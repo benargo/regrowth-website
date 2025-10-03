@@ -28,7 +28,7 @@ Route::middleware('auth')->group(function () {
  * Comps spreadsheet redirect
  */
 Route::get('/comps', function () {
-    return redirect('https://docs.google.com/spreadsheets/d/1SYaMOFDtXxdRm7gQz6nG7c_B-N7rsf7P7QIRipkJkwg/view?usp=sharing', 303);
+    return redirect('https://docs.google.com/spreadsheets/d/1SYaMOFDtXxdRm7gQz6nG7c_B-N7rsf7P7QIRipkJkwg/view?pli=1&gid=934701754#gid=934701754', 303);
 });
 
 /**
