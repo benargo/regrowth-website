@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.bg-brown-texture {
+    background-image: url('../images/bg_brown_texture_repeat.jpg');
+    background-position: center -200px;
+    background-repeat: repeat;
+}
+
+.bg-illidan {
+    background-image: url('../images/bg_illidan.jpg');
+    background-position: 50% 10%;
+    background-size: cover;
+}
+
+.bg-masthead {
+    background-image: url('../images/bg_masthead_mobile.webp');
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-masthead-desktop {
+    background-image: url('../images/bg_masthead_desktop_1.webp');
+    background-position: center;
+    background-size: cover;
+}
