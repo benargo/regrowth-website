@@ -132,9 +132,9 @@ export default function Master({ title, children }) {
                 <footer className="mx-3 md:mx-5 py-5" id="footer">
                     <div className="container mx-auto">
                         {/* Footer Links */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6 my-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 my-5">
                             {/* Column 1 - Legal & Account */}
-                            <ul className="md:col-start-2 lg:col-start-3 space-y-2 text-center">
+                            <ul className="lg:col-start-2 space-y-2 text-center">
                                 <li className="py-2 px-3 text-gray-300">
                                     <i className="far fa-copyright w-5 mr-2"></i>
                                     {new Date().getFullYear()} Regrowth
@@ -159,8 +159,8 @@ export default function Master({ title, children }) {
                         </div>
 
                         {/* Logos Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6 my-5">
-                            <div className="md:col-start-2 lg:col-start-3 text-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 my-5">
+                            <div className="lg:col-start-2 text-center">
                                 <Link href="/" title="Regrowth">
                                     <img
                                         src="/images/guild_emblem.webp"
