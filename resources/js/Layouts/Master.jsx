@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, Head, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
+import FlashMessage from '@/Components/FlashMessage';
 
 export default function Master({ title, children }) {
-    const { auth, canAccessControlPanel } = usePage().props;
+    const { auth, canAccessControlPanel, flash } = usePage().props;
     const user = auth?.user;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
+    const [flashError, setFlashError] = useState(flash?.error);
+    const [flashSuccess, setFlashSuccess] = useState(flash?.success);
 
     useEffect(() => {
         document.body.classList.add('bg-white', 'bg-brown-texture');
@@ -14,6 +17,12 @@ export default function Master({ title, children }) {
             document.body.classList.remove('bg-white', 'bg-brown-texture');
         };
     }, []);
+
+    // Update flash messages when props change
+    useEffect(() => {
+        setFlashError(flash?.error);
+        setFlashSuccess(flash?.success);
+    }, [flash?.error, flash?.success]);
 
     return (
         <>
@@ -49,7 +58,6 @@ export default function Master({ title, children }) {
                     {/* Desktop menu */}
                     <div className="hidden lg:flex lg:items-center lg:justify-between lg:flex-1 lg:ml-10">
                         <div className="flex space-x-1">
-                            {/* Navigation items go here */}
                             <Link
                                 href="/discord"
                                 className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
@@ -60,10 +68,70 @@ export default function Master({ title, children }) {
                         </div>
 
                         <div className="flex items-center">
-                            {/* User Account Dropdown */}
+                            {user ? (
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <button className="flex items-center space-x-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                                            <img
+                                                src={user.avatar_url}
+                                                alt={user.display_name}
+                                                className="h-8 w-8 rounded-full"
+                                            />
+                                            <span>{user.display_name}</span>
+                                            {user.highest_role && (
+                                                <span className="text-xs bg-gray-700 px-2 py-0.5 rounded">
+                                                    {user.highest_role}
+                                                </span>
+                                            )}
+                                            <i className="far fa-chevron-down text-xs"></i>
+                                        </button>
+                                    </Dropdown.Trigger>
+
+                                    <Dropdown.Content>
+                                        {/* <Dropdown.Link href={route('profile.edit')}>
+                                            <i className="far fa-user-cog mr-2"></i>
+                                            Account Settings
+                                        </Dropdown.Link>
+                                        {canAccessControlPanel && (
+                                            <Dropdown.Link href={route('control_panel.index')}>
+                                                <i className="far fa-cogs mr-2"></i>
+                                                Officers' Control Panel
+                                            </Dropdown.Link>
+                                        )} */}
+                                        <Dropdown.Link
+                                            href={route('logout')}
+                                            method="post"
+                                            as="button"
+                                        >
+                                            <i className="far fa-sign-out mr-2"></i>
+                                            Logout
+                                        </Dropdown.Link>
+                                    </Dropdown.Content>
+                                </Dropdown>
+                            ) : (
+                                <a
+                                    href={route('login')}
+                                    className="flex items-center space-x-2 px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md transition-colors"
+                                >
+                                    <i className="fab fa-discord"></i>
+                                    <span>Login with Discord</span>
+                                </a>
+                            )}
                         </div>
                     </div>
                 </nav>
+
+                {/* Flash Messages */}
+                <FlashMessage
+                    type="error"
+                    message={flashError}
+                    onDismiss={() => setFlashError(null)}
+                />
+                <FlashMessage
+                    type="success"
+                    message={flashSuccess}
+                    onDismiss={() => setFlashSuccess(null)}
+                />
 
                 {/* Mobile menu */}
                 <div
@@ -71,7 +139,6 @@ export default function Master({ title, children }) {
                     id="mobile-menu"
                 >
                     <div className="px-2 pt-2 pb-3 space-y-1">
-                        {/* Navigation items go here */}
                         <Link
                             href="/discord"
                             className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
@@ -84,10 +151,24 @@ export default function Master({ title, children }) {
                     <div className="pt-4 pb-3 border-t border-gray-700">
                         {user ? (
                             <div className="px-4 space-y-2">
-                                <div className="text-base font-medium text-white">
-                                    {user.nickname || user.name}
+                                <div className="flex items-center space-x-3">
+                                    <img
+                                        src={user.avatar_url}
+                                        alt={user.display_name}
+                                        className="h-10 w-10 rounded-full"
+                                    />
+                                    <div>
+                                        <div className="text-base font-medium text-white">
+                                            {user.display_name}
+                                        </div>
+                                        {user.highest_role && (
+                                            <div className="text-sm text-gray-400">
+                                                {user.highest_role}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <Link
+                                {/* <Link
                                     href={route('profile.edit')}
                                     className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
                                 >
@@ -102,7 +183,7 @@ export default function Master({ title, children }) {
                                         <i className="far fa-cogs mr-2"></i>
                                         Officers' Control Panel
                                     </Link>
-                                )}
+                                )} */}
                                 <Link
                                     href={route('logout')}
                                     method="post"
@@ -116,11 +197,11 @@ export default function Master({ title, children }) {
                         ) : (
                             <div className="px-4">
                                 <Link
-                                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
                                     href={route('login')}
+                                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md transition-colors"
                                 >
-                                    <i className="far fa-sign-in mr-2"></i>
-                                    Login
+                                    <i className="fab fa-discord"></i>
+                                    <span>Login with Discord</span>
                                 </Link>
                             </div>
                         )}

@@ -3,4 +3,5 @@
 return [
     App\Providers\AppServiceProvider::class,
     App\Providers\WarcraftLogsServiceProvider::class,
+    App\Providers\DiscordServiceProvider::class,
 ];

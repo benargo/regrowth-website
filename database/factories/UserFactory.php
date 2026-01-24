@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -12,11 +12,6 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
@@ -24,21 +19,75 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'id' => (string) fake()->unique()->numerify('##################'),
+            'username' => fake()->userName(),
+            'discriminator' => '0',
+            'nickname' => fake()->optional(0.7)->firstName(),
+            'avatar' => fake()->optional(0.8)->md5(),
+            'guild_avatar' => fake()->optional(0.8)->md5(),
+            'banner' => null,
+            'roles' => [User::ROLE_MEMBER],
             'remember_token' => Str::random(10),
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indicate the user is an Officer.
      */
-    public function unverified(): static
+    public function officer(): static
     {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+            'roles' => [User::ROLE_OFFICER],
+        ]);
+    }
+
+    /**
+     * Indicate the user is a Raider.
+     */
+    public function raider(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'roles' => [User::ROLE_RAIDER],
+        ]);
+    }
+
+    /**
+     * Indicate the user is a Member.
+     */
+    public function member(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'roles' => [User::ROLE_MEMBER],
+        ]);
+    }
+
+    /**
+     * Indicate the user is a Guest.
+     */
+    public function guest(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'roles' => [User::ROLE_GUEST],
+        ]);
+    }
+
+    /**
+     * Indicate the user has multiple roles.
+     */
+    public function withRoles(array $roles): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'roles' => $roles,
+        ]);
+    }
+
+    /**
+     * Indicate the user has no recognized guild roles.
+     */
+    public function noRoles(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'roles' => [],
         ]);
     }
 }

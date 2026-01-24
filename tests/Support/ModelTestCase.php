@@ -52,12 +52,12 @@ abstract class ModelTestCase extends TestCase
 
     protected function assertFillable(Model $model, array $expected): void
     {
-        $this->assertSameCanonicalizing($expected, $model->getFillable(), 'Unexpected $fillable.');
+        $this->assertEqualsCanonicalizing($expected, $model->getFillable(), 'Unexpected $fillable.');
     }
 
     protected function assertHidden(Model $model, array $expected): void
     {
-        $this->assertSameCanonicalizing($expected, $model->getHidden(), 'Unexpected $hidden.');
+        $this->assertEqualsCanonicalizing($expected, $model->getHidden(), 'Unexpected $hidden.');
     }
 
     /** ---------- Database helpers ---------- */
