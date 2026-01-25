@@ -232,7 +232,7 @@ class UserTest extends ModelTestCase
         ]);
 
         $this->assertSame(
-            'https://cdn.discordapp.com/guilds/123456789012345688/users/123456789012345688/avatars/def456abc123.webp',
+            'https://cdn.discordapp.com/guilds/829020506907869214/users/123456789012345688/avatars/def456abc123.webp',
             $user->avatar_url
         );
     }

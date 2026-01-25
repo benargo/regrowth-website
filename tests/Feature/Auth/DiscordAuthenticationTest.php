@@ -141,7 +141,7 @@ class DiscordAuthenticationTest extends TestCase
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
-            'roles' => ['829022020301094922'],
+            'roles' => ['829021769448816691'],
         ]);
 
         $response = $this->actingAs($user)->get('/dashboard');

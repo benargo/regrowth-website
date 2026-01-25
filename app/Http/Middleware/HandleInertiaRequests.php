@@ -43,7 +43,7 @@ class HandleInertiaRequests extends Middleware
                     'highest_role' => $user->highestRole(),
                 ] : null,
             ],
-            'canAccessControlPanel' => $user?->isOfficer() ?? false,
+            'canAccessDashboard' => $user?->can('access-dashboard') ?? false,
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),

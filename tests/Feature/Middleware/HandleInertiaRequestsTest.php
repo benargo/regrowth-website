@@ -25,7 +25,7 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessControlPanel', true)
+                $page->where('canAccessDashboard', true)
             );
     }
 
@@ -42,7 +42,7 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessControlPanel', false)
+                $page->where('canAccessDashboard', false)
             );
     }
 
@@ -59,7 +59,7 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessControlPanel', false)
+                $page->where('canAccessDashboard', false)
             );
     }
 
@@ -68,7 +68,7 @@ class HandleInertiaRequestsTest extends TestCase
     {
         $this->get('/')
             ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessControlPanel', false)
+                $page->where('canAccessDashboard', false)
             );
     }
 

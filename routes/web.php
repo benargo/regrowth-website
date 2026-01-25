@@ -9,9 +9,14 @@ Route::get('/', function () {
     return Inertia::render('Home');
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+/*
+ * Officers' Dashboard
+ */
+Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
+    Route::get('/', function () {
+        return Inertia::render('Dashboard/Index');
+    })->name('index');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -4,7 +4,7 @@ import Dropdown from '@/Components/Dropdown';
 import FlashMessage from '@/Components/FlashMessage';
 
 export default function Master({ title, children }) {
-    const { auth, canAccessControlPanel, flash } = usePage().props;
+    const { auth, canAccessDashboard, flash } = usePage().props;
     const user = auth?.user;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
@@ -59,7 +59,7 @@ export default function Master({ title, children }) {
                     <div className="hidden lg:flex lg:items-center lg:justify-between lg:flex-1 lg:ml-10">
                         <div className="flex space-x-1">
                             <Link
-                                href="/discord"
+                                href="https://discord.gg/regrowth"
                                 className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
                             >
                                 <i className="fab fa-discord mr-2"></i>
@@ -91,13 +91,13 @@ export default function Master({ title, children }) {
                                         {/* <Dropdown.Link href={route('profile.edit')}>
                                             <i className="far fa-user-cog mr-2"></i>
                                             Account Settings
-                                        </Dropdown.Link>
-                                        {canAccessControlPanel && (
-                                            <Dropdown.Link href={route('control_panel.index')}>
+                                        </Dropdown.Link> */}
+                                        {canAccessDashboard && (
+                                            <Dropdown.Link href={route('dashboard.index')}>
                                                 <i className="far fa-cogs mr-2"></i>
-                                                Officers' Control Panel
+                                                Officers&rsquo; Dashboard
                                             </Dropdown.Link>
-                                        )} */}
+                                        )}
                                         <Dropdown.Link
                                             href={route('logout')}
                                             method="post"
@@ -120,18 +120,6 @@ export default function Master({ title, children }) {
                         </div>
                     </div>
                 </nav>
-
-                {/* Flash Messages */}
-                <FlashMessage
-                    type="error"
-                    message={flashError}
-                    onDismiss={() => setFlashError(null)}
-                />
-                <FlashMessage
-                    type="success"
-                    message={flashSuccess}
-                    onDismiss={() => setFlashSuccess(null)}
-                />
 
                 {/* Mobile menu */}
                 <div
@@ -174,16 +162,16 @@ export default function Master({ title, children }) {
                                 >
                                     <i className="far fa-user-cog mr-2"></i>
                                     Account Settings
-                                </Link>
-                                {canAccessControlPanel && (
+                                </Link> */}
+                                {canAccessDashboard && (
                                     <Link
-                                        href={route('control_panel.index')}
+                                        href={route('dashboard.index')}
                                         className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
                                     >
                                         <i className="far fa-cogs mr-2"></i>
                                         Officers' Control Panel
                                     </Link>
-                                )} */}
+                                )}
                                 <Link
                                     href={route('logout')}
                                     method="post"
@@ -207,6 +195,18 @@ export default function Master({ title, children }) {
                         )}
                     </div>
                 </div>
+
+                {/* Flash Messages */}
+                <FlashMessage
+                    type="error"
+                    message={flashError}
+                    onDismiss={() => setFlashError(null)}
+                />
+                <FlashMessage
+                    type="success"
+                    message={flashSuccess}
+                    onDismiss={() => setFlashSuccess(null)}
+                />
 
                 <main>{children}</main>
 

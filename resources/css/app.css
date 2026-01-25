@@ -25,3 +25,9 @@
     background-position: center;
     background-size: cover;
 }
+
+.bg-officer-meeting {
+    background-image: url('../images/bg_officermeeting.webp');
+    background-position: center;
+    background-size: cover;
+}
