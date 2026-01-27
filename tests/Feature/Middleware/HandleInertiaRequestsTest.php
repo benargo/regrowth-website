@@ -24,8 +24,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessDashboard', true)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', true)
             );
     }
 
@@ -41,8 +40,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', false)
             );
     }
 
@@ -58,8 +56,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', false)
             );
     }
 
@@ -67,8 +64,7 @@ class HandleInertiaRequestsTest extends TestCase
     public function it_shares_can_access_control_panel_as_false_for_guests(): void
     {
         $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('canAccessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', false)
             );
     }
 
@@ -86,13 +82,12 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->has('auth.user')
-                    ->where('auth.user.id', '123456789012345678')
-                    ->where('auth.user.username', 'testuser')
-                    ->where('auth.user.nickname', 'TestNick')
-                    ->where('auth.user.display_name', 'TestNick')
-                    ->where('auth.user.highest_role', 'Member')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('auth.user')
+                ->where('auth.user.id', '123456789012345678')
+                ->where('auth.user.username', 'testuser')
+                ->where('auth.user.nickname', 'TestNick')
+                ->where('auth.user.display_name', 'TestNick')
+                ->where('auth.user.highest_role', 'Member')
             );
     }
 
@@ -109,8 +104,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('auth.user.display_name', 'testuser')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.display_name', 'testuser')
             );
     }
 
@@ -118,8 +112,7 @@ class HandleInertiaRequestsTest extends TestCase
     public function it_shares_null_user_for_guest(): void
     {
         $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('auth.user', null)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user', null)
             );
     }
 
@@ -136,11 +129,10 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where(
-                    'auth.user.avatar_url',
-                    'https://cdn.discordapp.com/guilds/123456789012345678/users/123456789012345678/avatars/avatarhash123.webp'
-                )
+            ->assertInertia(fn (AssertableInertia $page) => $page->where(
+                'auth.user.avatar_url',
+                'https://cdn.discordapp.com/guilds/'.config('services.discord.guild_id').'/users/123456789012345678/avatars/avatarhash123.webp'
+            )
             );
     }
 
@@ -156,8 +148,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('auth.user.highest_role', 'Officer')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.highest_role', 'Officer')
             );
     }
 
@@ -173,8 +164,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) =>
-                $page->where('auth.user.highest_role', null)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.highest_role', null)
             );
     }
 }

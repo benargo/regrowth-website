@@ -14,10 +14,12 @@ return [
     |
     */
 
-    'warcraftlogs' => [
-        'client_id' => env('WCL_CLIENT_ID'),
-        'client_secret' => env('WCL_CLIENT_SECRET'),
-        'token_url' => 'https://www.warcraftlogs.com/oauth/token',
+    'blizzard' => [
+        'client_id' => env('BLIZZARD_CLIENT_ID'),
+        'client_secret' => env('BLIZZARD_CLIENT_SECRET'),
+        'region' => 'eu',
+        'locale' => 'en_GB',
+        'filesystem' => env('BLIZZARD_FILESYSTEM', 'public'),
     ],
 
     'discord' => [
@@ -25,7 +27,13 @@ return [
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'redirect' => env('DISCORD_REDIRECT_URI', '/auth/discord/callback'),
         'bot_token' => env('DISCORD_BOT_TOKEN'),
-        'guild_id' => env('DISCORD_GUILD_ID', '829020506907869214'),
+        'guild_id' => 829020506907869214,
+    ],
+
+    'warcraftlogs' => [
+        'client_id' => env('WCL_CLIENT_ID'),
+        'client_secret' => env('WCL_CLIENT_SECRET'),
+        'token_url' => 'https://www.warcraftlogs.com/oauth/token',
     ],
 
 ];

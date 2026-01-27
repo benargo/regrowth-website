@@ -2,6 +2,7 @@
 
 return [
     App\Providers\AppServiceProvider::class,
-    App\Providers\WarcraftLogsServiceProvider::class,
+    App\Providers\BlizzardServiceProvider::class,
     App\Providers\DiscordServiceProvider::class,
+    App\Providers\WarcraftLogsServiceProvider::class,
 ];

@@ -2,7 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use Database\Seeders\LootCouncil\ItemsSeeder;
+use Database\Seeders\LootCouncil\PrioritySeeder;
+use Database\Seeders\TBC\BossSeeder;
+use Database\Seeders\TBC\PhaseSeeder;
+use Database\Seeders\TBC\RaidSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,11 +17,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            PhaseSeeder::class,
+            RaidSeeder::class,
+            BossSeeder::class,
+            PrioritySeeder::class,
+            ItemsSeeder::class,
         ]);
     }
 }
