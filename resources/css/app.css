@@ -14,6 +14,12 @@
     background-size: cover;
 }
 
+.bg-karazhan {
+    background-image: url('../images/bg_karazhan.webp');
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-masthead {
     background-image: url('../images/bg_masthead_mobile.webp');
     background-position: center;

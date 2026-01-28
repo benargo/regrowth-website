@@ -14,10 +14,11 @@ class PrioritySeeder extends Seeder
     {
         $priorities = [
             // Roles
-            ['type' => 'Role', 'title' => 'Tank', 'media' => ['media_type' => 'item', 'media_id' => 1201]],
-            ['type' => 'Role', 'title' => 'Healer', 'media' => ['media_type' => 'spell', 'media_id' => 41386]],
-            ['type' => 'Role', 'title' => 'Melee DPS', 'media' => ['media_type' => 'item', 'media_id' => 2131]],
-            ['type' => 'Role', 'title' => 'Ranged DPS', 'media' => ['media_type' => 'spell', 'media_id' => 30672]],
+            ['type' => 'Role', 'title' => 'Tank', 'media' => ['media_name' => 'inv_shield_04']],
+            ['type' => 'Role', 'title' => 'Backup tank', 'media' => ['media_name' => 'inv_shield_09']],
+            ['type' => 'Role', 'title' => 'Healer', 'media' => ['media_name' => 'spell_holy_heal']],
+            ['type' => 'Role', 'title' => 'Melee DPS', 'media' => ['media_name' => 'inv_sword_04']],
+            ['type' => 'Role', 'title' => 'Ranged DPS', 'media' => ['media_name' => 'spell_nature_elementalprecision_1']],
 
             // Classes
             ['type' => 'Class', 'title' => 'Druid', 'media' => ['media_type' => 'playable-class', 'media_id' => 11]],
@@ -31,50 +32,50 @@ class PrioritySeeder extends Seeder
             ['type' => 'Class', 'title' => 'Warrior', 'media' => ['media_type' => 'playable-class', 'media_id' => 1]],
 
             // Specs - Druid
-            ['type' => 'Spec', 'title' => 'Balance Druid', 'media' => ['media_type' => 'spell', 'media_id' => 8921]],
-            ['type' => 'Spec', 'title' => 'Feral DPS Druid', 'media' => ['media_type' => 'spell', 'media_id' => 768]],
-            ['type' => 'Spec', 'title' => 'Feral Tank Druid', 'media' => ['media_type' => 'spell', 'media_id' => 5487]],
-            ['type' => 'Spec', 'title' => 'Restoration Druid', 'media' => ['media_type' => 'spell', 'media_id' => 5185]],
+            ['type' => 'Spec', 'title' => 'Balance Druid', 'media' => ['media_name' => 'spell_nature_starfall']],
+            ['type' => 'Spec', 'title' => 'Feral DPS Druid', 'media' => ['media_name' => 'ability_druid_catform']],
+            ['type' => 'Spec', 'title' => 'Feral Tank Druid', 'media' => ['media_name' => 'ability_racial_bearform']],
+            ['type' => 'Spec', 'title' => 'Restoration Druid', 'media' => ['media_name' => 'spell_nature_healingtouch']],
 
             // Specs - Hunter
-            ['type' => 'Spec', 'title' => 'Beast Mastery Hunter', 'media' => ['media_type' => 'spell', 'media_id' => 1515]],
-            ['type' => 'Spec', 'title' => 'Marksmanship Hunter', 'media' => ['media_type' => 'spell', 'media_id' => 1510]],
-            ['type' => 'Spec', 'title' => 'Survival Hunter', 'media' => ['media_type' => 'spell', 'media_id' => 1495]],
+            ['type' => 'Spec', 'title' => 'Beast Mastery Hunter', 'media' => ['media_name' => 'ability_hunter_beasttaming']],
+            ['type' => 'Spec', 'title' => 'Marksmanship Hunter', 'media' => ['media_name' => 'ability_marksmanship']],
+            ['type' => 'Spec', 'title' => 'Survival Hunter', 'media' => ['media_name' => 'ability_hunter_swiftstrike']],
 
             // Specs - Mage
-            ['type' => 'Spec', 'title' => 'Arcane Mage', 'media' => ['media_type' => 'spell', 'media_id' => 8921]],
-            ['type' => 'Spec', 'title' => 'Fire Mage', 'media' => ['media_type' => 'spell', 'media_id' => 133]],
-            ['type' => 'Spec', 'title' => 'Frost Mage', 'media' => ['media_type' => 'spell', 'media_id' => 116]],
+            ['type' => 'Spec', 'title' => 'Arcane Mage', 'media' => ['media_name' => 'spell_arcane_blast']],
+            ['type' => 'Spec', 'title' => 'Fire Mage', 'media' => ['media_name' => 'spell_fire_flamebolt']],
+            ['type' => 'Spec', 'title' => 'Frost Mage', 'media' => ['media_name' => 'spell_frost_frostbolt02']],
 
             // Specs - Paladin
-            ['type' => 'Spec', 'title' => 'Holy Paladin', 'media' => ['media_type' => 'spell', 'media_id' => 635]],
-            ['type' => 'Spec', 'title' => 'Protection Paladin', 'media' => ['media_type' => 'spell', 'media_id' => 465]],
-            ['type' => 'Spec', 'title' => 'Retribution Paladin', 'media' => ['media_type' => 'spell', 'media_id' => 7294]],
+            ['type' => 'Spec', 'title' => 'Holy Paladin', 'media' => ['media_name' => 'spell_holy_holybolt']],
+            ['type' => 'Spec', 'title' => 'Protection Paladin', 'media' => ['media_name' => 'spell_holy_devotionaura']],
+            ['type' => 'Spec', 'title' => 'Retribution Paladin', 'media' => ['media_name' => 'spell_holy_auraoflight']],
 
             // Specs - Priest
-            ['type' => 'Spec', 'title' => 'Discipline Priest', 'media' => ['media_type' => 'spell', 'media_id' => 17]],
-            ['type' => 'Spec', 'title' => 'Holy Priest', 'media' => ['media_type' => 'spell', 'media_id' => 47788]],
-            ['type' => 'Spec', 'title' => 'Shadow Priest', 'media' => ['media_type' => 'spell', 'media_id' => 589]],
+            ['type' => 'Spec', 'title' => 'Discipline Priest', 'media' => ['media_name' => 'spell_holy_powerwordshield']],
+            ['type' => 'Spec', 'title' => 'Holy Priest', 'media' => ['media_name' => 'spell_holy_guardianspirit']],
+            ['type' => 'Spec', 'title' => 'Shadow Priest', 'media' => ['media_name' => 'spell_shadow_shadowwordpain']],
 
             // Specs - Rogue
-            ['type' => 'Spec', 'title' => 'Assassination Rogue', 'media' => ['media_type' => 'spell', 'media_id' => 2098]],
-            ['type' => 'Spec', 'title' => 'Combat Rogue', 'media' => ['media_type' => 'spell', 'media_id' => 53]],
-            ['type' => 'Spec', 'title' => 'Subtlety Rogue', 'media' => ['media_type' => 'spell', 'media_id' => 1784]],
+            ['type' => 'Spec', 'title' => 'Assassination Rogue', 'media' => ['media_name' => 'ability_rogue_eviscerate']],
+            ['type' => 'Spec', 'title' => 'Combat Rogue', 'media' => ['media_name' => 'ability_backstab']],
+            ['type' => 'Spec', 'title' => 'Subtlety Rogue', 'media' => ['media_name' => 'ability_stealth']],
 
             // Specs - Shaman
-            ['type' => 'Spec', 'title' => 'Elemental Shaman', 'media' => ['media_type' => 'spell', 'media_id' => 403]],
-            ['type' => 'Spec', 'title' => 'Enhancement Shaman', 'media' => ['media_type' => 'spell', 'media_id' => 324]],
-            ['type' => 'Spec', 'title' => 'Restoration Shaman', 'media' => ['media_type' => 'spell', 'media_id' => 331]],
+            ['type' => 'Spec', 'title' => 'Elemental Shaman', 'media' => ['media_name' => 'spell_nature_lightning']],
+            ['type' => 'Spec', 'title' => 'Enhancement Shaman', 'media' => ['media_name' => 'spell_nature_lightningshield']],
+            ['type' => 'Spec', 'title' => 'Restoration Shaman', 'media' => ['media_name' => 'spell_nature_magicimmunity']],
 
             // Specs - Warlock
-            ['type' => 'Spec', 'title' => 'Affliction Warlock', 'media' => ['media_type' => 'spell', 'media_id' => 6789]],
-            ['type' => 'Spec', 'title' => 'Demonology Warlock', 'media' => ['media_type' => 'spell', 'media_id' => 18697]],
-            ['type' => 'Spec', 'title' => 'Destruction Warlock', 'media' => ['media_type' => 'spell', 'media_id' => 5740]],
+            ['type' => 'Spec', 'title' => 'Affliction Warlock', 'media' => ['media_name' => 'spell_shadow_deathcoil']],
+            ['type' => 'Spec', 'title' => 'Demonology Warlock', 'media' => ['media_name' => 'spell_shadow_metamorphosis']],
+            ['type' => 'Spec', 'title' => 'Destruction Warlock', 'media' => ['media_name' => 'spell_shadow_rainoffire']],
 
             // Specs - Warrior
-            ['type' => 'Spec', 'title' => 'Arms Warrior', 'media' => ['media_type' => 'spell', 'media_id' => 12294]],
-            ['type' => 'Spec', 'title' => 'Fury Warrior', 'media' => ['media_type' => 'spell', 'media_id' => 20375]],
-            ['type' => 'Spec', 'title' => 'Protection Warrior', 'media' => ['media_type' => 'spell', 'media_id' => 71]],
+            ['type' => 'Spec', 'title' => 'Arms Warrior', 'media' => ['media_name' => 'ability_warrior_savageblow']],
+            ['type' => 'Spec', 'title' => 'Fury Warrior', 'media' => ['media_name' => 'ability_warrior_innerrage']],
+            ['type' => 'Spec', 'title' => 'Protection Warrior', 'media' => ['media_name' => 'ability_warrior_defensivestance']],
         ];
 
         foreach ($priorities as $priority) {

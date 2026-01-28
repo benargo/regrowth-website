@@ -20,6 +20,12 @@ class MediaService extends Service
     protected const CACHE_TTL_SEARCH = 3600; // 1 hour
 
     /**
+     * Base URL pattern for fetching icons by name.
+     * Use sprintf with region and icon name.
+     */
+    protected const ICON_BASE_URL = 'https://render.worldofwarcraft.com/%s/icons/56/%s.jpg';
+
+    /**
      * Allowed media tags for retrieval.
      */
     protected array $valid_tags = ['item', 'spell', 'playable-class'];
@@ -177,6 +183,56 @@ class MediaService extends Service
                 )
             );
         }
+    }
+
+    /**
+     * Get the icon URL by icon name.
+     *
+     * This constructs the URL directly without needing to query the API.
+     */
+    public function getIconUrl(string $iconName): string
+    {
+        return sprintf(
+            self::ICON_BASE_URL,
+            $this->client->getRegion()->value,
+            $iconName
+        );
+    }
+
+    /**
+     * Download and store an icon by name.
+     *
+     * @return string|null The local path to the stored icon, or null on failure
+     */
+    public function downloadIconByName(string $iconName): ?string
+    {
+        $url = $this->getIconUrl($iconName);
+        $path = sprintf('blizzard/icons/%s.jpg', $iconName);
+
+        if ($this->disk()->exists($path)) {
+            return $path;
+        }
+
+        $content = $this->fetchRemoteImage($url);
+
+        if ($content === null) {
+            return null;
+        }
+
+        $this->disk()->put($path, $content, 'public');
+
+        return $path;
+    }
+
+    /**
+     * Get the public URL for an icon by name.
+     * Downloads the icon if not already stored.
+     */
+    public function getIconUrlByName(string $iconName): ?string
+    {
+        $path = $this->downloadIconByName($iconName);
+
+        return $path !== null ? $this->disk()->url($path) : null;
     }
 
     /**

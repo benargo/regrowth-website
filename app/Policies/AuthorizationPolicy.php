@@ -37,4 +37,14 @@ abstract class AuthorizationPolicy
     {
         return $user->isMember() ?? false;
     }
+
+    /**
+     * Determine if the user is a Member or above (Member, Raider, or Officer).
+     */
+    public function userIsMemberOrAbove(User $user): bool
+    {
+        return $this->userIsOfficer($user)
+            || $this->userIsRaider($user)
+            || $this->userIsMember($user);
+    }
 }

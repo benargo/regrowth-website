@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Controllers\Loot\LootDashboardController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -18,10 +18,14 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     })->name('index');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+/**
+ * Loot Priority Manager
+ */
+Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:access-loot']], function () {
+    Route::get('/', [LootDashboardController::class, 'index'])->name('loot.index');
+    Route::get('/items/{item}', [LootDashboardController::class, 'showItem'])->name('loot.items.show');
+    Route::get('/edit/{item}', [LootDashboardController::class, 'editItem'])->middleware('can:edit-loot-priorities')->name('loot.items.edit');
+    Route::put('/items/{item}/priorities', [LootDashboardController::class, 'updateItemPriorities'])->middleware('can:edit-loot-priorities')->name('loot.items.priorities.update');
 });
 
 /**
@@ -35,7 +39,13 @@ Route::get('/comps', function () {
  * Discord redirect
  */
 Route::get('/discord', function () {
-    return redirect('https://discord.gg/pM6haPnQRt', 303);
+    return redirect('https://discord.gg/regrowth', 303);
 });
+
+// Route::middleware('auth')->group(function () {
+//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// });
 
 require __DIR__.'/auth.php';

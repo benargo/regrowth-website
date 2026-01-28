@@ -16,7 +16,7 @@ class PhaseSeeder extends Seeder
             [
                 'id' => 1,
                 'description' => "Phase 1: Karazhan, Gruul's Lair, and Magtheridon's Lair",
-                'start_date' => '2026-02-06 00:00:00',
+                'start_date' => '2026-01-01 00:00:00',
             ],
             [
                 'id' => 2,

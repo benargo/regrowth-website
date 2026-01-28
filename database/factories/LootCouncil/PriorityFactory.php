@@ -27,10 +27,10 @@ class PriorityFactory extends Factory
         return [
             'title' => fake()->randomElement(['Tank', 'Healer', 'Melee DPS', 'Ranged DPS', 'Caster', 'Physical']),
             'type' => fake()->randomElement(['role', 'class', 'spec']),
-            'media' => json_encode([
+            'media' => [
                 'media_type' => 'spell',
                 'media_id' => fake()->numberBetween(1000, 9999),
-            ]),
+            ],
         ];
     }
 

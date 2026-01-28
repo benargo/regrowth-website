@@ -18,5 +18,9 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+
+        <!-- Wowhead Tooltips -->
+        <script>const whTooltips = {colorLinks: true, iconizeLinks: true, renameLinks: false};</script>
+        <script src="https://wow.zamimg.com/js/tooltips.js"></script>
     </body>
 </html>
