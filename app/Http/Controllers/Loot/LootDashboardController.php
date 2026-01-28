@@ -43,6 +43,10 @@ class LootDashboardController extends Controller
 
     public function showItem(Item $item, Request $request)
     {
+        if ($request->user()->can('edit-loot-priorities')) {
+            return redirect()->route('loot.items.edit', $item);
+        }
+
         $item->load([
             'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
         ]);

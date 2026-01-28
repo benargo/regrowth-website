@@ -518,11 +518,11 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource })
                     <div className="flex items-center justify-between h-12">
                         <div className="flex flex-1 space-x-4">
                             <Link
-                                href={route('loot.items.show', { item: item.data.id })}
+                                href={route('loot.index', { raid_id: item.data.raid.id })}
                                 className="text-white hover:bg-brown-800 px-3 py-2 rounded-md text-sm font-medium"
                             >
                                 <i className="fas fa-arrow-left mr-2"></i>
-                                Cancel
+                                Back to {item.data.raid.name} loot
                             </Link>
                         </div>
                         <div className="flex items-center space-x-4">

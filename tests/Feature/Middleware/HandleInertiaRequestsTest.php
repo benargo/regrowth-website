@@ -24,7 +24,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', true)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', true)
             );
     }
 
@@ -40,7 +40,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', false)
             );
     }
 
@@ -56,7 +56,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', false)
             );
     }
 
@@ -64,7 +64,7 @@ class HandleInertiaRequestsTest extends TestCase
     public function it_shares_can_access_control_panel_as_false_for_guests(): void
     {
         $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('canAccessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', false)
             );
     }
 

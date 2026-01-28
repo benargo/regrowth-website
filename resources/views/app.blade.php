@@ -15,6 +15,8 @@
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead
+
+        <link rel="icon" type="image/webp" rel="noopener" target="_blank" href="/images/guild_emblem.webp" />
     </head>
     <body class="font-sans antialiased">
         @inertia

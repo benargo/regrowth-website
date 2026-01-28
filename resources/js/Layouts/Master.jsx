@@ -4,8 +4,9 @@ import Dropdown from '@/Components/Dropdown';
 import FlashMessage from '@/Components/FlashMessage';
 
 export default function Master({ title, children }) {
-    const { auth, canAccessDashboard, flash } = usePage().props;
+    const { auth, flash } = usePage().props;
     const user = auth?.user;
+    const can = auth?.can;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [flashError, setFlashError] = useState(flash?.error);
@@ -57,7 +58,7 @@ export default function Master({ title, children }) {
 
                     {/* Desktop menu */}
                     <div className="hidden lg:flex lg:items-center lg:justify-between lg:flex-1 lg:ml-10">
-                        <div className="flex space-x-1">
+                        <div className="flex gap-4 space-x-1">
                             <Link
                                 href="https://discord.gg/regrowth"
                                 className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
@@ -65,6 +66,15 @@ export default function Master({ title, children }) {
                                 <i className="fab fa-discord mr-2"></i>
                                 Discord
                             </Link>
+                            {can?.accessLoot && (
+                                <Link 
+                                    href="/loot"
+                                    className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
+                                >
+                                    <i className="fas fa-gem mr-2"></i>
+                                    Loot Priorities
+                                </Link>
+                            )}
                         </div>
 
                         <div className="flex items-center">
@@ -92,7 +102,7 @@ export default function Master({ title, children }) {
                                             <i className="far fa-user-cog mr-2"></i>
                                             Account Settings
                                         </Dropdown.Link> */}
-                                        {canAccessDashboard && (
+                                        {can?.accessDashboard && (
                                             <Dropdown.Link href={route('dashboard.index')}>
                                                 <i className="far fa-cogs mr-2"></i>
                                                 Officers&rsquo; Dashboard
@@ -134,6 +144,15 @@ export default function Master({ title, children }) {
                             <i className="fab fa-discord mr-2"></i>
                             Discord
                         </Link>
+                        {can?.accessLoot && (
+                            <Link 
+                                href="/loot"
+                                className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
+                            >
+                                <i className="fas fa-gem mr-2"></i>
+                                Loot Priorities
+                            </Link>
+                        )}
                     </div>
 
                     <div className="pt-4 pb-3 border-t border-gray-700">
@@ -163,7 +182,7 @@ export default function Master({ title, children }) {
                                     <i className="far fa-user-cog mr-2"></i>
                                     Account Settings
                                 </Link> */}
-                                {canAccessDashboard && (
+                                {can?.accessDashboard && (
                                     <Link
                                         href={route('dashboard.index')}
                                         className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"

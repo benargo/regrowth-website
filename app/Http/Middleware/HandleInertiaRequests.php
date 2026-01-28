@@ -42,8 +42,11 @@ class HandleInertiaRequests extends Middleware
                     'avatar_url' => $user->avatar_url,
                     'highest_role' => $user->highestRole(),
                 ] : null,
+                'can' => [
+                    'accessDashboard' => $user?->can('access-dashboard') ?? false,
+                    'accessLoot' => $user?->can('access-loot') ?? false,
+                ],
             ],
-            'canAccessDashboard' => $user?->can('access-dashboard') ?? false,
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),
