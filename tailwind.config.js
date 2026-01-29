@@ -28,16 +28,25 @@ export default {
                     800: '#4a3d32',
                     900: '#372d22',
                 },
+                /*-- Discord branding and role colors --*/
+                discord: {
+                    DEFAULT: '#5865F2',
+                    officer: '#aa3b3b',
+                    raider: '#e67e22',
+                    member: '#1f8b4c',
+                    guest: '#9b59b6',
+                },
+                /*-- WoW item quality colors --*/
                 quality: {
                     DEFAULT: '#ffffff',
-                    'poor': '#9d9d9d',
-                    'common': '#ffffff',
-                    'uncommon': '#1eff00',
-                    'rare': '#0070dd',
-                    'epic': '#a335ee',
-                    'legendary': '#ff8000',
-                    'artifact': '#e6cc80',
-                    'heirloom': '#00ccff',
+                    poor: '#9d9d9d',
+                    common: '#ffffff',
+                    uncommon: '#1eff00',
+                    rare: '#0070dd',
+                    epic: '#a335ee',
+                    legendary: '#ff8000',
+                    artifact: '#e6cc80',
+                    heirloom: '#00ccff',
                 },
                 wowhead: {
                     DEFAULT: '#a71a19',
@@ -49,4 +58,9 @@ export default {
     },
 
     plugins: [forms],
+
+    safelist: [
+        { pattern: /(bg|text|border)-discord-(officer|raider|member|guest)/, },
+        { pattern: /(bg|text|border)-quality-(poor|common|uncommon|rare|epic|legendary|artifact|heirloom)/, }
+    ],
 };

@@ -186,12 +186,12 @@ export default function Index({ phases, current_phase, raids, bosses, items, sel
     };
 
     return (
-        <Master title="Loot Priorities">
+        <Master title="Loot Bias">
             {/* Header */}
             <div className="bg-karazhan py-24 text-white">
                 <div className="container mx-auto px-4">
                     <h1 className="text-4xl font-bold text-center">
-                        Loot Priorities
+                        Loot Bias
                     </h1>
                     {/* Insert search bar here in the future */}
                 </div>

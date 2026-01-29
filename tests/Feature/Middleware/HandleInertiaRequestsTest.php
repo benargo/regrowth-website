@@ -130,7 +130,7 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page->where(
-                'auth.user.avatar_url',
+                'auth.user.avatar',
                 'https://cdn.discordapp.com/guilds/'.config('services.discord.guild_id').'/users/123456789012345678/avatars/avatarhash123.webp'
             )
             );

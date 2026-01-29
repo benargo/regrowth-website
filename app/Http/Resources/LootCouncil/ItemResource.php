@@ -38,6 +38,7 @@ class ItemResource extends JsonResource
             'quality' => $blizzardData['quality'] ?? null,
             'inventory_type' => $blizzardData['inventory_type']['name'] ?? null,
             'priorities' => PriorityResource::collection($this->whenLoaded('priorities')),
+            'notes' => $this->notes,
             'wowhead_url' => $this->getWowheadUrl($blizzardData['name'] ?? null),
         ];
     }
@@ -93,7 +94,7 @@ class ItemResource extends JsonResource
 
     protected function getWowheadUrl(?string $name = null): string
     {
-        $baseUrl = 'https://www.wowhead.com/item=';
+        $baseUrl = 'https://www.wowhead.com/tbc/item=';
 
         return $baseUrl.$this->id.($name ? '/'.Str::slug($name) : '');
     }

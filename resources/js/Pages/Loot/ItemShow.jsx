@@ -1,6 +1,7 @@
 import Master from '@/Layouts/Master';
-import { useState } from 'react';
-import { router, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import CommentsSection from '@/Components/Loot/CommentsSection';
+import Notes from '@/Components/Loot/Notes';
 
 function PriorityItem({ priority }) {
     return (
@@ -60,15 +61,14 @@ function PriorityDisplay({ priorities }) {
     );
 }
 
-export default function ItemShow({ item, can_edit }) {
-    console.log(item);
+export default function ItemShow({ item, can_edit, can, comments }) {
     return (
         <Master title={item.data.name}>
             {/* Header */}
             <div className="bg-karazhan py-24 text-white">
                 <div className="container mx-auto px-4">
                     <h1 className="text-4xl font-bold text-center">
-                        Loot Priorities
+                        Loot Bias
                     </h1>
                     {/* Insert search bar here in the future */}
                 </div>
@@ -102,7 +102,7 @@ export default function ItemShow({ item, can_edit }) {
             </nav>
             {/* Content */}
             <main className="container mx-auto px-4 py-8">
-                <div className="flex flex-row items-start space-x-8">
+                <div className="flex flex-column md:flex-row items-start space-x-8">
                     <div className="flex-none w-24 h-24 mb-8">
                         <Link href={item.data.wowhead_url} data-wowhead={`item=${item.data.id}&domain=tbc`} target="_blank" rel="noopener noreferrer">
                             <img
@@ -115,6 +115,7 @@ export default function ItemShow({ item, can_edit }) {
                     <div className="w-64 flex-auto">
                         {/* Item Details */}
                         <h2 className={`text-2xl font-bold mb-4 text-quality-${item.data.quality?.name?.toLowerCase() || 'common'}`}>{item.data.name}</h2>
+                        {item.data.id && <p className="mb-2"><strong>Item ID:</strong> {item.data.id}</p>}
                         {item.data.item_class && <p className="mb-2"><strong>Type:</strong> {item.data.item_class}{item.data.item_subclass ? ` / ${item.data.item_subclass}` : ''}</p>}
                         {item.data.inventory_type && <p className="mb-2"><strong>Slot:</strong> {item.data.inventory_type}</p>}
                         {item.data.boss && <p className="mb-2"><strong>Drops from:</strong> {item.data.boss.name}</p>}
@@ -142,6 +143,20 @@ export default function ItemShow({ item, can_edit }) {
                 ) : (
                     <p className="text-gray-300">No loot priorities have been set for this item.</p>
                 )}
+
+                {/* Notes Section */}
+                <Notes
+                    notes={item.data.notes}
+                    itemId={item.data.id}
+                    canEdit={can?.edit_item}
+                />
+
+                {/* Comments Section */}
+                <CommentsSection
+                    comments={comments}
+                    itemId={item.data.id}
+                    canCreate={can?.create_comment}
+                />
             </main>
         </Master>
     );

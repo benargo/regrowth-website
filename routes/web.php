@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\Loot\LootDashboardController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Loot\LootController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -13,19 +14,25 @@ Route::get('/', function () {
  * Officers' Dashboard
  */
 Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
-    Route::get('/', function () {
-        return Inertia::render('Dashboard/Index');
-    })->name('index');
+    Route::get('/', [DashboardController::class, 'index'])->name('index');
 });
 
 /**
  * Loot Priority Manager
  */
 Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:access-loot']], function () {
-    Route::get('/', [LootDashboardController::class, 'index'])->name('loot.index');
-    Route::get('/items/{item}', [LootDashboardController::class, 'showItem'])->name('loot.items.show');
-    Route::get('/edit/{item}', [LootDashboardController::class, 'editItem'])->middleware('can:edit-loot-priorities')->name('loot.items.edit');
-    Route::put('/items/{item}/priorities', [LootDashboardController::class, 'updateItemPriorities'])->middleware('can:edit-loot-priorities')->name('loot.items.priorities.update');
+    Route::get('/', [LootController::class, 'index'])->name('loot.index');
+    Route::get('/items/{item}', [LootController::class, 'showItem'])->name('loot.items.show');
+    Route::get('/edit/{item}', [LootController::class, 'editItem'])->middleware('can:edit-loot-items')->name('loot.items.edit');
+    Route::put('/items/{item}/priorities', [LootController::class, 'updateItemPriorities'])->middleware('can:edit-loot-items')->name('loot.items.priorities.update');
+
+    // Notes routes
+    Route::post('/items/{item}/notes', [LootController::class, 'updateItemNotes'])->middleware('can:edit-loot-items')->name('loot.items.notes.store');
+
+    // Comment routes
+    Route::post('/items/{item}/comments', [LootController::class, 'storeComment'])->name('loot.items.comments.store');
+    Route::put('/items/{item}/comments/{comment}', [LootController::class, 'updateComment'])->name('loot.items.comments.update');
+    Route::delete('/items/{item}/comments/{comment}', [LootController::class, 'destroyComment'])->name('loot.items.comments.destroy');
 });
 
 /**

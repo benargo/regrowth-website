@@ -30,6 +30,7 @@ class ItemFactory extends Factory
             'raid_id' => Raid::factory(),
             'boss_id' => null,
             'group' => fake()->optional(0.5)->randomElement(['Tokens', 'Weapons', 'Armor', 'Trinkets', 'Rings']),
+            'notes' => null,
         ];
     }
 
@@ -65,6 +66,16 @@ class ItemFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'group' => $group,
+        ]);
+    }
+
+    /**
+     * Set notes for the item.
+     */
+    public function withNotes(?string $notes = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'notes' => $notes ?? fake()->sentence(),
         ]);
     }
 }

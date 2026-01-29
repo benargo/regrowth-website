@@ -28,6 +28,7 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@fortawesome/fontawesome-pro": "file:resources/fonts/fortawesome-fontawesome-pro-5.15.4.tgz",
         "react": "^19.1.0",
-        "react-dom": "^19.1.0"
+        "react-dom": "^19.1.0",
+        "react-markdown": "^10.1.0"
     }
 }

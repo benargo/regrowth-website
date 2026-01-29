@@ -11,7 +11,7 @@ class UpdateItemPrioritiesRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('edit-loot-priorities');
+        return $this->user()->can('edit-loot-items');
     }
 
     /**

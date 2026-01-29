@@ -269,4 +269,163 @@ class ItemEditTest extends TestCase
         $weights = $item->priorities->pluck('pivot.weight')->toArray();
         $this->assertEquals([0, 0], $weights);
     }
+
+    public function test_update_notes_requires_authentication(): void
+    {
+        $item = $this->createTestItem();
+
+        $response = $this->post(route('loot.items.notes.store', $item), [
+            'notes' => 'Test notes',
+        ]);
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_update_notes_forbids_guest_users(): void
+    {
+        $user = User::factory()->guest()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => 'Test notes',
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_update_notes_forbids_member_users(): void
+    {
+        $user = User::factory()->member()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => 'Test notes',
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_update_notes_forbids_raider_users(): void
+    {
+        $user = User::factory()->raider()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => 'Test notes',
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_update_notes_allows_officer_users(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => 'Test notes content',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('lootcouncil_items', [
+            'id' => $item->id,
+            'notes' => 'Test notes content',
+        ]);
+    }
+
+    public function test_update_notes_saves_notes_to_database(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => 'These are detailed officer notes about the item.',
+        ]);
+
+        $item->refresh();
+        $this->assertEquals('These are detailed officer notes about the item.', $item->notes);
+    }
+
+    public function test_update_notes_allows_null_to_clear_notes(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+        $item->update(['notes' => 'Existing notes']);
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => null,
+        ]);
+
+        $response->assertRedirect();
+        $item->refresh();
+        $this->assertNull($item->notes);
+    }
+
+    public function test_update_notes_allows_empty_string_to_clear_notes(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+        $item->update(['notes' => 'Existing notes']);
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => '',
+        ]);
+
+        $response->assertRedirect();
+        $item->refresh();
+        $this->assertEquals('', $item->notes);
+    }
+
+    public function test_update_notes_validates_max_length(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => str_repeat('a', 5001),
+        ]);
+
+        $response->assertSessionHasErrors(['notes']);
+    }
+
+    public function test_update_notes_allows_max_length(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => str_repeat('a', 5000),
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionDoesntHaveErrors();
+        $item->refresh();
+        $this->assertEquals(5000, strlen($item->notes));
+    }
+
+    public function test_update_notes_validates_notes_is_string(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => ['array', 'of', 'values'],
+        ]);
+
+        $response->assertSessionHasErrors(['notes']);
+    }
+
+    public function test_update_notes_overwrites_existing_notes(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+        $item->update(['notes' => 'Original notes']);
+
+        $this->actingAs($user)->post(route('loot.items.notes.store', $item), [
+            'notes' => 'Updated notes',
+        ]);
+
+        $item->refresh();
+        $this->assertEquals('Updated notes', $item->notes);
+    }
 }

@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\LootCouncil\ItemComment;
+use App\Models\User;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class ItemCommentPolicy extends AuthorizationPolicy
+{
+    use HandlesAuthorization;
+
+    /**
+     * Determine if the user can create comments on loot items.
+     */
+    public function create(User $user): bool
+    {
+        return $this->userIsOfficer($user) || $this->userIsRaider($user);
+    }
+
+    /**
+     * Determine if the user can delete a comment.
+     */
+    public function delete(User $user, ItemComment $comment): bool
+    {
+        if ($this->userIsOfficer($user)) {
+            return true;
+        }
+
+        return $this->userIsRaider($user) && $comment->user_id === $user->id;
+    }
+
+    /**
+     * Determine if the user can update a comment.
+     */
+    public function update(User $user, ItemComment $comment): bool
+    {
+        return ($this->userIsOfficer($user) || $this->userIsRaider($user))
+            && $comment->user_id === $user->id;
+    }
+}

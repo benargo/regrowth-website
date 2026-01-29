@@ -44,6 +44,7 @@ class ItemTest extends ModelTestCase
             'raid_id',
             'boss_id',
             'group',
+            'notes',
         ]);
     }
 
@@ -70,12 +71,14 @@ class ItemTest extends ModelTestCase
             'raid_id' => $raid->id,
             'boss_id' => $boss->id,
             'group' => 'Tokens',
+            'notes' => 'Priority for tanks',
         ]);
 
         $this->assertTableHas([
             'raid_id' => $raid->id,
             'boss_id' => $boss->id,
             'group' => 'Tokens',
+            'notes' => 'Priority for tanks',
         ]);
         $this->assertModelExists($item);
     }
@@ -105,6 +108,20 @@ class ItemTest extends ModelTestCase
         ]);
 
         $this->assertNull($item->group);
+        $this->assertModelExists($item);
+    }
+
+    #[Test]
+    public function it_allows_null_notes(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $item = $this->create([
+            'raid_id' => $raid->id,
+            'notes' => null,
+        ]);
+
+        $this->assertNull($item->notes);
         $this->assertModelExists($item);
     }
 
@@ -140,6 +157,14 @@ class ItemTest extends ModelTestCase
         $item = $this->factory()->inGroup('Weapons')->create();
 
         $this->assertSame('Weapons', $item->group);
+    }
+
+    #[Test]
+    public function factory_with_notes_state_sets_notes(): void
+    {
+        $item = $this->factory()->withNotes('Tank priority')->create();
+
+        $this->assertSame('Tank priority', $item->notes);
     }
 
     #[Test]

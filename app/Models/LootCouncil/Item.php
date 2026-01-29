@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Item extends Model
 {
@@ -30,6 +31,7 @@ class Item extends Model
         'raid_id',
         'boss_id',
         'group',
+        'notes',
     ];
 
     /**
@@ -62,5 +64,15 @@ class Item extends Model
         return $this->belongsToMany(Priority::class, 'lootcouncil_item_priorities', 'item_id', 'priority_id')
             ->withPivot('weight')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the comments for this item.
+     *
+     * @return HasMany<ItemComment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(ItemComment::class);
     }
 }

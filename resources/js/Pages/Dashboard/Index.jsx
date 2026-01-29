@@ -17,7 +17,7 @@ function DashboardCard({ href, icon, children }) {
     );
 }
 
-export default function Index() {
+export default function Index({ discordRoles }) {
     return (
         <Master title="Officers’ Dashboard">
             {/* Header */}
@@ -35,11 +35,23 @@ export default function Index() {
                     {/* Loot Council */}
                     <h2 className="text-2xl font-semibold">Loot Council</h2>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 my-4">
-                        <DashboardCard href="/dashboard" icon="fal fa-balance-scale-left">
-                            Class bias tool
+                        <DashboardCard href={route('loot.index')} icon="fal fa-balance-scale-left">
+                            Loot bias tool
                         </DashboardCard>
                     </div>
-
+                    {/* Testing */}
+                    <h2 className="text-2xl font-semibold mt-12">Testing</h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 my-4">
+                        <DashboardCard href={route('auth.view-as', { role: discordRoles.raider })} icon="fal fa-user-headset">
+                            View site as a Raider
+                        </DashboardCard>
+                        <DashboardCard href={route('auth.view-as', { role: discordRoles.member })} icon="fal fa-street-view">
+                            View site as a Member
+                        </DashboardCard>
+                        <DashboardCard href={route('auth.view-as', { role: discordRoles.guest })} icon="fal fa-user-alien">
+                            View site as a Guest
+                        </DashboardCard>
+                    </div>
                 </div>
             </div>
         </Master>

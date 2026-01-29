@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -34,18 +35,12 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? [
-                    'id' => $user->id,
-                    'username' => $user->username,
-                    'nickname' => $user->nickname,
-                    'display_name' => $user->display_name,
-                    'avatar_url' => $user->avatar_url,
-                    'highest_role' => $user->highestRole(),
-                ] : null,
+                'user' => $user ? (new UserResource($user))->resolve($request) : null,
                 'can' => [
                     'accessDashboard' => $user?->can('access-dashboard') ?? false,
                     'accessLoot' => $user?->can('access-loot') ?? false,
                 ],
+                'impersonating' => $request->session()->has('impersonating_user_id'),
             ],
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),

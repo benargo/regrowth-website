@@ -7,6 +7,7 @@ export default function Master({ title, children }) {
     const { auth, flash } = usePage().props;
     const user = auth?.user;
     const can = auth?.can;
+    const impersonating = auth?.impersonating;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [flashError, setFlashError] = useState(flash?.error);
@@ -71,8 +72,8 @@ export default function Master({ title, children }) {
                                     href="/loot"
                                     className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
                                 >
-                                    <i className="fas fa-gem mr-2"></i>
-                                    Loot Priorities
+                                    <i className="fas fa-treasure-chest mr-2"></i>
+                                    Loot Bias
                                 </Link>
                             )}
                         </div>
@@ -83,13 +84,13 @@ export default function Master({ title, children }) {
                                     <Dropdown.Trigger>
                                         <button className="flex items-center space-x-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
                                             <img
-                                                src={user.avatar_url}
+                                                src={user.avatar}
                                                 alt={user.display_name}
                                                 className="h-8 w-8 rounded-full"
                                             />
                                             <span>{user.display_name}</span>
                                             {user.highest_role && (
-                                                <span className="text-xs bg-gray-700 px-2 py-0.5 rounded">
+                                                <span className={`text-xs bg-discord-${user.highest_role ? user.highest_role.toLowerCase() : 'grey-800'} px-2 py-0.5 rounded`}>
                                                     {user.highest_role}
                                                 </span>
                                             )}
@@ -102,6 +103,12 @@ export default function Master({ title, children }) {
                                             <i className="far fa-user-cog mr-2"></i>
                                             Account Settings
                                         </Dropdown.Link> */}
+                                        {impersonating && (
+                                            <Dropdown.Link href={route('auth.return-to-self')}>
+                                                <i className="far fa-undo mr-2"></i>
+                                                Return to my account
+                                            </Dropdown.Link>
+                                        )}
                                         {can?.accessDashboard && (
                                             <Dropdown.Link href={route('dashboard.index')}>
                                                 <i className="far fa-cogs mr-2"></i>
@@ -147,10 +154,10 @@ export default function Master({ title, children }) {
                         {can?.accessLoot && (
                             <Link 
                                 href="/loot"
-                                className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
+                                className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
                             >
-                                <i className="fas fa-gem mr-2"></i>
-                                Loot Priorities
+                                <i className="fas fa-treasure-chest mr-2"></i>
+                                Loot Bias
                             </Link>
                         )}
                     </div>
@@ -160,7 +167,7 @@ export default function Master({ title, children }) {
                             <div className="px-4 space-y-2">
                                 <div className="flex items-center space-x-3">
                                     <img
-                                        src={user.avatar_url}
+                                        src={user.avatar}
                                         alt={user.display_name}
                                         className="h-10 w-10 rounded-full"
                                     />
@@ -182,10 +189,19 @@ export default function Master({ title, children }) {
                                     <i className="far fa-user-cog mr-2"></i>
                                     Account Settings
                                 </Link> */}
+                                {impersonating && (
+                                    <Link 
+                                        href={route('auth.return-to-self')}
+                                        className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                                    >
+                                        <i className="far fa-undo mr-2"></i>
+                                        Return to my account
+                                    </Link>
+                                )}
                                 {can?.accessDashboard && (
                                     <Link
                                         href={route('dashboard.index')}
-                                        className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                                        className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
                                     >
                                         <i className="far fa-cogs mr-2"></i>
                                         Officers' Control Panel
@@ -252,7 +268,7 @@ export default function Master({ title, children }) {
                                         className="block px-3 py-2 text-gray-400 hover:text-white transition-colors"
                                     >
                                         <i className="fab fa-safari w-5 mr-2"></i>
-                                        Website by Ben Argo
+                                        A Fizzywigs Production
                                     </a>
                                 </li>
                             </ul>

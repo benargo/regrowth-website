@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class LootPolicy extends AuthorizationPolicy
+class ItemPolicy extends AuthorizationPolicy
 {
     use HandlesAuthorization;
 

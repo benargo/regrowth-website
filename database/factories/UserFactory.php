@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Enums\DiscordRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -26,7 +26,7 @@ class UserFactory extends Factory
             'avatar' => fake()->optional(0.8)->md5(),
             'guild_avatar' => fake()->optional(0.8)->md5(),
             'banner' => null,
-            'roles' => [User::ROLE_MEMBER],
+            'roles' => [(string) DiscordRole::Member->value],
             'remember_token' => Str::random(10),
         ];
     }
@@ -37,7 +37,7 @@ class UserFactory extends Factory
     public function officer(): static
     {
         return $this->state(fn (array $attributes) => [
-            'roles' => [User::ROLE_OFFICER],
+            'roles' => [(string) DiscordRole::Officer->value],
         ]);
     }
 
@@ -47,7 +47,7 @@ class UserFactory extends Factory
     public function raider(): static
     {
         return $this->state(fn (array $attributes) => [
-            'roles' => [User::ROLE_RAIDER],
+            'roles' => [(string) DiscordRole::Raider->value],
         ]);
     }
 
@@ -57,7 +57,7 @@ class UserFactory extends Factory
     public function member(): static
     {
         return $this->state(fn (array $attributes) => [
-            'roles' => [User::ROLE_MEMBER],
+            'roles' => [(string) DiscordRole::Member->value],
         ]);
     }
 
@@ -67,7 +67,7 @@ class UserFactory extends Factory
     public function guest(): static
     {
         return $this->state(fn (array $attributes) => [
-            'roles' => [User::ROLE_GUEST],
+            'roles' => [(string) DiscordRole::Guest->value],
         ]);
     }
 
