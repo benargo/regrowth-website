@@ -55,8 +55,9 @@ export default function CommentsSection({ comments, itemId, canCreate }) {
                 </div>
             ) : (
                 <div className="mb-8 text-gray-400 italic border border-gray-700 rounded-lg p-4 bg-brown-800/50">
-                    <i className="fas fa-info-circle mr-2"></i>
-                    Only raiders may post comments.
+                    <i className="fas fa-lock mr-2"></i>
+                    {/* Only raiders may post comments. */}
+                    Only officers may post comments. Raiders will be invited to make comments in the future.
                 </div>
             )}
 

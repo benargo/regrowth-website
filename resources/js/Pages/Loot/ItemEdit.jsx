@@ -505,12 +505,12 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
     }, [data.priorities, allPriorities]);
 
     return (
-        <Master title={`Edit ${item.data.name}`}>
+        <Master title={`Editing ${item.data.name}`}>
             {/* Header */}
             <div className="bg-karazhan py-24 text-white">
                 <div className="container mx-auto px-4">
                     <h1 className="text-4xl font-bold text-center">
-                        Edit Loot Priorities
+                        Edit Loot Biases
                     </h1>
                 </div>
             </div>

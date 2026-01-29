@@ -15,7 +15,8 @@ class ItemCommentPolicy extends AuthorizationPolicy
      */
     public function create(User $user): bool
     {
-        return $this->userIsOfficer($user) || $this->userIsRaider($user);
+        // return $this->userIsOfficer($user) || $this->userIsRaider($user);
+        return $this->userIsOfficer($user);
     }
 
     /**
