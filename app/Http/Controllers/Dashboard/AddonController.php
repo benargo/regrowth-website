@@ -48,7 +48,7 @@ class AddonController extends Controller
     {
         return [
             '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.0.0',
+            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.0.1',
             'title' => 'Regrowth Loot Tool Export Schema',
             'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
             'type' => 'object',
@@ -83,7 +83,6 @@ class AddonController extends Controller
                         'type' => 'object',
                         'properties' => [
                             'item_id' => ['type' => 'integer'],
-                            'notes' => ['type' => 'string'],
                             'priorities' => [
                                 'type' => 'array',
                                 'items' => [
@@ -94,6 +93,7 @@ class AddonController extends Controller
                                     ],
                                 ],
                             ],
+                            'notes' => ['type' => ['string', 'null']],
                         ],
                     ],
                 ],
@@ -131,18 +131,18 @@ class AddonController extends Controller
         return $items->map(function (Item $item) {
             return [
                 'item_id' => $item->id,
-                'notes' => $this->cleanNotes($item->notes),
                 'priorities' => ItemPriority::where('item_id', $item->id)
                     ->select('priority_id', 'weight')
                     ->get(),
+                'notes' => $this->cleanNotes($item->notes),
             ];
         });
     }
 
-    protected function cleanNotes(?string $notes): string
+    protected function cleanNotes(?string $notes): string|null
     {
         if ($notes === null) {
-            return '';
+            return null;
         }
 
         // Remove custom wowhead links: !wh[text](item=12345) -> text

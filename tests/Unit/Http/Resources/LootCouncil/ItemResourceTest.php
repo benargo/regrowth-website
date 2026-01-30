@@ -84,7 +84,7 @@ class ItemResourceTest extends TestCase
         $item = Item::factory()->create(['raid_id' => $raid->id]);
         $item->load('raid');
 
-        $resource = (new ItemResource($item))->withRaid();
+        $resource = (new ItemResource($item));
         $array = $resource->toArray(new Request);
 
         $this->assertIsObject($array['raid']);
@@ -121,7 +121,7 @@ class ItemResourceTest extends TestCase
         $item = Item::factory()->create(['boss_id' => $boss->id, 'raid_id' => $boss->raid_id]);
         $item->load('boss');
 
-        $resource = (new ItemResource($item))->withBoss();
+        $resource = new ItemResource($item);
         $array = $resource->toArray(new Request);
 
         $this->assertIsObject($array['boss']);
