@@ -38,6 +38,9 @@ export default function Index({ discordRoles }) {
                         <DashboardCard href={route('loot.index')} icon="fal fa-balance-scale-left">
                             Loot bias tool
                         </DashboardCard>
+                        <DashboardCard href={route('dashboard.addon.export')} icon="fal fa-file-export">
+                            Export addon data
+                        </DashboardCard>
                     </div>
                     {/* Raids and phases */}
                     <h2 className="text-2xl font-semibold mt-12">Raids and Phases</h2>

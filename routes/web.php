@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\Loot\LootController;
@@ -17,7 +18,9 @@ Route::get('/', function () {
  */
 Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('index');
-    Route::get('/addon/export', [DashboardController::class, 'exportAddonData'])->name('addon.export');
+    Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
+    Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
+    Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
     Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('manage-phases');
     Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
 });

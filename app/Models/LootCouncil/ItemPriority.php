@@ -30,6 +30,14 @@ class ItemPriority extends Model
     ];
 
     /**
+     * The attributes that are hidden for serialization.
+     */
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
+    /**
      * Get the item that this priority belongs to.
      *
      * @return BelongsTo<Item, $this>

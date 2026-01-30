@@ -10,10 +10,6 @@ use Illuminate\Support\Str;
 
 class ItemResource extends JsonResource
 {
-    protected bool $withRaid = false;
-
-    protected bool $withBoss = false;
-
     /**
      * Transform the resource into an array.
      *
@@ -28,8 +24,8 @@ class ItemResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'raid' => $this->withRaid ? $this->raid : $this->raid_id,
-            'boss' => $this->withBoss ? $this->boss : $this->boss_id,
+            'raid' => $this->getRaidData(),
+            'boss' => $this->getBossData(),
             'group' => $this->group,
             'name' => $blizzardData['name'] ?? "Item #{$this->id}",
             'icon' => $iconUrl,
@@ -43,18 +39,22 @@ class ItemResource extends JsonResource
         ];
     }
 
-    public function withRaid(): self
+    public function getRaidData(): array|int
     {
-        $this->withRaid = true;
+        if (! $this->relationLoaded('raid')) {
+            return $this->raid_id;
+        }
 
-        return $this;
+        return $this->raid;
     }
 
-    public function withBoss(): self
+    public function getBossData(): array|int
     {
-        $this->withBoss = true;
+        if (! $this->relationLoaded('boss')) {
+            return $this->boss_id;
+        }
 
-        return $this;
+        return $this->boss;
     }
 
     /**
