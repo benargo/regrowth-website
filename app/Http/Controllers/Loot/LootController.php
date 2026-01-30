@@ -56,6 +56,8 @@ class LootController extends Controller
     {
         $item->load([
             'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+            'raid',
+            'boss',
         ]);
 
         $comments = $item->comments()
@@ -64,7 +66,7 @@ class LootController extends Controller
             ->paginate(10);
 
         return Inertia::render('Loot/ItemShow', [
-            'item' => new ItemResource($item)->withRaid()->withBoss(),
+            'item' => new ItemResource($item),
             'can' => [
                 'create_comment' => $request->user()->can('create-loot-comment'),
                 'edit_item' => $request->user()->can('edit-loot-items'),
@@ -79,7 +81,9 @@ class LootController extends Controller
     public function editItem(Item $item, Request $request)
     {
         $item->load([
-            'priorities' => fn ($q) => $q->orderByPivot('weight', 'asc'),
+            'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+            'raid',
+            'boss',
         ]);
 
         $comments = $item->comments()
@@ -90,7 +94,7 @@ class LootController extends Controller
         $allPriorities = Priority::all();
 
         return Inertia::render('Loot/ItemEdit', [
-            'item' => new ItemResource($item)->withRaid()->withBoss(),
+            'item' => new ItemResource($item),
             'allPriorities' => PriorityResource::collection($allPriorities),
             'can' => [
                 'create_comment' => $request->user()->can('create-loot-comment'),
