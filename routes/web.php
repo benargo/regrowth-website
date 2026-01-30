@@ -3,6 +3,7 @@
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\Loot\LootController;
+use App\Http\Controllers\LootCouncil\CommentController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -16,6 +17,7 @@ Route::get('/', function () {
  */
 Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('index');
+    Route::get('/addon/export', [DashboardController::class, 'exportAddonData'])->name('addon.export');
     Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('manage-phases');
     Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
 });
@@ -33,9 +35,9 @@ Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:access-loot']], 
     Route::post('/items/{item}/notes', [LootController::class, 'updateItemNotes'])->middleware('can:edit-loot-items')->name('loot.items.notes.store');
 
     // Comment routes
-    Route::post('/items/{item}/comments', [LootController::class, 'storeComment'])->name('loot.items.comments.store');
-    Route::put('/items/{item}/comments/{comment}', [LootController::class, 'updateComment'])->name('loot.items.comments.update');
-    Route::delete('/items/{item}/comments/{comment}', [LootController::class, 'destroyComment'])->name('loot.items.comments.destroy');
+    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');
+    Route::put('/items/{item}/comments/{comment}', [CommentController::class, 'update'])->name('loot.items.comments.update');
+    Route::delete('/items/{item}/comments/{comment}', [CommentController::class, 'destroy'])->name('loot.items.comments.destroy');
 });
 
 /**

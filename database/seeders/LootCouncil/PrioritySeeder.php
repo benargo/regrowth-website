@@ -21,15 +21,15 @@ class PrioritySeeder extends Seeder
             ['type' => 'Role', 'title' => 'Ranged DPS', 'media' => ['media_name' => 'spell_nature_elementalprecision_1']],
 
             // Classes
-            ['type' => 'Class', 'title' => 'Druid', 'media' => ['media_type' => 'playable-class', 'media_id' => 11]],
-            ['type' => 'Class', 'title' => 'Hunter', 'media' => ['media_type' => 'playable-class', 'media_id' => 3]],
-            ['type' => 'Class', 'title' => 'Mage', 'media' => ['media_type' => 'playable-class', 'media_id' => 8]],
-            ['type' => 'Class', 'title' => 'Paladin', 'media' => ['media_type' => 'playable-class', 'media_id' => 2]],
-            ['type' => 'Class', 'title' => 'Priest', 'media' => ['media_type' => 'playable-class', 'media_id' => 5]],
-            ['type' => 'Class', 'title' => 'Rogue', 'media' => ['media_type' => 'playable-class', 'media_id' => 4]],
-            ['type' => 'Class', 'title' => 'Shaman', 'media' => ['media_type' => 'playable-class', 'media_id' => 7]],
-            ['type' => 'Class', 'title' => 'Warlock', 'media' => ['media_type' => 'playable-class', 'media_id' => 9]],
-            ['type' => 'Class', 'title' => 'Warrior', 'media' => ['media_type' => 'playable-class', 'media_id' => 1]],
+            ['type' => 'Class', 'title' => 'Druid', 'media' => ['media_name' => 'classicon_druid']],
+            ['type' => 'Class', 'title' => 'Hunter', 'media' => ['media_name' => 'classicon_hunter']],
+            ['type' => 'Class', 'title' => 'Mage', 'media' => ['media_name' => 'classicon_mage']],
+            ['type' => 'Class', 'title' => 'Paladin', 'media' => ['media_name' => 'classicon_paladin']],
+            ['type' => 'Class', 'title' => 'Priest', 'media' => ['media_name' => 'classicon_priest']],
+            ['type' => 'Class', 'title' => 'Rogue', 'media' => ['media_name' => 'classicon_rogue']],
+            ['type' => 'Class', 'title' => 'Shaman', 'media' => ['media_name' => 'classicon_shaman']],
+            ['type' => 'Class', 'title' => 'Warlock', 'media' => ['media_name' => 'classicon_warlock']],
+            ['type' => 'Class', 'title' => 'Warrior', 'media' => ['media_name' => 'classicon_warrior']],
 
             // Specs - Druid
             ['type' => 'Spec', 'title' => 'Balance Druid', 'media' => ['media_name' => 'spell_nature_starfall']],

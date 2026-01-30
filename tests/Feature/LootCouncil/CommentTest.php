@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootCouncil;
 
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemComment;
@@ -15,7 +15,7 @@ use Mockery;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
-class ItemCommentsTest extends TestCase
+class CommentTest extends TestCase
 {
     use RefreshDatabase;
 

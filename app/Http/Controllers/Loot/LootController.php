@@ -3,21 +3,17 @@
 namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Loot\StoreItemCommentRequest;
-use App\Http\Requests\Loot\UpdateItemCommentRequest;
 use App\Http\Requests\Loot\UpdateItemPrioritiesRequest;
 use App\Http\Resources\LootCouncil\ItemCommentResource;
 use App\Http\Resources\LootCouncil\ItemResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class LootController extends Controller
@@ -129,55 +125,6 @@ class LootController extends Controller
 
         $item->notes = $request->input('notes');
         $item->save();
-
-        return redirect()->back();
-    }
-
-    /**
-     * Store a new comment for a specific loot item.
-     */
-    public function storeComment(StoreItemCommentRequest $request, Item $item): RedirectResponse
-    {
-        $item->comments()->create([
-            'user_id' => $request->user()->id,
-            'body' => $request->validated('body'),
-        ]);
-
-        return redirect()->back();
-    }
-
-    /**
-     * Update an existing comment for a specific loot item.
-     */
-    public function updateComment(UpdateItemCommentRequest $request, Item $item, ItemComment $comment): RedirectResponse
-    {
-        $originalCreatedAt = $comment->created_at;
-
-        // Soft delete the original comment, tracking who edited it
-        $comment->update(['deleted_by' => $request->user()->id]);
-        $comment->delete();
-
-        // Create new comment with original timestamp
-        $newComment = new ItemComment([
-            'item_id' => $item->id,
-            'user_id' => $comment->user_id,
-            'body' => $request->validated('body'),
-        ]);
-        $newComment->created_at = $originalCreatedAt;
-        $newComment->save();
-
-        return redirect()->back();
-    }
-
-    /**
-     * Delete a comment for a specific loot item.
-     */
-    public function destroyComment(Request $request, Item $item, ItemComment $comment): RedirectResponse
-    {
-        Gate::authorize('delete-loot-comment', $comment);
-
-        $comment->update(['deleted_by' => $request->user()->id]);
-        $comment->delete();
 
         return redirect()->back();
     }
