@@ -39,7 +39,7 @@ class ItemResource extends JsonResource
         ];
     }
 
-    public function getRaidData(): array|int
+    public function getRaidData()
     {
         if (! $this->relationLoaded('raid')) {
             return $this->raid_id;
@@ -48,7 +48,7 @@ class ItemResource extends JsonResource
         return $this->raid;
     }
 
-    public function getBossData(): array|int
+    public function getBossData()
     {
         if (! $this->relationLoaded('boss')) {
             return $this->boss_id;
