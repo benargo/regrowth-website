@@ -30,6 +30,10 @@ class LootController extends Controller
         $phases = Phase::all();
         $currentPhase = $phases->where('start_date', '<=', now())->sortByDesc('start_date')->first();
 
+        if ($currentPhase === null) {
+            $currentPhase = $phases->first();
+        }
+
         $raids = Raid::all();
         $groupedRaids = $raids->groupBy('phase_id');
         $bosses = Boss::orderBy('encounter_order')->get()->groupBy('raid_id');

@@ -39,6 +39,13 @@ export default function Index({ discordRoles }) {
                             Loot bias tool
                         </DashboardCard>
                     </div>
+                    {/* Raids and phases */}
+                    <h2 className="text-2xl font-semibold mt-12">Raids and Phases</h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 my-4">
+                        <DashboardCard href={route('dashboard.manage-phases')} icon="fal fa-hourglass-start">
+                            Manage TBC phases
+                        </DashboardCard>
+                    </div>
                     {/* Testing */}
                     <h2 className="text-2xl font-semibold mt-12">Testing</h2>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 my-4">

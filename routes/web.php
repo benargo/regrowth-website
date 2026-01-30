@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\Loot\LootController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,8 @@ Route::get('/', function () {
  */
 Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('index');
+    Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('manage-phases');
+    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
 });
 
 /**

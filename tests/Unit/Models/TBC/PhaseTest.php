@@ -2,7 +2,11 @@
 
 namespace Tests\Unit\Models\TBC;
 
+use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
+use App\Models\TBC\Raid;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -136,5 +140,52 @@ class PhaseTest extends ModelTestCase
         $phase = $this->factory()->unscheduled()->create();
 
         $this->assertNull($phase->start_date);
+    }
+
+    #[Test]
+    public function it_has_many_raids(): void
+    {
+        $phase = $this->create();
+        Raid::factory()->count(3)->create(['phase_id' => $phase->id]);
+
+        $this->assertRelation($phase, 'raids', HasMany::class);
+        $this->assertCount(3, $phase->raids);
+    }
+
+    #[Test]
+    public function it_has_many_bosses_through_raids(): void
+    {
+        $phase = $this->create();
+        $raid1 = Raid::factory()->create(['phase_id' => $phase->id]);
+        $raid2 = Raid::factory()->create(['phase_id' => $phase->id]);
+        Boss::factory()->count(2)->create(['raid_id' => $raid1->id]);
+        Boss::factory()->count(3)->create(['raid_id' => $raid2->id]);
+
+        $this->assertRelation($phase, 'bosses', HasManyThrough::class);
+        $this->assertCount(5, $phase->bosses);
+    }
+
+    #[Test]
+    public function has_started_returns_true_when_start_date_is_in_the_past(): void
+    {
+        $phase = $this->factory()->started()->create();
+
+        $this->assertTrue($phase->hasStarted());
+    }
+
+    #[Test]
+    public function has_started_returns_false_when_start_date_is_in_the_future(): void
+    {
+        $phase = $this->factory()->upcoming()->create();
+
+        $this->assertFalse($phase->hasStarted());
+    }
+
+    #[Test]
+    public function has_started_returns_false_when_start_date_is_null(): void
+    {
+        $phase = $this->factory()->unscheduled()->create();
+
+        $this->assertFalse($phase->hasStarted());
     }
 }

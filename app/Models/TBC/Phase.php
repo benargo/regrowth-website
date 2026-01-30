@@ -4,6 +4,8 @@ namespace App\Models\TBC;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Phase extends Model
 {
@@ -37,5 +39,29 @@ class Phase extends Model
         return [
             'start_date' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the raids that belong to this phase.
+     */
+    public function raids(): HasMany
+    {
+        return $this->hasMany(Raid::class);
+    }
+
+    /**
+     * Get the bosses that belong to this phase through its raids.
+     */
+    public function bosses(): HasManyThrough
+    {
+        return $this->hasManyThrough(Boss::class, Raid::class);
+    }
+
+    /**
+     * Determine if the phase has started.
+     */
+    public function hasStarted(): bool
+    {
+        return $this->start_date?->isPast() ?? false;
     }
 }

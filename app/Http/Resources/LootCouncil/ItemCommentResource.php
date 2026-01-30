@@ -34,8 +34,12 @@ class ItemCommentResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    protected function getItemData(): array
+    protected function getItemData()
     {
+        if (! $this->relationLoaded('item')) {
+            return $this->item_id;
+        }
+
         return (new ItemResource($this->item))->toArray(request());
     }
 
@@ -44,8 +48,12 @@ class ItemCommentResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    protected function getUserData(): array
+    protected function getUserData()
     {
+        if (! $this->relationLoaded('user')) {
+            return $this->user_id;
+        }
+
         return (new UserResource($this->user))->toArray(request());
     }
 }

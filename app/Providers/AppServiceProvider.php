@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Policies\DashboardPolicy;
 use App\Policies\ItemCommentPolicy;
 use App\Policies\ItemPolicy;
+use App\Policies\PhasePolicy;
 use App\Policies\ViewAsRolePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
@@ -37,5 +38,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('delete-loot-comment', [ItemCommentPolicy::class, 'delete']);
         Gate::define('edit-loot-comment', [ItemCommentPolicy::class, 'update']);
         Gate::define('view-as-role', [ViewAsRolePolicy::class, 'viewAsRole']);
+        Gate::define('update-phase', [PhasePolicy::class, 'update']);
     }
 }
