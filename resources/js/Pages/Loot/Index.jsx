@@ -2,7 +2,7 @@ import Master from '@/Layouts/Master';
 import { useState } from 'react';
 import { router, Deferred, Link } from '@inertiajs/react';
 import LootPageHeader from '@/Components/Loot/LootPageHeader';
-import { BossCollapse, BossItemsSkeleton } from '@/Components/Loot/BossCollapse';
+import BossCollapse, { BossItemsSkeleton } from '@/Components/Loot/BossCollapse';
 
 function PriorityItem({ priority }) {
     return (
