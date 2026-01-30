@@ -1,6 +1,7 @@
 import Master from '@/Layouts/Master';
 import { useState } from 'react';
 import { router, Deferred, Link } from '@inertiajs/react';
+import LootPageHeader from '@/Components/Loot/LootPageHeader';
 
 function ItemsSkeleton() {
     return (
@@ -187,15 +188,7 @@ export default function Index({ phases, current_phase, raids, bosses, items, sel
 
     return (
         <Master title="Loot Bias">
-            {/* Header */}
-            <div className="bg-karazhan py-24 text-white">
-                <div className="container mx-auto px-4">
-                    <h1 className="text-4xl font-bold text-center">
-                        Loot Bias
-                    </h1>
-                    {/* Insert search bar here in the future */}
-                </div>
-            </div>
+            <LootPageHeader title="Loot Bias" />
             {/* Content */}
             <main className="container mx-auto px-4 py-8">
                 <div className="flex flex-wrap gap-2 mb-8 animate-in fade-in duration-300">

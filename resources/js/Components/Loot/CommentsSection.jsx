@@ -45,7 +45,7 @@ function Pagination({ links, meta }) {
 
 export default function CommentsSection({ comments, itemId, canCreate }) {
     return (
-        <section className="mt-12">
+        <section className="w-full mt-12">
             <h2 className="text-xl font-bold mb-6">Discussion</h2>
 
             {/* New comment form for raiders+ */}

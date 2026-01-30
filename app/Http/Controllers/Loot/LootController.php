@@ -54,10 +54,6 @@ class LootController extends Controller
      */
     public function showItem(Item $item, Request $request)
     {
-        if ($request->user()->can('edit-loot-items')) {
-            return redirect()->route('loot.items.edit', $item);
-        }
-
         $item->load([
             'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
         ]);
@@ -115,7 +111,7 @@ class LootController extends Controller
 
         $item->priorities()->sync($priorities);
 
-        return redirect()->route('loot.items.show', $item);
+        return redirect()->back();
     }
 
     /**

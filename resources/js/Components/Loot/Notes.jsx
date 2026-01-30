@@ -8,8 +8,6 @@ const formatButtons = [
     { label: (<i className="fas fa-bold"></i>), title: 'Bold', prefix: '**', suffix: '**', placeholder: 'bold' },
     { label: (<i className="fas fa-italic"></i>), title: 'Italic', prefix: '*', suffix: '*', placeholder: 'italic', className: 'italic' },
     { label: (<i className="fas fa-underline"></i>), title: 'Underline', prefix: '__', suffix: '__', placeholder: 'underline', className: 'underline' },
-    { label: (<i className="fas fa-list-ul"></i>), title: 'Bullet List', prefix: '- ', suffix: '', placeholder: 'list item' },
-    { label: (<i className="fas fa-list-ol"></i>), title: 'Numbered List', prefix: '1. ', suffix: '', placeholder: 'list item' },
     { label: (<i className="fas fa-link"></i>), title: 'Link', prefix: '[', suffix: '](url)', placeholder: 'link text' },
     { label: (<img src="/images/logo_wowhead_white.webp" alt="Wowhead Link" className="w-4 h-4"/>), title: 'Wowhead Link', prefix: '!wh[', suffix: '](item=12345)', placeholder: 'Item Name' },
 ];
@@ -97,8 +95,9 @@ export default function Notes({ notes, itemId, canEdit }) {
     if (canEdit) {
         return (
             <form onSubmit={submit} className="mt-8">
-                <h2 className="w-auto flex-autotext-xl font-bold my-4">Officers&rsquo; notes</h2>
-                <div className="flex items-end justify-between gap-4 mb-4">      
+                <h2 className="text-xl font-bold mb-2">Officers&rsquo; notes</h2>
+                <p className="text-md text-gray-400 mb-4">Notes are unique to each loot item. If you change what another officer has written, it will overwrite their notes.</p>
+                <div className="flex flex-col-reverse md:flex-row justify-between gap-4 mb-4">      
                     {/* Formatting Buttons */}
                     <div className="flex items-center gap-1">
                         {formatButtons.map((format) => (
@@ -111,7 +110,7 @@ export default function Notes({ notes, itemId, canEdit }) {
                         ))}
                     </div>
                     {/* Actions */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between gap-4">
                         <button
                             onClick={() => reset('notes')}
                             disabled={processing}
@@ -137,7 +136,7 @@ export default function Notes({ notes, itemId, canEdit }) {
                         ref={textareaRef}
                         value={data.notes}
                         onChange={handleChange}
-                        placeholder="Supports **bold**, *italic*, __underline__, - lists, 1. numbered, [links](url), !wh[Item](item=12345)"
+                        placeholder="Supports **bold**, *italic*, __underline__, [links](url), !wh[Item](item=12345)"
                         rows={2}
                         className="w-full rounded-md border-brown-600 bg-brown-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
                     />
@@ -149,7 +148,7 @@ export default function Notes({ notes, itemId, canEdit }) {
 
     return (
         <div className="mt-8">
-            <h2 className="text-xl font-bold mb-4">Notes</h2>
+            <h2 className="text-xl font-bold mb-6">Officers&rsquo; Notes</h2>
             <FormattedMarkdown>{notes}</FormattedMarkdown>
         </div>
     )
