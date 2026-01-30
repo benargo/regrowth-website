@@ -2,16 +2,7 @@ import Master from '@/Layouts/Master';
 import { useState } from 'react';
 import { router, Deferred, Link } from '@inertiajs/react';
 import LootPageHeader from '@/Components/Loot/LootPageHeader';
-
-function ItemsSkeleton() {
-    return (
-        <div className="space-y-2 animate-pulse">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 bg-amber-600/20 rounded" />
-            ))}
-        </div>
-    );
-}
+import { BossCollapse, BossItemsSkeleton } from '@/Components/Loot/BossCollapse';
 
 function PriorityItem({ priority }) {
     return (
@@ -146,7 +137,6 @@ function BossItems({ items, grouped=true }) {
 export default function Index({ phases, current_phase, raids, bosses, items, selected_raid_id }) {
     const [selectedPhase, setSelectedPhase] = useState(current_phase);
     const [selectedRaid, setSelectedRaid] = useState(selected_raid_id);
-    const [expandedBosses, setExpandedBosses] = useState({});
 
     const handlePhaseChange = (phaseId) => {
         setSelectedPhase(phaseId);
@@ -170,13 +160,6 @@ export default function Index({ phases, current_phase, raids, bosses, items, sel
             preserveState: true,
             preserveScroll: true,
         });
-    };
-
-    const toggleBoss = (bossId) => {
-        setExpandedBosses((prev) => ({
-            ...prev,
-            [bossId]: !prev[bossId],
-        }));
     };
 
     const currentRaids = raids[selectedPhase] ?? [];
@@ -224,48 +207,18 @@ export default function Index({ phases, current_phase, raids, bosses, items, sel
                 </div>
                 <div className="flex flex-col gap-2">
                     {currentBosses.map((boss) => (
-                        <div key={boss.id} className="border border-amber-600 rounded-md">
-                            <button
-                                onClick={() => toggleBoss(boss.id)}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-600/10 transition-colors"
-                            >
-                                <i
-                                    className={`fas fa-chevron-down transition-transform duration-500 ${
-                                        expandedBosses[boss.id] ? '-rotate-180' : ''
-                                    }`}
-                                />
-                                <h3 className="text-lg font-semibold">{boss.name}</h3>
-                            </button>
-                            {expandedBosses[boss.id] && (
-                                <div className="px-4 py-3 border-t border-amber-600">
-                                    <Deferred data="items" fallback={<ItemsSkeleton />}>
-                                        <BossItems items={getItemsForBoss(boss.id)} />
-                                    </Deferred>
-                                </div>
-                            )}
-                        </div>
+                        <BossCollapse key={boss.id} title={boss.name}>
+                            <Deferred data="items" fallback={<BossItemsSkeleton />}>
+                                <BossItems items={getItemsForBoss(boss.id)} />
+                            </Deferred>
+                        </BossCollapse>
                     ))}
                     {getItemsForBoss(-1).length > 0 && (
-                        <div key="-1" className="border border-amber-600 rounded">
-                            <button
-                                onClick={() => toggleBoss(-1)}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-600/10 transition-colors"
-                            >
-                                <i
-                                    className={`fas fa-chevron-down transition-transform duration-500 ${
-                                        expandedBosses[-1] ? '-rotate-180' : ''
-                                    }`}
-                                />
-                                <h3 className="text-lg font-semibold">Trash drops</h3>
-                            </button>
-                            {expandedBosses[-1] && (
-                                <div className="px-4 py-3 border-t border-amber-600">
-                                    <Deferred data="items" fallback={<ItemsSkeleton />}>
-                                        <BossItems items={getItemsForBoss(-1)} grouped={false} />
-                                    </Deferred>
-                                </div>
-                            )}
-                        </div>
+                        <BossCollapse key="-1" title="Trash drops">
+                            <Deferred data="items" fallback={<BossItemsSkeleton />}>
+                                <BossItems items={getItemsForBoss(-1)} grouped={false} />
+                            </Deferred>
+                        </BossCollapse>
                     )}
                 </div>
             </main>

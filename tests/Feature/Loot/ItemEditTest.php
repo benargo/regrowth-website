@@ -165,13 +165,13 @@ class ItemEditTest extends TestCase
         $item = $this->createTestItem();
         $priority = Priority::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority->id, 'weight' => 0],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.show', $item));
+        $response->assertRedirect(route('loot.items.edit', $item));
     }
 
     public function test_update_priorities_syncs_correctly(): void
@@ -184,14 +184,14 @@ class ItemEditTest extends TestCase
 
         $item->priorities()->attach($priority1->id, ['weight' => 0]);
 
-        $response = $this->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority2->id, 'weight' => 0],
                 ['priority_id' => $priority3->id, 'weight' => 1],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.show', $item));
+        $response->assertRedirect(route('loot.items.edit', $item));
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);
@@ -237,11 +237,11 @@ class ItemEditTest extends TestCase
 
         $item->priorities()->attach($priority->id, ['weight' => 0]);
 
-        $response = $this->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [],
         ]);
 
-        $response->assertRedirect(route('loot.items.show', $item));
+        $response->assertRedirect(route('loot.items.edit', $item));
 
         $item->refresh();
         $this->assertCount(0, $item->priorities);
@@ -254,14 +254,14 @@ class ItemEditTest extends TestCase
         $priority1 = Priority::factory()->create();
         $priority2 = Priority::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority1->id, 'weight' => 0],
                 ['priority_id' => $priority2->id, 'weight' => 0],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.show', $item));
+        $response->assertRedirect(route('loot.items.edit', $item));
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);
