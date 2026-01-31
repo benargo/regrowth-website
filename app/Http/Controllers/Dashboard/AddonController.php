@@ -139,7 +139,7 @@ class AddonController extends Controller
         });
     }
 
-    protected function cleanNotes(?string $notes): string|null
+    protected function cleanNotes(?string $notes): ?string
     {
         if ($notes === null) {
             return null;

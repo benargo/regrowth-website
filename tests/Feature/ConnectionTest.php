@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use PHPUnit\Framework\Attributes\Test;

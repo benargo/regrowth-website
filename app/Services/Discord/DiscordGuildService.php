@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Http;
 class DiscordGuildService
 {
     protected string $botToken;
+
     protected string $guildId;
+
     protected string $baseUrl = 'https://discord.com/api/v10';
 
     public function __construct(string $botToken, string $guildId)
@@ -34,7 +36,7 @@ class DiscordGuildService
         }
 
         if ($response->failed()) {
-            throw new \RuntimeException("Failed to fetch guild member data: " . $response->body());
+            throw new \RuntimeException('Failed to fetch guild member data: '.$response->body());
         }
 
         $data = $response->json();

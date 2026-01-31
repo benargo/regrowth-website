@@ -18,7 +18,6 @@ abstract class ModelTestCase extends TestCase
     abstract protected function modelClass(): string;
 
     /** ---------- Factory helpers ---------- */
-
     protected function make(array $overrides = []): Model
     {
         return $this->factory()->make($overrides);
@@ -33,6 +32,7 @@ abstract class ModelTestCase extends TestCase
     {
         /** @var class-string<Model> $class */
         $class = $this->modelClass();
+
         return Factory::factoryForModel($class);
     }
 
@@ -61,7 +61,6 @@ abstract class ModelTestCase extends TestCase
     }
 
     /** ---------- Database helpers ---------- */
-
     protected function assertTableHas(array $data): void
     {
         $this->assertDatabaseHas($this->tableName(), $data);
@@ -76,6 +75,7 @@ abstract class ModelTestCase extends TestCase
     {
         /** @var Model $m */
         $m = new ($this->modelClass());
+
         return $m->getTable();
     }
 

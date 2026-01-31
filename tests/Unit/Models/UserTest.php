@@ -16,7 +16,7 @@ class UserTest extends ModelTestCase
     #[Test]
     public function it_uses_discord_id_as_primary_key(): void
     {
-        $model = new User();
+        $model = new User;
 
         $this->assertSame('id', $model->getKeyName());
         $this->assertSame('string', $model->getKeyType());
@@ -26,7 +26,7 @@ class UserTest extends ModelTestCase
     #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
-        $model = new User();
+        $model = new User;
 
         $this->assertFillable($model, [
             'id',
@@ -43,7 +43,7 @@ class UserTest extends ModelTestCase
     #[Test]
     public function it_has_expected_casts(): void
     {
-        $model = new User();
+        $model = new User;
 
         $this->assertCasts($model, [
             'id' => 'string',
@@ -54,7 +54,7 @@ class UserTest extends ModelTestCase
     #[Test]
     public function it_does_not_have_password_in_fillable(): void
     {
-        $model = new User();
+        $model = new User;
 
         $this->assertNotContains('password', $model->getFillable());
     }

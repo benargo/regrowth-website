@@ -12,29 +12,42 @@ use Inertia\Inertia;
 
 class GuildRosterController extends Controller
 {
+    protected PlayableClassService $classService;
+
+    protected PlayableRaceService $raceService;
+
     public function index(
-        GuildService $guildService,
         PlayableClassService $classService,
         PlayableRaceService $raceService
     ) {
+        $this->classService = $classService;
+        $this->raceService = $raceService;
+
+        return Inertia::render('Roster', [
+            'classes' => $this->classService->index(),
+            'races' => $this->raceService->index(),
+            'ranks' => GuildRank::orderBy('position')->get(),
+            'level_cap' => 70,
+            'members' => Inertia::defer(fn () => $this->buildMemberCollection()),
+        ]);
+    }
+
+    protected function buildMemberCollection()
+    {
+        $guildService = app(GuildService::class);
+
         $roster = $guildService->fresh()->roster();
 
-        $members = collect($roster['members'])->map(function ($memberData) use ($classService, $raceService) {
+        $members = collect($roster['members'])->map(function ($memberData) {
             $member = GuildMember::fromArray($memberData)->with('rank');
 
-            data_set($member, 'character.playable_class', $classService->find(Arr::get($memberData, 'character.playable_class.id')));
-            data_set($member, 'character.playable_class.media', $classService->media(Arr::get($memberData, 'character.playable_class.id')));
-            data_set($member, 'character.playable_race', $raceService->find(Arr::get($memberData, 'character.playable_race.id')));
+            data_set($member, 'character.playable_class', $this->classService->find(Arr::get($memberData, 'character.playable_class.id')));
+            data_set($member, 'character.playable_class.media', $this->classService->media(Arr::get($memberData, 'character.playable_class.id')));
+            data_set($member, 'character.playable_race', $this->raceService->find(Arr::get($memberData, 'character.playable_race.id')));
 
             return $member;
         });
 
-        return Inertia::render('Roster', [
-            'members' => $members->toArray(),
-            'classes' => $classService->index(),
-            'races' => $raceService->index(),
-            'ranks' => GuildRank::orderBy('position')->get(),
-            'level_cap' => 70,
-        ]);
+        return $members->toArray();
     }
 }

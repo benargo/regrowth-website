@@ -216,7 +216,41 @@ function MemberCard({ member }) {
     );
 }
 
+function RosterSkeleton() {
+    return (
+        <div className="animate-pulse">
+            {/* Search skeleton */}
+            <div className="mb-8 space-y-6">
+                <div className="h-10 bg-brown-800 rounded"></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="h-10 bg-brown-800 rounded"></div>
+                    <div className="h-10 bg-brown-800 rounded"></div>
+                    <div className="h-10 bg-brown-800 rounded"></div>
+                </div>
+                <div className="h-5 w-48 bg-brown-800 rounded"></div>
+            </div>
+
+            {/* Table skeleton - desktop */}
+            <div className="hidden md:block">
+                <div className="h-12 bg-brown-800/50 rounded mb-2"></div>
+                {[...Array(10)].map((_, i) => (
+                    <div key={i} className="h-14 bg-brown-800/30 rounded mb-1"></div>
+                ))}
+            </div>
+
+            {/* Card skeleton - mobile */}
+            <div className="md:hidden space-y-4">
+                {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-24 bg-brown-800/50 rounded-lg"></div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function Roster({ members, classes, races, ranks }) {
+    const isLoading = members === undefined;
+
     // Sorting state
     const [sortColumn, setSortColumn] = useState('rank');
     const [sortDirection, setSortDirection] = useState('asc');
@@ -245,6 +279,7 @@ export default function Roster({ members, classes, races, ranks }) {
 
     // Filter and sort members
     const filteredAndSortedMembers = useMemo(() => {
+        if (!members) return [];
         let result = [...members];
 
         // Filter by search query (character name)
@@ -315,106 +350,112 @@ export default function Roster({ members, classes, races, ranks }) {
             <SharedHeader backgroundClass="bg-goldshire" title="Guild Roster" />
 
             <main className="container mx-auto px-4 py-8">
-                {/* Filters Section */}
-                <div className="mb-8 space-y-6">
-                    {/* Search */}
-                    <SearchInput
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                    />
+                {isLoading ? (
+                    <RosterSkeleton />
+                ) : (
+                    <>
+                        {/* Filters Section */}
+                        <div className="mb-8 space-y-6">
+                            {/* Search */}
+                            <SearchInput
+                                value={searchQuery}
+                                onChange={setSearchQuery}
+                            />
 
-                    {/* Filter Dropdowns */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FilterDropdown
-                            label={{singular:"Class", plural:"Classes"}}
-                            options={classList}
-                            selected={selectedClasses}
-                            onChange={setSelectedClasses}
-                            showIcon={true}
-                        />
-                        <FilterDropdown
-                            label={{singular:"Race", plural:"Races"}}
-                            options={raceList}
-                            selected={selectedRaces}
-                            onChange={setSelectedRaces}
-                        />
-                        <FilterDropdown
-                            label={{singular:"Rank", plural:"Ranks"}}
-                            options={ranks}
-                            selected={selectedRanks}
-                            onChange={setSelectedRanks}
-                        />
-                    </div>
+                            {/* Filter Dropdowns */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FilterDropdown
+                                    label={{singular:"Class", plural:"Classes"}}
+                                    options={classList}
+                                    selected={selectedClasses}
+                                    onChange={setSelectedClasses}
+                                    showIcon={true}
+                                />
+                                <FilterDropdown
+                                    label={{singular:"Race", plural:"Races"}}
+                                    options={raceList}
+                                    selected={selectedRaces}
+                                    onChange={setSelectedRaces}
+                                />
+                                <FilterDropdown
+                                    label={{singular:"Rank", plural:"Ranks"}}
+                                    options={ranks}
+                                    selected={selectedRanks}
+                                    onChange={setSelectedRanks}
+                                />
+                            </div>
 
-                    {/* Results count */}
-                    <p className="text-gray-400 text-sm">
-                        Showing {filteredAndSortedMembers.length} of {members.length} members
-                    </p>
-                </div>
+                            {/* Results count */}
+                            <p className="text-gray-400 text-sm">
+                                Showing {filteredAndSortedMembers.length} of {members.length} members
+                            </p>
+                        </div>
 
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="border-b border-amber-600">
-                            <tr>
-                                <SortableHeader
-                                    column="name"
-                                    label="Character"
-                                    currentColumn={sortColumn}
-                                    currentDirection={sortDirection}
-                                    onSort={handleSort}
-                                />
-                                <SortableHeader
-                                    column="level"
-                                    label="Level"
-                                    currentColumn={sortColumn}
-                                    currentDirection={sortDirection}
-                                    onSort={handleSort}
-                                />
-                                <SortableHeader
-                                    column="race"
-                                    label="Race"
-                                    currentColumn={sortColumn}
-                                    currentDirection={sortDirection}
-                                    onSort={handleSort}
-                                />
-                                <SortableHeader
-                                    column="class"
-                                    label="Class"
-                                    currentColumn={sortColumn}
-                                    currentDirection={sortDirection}
-                                    onSort={handleSort}
-                                />
-                                <SortableHeader
-                                    column="rank"
-                                    label="Rank"
-                                    currentColumn={sortColumn}
-                                    currentDirection={sortDirection}
-                                    onSort={handleSort}
-                                />
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-brown-700">
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="border-b border-amber-600">
+                                    <tr>
+                                        <SortableHeader
+                                            column="name"
+                                            label="Character"
+                                            currentColumn={sortColumn}
+                                            currentDirection={sortDirection}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableHeader
+                                            column="level"
+                                            label="Level"
+                                            currentColumn={sortColumn}
+                                            currentDirection={sortDirection}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableHeader
+                                            column="race"
+                                            label="Race"
+                                            currentColumn={sortColumn}
+                                            currentDirection={sortDirection}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableHeader
+                                            column="class"
+                                            label="Class"
+                                            currentColumn={sortColumn}
+                                            currentDirection={sortDirection}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableHeader
+                                            column="rank"
+                                            label="Rank"
+                                            currentColumn={sortColumn}
+                                            currentDirection={sortDirection}
+                                            onSort={handleSort}
+                                        />
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-brown-700">
+                                    {filteredAndSortedMembers.map((member) => (
+                                        <RosterRow key={member.character.id} member={member} />
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="md:hidden space-y-4">
                             {filteredAndSortedMembers.map((member) => (
-                                <RosterRow key={member.character.id} member={member} />
+                                <MemberCard key={member.character.id} member={member} />
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
 
-                {/* Mobile Cards */}
-                <div className="md:hidden space-y-4">
-                    {filteredAndSortedMembers.map((member) => (
-                        <MemberCard key={member.character.id} member={member} />
-                    ))}
-                </div>
-
-                {/* Empty state */}
-                {filteredAndSortedMembers.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
-                        <i className="fas fa-users-slash text-4xl mb-4"></i>
-                        <p>No members match your filters.</p>
-                    </div>
+                        {/* Empty state */}
+                        {filteredAndSortedMembers.length === 0 && (
+                            <div className="text-center py-12 text-gray-400">
+                                <i className="fas fa-users-slash text-4xl mb-4"></i>
+                                <p>No members match your filters.</p>
+                            </div>
+                        )}
+                    </>
                 )}
             </main>
         </Master>

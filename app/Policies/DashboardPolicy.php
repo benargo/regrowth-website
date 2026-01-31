@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Policies\AuthorizationPolicy;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class DashboardPolicy extends AuthorizationPolicy

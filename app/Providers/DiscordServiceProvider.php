@@ -17,6 +17,7 @@ class DiscordServiceProvider extends ServiceProvider
     {
         $this->app->singleton(DiscordGuildService::class, function (Application $app) {
             $config = config('services.discord');
+
             return new DiscordGuildService($config['bot_token'], $config['guild_id']);
         });
     }
