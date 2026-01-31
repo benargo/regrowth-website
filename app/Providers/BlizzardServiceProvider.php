@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Services\Blizzard\Client;
+use App\Services\Blizzard\GuildService;
 use App\Services\Blizzard\ItemService;
 use App\Services\Blizzard\MediaService;
+use App\Services\Blizzard\PlayableClassService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\ServiceProvider;
@@ -16,8 +18,12 @@ class BlizzardServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(Client::class, function (Application $app) {
+        $this->app->bind(Client::class, function (Application $app) {
             return Client::fromConfig();
+        });
+
+        $this->app->singleton(GuildService::class, function (Application $app) {
+            return new GuildService($app->make(Client::class));
         });
 
         $this->app->singleton(ItemService::class, function (Application $app) {
@@ -30,6 +36,10 @@ class BlizzardServiceProvider extends ServiceProvider
                 $app->make(FilesystemManager::class),
             );
         });
+
+        $this->app->singleton(PlayableClassService::class, function (Application $app) {
+            return new PlayableClassService($app->make(Client::class));
+        });
     }
 
     /**
@@ -38,5 +48,21 @@ class BlizzardServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array<int, string>
+     */
+    public function provides(): array
+    {
+        return [
+            Client::class,
+            GuildService::class,
+            ItemService::class,
+            MediaService::class,
+            PlayableClassService::class,
+        ];
     }
 }

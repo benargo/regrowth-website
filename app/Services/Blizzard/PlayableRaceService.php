@@ -2,7 +2,7 @@
 
 namespace App\Services\Blizzard;
 
-class PlayableClassService extends Service
+class PlayableRaceService extends Service
 {
     protected string $basePath = '/data/wow';
 
@@ -18,7 +18,7 @@ class PlayableClassService extends Service
     }
 
     /**
-     * Get the index of all playable classes with their IDs and media.
+     * Get the index of all playable races with their IDs and media.
      *
      * @return array<string, mixed>
      */
@@ -27,32 +27,22 @@ class PlayableClassService extends Service
         return $this->cacheable(
             $this->indexCacheKey(),
             self::CACHE_TTL,
-            fn () => $this->getJson('/playable-class/index')
+            fn () => $this->getJson('/playable-race/index')
         );
     }
 
     /**
-     * Find a playable class by its ID.
+     * Find a playable race by its ID.
      *
      * @return array<string, mixed>
      */
-    public function find(int $playableClassId): array
+    public function find(int $playableRaceId): array
     {
         return $this->cacheable(
-            $this->findCacheKey($playableClassId),
+            $this->findCacheKey($playableRaceId),
             self::CACHE_TTL,
-            fn () => $this->getJson("/playable-class/{$playableClassId}")
+            fn () => $this->getJson("/playable-race/{$playableRaceId}")
         );
-    }
-
-    /**
-     * Get media (icon URLs) for a playable class.
-     *
-     * @return array<string, mixed>
-     */
-    public function media(int $playableClassId): array
-    {
-        return app(MediaService::class)->find('playable-class', $playableClassId);
     }
 
     /**
@@ -61,19 +51,19 @@ class PlayableClassService extends Service
     protected function indexCacheKey(): string
     {
         return sprintf(
-            'blizzard.playable-class.index.%s',
+            'blizzard.playable-race.index.%s',
             $this->getNamespace()
         );
     }
 
     /**
-     * Get the cache key for a playable class.
+     * Get the cache key for a playable race.
      */
-    protected function findCacheKey(int $playableClassId): string
+    protected function findCacheKey(int $playableRaceId): string
     {
         return sprintf(
-            'blizzard.playable-class.%d.%s',
-            $playableClassId,
+            'blizzard.playable-race.%d.%s',
+            $playableRaceId,
             $this->getNamespace(),
         );
     }

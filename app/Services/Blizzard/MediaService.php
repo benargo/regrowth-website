@@ -47,23 +47,11 @@ class MediaService extends Service
     {
         $this->validateTags($tag);
 
-        return Cache::remember(
+        return $this->cacheable(
             $this->mediaCacheKey($tag, $mediaId),
             self::CACHE_TTL_MEDIA,
             fn () => $this->getJson("/media/{$tag}/{$mediaId}")
         );
-    }
-
-    /**
-     * Find media without caching (fresh from API).
-     */
-    public function findFresh(string $tag, int $mediaId): array
-    {
-        $this->validateTags($tag);
-
-        Cache::forget($this->mediaCacheKey($tag, $mediaId));
-
-        return $this->getJson("/media/{$tag}/{$mediaId}");
     }
 
     /**
@@ -82,7 +70,7 @@ class MediaService extends Service
 
         $query = $this->buildSearchQuery($params);
 
-        return Cache::remember(
+        return $this->cacheable(
             $this->searchCacheKey($query),
             self::CACHE_TTL_SEARCH,
             fn () => $this->getJson('/search/media', $query)

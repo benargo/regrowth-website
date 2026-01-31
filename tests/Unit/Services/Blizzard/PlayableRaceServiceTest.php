@@ -4,7 +4,7 @@ namespace Tests\Unit\Services\Blizzard;
 
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\PlayableClassService;
+use App\Services\Blizzard\PlayableRaceService;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -12,7 +12,7 @@ use Mockery;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
-class PlayableClassServiceTest extends TestCase
+class PlayableRaceServiceTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -51,12 +51,12 @@ class PlayableClassServiceTest extends TestCase
     public function test_constructor_sets_static_classic_eu_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
-        new PlayableClassService($client);
+        new PlayableRaceService($client);
 
         $this->assertEquals('static-classicann-eu', $client->getNamespace());
     }
 
-    public function test_index_returns_playable_class_data(): void
+    public function test_index_returns_playable_race_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -65,7 +65,7 @@ class PlayableClassServiceTest extends TestCase
                 'expires_in' => 3600,
             ]),
             'eu.api.blizzard.com/*' => Http::response([
-                'playable_classes' => [
+                'playable_races' => [
                     ['id' => 1, 'name' => 'Warrior'],
                     ['id' => 2, 'name' => 'Paladin'],
                 ],
@@ -73,13 +73,13 @@ class PlayableClassServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $result = $service->index();
 
         $this->assertIsArray($result);
-        $this->assertArrayHasKey('playable_classes', $result);
-        $this->assertCount(2, $result['playable_classes']);
+        $this->assertArrayHasKey('playable_races', $result);
+        $this->assertCount(2, $result['playable_races']);
     }
 
     public function test_index_makes_correct_api_call(): void
@@ -90,17 +90,17 @@ class PlayableClassServiceTest extends TestCase
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ]),
-            'eu.api.blizzard.com/*' => Http::response(['playable_classes' => []]),
+            'eu.api.blizzard.com/*' => Http::response(['playable_races' => []]),
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->index();
 
         Http::assertSent(function ($request) {
             if (str_contains($request->url(), 'api.blizzard.com')) {
-                return str_contains($request->url(), '/data/wow/media/playable-class/index');
+                return str_contains($request->url(), '/data/wow/media/playable-race/index');
             }
 
             return true;
@@ -120,12 +120,12 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => function () use (&$callCount) {
                 $callCount++;
 
-                return Http::response(['playable_classes' => []]);
+                return Http::response(['playable_races' => []]);
             },
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->index();
         $service->index();
@@ -142,15 +142,15 @@ class PlayableClassServiceTest extends TestCase
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ]),
-            'eu.api.blizzard.com/*' => Http::response(['playable_classes' => []]),
+            'eu.api.blizzard.com/*' => Http::response(['playable_races' => []]),
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->index();
 
-        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classicann-eu'));
+        $this->assertTrue(Cache::has('blizzard.playable-race.index.static-classicann-eu'));
     }
 
     public function test_index_throws_exception_on_api_error(): void
@@ -165,7 +165,7 @@ class PlayableClassServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $this->expectException(RequestException::class);
 
@@ -185,12 +185,12 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => function () use (&$callCount) {
                 $callCount++;
 
-                return Http::response(['playable_classes' => []]);
+                return Http::response(['playable_races' => []]);
             },
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->index();
         $service->fresh()->index();
@@ -198,7 +198,7 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_find_returns_playable_class_data(): void
+    public function test_find_returns_playable_race_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -208,13 +208,13 @@ class PlayableClassServiceTest extends TestCase
             ]),
             'eu.api.blizzard.com/*' => Http::response([
                 'id' => 1,
-                'name' => 'Warrior',
-                'power_type' => ['name' => 'Rage'],
+                'name' => 'Orc',
+                'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
             ]),
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $result = $service->find(1);
 
@@ -222,7 +222,7 @@ class PlayableClassServiceTest extends TestCase
         $this->assertArrayHasKey('id', $result);
         $this->assertArrayHasKey('name', $result);
         $this->assertEquals(1, $result['id']);
-        $this->assertEquals('Warrior', $result['name']);
+        $this->assertEquals('Orc', $result['name']);
     }
 
     public function test_find_makes_correct_api_call(): void
@@ -233,17 +233,17 @@ class PlayableClassServiceTest extends TestCase
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ]),
-            'eu.api.blizzard.com/*' => Http::response(['id' => 1, 'name' => 'Warrior']),
+            'eu.api.blizzard.com/*' => Http::response(['id' => 1, 'name' => 'Orc']),
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->find(1);
 
         Http::assertSent(function ($request) {
             if (str_contains($request->url(), 'api.blizzard.com')) {
-                return str_contains($request->url(), '/data/wow/playable-class/1');
+                return str_contains($request->url(), '/data/wow/playable-race/1');
             }
 
             return true;
@@ -268,7 +268,7 @@ class PlayableClassServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->find(1);
         $service->find(1);
@@ -285,15 +285,15 @@ class PlayableClassServiceTest extends TestCase
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ]),
-            'eu.api.blizzard.com/*' => Http::response(['id' => 1, 'name' => 'Warrior']),
+            'eu.api.blizzard.com/*' => Http::response(['id' => 2, 'name' => 'Orc']),
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
-        $service->find(1);
+        $service->find(2);
 
-        $this->assertTrue(Cache::has('blizzard.playable-class.1.static-classicann-eu'));
+        $this->assertTrue(Cache::has('blizzard.playable-race.2.static-classicann-eu'));
     }
 
     public function test_find_throws_exception_on_api_error(): void
@@ -308,7 +308,7 @@ class PlayableClassServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $this->expectException(RequestException::class);
 
@@ -328,15 +328,15 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => function () use (&$callCount) {
                 $callCount++;
 
-                return Http::response(['id' => 1, 'name' => 'Warrior']);
+                return Http::response(['id' => 2, 'name' => 'Orc']);
             },
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
-        $service->find(1);
-        $service->fresh()->find(1);
+        $service->find(2);
+        $service->fresh()->find(2);
 
         $this->assertEquals(2, $callCount);
     }
@@ -354,64 +354,19 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => function () use (&$callCount) {
                 $callCount++;
 
-                return Http::response(['id' => 1, 'name' => 'Warrior']);
+                return Http::response(['id' => 2, 'name' => 'Orc']);
             },
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->find(1);
         $service->find(2);
 
         $this->assertEquals(2, $callCount);
-        $this->assertTrue(Cache::has('blizzard.playable-class.1.static-classicann-eu'));
-        $this->assertTrue(Cache::has('blizzard.playable-class.2.static-classicann-eu'));
-    }
-
-    public function test_media_returns_icon_data(): void
-    {
-        $expectedMedia = [
-            'assets' => [
-                ['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/icons/warrior.jpg'],
-            ],
-        ];
-
-        $this->instance(
-            MediaService::class,
-            $this->createMockMediaService(function (MockInterface $mock) use ($expectedMedia) {
-                $mock->shouldReceive('find')
-                    ->once()
-                    ->with('playable-class', 1)
-                    ->andReturn($expectedMedia);
-            })
-        );
-
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
-
-        $media = $service->media(1);
-
-        $this->assertIsArray($media);
-        $this->assertArrayHasKey('assets', $media);
-    }
-
-    public function test_media_delegates_to_media_service(): void
-    {
-        $this->instance(
-            MediaService::class,
-            $this->createMockMediaService(function (MockInterface $mock) {
-                $mock->shouldReceive('find')
-                    ->once()
-                    ->with('playable-class', 1)
-                    ->andReturn(['assets' => []]);
-            })
-        );
-
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
-
-        $service->media(1);
+        $this->assertTrue(Cache::has('blizzard.playable-race.1.static-classicann-eu'));
+        $this->assertTrue(Cache::has('blizzard.playable-race.2.static-classicann-eu'));
     }
 
     public function test_with_namespace_affects_cache_keys(): void
@@ -427,18 +382,18 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => function () use (&$callCount) {
                 $callCount++;
 
-                return Http::response(['playable_classes' => []]);
+                return Http::response(['playable_races' => []]);
             },
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableClassService($client);
+        $service = new PlayableRaceService($client);
 
         $service->index();
         $service->withNamespace('static-classic1x-eu')->index();
 
         $this->assertEquals(2, $callCount);
-        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classicann-eu'));
-        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classic1x-eu'));
+        $this->assertTrue(Cache::has('blizzard.playable-race.index.static-classicann-eu'));
+        $this->assertTrue(Cache::has('blizzard.playable-race.index.static-classic1x-eu'));
     }
 }

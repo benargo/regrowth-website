@@ -28,23 +28,11 @@ class ItemService extends Service
      */
     public function find(int $itemId): array
     {
-        return Cache::remember(
+        return $this->cacheable(
             $this->itemCacheKey($itemId),
             self::CACHE_TTL_ITEM,
             fn () => $this->getJson("/item/{$itemId}")
         );
-    }
-
-    /**
-     * Find an item without caching (fresh from API).
-     *
-     * @return array<string, mixed>
-     */
-    public function findFresh(int $itemId): array
-    {
-        Cache::forget($this->itemCacheKey($itemId));
-
-        return $this->getJson("/item/{$itemId}");
     }
 
     /**
@@ -67,7 +55,7 @@ class ItemService extends Service
     {
         $query = $this->buildSearchQuery($params);
 
-        return Cache::remember(
+        return $this->cacheable(
             $this->searchCacheKey($query),
             self::CACHE_TTL_SEARCH,
             fn () => $this->getJson('/search/item', $query)

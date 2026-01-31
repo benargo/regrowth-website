@@ -61,11 +61,11 @@ export default function Master({ title, children }) {
                     <div className="hidden lg:flex lg:items-center lg:justify-between lg:flex-1 lg:ml-10">
                         <div className="flex gap-4 space-x-1">
                             <Link
-                                href="https://discord.gg/regrowth"
+                                href={route('roster.index')}
                                 className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
                             >
-                                <i className="fab fa-discord mr-2"></i>
-                                Discord
+                                <i className="fas fa-users mr-2"></i>
+                                Roster
                             </Link>
                             {can?.accessLoot && (
                                 <Link 
@@ -76,6 +76,13 @@ export default function Master({ title, children }) {
                                     Loot Bias
                                 </Link>
                             )}
+                            <Link
+                                href="https://discord.gg/regrowth"
+                                className="p-1 text-sm font-medium border-b border-transparent hover:border-white transition-colors"
+                            >
+                                <i className="fab fa-discord mr-2"></i>
+                                Discord
+                            </Link>
                         </div>
 
                         <div className="flex items-center">
@@ -144,22 +151,29 @@ export default function Master({ title, children }) {
                     id="mobile-menu"
                 >
                     <div className="px-2 pt-2 pb-3 space-y-1">
-                        <Link
-                            href="/discord"
+                        <Link 
+                            href={route('roster.index')}
                             className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                         >
-                            <i className="fab fa-discord mr-2"></i>
-                            Discord
+                            <i className="fas fa-users mr-2"></i>
+                            Roster
                         </Link>
                         {can?.accessLoot && (
                             <Link 
-                                href="/loot"
+                                href={route('loot.index')}
                                 className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                             >
                                 <i className="fas fa-treasure-chest mr-2"></i>
                                 Loot Bias
                             </Link>
                         )}
+                        <Link
+                            href="https://discord.gg/regrowth"
+                            className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
+                        >
+                            <i className="fab fa-discord mr-2"></i>
+                            Discord
+                        </Link>
                     </div>
 
                     <div className="pt-4 pb-3 border-t border-amber-700">

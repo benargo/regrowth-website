@@ -138,7 +138,7 @@ class ItemServiceTest extends TestCase
         $service->find(99999999);
     }
 
-    public function test_find_fresh_bypasses_cache(): void
+    public function test_fresh_find_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -159,46 +159,9 @@ class ItemServiceTest extends TestCase
         $service = new ItemService($client);
 
         $service->find(19019);
-        $service->findFresh(19019);
+        $service->fresh()->find(19019);
 
         $this->assertEquals(2, $callCount);
-    }
-
-    public function test_find_fresh_clears_existing_cache(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['id' => 19019]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
-
-        $service->find(19019);
-        $this->assertTrue(Cache::has('blizzard.item.static-classicann-eu.19019'));
-        Cache::shouldReceive('forget')
-            ->once()
-            ->with('blizzard.item.static-classicann-eu.19019');
-
-        Cache::shouldReceive('get')
-            ->with('blizzard_access_token_eu')
-            ->andReturn('test_token');
-
-        // Reset Http fake to allow the API call
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['id' => 19019]),
-        ]);
-
-        $service->findFresh(19019);
     }
 
     public function test_media_returns_icon_data(): void

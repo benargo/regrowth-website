@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PhaseController;
+use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\Loot\LootController;
 use App\Http\Controllers\LootCouncil\CommentController;
 use App\Http\Controllers\ProfileController;
@@ -13,17 +15,7 @@ Route::get('/', function () {
     return Inertia::render('Home');
 });
 
-/*
- * Officers' Dashboard
- */
-Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('index');
-    Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
-    Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
-    Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
-    Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('manage-phases');
-    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
-});
+Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.index');
 
 /**
  * Loot Priority Manager
@@ -41,6 +33,23 @@ Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:access-loot']], 
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');
     Route::put('/items/{item}/comments/{comment}', [CommentController::class, 'update'])->name('loot.items.comments.update');
     Route::delete('/items/{item}/comments/{comment}', [CommentController::class, 'destroy'])->name('loot.items.comments.destroy');
+});
+
+/*
+ * Officers' Dashboard
+ */
+Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('index');
+    Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
+    Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
+    Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
+    Route::get('/manage-ranks', [GuildRankController::class, 'manageRanks'])->name('ranks.view');
+    Route::post('/manage-ranks', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
+    Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
+    Route::post('/ranks', [GuildRankController::class, 'store'])->name('ranks.store');
+    Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
+    Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('phases.view');
+    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
 });
 
 /**

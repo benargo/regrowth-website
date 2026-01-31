@@ -244,46 +244,9 @@ class MediaServiceTest extends TestCase
         $service = new MediaService($client);
 
         $service->find('item', 19019);
-        $service->findFresh('item', 19019);
+        $service->fresh()->find('item', 19019);
 
         $this->assertEquals(2, $callCount);
-    }
-
-    public function test_find_fresh_clears_existing_cache(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['assets' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->find('item', 19019);
-        $this->assertTrue(Cache::has('blizzard.media.item.static-eu.19019'));
-
-        Cache::shouldReceive('forget')
-            ->once()
-            ->with('blizzard.media.item.static-eu.19019');
-
-        Cache::shouldReceive('get')
-            ->with('blizzard_access_token_eu')
-            ->andReturn('test_token');
-
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['assets' => []]),
-        ]);
-
-        $service->findFresh('item', 19019);
     }
 
     public function test_find_fresh_throws_exception_for_invalid_tag(): void
@@ -294,7 +257,7 @@ class MediaServiceTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid tag(s): invalid. Allowed tags are: item, spell, playable-class');
 
-        $service->findFresh('invalid', 19019);
+        $service->fresh()->find('invalid', 19019);
     }
 
     public function test_search_requires_tags_parameter(): void
