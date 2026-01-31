@@ -312,7 +312,7 @@ export default function Roster({ members, classes, races, ranks }) {
 
     return (
         <Master title="Guild Roster">
-            <SharedHeader title="Guild Roster" />
+            <SharedHeader backgroundClass="bg-goldshire" title="Guild Roster" />
 
             <main className="container mx-auto px-4 py-8">
                 {/* Filters Section */}

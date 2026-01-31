@@ -8,6 +8,12 @@
     background-repeat: repeat;
 }
 
+.bg-goldshire {
+    background-image: url('../images/bg_goldshire.webp');
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-illidan {
     background-image: url('../images/bg_illidan.jpg');
     background-position: 50% 10%;
