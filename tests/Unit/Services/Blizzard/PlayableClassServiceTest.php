@@ -53,7 +53,7 @@ class PlayableClassServiceTest extends TestCase
         $client = new Client('client_id', 'client_secret');
         new PlayableClassService($client);
 
-        $this->assertEquals('static-classic-eu', $client->getNamespace());
+        $this->assertEquals('static-classicann-eu', $client->getNamespace());
     }
 
     public function test_index_returns_playable_class_data(): void
@@ -72,7 +72,7 @@ class PlayableClassServiceTest extends TestCase
             ]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $result = $service->index();
@@ -93,7 +93,7 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['playable_classes' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $service->index();
@@ -124,7 +124,7 @@ class PlayableClassServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $service->index();
@@ -145,12 +145,12 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['playable_classes' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $service->index();
 
-        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classic-eu'));
+        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classicann-eu'));
     }
 
     public function test_index_throws_exception_on_api_error(): void
@@ -189,7 +189,7 @@ class PlayableClassServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $service->index();
@@ -209,15 +209,14 @@ class PlayableClassServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['playable_classes' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $service->index();
-        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classic-eu'));
-
+        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classicann-eu'));
         Cache::shouldReceive('forget')
             ->once()
-            ->with('blizzard.playable-class.index.static-classic-eu');
+            ->with('blizzard.playable-class.index.static-classicann-eu');
 
         Cache::shouldReceive('get')
             ->with('blizzard_access_token_eu')
@@ -253,7 +252,7 @@ class PlayableClassServiceTest extends TestCase
             })
         );
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $media = $service->media(1);
@@ -274,7 +273,7 @@ class PlayableClassServiceTest extends TestCase
             })
         );
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $service->media(1);
@@ -297,14 +296,14 @@ class PlayableClassServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new PlayableClassService($client);
 
         $service->index();
         $service->withNamespace('static-classic1x-eu')->index();
 
         $this->assertEquals(2, $callCount);
-        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classic-eu'));
+        $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classicann-eu'));
         $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classic1x-eu'));
     }
 }

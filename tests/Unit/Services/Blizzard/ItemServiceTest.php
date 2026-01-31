@@ -63,7 +63,7 @@ class ItemServiceTest extends TestCase
             ]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $item = $service->find(19019);
@@ -90,7 +90,7 @@ class ItemServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->find(19019);
@@ -111,12 +111,12 @@ class ItemServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['id' => 19019]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->find(19019);
 
-        $this->assertTrue(Cache::has('blizzard.item.static-classic-eu.19019'));
+        $this->assertTrue(Cache::has('blizzard.item.static-classicann-eu.19019'));
     }
 
     public function test_find_throws_exception_for_invalid_item(): void
@@ -155,7 +155,7 @@ class ItemServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->find(19019);
@@ -175,15 +175,14 @@ class ItemServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['id' => 19019]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->find(19019);
-        $this->assertTrue(Cache::has('blizzard.item.static-classic-eu.19019'));
-
+        $this->assertTrue(Cache::has('blizzard.item.static-classicann-eu.19019'));
         Cache::shouldReceive('forget')
             ->once()
-            ->with('blizzard.item.static-classic-eu.19019');
+            ->with('blizzard.item.static-classicann-eu.19019');
 
         Cache::shouldReceive('get')
             ->with('blizzard_access_token_eu')
@@ -220,7 +219,7 @@ class ItemServiceTest extends TestCase
             })
         );
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $media = $service->media(19019);
@@ -241,7 +240,7 @@ class ItemServiceTest extends TestCase
             })
         );
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->media(19019);
@@ -266,7 +265,7 @@ class ItemServiceTest extends TestCase
             ]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $results = $service->search(['name' => 'Thunderfury']);
@@ -289,7 +288,7 @@ class ItemServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['results' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->search(['name' => 'Thunderfury']);
@@ -317,7 +316,7 @@ class ItemServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['results' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->search(['page' => 3]);
@@ -345,7 +344,7 @@ class ItemServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['results' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->search(['pageSize' => 50]);
@@ -373,7 +372,7 @@ class ItemServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['results' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->search(['pageSize' => 5000]);
@@ -401,7 +400,7 @@ class ItemServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['results' => []]),
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->search(['orderby' => 'name']);
@@ -435,7 +434,7 @@ class ItemServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->search(['name' => 'Thunderfury']);
@@ -461,7 +460,7 @@ class ItemServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->search(['name' => 'Thunderfury']);
@@ -487,7 +486,7 @@ class ItemServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
         $service = new ItemService($client);
 
         $service->find(19019);

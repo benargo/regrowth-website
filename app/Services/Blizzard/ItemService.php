@@ -18,7 +18,7 @@ class ItemService extends Service
     public function __construct(
         protected Client $client,
     ) {
-        parent::__construct($client->withNamespace('static-classic-eu'));
+        parent::__construct($client->withNamespace('static-classicann-eu'));
     }
 
     /**

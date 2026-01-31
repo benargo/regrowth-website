@@ -14,9 +14,9 @@ export default function Master({ title, children }) {
     const [flashSuccess, setFlashSuccess] = useState(flash?.success);
 
     useEffect(() => {
-        document.body.classList.add('bg-white', 'bg-brown-texture');
+        document.body.classList.add('bg-brown', 'bg-brown-texture');
         return () => {
-            document.body.classList.remove('bg-white', 'bg-brown-texture');
+            document.body.classList.remove('bg-brown', 'bg-brown-texture');
         };
     }, []);
 
@@ -146,7 +146,7 @@ export default function Master({ title, children }) {
                     <div className="px-2 pt-2 pb-3 space-y-1">
                         <Link
                             href="/discord"
-                            className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                            className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                         >
                             <i className="fab fa-discord mr-2"></i>
                             Discord
@@ -154,7 +154,7 @@ export default function Master({ title, children }) {
                         {can?.accessLoot && (
                             <Link 
                                 href="/loot"
-                                className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                                className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                             >
                                 <i className="fas fa-treasure-chest mr-2"></i>
                                 Loot Bias
@@ -162,7 +162,7 @@ export default function Master({ title, children }) {
                         )}
                     </div>
 
-                    <div className="pt-4 pb-3 border-t border-gray-700">
+                    <div className="pt-4 pb-3 border-t border-amber-700">
                         {user ? (
                             <div className="px-4 space-y-2">
                                 <div className="flex items-center space-x-3">
@@ -184,7 +184,7 @@ export default function Master({ title, children }) {
                                 </div>
                                 {/* <Link
                                     href={route('profile.edit')}
-                                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                                 >
                                     <i className="far fa-user-cog mr-2"></i>
                                     Account Settings
@@ -192,7 +192,7 @@ export default function Master({ title, children }) {
                                 {impersonating && (
                                     <Link 
                                         href={route('auth.return-to-self')}
-                                        className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                                        className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                                     >
                                         <i className="far fa-undo mr-2"></i>
                                         Return to my account
@@ -201,7 +201,7 @@ export default function Master({ title, children }) {
                                 {can?.accessDashboard && (
                                     <Link
                                         href={route('dashboard.index')}
-                                        className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                                        className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                                     >
                                         <i className="far fa-cogs mr-2"></i>
                                         Officers' Control Panel
@@ -211,7 +211,7 @@ export default function Master({ title, children }) {
                                     href={route('logout')}
                                     method="post"
                                     as="button"
-                                    className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md"
+                                    className="block w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
                                 >
                                     <i className="far fa-sign-out mr-2"></i>
                                     Logout
@@ -286,19 +286,12 @@ export default function Master({ title, children }) {
                                 </Link>
                             </div>
                             <div className="text-center">
-                                <a
-                                    href="https://worldofwarcraft.blizzard.com/en-gb/wowclassic"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title="World of Warcraft Classic"
-                                >
-                                    <img
-                                        src="/images/logo_tbcclassic.webp"
-                                        alt="World of Warcraft Classic logo"
-                                        className="inline-block max-h-36"
-                                    />
-                                    <span className="sr-only">World of Warcraft: Classic</span>
-                                </a>
+                                <img
+                                    src="/images/logo_tbcclassic.webp"
+                                    alt="World of Warcraft Classic logo"
+                                    className="inline-block max-h-36"
+                                />
+                                <span className="sr-only">World of Warcraft: Classic</span>
                             </div>
                         </div>
 
