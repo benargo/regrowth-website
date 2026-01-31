@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Blizzard;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\Region;
 use App\Services\Blizzard\Service;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -256,5 +257,433 @@ class ServiceTest extends TestCase
 
             return true;
         });
+    }
+
+    public function test_fresh_sets_ignore_cache_and_is_fluent(): void
+    {
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $result = $service->fresh();
+
+        $this->assertSame($service, $result);
+
+        $reflection = new \ReflectionClass($service);
+        $property = $reflection->getProperty('ignoreCache');
+        $this->assertTrue($property->getValue($service));
+    }
+
+    public function test_cacheable_caches_result_when_ignore_cache_is_false(): void
+    {
+        Cache::flush();
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('cacheable');
+
+        $callCount = 0;
+        $callback = function () use (&$callCount) {
+            $callCount++;
+
+            return ['data' => 'test'];
+        };
+
+        $result1 = $method->invoke($service, 'test_cache_key', 60, $callback);
+        $result2 = $method->invoke($service, 'test_cache_key', 60, $callback);
+
+        $this->assertEquals(['data' => 'test'], $result1);
+        $this->assertEquals(['data' => 'test'], $result2);
+        $this->assertEquals(1, $callCount);
+    }
+
+    public function test_cacheable_bypasses_cache_when_fresh_is_called(): void
+    {
+        Cache::flush();
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('cacheable');
+
+        $callCount = 0;
+        $callback = function () use (&$callCount) {
+            $callCount++;
+
+            return ['data' => 'fresh'];
+        };
+
+        $method->invoke($service, 'fresh_cache_key', 60, $callback);
+        $this->assertEquals(1, $callCount);
+
+        $service->fresh();
+        $result = $method->invoke($service, 'fresh_cache_key', 60, $callback);
+
+        $this->assertEquals(['data' => 'fresh'], $result);
+        $this->assertEquals(2, $callCount);
+    }
+
+    public function test_get_resets_ignore_cache_after_request(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response(['id' => 19019]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $service->fresh();
+
+        $reflection = new \ReflectionClass($service);
+        $property = $reflection->getProperty('ignoreCache');
+        $this->assertTrue($property->getValue($service));
+
+        $method = $reflection->getMethod('get');
+        $method->invoke($service, '/item/19019');
+
+        $this->assertFalse($property->getValue($service));
+    }
+
+    public function test_cacheable_uses_cache_remember_with_ttl(): void
+    {
+        Cache::flush();
+        Cache::shouldReceive('remember')
+            ->once()
+            ->with('custom_ttl_key', 120, \Mockery::type('callable'))
+            ->andReturn(['cached' => true]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('cacheable');
+
+        $result = $method->invoke($service, 'custom_ttl_key', 120, fn () => ['cached' => true]);
+
+        $this->assertEquals(['cached' => true], $result);
+    }
+
+    public function test_cacheable_accepts_null_ttl(): void
+    {
+        Cache::flush();
+        Cache::shouldReceive('remember')
+            ->once()
+            ->with('null_ttl_key', null, \Mockery::type('callable'))
+            ->andReturn(['data' => 'forever']);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('cacheable');
+
+        $result = $method->invoke($service, 'null_ttl_key', null, fn () => ['data' => 'forever']);
+
+        $this->assertEquals(['data' => 'forever'], $result);
+    }
+
+    public function test_get_namespace_returns_client_namespace(): void
+    {
+        $client = new Client('client_id', 'client_secret', namespace: 'test-namespace-eu');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getNamespace');
+
+        $this->assertEquals('test-namespace-eu', $method->invoke($service));
+    }
+
+    public function test_select_sets_selected_fields_and_is_fluent(): void
+    {
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $result = $service->select('id', 'name', 'quality');
+
+        $this->assertSame($service, $result);
+
+        $reflection = new \ReflectionClass($service);
+        $property = $reflection->getProperty('selectedFields');
+        $this->assertEquals(['id', 'name', 'quality'], $property->getValue($service));
+    }
+
+    public function test_select_overwrites_previous_selection(): void
+    {
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $service->select('id', 'name');
+        $service->select('quality', 'level');
+
+        $reflection = new \ReflectionClass($service);
+        $property = $reflection->getProperty('selectedFields');
+        $this->assertEquals(['quality', 'level'], $property->getValue($service));
+    }
+
+    public function test_get_json_filters_response_with_selected_fields(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'name' => 'Thunderfury',
+                'quality' => 'Legendary',
+                'level' => 60,
+                'required_level' => 60,
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getJson');
+
+        $service->select('id', 'name');
+        $result = $method->invoke($service, '/item/19019');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('name', $result);
+        $this->assertArrayNotHasKey('quality', $result);
+        $this->assertArrayNotHasKey('level', $result);
+        $this->assertArrayNotHasKey('required_level', $result);
+        $this->assertEquals(19019, $result['id']);
+        $this->assertEquals('Thunderfury', $result['name']);
+    }
+
+    public function test_get_json_resets_selected_fields_after_use(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'name' => 'Thunderfury',
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $service->select('id', 'name');
+
+        $reflection = new \ReflectionClass($service);
+        $property = $reflection->getProperty('selectedFields');
+        $this->assertEquals(['id', 'name'], $property->getValue($service));
+
+        $method = $reflection->getMethod('getJson');
+        $method->invoke($service, '/item/19019');
+
+        $this->assertEquals([], $property->getValue($service));
+    }
+
+    public function test_get_json_returns_full_response_without_select(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'name' => 'Thunderfury',
+                'quality' => 'Legendary',
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getJson');
+        $result = $method->invoke($service, '/item/19019');
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('name', $result);
+        $this->assertArrayHasKey('quality', $result);
+    }
+
+    public function test_select_can_be_chained_with_fresh(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'name' => 'Thunderfury',
+                'quality' => 'Legendary',
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getJson');
+
+        $result = $service->fresh()->select('id', 'name');
+        $this->assertSame($service, $result);
+
+        $response = $method->invoke($service, '/item/19019');
+
+        $this->assertArrayHasKey('id', $response);
+        $this->assertArrayHasKey('name', $response);
+        $this->assertArrayNotHasKey('quality', $response);
+    }
+
+    public function test_get_json_supports_dot_notation_for_nested_fields(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'name' => 'Thunderfury',
+                'media' => [
+                    'key' => ['href' => 'https://example.com/key'],
+                    'href' => 'https://example.com/media',
+                ],
+                'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getJson');
+
+        $service->select('id', 'media.href');
+        $result = $method->invoke($service, '/item/19019');
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('media', $result);
+        $this->assertArrayHasKey('href', $result['media']);
+        $this->assertEquals('https://example.com/media', $result['media']['href']);
+        $this->assertArrayNotHasKey('key', $result['media']);
+        $this->assertArrayNotHasKey('name', $result);
+        $this->assertArrayNotHasKey('quality', $result);
+    }
+
+    public function test_get_json_supports_deeply_nested_dot_notation(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'media' => [
+                    'key' => [
+                        'href' => 'https://example.com/key',
+                        'id' => 12345,
+                    ],
+                ],
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getJson');
+
+        $service->select('media.key.href');
+        $result = $method->invoke($service, '/item/19019');
+
+        $this->assertArrayHasKey('media', $result);
+        $this->assertArrayHasKey('key', $result['media']);
+        $this->assertArrayHasKey('href', $result['media']['key']);
+        $this->assertEquals('https://example.com/key', $result['media']['key']['href']);
+        $this->assertArrayNotHasKey('id', $result['media']['key']);
+        $this->assertArrayNotHasKey('id', $result);
+    }
+
+    public function test_get_json_combines_top_level_and_nested_selections(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'name' => 'Thunderfury',
+                'media' => [
+                    'key' => ['href' => 'https://example.com/key'],
+                    'href' => 'https://example.com/media',
+                ],
+                'quality' => 'Legendary',
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getJson');
+
+        $service->select('id', 'name', 'media.href');
+        $result = $method->invoke($service, '/item/19019');
+
+        $this->assertEquals(19019, $result['id']);
+        $this->assertEquals('Thunderfury', $result['name']);
+        $this->assertEquals('https://example.com/media', $result['media']['href']);
+        $this->assertArrayNotHasKey('quality', $result);
+        $this->assertArrayNotHasKey('key', $result['media']);
+    }
+
+    public function test_get_json_ignores_non_existent_nested_fields(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'id' => 19019,
+                'name' => 'Thunderfury',
+            ]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new ConcreteService($client);
+
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('getJson');
+
+        $service->select('id', 'media.href', 'nonexistent.field');
+        $result = $method->invoke($service, '/item/19019');
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertEquals(19019, $result['id']);
+        $this->assertArrayNotHasKey('media', $result);
+        $this->assertArrayNotHasKey('nonexistent', $result);
     }
 }
