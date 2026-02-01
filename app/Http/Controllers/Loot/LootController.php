@@ -14,6 +14,7 @@ use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class LootController extends Controller
@@ -24,6 +25,7 @@ class LootController extends Controller
     public function index(Request $request)
     {
         $phases = Phase::all();
+
         $currentPhase = $phases->where('start_date', '<=', now())->sortByDesc('start_date')->first();
 
         if ($currentPhase === null) {
@@ -115,6 +117,8 @@ class LootController extends Controller
 
         $item->priorities()->sync($priorities);
 
+        Cache::forget("loot_items_raid_{$item->raid_id}");
+
         return redirect()->back();
     }
 
@@ -130,6 +134,8 @@ class LootController extends Controller
         $item->notes = $request->input('notes');
         $item->save();
 
+        Cache::forget("loot_items_raid_{$item->raid_id}");
+
         return redirect()->back();
     }
 
@@ -144,12 +150,16 @@ class LootController extends Controller
             return [];
         }
 
-        $items = Item::query()
-            ->where('raid_id', $raidId)
-            ->with([
-                'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
-            ])
-            ->get();
+        $items = Cache::remember(
+            "loot_items_raid_{$raidId}",
+            now()->addDay(),
+            fn () => Item::query()
+                ->where('raid_id', $raidId)
+                ->with([
+                    'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+                ])
+                ->get()
+        );
 
         return ItemResource::collection($items)
             ->collection
