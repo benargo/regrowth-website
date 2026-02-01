@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export function BossItemsSkeleton() {
     return (
@@ -10,13 +10,31 @@ export function BossItemsSkeleton() {
     );
 }
 
-export default function BossCollapse({ title, children }) {
+export default function BossCollapse({ title, bossId, onExpand, loading, children }) {
     const [expanded, setExpanded] = useState(false);
+    const hasTriggeredLoad = useRef(false);
+
+    const handleToggle = () => {
+        const newExpanded = !expanded;
+        setExpanded(newExpanded);
+
+        // Trigger onExpand callback on first expansion
+        if (newExpanded && !hasTriggeredLoad.current && onExpand) {
+            hasTriggeredLoad.current = true;
+            onExpand(bossId);
+        }
+    };
+
+    // Reset the load trigger when bossId changes (e.g., raid switch)
+    useEffect(() => {
+        hasTriggeredLoad.current = false;
+        setExpanded(false);
+    }, [bossId]);
 
     return (
         <div className="border border-amber-600 rounded-md">
             <button
-                onClick={() => setExpanded(!expanded)}
+                onClick={handleToggle}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-600/10 transition-colors"
             >
                 <span className={`flex items-center justify-items-center transition-transform duration-500 ${expanded ? '-rotate-180' : ''}`}>
@@ -26,7 +44,7 @@ export default function BossCollapse({ title, children }) {
             </button>
             {expanded && (
                 <div className="px-4 py-3 border-t border-amber-600">
-                    {children || <BossItemsSkeleton />}
+                    {loading ? <BossItemsSkeleton /> : (children || <BossItemsSkeleton />)}
                 </div>
             )}
         </div>

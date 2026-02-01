@@ -140,7 +140,7 @@ class LootDashboardTest extends TestCase
         );
     }
 
-    public function test_loot_index_defers_items_prop(): void
+    public function test_loot_index_has_optional_boss_items_prop(): void
     {
         $user = User::factory()->create();
         $phase = Phase::factory()->started()->create();
@@ -153,11 +153,11 @@ class LootDashboardTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Index')
-            ->missing('items')
+            ->missing('boss_items') // Optional prop is not included on initial load
         );
     }
 
-    public function test_deferred_items_are_loaded_correctly(): void
+    public function test_boss_items_are_loaded_via_partial_reload(): void
     {
         $user = User::factory()->create();
         $phase = Phase::factory()->started()->create();
@@ -167,29 +167,32 @@ class LootDashboardTest extends TestCase
         $priority = Priority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 100]);
 
-        // Initial request - items should be deferred
+        // Initial request - boss_items should not be included (optional prop)
         $response = $this->actingAs($user)->get('/loot');
         $response->assertOk();
 
         // Extract page data from the Inertia response
         $pageData = $response->viewData('page');
-        $this->assertArrayNotHasKey('items', $pageData['props']);
+        $this->assertArrayNotHasKey('boss_items', $pageData['props']);
 
-        // Manual partial reload request to load deferred items
-        // (loadDeferredProps doesn't preserve actingAs authentication)
-        $deferredResponse = $this->actingAs($user)->get('/loot', [
+        // Partial reload request to load boss items for a specific boss
+        $partialResponse = $this->actingAs($user)->get("/loot?boss_id={$boss->id}", [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
             'X-Inertia-Partial-Component' => 'Loot/Index',
-            'X-Inertia-Partial-Data' => 'items',
+            'X-Inertia-Partial-Data' => 'boss_items',
         ]);
 
-        $deferredResponse->assertOk();
-        $deferredResponse->assertJsonStructure([
+        $partialResponse->assertOk();
+        $partialResponse->assertJsonStructure([
             'props' => [
-                'items',
+                'boss_items' => [
+                    'boss_id',
+                    'items',
+                ],
             ],
         ]);
+        $partialResponse->assertJsonPath('props.boss_items.boss_id', $boss->id);
     }
 
     public function test_partial_reload_returns_items_for_specified_raid(): void

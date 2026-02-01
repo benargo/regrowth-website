@@ -47,7 +47,10 @@ class LootController extends Controller
             'raids' => $groupedRaids,
             'bosses' => $bosses,
             'selected_raid_id' => (int) $selectedRaidId,
-            'items' => Inertia::defer(fn () => $this->getItemsForRaid($selectedRaidId)),
+            // Only load boss items when explicitly requested via partial reload
+            'boss_items' => Inertia::optional(fn () => $this->getItemsForBoss(
+                $request->integer('boss_id')
+            )),
         ]);
     }
 
@@ -117,7 +120,7 @@ class LootController extends Controller
 
         $item->priorities()->sync($priorities);
 
-        Cache::forget("loot_items_raid_{$item->raid_id}");
+        Cache::forget("loot_items_boss_{$item->boss_id}");
 
         return redirect()->back();
     }
@@ -134,36 +137,36 @@ class LootController extends Controller
         $item->notes = $request->input('notes');
         $item->save();
 
-        Cache::forget("loot_items_raid_{$item->raid_id}");
+        Cache::forget("loot_items_boss_{$item->boss_id}");
 
         return redirect()->back();
     }
 
     /**
-     * Get items for a specific raid, grouped by boss_id.
+     * Get items for a specific boss.
      *
-     * @return array<int|string, array<int, mixed>>
+     * @return array{boss_id: int, items: array<int, mixed>}
      */
-    protected function getItemsForRaid(?int $raidId)
+    protected function getItemsForBoss(?int $bossId): array
     {
-        if (! $raidId) {
+        if (! $bossId) {
             return [];
         }
 
         $items = Cache::remember(
-            "loot_items_raid_{$raidId}",
+            "loot_items_boss_{$bossId}",
             now()->addDay(),
             fn () => Item::query()
-                ->where('raid_id', $raidId)
+                ->where('boss_id', $bossId)
                 ->with([
                     'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
                 ])
                 ->get()
         );
 
-        return ItemResource::collection($items)
-            ->collection
-            ->groupBy(fn ($item) => $item['boss_id'] ?? -1)
-            ->toArray();
+        return [
+            'boss_id' => $bossId,
+            'items' => ItemResource::collection($items)->collection->toArray(),
+        ];
     }
 }

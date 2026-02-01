@@ -1,8 +1,8 @@
 import Master from '@/Layouts/Master';
 import { useState } from 'react';
-import { router, Deferred, Link } from '@inertiajs/react';
+import { router, Link } from '@inertiajs/react';
 import LootPageHeader from '@/Components/Loot/LootPageHeader';
-import BossCollapse, { BossItemsSkeleton } from '@/Components/Loot/BossCollapse';
+import BossCollapse from '@/Components/Loot/BossCollapse';
 
 function PriorityItem({ priority }) {
     return (
@@ -134,18 +134,22 @@ function BossItems({ items, grouped=true }) {
     );
 }
 
-export default function Index({ phases, current_phase, raids, bosses, items, selected_raid_id }) {
+export default function Index({ phases, current_phase, raids, bosses, selected_raid_id, boss_items }) {
     const [selectedPhase, setSelectedPhase] = useState(current_phase);
     const [selectedRaid, setSelectedRaid] = useState(selected_raid_id);
+    const [loadedItems, setLoadedItems] = useState({});
+    const [loadingBoss, setLoadingBoss] = useState(null);
 
     const handlePhaseChange = (phaseId) => {
         setSelectedPhase(phaseId);
         const firstRaidInPhase = raids[phaseId]?.[0]?.id ?? null;
         setSelectedRaid(firstRaidInPhase);
+        setLoadedItems({}); // Clear cached items for new raid
+        setLoadingBoss(null);
 
         if (firstRaidInPhase) {
             router.visit(route('loot.index', { raid_id: firstRaidInPhase }), {
-                only: ['items', 'selected_raid_id'],
+                only: ['selected_raid_id'],
                 preserveState: true,
                 preserveScroll: true,
             });
@@ -154,11 +158,41 @@ export default function Index({ phases, current_phase, raids, bosses, items, sel
 
     const handleRaidChange = (raidId) => {
         setSelectedRaid(raidId);
+        setLoadedItems({}); // Clear cached items for new raid
+        setLoadingBoss(null);
 
         router.visit(route('loot.index', { raid_id: raidId }), {
-            only: ['items', 'selected_raid_id'],
+            only: ['selected_raid_id'],
             preserveState: true,
             preserveScroll: true,
+        });
+    };
+
+    const handleBossExpand = (bossId) => {
+        if (loadedItems[bossId] || loadingBoss === bossId) {
+            return; // Already loaded or currently loading
+        }
+
+        setLoadingBoss(bossId);
+
+        router.reload({
+            only: ['boss_items'],
+            data: { boss_id: bossId },
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const bossItemsData = page.props.boss_items;
+                if (bossItemsData?.boss_id) {
+                    setLoadedItems(prev => ({
+                        ...prev,
+                        [bossItemsData.boss_id]: bossItemsData.items,
+                    }));
+                }
+                setLoadingBoss(null);
+            },
+            onError: () => {
+                setLoadingBoss(null);
+            },
         });
     };
 
@@ -166,7 +200,7 @@ export default function Index({ phases, current_phase, raids, bosses, items, sel
     const currentBosses = bosses[selectedRaid] ?? [];
 
     const getItemsForBoss = (bossId) => {
-        return items?.[bossId] ?? items?.[bossId] ?? [];
+        return loadedItems[bossId] ?? [];
     };
 
     return (
@@ -207,19 +241,25 @@ export default function Index({ phases, current_phase, raids, bosses, items, sel
                 </div>
                 <div className="flex flex-col gap-2">
                     {currentBosses.map((boss) => (
-                        <BossCollapse key={boss.id} title={boss.name}>
-                            <Deferred data="items" fallback={<BossItemsSkeleton />}>
-                                <BossItems items={getItemsForBoss(boss.id)} />
-                            </Deferred>
+                        <BossCollapse
+                            key={`${selectedRaid}-${boss.id}`}
+                            title={boss.name}
+                            bossId={boss.id}
+                            onExpand={handleBossExpand}
+                            loading={loadingBoss === boss.id}
+                        >
+                            <BossItems items={getItemsForBoss(boss.id)} />
                         </BossCollapse>
                     ))}
-                    {getItemsForBoss(-1).length > 0 && (
-                        <BossCollapse key="-1" title="Trash drops">
-                            <Deferred data="items" fallback={<BossItemsSkeleton />}>
-                                <BossItems items={getItemsForBoss(-1)} grouped={false} />
-                            </Deferred>
-                        </BossCollapse>
-                    )}
+                    <BossCollapse
+                        key={`${selectedRaid}-trash`}
+                        title="Trash drops"
+                        bossId={-1}
+                        onExpand={handleBossExpand}
+                        loading={loadingBoss === -1}
+                    >
+                        <BossItems items={getItemsForBoss(-1)} grouped={false} />
+                    </BossCollapse>
                 </div>
             </main>
         </Master>
