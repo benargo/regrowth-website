@@ -6,13 +6,34 @@ use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Models\User;
+use App\Models\WarcraftLogs\GuildTag;
+use App\Services\Blizzard\GuildService as BlizzardGuildService;
+use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
+use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\LazyCollection;
 use Inertia\Testing\AssertableInertia as Assert;
+use Mockery;
 use Tests\TestCase;
 
 class AddonControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Mock WarcraftLogs GuildService to return empty tags by default
+        // This prevents API calls during tests that don't specifically test attendance
+        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
+        $wclGuildService->shouldReceive('getGuildTags')
+            ->andReturn(collect())
+            ->byDefault();
+
+        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+    }
 
     // ==========================================
     // Authentication & Authorization Tests
@@ -382,6 +403,45 @@ class AddonControllerTest extends TestCase
         );
     }
 
+    public function test_export_schema_defines_players_properties(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('schema.properties.players')
+            ->where('schema.properties.players.type', 'array')
+        );
+    }
+
+    public function test_export_schema_defines_player_attendance_properties(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('schema.properties.players.items.properties.name')
+            ->has('schema.properties.players.items.properties.attendance')
+            ->has('schema.properties.players.items.properties.attendance.properties.first_attendance')
+            ->has('schema.properties.players.items.properties.attendance.properties.attended')
+            ->has('schema.properties.players.items.properties.attendance.properties.total')
+            ->has('schema.properties.players.items.properties.attendance.properties.percentage')
+        );
+    }
+
+    public function test_export_schema_id_contains_version_1_1_0(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+
+        $schema = $response->original->getData()['page']['props']['schema'];
+
+        $this->assertStringContainsString('v=1.1.0', $schema['$id']);
+    }
+
     // ==========================================
     // Clean Notes Tests
     // ==========================================
@@ -641,5 +701,183 @@ class AddonControllerTest extends TestCase
         $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
 
         $this->assertNull($priorityData['icon']);
+    }
+
+    // ==========================================
+    // Player Attendance Data Tests
+    // ==========================================
+
+    public function test_export_includes_empty_players_when_no_attendance_tags_exist(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        // Ensure no guild tags exist
+        GuildTag::query()->delete();
+
+        // Mock the WarcraftLogs GuildService to return empty tags
+        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
+        $wclGuildService->shouldReceive('getGuildTags')
+            ->andReturn(collect());
+
+        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $exportedData = $response->original->getData()['page']['props']['exportedData'];
+        $data = json_decode(base64_decode($exportedData), true);
+
+        $this->assertArrayHasKey('players', $data);
+        $this->assertEmpty($data['players']);
+    }
+
+    public function test_export_includes_empty_players_when_no_tags_count_attendance(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        // Create a guild tag that doesn't count attendance
+        GuildTag::factory()->doesNotCountAttendance()->create();
+
+        // Mock the WarcraftLogs GuildService
+        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
+        $wclGuildService->shouldReceive('getGuildTags')
+            ->andReturn(GuildTag::all());
+
+        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $exportedData = $response->original->getData()['page']['props']['exportedData'];
+        $data = json_decode(base64_decode($exportedData), true);
+
+        $this->assertArrayHasKey('players', $data);
+        $this->assertEmpty($data['players']);
+    }
+
+    public function test_export_includes_player_attendance_data_when_tags_exist(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        // Create a guild tag that counts attendance
+        $tag = GuildTag::factory()->countsAttendance()->create();
+
+        // Mock the services
+        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
+        $wclGuildService->shouldReceive('getGuildTags')
+            ->andReturn(collect([$tag]));
+        $wclGuildService->shouldReceive('getAttendanceLazy')
+            ->andReturn(LazyCollection::make([]));
+        $wclGuildService->shouldReceive('calculateAttendanceStats')
+            ->andReturn(collect([
+                new PlayerAttendanceStats(
+                    name: 'TestPlayer',
+                    firstAttendance: Carbon::parse('2025-01-15 20:00:00'),
+                    totalReports: 10,
+                    reportsAttended: 8,
+                    percentage: 80.0
+                ),
+            ]));
+
+        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
+        $blizzardGuildService->shouldReceive('members')
+            ->andReturn(collect([
+                (object) ['character' => (object) ['name' => 'TestPlayer']],
+            ]));
+
+        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $exportedData = $response->original->getData()['page']['props']['exportedData'];
+        $data = json_decode(base64_decode($exportedData), true);
+
+        $this->assertArrayHasKey('players', $data);
+        $this->assertCount(1, $data['players']);
+        $this->assertEquals('TestPlayer', $data['players'][0]['name']);
+        $this->assertArrayHasKey('attendance', $data['players'][0]);
+        $this->assertEquals(8, $data['players'][0]['attendance']['attended']);
+        $this->assertEquals(10, $data['players'][0]['attendance']['total']);
+        $this->assertEquals(80.0, $data['players'][0]['attendance']['percentage']);
+    }
+
+    public function test_export_player_attendance_includes_first_attendance_date(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $tag = GuildTag::factory()->countsAttendance()->create();
+        $firstAttendance = Carbon::parse('2025-01-15 20:00:00');
+
+        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
+        $wclGuildService->shouldReceive('getGuildTags')
+            ->andReturn(collect([$tag]));
+        $wclGuildService->shouldReceive('getAttendanceLazy')
+            ->andReturn(LazyCollection::make([]));
+        $wclGuildService->shouldReceive('calculateAttendanceStats')
+            ->andReturn(collect([
+                new PlayerAttendanceStats(
+                    name: 'TestPlayer',
+                    firstAttendance: $firstAttendance,
+                    totalReports: 5,
+                    reportsAttended: 5,
+                    percentage: 100.0
+                ),
+            ]));
+
+        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
+        $blizzardGuildService->shouldReceive('members')
+            ->andReturn(collect([
+                (object) ['character' => (object) ['name' => 'TestPlayer']],
+            ]));
+
+        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $exportedData = $response->original->getData()['page']['props']['exportedData'];
+        $data = json_decode(base64_decode($exportedData), true);
+
+        $this->assertArrayHasKey('first_attendance', $data['players'][0]['attendance']);
+        $this->assertNotNull($data['players'][0]['attendance']['first_attendance']);
+    }
+
+    public function test_export_json_includes_players_data(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $tag = GuildTag::factory()->countsAttendance()->create();
+
+        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
+        $wclGuildService->shouldReceive('getGuildTags')
+            ->andReturn(collect([$tag]));
+        $wclGuildService->shouldReceive('getAttendanceLazy')
+            ->andReturn(LazyCollection::make([]));
+        $wclGuildService->shouldReceive('calculateAttendanceStats')
+            ->andReturn(collect([
+                new PlayerAttendanceStats(
+                    name: 'TestPlayer',
+                    firstAttendance: Carbon::now(),
+                    totalReports: 5,
+                    reportsAttended: 4,
+                    percentage: 80.0
+                ),
+            ]));
+
+        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
+        $blizzardGuildService->shouldReceive('members')
+            ->andReturn(collect([
+                (object) ['character' => (object) ['name' => 'TestPlayer']],
+            ]));
+
+        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+
+        $exportedData = $response->original->getData()['page']['props']['exportedData'];
+        $data = json_decode($exportedData, true);
+
+        $this->assertArrayHasKey('players', $data);
+        $this->assertCount(1, $data['players']);
     }
 }

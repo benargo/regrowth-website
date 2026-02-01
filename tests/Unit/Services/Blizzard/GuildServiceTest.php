@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Blizzard;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -13,6 +14,8 @@ use Tests\TestCase;
 
 class GuildServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();

@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Http;
 class AuthenticationHandler
 {
     protected string $clientId;
+
     protected string $clientSecret;
+
     protected string $tokenUrl;
 
     public function __construct(string $clientId, string $clientSecret, string $tokenUrl)

@@ -2,6 +2,7 @@
 
 namespace App\Models\TBC;
 
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -55,6 +56,14 @@ class Phase extends Model
     public function bosses(): HasManyThrough
     {
         return $this->hasManyThrough(Boss::class, Raid::class);
+    }
+
+    /**
+     * Get the Warcraft Logs guild tags associated with this phase.
+     */
+    public function guildTags(): HasMany
+    {
+        return $this->hasMany(GuildTag::class, 'tbc_phase_id');
     }
 
     /**

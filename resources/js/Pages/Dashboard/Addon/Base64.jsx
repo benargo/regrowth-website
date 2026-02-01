@@ -53,7 +53,7 @@ export default function AddonExport({ exportedData }) {
                         <div
                             ref={dataRef}
                             onClick={selectAllContent}
-                            className="w-full min-h-64 bg-brown-800/50 border border-gray-800 text-white p-4 rounded break-all cursor-pointer"
+                            className="w-full min-h-64 max-h-[600px] overflow-auto bg-brown-800/50 border border-gray-800 text-white p-4 rounded break-all cursor-pointer"
                         >
                             {exportedData.length === 0 && (<p>No addon data available.</p>)}
                             {exportedData}

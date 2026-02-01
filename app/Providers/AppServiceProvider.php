@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DashboardPolicy;
 use App\Policies\ItemCommentPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\PhasePolicy;
 use App\Policies\ViewAsRolePolicy;
+use App\Policies\WclGuildTagPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        /**
+         * Policies
+         */
+        Gate::policy(GuildTag::class, WclGuildTagPolicy::class);
 
         /**
          * Authorization Gates

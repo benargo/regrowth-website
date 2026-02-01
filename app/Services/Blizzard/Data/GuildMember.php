@@ -20,14 +20,16 @@ class GuildMember
      */
     public static function fromArray(array $data): self
     {
+        $rank = GuildRank::select('id', 'position', 'name')->where('position', $data['rank'])->first() ?? $data['rank'];
+
         return new self(
             character: $data['character'],
-            rank: $data['rank'],
+            rank: $rank,
         );
     }
 
     /**
-     * @return array{character: array, rank: int}
+     * @return array{character: array, rank: int|array}
      */
     public function toArray(): array
     {

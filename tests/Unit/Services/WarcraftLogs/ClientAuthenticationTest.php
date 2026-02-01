@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services\WarcraftLogs;
 
-use App\Services\WarcraftLogs\WarcraftLogsService;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -50,26 +49,26 @@ class ClientAuthenticationTest extends TestCase
     }
 
     /**
-     * Tests that the service returns an instance of AuthenticationHandler.
+     * Tests that the AuthenticationHandler can be resolved from the container.
      */
-    public function test_service_returns_instance_of_authentication_handler(): void
+    public function test_authentication_handler_can_be_resolved(): void
     {
-        $service = $this->app->make(WarcraftLogsService::class);
+        $authHandler = $this->app->make(AuthenticationHandler::class);
 
-        $this->assertInstanceOf(AuthenticationHandler::class, $service->auth());
+        $this->assertInstanceOf(AuthenticationHandler::class, $authHandler);
     }
 
     /**
-     * Tests that the service can return a token.
+     * Tests that the container-resolved AuthenticationHandler can return a token.
      */
-    public function test_service_can_return_token(): void
+    public function test_resolved_authentication_handler_can_return_token(): void
     {
-        $service = $this->app->make(WarcraftLogsService::class);
-
         Cache::expects('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('cached_access_token');
 
-        $this->assertEquals('cached_access_token', $service->auth()->clientToken());
+        $authHandler = $this->app->make(AuthenticationHandler::class);
+
+        $this->assertEquals('cached_access_token', $authHandler->clientToken());
     }
 }

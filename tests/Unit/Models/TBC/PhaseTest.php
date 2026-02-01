@@ -5,6 +5,7 @@ namespace Tests\Unit\Models\TBC;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
+use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use PHPUnit\Framework\Attributes\Test;
@@ -187,5 +188,15 @@ class PhaseTest extends ModelTestCase
         $phase = $this->factory()->unscheduled()->create();
 
         $this->assertFalse($phase->hasStarted());
+    }
+
+    #[Test]
+    public function it_has_many_guild_tags(): void
+    {
+        $phase = $this->create();
+        GuildTag::factory()->count(3)->create(['tbc_phase_id' => $phase->id]);
+
+        $this->assertRelation($phase, 'guildTags', HasMany::class);
+        $this->assertCount(3, $phase->guildTags);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\TBC;
 
+use App\Http\Resources\WarcraftLogs\GuildTagResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,6 +22,7 @@ class PhaseResource extends JsonResource
             'has_started' => $this->hasStarted(),
             'raids' => $this->whenLoaded('raids'),
             'bosses' => $this->whenLoaded('bosses'),
+            'guild_tags' => GuildTagResource::collection($this->whenLoaded('guildTags')),
         ];
     }
 }

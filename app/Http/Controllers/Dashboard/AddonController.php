@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
+use App\Services\Blizzard\GuildService as BlizzardGuildService;
+use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -48,7 +50,7 @@ class AddonController extends Controller
     {
         return [
             '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.0.1',
+            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.1.0',
             'title' => 'Regrowth Loot Tool Export Schema',
             'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
             'type' => 'object',
@@ -97,22 +99,30 @@ class AddonController extends Controller
                         ],
                     ],
                 ],
+                'players' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => ['type' => 'string'],
+                            'attendance' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'first_attendance' => ['type' => 'string', 'format' => 'date-time'],
+                                    'attended' => ['type' => 'integer'],
+                                    'total' => ['type' => 'integer'],
+                                    'percentage' => ['type' => 'number'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
             ],
         ];
     }
 
     protected function getExportedData(Request $request): array
     {
-        $priorities = Priority::has('items')->get()->map(function (Priority $priority) {
-            return [
-                'id' => $priority->id,
-                'name' => $priority->title,
-                'icon' => $priority->media['media_name'] ?? null,
-            ];
-        });
-
-        $items = Item::has('priorities')->select('id', 'notes')->get();
-
         return [
             'system' => [
                 'date_generated' => Carbon::now()->toIso8601String(),
@@ -121,13 +131,27 @@ class AddonController extends Controller
                     'name' => $request->user()->displayName,
                 ],
             ],
-            'priorities' => $priorities,
-            'items' => $this->mapItemsWithPriorities($items),
+            'priorities' => $this->buildPriorities(),
+            'items' => $this->buildItems(),
+            'players' => $this->buildPlayerAttendanceData(),
         ];
     }
 
-    protected function mapItemsWithPriorities(Collection $items): Collection
+    protected function buildPriorities(): Collection
     {
+        return Priority::has('items')->get()->map(function (Priority $priority) {
+            return [
+                'id' => $priority->id,
+                'name' => $priority->title,
+                'icon' => $priority->media['media_name'] ?? null,
+            ];
+        });
+    }
+
+    protected function buildItems(): Collection
+    {
+        $items = Item::has('priorities')->select('id', 'notes')->get();
+
         return $items->map(function (Item $item) {
             return [
                 'item_id' => $item->id,
@@ -169,5 +193,40 @@ class AddonController extends Controller
 
         // Normalize whitespace
         return trim(preg_replace('/\s+/', ' ', $notes));
+    }
+
+    protected function buildPlayerAttendanceData(): Collection
+    {
+        $wclGuildService = app(WarcraftLogsGuildService::class);
+
+        $tags = $wclGuildService->getGuildTags()->where('count_attendance', true);
+
+        /**
+         * If no tags are configured for attendance tracking, return an empty collection.
+         */
+        if ($tags->isEmpty()) {
+            return collect();
+        }
+
+        $blizzardGuildService = app(BlizzardGuildService::class);
+
+        $members = $blizzardGuildService->members()->pluck('character.name')->toArray();
+
+        $attendanceData = $wclGuildService->getAttendanceLazy(
+            playerNames: $members,
+            guildTagID: $tags->pluck('id')->toArray()
+        );
+
+        return $wclGuildService->calculateAttendanceStats($attendanceData)->map(function ($stats) {
+            return [
+                'name' => $stats->name,
+                'attendance' => [
+                    'first_attendance' => $stats->firstAttendance?->setTimezone(config('app.timezone'))->toIso8601String(),
+                    'attended' => $stats->reportsAttended,
+                    'total' => $stats->totalReports,
+                    'percentage' => $stats->percentage,
+                ],
+            ];
+        });
     }
 }

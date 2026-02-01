@@ -8,6 +8,7 @@ use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\Loot\LootController;
 use App\Http\Controllers\LootCouncil\CommentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -15,6 +16,9 @@ Route::get('/', function () {
     return Inertia::render('Home');
 });
 
+/**
+ * Guild Roster
+ */
 Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.index');
 
 /**
@@ -50,7 +54,15 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
     Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('phases.view');
     Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
+    Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
 });
+
+/**
+ * Warcraft Logs Guild Tags Management
+ */
+Route::patch('/wcl/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
+    ->middleware('auth')
+    ->name('wcl.guild-tags.toggle-attendance');
 
 /**
  * Comps spreadsheet redirect
