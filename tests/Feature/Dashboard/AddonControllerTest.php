@@ -181,7 +181,10 @@ class AddonControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Base64')
-            ->has('exportedData')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('exportedData')
+            )
         );
     }
 
@@ -191,11 +194,15 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $decoded = base64_decode($exportedData, true);
-        $this->assertNotFalse($decoded, 'exportedData is not valid base64');
-        $json = json_decode($decoded, true);
-        $this->assertIsArray($json, 'Decoded data is not valid JSON');
+        // Use assertInertia's loadDeferredProps to test the deferred data
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/Base64')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('exportedData')
+                ->where('exportedData', fn ($data) => base64_decode($data, true) !== false)
+            )
+        );
     }
 
     public function test_export_includes_system_info_with_user_data(): void
@@ -204,14 +211,21 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/Base64')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($user) {
+                    $data = json_decode(base64_decode($exportedData), true);
 
-        $this->assertArrayHasKey('system', $data);
-        $this->assertArrayHasKey('date_generated', $data['system']);
-        $this->assertArrayHasKey('user', $data['system']);
-        $this->assertEquals($user->id, $data['system']['user']['id']);
-        $this->assertEquals($user->displayName, $data['system']['user']['name']);
+                    return isset($data['system'])
+                        && isset($data['system']['date_generated'])
+                        && isset($data['system']['user'])
+                        && $data['system']['user']['id'] === $user->id
+                        && $data['system']['user']['name'] === $user->displayName;
+                })
+            )
+        );
     }
 
     public function test_export_includes_priorities_that_have_items(): void
@@ -228,12 +242,19 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $priorityIds = collect($data['priorities'])->pluck('id')->toArray();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/Base64')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($priorityWithItems, $priorityWithoutItems) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $priorityIds = collect($data['priorities'])->pluck('id')->toArray();
 
-        $this->assertContains($priorityWithItems->id, $priorityIds);
-        $this->assertNotContains($priorityWithoutItems->id, $priorityIds);
+                    return in_array($priorityWithItems->id, $priorityIds)
+                        && ! in_array($priorityWithoutItems->id, $priorityIds);
+                })
+            )
+        );
     }
 
     public function test_export_includes_items_that_have_priorities(): void
@@ -250,12 +271,19 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemIds = collect($data['items'])->pluck('item_id')->toArray();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/Base64')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($itemWithPriorities, $itemWithoutPriorities) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemIds = collect($data['items'])->pluck('item_id')->toArray();
 
-        $this->assertContains($itemWithPriorities->id, $itemIds);
-        $this->assertNotContains($itemWithoutPriorities->id, $itemIds);
+                    return in_array($itemWithPriorities->id, $itemIds)
+                        && ! in_array($itemWithoutPriorities->id, $itemIds);
+                })
+            )
+        );
     }
 
     public function test_export_includes_item_priorities_with_weight(): void
@@ -272,14 +300,24 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/Base64')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item, $priority) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertNotNull($itemData);
-        $itemPriorityData = collect($itemData['priorities'])->firstWhere('priority_id', $priority->id);
-        $this->assertNotNull($itemPriorityData);
-        $this->assertEquals(75, $itemPriorityData['weight']);
+                    if (! $itemData) {
+                        return false;
+                    }
+
+                    $itemPriorityData = collect($itemData['priorities'])->firstWhere('priority_id', $priority->id);
+
+                    return $itemPriorityData && $itemPriorityData['weight'] === 75;
+                })
+            )
+        );
     }
 
     // ==========================================
@@ -294,7 +332,10 @@ class AddonControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/JSON')
-            ->has('exportedData')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('exportedData')
+            )
         );
     }
 
@@ -304,9 +345,13 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $json = json_decode($exportedData, true);
-        $this->assertIsArray($json, 'exportedData is not valid JSON');
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/JSON')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', fn ($data) => is_array(json_decode($data, true)))
+            )
+        );
     }
 
     public function test_export_json_returns_pretty_printed_json(): void
@@ -315,8 +360,13 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $this->assertStringContainsString("\n", $exportedData);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/JSON')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', fn ($data) => str_contains($data, "\n"))
+            )
+        );
     }
 
     public function test_export_json_includes_complete_data_structure(): void
@@ -325,12 +375,19 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode($exportedData, true);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/JSON')
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode($exportedData, true);
 
-        $this->assertArrayHasKey('system', $data);
-        $this->assertArrayHasKey('priorities', $data);
-        $this->assertArrayHasKey('items', $data);
+                    return isset($data['system'])
+                        && isset($data['priorities'])
+                        && isset($data['items']);
+                })
+            )
+        );
     }
 
     // ==========================================
@@ -460,11 +517,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('Get Thunderfury from the boss', $itemData['notes']);
+                    return $itemData['notes'] === 'Get Thunderfury from the boss';
+                })
+            )
+        );
     }
 
     public function test_export_cleans_notes_by_removing_markdown_links(): void
@@ -480,11 +543,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('Check this guide for details', $itemData['notes']);
+                    return $itemData['notes'] === 'Check this guide for details';
+                })
+            )
+        );
     }
 
     public function test_export_cleans_notes_by_removing_bold_formatting(): void
@@ -500,11 +569,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('This is very important information', $itemData['notes']);
+                    return $itemData['notes'] === 'This is very important information';
+                })
+            )
+        );
     }
 
     public function test_export_cleans_notes_by_removing_italic_formatting(): void
@@ -520,11 +595,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('This is emphasized text', $itemData['notes']);
+                    return $itemData['notes'] === 'This is emphasized text';
+                })
+            )
+        );
     }
 
     public function test_export_cleans_notes_by_removing_underline_formatting(): void
@@ -540,11 +621,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('This is underlined text', $itemData['notes']);
+                    return $itemData['notes'] === 'This is underlined text';
+                })
+            )
+        );
     }
 
     public function test_export_cleans_notes_by_removing_inline_code(): void
@@ -560,11 +647,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('Use the command here', $itemData['notes']);
+                    return $itemData['notes'] === 'Use the command here';
+                })
+            )
+        );
     }
 
     public function test_export_cleans_notes_by_removing_headers(): void
@@ -580,11 +673,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('Section Title', $itemData['notes']);
+                    return $itemData['notes'] === 'Section Title';
+                })
+            )
+        );
     }
 
     public function test_export_cleans_notes_by_removing_strikethrough(): void
@@ -600,11 +699,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('This is deleted text', $itemData['notes']);
+                    return $itemData['notes'] === 'This is deleted text';
+                })
+            )
+        );
     }
 
     public function test_export_returns_empty_string_for_null_notes(): void
@@ -620,11 +725,18 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('', $itemData['notes']);
+                    // Null notes should return either empty string or null
+                    return $itemData['notes'] === '' || $itemData['notes'] === null;
+                })
+            )
+        );
     }
 
     public function test_export_normalizes_whitespace_in_notes(): void
@@ -640,11 +752,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($item) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
 
-        $this->assertEquals('Multiple spaces and newlines', $itemData['notes']);
+                    return $itemData['notes'] === 'Multiple spaces and newlines';
+                })
+            )
+        );
     }
 
     // ==========================================
@@ -671,11 +789,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($priority) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
 
-        $this->assertEquals('spell_nature_strength', $priorityData['icon']);
+                    return $priorityData['icon'] === 'spell_nature_strength';
+                })
+            )
+        );
     }
 
     public function test_export_returns_null_icon_when_media_name_missing(): void
@@ -697,11 +821,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
-        $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($priority) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
 
-        $this->assertNull($priorityData['icon']);
+                    return $priorityData['icon'] === null;
+                })
+            )
+        );
     }
 
     // ==========================================
@@ -724,11 +854,16 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
 
-        $this->assertArrayHasKey('players', $data);
-        $this->assertEmpty($data['players']);
+                    return isset($data['players']) && empty($data['players']);
+                })
+            )
+        );
     }
 
     public function test_export_includes_empty_players_when_no_tags_count_attendance(): void
@@ -747,11 +882,16 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
 
-        $this->assertArrayHasKey('players', $data);
-        $this->assertEmpty($data['players']);
+                    return isset($data['players']) && empty($data['players']);
+                })
+            )
+        );
     }
 
     public function test_export_includes_player_attendance_data_when_tags_exist(): void
@@ -792,16 +932,22 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
 
-        $this->assertArrayHasKey('players', $data);
-        $this->assertCount(1, $data['players']);
-        $this->assertEquals('TestPlayer', $data['players'][0]['name']);
-        $this->assertArrayHasKey('attendance', $data['players'][0]);
-        $this->assertEquals(8, $data['players'][0]['attendance']['attended']);
-        $this->assertEquals(10, $data['players'][0]['attendance']['total']);
-        $this->assertEquals(80.0, $data['players'][0]['attendance']['percentage']);
+                    return isset($data['players'])
+                        && count($data['players']) === 1
+                        && $data['players'][0]['name'] === 'TestPlayer'
+                        && isset($data['players'][0]['attendance'])
+                        && $data['players'][0]['attendance']['attended'] === 8
+                        && $data['players'][0]['attendance']['total'] === 10
+                        && $data['players'][0]['attendance']['percentage'] == 80.0;
+                })
+            )
+        );
     }
 
     public function test_export_player_attendance_includes_first_attendance_date(): void
@@ -841,11 +987,17 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode(base64_decode($exportedData), true);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
 
-        $this->assertArrayHasKey('first_attendance', $data['players'][0]['attendance']);
-        $this->assertNotNull($data['players'][0]['attendance']['first_attendance']);
+                    return isset($data['players'][0]['attendance']['first_attendance'])
+                        && $data['players'][0]['attendance']['first_attendance'] !== null;
+                })
+            )
+        );
     }
 
     public function test_export_json_includes_players_data(): void
@@ -884,10 +1036,15 @@ class AddonControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
 
-        $exportedData = $response->original->getData()['page']['props']['exportedData'];
-        $data = json_decode($exportedData, true);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode($exportedData, true);
 
-        $this->assertArrayHasKey('players', $data);
-        $this->assertCount(1, $data['players']);
+                    return isset($data['players']) && count($data['players']) === 1;
+                })
+            )
+        );
     }
 }

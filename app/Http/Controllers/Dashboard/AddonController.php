@@ -18,14 +18,14 @@ class AddonController extends Controller
     public function export(Request $request)
     {
         return Inertia::render('Dashboard/Addon/Base64', [
-            'exportedData' => $this->getBase64ExportedData($request),
+            'exportedData' => Inertia::defer(fn () => $this->getBase64ExportedData($request)),
         ]);
     }
 
     public function exportJson(Request $request)
     {
         return Inertia::render('Dashboard/Addon/JSON', [
-            'exportedData' => $this->getJsonExportedData($request, JSON_PRETTY_PRINT),
+            'exportedData' => Inertia::defer(fn () => $this->getJsonExportedData($request, JSON_PRETTY_PRINT)),
         ]);
     }
 

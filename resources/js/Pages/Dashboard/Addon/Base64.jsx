@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Deferred } from '@inertiajs/react';
 import Master from '@/Layouts/Master';
 import SharedHeader from '@/Components/SharedHeader';
 import FlashMessage from '@/Components/FlashMessage';
@@ -49,16 +50,24 @@ export default function AddonExport({ exportedData }) {
                             <span>Copy Addon Data</span>
                         </button>
                     </div>
-                    <div className="mt-6">
-                        <div
-                            ref={dataRef}
-                            onClick={selectAllContent}
-                            className="w-full min-h-64 max-h-[600px] overflow-auto bg-brown-800/50 border border-gray-800 text-white p-4 rounded break-all cursor-pointer"
-                        >
-                            {exportedData.length === 0 && (<p>No addon data available.</p>)}
-                            {exportedData}
+                    <Deferred data="exportedData" fallback={
+                        <div className="mt-6">
+                            <div className="w-full min-h-64 bg-brown-800/50 border border-gray-800 p-4 rounded flex items-center justify-center">
+                                <p className="text-gray-400 animate-pulse">Loading data... this may take a while.</p>
+                            </div>
                         </div>
-                    </div>
+                    }>
+                        <div className="mt-6">
+                            <div
+                                ref={dataRef}
+                                onClick={selectAllContent}
+                                className="w-full min-h-64 max-h-[600px] overflow-auto bg-brown-800/50 border border-gray-800 text-white p-4 rounded break-all cursor-pointer"
+                            >
+                                {exportedData.length === 0 && (<p>No addon data available.</p>)}
+                                {exportedData}
+                            </div>
+                        </div>
+                    </Deferred>
                 </div>
             </div>
             <FlashMessage
