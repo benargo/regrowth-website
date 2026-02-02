@@ -57,6 +57,22 @@ export default function AddonExportSchema({ schema }) {
                             {schemaJson}
                         </pre>
                     </div>
+                    <div className="mt-6 border-t border-amber-700 pt-6">
+                        <h2 className="text-2xl font-semibold mb-4">Changelog</h2>
+                        <h3 className="text-lg font-semibold mt-4">Version 1.1.1 <span className="text-sm text-gray-400 italic">(2026-02-02)</span></h3>
+                        <ul className="list-disc list-inside mt-2">
+                            <li>Added <code>roleId</code> to <code>members</code> objects.</li>
+                        </ul>
+                        <h3 className="text-lg font-semibold mt-4">Version 1.1.0 <span className="text-sm text-gray-400 italic">(2026-02-01)</span></h3>
+                        <ul className="list-disc list-inside mt-2">
+                            <li>Added <code>members</code> array to include guild member data.</li>
+                            <li>Added <code>rankId</code> to <code>members</code> objects.</li>
+                        </ul>
+                        <h3 className="text-lg font-semibold mt-4">Version 1.0.0 <span className="text-sm text-gray-400 italic">(2026-01-31)</span></h3>
+                        <ul className="list-disc list-inside mt-2">
+                            <li>Initial version of the addon export schema.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <FlashMessage

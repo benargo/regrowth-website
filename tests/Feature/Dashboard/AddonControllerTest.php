@@ -7,6 +7,7 @@ use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
 use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
 use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
@@ -431,7 +432,7 @@ class AddonControllerTest extends TestCase
         );
     }
 
-    public function test_export_schema_id_contains_version_1_1_0(): void
+    public function test_export_schema_id_contains_version_1_1_1(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -439,7 +440,7 @@ class AddonControllerTest extends TestCase
 
         $schema = $response->original->getData()['page']['props']['schema'];
 
-        $this->assertStringContainsString('v=1.1.0', $schema['$id']);
+        $this->assertStringContainsString('v=1.1.1', $schema['$id']);
     }
 
     // ==========================================
@@ -780,7 +781,10 @@ class AddonControllerTest extends TestCase
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
         $blizzardGuildService->shouldReceive('members')
             ->andReturn(collect([
-                (object) ['character' => (object) ['name' => 'TestPlayer']],
+                new GuildMember(
+                    character: ['id' => 1, 'name' => 'TestPlayer'],
+                    rank: 1,
+                ),
             ]));
 
         $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
@@ -826,7 +830,10 @@ class AddonControllerTest extends TestCase
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
         $blizzardGuildService->shouldReceive('members')
             ->andReturn(collect([
-                (object) ['character' => (object) ['name' => 'TestPlayer']],
+                new GuildMember(
+                    character: ['id' => 1, 'name' => 'TestPlayer'],
+                    rank: 1,
+                ),
             ]));
 
         $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
@@ -866,7 +873,10 @@ class AddonControllerTest extends TestCase
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
         $blizzardGuildService->shouldReceive('members')
             ->andReturn(collect([
-                (object) ['character' => (object) ['name' => 'TestPlayer']],
+                new GuildMember(
+                    character: ['id' => 1, 'name' => 'TestPlayer'],
+                    rank: 1,
+                ),
             ]));
 
         $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);

@@ -10,10 +10,17 @@ use Illuminate\Support\Str;
 
 class GuildMember
 {
+    public array $character;
+
+    public mixed $rank;
+
     public function __construct(
-        public array $character,
-        public GuildRank|int $rank,
-    ) {}
+        array $character,
+        GuildRank|int $rank,
+    ) {
+        $this->character = $character;
+        $this->rank = $rank;
+    }
 
     /**
      * @param  array{id: int, name: string, slug: string}  $data

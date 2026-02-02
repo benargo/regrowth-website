@@ -39,7 +39,7 @@ class GuildRosterController extends Controller
         $roster = $guildService->fresh()->roster();
 
         $members = collect($roster['members'])->map(function ($memberData) {
-            $member = GuildMember::fromArray($memberData)->with('rank');
+            $member = GuildMember::fromArray($memberData);
 
             data_set($member, 'character.playable_class', $this->classService->find(Arr::get($memberData, 'character.playable_class.id')));
             data_set($member, 'character.playable_class.media', $this->classService->media(Arr::get($memberData, 'character.playable_class.id')));

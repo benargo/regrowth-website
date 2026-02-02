@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Character;
 use App\Models\GuildRank;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -128,5 +130,62 @@ class GuildRankTest extends ModelTestCase
         ]);
 
         $this->assertSame('Senior Raider', $guildRank->name);
+    }
+
+    #[Test]
+    public function characters_returns_has_many_relationship(): void
+    {
+        $guildRank = new GuildRank;
+
+        $this->assertInstanceOf(HasMany::class, $guildRank->characters());
+    }
+
+    #[Test]
+    public function characters_returns_associated_characters(): void
+    {
+        $guildRank = $this->create(['position' => 0, 'name' => 'Officer']);
+        $character1 = Character::factory()->create(['rank_id' => $guildRank->id]);
+        $character2 = Character::factory()->create(['rank_id' => $guildRank->id]);
+
+        $this->assertCount(2, $guildRank->characters);
+        $this->assertTrue($guildRank->characters->contains($character1));
+        $this->assertTrue($guildRank->characters->contains($character2));
+    }
+
+    #[Test]
+    public function characters_returns_empty_collection_when_no_characters_exist(): void
+    {
+        $guildRank = $this->create(['position' => 0, 'name' => 'Officer']);
+
+        $this->assertCount(0, $guildRank->characters);
+    }
+
+    #[Test]
+    public function main_characters_returns_has_many_relationship(): void
+    {
+        $guildRank = new GuildRank;
+
+        $this->assertInstanceOf(HasMany::class, $guildRank->mainCharacters());
+    }
+
+    #[Test]
+    public function main_characters_only_returns_characters_where_is_main_is_true(): void
+    {
+        $guildRank = $this->create(['position' => 0, 'name' => 'Officer']);
+        $mainChar = Character::factory()->main()->create(['rank_id' => $guildRank->id]);
+        $altChar = Character::factory()->create(['rank_id' => $guildRank->id, 'is_main' => false]);
+
+        $this->assertCount(1, $guildRank->mainCharacters);
+        $this->assertTrue($guildRank->mainCharacters->contains($mainChar));
+        $this->assertFalse($guildRank->mainCharacters->contains($altChar));
+    }
+
+    #[Test]
+    public function main_characters_returns_empty_collection_when_no_main_characters_exist(): void
+    {
+        $guildRank = $this->create(['position' => 0, 'name' => 'Officer']);
+        Character::factory()->create(['rank_id' => $guildRank->id, 'is_main' => false]);
+
+        $this->assertCount(0, $guildRank->mainCharacters);
     }
 }

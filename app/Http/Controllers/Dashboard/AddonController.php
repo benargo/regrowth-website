@@ -50,7 +50,7 @@ class AddonController extends Controller
     {
         return [
             '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.1.0',
+            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.1.1',
             'title' => 'Regrowth Loot Tool Export Schema',
             'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
             'type' => 'object',
@@ -104,6 +104,7 @@ class AddonController extends Controller
                     'items' => [
                         'type' => 'object',
                         'properties' => [
+                            'id' => ['type' => 'integer'],
                             'name' => ['type' => 'string'],
                             'attendance' => [
                                 'type' => 'object',
@@ -210,15 +211,16 @@ class AddonController extends Controller
 
         $blizzardGuildService = app(BlizzardGuildService::class);
 
-        $members = $blizzardGuildService->members()->pluck('character.name')->toArray();
+        $members = $blizzardGuildService->members();
 
         $attendanceData = $wclGuildService->getAttendanceLazy(
-            playerNames: $members,
+            playerNames: $members->pluck('character.name')->toArray(),
             guildTagID: $tags->pluck('id')->toArray()
         );
 
-        return $wclGuildService->calculateAttendanceStats($attendanceData)->map(function ($stats) {
+        return $wclGuildService->calculateAttendanceStats($attendanceData)->map(function ($stats) use ($members) {
             return [
+                'id' => $members->firstWhere('character.name', $stats->name)?->character['id'] ?? null,
                 'name' => $stats->name,
                 'attendance' => [
                     'first_attendance' => $stats->firstAttendance?->setTimezone(config('app.timezone'))->toIso8601String(),

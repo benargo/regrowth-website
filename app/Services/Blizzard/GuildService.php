@@ -2,7 +2,10 @@
 
 namespace App\Services\Blizzard;
 
+use App\Models\Character;
+use App\Models\GuildRank;
 use App\Services\Blizzard\Data\GuildMember;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 
 class GuildService extends Service
@@ -36,9 +39,41 @@ class GuildService extends Service
             $this->guildRosterCacheKey($realmSlug, $nameSlug),
             self::CACHE_TTL_ROSTER,
             function () use ($realmSlug, $nameSlug) {
-                return $this->getJson("/{$realmSlug}/{$nameSlug}/roster");
+                $rosterData = $this->getJson("/{$realmSlug}/{$nameSlug}/roster");
+
+                if (isset($rosterData['members'])) {
+                    foreach ($rosterData['members'] as $member) {
+                        $this->updateCharacterModel($member);
+                    }
+                }
+
+                return $rosterData;
             }
         );
+    }
+
+    /**
+     * Update or create character model in the database.
+     *
+     *
+     *
+     * @throws ModelNotFoundException
+     */
+    protected function updateCharacterModel(array $characterData): void
+    {
+        $character = Character::firstOrNew(['id' => $characterData['character']['id']]);
+
+        $character->fill(['name' => $characterData['character']['name']]);
+
+        try {
+            $guildRank = GuildRank::where('position', $characterData['rank'])->firstOrFail();
+            $character->rank()->associate($guildRank);
+        } catch (ModelNotFoundException $e) {
+            // The model should not be saved, so return early.
+            return;
+        }
+
+        $character->save();
     }
 
     /**
