@@ -11,9 +11,7 @@ class ItemService extends Service
     /**
      * Default cache TTL values in seconds.
      */
-    protected const CACHE_TTL_ITEM = 86400;   // 24 hours
-
-    protected const CACHE_TTL_SEARCH = 3600;  // 1 hour
+    protected int $cacheTtl = 86400;   // 24 hours
 
     public function __construct(
         protected Client $client,
@@ -30,7 +28,7 @@ class ItemService extends Service
     {
         return $this->cacheable(
             $this->itemCacheKey($itemId),
-            self::CACHE_TTL_ITEM,
+            $this->cacheTtl,
             fn () => $this->getJson("/item/{$itemId}")
         );
     }
@@ -57,7 +55,7 @@ class ItemService extends Service
 
         return $this->cacheable(
             $this->searchCacheKey($query),
-            self::CACHE_TTL_SEARCH,
+            self::SEARCH_CACHE_TTL,
             fn () => $this->getJson('/search/item', $query)
         );
     }

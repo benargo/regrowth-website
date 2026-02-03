@@ -21,6 +21,16 @@ abstract class Service
     protected array $selectedFields = [];
 
     /**
+     * Default cache TTL values in seconds.
+     */
+    protected int $cacheTtl = 3600; // 1 hour
+
+    /**
+     * Default search cache TTL values in seconds.
+     */
+    protected const SEARCH_CACHE_TTL = 3600; // 1 hour
+
+    /**
      * Whether to ignore cache for the next request.
      */
     protected bool $ignoreCache = false;

@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\GuildRank;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
+use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
 use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class AddonController extends Controller
@@ -19,6 +22,7 @@ class AddonController extends Controller
     {
         return Inertia::render('Dashboard/Addon/Base64', [
             'exportedData' => Inertia::defer(fn () => $this->getBase64ExportedData($request)),
+            'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
         ]);
     }
 
@@ -26,6 +30,7 @@ class AddonController extends Controller
     {
         return Inertia::render('Dashboard/Addon/JSON', [
             'exportedData' => Inertia::defer(fn () => $this->getJsonExportedData($request, JSON_PRETTY_PRINT)),
+            'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
         ]);
     }
 
@@ -122,6 +127,9 @@ class AddonController extends Controller
         ];
     }
 
+    /**
+     * Get the data to be exported.
+     */
     protected function getExportedData(Request $request): array
     {
         return [
@@ -230,5 +238,72 @@ class AddonController extends Controller
                 ],
             ];
         });
+    }
+
+    /**
+     * Get the freshness status of the GRM data.
+     */
+    protected function getGrmFreshness(): array
+    {
+        $dataIsStale = false;
+        $timestamp = Carbon::createFromTimestamp(0);
+
+        // Check the last modified time of the GRM upload file
+        $disk = Storage::disk('local');
+
+        if ($disk->exists('grm/uploads/latest.csv')) {
+            $fileLastModifiedTime = $disk->lastModified('grm/uploads/latest.csv');
+            $timestamp = Carbon::createFromTimestamp($fileLastModifiedTime);
+        }
+
+        // Check if the roster data is significantly different from the roster data at the time of the last GRM upload
+        $members = app(BlizzardGuildService::class)->members();
+
+        // Count the number of raiders in the official guild roster.
+        $raiderRankIds = GuildRank::whereLike('name', '%Raider%')->pluck('id');
+        $raiderCount = $members->filter(
+            fn (GuildMember $member) => $member->rank instanceof GuildRank
+                && $raiderRankIds->contains($member->rank->id)
+        )->count();
+
+        // Count the number of raiders in the GRM upload file.
+        $grmRaidersCount = 0;
+        if ($disk->exists('grm/uploads/latest.csv')) {
+            $file = $disk->get('grm/uploads/latest.csv');
+
+            // Find which column contains the rank information by reading the first line to find 'Rank'
+            $lines = explode("\n", $file);
+            $header = str_getcsv(array_shift($lines));
+            $rankColumnIndex = null;
+            foreach ($header as $index => $columnName) {
+                if (stripos($columnName, 'Rank') !== false) {
+                    $rankColumnIndex = $index;
+                    break;
+                }
+            }
+
+            // Count the number of individuals with 'Raider' in their rank
+            foreach ($lines as $line) {
+                $columns = str_getcsv($line);
+                if ($rankColumnIndex !== null
+                    && isset($columns[$rankColumnIndex])
+                    && stripos($columns[$rankColumnIndex], 'Raider') !== false) {
+                    $grmRaidersCount++;
+                }
+            }
+        }
+
+        // Compare the two counts
+        if (abs($raiderCount - $grmRaidersCount) >= 3) {
+            // If the difference is 3 or more, consider the GRM data stale
+            $dataIsStale = true;
+        }
+
+        return [
+            'lastModified' => $timestamp,
+            'dataIsStale' => $dataIsStale,
+            'blzRaiderCount' => $raiderCount,
+            'grmRaiderCount' => $grmRaidersCount,
+        ];
     }
 }

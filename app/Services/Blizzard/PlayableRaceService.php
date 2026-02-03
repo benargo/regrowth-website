@@ -9,7 +9,7 @@ class PlayableRaceService extends Service
     /**
      * Default cache TTL values in seconds.
      */
-    protected const CACHE_TTL = 2592000; // 30 days
+    protected int $cacheTtl = 2592000; // 30 days
 
     public function __construct(
         protected Client $client,
@@ -26,7 +26,7 @@ class PlayableRaceService extends Service
     {
         return $this->cacheable(
             $this->indexCacheKey(),
-            self::CACHE_TTL,
+            $this->cacheTtl,
             fn () => $this->getJson('/playable-race/index')
         );
     }
@@ -40,7 +40,7 @@ class PlayableRaceService extends Service
     {
         return $this->cacheable(
             $this->findCacheKey($playableRaceId),
-            self::CACHE_TTL,
+            $this->cacheTtl,
             fn () => $this->getJson("/playable-race/{$playableRaceId}")
         );
     }

@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Character extends Model
 {
-    use HasFactory;
+    use HasFactory, Prunable;
 
     protected $fillable = [
         'id',
@@ -21,6 +23,13 @@ class Character extends Model
     protected $casts = [
         'is_main' => 'boolean',
     ];
+
+    /**
+     * All of the relationships to be touched.
+     *
+     * @var array
+     */
+    protected $touches = ['linkedCharacters'];
 
     /**
      * Get the guild rank associated with the character.
@@ -43,5 +52,16 @@ class Character extends Model
     public function linkedCharacters(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
+    }
+
+    /**
+     * Get the prunable model query.
+     */
+    public function prunable(): Builder
+    {
+        $guildService = app()->make('App\Services\Blizzard\GuildService');
+        $memberIds = $guildService->members()->pluck('character.id')->toArray();
+
+        return static::whereNotIn('id', $memberIds)->where('updated_at', '<=', now()->subDays(14));
     }
 }

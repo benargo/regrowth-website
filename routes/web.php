@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\GuildRosterController;
@@ -44,17 +45,35 @@ Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:access-loot']], 
  */
 Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('index');
+
+    /**
+     * Addon management
+     */
     Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
     Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
+
+    /**
+     * Guild ranks management
+     */
     Route::get('/manage-ranks', [GuildRankController::class, 'manageRanks'])->name('ranks.view');
     Route::post('/manage-ranks', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
     Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
     Route::post('/ranks', [GuildRankController::class, 'store'])->name('ranks.store');
     Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
+
+    /**
+     * Phases management
+     */
     Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('phases.view');
     Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
     Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
+
+    /**
+     * GRM data upload
+     */
+    Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
+    Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
 });
 
 /**

@@ -26,8 +26,12 @@ return [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'redirect' => env('DISCORD_REDIRECT_URI', '/auth/discord/callback'),
-        'bot_token' => env('DISCORD_BOT_TOKEN'),
+        'token' => env('DISCORD_BOT_TOKEN'),
         'guild_id' => 829020506907869214,
+        'channels' => [
+            'announcements' => env('DISCORD_CHANNEL_ANNOUNCEMENTS'),
+            'officer' => env('DISCORD_CHANNEL_OFFICER'),
+        ],
     ],
 
     'warcraftlogs' => [

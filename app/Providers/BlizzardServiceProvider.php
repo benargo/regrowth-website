@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Blizzard\CharacterService;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\GuildService;
 use App\Services\Blizzard\ItemService;
@@ -20,6 +21,10 @@ class BlizzardServiceProvider extends ServiceProvider
     {
         $this->app->bind(Client::class, function (Application $app) {
             return Client::fromConfig();
+        });
+
+        $this->app->singleton(CharacterService::class, function (Application $app) {
+            return new CharacterService($app->make(Client::class));
         });
 
         $this->app->singleton(GuildService::class, function (Application $app) {

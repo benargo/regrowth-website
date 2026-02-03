@@ -15,9 +15,7 @@ class MediaService extends Service
     /**
      * Default cache TTL values in seconds.
      */
-    protected const CACHE_TTL_MEDIA = 604800; // 7 days
-
-    protected const CACHE_TTL_SEARCH = 3600; // 1 hour
+    protected int $cacheTtl = 604800; // 7 days
 
     /**
      * Base URL pattern for fetching icons by name.
@@ -49,7 +47,7 @@ class MediaService extends Service
 
         return $this->cacheable(
             $this->mediaCacheKey($tag, $mediaId),
-            self::CACHE_TTL_MEDIA,
+            $this->cacheTtl,
             fn () => $this->getJson("/media/{$tag}/{$mediaId}")
         );
     }
@@ -72,7 +70,7 @@ class MediaService extends Service
 
         return $this->cacheable(
             $this->searchCacheKey($query),
-            self::CACHE_TTL_SEARCH,
+            self::SEARCH_CACHE_TTL,
             fn () => $this->getJson('/search/media', $query)
         );
     }

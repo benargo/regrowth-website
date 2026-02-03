@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 
-class ExpiredTokenException extends Exception
+class CharacterTooLowLevelException extends Exception
 {
     //
 }

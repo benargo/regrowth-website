@@ -1,0 +1,10 @@
+@font-face {
+    font-family: 'Friz Quadrata';
+    src: url('../fonts/friz-quadrata-regular-os-5870333951e7c.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-friz-quadrata {
+    font-family: 'Friz Quadrata', serif;
+}

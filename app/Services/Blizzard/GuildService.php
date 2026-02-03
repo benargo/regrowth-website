@@ -2,10 +2,9 @@
 
 namespace App\Services\Blizzard;
 
+use App\Jobs\UpdateCharacterFromRoster;
 use App\Models\Character;
-use App\Models\GuildRank;
 use App\Services\Blizzard\Data\GuildMember;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 
 class GuildService extends Service
@@ -16,10 +15,12 @@ class GuildService extends Service
 
     protected string $basePath = '/data/wow/guild';
 
+    protected bool $shouldUpdateCharacters = false;
+
     /**
      * Default cache TTL values in seconds.
      */
-    protected const CACHE_TTL_ROSTER = 10800;   // 3 hours
+    protected int $cacheTtl = 10800;   // 3 hours
 
     public function __construct(
         protected Client $client,
@@ -37,43 +38,35 @@ class GuildService extends Service
 
         return $this->cacheable(
             $this->guildRosterCacheKey($realmSlug, $nameSlug),
-            self::CACHE_TTL_ROSTER,
+            $this->cacheTtl,
             function () use ($realmSlug, $nameSlug) {
-                $rosterData = $this->getJson("/{$realmSlug}/{$nameSlug}/roster");
+                $roster = $this->getJson("/{$realmSlug}/{$nameSlug}/roster");
 
-                if (isset($rosterData['members'])) {
-                    foreach ($rosterData['members'] as $member) {
-                        $this->updateCharacterModel($member);
-                    }
-                }
+                // Dispatch character update jobs if enabled
+                $this->updateCharacters($roster);
 
-                return $rosterData;
+                return $roster;
             }
         );
     }
 
     /**
-     * Update or create character model in the database.
-     *
-     *
-     *
-     * @throws ModelNotFoundException
+     * Set whether characters should be updated.
      */
-    protected function updateCharacterModel(array $characterData): void
+    public function shouldUpdateCharacters(bool $shouldUpdateCharacters = true): static
     {
-        $character = Character::firstOrNew(['id' => $characterData['character']['id']]);
+        $this->shouldUpdateCharacters = $shouldUpdateCharacters;
 
-        $character->fill(['name' => $characterData['character']['name']]);
+        return $this;
+    }
 
-        try {
-            $guildRank = GuildRank::where('position', $characterData['rank'])->firstOrFail();
-            $character->rank()->associate($guildRank);
-        } catch (ModelNotFoundException $e) {
-            // The model should not be saved, so return early.
-            return;
+    protected function updateCharacters(array $roster): void
+    {
+        if ($this->shouldUpdateCharacters) {
+            foreach ($roster['members'] as $memberData) {
+                UpdateCharacterFromRoster::dispatch($memberData);
+            }
         }
-
-        $character->save();
     }
 
     /**

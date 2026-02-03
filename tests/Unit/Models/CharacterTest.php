@@ -4,8 +4,12 @@ namespace Tests\Unit\Models;
 
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Services\Blizzard\Data\GuildMember;
+use App\Services\Blizzard\GuildService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -212,5 +216,175 @@ class CharacterTest extends ModelTestCase
 
         $character->refresh();
         $this->assertNull($character->rank_id);
+    }
+
+    #[Test]
+    public function prunable_returns_builder_instance(): void
+    {
+        $this->mockGuildServiceWithMembers([]);
+
+        $character = new Character;
+
+        $this->assertInstanceOf(Builder::class, $character->prunable());
+    }
+
+    #[Test]
+    public function prunable_includes_characters_not_in_guild_and_older_than_14_days(): void
+    {
+        $this->mockGuildServiceWithMembers([]);
+
+        $prunableCharacter = $this->create([
+            'name' => 'OldNonMember',
+            'updated_at' => now()->subDays(15),
+        ]);
+
+        $character = new Character;
+        $prunableIds = $character->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($prunableCharacter->id, $prunableIds);
+    }
+
+    #[Test]
+    public function prunable_excludes_characters_that_are_guild_members(): void
+    {
+        $guildMember = $this->create([
+            'name' => 'GuildMember',
+            'updated_at' => now()->subDays(30),
+        ]);
+
+        $this->mockGuildServiceWithMembers([
+            ['character' => ['id' => $guildMember->id, 'name' => 'GuildMember'], 'rank' => 0],
+        ]);
+
+        $character = new Character;
+        $prunableIds = $character->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($guildMember->id, $prunableIds);
+    }
+
+    #[Test]
+    public function prunable_excludes_characters_updated_within_14_days(): void
+    {
+        $this->mockGuildServiceWithMembers([]);
+
+        $recentCharacter = $this->create([
+            'name' => 'RecentNonMember',
+            'updated_at' => now()->subDays(13),
+        ]);
+
+        $character = new Character;
+        $prunableIds = $character->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($recentCharacter->id, $prunableIds);
+    }
+
+    #[Test]
+    public function prunable_excludes_characters_updated_exactly_14_days_ago(): void
+    {
+        $this->mockGuildServiceWithMembers([]);
+
+        $boundaryCharacter = $this->create([
+            'name' => 'BoundaryCharacter',
+            'updated_at' => now()->subDays(14),
+        ]);
+
+        $character = new Character;
+        $prunableIds = $character->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($boundaryCharacter->id, $prunableIds);
+    }
+
+    #[Test]
+    public function prunable_correctly_filters_mixed_scenarios(): void
+    {
+        $guildMemberOld = $this->create([
+            'name' => 'GuildMemberOld',
+            'updated_at' => now()->subDays(30),
+        ]);
+
+        $guildMemberRecent = $this->create([
+            'name' => 'GuildMemberRecent',
+            'updated_at' => now()->subDays(5),
+        ]);
+
+        $nonMemberOld = $this->create([
+            'name' => 'NonMemberOld',
+            'updated_at' => now()->subDays(20),
+        ]);
+
+        $nonMemberRecent = $this->create([
+            'name' => 'NonMemberRecent',
+            'updated_at' => now()->subDays(7),
+        ]);
+
+        $this->mockGuildServiceWithMembers([
+            ['character' => ['id' => $guildMemberOld->id, 'name' => 'GuildMemberOld'], 'rank' => 0],
+            ['character' => ['id' => $guildMemberRecent->id, 'name' => 'GuildMemberRecent'], 'rank' => 5],
+        ]);
+
+        $character = new Character;
+        $prunableIds = $character->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($guildMemberOld->id, $prunableIds, 'Guild member (old) should not be prunable');
+        $this->assertNotContains($guildMemberRecent->id, $prunableIds, 'Guild member (recent) should not be prunable');
+        $this->assertContains($nonMemberOld->id, $prunableIds, 'Non-member (old) should be prunable');
+        $this->assertNotContains($nonMemberRecent->id, $prunableIds, 'Non-member (recent) should not be prunable');
+    }
+
+    #[Test]
+    public function prunable_returns_empty_when_all_characters_are_guild_members(): void
+    {
+        $character1 = $this->create([
+            'name' => 'Member1',
+            'updated_at' => now()->subDays(30),
+        ]);
+
+        $character2 = $this->create([
+            'name' => 'Member2',
+            'updated_at' => now()->subDays(60),
+        ]);
+
+        $this->mockGuildServiceWithMembers([
+            ['character' => ['id' => $character1->id, 'name' => 'Member1'], 'rank' => 0],
+            ['character' => ['id' => $character2->id, 'name' => 'Member2'], 'rank' => 1],
+        ]);
+
+        $character = new Character;
+
+        $this->assertCount(0, $character->prunable()->get());
+    }
+
+    #[Test]
+    public function prunable_returns_empty_when_all_characters_are_recent(): void
+    {
+        $this->mockGuildServiceWithMembers([]);
+
+        $this->create([
+            'name' => 'Recent1',
+            'updated_at' => now()->subDays(1),
+        ]);
+
+        $this->create([
+            'name' => 'Recent2',
+            'updated_at' => now()->subDays(10),
+        ]);
+
+        $character = new Character;
+
+        $this->assertCount(0, $character->prunable()->get());
+    }
+
+    /**
+     * Mock the GuildService to return specific members.
+     *
+     * @param  array<int, array{character: array{id: int, name: string}, rank: int}>  $memberData
+     */
+    protected function mockGuildServiceWithMembers(array $memberData): void
+    {
+        $members = collect($memberData)->map(fn (array $data) => new GuildMember($data['character'], $data['rank']));
+
+        $this->mock(GuildService::class, function (MockInterface $mock) use ($members) {
+            $mock->shouldReceive('members')->andReturn($members);
+        });
     }
 }
