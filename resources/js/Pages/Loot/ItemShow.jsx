@@ -7,7 +7,7 @@ import Notes from "@/Components/Loot/Notes";
 
 function PriorityItem({ priority }) {
     return (
-        <div className="min-w-50 flex items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6">
+        <div className="w-full md:w-50 flex items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6">
             {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
             <span>{priority.title}</span>
         </div>
@@ -38,22 +38,22 @@ function PriorityDisplay({ priorities }) {
             {weights.map((weight, weightIndex) => (
                 <div key={weight} className="my-4">
                     {weightIndex > 0 && (
-                        <div className="mx-1 my-4 ml-12 text-center text-4xl font-bold text-amber-600">
+                        <div className="mx-auto my-4 md:ml-12 text-center text-4xl font-bold text-amber-600">
                             <Icon icon="chevron-down" style="solid" />
                         </div>
                     )}
-                    <div className="flex items-center justify-center">
-                        <div className="w-12 flex-none text-4xl">{weightIndex + 1}</div>
-                        <div className="flex w-full items-center justify-center">
+                    <div className="flex items-center justify-center border border-amber-700 rounded-md md:border-transparent">
+                        <div className="w-6 mx-2 flex-none text-4xl">{weightIndex + 1}</div>
+                        <div className="flex flex-col rounded px-2 py-4 md:flex-row w-full md:w-92 items-center justify-center">
                             {grouped[weight].map((priority, index) => (
                                 <div
                                     key={`priority-${priority.id}`}
-                                    className="w-92 my-4 flex items-center justify-center"
+                                    className="w-full md:w-auto flex flex-col md:flex-row items-center justify-center"
                                 >
                                     {index > 0 && (
                                         <div
                                             key={`separator-${index}`}
-                                            className="w-12 flex-none items-center text-center text-2xl font-bold text-amber-600"
+                                            className="w-12 my-4 flex-none items-center text-center text-2xl font-bold text-amber-600"
                                         >
                                             <Icon icon="equals" style="solid" />
                                         </div>
@@ -90,7 +90,7 @@ export default function ItemShow({ item, can, comments }) {
                             {can.edit_item && (
                                 <Link
                                     href={route("loot.items.edit", { item: item.data.id })}
-                                    className="fflex my-2 flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                                    className="flex my-2 flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
                                 >
                                     <Icon icon="edit" style="solid" className="mr-2" />
                                     <span>Edit this item</span>

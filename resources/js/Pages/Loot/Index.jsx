@@ -34,12 +34,12 @@ function PriorityDisplay({ priorities }) {
     const weights = Object.keys(grouped).sort((a, b) => a - b);
 
     return (
-        <span className="text-md inline-flex flex-wrap items-center gap-1">
+        <span className="flex flex-col items-center gap-1 lg:flex-row lg:text-right">
             {weights.map((weight, weightIndex) => (
-                <span key={weight} className="inline-flex items-center gap-1">
+                <span key={weight} className="flex flex-col items-center gap-1 lg:flex-row">
                     {weightIndex > 0 && <span className="mx-1 text-xl font-bold text-amber-600">&gt;</span>}
                     {grouped[weight].map((priority, index) => (
-                        <span key={priority.id} className="inline-flex items-center gap-1">
+                        <span key={priority.id} className="flex flex-col items-center gap-1 lg:flex-row">
                             {index > 0 && <span className="mx-1 text-xl font-bold text-amber-600">=</span>}
                             <PriorityItem priority={priority} />
                         </span>
@@ -75,7 +75,7 @@ function ItemRow({ item }) {
                 <h4 className="text-md font-bold">{item.data.name}</h4>
                 <p className="text-xs">Item ID: {item.data.id}</p>
             </div>
-            <div className="ml-auto text-right">
+            <div className="mx-auto mb-2 lg:mr-0">
                 <PriorityDisplay priorities={item.data.priorities} />
             </div>
         </Link>
@@ -191,7 +191,7 @@ function MegaMenu({ phases, raids, selectedPhase, selectedRaid, onPhaseSelect, o
                         setRaidOpen(false);
                     }}
                     aria-expanded={phaseOpen}
-                    className={`flex w-full items-center justify-between rounded border px-4 py-2 transition-colors border-amber-600 ${
+                    className={`flex w-full items-center justify-between rounded border border-amber-600 px-4 py-2 transition-colors ${
                         phaseOpen ? "bg-amber-600 text-white" : "text-amber-600 hover:bg-amber-600/20"
                     }`}
                 >
@@ -232,7 +232,7 @@ function MegaMenu({ phases, raids, selectedPhase, selectedRaid, onPhaseSelect, o
                         setPhaseOpen(false);
                     }}
                     aria-expanded={raidOpen}
-                    className={`flex w-full items-center justify-between rounded border px-4 py-2 transition-colors border-amber-600 ${
+                    className={`flex w-full items-center justify-between rounded border border-amber-600 px-4 py-2 transition-colors ${
                         raidOpen ? "bg-amber-600 text-white" : "text-amber-600 hover:bg-amber-600/20"
                     }`}
                 >

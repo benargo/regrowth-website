@@ -230,8 +230,6 @@ function RosterSkeleton() {
 
 export default function Roster({ members, classes, races, ranks }) {
     const isLoading = members === undefined;
-    console.log("Classes: ", classes);
-    console.log("Races: ", races);
 
     // Sorting state
     const [sortColumn, setSortColumn] = useState("rank");
