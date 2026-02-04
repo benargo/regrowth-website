@@ -47,11 +47,14 @@ export default function CommentItem({ comment, itemId }) {
                     <div>
                         <span className="font-medium">{comment.user.display_name}</span>
                         {comment.user.highest_role && (
-                            <Pill
-                                bgColor={`bg-discord${comment.user.highest_role ? "-" + comment.user.highest_role.toLowerCase() : ""}`}
-                            >
-                                {comment.user.highest_role}
-                            </Pill>
+                            <span className="mx-2">
+                                <Pill
+                                    bgColor={`bg-discord${comment.user.highest_role ? "-" + comment.user.highest_role.toLowerCase() : ""}`}
+                                    className="ml-2"
+                                >
+                                    {comment.user.highest_role}
+                                </Pill>
+                            </span>
                         )}
                     </div>
                 </div>
