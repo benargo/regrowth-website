@@ -9,6 +9,7 @@ use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemComment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 
 class CommentController extends Controller
@@ -22,6 +23,8 @@ class CommentController extends Controller
             'user_id' => $request->user()->id,
             'body' => $request->validated('body'),
         ]);
+
+        Cache::tags(["item_{$item->id}_comments"])->flush();
 
         return redirect()->back();
     }
@@ -46,6 +49,8 @@ class CommentController extends Controller
         $newComment->created_at = $originalCreatedAt;
         $newComment->save();
 
+        Cache::tags(["item_{$item->id}_comments"])->flush();
+
         return redirect()->back();
     }
 
@@ -58,6 +63,8 @@ class CommentController extends Controller
 
         $comment->update(['deleted_by' => $request->user()->id]);
         $comment->delete();
+
+        Cache::tags(["item_{$item->id}_comments"])->flush();
 
         return redirect()->back();
     }
