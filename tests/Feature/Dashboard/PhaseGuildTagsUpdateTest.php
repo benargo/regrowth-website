@@ -6,6 +6,7 @@ use App\Models\TBC\Phase;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class PhaseGuildTagsUpdateTest extends TestCase
@@ -176,5 +177,20 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
         $this->assertNull($tagForPhase1->tbc_phase_id);
         $this->assertEquals($phase2->id, $tagForPhase2->tbc_phase_id);
+    }
+
+    public function test_update_guild_tags_clears_phases_cache(): void
+    {
+        $user = User::factory()->officer()->create();
+        $phase = Phase::factory()->create();
+
+        Cache::put('phases.tbc.index', 'cached-data');
+        $this->assertTrue(Cache::has('phases.tbc.index'));
+
+        $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+            'guild_tag_ids' => [],
+        ]);
+
+        $this->assertFalse(Cache::has('phases.tbc.index'));
     }
 }

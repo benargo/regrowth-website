@@ -12,6 +12,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class PhaseController extends Controller
@@ -34,38 +35,6 @@ class PhaseController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return response(null, 405);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Phase $phase)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Phase $phase)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(UpdatePhaseStartDateRequest $request, Phase $phase): RedirectResponse
@@ -79,6 +48,8 @@ class PhaseController extends Controller
         $phase->update([
             'start_date' => $startDate,
         ]);
+
+        $this->clearCache();
 
         return back();
     }
@@ -108,14 +79,16 @@ class PhaseController extends Controller
             GuildTag::query()->whereIn('id', $guildTagIds)->update(['tbc_phase_id' => $phase->id]);
         }
 
+        $this->clearCache();
+
         return back();
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Clear relevant caches when phases are updated.
      */
-    public function destroy(Phase $phase)
+    protected function clearCache(): void
     {
-        return response(null, 405);
+        Cache::forget("phases.tbc.index");
     }
 }

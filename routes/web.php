@@ -6,8 +6,11 @@ use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\GuildRosterController;
-use App\Http\Controllers\Loot\LootController;
+use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
+use App\Http\Controllers\LootCouncil\ItemController;
+use App\Http\Controllers\LootCouncil\NotesController;
+use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
@@ -26,13 +29,13 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
  * Loot Bias Tools
  */
 Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:viewAny,App\Models\LootCouncil\Item']], function () {
-    Route::get('/', [LootController::class, 'index'])->name('loot.index');
-    Route::get('/items/{item}', [LootController::class, 'showItem'])->name('loot.items.show');
-    Route::get('/items/{item}/edit', [LootController::class, 'editItem'])->can('update', 'item')->name('loot.items.edit');
-    Route::put('/items/{item}/priorities', [LootController::class, 'updateItemPriorities'])->can('update', 'item')->name('loot.items.priorities.update');
+    Route::get('/', [BiasToolController::class, 'index'])->name('loot.index');
+    Route::get('/items/{item}', [ItemController::class, 'view'])->name('loot.items.show');
+    Route::get('/items/{item}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('loot.items.edit');
+    Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('loot.items.priorities.update');
 
     // Notes routes
-    Route::post('/items/{item}/notes', [LootController::class, 'updateItemNotes'])->can('update', 'item')->name('loot.items.notes.store');
+    Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('loot.items.notes.store');
 
     // Comment routes
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');

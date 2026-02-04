@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Loot;
+namespace App\Http\Requests\Items;
 
 use Illuminate\Foundation\Http\FormRequest;
 

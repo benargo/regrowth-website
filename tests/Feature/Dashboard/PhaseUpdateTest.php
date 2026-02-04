@@ -5,6 +5,7 @@ namespace Tests\Feature\Dashboard;
 use App\Models\TBC\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class PhaseUpdateTest extends TestCase
@@ -136,5 +137,20 @@ class PhaseUpdateTest extends TestCase
 
         $phase->refresh();
         $this->assertEquals('2025-01-15 14:00:00', $phase->start_date->utc()->format('Y-m-d H:i:s'));
+    }
+
+    public function test_update_phase_clears_phases_cache(): void
+    {
+        $user = User::factory()->officer()->create();
+        $phase = Phase::factory()->create();
+
+        Cache::put('phases.tbc.index', 'cached-data');
+        $this->assertTrue(Cache::has('phases.tbc.index'));
+
+        $this->actingAs($user)->put(route('dashboard.phases.update', $phase), [
+            'start_date' => '2025-06-15T14:00',
+        ]);
+
+        $this->assertFalse(Cache::has('phases.tbc.index'));
     }
 }

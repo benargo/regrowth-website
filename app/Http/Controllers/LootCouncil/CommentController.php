@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Loot\StoreItemCommentRequest;
-use App\Http\Requests\Loot\UpdateItemCommentRequest;
+use App\Http\Requests\Items\StoreItemCommentRequest;
+use App\Http\Requests\Items\UpdateItemCommentRequest;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemComment;
 use Illuminate\Http\RedirectResponse;
