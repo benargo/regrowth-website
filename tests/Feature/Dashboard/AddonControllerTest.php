@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
@@ -386,7 +387,8 @@ class AddonControllerTest extends TestCase
 
                     return isset($data['system'])
                         && isset($data['priorities'])
-                        && isset($data['items']);
+                        && isset($data['items'])
+                        && isset($data['councillors']);
                 })
             )
         );
@@ -491,7 +493,22 @@ class AddonControllerTest extends TestCase
         );
     }
 
-    public function test_export_schema_id_contains_version_1_1_2(): void
+    public function test_export_schema_defines_councillors_properties(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('schema.properties.councillors')
+            ->where('schema.properties.councillors.type', 'array')
+            ->has('schema.properties.councillors.items.properties.id')
+            ->has('schema.properties.councillors.items.properties.name')
+            ->has('schema.properties.councillors.items.properties.rank')
+        );
+    }
+
+    public function test_export_schema_id_contains_version_1_2_0(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -499,7 +516,7 @@ class AddonControllerTest extends TestCase
 
         $schema = $response->original->getData()['page']['props']['schema'];
 
-        $this->assertStringContainsString('v=1.1.2', $schema['$id']);
+        $this->assertStringContainsString('v=1.2.0', $schema['$id']);
     }
 
     // ==========================================
@@ -1054,6 +1071,165 @@ class AddonControllerTest extends TestCase
                     $data = json_decode($exportedData, true);
 
                     return isset($data['players']) && count($data['players']) === 1;
+                })
+            )
+        );
+    }
+
+    // ==========================================
+    // Councillor Data Tests
+    // ==========================================
+
+    public function test_export_includes_empty_councillors_when_none_exist(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
+
+                    return isset($data['councillors']) && empty($data['councillors']);
+                })
+            )
+        );
+    }
+
+    public function test_export_includes_councillors_when_they_exist(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $rank = GuildRank::factory()->create(['name' => 'Officer']);
+        Character::factory()->lootCouncillor()->create(['name' => 'Councillor1', 'rank_id' => $rank->id]);
+        Character::factory()->lootCouncillor()->create(['name' => 'Councillor2', 'rank_id' => $rank->id]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
+
+                    return isset($data['councillors']) && count($data['councillors']) === 2;
+                })
+            )
+        );
+    }
+
+    public function test_export_councillor_data_includes_id_name_and_rank(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $rank = GuildRank::factory()->create(['name' => 'Officer']);
+        $character = Character::factory()->lootCouncillor()->create(['name' => 'TestCouncillor', 'rank_id' => $rank->id]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($character) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $councillor = collect($data['councillors'])->firstWhere('id', $character->id);
+
+                    return $councillor !== null
+                        && $councillor['name'] === 'TestCouncillor'
+                        && $councillor['rank'] === 'Officer';
+                })
+            )
+        );
+    }
+
+    public function test_export_councillor_includes_null_rank_when_no_rank_assigned(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $character = Character::factory()->lootCouncillor()->create(['name' => 'UnrankedCouncillor', 'rank_id' => null]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) use ($character) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $councillor = collect($data['councillors'])->firstWhere('id', $character->id);
+
+                    return $councillor !== null && $councillor['rank'] === null;
+                })
+            )
+        );
+    }
+
+    public function test_export_councillors_are_ordered_by_name(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        Character::factory()->lootCouncillor()->create(['name' => 'Zara']);
+        Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
+        Character::factory()->lootCouncillor()->create(['name' => 'Milo']);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $names = collect($data['councillors'])->pluck('name')->toArray();
+
+                    return $names === ['Alice', 'Milo', 'Zara'];
+                })
+            )
+        );
+    }
+
+    public function test_export_excludes_non_councillor_characters(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        Character::factory()->lootCouncillor()->create(['name' => 'IsCouncillor']);
+        Character::factory()->create(['name' => 'NotCouncillor']);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode(base64_decode($exportedData), true);
+                    $names = collect($data['councillors'])->pluck('name')->toArray();
+
+                    return in_array('IsCouncillor', $names)
+                        && ! in_array('NotCouncillor', $names);
+                })
+            )
+        );
+    }
+
+    public function test_export_json_includes_councillors_data(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $rank = GuildRank::factory()->create(['name' => 'Raider']);
+        Character::factory()->lootCouncillor()->create(['name' => 'JsonCouncillor', 'rank_id' => $rank->id]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', function ($exportedData) {
+                    $data = json_decode($exportedData, true);
+
+                    return isset($data['councillors'])
+                        && count($data['councillors']) === 1
+                        && $data['councillors'][0]['name'] === 'JsonCouncillor'
+                        && $data['councillors'][0]['rank'] === 'Raider';
                 })
             )
         );

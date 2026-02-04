@@ -22,14 +22,14 @@ readonly class GuildAttendancePagination
         public int $total,
         public int $perPage,
         public int $currentPage,
-        public int $from,
-        public int $to,
-        public int $lastPage,
-        public bool $hasMorePages,
+        public ?int $from,
+        public ?int $to,
+        public ?int $lastPage,
+        public ?bool $hasMorePages,
     ) {}
 
     /**
-     * @param  array{data: array, total: int, per_page: int, current_page: int, from: int, to: int, last_page: int, has_more_pages: bool}  $data
+     * @param  array{data: array, total: int, per_page: int, current_page: int, from: int|null, to: int|null, last_page: int|null, has_more_pages: bool|null}  $data
      */
     public static function fromArray(array $data): self
     {
@@ -51,7 +51,7 @@ readonly class GuildAttendancePagination
     }
 
     /**
-     * @return array{data: array<GuildAttendance>, total: int, perPage: int, currentPage: int, from: int, to: int, lastPage: int, hasMorePages: bool}
+     * @return array{data: array<GuildAttendance>, total: int, perPage: int, currentPage: int, from: int|null, to: int|null, lastPage: int|null, hasMorePages: bool|null}
      */
     public function toArray(): array
     {

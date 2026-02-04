@@ -71,6 +71,7 @@ class AddonController extends Controller
             'priorities' => $this->buildPriorities(),
             'items' => $this->buildItems(),
             'players' => $this->buildPlayerAttendanceData(),
+            'councillors' => $this->buildCouncillors(),
         ];
     }
 
@@ -237,6 +238,20 @@ class AddonController extends Controller
         ];
     }
 
+    protected function buildCouncillors(): Collection
+    {
+        return Character::where('is_loot_councillor', true)
+            ->orderBy('name')
+            ->get()
+            ->map(function (Character $character) {
+                return [
+                    'id' => $character->id,
+                    'name' => $character->name,
+                    'rank' => $character->rank?->name,
+                ];
+            });
+    }
+
     // ==========================================
     // Schema display
     // ==========================================
@@ -252,7 +267,7 @@ class AddonController extends Controller
     {
         return [
             '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.1.2',
+            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.2.0',
             'title' => 'Regrowth Loot Tool Export Schema',
             'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
             'type' => 'object',
@@ -317,6 +332,17 @@ class AddonController extends Controller
                                     'percentage' => ['type' => 'number'],
                                 ],
                             ],
+                        ],
+                    ],
+                ],
+                'councillors' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer'],
+                            'name' => ['type' => 'string'],
+                            'rank' => ['type' => 'string'],
                         ],
                     ],
                 ],

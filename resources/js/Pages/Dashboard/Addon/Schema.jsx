@@ -63,6 +63,14 @@ export default function AddonExportSchema({ schema }) {
                     <div className="mt-6 border-t border-amber-700 pt-6">
                         <h2 className="mb-4 text-2xl font-semibold">Changelog</h2>
                         <h3 className="text-md font-semibold">
+                            Version 1.2.0 <span className="text-sm italic text-gray-400">(2026-02-04)</span>
+                        </h3>
+                        <ul className="mt-2 list-inside list-disc text-sm">
+                            <li>
+                                Added <code>councillors</code> array to include loot councillor data.
+                            </li>
+                        </ul>
+                        <h3 className="text-md font-semibold">
                             Version 1.1.2 <span className="text-sm italic text-gray-400">(2026-02-03)</span>
                         </h3>
                         <ul className="mt-2 list-inside list-disc text-sm">
