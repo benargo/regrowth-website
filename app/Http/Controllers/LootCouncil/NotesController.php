@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\LootCouncil;
 
-use App\Models\LootCouncil\Item;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\LootCouncil\Item;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class NotesController extends Controller

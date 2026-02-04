@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\LootCouncil\Item;
 use App\Http\Resources\UserResource;
+use App\Models\LootCouncil\Item;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
