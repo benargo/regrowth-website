@@ -75,7 +75,7 @@ function ItemRow({ item }) {
                 <h4 className="text-md font-bold">{item.data.name}</h4>
                 <p className="text-xs">Item ID: {item.data.id}</p>
             </div>
-            <div className="mx-auto mb-2 lg:mr-0">
+            <div className="mx-auto mb-2 lg:mb-0 lg:mr-0">
                 <PriorityDisplay priorities={item.data.priorities} />
             </div>
         </Link>
