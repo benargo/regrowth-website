@@ -9,7 +9,8 @@ use App\Http\Requests\Dashboard\UpdateGuildRankPositionsRequest;
 use App\Http\Requests\Dashboard\UpdateGuildRankRequest;
 use App\Models\GuildRank;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -19,10 +20,18 @@ class GuildRankController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function manageRanks(Request $request)
+    public function list()
     {
+        $guildRanks = Cache::remember('guild_ranks.index', now()->addDay(), function () {
+            return GuildRank::all();
+        });
+
+        if ($guildRanks instanceof Collection) {
+            $guildRanks = $guildRanks->sortBy('position');
+        }
+
         return Inertia::render('Dashboard/ManageRanks', [
-            'guildRanks' => GuildRank::orderBy('position')->get(),
+            'guildRanks' => $guildRanks,
         ]);
     }
 
@@ -38,7 +47,7 @@ class GuildRankController extends Controller
             'position' => $nextPosition,
         ]);
 
-        return back();
+        return $this->back();
     }
 
     /**
@@ -48,7 +57,7 @@ class GuildRankController extends Controller
     {
         $guildRank->update($request->validated());
 
-        return back();
+        return $this->back();
     }
 
     /**
@@ -70,7 +79,7 @@ class GuildRankController extends Controller
             }
         });
 
-        return back();
+        return $this->back();
     }
 
     /**
@@ -82,7 +91,7 @@ class GuildRankController extends Controller
             'count_attendance' => $request->validated('count_attendance'),
         ]);
 
-        return back();
+        return $this->back();
     }
 
     /**
@@ -94,6 +103,24 @@ class GuildRankController extends Controller
 
         $guildRank->delete();
 
+        return $this->back();
+    }
+
+    /**
+     * Redirect back with cache cleared.
+     */
+    private function back(): RedirectResponse
+    {
+        $this->clearCache();
+
         return back();
+    }
+
+    /**
+     * Clear the guild ranks cache.
+     */
+    private function clearCache(): void
+    {
+        Cache::forget('guild_ranks.index');
     }
 }

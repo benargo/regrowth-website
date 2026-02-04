@@ -62,7 +62,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     /**
      * Guild ranks management
      */
-    Route::get('/manage-ranks', [GuildRankController::class, 'manageRanks'])->name('ranks.view');
+    Route::get('/manage-ranks', [GuildRankController::class, 'list'])->name('ranks.view');
     Route::post('/manage-ranks', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
     Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
     Route::post('/ranks', [GuildRankController::class, 'store'])->name('ranks.store');

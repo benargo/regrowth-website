@@ -5,6 +5,7 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class GuildRankPositionUpdateTest extends TestCase
@@ -207,5 +208,22 @@ class GuildRankPositionUpdateTest extends TestCase
         ]);
 
         $this->assertEquals(0, $rank->fresh()->position);
+    }
+
+    public function test_update_positions_clears_guild_ranks_cache(): void
+    {
+        $user = User::factory()->officer()->create();
+        $rank = GuildRank::factory()->create();
+
+        Cache::put('guild_ranks.index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks.index'));
+
+        $this->actingAs($user)->post(route('dashboard.ranks.update-positions'), [
+            'ranks' => [
+                ['id' => $rank->id, 'position' => $rank->position],
+            ],
+        ]);
+
+        $this->assertFalse(Cache::has('guild_ranks.index'));
     }
 }

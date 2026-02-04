@@ -5,6 +5,7 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class GuildRankToggleAttendanceTest extends TestCase
@@ -139,5 +140,20 @@ class GuildRankToggleAttendanceTest extends TestCase
 
         $this->assertTrue($rank1->count_attendance);
         $this->assertTrue($rank2->count_attendance);
+    }
+
+    public function test_toggle_count_attendance_clears_guild_ranks_cache(): void
+    {
+        $user = User::factory()->officer()->create();
+        $rank = GuildRank::factory()->doesNotCountAttendance()->create();
+
+        Cache::put('guild_ranks.index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks.index'));
+
+        $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+            'count_attendance' => true,
+        ]);
+
+        $this->assertFalse(Cache::has('guild_ranks.index'));
     }
 }

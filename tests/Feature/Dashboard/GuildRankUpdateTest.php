@@ -5,6 +5,7 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class GuildRankUpdateTest extends TestCase
@@ -125,5 +126,20 @@ class GuildRankUpdateTest extends TestCase
         ]);
 
         $response->assertNotFound();
+    }
+
+    public function test_update_clears_guild_ranks_cache(): void
+    {
+        $user = User::factory()->officer()->create();
+        $rank = GuildRank::factory()->create();
+
+        Cache::put('guild_ranks.index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks.index'));
+
+        $this->actingAs($user)->put(route('dashboard.ranks.update', $rank), [
+            'name' => 'New Name',
+        ]);
+
+        $this->assertFalse(Cache::has('guild_ranks.index'));
     }
 }

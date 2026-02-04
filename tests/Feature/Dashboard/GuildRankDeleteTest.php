@@ -5,6 +5,7 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class GuildRankDeleteTest extends TestCase
@@ -78,5 +79,18 @@ class GuildRankDeleteTest extends TestCase
         $response = $this->actingAs($user)->delete(route('dashboard.ranks.destroy', 99999));
 
         $response->assertNotFound();
+    }
+
+    public function test_delete_clears_guild_ranks_cache(): void
+    {
+        $user = User::factory()->officer()->create();
+        $rank = GuildRank::factory()->create();
+
+        Cache::put('guild_ranks.index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks.index'));
+
+        $this->actingAs($user)->delete(route('dashboard.ranks.destroy', $rank));
+
+        $this->assertFalse(Cache::has('guild_ranks.index'));
     }
 }
