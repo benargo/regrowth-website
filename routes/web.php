@@ -23,16 +23,16 @@ Route::get('/', function () {
 Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.index');
 
 /**
- * Loot Priority Manager
+ * Loot Bias Tools
  */
-Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:access-loot']], function () {
+Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:viewAny,App\Models\LootCouncil\Item']], function () {
     Route::get('/', [LootController::class, 'index'])->name('loot.index');
     Route::get('/items/{item}', [LootController::class, 'showItem'])->name('loot.items.show');
-    Route::get('/edit/{item}', [LootController::class, 'editItem'])->middleware('can:edit-loot-items')->name('loot.items.edit');
-    Route::put('/items/{item}/priorities', [LootController::class, 'updateItemPriorities'])->middleware('can:edit-loot-items')->name('loot.items.priorities.update');
+    Route::get('/items/{item}/edit', [LootController::class, 'editItem'])->can('update', 'item')->name('loot.items.edit');
+    Route::put('/items/{item}/priorities', [LootController::class, 'updateItemPriorities'])->can('update', 'item')->name('loot.items.priorities.update');
 
     // Notes routes
-    Route::post('/items/{item}/notes', [LootController::class, 'updateItemNotes'])->middleware('can:edit-loot-items')->name('loot.items.notes.store');
+    Route::post('/items/{item}/notes', [LootController::class, 'updateItemNotes'])->can('update', 'item')->name('loot.items.notes.store');
 
     // Comment routes
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');

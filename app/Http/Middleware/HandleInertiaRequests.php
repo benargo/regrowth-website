@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\LootCouncil\Item;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -38,7 +39,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? (new UserResource($user))->resolve($request) : null,
                 'can' => [
                     'accessDashboard' => $user?->can('access-dashboard') ?? false,
-                    'accessLoot' => $user?->can('access-loot') ?? false,
+                    'accessLoot' => $user?->can('viewAny', Item::class) ?? false,
                 ],
                 'impersonating' => $request->session()->has('impersonating_user_id'),
             ],

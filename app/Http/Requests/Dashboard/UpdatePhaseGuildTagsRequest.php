@@ -11,7 +11,7 @@ class UpdatePhaseGuildTagsRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('update-phase', $this->route('phase'));
+        return $this->user()->can('update', $this->route('phase'));
     }
 
     /**
