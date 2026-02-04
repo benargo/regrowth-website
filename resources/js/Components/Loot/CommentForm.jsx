@@ -1,14 +1,40 @@
-import { useState, useRef } from 'react';
-import { useForm } from '@inertiajs/react';
-import FormatButton from '@/Components/FormatButton';
-import InputError from '@/Components/InputError';
+import { useState, useRef } from "react";
+import { useForm } from "@inertiajs/react";
+import FormatButton from "@/Components/FormatButton";
+import Icon from "@/Components/FontAwesome/Icon";
+import InputError from "@/Components/InputError";
 
 const formatButtons = [
-    { label: (<i className="fas fa-bold"></i>), title: 'Bold', prefix: '**', suffix: '**', placeholder: 'bold' },
-    { label: (<i className="fas fa-italic"></i>), title: 'Italic', prefix: '*', suffix: '*', placeholder: 'italic', className: 'italic' },
-    { label: (<i className="fas fa-list-ul"></i>), title: 'Bullet List', prefix: '- ', suffix: '', placeholder: 'list item' },
-    { label: (<i className="fas fa-list-ol"></i>), title: 'Numbered List', prefix: '1. ', suffix: '', placeholder: 'list item' },
-    { label: (<img src="/images/logo_wowhead_white.webp" alt="Wowhead Link" className="w-4 h-4"/>), title: 'Wowhead Link', prefix: '!wh[', suffix: '](item=12345)', placeholder: 'Item Name' },
+    { label: <Icon icon="bold" style="solid" />, title: "Bold", prefix: "**", suffix: "**", placeholder: "bold" },
+    {
+        label: <Icon icon="italic" style="solid" />,
+        title: "Italic",
+        prefix: "*",
+        suffix: "*",
+        placeholder: "italic",
+        className: "italic",
+    },
+    {
+        label: <Icon icon="list-ul" style="solid" />,
+        title: "Bullet List",
+        prefix: "- ",
+        suffix: "",
+        placeholder: "list item",
+    },
+    {
+        label: <Icon icon="list-ol" style="solid" />,
+        title: "Numbered List",
+        prefix: "1. ",
+        suffix: "",
+        placeholder: "list item",
+    },
+    {
+        label: <img src="/images/logo_wowhead_white.webp" alt="Wowhead Link" className="h-4 w-4" />,
+        title: "Wowhead Link",
+        prefix: "!wh[",
+        suffix: "](item=12345)",
+        placeholder: "Item Name",
+    },
 ];
 
 function validateCommentMarkdown(text) {
@@ -17,14 +43,14 @@ function validateCommentMarkdown(text) {
 
     // Check for underline (++text++)
     if (/\+\+.+?\+\+/.test(text)) {
-        return 'Underline formatting is not allowed in comments.';
+        return "Underline formatting is not allowed in comments.";
     }
 
     // Check for regular markdown links [text](url) but allow wowhead links !wh[text](item=123)
     // First, temporarily remove wowhead links, then check for remaining markdown links
-    const withoutWowhead = text.replace(/!wh\[.+?\]\((item|spell)=\d+\)/g, '');
+    const withoutWowhead = text.replace(/!wh\[.+?\]\((item|spell)=\d+\)/g, "");
     if (/\[.+?\]\(.+?\)/.test(withoutWowhead)) {
-        return 'Regular links are not allowed. Use Wowhead format: !wh[Item Name](item=12345)';
+        return "Regular links are not allowed. Use Wowhead format: !wh[Item Name](item=12345)";
     }
 
     return null;
@@ -34,7 +60,7 @@ export default function CommentForm({ itemId }) {
     const textareaRef = useRef(null);
     const [validationError, setValidationError] = useState(null);
     const { data, setData, post, processing, errors, reset } = useForm({
-        body: '',
+        body: "",
     });
 
     function applyFormat(format) {
@@ -53,12 +79,13 @@ export default function CommentForm({ itemId }) {
             newText = text.substring(0, start) + format.prefix + selectedText + format.suffix + text.substring(end);
             newCursorPos = start + format.prefix.length + selectedText.length + format.suffix.length;
         } else {
-            newText = text.substring(0, start) + format.prefix + format.placeholder + format.suffix + text.substring(end);
+            newText =
+                text.substring(0, start) + format.prefix + format.placeholder + format.suffix + text.substring(end);
             newCursorPos = start + format.prefix.length;
         }
 
         setValidationError(validateCommentMarkdown(newText));
-        setData('body', newText);
+        setData("body", newText);
 
         setTimeout(() => {
             textarea.focus();
@@ -73,7 +100,7 @@ export default function CommentForm({ itemId }) {
     function handleChange(e) {
         const value = e.target.value;
         setValidationError(validateCommentMarkdown(value));
-        setData('body', value);
+        setData("body", value);
     }
 
     function submit(e) {
@@ -83,10 +110,10 @@ export default function CommentForm({ itemId }) {
             setValidationError(error);
             return;
         }
-        post(route('loot.items.comments.store', { item: itemId }), {
+        post(route("loot.items.comments.store", { item: itemId }), {
             preserveScroll: true,
             onSuccess: () => {
-                reset('body');
+                reset("body");
                 setValidationError(null);
             },
         });
@@ -94,7 +121,7 @@ export default function CommentForm({ itemId }) {
 
     return (
         <form onSubmit={submit}>
-            <div className="flex items-center gap-1 mb-2">
+            <div className="mb-2 flex items-center gap-1">
                 {formatButtons.map((format) => (
                     <FormatButton
                         key={format.title}
@@ -119,11 +146,11 @@ export default function CommentForm({ itemId }) {
                 type="submit"
                 disabled={processing || validationError}
                 className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 ${
-                    (processing || validationError) && 'opacity-25'
+                    (processing || validationError) && "opacity-25"
                 }`}
             >
-                <i className="fas fa-paper-plane mr-1"></i>
-                {processing ? 'Posting...' : 'Post Comment'}
+                <Icon icon="paper-plane" style="solid" className="mr-1" />
+                {processing ? "Posting..." : "Post Comment"}
             </button>
         </form>
     );

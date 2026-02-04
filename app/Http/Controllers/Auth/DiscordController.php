@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\DiscordRole;
 use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
@@ -63,9 +64,12 @@ class DiscordController extends Controller
                 'avatar' => $rawData['avatar'] ?? null,
                 'guild_avatar' => $guildMemberData['avatar'] ?? null,
                 'banner' => $guildMemberData['banner'] ?? $rawData['banner'] ?? null,
-                'roles' => $guildMemberData['roles'] ?? '[]',
             ]
         );
+
+        $incomingRoleIds = $guildMemberData['roles'] ?? [];
+        $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
+        $user->discordRoles()->sync($recognizedRoleIds);
 
         Auth::login($user, remember: true);
 

@@ -34,6 +34,7 @@ export default {
                     officer: '#aa3b3b',
                     raider: '#e67e22',
                     member: '#1f8b4c',
+                    lootcouncillor: '#a335ee',
                     guest: '#9b59b6',
                 },
                 /*-- WoW item quality colors --*/
@@ -60,7 +61,7 @@ export default {
     plugins: [forms],
 
     safelist: [
-        { pattern: /(bg|text|border)-discord-(officer|raider|member|guest)/, },
+        { pattern: /(bg|text|border)-discord-(officer|raider|member|lootcouncillor|guest)/, },
         { pattern: /(bg|text|border)-quality-(poor|common|uncommon|rare|epic|legendary|artifact|heirloom)/, }
     ],
 };

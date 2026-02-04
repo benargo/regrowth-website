@@ -1,7 +1,8 @@
-import Master from '@/Layouts/Master';
-import SharedHeader from '@/Components/SharedHeader';
-import { useState, useEffect, useRef } from 'react';
-import { router } from '@inertiajs/react';
+import { useState, useEffect, useRef } from "react";
+import { router } from "@inertiajs/react";
+import Master from "@/Layouts/Master";
+import Icon from "@/Components/FontAwesome/Icon";
+import SharedHeader from "@/Components/SharedHeader";
 import {
     DndContext,
     DragOverlay,
@@ -11,14 +12,9 @@ import {
     useSensor,
     useSensors,
     useDroppable,
-} from '@dnd-kit/core';
-import {
-    SortableContext,
-    useSortable,
-    verticalListSortingStrategy,
-    arrayMove,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -26,14 +22,7 @@ function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
     const inputRef = useRef(null);
     const saveTimerRef = useRef(null);
 
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: rank.id });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rank.id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -85,10 +74,10 @@ function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
             e.preventDefault();
             inputRef.current?.blur();
-        } else if (e.key === 'Escape') {
+        } else if (e.key === "Escape") {
             setEditedName(rank.name);
             setIsEditing(false);
         }
@@ -98,9 +87,9 @@ function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
         <div
             ref={setNodeRef}
             style={style}
-            className="flex items-center justify-between border-b border-amber-600 last:border-b-0 px-4 py-2 bg-brown-900"
+            className="flex items-center justify-between border-b border-amber-600 bg-brown-900 px-4 py-2 last:border-b-0"
         >
-            <span className="w-6 flex-initial mr-2 text-right">{index + 1}.</span>
+            <span className="mr-2 w-6 flex-initial text-right">{index + 1}.</span>
             {isEditing ? (
                 <input
                     ref={inputRef}
@@ -109,26 +98,22 @@ function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
                     onChange={handleInputChange}
                     onBlur={handleInputBlur}
                     onKeyDown={handleKeyDown}
-                    className="flex-auto text-left mr-2 bg-brown-800 border border-amber-600 rounded px-2 py-0.5 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mr-2 flex-auto rounded border border-amber-600 bg-brown-800 px-2 py-0.5 text-left text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
             ) : (
                 <span
-                    className="flex-auto text-left mr-2 cursor-text hover:text-amber-400 transition-colors"
+                    className="mr-2 flex-auto cursor-text text-left transition-colors hover:text-amber-400"
                     onClick={handleNameClick}
                     title="Click to edit"
                 >
                     {rank.name}
-                    <span className={isSavingName === rank.id ? 'inline' : 'hidden'}>
-                        <i className="fas fa-spinner fa-spin ml-2 text-amber-400 text-xs"></i>
+                    <span className={isSavingName === rank.id ? "inline" : "hidden"}>
+                        <Icon icon="spinner" style="solid" className="fa-spin ml-2 text-xs text-amber-400" />
                     </span>
                 </span>
             )}
-            <span
-                className="flex-none flex items-center justify-center cursor-grab"
-                {...attributes}
-                {...listeners}
-            >
-                <i className="far fa-grip-vertical text-grey-400 w-4 h-4"></i>
+            <span className="flex flex-none cursor-grab items-center justify-center" {...attributes} {...listeners}>
+                <Icon icon="grip-vertical" style="regular" className="text-grey-400 h-4 w-4" />
             </span>
         </div>
     );
@@ -138,18 +123,18 @@ function RankOverlay({ rank, index }) {
     if (!rank) return null;
 
     return (
-        <div className="flex items-center justify-between border border-amber-600 px-4 py-2 bg-brown-900 shadow-lg cursor-grabbing rounded">
-            <span className="w-6 flex-initial mr-2 text-right">{index + 1}.</span>
-            <span className="flex-auto text-left mr-2">{rank.name}</span>
-            <span className="flex-none flex items-center justify-center">
-                <i className="far fa-grip-vertical text-grey-400 w-4 h-4"></i>
+        <div className="flex cursor-grabbing items-center justify-between rounded border border-amber-600 bg-brown-900 px-4 py-2 shadow-lg">
+            <span className="mr-2 w-6 flex-initial text-right">{index + 1}.</span>
+            <span className="mr-2 flex-auto text-left">{rank.name}</span>
+            <span className="flex flex-none items-center justify-center">
+                <Icon icon="grip-vertical" style="regular" className="text-grey-400 h-4 w-4" />
             </span>
         </div>
     );
 }
 
 function NewRankInput({ nextPosition, onSave, isSaving }) {
-    const [name, setName] = useState('');
+    const [name, setName] = useState("");
     const inputRef = useRef(null);
     const saveTimerRef = useRef(null);
 
@@ -164,7 +149,7 @@ function NewRankInput({ nextPosition, onSave, isSaving }) {
         if (newName.trim()) {
             saveTimerRef.current = setTimeout(() => {
                 onSave(newName);
-                setName('');
+                setName("");
             }, 3000);
         }
     };
@@ -176,34 +161,32 @@ function NewRankInput({ nextPosition, onSave, isSaving }) {
 
         if (name.trim()) {
             onSave(name);
-            setName('');
+            setName("");
         }
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
             e.preventDefault();
             if (saveTimerRef.current) {
                 clearTimeout(saveTimerRef.current);
             }
             if (name.trim()) {
                 onSave(name);
-                setName('');
+                setName("");
             }
-        } else if (e.key === 'Escape') {
+        } else if (e.key === "Escape") {
             if (saveTimerRef.current) {
                 clearTimeout(saveTimerRef.current);
             }
-            setName('');
+            setName("");
             inputRef.current?.blur();
         }
     };
 
     return (
-        <div className="flex items-center justify-between border-t border-amber-600 px-4 py-2 bg-brown-800/50">
-            <span className="w-6 flex-initial mr-2 text-right text-grey-400">
-                {nextPosition + 1}.
-            </span>
+        <div className="flex items-center justify-between border-t border-amber-600 bg-brown-800/50 px-4 py-2">
+            <span className="text-grey-400 mr-2 w-6 flex-initial text-right">{nextPosition + 1}.</span>
             <input
                 ref={inputRef}
                 type="text"
@@ -213,11 +196,11 @@ function NewRankInput({ nextPosition, onSave, isSaving }) {
                 onKeyDown={handleKeyDown}
                 placeholder="Add new rank..."
                 disabled={isSaving}
-                className="flex-auto text-left mr-2 bg-transparent border-none px-2 py-0.5 text-grey-400 placeholder-grey-600 focus:outline-none focus:text-white"
+                className="text-grey-400 placeholder-grey-600 mr-2 flex-auto border-none bg-transparent px-2 py-0.5 text-left focus:text-white focus:outline-none"
             />
             {isSaving && (
                 <span className="flex-none">
-                    <i className="fas fa-spinner fa-spin text-amber-400 text-xs"></i>
+                    <Icon icon="spinner" style="solid" className="fa-spin text-xs text-amber-400" />
                 </span>
             )}
         </div>
@@ -226,7 +209,7 @@ function NewRankInput({ nextPosition, onSave, isSaving }) {
 
 function TrashZone({ isVisible }) {
     const { setNodeRef, isOver } = useDroppable({
-        id: 'trash',
+        id: "trash",
     });
 
     if (!isVisible) return null;
@@ -234,16 +217,12 @@ function TrashZone({ isVisible }) {
     return (
         <div
             ref={setNodeRef}
-            className={`mt-4 flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-4 transition-all duration-200 ${
-                isOver
-                    ? 'border-red-500 bg-red-500/20 text-red-400'
-                    : 'border-grey-600 bg-grey-800/50 text-grey-400'
+            className={`mt-4 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 transition-all duration-200 ${
+                isOver ? "border-red-500 bg-red-500/20 text-red-400" : "border-grey-600 bg-grey-800/50 text-grey-400"
             }`}
         >
-            <i className={`fas fa-trash-alt ${isOver ? 'text-red-400' : 'text-grey-500'}`}></i>
-            <span className="text-sm font-medium">
-                {isOver ? 'Release to delete' : 'Drag here to delete'}
-            </span>
+            <Icon icon="trash-alt" style="solid" className={isOver ? "text-red-400" : "text-grey-500"} />
+            <span className="text-sm font-medium">{isOver ? "Release to delete" : "Drag here to delete"}</span>
         </div>
     );
 }
@@ -264,7 +243,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                 distance: 8,
             },
         }),
-        useSensor(KeyboardSensor)
+        useSensor(KeyboardSensor),
     );
 
     const activeRank = activeId ? ranks.find((r) => r.id === activeId) : null;
@@ -284,7 +263,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
         debounceTimer.current = setTimeout(() => {
             setIsSaving(true);
             router.post(
-                route('dashboard.ranks.update-positions'),
+                route("dashboard.ranks.update-positions"),
                 {
                     ranks: ranks.map((rank, index) => ({
                         id: rank.id,
@@ -301,7 +280,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                     onError: () => {
                         setIsSaving(false);
                     },
-                }
+                },
             );
         }, 500);
 
@@ -322,7 +301,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
 
         if (!over) return;
 
-        if (over.id === 'trash') {
+        if (over.id === "trash") {
             handleDelete(active.id);
             return;
         }
@@ -337,7 +316,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
 
     const handleDelete = (rankId) => {
         setIsSaving(true);
-        router.delete(route('dashboard.ranks.destroy', rankId), {
+        router.delete(route("dashboard.ranks.destroy", rankId), {
             preserveScroll: true,
             onSuccess: () => {
                 setRanks((prev) => prev.filter((r) => r.id !== rankId));
@@ -354,7 +333,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
     const handleCreate = (name) => {
         setIsCreating(true);
         router.post(
-            route('dashboard.ranks.store'),
+            route("dashboard.ranks.store"),
             { name },
             {
                 preserveScroll: true,
@@ -367,30 +346,28 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                 onError: () => {
                     setIsCreating(false);
                 },
-            }
+            },
         );
     };
 
     const handleNameChange = (rankId, newName) => {
         setIsSavingName(rankId);
         router.put(
-            route('dashboard.ranks.update', rankId),
+            route("dashboard.ranks.update", rankId),
             { name: newName },
             {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
                     setIsSavingName(null);
-                    setRanks((prev) =>
-                        prev.map((r) => (r.id === rankId ? { ...r, name: newName } : r))
-                    );
+                    setRanks((prev) => prev.map((r) => (r.id === rankId ? { ...r, name: newName } : r)));
                     setShowSaved(true);
                     setTimeout(() => setShowSaved(false), 2000);
                 },
                 onError: () => {
                     setIsSavingName(null);
                 },
-            }
+            },
         );
     };
 
@@ -404,26 +381,22 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                     <div className="flex items-center gap-4">
                         <p className="text-grey-200">Drag and drop to reorder guild ranks.</p>
                         {isSaving && (
-                            <span className="text-amber-400 text-sm font-medium">
-                                <i className="fas fa-spinner fa-spin mr-2"></i>
+                            <span className="text-sm font-medium text-amber-400">
+                                <Icon icon="spinner" style="solid" className="fa-spin mr-2" />
                                 Saving...
                             </span>
                         )}
                         {!isSaving && showSaved && (
-                            <span className="text-green-400 text-sm font-medium">
-                                <i className="fas fa-check mr-2"></i>
+                            <span className="text-sm font-medium text-green-400">
+                                <Icon icon="check" style="solid" className="mr-2" />
                                 Saved
                             </span>
                         )}
                     </div>
                     <div className="mt-6 w-64">
                         {ranks.length === 0 ? (
-                            <div className="flex flex-col border border-amber-600 rounded">
-                                <NewRankInput
-                                    nextPosition={0}
-                                    onSave={handleCreate}
-                                    isSaving={isCreating}
-                                />
+                            <div className="flex flex-col rounded border border-amber-600">
+                                <NewRankInput nextPosition={0} onSave={handleCreate} isSaving={isCreating} />
                             </div>
                         ) : (
                             <DndContext
@@ -432,11 +405,8 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                                 onDragStart={handleDragStart}
                                 onDragEnd={handleDragEnd}
                             >
-                                <SortableContext
-                                    items={ranks.map((r) => r.id)}
-                                    strategy={verticalListSortingStrategy}
-                                >
-                                    <div className="flex flex-col border border-amber-600 rounded">
+                                <SortableContext items={ranks.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+                                    <div className="flex flex-col rounded border border-amber-600">
                                         {ranks.map((rank, index) => (
                                             <SortableRankItem
                                                 key={rank.id}

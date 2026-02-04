@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\StoreGuildRankRequest;
+use App\Http\Requests\Dashboard\ToggleGuildRankAttendanceRequest;
 use App\Http\Requests\Dashboard\UpdateGuildRankPositionsRequest;
 use App\Http\Requests\Dashboard\UpdateGuildRankRequest;
 use App\Models\GuildRank;
@@ -68,6 +69,18 @@ class GuildRankController extends Controller
                 GuildRank::where('id', $rankData['id'])->update(['position' => $rankData['position']]);
             }
         });
+
+        return back();
+    }
+
+    /**
+     * Toggle the count_attendance flag for a guild rank.
+     */
+    public function toggleCountAttendance(ToggleGuildRankAttendanceRequest $request, GuildRank $guildRank): RedirectResponse
+    {
+        $guildRank->update([
+            'count_attendance' => $request->validated('count_attendance'),
+        ]);
 
         return back();
     }

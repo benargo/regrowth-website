@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AllianceRaces;
 use App\Models\GuildRank;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService;
@@ -23,9 +24,21 @@ class GuildRosterController extends Controller
         $this->classService = $classService;
         $this->raceService = $raceService;
 
+        $classes = collect(Arr::get($this->classService->index(), 'classes'))
+            ->sortBy('name')
+            ->values()
+            ->toArray();
+
+        $races = collect(Arr::get($this->raceService->index(), 'races'))
+            ->filter(function ($race) {
+                return in_array($race['id'], AllianceRaces::ids());
+            })
+            ->values()
+            ->toArray();
+
         return Inertia::render('Roster', [
-            'classes' => $this->classService->index(),
-            'races' => $this->raceService->index(),
+            'classes' => $classes,
+            'races' => $races,
             'ranks' => GuildRank::orderBy('position')->get(),
             'level_cap' => 70,
             'members' => Inertia::defer(fn () => $this->buildMemberCollection()),

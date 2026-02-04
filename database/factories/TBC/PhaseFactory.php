@@ -25,6 +25,7 @@ class PhaseFactory extends Factory
     public function definition(): array
     {
         return [
+            'number' => fake()->randomFloat(1, 1, 9),
             'description' => fake()->sentence(3),
             'start_date' => fake()->optional(0.7)->dateTimeBetween('-2 years', '+1 year'),
         ];

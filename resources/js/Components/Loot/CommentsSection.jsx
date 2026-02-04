@@ -1,6 +1,7 @@
-import { Link } from '@inertiajs/react';
-import CommentForm from './CommentForm';
-import CommentItem from './CommentItem';
+import { Link } from "@inertiajs/react";
+import CommentForm from "./CommentForm";
+import CommentItem from "./CommentItem";
+import Icon from "@/Components/FontAwesome/Icon";
 
 function Pagination({ links, meta }) {
     if (!links || meta.last_page <= 1) {
@@ -8,7 +9,7 @@ function Pagination({ links, meta }) {
     }
 
     return (
-        <nav className="flex items-center justify-between mt-6">
+        <nav className="mt-6 flex items-center justify-between">
             <div className="text-sm text-gray-400">
                 Showing {meta.from} to {meta.to} of {meta.total} comments
             </div>
@@ -18,7 +19,7 @@ function Pagination({ links, meta }) {
                         return (
                             <span
                                 key={index}
-                                className="px-3 py-1 text-sm text-gray-500 bg-gray-800 rounded"
+                                className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-500"
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />
                         );
@@ -29,10 +30,8 @@ function Pagination({ links, meta }) {
                             key={index}
                             href={link.url}
                             preserveScroll
-                            className={`px-3 py-1 text-sm rounded transition-colors ${
-                                link.active
-                                    ? 'bg-amber-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            className={`rounded px-3 py-1 text-sm transition-colors ${
+                                link.active ? "bg-amber-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                             }`}
                             dangerouslySetInnerHTML={{ __html: link.label }}
                         />
@@ -45,8 +44,8 @@ function Pagination({ links, meta }) {
 
 export default function CommentsSection({ comments, itemId, canCreate }) {
     return (
-        <section className="w-full mt-12">
-            <h2 className="text-xl font-bold mb-6">Discussion</h2>
+        <section className="mt-12 w-full">
+            <h2 className="mb-6 text-xl font-bold">Discussion</h2>
 
             {/* New comment form for raiders+ */}
             {canCreate ? (
@@ -54,8 +53,8 @@ export default function CommentsSection({ comments, itemId, canCreate }) {
                     <CommentForm itemId={itemId} />
                 </div>
             ) : (
-                <div className="mb-8 text-gray-400 italic border border-gray-700 rounded-lg p-4 bg-brown-800/50">
-                    <i className="fas fa-lock mr-2"></i>
+                <div className="mb-8 rounded-lg border border-gray-700 bg-brown-800/50 p-4 italic text-gray-400">
+                    <Icon icon="lock" style="solid" className="mr-2" />
                     {/* Only raiders may post comments. */}
                     Only officers may post comments. Raiders will be invited to make comments in the future.
                 </div>
@@ -65,13 +64,13 @@ export default function CommentsSection({ comments, itemId, canCreate }) {
             <div className="space-y-4">
                 {comments.data.length > 0 ? (
                     <>
-                        {comments.data.map(comment => (
+                        {comments.data.map((comment) => (
                             <CommentItem key={comment.id} comment={comment} itemId={itemId} />
                         ))}
                         <Pagination links={comments.links} meta={comments.meta} />
                     </>
                 ) : (
-                    <p className="text-gray-400 text-center py-8">
+                    <p className="py-8 text-center text-gray-400">
                         No comments yet. Be the first to share your thoughts!
                     </p>
                 )}

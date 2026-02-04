@@ -1,10 +1,11 @@
-import Master from '@/Layouts/Master';
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Link, useForm } from '@inertiajs/react';
-import CommentsSection from '@/Components/Loot/CommentsSection';
-import Notes from '@/Components/Loot/Notes';
-import LootPageHeader from '@/Components/Loot/LootPageHeader';
-import ItemDetailsCard from '@/Components/Loot/ItemDetailsCard';
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useForm } from "@inertiajs/react";
+import Master from "@/Layouts/Master";
+import CommentsSection from "@/Components/Loot/CommentsSection";
+import Icon from "@/Components/FontAwesome/Icon";
+import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
+import Notes from "@/Components/Loot/Notes";
+import SharedHeader from "@/Components/SharedHeader";
 import {
     DndContext,
     DragOverlay,
@@ -13,20 +14,13 @@ import {
     KeyboardSensor,
     useSensor,
     useSensors,
-} from '@dnd-kit/core';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { useDroppable } from '@dnd-kit/core';
+} from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useDroppable } from "@dnd-kit/core";
 
 function DraggablePriorityItem({ priority, onRemove }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: priority.id });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: priority.id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -38,13 +32,11 @@ function DraggablePriorityItem({ priority, onRemove }) {
         <div
             ref={setNodeRef}
             style={style}
-            className="relative min-w-50 flex items-center justify-center gap-2 p-6 border border-primary rounded-md bg-brown-800 cursor-grab"
+            className="min-w-50 relative flex cursor-grab items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6"
             {...attributes}
             {...listeners}
         >
-            {priority.media && (
-                <img src={priority.media} alt="" className="w-6 h-6 rounded-sm" />
-            )}
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
             <span>{priority.title}</span>
             <button
                 type="button"
@@ -52,9 +44,9 @@ function DraggablePriorityItem({ priority, onRemove }) {
                     e.stopPropagation();
                     onRemove(priority.id);
                 }}
-                className="absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded-full text-xs transition-colors"
+                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white transition-colors hover:bg-red-700"
             >
-                <i className="fas fa-times"></i>
+                <Icon icon="times" style="solid" />
             </button>
         </div>
     );
@@ -64,10 +56,8 @@ function PriorityOverlay({ priority }) {
     if (!priority) return null;
 
     return (
-        <div className="w-60 flex items-center justify-center gap-2 p-6 border border-primary rounded-md bg-brown-800 shadow-lg cursor-grabbing">
-            {priority.media && (
-                <img src={priority.media} alt="" className="w-6 h-6 rounded-sm" />
-            )}
+        <div className="flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6 shadow-lg">
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
             <span>{priority.title}</span>
         </div>
     );
@@ -76,23 +66,23 @@ function PriorityOverlay({ priority }) {
 function DroppableWeightRow({ weight, children, onAddClick }) {
     const { setNodeRef, isOver } = useDroppable({
         id: `weight-${weight}`,
-        data: { weight, type: 'weight-row' },
+        data: { weight, type: "weight-row" },
     });
 
     return (
         <div
             ref={setNodeRef}
-            className={`flex items-center justify-center transition-colors ${isOver ? 'bg-amber-900/30' : ''}`}
+            className={`flex items-center justify-center transition-colors ${isOver ? "bg-amber-900/30" : ""}`}
         >
             <div className="w-12 flex-none text-4xl">{weight + 1}</div>
-            <div className="w-full flex items-center justify-center flex-wrap gap-4 py-4 ml-4">
+            <div className="ml-4 flex w-full flex-wrap items-center justify-center gap-4 py-4">
                 {children}
                 <button
                     type="button"
                     onClick={() => onAddClick(weight)}
-                    className="w-12 h-12 flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white rounded-full transition-colors"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600 text-white transition-colors hover:bg-amber-700"
                 >
-                    <i className="fas fa-plus"></i>
+                    <Icon icon="plus" style="solid" />
                 </button>
             </div>
         </div>
@@ -103,7 +93,7 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
     const [isHovered, setIsHovered] = useState(false);
     const { setNodeRef, isOver } = useDroppable({
         id: `insert-${afterWeight}`,
-        data: { afterWeight, type: 'insert-zone' },
+        data: { afterWeight, type: "insert-zone" },
     });
 
     return (
@@ -113,24 +103,22 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="font-bold text-4xl text-center text-amber-600 my-4">
-                <i className="fas fa-chevron-down"></i>
+            <div className="my-4 text-center text-4xl font-bold text-amber-600">
+                <Icon icon="chevron-down" style="solid" />
             </div>
             <div
-                className={`absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center transition-opacity ${
-                    isHovered || isOver ? 'opacity-100' : 'opacity-0'
+                className={`absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center transition-opacity ${
+                    isHovered || isOver ? "opacity-100" : "opacity-0"
                 }`}
             >
                 <button
                     type="button"
                     onClick={() => onAddClick(afterWeight)}
-                    className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${
-                        isOver
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-amber-600 hover:bg-amber-700 text-white'
+                    className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                        isOver ? "bg-amber-500 text-white" : "bg-amber-600 text-white hover:bg-amber-700"
                     }`}
                 >
-                    <i className="fas fa-plus"></i>
+                    <Icon icon="plus" style="solid" />
                 </button>
             </div>
         </div>
@@ -140,22 +128,22 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
 function AddNewWeightRow({ weight, onAddClick }) {
     const { setNodeRef, isOver } = useDroppable({
         id: `new-weight-${weight}`,
-        data: { weight, type: 'new-weight' },
+        data: { weight, type: "new-weight" },
     });
 
     return (
         <div
             ref={setNodeRef}
-            className={`flex items-center justify-center py-8 border-2 border-dashed rounded-lg transition-colors ${
-                isOver ? 'border-amber-500 bg-amber-900/20' : 'border-amber-600/30'
+            className={`flex items-center justify-center rounded-lg border-2 border-dashed py-8 transition-colors ${
+                isOver ? "border-amber-500 bg-amber-900/20" : "border-amber-600/30"
             }`}
         >
             <button
                 type="button"
                 onClick={() => onAddClick(weight)}
-                className="w-12 h-12 flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white rounded-full transition-colors"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600 text-white transition-colors hover:bg-amber-700"
             >
-                <i className="fas fa-plus"></i>
+                <Icon icon="plus" style="solid" />
             </button>
             <span className="ml-4 text-gray-400">Add new priority level</span>
         </div>
@@ -167,7 +155,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
 
     const groupedPriorities = useMemo(() => {
         return priorities.reduce((acc, priority) => {
-            const type = priority.type || 'other';
+            const type = priority.type || "other";
             if (!acc[type]) {
                 acc[type] = [];
             }
@@ -177,43 +165,39 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
     }, [priorities]);
 
     const typeLabels = {
-        role: 'Roles',
-        class: 'Classes',
-        spec: 'Specializations',
-        other: 'Other',
+        role: "Roles",
+        class: "Classes",
+        spec: "Specializations",
+        other: "Other",
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
             <div
-                className="bg-brown-900 border border-primary rounded-lg p-6 max-w-2xl max-h-[80vh] overflow-y-auto"
+                className="max-h-[80vh] max-w-2xl overflow-y-auto rounded-lg border border-primary bg-brown-900 p-6"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-xl font-bold">Select Priority</h3>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white"
-                    >
-                        <i className="fas fa-times"></i>
+                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">
+                        <Icon icon="times" style="solid" />
                     </button>
                 </div>
                 {Object.entries(groupedPriorities).map(([type, typePriorities]) => (
                     <div key={type} className="mb-4">
-                        <h4 className="text-sm font-semibold text-amber-500 uppercase mb-2">
+                        <h4 className="mb-2 text-sm font-semibold uppercase text-amber-500">
                             {typeLabels[type] || type}
                         </h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                             {typePriorities.map((priority) => (
                                 <button
                                     key={priority.id}
                                     type="button"
                                     onClick={() => onSelect(priority.id)}
-                                    className="flex items-center gap-2 p-3 border border-primary/50 rounded-md bg-brown-800 hover:bg-brown-700 transition-colors text-left"
+                                    className="flex items-center gap-2 rounded-md border border-primary/50 bg-brown-800 p-3 text-left transition-colors hover:bg-brown-700"
                                 >
                                     {priority.media && (
-                                        <img src={priority.media} alt="" className="w-5 h-5 rounded-sm" />
+                                        <img src={priority.media} alt="" className="h-5 w-5 rounded-sm" />
                                     )}
                                     <span className="text-sm">{priority.title}</span>
                                 </button>
@@ -222,9 +206,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                     </div>
                 ))}
                 {Object.keys(groupedPriorities).length === 0 && (
-                    <p className="text-gray-400 text-center py-4">
-                        All priorities have been assigned to this item.
-                    </p>
+                    <p className="py-4 text-center text-gray-400">All priorities have been assigned to this item.</p>
                 )}
             </div>
         </div>
@@ -242,7 +224,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
                 distance: 8,
             },
         }),
-        useSensor(KeyboardSensor)
+        useSensor(KeyboardSensor),
     );
 
     const groupedPriorities = useMemo(() => {
@@ -258,7 +240,9 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     }, [priorities]);
 
     const weights = useMemo(() => {
-        return Object.keys(groupedPriorities).map(Number).sort((a, b) => a - b);
+        return Object.keys(groupedPriorities)
+            .map(Number)
+            .sort((a, b) => a - b);
     }, [groupedPriorities]);
 
     const maxWeight = useMemo(() => {
@@ -287,18 +271,15 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
         const priority = allPriorities.find((p) => p.id === priorityId);
         if (!priority) return;
 
-        const newPriorities = [
-            ...data.priorities,
-            { priority_id: priorityId, weight: targetWeight },
-        ];
-        setData('priorities', newPriorities);
+        const newPriorities = [...data.priorities, { priority_id: priorityId, weight: targetWeight }];
+        setData("priorities", newPriorities);
         setShowPicker(false);
         setTargetWeight(null);
     };
 
     const handleRemovePriority = (priorityId) => {
         const updated = data.priorities.filter((p) => p.priority_id !== priorityId);
-        setData('priorities', recalculateWeights(updated));
+        setData("priorities", recalculateWeights(updated));
     };
 
     const handleAddToWeight = (weight) => {
@@ -311,7 +292,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
             ...p,
             weight: p.weight > afterWeight ? p.weight + 1 : p.weight,
         }));
-        setData('priorities', updated);
+        setData("priorities", updated);
         setTargetWeight(afterWeight + 1);
         setShowPicker(true);
     };
@@ -338,9 +319,9 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
 
         let newWeight;
 
-        if (overData.type === 'weight-row') {
+        if (overData.type === "weight-row") {
             newWeight = overData.weight;
-        } else if (overData.type === 'insert-zone') {
+        } else if (overData.type === "insert-zone") {
             const afterWeight = overData.afterWeight;
             const updated = data.priorities.map((p) => ({
                 ...p,
@@ -348,32 +329,30 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
             }));
             newWeight = afterWeight + 1;
             const finalPriorities = updated.map((p) =>
-                p.priority_id === priorityId ? { ...p, weight: newWeight } : p
+                p.priority_id === priorityId ? { ...p, weight: newWeight } : p,
             );
-            setData('priorities', recalculateWeights(finalPriorities));
+            setData("priorities", recalculateWeights(finalPriorities));
             return;
-        } else if (overData.type === 'new-weight') {
+        } else if (overData.type === "new-weight") {
             newWeight = overData.weight;
         } else {
             return;
         }
 
-        const updated = data.priorities.map((p) =>
-            p.priority_id === priorityId ? { ...p, weight: newWeight } : p
-        );
-        setData('priorities', recalculateWeights(updated));
+        const updated = data.priorities.map((p) => (p.priority_id === priorityId ? { ...p, weight: newWeight } : p));
+        setData("priorities", recalculateWeights(updated));
     };
 
     if (priorities.length === 0 && data.priorities.length === 0) {
         return (
-            <div className="text-center py-8">
-                <p className="text-gray-400 mb-4">No priorities assigned to this item.</p>
+            <div className="py-8 text-center">
+                <p className="mb-4 text-gray-400">No priorities assigned to this item.</p>
                 <button
                     type="button"
                     onClick={() => handleAddNewWeight(0)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors"
+                    className="inline-flex items-center gap-2 rounded-md bg-amber-600 px-4 py-2 text-white transition-colors hover:bg-amber-700"
                 >
-                    <i className="fas fa-plus"></i>
+                    <Icon icon="plus" style="solid" />
                     Add First Priority
                 </button>
                 <PriorityPickerModal
@@ -396,40 +375,28 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className="text-lg flex-col items-center flex-wrap gap-2">
+            <div className="flex-col flex-wrap items-center gap-2 text-lg">
                 {weights.map((weight, weightIndex) => (
                     <div key={weight}>
                         {weightIndex > 0 && (
-                            <InsertWeightZone
-                                afterWeight={weights[weightIndex - 1]}
-                                onAddClick={handleInsertBetween}
-                            />
+                            <InsertWeightZone afterWeight={weights[weightIndex - 1]} onAddClick={handleInsertBetween} />
                         )}
-                        <DroppableWeightRow
-                            weight={weight}
-                            onAddClick={handleAddToWeight}
-                        >
+                        <DroppableWeightRow weight={weight} onAddClick={handleAddToWeight}>
                             {groupedPriorities[weight].map((priority, index) => (
                                 <div key={priority.id} className="flex items-center">
                                     {index > 0 && (
-                                        <div className="w-12 flex-none items-center text-center font-bold text-2xl text-amber-600 mx-2">
-                                            <i className="fas fa-equals -ml-4"></i>
+                                        <div className="mx-2 w-12 flex-none items-center text-center text-2xl font-bold text-amber-600">
+                                            <Icon icon="equals" style="solid" className="-ml-4" />
                                         </div>
                                     )}
-                                    <DraggablePriorityItem
-                                        priority={priority}
-                                        onRemove={handleRemovePriority}
-                                    />
+                                    <DraggablePriorityItem priority={priority} onRemove={handleRemovePriority} />
                                 </div>
                             ))}
                         </DroppableWeightRow>
                     </div>
                 ))}
                 <div className="mt-8">
-                    <AddNewWeightRow
-                        weight={maxWeight + 1}
-                        onAddClick={handleAddNewWeight}
-                    />
+                    <AddNewWeightRow weight={maxWeight + 1} onAddClick={handleAddNewWeight} />
                 </div>
             </div>
             <DragOverlay>
@@ -480,7 +447,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
 
         // Debounced save
         debounceTimer.current = setTimeout(() => {
-            put(route('loot.items.priorities.update', { item: item.data.id }), {
+            put(route("loot.items.priorities.update", { item: item.data.id }), {
                 preserveScroll: true,
                 onSuccess: () => {
                     setShowSaved(true);
@@ -508,30 +475,30 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
 
     return (
         <Master title={`Editing ${item.data.name}`}>
-            <LootPageHeader title="Edit Loot Biases" />
+            <SharedHeader backgroundClass="bg-karazhan" title="Edit Loot Biases" />
             {/* Tool navigation */}
             <nav className="bg-brown-900 shadow">
                 <div className="container mx-auto px-4">
-                    <div className="flex flex-col md:flex-row items-center justify-between min-h-12">
+                    <div className="flex min-h-12 flex-col items-center justify-between md:flex-row">
                         <div className="flex-initial space-x-4">
                             <Link
-                                href={route('loot.items.show', { item: item.data.id })}
-                                className="flex flex-row items-center text-white hover:bg-brown-800 p-2 my-2 border border-transparent hover:border-primary active:border-primary rounded-md text-sm font-medium"
+                                href={route("loot.items.show", { item: item.data.id })}
+                                className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
                             >
-                                <i className="fas fa-arrow-left mr-2"></i>
+                                <Icon icon="arrow-left" style="solid" className="mr-2" />
                                 <span>Finish editing {item.data.name}</span>
                             </Link>
                         </div>
                         <div className="flex space-x-4">
                             {processing && (
-                                <span className="text-amber-400 text-sm font-medium">
-                                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                                <span className="text-sm font-medium text-amber-400">
+                                    <Icon icon="spinner" style="solid" className="fa-spin mr-2" />
                                     Saving...
                                 </span>
                             )}
                             {!processing && showSaved && (
-                                <span className="text-green-400 text-sm font-medium">
-                                    <i className="fas fa-check mr-2"></i>
+                                <span className="text-sm font-medium text-green-400">
+                                    <Icon icon="check" style="solid" className="mr-2" />
                                     Saved
                                 </span>
                             )}
@@ -544,8 +511,8 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 <ItemDetailsCard item={item.data} />
 
                 {/* Editable Priorities */}
-                <h2 className="text-xl font-bold mt-8 mb-2">Loot Priorities</h2>
-                <p className="text-gray-400 mb-4">
+                <h2 className="mb-2 mt-8 text-xl font-bold">Loot Priorities</h2>
+                <p className="mb-4 text-gray-400">
                     Drag priorities between rows to change their weight. Use the + buttons to add new priorities.
                 </p>
                 <div className="mt-8 w-full">
@@ -558,18 +525,10 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
 
                 {/* Notes Section */}
-                <Notes 
-                    notes={item.data.notes} 
-                    itemId={item.data.id} 
-                    canEdit="true"
-                />
+                <Notes notes={item.data.notes} itemId={item.data.id} canEdit="true" />
 
                 {/* Comments Section */}
-                <CommentsSection
-                    comments={comments}
-                    itemId={item.data.id}
-                    canCreate="true"
-                />
+                <CommentsSection comments={comments} itemId={item.data.id} canCreate="true" />
             </main>
         </Master>
     );

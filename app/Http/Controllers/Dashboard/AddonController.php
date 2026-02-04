@@ -3,14 +3,21 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dashboard\AddCouncillorRequest;
+use App\Http\Requests\Dashboard\RemoveCouncillorRequest;
+use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
+use App\Models\TBC\Phase;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
+use App\Services\WarcraftLogs\AttendanceService;
 use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +25,10 @@ use Inertia\Inertia;
 
 class AddonController extends Controller
 {
+    // ==========================================
+    // Data export
+    // ==========================================
+
     public function export(Request $request)
     {
         return Inertia::render('Dashboard/Addon/Base64', [
@@ -34,13 +45,6 @@ class AddonController extends Controller
         ]);
     }
 
-    public function exportSchema()
-    {
-        return Inertia::render('Dashboard/Addon/Schema', [
-            'schema' => $this->getSchema(),
-        ]);
-    }
-
     protected function getBase64ExportedData(Request $request): string
     {
         return base64_encode($this->getJsonExportedData($request));
@@ -51,82 +55,6 @@ class AddonController extends Controller
         return json_encode($this->getExportedData($request), $style);
     }
 
-    protected function getSchema(): array
-    {
-        return [
-            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.1.1',
-            'title' => 'Regrowth Loot Tool Export Schema',
-            'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
-            'type' => 'object',
-            'properties' => [
-                'system' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'date_generated' => ['type' => 'string', 'format' => 'date-time'],
-                        'user' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'id' => ['type' => 'integer'],
-                                'name' => ['type' => 'string'],
-                            ],
-                        ],
-                    ],
-                ],
-                'priorities' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'id' => ['type' => 'integer'],
-                            'name' => ['type' => 'string'],
-                            'icon' => ['type' => ['string', 'null']],
-                        ],
-                    ],
-                ],
-                'items' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'item_id' => ['type' => 'integer'],
-                            'priorities' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'priority_id' => ['type' => 'integer'],
-                                        'weight' => ['type' => 'integer'],
-                                    ],
-                                ],
-                            ],
-                            'notes' => ['type' => ['string', 'null']],
-                        ],
-                    ],
-                ],
-                'players' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'id' => ['type' => 'integer'],
-                            'name' => ['type' => 'string'],
-                            'attendance' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'first_attendance' => ['type' => 'string', 'format' => 'date-time'],
-                                    'attended' => ['type' => 'integer'],
-                                    'total' => ['type' => 'integer'],
-                                    'percentage' => ['type' => 'number'],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-    }
-
     /**
      * Get the data to be exported.
      */
@@ -134,7 +62,7 @@ class AddonController extends Controller
     {
         return [
             'system' => [
-                'date_generated' => Carbon::now()->toIso8601String(),
+                'date_generated' => Carbon::now()->unix(),
                 'user' => [
                     'id' => $request->user()->id,
                     'name' => $request->user()->displayName,
@@ -210,34 +138,36 @@ class AddonController extends Controller
 
         $tags = $wclGuildService->getGuildTags()->where('count_attendance', true);
 
-        /**
-         * If no tags are configured for attendance tracking, return an empty collection.
-         */
-        if ($tags->isEmpty()) {
+        $ranks = GuildRank::where('count_attendance', true)->get();
+
+        // If no tags and no ranks are configured for attendance tracking, return an empty collection.
+        if ($tags->isEmpty() && $ranks->isEmpty()) {
             return collect();
         }
 
-        $blizzardGuildService = app(BlizzardGuildService::class);
+        $members = app(BlizzardGuildService::class)
+            ->members()
+            ->filter(function (GuildMember $member) use ($ranks) {
+                return $member->rank instanceof GuildRank
+                    && $ranks->pluck('id')->contains($member->rank->id);
+            });
 
-        $members = $blizzardGuildService->members();
-
-        $attendanceData = $wclGuildService->getAttendanceLazy(
-            playerNames: $members->pluck('character.name')->toArray(),
-            guildTagID: $tags->pluck('id')->toArray()
-        );
-
-        return $wclGuildService->calculateAttendanceStats($attendanceData)->map(function ($stats) use ($members) {
-            return [
-                'id' => $members->firstWhere('character.name', $stats->name)?->character['id'] ?? null,
-                'name' => $stats->name,
-                'attendance' => [
-                    'first_attendance' => $stats->firstAttendance?->setTimezone(config('app.timezone'))->toIso8601String(),
-                    'attended' => $stats->reportsAttended,
-                    'total' => $stats->totalReports,
-                    'percentage' => $stats->percentage,
-                ],
-            ];
-        });
+        return app(AttendanceService::class)
+            ->tags($tags->pluck('id')->toArray())
+            ->playerNames($members->pluck('character.name')->toArray())
+            ->calculate()
+            ->map(function ($stats) use ($members) {
+                return [
+                    'id' => $members->firstWhere('character.name', $stats->name)?->character['id'] ?? null,
+                    'name' => $stats->name,
+                    'attendance' => [
+                        'first_attendance' => $stats->firstAttendance?->setTimezone(config('app.timezone'))->toIso8601String(),
+                        'attended' => $stats->reportsAttended,
+                        'total' => $stats->totalReports,
+                        'percentage' => $stats->percentage,
+                    ],
+                ];
+            });
     }
 
     /**
@@ -305,5 +235,145 @@ class AddonController extends Controller
             'blzRaiderCount' => $raiderCount,
             'grmRaiderCount' => $grmRaidersCount,
         ];
+    }
+
+    // ==========================================
+    // Schema display
+    // ==========================================
+
+    public function exportSchema()
+    {
+        return Inertia::render('Dashboard/Addon/Schema', [
+            'schema' => $this->getSchema(),
+        ]);
+    }
+
+    protected function getSchema(): array
+    {
+        return [
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.1.2',
+            'title' => 'Regrowth Loot Tool Export Schema',
+            'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
+            'type' => 'object',
+            'properties' => [
+                'system' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'date_generated' => ['type' => 'integer'],
+                        'user' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'id' => ['type' => 'integer'],
+                                'name' => ['type' => 'string'],
+                            ],
+                        ],
+                    ],
+                ],
+                'priorities' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer'],
+                            'name' => ['type' => 'string'],
+                            'icon' => ['type' => ['string', 'null']],
+                        ],
+                    ],
+                ],
+                'items' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'item_id' => ['type' => 'integer'],
+                            'priorities' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'priority_id' => ['type' => 'integer'],
+                                        'weight' => ['type' => 'integer'],
+                                    ],
+                                ],
+                            ],
+                            'notes' => ['type' => ['string', 'null']],
+                        ],
+                    ],
+                ],
+                'players' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer'],
+                            'name' => ['type' => 'string'],
+                            'attendance' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'first_attendance' => ['type' => 'string', 'format' => 'date-time'],
+                                    'attended' => ['type' => 'integer'],
+                                    'total' => ['type' => 'integer'],
+                                    'percentage' => ['type' => 'number'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    // ==========================================
+    // Settings management
+    // ==========================================
+
+    public function settings(Request $request)
+    {
+        $councillors = Character::where('is_loot_councillor', true)
+            ->orderBy('name')
+            ->get();
+
+        $tags = app(WarcraftLogsGuildService::class)
+            ->getGuildTags()
+            ->map(function (GuildTag $tag) {
+                $phase = null;
+                if ($tag->phase instanceof Phase) {
+                    $phase = $tag->phase->number;
+                }
+
+                return [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'count_attendance' => $tag->count_attendance,
+                    'phaseNumber' => $phase,
+                ];
+            })
+            ->toArray();
+
+        return Inertia::render('Dashboard/Addon/Settings', [
+            'settings' => [
+                'councillors' => $councillors,
+                'ranks' => GuildRank::orderBy('position')->get(),
+                'tags' => $tags,
+            ],
+            'characters' => Inertia::defer(fn () => Character::with('rank')->orderBy('name')->get()),
+        ]);
+    }
+
+    public function addCouncillor(AddCouncillorRequest $request): RedirectResponse
+    {
+        $character = Character::where('name', $request->validated('character_name'))->firstOrFail();
+
+        $character->update(['is_loot_councillor' => true]);
+
+        return back();
+    }
+
+    public function removeCouncillor(RemoveCouncillorRequest $request, Character $character): RedirectResponse
+    {
+        $character->update(['is_loot_councillor' => false]);
+
+        return back();
     }
 }

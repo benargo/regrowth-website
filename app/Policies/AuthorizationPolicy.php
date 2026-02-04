@@ -39,6 +39,14 @@ abstract class AuthorizationPolicy
     }
 
     /**
+     * Determine if the user is a Loot Councillor.
+     */
+    public function userIsLootCouncillor(User $user): bool
+    {
+        return $user->isLootCouncillor() ?? false;
+    }
+
+    /**
      * Determine if the user is a Member or above (Member, Raider, or Officer).
      */
     public function userIsMemberOrAbove(User $user): bool

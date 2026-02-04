@@ -15,27 +15,32 @@ class PhaseSeeder extends Seeder
         $phases = [
             [
                 'id' => 1,
+                'number' => 1,
                 'description' => "Phase 1: Karazhan, Gruul's Lair, and Magtheridon's Lair",
                 'start_date' => '2026-01-01 00:00:00',
             ],
             [
                 'id' => 2,
+                'number' => 2,
                 'description' => 'Phase 2: The Eye and Serpentshrine Cavern',
                 'start_date' => null,
             ],
             [
                 'id' => 3,
+                'number' => 3,
                 'description' => 'Phase 3: Mount Hyjal and Black Temple',
                 'start_date' => null,
             ],
             [
                 'id' => 4,
-                'description' => "Phase 4: Zul'Aman",
+                'number' => 3.5,
+                'description' => "Phase 3.5: Zul'Aman",
                 'start_date' => null,
             ],
             [
                 'id' => 5,
-                'description' => 'Phase 5: Sunwell Plateau',
+                'number' => 4,
+                'description' => 'Phase 4: Sunwell Plateau',
                 'start_date' => null,
             ],
         ];

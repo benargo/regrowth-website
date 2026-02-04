@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
-import { Deferred, Link } from '@inertiajs/react';
-import Master from '@/Layouts/Master';
-import Alert from '@/Components/Alert';
-import SharedHeader from '@/Components/SharedHeader';
-import FlashMessage from '@/Components/FlashMessage';
-import TabNav from '@/Components/TabNav';
+import { useRef, useState } from "react";
+import { Deferred, Link } from "@inertiajs/react";
+import Master from "@/Layouts/Master";
+import Alert from "@/Components/Alert";
+import FlashMessage from "@/Components/FlashMessage";
+import Icon from "@/Components/FontAwesome/Icon";
+import SharedHeader from "@/Components/SharedHeader";
+import TabNav from "@/Components/TabNav";
 
 export default function AddonExportJson({ exportedData, grmFreshness }) {
     const [flashSuccess, setFlashSuccess] = useState(null);
@@ -22,7 +23,7 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
 
     function exportAddonData() {
         navigator.clipboard.writeText(exportedData).then(() => {
-            setFlashSuccess('JSON data copied to clipboard!');
+            setFlashSuccess("JSON data copied to clipboard!");
         });
     }
 
@@ -40,27 +41,32 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
                 <div className="container mx-auto px-4">
                     <TabNav
                         tabs={[
-                            { name: 'base64', label: 'Base64', href: route('dashboard.addon.export') },
-                            { name: 'json', label: 'JSON', href: route('dashboard.addon.export.json') },
-                            { name: 'schema', label: 'Schema', href: route('dashboard.addon.export.schema') },
+                            { name: "base64", label: "Base64", href: route("dashboard.addon.export") },
+                            { name: "json", label: "JSON", href: route("dashboard.addon.export.json") },
+                            { name: "schema", label: "Schema", href: route("dashboard.addon.export.schema") },
+                            { name: "settings", label: "Settings", href: route("dashboard.addon.settings") },
                         ]}
                         currentTab="json"
                     />
                     <Deferred data="grmFreshness" fallback={<div></div>}>
                         {grmFreshness?.dataIsStale && (
-                            <div className="md:mx-20 mb-6">
+                            <div className="mb-6 md:mx-20">
                                 <Alert type="error">
-                                    <div className="flex flex-col md:flex-row items-center gap-2">
+                                    <div className="flex flex-col items-center gap-2 md:flex-row">
                                         <div className="flex-auto">
-                                            <h2 className="font-bold text-lg mb-1">GRM data out of date</h2>
-                                            <p>The GRM data used to generate this addon data is missing raiders. Please consider uploading a fresh GRM export to ensure your addon data is up to date.</p>
+                                            <h2 className="mb-1 text-lg font-bold">GRM data out of date</h2>
+                                            <p>
+                                                The GRM data used to generate this addon data is missing raiders. Please
+                                                consider uploading a fresh GRM export to ensure your addon data is up to
+                                                date.
+                                            </p>
                                         </div>
                                         <div className="flex-auto">
-                                            <Link 
-                                                href={route('dashboard.grm-upload.form')}
-                                                className="inline-flex items-center p-4 bg-red-600 hover:bg-red-800 border border-transparent rounded-md font-semibold text-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-25 transition ease-in-out duration-150"
+                                            <Link
+                                                href={route("dashboard.grm-upload.form")}
+                                                className="inline-flex items-center rounded-md border border-transparent bg-red-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-25"
                                             >
-                                                <i className="fas fa-file-upload mr-2"></i>
+                                                <Icon icon="file-upload" style="solid" className="mr-2" />
                                                 <span className="whitespace-nowrap">Upload GRM Data</span>
                                             </Link>
                                         </div>
@@ -69,19 +75,24 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
                             </div>
                         )}
                         {!grmFreshness?.dataIsStale && grmDataIsOutdated() && (
-                            <div className="md:mx-20 mb-6">
+                            <div className="mb-6 md:mx-20">
                                 <Alert type="warning">
-                                    <div className="flex flex-col md:flex-row items-center gap-2">
+                                    <div className="flex flex-col items-center gap-2 md:flex-row">
                                         <div className="flex-auto">
-                                            <h2 className="font-bold text-lg mb-1">Old GRM data detected</h2>
-                                            <p>The GRM data used to generate this addon data is over 7 days old (last updated on {new Date(grmFreshness?.lastModified).toLocaleDateString()}). Please consider uploading a fresh GRM export to ensure your addon data is up to date.</p>
+                                            <h2 className="mb-1 text-lg font-bold">Old GRM data detected</h2>
+                                            <p>
+                                                The GRM data used to generate this addon data is over 7 days old (last
+                                                updated on {new Date(grmFreshness?.lastModified).toLocaleDateString()}).
+                                                Please consider uploading a fresh GRM export to ensure your addon data
+                                                is up to date.
+                                            </p>
                                         </div>
                                         <div className="flex-initial">
-                                            <Link 
-                                                href={route('dashboard.grm-upload.form')}
-                                                className="inline-flex items-center p-4 bg-yellow-600 hover:bg-yellow-800 border border-transparent rounded-md font-semibold text-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-25 transition ease-in-out duration-150"
+                                            <Link
+                                                href={route("dashboard.grm-upload.form")}
+                                                className="inline-flex items-center rounded-md border border-transparent bg-yellow-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-yellow-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-25"
                                             >
-                                                <i className="fas fa-file-upload mr-2"></i>
+                                                <Icon icon="file-upload" style="solid" className="mr-2" />
                                                 <span className="whitespace-nowrap">Upload GRM Data</span>
                                             </Link>
                                         </div>
@@ -95,38 +106,41 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
                             <p>Click the button to copy the JSON data to your clipboard.</p>
                         </div>
                         <button
-                            className="flex-none flex items-center justify-center bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded"
+                            className="flex flex-none items-center justify-center rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-800"
                             onClick={exportAddonData}
                         >
-                            <i className="fas fa-copy mr-2"></i>
+                            <Icon icon="copy" style="solid" className="mr-2" />
                             <span>Copy JSON Data</span>
                         </button>
                     </div>
-                    <Deferred data="exportedData" fallback={
-                        <div className="mt-6">
-                            <div className="w-full min-h-64 bg-brown-800/50 border border-gray-800 p-4 rounded flex items-center justify-center">
-                                <p className="text-gray-400 animate-pulse">Loading data... this may take a while.</p>
+                    <Deferred
+                        data="exportedData"
+                        fallback={
+                            <div className="mt-6">
+                                <div className="flex min-h-64 w-full items-center justify-center rounded border border-gray-800 bg-brown-800/50 p-4">
+                                    <p className="animate-pulse text-gray-400">
+                                        Loading data... this may take a while.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    }>
+                        }
+                    >
                         <div className="mt-6">
                             <pre
                                 ref={dataRef}
                                 onClick={selectAllContent}
-                                className="w-full min-h-64 max-h-[600px] overflow-auto bg-brown-800/50 border border-gray-800 text-white p-4 rounded cursor-pointer text-sm"
+                                className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 bg-brown-800/50 p-4 text-sm text-white"
                             >
-                                {exportedData?.length === 0 && 'No addon data available.'}
-                                {exportedData?.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))}
+                                {exportedData?.length === 0 && "No addon data available."}
+                                {exportedData?.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+                                    String.fromCharCode(parseInt(hex, 16)),
+                                )}
                             </pre>
                         </div>
                     </Deferred>
                 </div>
             </div>
-            <FlashMessage
-                type="success"
-                message={flashSuccess}
-                onDismiss={() => setFlashSuccess(null)}
-            />
+            <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
         </Master>
     );
 }

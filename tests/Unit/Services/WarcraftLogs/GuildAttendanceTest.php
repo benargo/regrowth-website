@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\WarcraftLogs;
 
+use App\Services\WarcraftLogs\AttendanceService;
 use App\Services\WarcraftLogs\Data\GuildAttendance;
 use App\Services\WarcraftLogs\Data\GuildAttendancePagination;
 use App\Services\WarcraftLogs\Data\PlayerAttendance;
@@ -31,6 +32,14 @@ class GuildAttendanceTest extends TestCase
         ], $configOverrides);
 
         return new GuildService($config);
+    }
+
+    protected function getAttendanceService(iterable $attendance = [], ?GuildService $guildService = null): AttendanceService
+    {
+        return new AttendanceService(
+            guildService: $guildService ?? $this->getService(),
+            attendance: $attendance,
+        );
     }
 
     protected function fakeSuccessfulAttendanceResponse(array $attendanceData): void
@@ -459,8 +468,8 @@ class GuildAttendanceTest extends TestCase
 
     public function test_calculate_attendance_stats_returns_empty_collection_for_empty_input(): void
     {
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats([]);
+        $service = $this->getAttendanceService([]);
+        $stats = $service->calculate();
 
         $this->assertInstanceOf(Collection::class, $stats);
         $this->assertEmpty($stats);
@@ -478,8 +487,8 @@ class GuildAttendanceTest extends TestCase
             ]),
         ];
 
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats($attendance);
+        $service = $this->getAttendanceService($attendance);
+        $stats = $service->calculate();
 
         $this->assertInstanceOf(Collection::class, $stats);
         $this->assertCount(1, $stats);
@@ -506,8 +515,8 @@ class GuildAttendanceTest extends TestCase
             ]),
         ];
 
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats($attendance);
+        $service = $this->getAttendanceService($attendance);
+        $stats = $service->calculate();
 
         $thrall = $stats->firstWhere('name', 'Thrall');
         $this->assertEquals(100.0, $thrall->percentage);
@@ -542,8 +551,8 @@ class GuildAttendanceTest extends TestCase
             ]),
         ];
 
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats($attendance);
+        $service = $this->getAttendanceService($attendance);
+        $stats = $service->calculate();
 
         $jaina = $stats->firstWhere('name', 'Jaina');
         $thrall = $stats->firstWhere('name', 'Thrall');
@@ -578,8 +587,8 @@ class GuildAttendanceTest extends TestCase
             ]),
         ];
 
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats($attendance);
+        $service = $this->getAttendanceService($attendance);
+        $stats = $service->calculate();
 
         $sylvanas = $stats->firstWhere('name', 'Sylvanas');
         $this->assertEquals(100.0, $sylvanas->percentage);
@@ -617,8 +626,8 @@ class GuildAttendanceTest extends TestCase
             ]),
         ];
 
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats($attendance);
+        $service = $this->getAttendanceService($attendance);
+        $stats = $service->calculate();
 
         $anduin = $stats->firstWhere('name', 'Anduin');
         $thrall = $stats->firstWhere('name', 'Thrall');
@@ -652,8 +661,8 @@ class GuildAttendanceTest extends TestCase
             ]);
         });
 
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats($attendance);
+        $service = $this->getAttendanceService($attendance);
+        $stats = $service->calculate();
 
         $this->assertCount(1, $stats);
         $thrall = $stats->firstWhere('name', 'Thrall');
@@ -672,8 +681,8 @@ class GuildAttendanceTest extends TestCase
             ]),
         ];
 
-        $service = $this->getService();
-        $stats = $service->calculateAttendanceStats($attendance);
+        $service = $this->getAttendanceService($attendance);
+        $stats = $service->calculate();
 
         $array = $stats->first()->toArray();
 
@@ -908,8 +917,8 @@ class GuildAttendanceTest extends TestCase
 
     public function test_aggregate_attendance_stats_returns_empty_for_empty_input(): void
     {
-        $service = $this->getService();
-        $result = $service->aggregateAttendanceStats(collect());
+        $service = $this->getAttendanceService();
+        $result = $service->aggregate(collect());
 
         $this->assertInstanceOf(Collection::class, $result);
         $this->assertEmpty($result);
@@ -927,8 +936,8 @@ class GuildAttendanceTest extends TestCase
             ),
         ]);
 
-        $service = $this->getService();
-        $result = $service->aggregateAttendanceStats(collect([$stats]));
+        $service = $this->getAttendanceService();
+        $result = $service->aggregate(collect([$stats]));
 
         $this->assertCount(1, $result);
         $this->assertEquals('Thrall', $result->first()->name);
@@ -957,8 +966,8 @@ class GuildAttendanceTest extends TestCase
             ),
         ]);
 
-        $service = $this->getService();
-        $result = $service->aggregateAttendanceStats(collect([$stats1, $stats2]));
+        $service = $this->getAttendanceService();
+        $result = $service->aggregate(collect([$stats1, $stats2]));
 
         $thrall = $result->first();
         $this->assertTrue($thrall->firstAttendance->eq(Carbon::parse('2025-01-01')));
@@ -986,8 +995,8 @@ class GuildAttendanceTest extends TestCase
             ),
         ]);
 
-        $service = $this->getService();
-        $result = $service->aggregateAttendanceStats(collect([$stats1, $stats2]));
+        $service = $this->getAttendanceService();
+        $result = $service->aggregate(collect([$stats1, $stats2]));
 
         $thrall = $result->first();
         $this->assertEquals(8, $thrall->totalReports);
@@ -1015,8 +1024,8 @@ class GuildAttendanceTest extends TestCase
             ),
         ]);
 
-        $service = $this->getService();
-        $result = $service->aggregateAttendanceStats(collect([$stats1, $stats2]));
+        $service = $this->getAttendanceService();
+        $result = $service->aggregate(collect([$stats1, $stats2]));
 
         $thrall = $result->first();
         $this->assertEquals(6, $thrall->reportsAttended);
@@ -1044,8 +1053,8 @@ class GuildAttendanceTest extends TestCase
             ),
         ]);
 
-        $service = $this->getService();
-        $result = $service->aggregateAttendanceStats(collect([$stats1, $stats2]));
+        $service = $this->getAttendanceService();
+        $result = $service->aggregate(collect([$stats1, $stats2]));
 
         $thrall = $result->first();
         // 6 attended out of 8 total = 75%
@@ -1074,8 +1083,8 @@ class GuildAttendanceTest extends TestCase
             ),
         ]);
 
-        $service = $this->getService();
-        $result = $service->aggregateAttendanceStats(collect([$stats1, $stats2]));
+        $service = $this->getAttendanceService();
+        $result = $service->aggregate(collect([$stats1, $stats2]));
 
         $this->assertCount(2, $result);
 
@@ -1086,12 +1095,12 @@ class GuildAttendanceTest extends TestCase
         $this->assertEquals(3, $jaina->totalReports);
     }
 
-    // ==================== calculateMultiTagAttendanceStats Tests ====================
+    // ==================== Multi-Tag Attendance Stats Tests ====================
 
     public function test_calculate_multi_tag_attendance_stats_with_empty_array_returns_empty(): void
     {
-        $service = $this->getService();
-        $result = $service->calculateMultiTagAttendanceStats([]);
+        $service = $this->getAttendanceService();
+        $result = $service->tags([])->calculate();
 
         $this->assertInstanceOf(Collection::class, $result);
         $this->assertEmpty($result);
@@ -1153,8 +1162,9 @@ class GuildAttendanceTest extends TestCase
             ->twice()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
-        $service = $this->getService();
-        $result = $service->calculateMultiTagAttendanceStats([1, 2]);
+        $guildService = $this->getService();
+        $service = $this->getAttendanceService([], $guildService);
+        $result = $service->tags([1, 2])->calculate();
 
         $this->assertCount(1, $result);
         $thrall = $result->first();

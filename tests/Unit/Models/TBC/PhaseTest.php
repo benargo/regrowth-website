@@ -41,6 +41,7 @@ class PhaseTest extends ModelTestCase
         $model = new Phase;
 
         $this->assertFillable($model, [
+            'number',
             'description',
             'start_date',
         ]);
@@ -60,10 +61,11 @@ class PhaseTest extends ModelTestCase
     public function it_can_be_created_with_required_attributes(): void
     {
         $phase = $this->create([
+            'number' => 1,
             'description' => 'Phase 1: Karazhan',
         ]);
 
-        $this->assertTableHas(['description' => 'Phase 1: Karazhan']);
+        $this->assertTableHas(['number' => 1, 'description' => 'Phase 1: Karazhan']);
         $this->assertModelExists($phase);
     }
 
@@ -73,11 +75,13 @@ class PhaseTest extends ModelTestCase
         $startDate = now()->subMonth()->startOfSecond();
 
         $phase = $this->create([
+            'number' => 2,
             'description' => 'Phase 2: Gruul & Magtheridon',
             'start_date' => $startDate,
         ]);
 
         $this->assertTableHas([
+            'number' => 2,
             'description' => 'Phase 2: Gruul & Magtheridon',
         ]);
         $this->assertModelExists($phase);
@@ -141,6 +145,24 @@ class PhaseTest extends ModelTestCase
         $phase = $this->factory()->unscheduled()->create();
 
         $this->assertNull($phase->start_date);
+    }
+
+    #[Test]
+    public function number_accessor_returns_int_for_whole_numbers(): void
+    {
+        $phase = $this->create(['number' => 1.0]);
+
+        $this->assertIsInt($phase->number);
+        $this->assertSame(1, $phase->number);
+    }
+
+    #[Test]
+    public function number_accessor_returns_float_for_decimal_numbers(): void
+    {
+        $phase = $this->create(['number' => 2.5]);
+
+        $this->assertIsFloat($phase->number);
+        $this->assertSame(2.5, $phase->number);
     }
 
     #[Test]

@@ -31,6 +31,18 @@ class GuildRankTest extends ModelTestCase
         $this->assertFillable($model, [
             'position',
             'name',
+            'count_attendance',
+        ]);
+    }
+
+    #[Test]
+    public function it_has_expected_casts(): void
+    {
+        $model = new GuildRank;
+
+        $this->assertCasts($model, [
+            'position' => 'integer',
+            'count_attendance' => 'boolean',
         ]);
     }
 
@@ -68,6 +80,26 @@ class GuildRankTest extends ModelTestCase
 
         $this->assertSame(1, $guildRank->position);
         $this->assertSame('Officer', $guildRank->name);
+    }
+
+    #[Test]
+    public function count_attendance_defaults_to_true(): void
+    {
+        $guildRank = $this->create(['position' => 0, 'name' => 'Raider']);
+
+        $this->assertTrue($guildRank->count_attendance);
+    }
+
+    #[Test]
+    public function count_attendance_can_be_set_to_false(): void
+    {
+        $guildRank = $this->create([
+            'position' => 0,
+            'name' => 'Social',
+            'count_attendance' => false,
+        ]);
+
+        $this->assertFalse($guildRank->count_attendance);
     }
 
     #[Test]

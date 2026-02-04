@@ -52,6 +52,9 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
     Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
+    Route::get('/addon/settings', [AddonController::class, 'settings'])->name('addon.settings');
+    Route::post('/addon/settings/councillors', [AddonController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
+    Route::delete('/addon/settings/councillors/{character}', [AddonController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
 
     /**
      * Guild ranks management
@@ -60,6 +63,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::post('/manage-ranks', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
     Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
     Route::post('/ranks', [GuildRankController::class, 'store'])->name('ranks.store');
+    Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
     Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
 
     /**

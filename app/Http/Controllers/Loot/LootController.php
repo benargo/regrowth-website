@@ -8,6 +8,7 @@ use App\Http\Resources\LootCouncil\ItemCommentResource;
 use App\Http\Resources\LootCouncil\ItemResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\LootCouncil\Item;
+use App\Models\LootCouncil\ItemComment;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
@@ -73,7 +74,7 @@ class LootController extends Controller
         return Inertia::render('Loot/ItemShow', [
             'item' => new ItemResource($item),
             'can' => [
-                'create_comment' => $request->user()->can('create-loot-comment'),
+                'create_comment' => $request->user()->can('create', ItemComment::class),
                 'edit_item' => $request->user()->can('edit-loot-items'),
             ],
             'comments' => ItemCommentResource::collection($comments),
@@ -102,7 +103,7 @@ class LootController extends Controller
             'item' => new ItemResource($item),
             'allPriorities' => PriorityResource::collection($allPriorities),
             'can' => [
-                'create_comment' => $request->user()->can('create-loot-comment'),
+                'create_comment' => $request->user()->can('create', ItemComment::class),
                 'edit_item' => $request->user()->can('edit-loot-items'),
             ],
             'comments' => ItemCommentResource::collection($comments),
@@ -153,8 +154,12 @@ class LootController extends Controller
             return [];
         }
 
+        if ($bossId === -1) {
+            return $this->getTrashItemsForRaid(request()->input('raid_id'));
+        }
+
         $items = Cache::remember(
-            "loot_items_boss_{$bossId}",
+            "loot_items.boss_{$bossId}",
             now()->addDay(),
             fn () => Item::query()
                 ->where('boss_id', $bossId)
@@ -166,6 +171,35 @@ class LootController extends Controller
 
         return [
             'boss_id' => $bossId,
+            'items' => ItemResource::collection($items)->collection->toArray(),
+        ];
+    }
+
+    /**
+     * Get trash items for a specific raid.
+     *
+     * @return array{boss_id: int, items: array<int, mixed>}
+     */
+    protected function getTrashItemsForRaid(?int $raidId = null): array
+    {
+        if (! $raidId) {
+            $raidId = 1;
+        }
+
+        $items = Cache::remember(
+            "loot_items.trash_raid_{$raidId}",
+            now()->addDay(),
+            fn () => Item::query()
+                ->where('raid_id', $raidId)
+                ->where('boss_id', null)
+                ->with([
+                    'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+                ])
+                ->get()
+        );
+
+        return [
+            'boss_id' => -1,
             'items' => ItemResource::collection($items)->collection->toArray(),
         ];
     }

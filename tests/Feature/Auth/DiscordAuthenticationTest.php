@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\DiscordRole;
 use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
@@ -28,6 +29,9 @@ class DiscordAuthenticationTest extends TestCase
     #[Test]
     public function discord_callback_creates_new_user(): void
     {
+        DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
+
         $this->mockDiscordOAuth();
         $this->mockDiscordGuildService();
 
@@ -38,24 +42,33 @@ class DiscordAuthenticationTest extends TestCase
             'id' => '123456789012345678',
             'username' => 'testuser',
         ]);
+
+        $user = User::find('123456789012345678');
+        $this->assertTrue($user->discordRoles->contains('name', 'Member'));
+
         $response->assertRedirect('/');
     }
 
     #[Test]
     public function discord_callback_updates_existing_user(): void
     {
-        User::factory()->create([
+        $guest = DiscordRole::find('829022292590985226') ??
+            DiscordRole::factory()->guest()->create();
+        $officer = DiscordRole::find('829021769448816691') ??
+            DiscordRole::factory()->officer()->create();
+
+        $user = User::factory()->create([
             'id' => '123456789012345678',
             'username' => 'oldusername',
             'discriminator' => '1234',
             'nickname' => 'OldNick',
-            'roles' => ['829022292590985226'], // Old Guest role
         ]);
+        $user->discordRoles()->attach($guest->id);
 
         $this->mockDiscordOAuth();
         $this->mockDiscordGuildService([
             'nick' => 'NewNickname',
-            'roles' => ['829021769448816691'], // New Officer role
+            'roles' => [$officer->id], // New Officer role from Discord API
         ]);
 
         $response = $this->get('/auth/discord/callback?code=test_code');
@@ -67,9 +80,9 @@ class DiscordAuthenticationTest extends TestCase
             'nickname' => 'NewNickname',
         ]);
 
-        $user = User::find('123456789012345678');
-        $this->assertContains('829021769448816691', $user->roles);
-        $this->assertNotContains('829022292590985226', $user->roles); // Old role should be replaced
+        $updatedUser = User::find('123456789012345678');
+        $this->assertTrue($updatedUser->discordRoles->contains('name', 'Officer'));
+        $this->assertFalse($updatedUser->discordRoles->contains('name', 'Guest'));
         $response->assertRedirect('/');
     }
 
@@ -137,11 +150,10 @@ class DiscordAuthenticationTest extends TestCase
     #[Test]
     public function authenticated_user_can_access_dashboard(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->officer()->create([
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
-            'roles' => ['829021769448816691'],
         ]);
 
         $response = $this->actingAs($user)->get('/dashboard');

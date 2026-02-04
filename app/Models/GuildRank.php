@@ -20,6 +20,25 @@ class GuildRank extends Model
     protected $table = 'guild_ranks';
 
     /**
+     * The model's default values for attributes.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'count_attendance' => true,
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'position' => 'integer',
+        'count_attendance' => 'boolean',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -27,6 +46,7 @@ class GuildRank extends Model
     protected $fillable = [
         'position',
         'name',
+        'count_attendance',
     ];
 
     /**

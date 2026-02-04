@@ -54,7 +54,7 @@ class CommentController extends Controller
      */
     public function destroy(Request $request, Item $item, ItemComment $comment): RedirectResponse
     {
-        Gate::authorize('delete-loot-comment', $comment);
+        Gate::authorize('delete', $comment);
 
         $comment->update(['deleted_by' => $request->user()->id]);
         $comment->delete();

@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
+import Icon from "@/Components/FontAwesome/Icon";
 
 export function BossItemsSkeleton() {
     return (
-        <div className="space-y-2 animate-pulse">
+        <div className="animate-pulse space-y-2">
             {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 bg-amber-600/20 rounded" />
+                <div key={i} className="h-12 rounded bg-amber-600/20" />
             ))}
         </div>
     );
@@ -32,19 +33,21 @@ export default function BossCollapse({ title, bossId, onExpand, loading, childre
     }, [bossId]);
 
     return (
-        <div className="border border-amber-600 rounded-md">
+        <div className="rounded-md border border-amber-600">
             <button
                 onClick={handleToggle}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-600/10 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-amber-600/10"
             >
-                <span className={`flex items-center justify-items-center transition-transform duration-500 ${expanded ? '-rotate-180' : ''}`}>
-                    <i className="fas fa-chevron-down"/>
+                <span
+                    className={`flex items-center justify-items-center transition-transform duration-500 ${expanded ? "-rotate-180" : ""}`}
+                >
+                    <Icon icon="chevron-down" style="solid" />
                 </span>
                 <h3 className="text-lg font-semibold">{title}</h3>
             </button>
             {expanded && (
-                <div className="px-4 py-3 border-t border-amber-600">
-                    {loading ? <BossItemsSkeleton /> : (children || <BossItemsSkeleton />)}
+                <div className="border-t border-amber-600 px-4 py-3">
+                    {loading ? <BossItemsSkeleton /> : children || <BossItemsSkeleton />}
                 </div>
             )}
         </div>

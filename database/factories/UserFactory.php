@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\DiscordRole;
+use App\Models\DiscordRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -26,7 +26,6 @@ class UserFactory extends Factory
             'avatar' => fake()->optional(0.8)->md5(),
             'guild_avatar' => fake()->optional(0.8)->md5(),
             'banner' => null,
-            'roles' => [(string) DiscordRole::Member->value],
             'remember_token' => Str::random(10),
         ];
     }
@@ -36,9 +35,11 @@ class UserFactory extends Factory
      */
     public function officer(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'roles' => [(string) DiscordRole::Officer->value],
-        ]);
+        return $this->afterCreating(function ($user) {
+            $user->discordRoles()->syncWithoutDetaching([
+                DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 1])->id,
+            ]);
+        });
     }
 
     /**
@@ -46,9 +47,11 @@ class UserFactory extends Factory
      */
     public function raider(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'roles' => [(string) DiscordRole::Raider->value],
-        ]);
+        return $this->afterCreating(function ($user) {
+            $user->discordRoles()->syncWithoutDetaching([
+                DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 3])->id,
+            ]);
+        });
     }
 
     /**
@@ -56,9 +59,11 @@ class UserFactory extends Factory
      */
     public function member(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'roles' => [(string) DiscordRole::Member->value],
-        ]);
+        return $this->afterCreating(function ($user) {
+            $user->discordRoles()->syncWithoutDetaching([
+                DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 4])->id,
+            ]);
+        });
     }
 
     /**
@@ -66,19 +71,21 @@ class UserFactory extends Factory
      */
     public function guest(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'roles' => [(string) DiscordRole::Guest->value],
-        ]);
+        return $this->afterCreating(function ($user) {
+            $user->discordRoles()->syncWithoutDetaching([
+                DiscordRole::firstOrCreate(['id' => '829022292590985226'], ['name' => 'Guest', 'position' => 5])->id,
+            ]);
+        });
     }
 
     /**
-     * Indicate the user has multiple roles.
+     * Indicate the user has the given roles.
      */
-    public function withRoles(array $roles): static
+    public function withRoles(array $roleIds): static
     {
-        return $this->state(fn (array $attributes) => [
-            'roles' => $roles,
-        ]);
+        return $this->afterCreating(function ($user) use ($roleIds) {
+            $user->discordRoles()->syncWithoutDetaching($roleIds);
+        });
     }
 
     /**
@@ -86,8 +93,8 @@ class UserFactory extends Factory
      */
     public function noRoles(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'roles' => [],
-        ]);
+        return $this->afterCreating(function ($user) {
+            $user->discordRoles()->detach();
+        });
     }
 }

@@ -9,15 +9,38 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GuildTag extends Model
 {
-    /** @use HasFactory<\Database\Factories\WarcraftLogs\GuildTagFactory> */
     use HasFactory;
 
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
     protected $table = 'wcl_guild_tags';
 
+    /**
+     * The attributes that are the model's default values.
+     *
+     * @var array
+     */
     protected $attributes = [
         'count_attendance' => false,
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'count_attendance' => 'boolean',
+    ];
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
         'id',
         'name',

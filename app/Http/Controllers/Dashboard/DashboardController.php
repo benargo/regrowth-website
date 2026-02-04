@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Enums\DiscordRole;
 use App\Http\Controllers\Controller;
+use App\Models\DiscordRole;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -13,9 +13,9 @@ class DashboardController extends Controller
     {
         return Inertia::render('Dashboard/Index', [
             'discordRoles' => [
-                'raider' => DiscordRole::Raider->value,
-                'member' => DiscordRole::Member->value,
-                'guest' => DiscordRole::Guest->value,
+                'raider' => DiscordRole::where('name', 'Raider')->value('id'),
+                'member' => DiscordRole::where('name', 'Member')->value('id'),
+                'guest' => DiscordRole::where('name', 'Guest')->value('id'),
             ],
         ]);
     }

@@ -14,14 +14,42 @@ class Character extends Model
 {
     use HasFactory, Prunable;
 
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'characters';
+
+    /**
+     * The attributes that are the model's default values.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'is_loot_councillor' => false,
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'is_main' => 'boolean',
+        'is_loot_councillor' => 'boolean',
+    ];
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
         'id',
         'name',
         'is_main',
-    ];
-
-    protected $casts = [
-        'is_main' => 'boolean',
+        'is_loot_councillor',
     ];
 
     /**

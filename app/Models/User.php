@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\DiscordRole;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Config;
@@ -41,7 +41,6 @@ class User extends Authenticatable
         'avatar',
         'guild_avatar',
         'banner',
-        'roles',
     ];
 
     /**
@@ -62,8 +61,12 @@ class User extends Authenticatable
     {
         return [
             'id' => 'string',
-            'roles' => 'array',
         ];
+    }
+
+    public function discordRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(DiscordRole::class, 'discord_role_user', 'user_id', 'discord_role_id');
     }
 
     /**
@@ -71,7 +74,7 @@ class User extends Authenticatable
      */
     public function isOfficer(): bool
     {
-        return in_array((string) DiscordRole::Officer->value, $this->roles ?? []);
+        return $this->discordRoles->contains('name', 'Officer');
     }
 
     /**
@@ -79,7 +82,7 @@ class User extends Authenticatable
      */
     public function isRaider(): bool
     {
-        return in_array((string) DiscordRole::Raider->value, $this->roles ?? []);
+        return $this->discordRoles->contains('name', 'Raider');
     }
 
     /**
@@ -87,7 +90,15 @@ class User extends Authenticatable
      */
     public function isMember(): bool
     {
-        return in_array((string) DiscordRole::Member->value, $this->roles ?? []);
+        return $this->discordRoles->contains('name', 'Member');
+    }
+
+    /**
+     * Check if user has the Loot Councillor role.
+     */
+    public function isLootCouncillor(): bool
+    {
+        return $this->discordRoles->contains('name', 'Loot Councillor');
     }
 
     /**
@@ -95,7 +106,7 @@ class User extends Authenticatable
      */
     public function isGuest(): bool
     {
-        return in_array((string) DiscordRole::Guest->value, $this->roles ?? []);
+        return $this->discordRoles->contains('name', 'Guest');
     }
 
     /**
@@ -103,13 +114,15 @@ class User extends Authenticatable
      */
     public function highestRole(): ?string
     {
-        foreach (DiscordRole::getRoleHierarchy() as $roleId => $roleName) {
-            if (in_array((string) $roleId, $this->roles ?? [])) {
-                return $roleName;
-            }
-        }
+        return $this->discordRoles->sortBy('position')->first()?->name;
+    }
 
-        return null;
+    /**
+     * Determine if the user can comment on loot items
+     */
+    public function canCommentOnLootItems(): bool
+    {
+        return $this->discordRoles->where('can_comment_on_loot_items', true)->isNotEmpty();
     }
 
     /**

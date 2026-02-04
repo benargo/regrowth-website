@@ -37,6 +37,7 @@ class CharacterTest extends ModelTestCase
             'id',
             'name',
             'is_main',
+            'is_loot_councillor',
         ]);
     }
 
@@ -47,6 +48,7 @@ class CharacterTest extends ModelTestCase
 
         $this->assertCasts($model, [
             'is_main' => 'boolean',
+            'is_loot_councillor' => 'boolean',
         ]);
     }
 
@@ -87,6 +89,22 @@ class CharacterTest extends ModelTestCase
         $character = $this->factory()->main()->create();
 
         $this->assertTrue($character->is_main);
+    }
+
+    #[Test]
+    public function it_can_be_created_as_loot_councillor(): void
+    {
+        $character = $this->factory()->lootCouncillor()->create();
+
+        $this->assertTrue($character->is_loot_councillor);
+    }
+
+    #[Test]
+    public function it_is_not_a_loot_councillor_by_default(): void
+    {
+        $character = $this->create();
+
+        $this->assertFalse($character->is_loot_councillor);
     }
 
     #[Test]

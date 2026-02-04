@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Middleware;
 
+use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -15,12 +16,7 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_can_access_control_panel_as_true_for_officers(): void
     {
-        $user = User::factory()->create([
-            'id' => '123456789012345678',
-            'username' => 'officer_user',
-            'discriminator' => '0',
-            'roles' => ['829021769448816691'], // Officer role
-        ]);
+        $user = User::factory()->officer()->create();
 
         $this->actingAs($user)
             ->get('/')
@@ -31,12 +27,7 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_can_access_control_panel_as_false_for_raiders(): void
     {
-        $user = User::factory()->create([
-            'id' => '123456789012345679',
-            'username' => 'raider_user',
-            'discriminator' => '0',
-            'roles' => ['1265247017215594496'], // Raider role
-        ]);
+        $user = User::factory()->raider()->create();
 
         $this->actingAs($user)
             ->get('/')
@@ -47,12 +38,7 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_can_access_control_panel_as_false_for_members(): void
     {
-        $user = User::factory()->create([
-            'id' => '123456789012345680',
-            'username' => 'member_user',
-            'discriminator' => '0',
-            'roles' => ['829022020301094922'], // Member role
-        ]);
+        $user = User::factory()->member()->create();
 
         $this->actingAs($user)
             ->get('/')
@@ -71,13 +57,12 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_user_data_with_inertia_for_authenticated_user(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->member()->create([
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
             'nickname' => 'TestNick',
             'avatar' => 'abc123',
-            'roles' => ['829022020301094922'],
         ]);
 
         $this->actingAs($user)
@@ -94,12 +79,11 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_display_name_as_username_when_nickname_is_null(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->member()->create([
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
             'nickname' => null,
-            'roles' => ['829022020301094922'],
         ]);
 
         $this->actingAs($user)
@@ -124,7 +108,6 @@ class HandleInertiaRequestsTest extends TestCase
             'username' => 'testuser',
             'discriminator' => '0',
             'guild_avatar' => 'avatarhash123',
-            'roles' => [],
         ]);
 
         $this->actingAs($user)
@@ -139,11 +122,15 @@ class HandleInertiaRequestsTest extends TestCase
     #[Test]
     public function it_shares_highest_role_for_officer(): void
     {
-        $user = User::factory()->create([
+        $officer = DiscordRole::find('829021769448816691') ??
+            DiscordRole::factory()->officer()->create();
+        $member = DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
+
+        $user = User::factory()->withRoles([$officer->id, $member->id])->create([
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
-            'roles' => ['829021769448816691', '829022020301094922'], // Officer + Member
         ]);
 
         $this->actingAs($user)
@@ -159,7 +146,6 @@ class HandleInertiaRequestsTest extends TestCase
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
-            'roles' => ['999999999999999999'], // Unknown role
         ]);
 
         $this->actingAs($user)

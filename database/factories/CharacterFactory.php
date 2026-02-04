@@ -35,6 +35,16 @@ class CharacterFactory extends Factory
     }
 
     /**
+     * Indicate that the character is a loot councillor.
+     */
+    public function lootCouncillor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_loot_councillor' => true,
+        ]);
+    }
+
+    /**
      * Indicate that the character has a guild rank.
      */
     public function withRank(): static

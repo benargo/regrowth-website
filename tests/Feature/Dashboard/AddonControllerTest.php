@@ -10,12 +10,12 @@ use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
+use App\Services\WarcraftLogs\AttendanceService;
 use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
 use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\LazyCollection;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Tests\TestCase;
@@ -491,7 +491,7 @@ class AddonControllerTest extends TestCase
         );
     }
 
-    public function test_export_schema_id_contains_version_1_1_1(): void
+    public function test_export_schema_id_contains_version_1_1_2(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -499,7 +499,7 @@ class AddonControllerTest extends TestCase
 
         $schema = $response->original->getData()['page']['props']['schema'];
 
-        $this->assertStringContainsString('v=1.1.1', $schema['$id']);
+        $this->assertStringContainsString('v=1.1.2', $schema['$id']);
     }
 
     // ==========================================
@@ -907,9 +907,11 @@ class AddonControllerTest extends TestCase
         $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
         $wclGuildService->shouldReceive('getGuildTags')
             ->andReturn(collect([$tag]));
-        $wclGuildService->shouldReceive('getAttendanceLazy')
-            ->andReturn(LazyCollection::make([]));
-        $wclGuildService->shouldReceive('calculateAttendanceStats')
+
+        $attendanceService = Mockery::mock(AttendanceService::class);
+        $attendanceService->shouldReceive('tags')->andReturnSelf();
+        $attendanceService->shouldReceive('playerNames')->andReturnSelf();
+        $attendanceService->shouldReceive('calculate')
             ->andReturn(collect([
                 new PlayerAttendanceStats(
                     name: 'TestPlayer',
@@ -930,6 +932,7 @@ class AddonControllerTest extends TestCase
             ]));
 
         $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(AttendanceService::class, $attendanceService);
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
@@ -962,9 +965,11 @@ class AddonControllerTest extends TestCase
         $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
         $wclGuildService->shouldReceive('getGuildTags')
             ->andReturn(collect([$tag]));
-        $wclGuildService->shouldReceive('getAttendanceLazy')
-            ->andReturn(LazyCollection::make([]));
-        $wclGuildService->shouldReceive('calculateAttendanceStats')
+
+        $attendanceService = Mockery::mock(AttendanceService::class);
+        $attendanceService->shouldReceive('tags')->andReturnSelf();
+        $attendanceService->shouldReceive('playerNames')->andReturnSelf();
+        $attendanceService->shouldReceive('calculate')
             ->andReturn(collect([
                 new PlayerAttendanceStats(
                     name: 'TestPlayer',
@@ -985,6 +990,7 @@ class AddonControllerTest extends TestCase
             ]));
 
         $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(AttendanceService::class, $attendanceService);
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
@@ -1011,9 +1017,11 @@ class AddonControllerTest extends TestCase
         $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
         $wclGuildService->shouldReceive('getGuildTags')
             ->andReturn(collect([$tag]));
-        $wclGuildService->shouldReceive('getAttendanceLazy')
-            ->andReturn(LazyCollection::make([]));
-        $wclGuildService->shouldReceive('calculateAttendanceStats')
+
+        $attendanceService = Mockery::mock(AttendanceService::class);
+        $attendanceService->shouldReceive('tags')->andReturnSelf();
+        $attendanceService->shouldReceive('playerNames')->andReturnSelf();
+        $attendanceService->shouldReceive('calculate')
             ->andReturn(collect([
                 new PlayerAttendanceStats(
                     name: 'TestPlayer',
@@ -1034,6 +1042,7 @@ class AddonControllerTest extends TestCase
             ]));
 
         $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(AttendanceService::class, $attendanceService);
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));

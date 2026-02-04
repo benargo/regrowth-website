@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Loot;
 
+use App\Models\LootCouncil\ItemComment;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreItemCommentRequest extends FormRequest
@@ -11,7 +12,7 @@ class StoreItemCommentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('create-loot-comment');
+        return $this->user()->can('create', ItemComment::class);
     }
 
     /**

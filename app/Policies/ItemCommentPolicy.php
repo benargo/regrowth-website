@@ -15,8 +15,7 @@ class ItemCommentPolicy extends AuthorizationPolicy
      */
     public function create(User $user): bool
     {
-        // return $this->userIsOfficer($user) || $this->userIsRaider($user);
-        return $this->userIsOfficer($user);
+        return $user->canCommentOnLootItems();
     }
 
     /**
@@ -28,7 +27,7 @@ class ItemCommentPolicy extends AuthorizationPolicy
             return true;
         }
 
-        return $this->userIsRaider($user) && $comment->user_id === $user->id;
+        return $comment->user_id === $user->id;
     }
 
     /**
@@ -36,7 +35,10 @@ class ItemCommentPolicy extends AuthorizationPolicy
      */
     public function update(User $user, ItemComment $comment): bool
     {
-        return ($this->userIsOfficer($user) || $this->userIsRaider($user))
-            && $comment->user_id === $user->id;
+        if ($this->userIsOfficer($user)) {
+            return true;
+        }
+
+        return $comment->user_id === $user->id;
     }
 }

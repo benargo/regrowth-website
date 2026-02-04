@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Enums\DiscordRole;
 use App\Http\Resources\UserResource;
+use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -192,14 +192,20 @@ class UserResourceTest extends TestCase
     #[Test]
     public function it_returns_roles(): void
     {
-        $user = User::factory()->create([
-            'roles' => [DiscordRole::Officer->value, DiscordRole::Member->value],
-        ]);
+        $officer = DiscordRole::find('829021769448816691') ??
+            DiscordRole::factory()->officer()->create();
+        $member = DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
 
-        $resource = new UserResource($user);
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$officer->id, $member->id]);
+
+        $resource = new UserResource($user->fresh()->load('discordRoles'));
         $array = $resource->toArray(new Request);
 
-        $this->assertSame([DiscordRole::Officer->value, DiscordRole::Member->value], $array['roles']);
+        $this->assertContains($officer->id, $array['roles']);
+        $this->assertContains($member->id, $array['roles']);
+        $this->assertCount(2, $array['roles']);
     }
 
     #[Test]
@@ -271,13 +277,20 @@ class UserResourceTest extends TestCase
     #[Test]
     public function it_returns_officer_as_highest_when_multiple_roles(): void
     {
+        $officer = DiscordRole::find('829021769448816691') ??
+            DiscordRole::factory()->officer()->create();
+        $member = DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
+        $guest = DiscordRole::find('829022292590985226') ??
+            DiscordRole::factory()->guest()->create();
+
         $user = User::factory()->withRoles([
-            DiscordRole::Member->value,
-            DiscordRole::Officer->value,
-            DiscordRole::Guest->value,
+            $member->id,
+            $officer->id,
+            $guest->id,
         ])->create();
 
-        $resource = new UserResource($user);
+        $resource = new UserResource($user->fresh()->load('discordRoles'));
         $array = $resource->toArray(new Request);
 
         $this->assertSame('Officer', $array['highest_role']);

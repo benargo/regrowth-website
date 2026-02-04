@@ -3,6 +3,7 @@
 namespace App\Models\TBC;
 
 use App\Models\WarcraftLogs\GuildTag;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,6 +27,7 @@ class Phase extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'number',
         'description',
         'start_date',
     ];
@@ -40,6 +42,18 @@ class Phase extends Model
         return [
             'start_date' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the phase number attribute.
+     */
+    protected function number(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                return fmod($value, 1) === 0.0 ? (int) $value : $value;
+            },
+        );
     }
 
     /**

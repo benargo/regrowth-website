@@ -22,7 +22,7 @@ class UserResource extends JsonResource
             'display_name' => $this->display_name,
             'avatar' => $this->avatar_url,
             'banner' => $this->banner_url,
-            'roles' => $this->roles,
+            'roles' => $this->discordRoles->pluck('id')->values()->toArray(),
             'highest_role' => $this->highestRole(),
         ];
     }

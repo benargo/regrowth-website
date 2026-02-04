@@ -19,6 +19,17 @@ class GuildRankFactory extends Factory
         return [
             'position' => fake()->unique()->numberBetween(0, 9),
             'name' => fake()->word(),
+            'count_attendance' => true,
         ];
+    }
+
+    /**
+     * Indicate that the guild rank should not count attendance.
+     */
+    public function doesNotCountAttendance(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'count_attendance' => false,
+        ]);
     }
 }

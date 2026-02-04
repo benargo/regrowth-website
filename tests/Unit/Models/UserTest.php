@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\DiscordRole;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -36,7 +38,6 @@ class UserTest extends ModelTestCase
             'avatar',
             'guild_avatar',
             'banner',
-            'roles',
         ]);
     }
 
@@ -47,7 +48,6 @@ class UserTest extends ModelTestCase
 
         $this->assertCasts($model, [
             'id' => 'string',
-            'roles' => 'array',
         ]);
     }
 
@@ -66,7 +66,6 @@ class UserTest extends ModelTestCase
             'id' => '123456789012345678',
             'username' => 'testuser',
             'discriminator' => '0',
-            'roles' => ['829021769448816691'],
         ]);
 
         $this->assertTableHas(['id' => '123456789012345678', 'username' => 'testuser']);
@@ -74,28 +73,33 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_casts_roles_to_array(): void
+    public function discord_roles_returns_belongs_to_many_relationship(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345678',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'roles' => ['829021769448816691', '1265247017215594496'],
-        ]);
+        $model = new User;
 
-        $this->assertIsArray($user->roles);
-        $this->assertContains('829021769448816691', $user->roles);
+        $this->assertInstanceOf(BelongsToMany::class, $model->discordRoles());
+    }
+
+    #[Test]
+    public function discord_roles_returns_associated_roles(): void
+    {
+        $officer = DiscordRole::find('829021769448816691') ??
+            DiscordRole::factory()->officer()->create();
+        $member = DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$officer->id, $member->id]);
+
+        $this->assertCount(2, $user->discordRoles);
+        $this->assertTrue($user->discordRoles->contains($officer));
+        $this->assertTrue($user->discordRoles->contains($member));
     }
 
     #[Test]
     public function is_officer_returns_true_for_officer_role(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345678',
-            'username' => 'officer_user',
-            'discriminator' => '0',
-            'roles' => ['829021769448816691'], // Officer role
-        ]);
+        $user = User::factory()->officer()->create();
 
         $this->assertTrue($user->isOfficer());
     }
@@ -103,12 +107,7 @@ class UserTest extends ModelTestCase
     #[Test]
     public function is_officer_returns_false_for_non_officer(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345679',
-            'username' => 'member_user',
-            'discriminator' => '0',
-            'roles' => ['829022020301094922'], // Member role
-        ]);
+        $user = User::factory()->member()->create();
 
         $this->assertFalse($user->isOfficer());
     }
@@ -116,12 +115,7 @@ class UserTest extends ModelTestCase
     #[Test]
     public function is_raider_returns_true_for_raider_role(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345680',
-            'username' => 'raider_user',
-            'discriminator' => '0',
-            'roles' => ['1265247017215594496'], // Raider role
-        ]);
+        $user = User::factory()->raider()->create();
 
         $this->assertTrue($user->isRaider());
     }
@@ -129,25 +123,34 @@ class UserTest extends ModelTestCase
     #[Test]
     public function is_member_returns_true_for_member_role(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345681',
-            'username' => 'member_user',
-            'discriminator' => '0',
-            'roles' => ['829022020301094922'], // Member role
-        ]);
+        $user = User::factory()->member()->create();
 
         $this->assertTrue($user->isMember());
     }
 
     #[Test]
+    public function is_loot_councillor_returns_true_for_loot_councillor_role(): void
+    {
+        $councillor = DiscordRole::find('1467994755953852590') ??
+            DiscordRole::factory()->lootCouncillor()->create();
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($councillor->id);
+
+        $this->assertTrue($user->isLootCouncillor());
+    }
+
+    #[Test]
+    public function is_loot_councillor_returns_false_for_non_loot_councillor(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $this->assertFalse($user->isLootCouncillor());
+    }
+
+    #[Test]
     public function is_guest_returns_true_for_guest_role(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345682',
-            'username' => 'guest_user',
-            'discriminator' => '0',
-            'roles' => ['829022292590985226'], // Guest role
-        ]);
+        $user = User::factory()->guest()->create();
 
         $this->assertTrue($user->isGuest());
     }
@@ -155,12 +158,15 @@ class UserTest extends ModelTestCase
     #[Test]
     public function highest_role_returns_officer_when_has_multiple_roles(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345683',
-            'username' => 'multi_role_user',
-            'discriminator' => '0',
-            'roles' => ['829021769448816691', '1265247017215594496', '829022020301094922'],
-        ]);
+        $officer = DiscordRole::find('829021769448816691') ??
+            DiscordRole::factory()->officer()->create();
+        $raider = DiscordRole::find('1265247017215594496') ??
+            DiscordRole::factory()->raider()->create();
+        $member = DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$officer->id, $raider->id, $member->id]);
 
         $this->assertSame('Officer', $user->highestRole());
     }
@@ -168,12 +174,13 @@ class UserTest extends ModelTestCase
     #[Test]
     public function highest_role_returns_raider_when_no_officer_role(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345684',
-            'username' => 'raider_member_user',
-            'discriminator' => '0',
-            'roles' => ['1265247017215594496', '829022020301094922'],
-        ]);
+        $raider = DiscordRole::find('1265247017215594496') ??
+            DiscordRole::factory()->raider()->create();
+        $member = DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$raider->id, $member->id]);
 
         $this->assertSame('Raider', $user->highestRole());
     }
@@ -181,12 +188,7 @@ class UserTest extends ModelTestCase
     #[Test]
     public function highest_role_returns_null_when_no_recognized_roles(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345685',
-            'username' => 'unknown_role_user',
-            'discriminator' => '0',
-            'roles' => ['999999999999999999'],
-        ]);
+        $user = User::factory()->create();
 
         $this->assertNull($user->highestRole());
     }
@@ -199,7 +201,6 @@ class UserTest extends ModelTestCase
             'username' => 'testuser',
             'nickname' => 'MyNickname',
             'discriminator' => '0',
-            'roles' => [],
         ]);
 
         $this->assertSame('MyNickname', $user->display_name);
@@ -213,7 +214,6 @@ class UserTest extends ModelTestCase
             'username' => 'testuser',
             'nickname' => null,
             'discriminator' => '0',
-            'roles' => [],
         ]);
 
         $this->assertSame('testuser', $user->display_name);
@@ -228,7 +228,6 @@ class UserTest extends ModelTestCase
             'discriminator' => '0',
             'avatar' => 'abc123def456',
             'guild_avatar' => 'def456abc123',
-            'roles' => [],
         ]);
 
         $this->assertSame(
@@ -246,7 +245,6 @@ class UserTest extends ModelTestCase
             'discriminator' => '0',
             'avatar' => 'abc123def456',
             'guild_avatar' => null,
-            'roles' => [],
         ]);
 
         $this->assertSame(
@@ -264,7 +262,6 @@ class UserTest extends ModelTestCase
             'discriminator' => '0',
             'avatar' => null,
             'guild_avatar' => null,
-            'roles' => [],
         ]);
 
         $this->assertStringStartsWith('https://cdn.discordapp.com/embed/avatars/', $user->avatar_url);
@@ -278,7 +275,6 @@ class UserTest extends ModelTestCase
             'username' => 'testuser',
             'discriminator' => '0',
             'banner' => 'banner123',
-            'roles' => [],
         ]);
 
         $this->assertSame(
@@ -295,7 +291,6 @@ class UserTest extends ModelTestCase
             'username' => 'testuser',
             'discriminator' => '0',
             'banner' => null,
-            'roles' => [],
         ]);
 
         $this->assertNull($user->banner_url);

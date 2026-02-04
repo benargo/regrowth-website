@@ -104,7 +104,7 @@ class LootDashboardTest extends TestCase
 
     public function test_loot_index_returns_phases_raids_and_bosses(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
@@ -124,7 +124,7 @@ class LootDashboardTest extends TestCase
 
     public function test_loot_index_selects_current_phase_correctly(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->member()->create();
 
         $oldPhase = Phase::factory()->create(['start_date' => now()->subMonths(6)]);
         $currentPhase = Phase::factory()->create(['start_date' => now()->subDay()]);
@@ -142,7 +142,7 @@ class LootDashboardTest extends TestCase
 
     public function test_loot_index_has_optional_boss_items_prop(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
@@ -159,7 +159,7 @@ class LootDashboardTest extends TestCase
 
     public function test_boss_items_are_loaded_via_partial_reload(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
@@ -197,7 +197,7 @@ class LootDashboardTest extends TestCase
 
     public function test_partial_reload_returns_items_for_specified_raid(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
 
         $raid1 = Raid::factory()->create(['phase_id' => $phase->id]);
@@ -219,7 +219,7 @@ class LootDashboardTest extends TestCase
 
     public function test_bosses_are_ordered_by_encounter_order(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
 

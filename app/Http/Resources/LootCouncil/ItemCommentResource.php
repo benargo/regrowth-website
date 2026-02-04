@@ -23,8 +23,8 @@ class ItemCommentResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'can' => [
-                'edit' => $request->user()?->can('edit-loot-comment', $this->resource) ?? false,
-                'delete' => $request->user()?->can('delete-loot-comment', $this->resource) ?? false,
+                'edit' => $request->user()?->can('update', $this->resource) ?? false,
+                'delete' => $request->user()?->can('delete', $this->resource) ?? false,
             ],
         ];
     }

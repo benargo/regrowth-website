@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\LootCouncil\ItemComment;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DashboardPolicy;
 use App\Policies\ItemCommentPolicy;
@@ -34,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
          * Policies
          */
         Gate::policy(GuildTag::class, WclGuildTagPolicy::class);
+        Gate::policy(ItemComment::class, ItemCommentPolicy::class);
 
         /**
          * Authorization Gates
@@ -41,9 +43,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('access-dashboard', [DashboardPolicy::class, 'access']);
         Gate::define('access-loot', [ItemPolicy::class, 'access']);
         Gate::define('edit-loot-items', [ItemPolicy::class, 'edit']);
-        Gate::define('create-loot-comment', [ItemCommentPolicy::class, 'create']);
-        Gate::define('delete-loot-comment', [ItemCommentPolicy::class, 'delete']);
-        Gate::define('edit-loot-comment', [ItemCommentPolicy::class, 'update']);
         Gate::define('view-as-role', [ViewAsRolePolicy::class, 'viewAsRole']);
         Gate::define('update-phase', [PhasePolicy::class, 'update']);
     }

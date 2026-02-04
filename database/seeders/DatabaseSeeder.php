@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            DiscordRoleSeeder::class,
             GuildRankSeeder::class,
             PhaseSeeder::class,
             RaidSeeder::class,

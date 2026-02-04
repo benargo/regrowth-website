@@ -199,7 +199,7 @@ class ItemCommentResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_can_edit_false_for_officer_who_did_not_create_comment(): void
+    public function it_returns_can_edit_true_for_officer_who_did_not_create_comment(): void
     {
         $officer = User::factory()->officer()->create();
         $otherUser = User::factory()->create();
@@ -211,7 +211,7 @@ class ItemCommentResourceTest extends TestCase
         $resource = new ItemCommentResource($comment);
         $array = $resource->toArray($request);
 
-        $this->assertFalse($array['can']['edit']);
+        $this->assertTrue($array['can']['edit']);
     }
 
     #[Test]

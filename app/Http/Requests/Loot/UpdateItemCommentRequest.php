@@ -13,7 +13,7 @@ class UpdateItemCommentRequest extends FormRequest
     {
         $comment = $this->route('comment');
 
-        return $this->user()->can('edit-loot-comment', $comment);
+        return $this->user()->can('update', $comment);
     }
 
     /**
