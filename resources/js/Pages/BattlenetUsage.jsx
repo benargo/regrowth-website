@@ -5,7 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 
 function headerInner() {
     return (
-        <div className="flex flex-row items-center gap-4">
+        <div className="flex flex-row items-center justify-center gap-4">
             <Icon icon="battle-net" style="brands" className="text-4xl" />
             <span className="text-4xl font-bold">Usage of the Blizzard Developer APIs</span>
         </div>
@@ -17,8 +17,8 @@ export default function BattlenetUsage() {
         <Master title="Usage of the Blizzard Developer APIs">
             <SharedHeader backgroundClass="bg-ironforge" title={headerInner()}/>
             <div className="py-12 text-white">
-                <main className="container mx-auto px-4">
-                    <p>
+                <main className="container mx-auto">
+                    <p className="font-md text-gray-400 mb-2">
                         Some of the services provided by Regrowth use data obtained from the Blizzard Developer APIs,
                         and is subject to the{" "}
                         <Link
@@ -31,7 +31,7 @@ export default function BattlenetUsage() {
                         .
                     </p>
 
-                    <p>
+                    <p className="font-md text-gray-400 mb-2">
                         Use of this data is subject to our <Link href={route('privacypolicy')}>privacy policy</Link> and that of{" "}
                         <Link 
                             href="https://www.blizzard.com/en-us/legal/a4380ee5-5c8d-4e3b-83b7-ea26d01a9918/blizzard-entertainment-online-privacy-policy"
@@ -39,12 +39,12 @@ export default function BattlenetUsage() {
                             rel="noopener noreferrer noindex nofollow"
                         >
                             Blizzard Entertainment, Inc.
-                        </a>
+                        </Link>
                         . You have the right to decide how Blizzard processes your personal data and object to providing
                         us information through the API.
                     </p>
 
-                    <p>If you have any questions about this statement please do not hesitate to contact an officer.</p>
+                    <p className="font-md text-gray-400 mb-2">If you have any questions about this statement please do not hesitate to contact an officer.</p>
                 </main>
             </div>
         </Master>

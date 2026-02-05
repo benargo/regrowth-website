@@ -5,7 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 
 function headerInner() {
     return (
-        <div className="flex flex-row items-center gap-4">
+        <div className="flex flex-row items-center justify-center gap-4">
             <Icon icon="user-secret" style="solid" className="text-4xl" />
             <span className="text-4xl font-bold">Privacy Policy</span>
         </div>
@@ -17,15 +17,15 @@ export default function PrivacyPolicy() {
         <Master title="Privacy Policy">
             <SharedHeader backgroundClass="bg-ironforge" title={headerInner()} />
             <div className="py-12 text-white">
-                <main className="container mx-auto px-4">
-                    <p class="lead">
+                <main className="container mx-auto">
+                    <p className="font-md text-gray-400 mb-2">
                         This privacy policy will explain how Regrowth uses the personal data we collect from you. While
                         we need to be GDPR compliant, and take data protection seriously, please bear in mind that The
                         Order is a World of Warcraft guild, not an organisation.
                     </p>
 
-                    <h2>Topics:</h2>
-                    <ol>
+                    <h2 className="font-lg text-gray-400 mb-2">Topics:</h2>
+                    <ol className="list-decimal list-inside mb-4 text-gray-400">
                         <li>
                             <a href="#1">What data do we collect?</a>
                         </li>
@@ -62,16 +62,13 @@ export default function PrivacyPolicy() {
                         <li>
                             <a href="#12">How to contact us</a>
                         </li>
-                        <li>
-                            <a href="#13">How to contact the appropriate authorities</a>
-                        </li>
                     </ol>
 
                     <a name="1"></a>
-                    <h2>What data do we collect?</h2>
-                    <p>Regrowth collects the following data:</p>
+                    <h2 className="font-lg text-gray-400 mb-2">What data do we collect?</h2>
+                    <p className="font-md text-gray-400 mb-2">Regrowth collects the following data:</p>
 
-                    <ul>
+                    <ul className="list-disc list-inside mb-4 text-gray-400">
                         <li>
                             Personal identification information (Name, Blizzard Battle.net Battletag, Discord username,
                             etc.)
@@ -80,15 +77,14 @@ export default function PrivacyPolicy() {
                     </ul>
 
                     <a name="2"></a>
-                    <h2>How do we collect your data?</h2>
-                    <p>
+                    <h2 className="font-lg text-gray-400 mb-2">How do we collect your data?</h2>
+                    <p className="font-md text-gray-400 mb-2">
                         You directly provide Regrowth with most of the data we collect. We collect data and process
                         data when you:
                     </p>
 
-                    <ul>
+                    <ul className="list-disc list-inside mb-4 text-gray-400">
                         <li>Use or view our website via your browser's cookies</li>
-                        <li>Sign in to this website using your Blizzard account</li>
                         <li>Sign in to this website using your Discord account</li>
                         <li>Apply to join Regrowth</li>
                         <li>
@@ -97,36 +93,37 @@ export default function PrivacyPolicy() {
                         </li>
                     </ul>
 
-                    <p>Regrowth may also receive your data indirectly from the following sources:</p>
+                    <p className="font-md text-gray-400 mb-2">Regrowth may also receive your data indirectly from the following sources:</p>
 
-                    <ul>
+                    <ul className="list-disc list-inside mb-4 text-gray-400">
                         <li>Blizzard Entertainment, Inc.</li>
                         <li>Discord, Inc.</li>
+                        <li>Warcraft Logs</li>
                     </ul>
 
                     <a name="3"></a>
-                    <h2>How will we use your data?</h2>
-                    <p>Regrowth collects your data so that we can:</p>
+                    <h2 className="font-lg text-gray-400 mb-2">How will we use your data?</h2>
+                    <p className="font-md text-gray-400 mb-2">Regrowth collects your data so that we can:</p>
 
-                    <ul>
+                    <ul className="list-disc list-inside mb-4 text-gray-400">
                         <li>Manage the guild roster</li>
                         <li>Organise guild events</li>
                         <li>Offer interactive services to enhance your experience as a member of the guild</li>
                     </ul>
 
-                    <p>
+                    <p className="font-md text-gray-400 mb-2">
                         Regrowth will never share your data with other companies so that they may offer you their
                         products and services.
                     </p>
 
                     <a name="4"></a>
-                    <h2>How do we store your data?</h2>
-                    <p>
+                    <h2 className="font-lg text-gray-400 mb-2">How do we store your data?</h2>
+                    <p className="font-md text-gray-400 mb-2">
                         Regrowth securely stores your data on virtual private servers provided by{" "}
                         <a href="https://m.do.co/c/d0af7c248cc4">DigitalOcean, LLC.</a>.
                     </p>
 
-                    <p>
+                    <p className="font-md text-gray-400 mb-2">
                         Regrowth will keep your data for between 30 days and two 2 years. Once this time period has
                         expired, it will be automatically removed from our databases. All data shared with us from
                         Blizzard Entertainment, Inc. is subject to a 30-day TTL (time-to-live) policy, meaning we retain
@@ -134,14 +131,14 @@ export default function PrivacyPolicy() {
                     </p>
 
                     <a name="5"></a>
-                    <h2>What are your data protection rights?</h2>
+                    <h2 className="font-lg text-gray-400 mb-2">What are your data protection rights?</h2>
 
-                    <p>
+                    <p className="font-md text-gray-400 mb-2">
                         Regrowth would like to make sure you are fully aware of all of your data protection rights.
                         Every user is entitled to the following:
                     </p>
 
-                    <ul>
+                    <ul className="list-disc list-inside mb-4 text-gray-400">
                         <li>
                             The right to access – You have the right to request Regrowth for copies of your personal
                             data. We may charge you a small fee for this service.
@@ -170,14 +167,14 @@ export default function PrivacyPolicy() {
                         </li>
                     </ul>
 
-                    <p>
+                    <p className="font-md text-gray-400 mb-2">
                         If you make a request, we have one month to respond to you. If you would like to exercise any of
                         these rights, please contact an officer.
                     </p>
 
                     <a name="6"></a>
-                    <h2>Cookies</h2>
-                    <p>
+                    <h2 className="font-lg text-gray-400 mb-2">Cookies</h2>
+                    <p className="font-md text-gray-400 mb-2">
                         Cookies are text files placed on your computer to collect standard Internet log information and
                         visitor behavior information. When you visit our websites, we may collect information from you
                         automatically through cookies or similar technology. For further information, visit{" "}
@@ -185,21 +182,21 @@ export default function PrivacyPolicy() {
                     </p>
 
                     <a name="7"></a>
-                    <h3>How do we use cookies?</h3>
-                    <p>
+                    <h3 className="font-md text-gray-400 mb-2">How do we use cookies?</h3>
+                    <p className="font-md text-gray-400 mb-2">
                         Regrowth uses cookies in a range of ways to improve your experience on our website, including:
                     </p>
 
-                    <ul>
+                    <ul className="list-disc list-inside mb-4 text-gray-400">
                         <li>Keeping you signed in</li>
                         <li>Understanding how you use our website</li>
                     </ul>
 
                     <a name="8"></a>
-                    <h3>What types of cookies do we use?</h3>
-                    <p>There are a number of different types of cookies, however, our website uses:</p>
+                    <h3 className="font-md text-gray-400 mb-2">What types of cookies do we use?</h3>
+                    <p className="font-md text-gray-400 mb-2">There are a number of different types of cookies, however, our website uses:</p>
 
-                    <ul>
+                    <ul className="list-disc list-inside mb-4 text-gray-400">
                         <li>
                             Functionality – Regrowth uses these cookies so that we recognize you on our website and
                             remember your previously selected preferences. These could include what language you prefer
@@ -216,35 +213,35 @@ export default function PrivacyPolicy() {
                     </ul>
 
                     <a name="9"></a>
-                    <h3>How to manage cookies</h3>
-                    <p>
+                    <h3 className="font-md text-gray-400 mb-2">How to manage cookies</h3>
+                    <p className="font-md text-gray-400 mb-2">
                         You can set your browser not to accept cookies, and the above website tells you how to remove
                         cookies from your browser. However, in a few cases, some of our website features may not
                         function as a result.
                     </p>
 
                     <a name="10"></a>
-                    <h2>Privacy policies of other websites</h2>
-                    <p>
+                    <h2 className="font-lg text-gray-400 mb-2">Privacy policies of other websites</h2>
+                    <p className="font-md text-gray-400 mb-2">
                         This website contains links to other websites. Our privacy policy applies only to our website,
                         so if you click on a link to another website, you should read their privacy policy.
                     </p>
 
                     <a name="11"></a>
-                    <h2>Changes to our privacy policy</h2>
-                    <p>
+                    <h2 className="font-lg text-gray-400 mb-2">Changes to our privacy policy</h2>
+                    <p className="font-md text-gray-400 mb-2">
                         Regrowth keeps its privacy policy under regular review and places any updates on this web page.
                         This privacy policy was last updated on 28 October 2019.
                     </p>
 
                     <a name="12"></a>
-                    <h2>How to contact us</h2>
-                    <p>
+                    <h2 className="font-lg text-gray-400 mb-2">How to contact us</h2>
+                    <p className="font-md text-gray-400 mb-2">
                         If you have any questions about Regrowth's privacy policy, the data we hold on you, or you
                         would like to exercise one of your data protection rights, please do not hesitate to contact us.
                     </p>
 
-                    <p>
+                    <p className="font-md text-gray-400 mb-2">
                         Join our{" "} 
                         <Link href="https://discord.gg/regrowth"
                             target="_blank"                            
