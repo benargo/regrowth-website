@@ -1,4 +1,5 @@
 import Master from "@/Layouts/Master";
+import CountdownTimer from "@/Components/CountdownTimer";
 
 export default function Home() {
     return (
@@ -12,18 +13,23 @@ export default function Home() {
                             <source src="/videos/bcc_masthead_1.mp4" type="video/mp4" />
                         </video>
                     </div>
-                    <div className="items-center justify-center bg-black/20 py-20 md:absolute md:inset-0 md:flex md:h-[800px] md:py-0">
-                        <div className="md:mr-10">
-                            <img
-                                src="/images/guild_emblem.webp"
-                                alt="Regrowth emblem"
-                                className="mx-auto h-32 md:mx-0 md:h-48"
-                            />
+                    <div className="items-center justify-center bg-black/20 py-20 md:absolute md:inset-0 flex flex-col md:py-0">
+                        <div className="flex flex-row items-center my-10">
+                            <div className="md:mr-10">
+                                <img
+                                    src="/images/guild_emblem.webp"
+                                    alt="Regrowth emblem"
+                                    className="mx-auto h-32 md:mx-0 md:h-48"
+                                />
+                            </div>
+                            <div className="text-center text-white md:text-left">
+                                <h1 className="mb-4 text-6xl font-bold md:text-8xl">Regrowth</h1>
+                                <h2 className="text-2xl md:text-3xl">Thunderstrike</h2>
+                            </div>
                         </div>
-                        <div className="text-center text-white md:text-left">
-                            <h1 className="mb-4 text-6xl font-bold md:text-8xl">Regrowth</h1>
-                            <h2 className="text-2xl md:text-3xl">Thunderstrike</h2>
-                        </div>
+                        <CountdownTimer targetDate="2026-02-05T23:00:00Z" className="my-10 text-center text-white">
+                            <h2 className="text-4xl md:text-3xl font-bold mb-2">Countdown to TBC launch</h2>
+                        </CountdownTimer>
                     </div>
                 </div>
             </div>
