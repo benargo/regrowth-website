@@ -268,35 +268,38 @@ export default function Master({ title, children }) {
                                 <img
                                     src="/images/logo_tbcclassic.webp"
                                     alt="World of Warcraft Classic logo"
-                                    className="flex-1 w-1/2 md:w-auto h-20 object-contain"
+                                    className="flex-1 w-1/2 md:w-auto h-20 md:mr-4 object-contain"
                                 />
                                 <span className="sr-only">World of Warcraft: Classic</span>
                             </div>
                             {/* Footer Links */}
-                            <nav className="flex flex-col items-center justify-start gap-6 space-y-2 md:flex-row md:justify-between">
-                                <div className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400">
+                            <nav className="flex flex-col items-center justify-start gap-6 md:flex-row md:flex-wrap md:justify-between">
+                                <Link 
+                                    href="/"
+                                    className="flex flex-row items-center p-1 h-8 text-gray-400"
+                                >
                                     <Icon icon="copyright" style="regular" className="mr-2 w-5 h-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
-                                </div>
+                                </Link>
                                 <Link
                                     href="https://discord.gg/regrowth"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                    className="flex flex-row items-center p-1 h-8 text-gray-400 transition-colors hover:text-white"
                                 >
                                     <Icon icon="discord" style="brands" className="mr-2 w-5 h-5" />
                                     <span className="text-nowrap">Join our Discord</span>
                                 </Link>
                                 <Link
                                     href={route("privacypolicy")}
-                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                    className="flex flex-row items-center p-1 h-8 text-gray-400 transition-colors hover:text-white"
                                 >
                                     <Icon icon="user-secret" style="regular" className="mr-2 w-5 h-5" />
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
                                 <Link
                                     href={route("battlenet-usage")}
-                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                    className="flex flex-row items-center p-1 h-8 text-gray-400 transition-colors hover:text-white"
                                 >
                                     <Icon icon="battle-net" style="brands" className="mr-2 w-5 h-5" />
                                     <span className="text-nowrap">Battle.net API Usage</span>
@@ -307,7 +310,7 @@ export default function Master({ title, children }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title="Ben Argo"
-                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                    className="flex flex-row items-center p-1 mt-0 h-8 text-gray-400 transition-colors hover:text-white"
                                 >
                                     <Icon icon="safari" style="brands" className="mr-2 w-5 h-5" />
                                     <span className="text-nowrap">A Fizzywigs Production</span>
