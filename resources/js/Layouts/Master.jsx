@@ -252,55 +252,68 @@ export default function Master({ title, children }) {
 
                 <main>{children}</main>
 
-                <footer className="mx-3 py-5 md:mx-5" id="footer">
+                <footer className="p-5" id="footer">
                     <div className="container mx-auto">
-                        {/* Footer Links */}
-                        <div className="my-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                            {/* Column 1 - Legal & Account */}
-                            <ul className="space-y-2 text-center lg:col-start-2">
-                                <li className="px-3 py-2 text-gray-300">
-                                    <Icon icon="copyright" style="regular" className="mr-2 w-5" />
-                                    {new Date().getFullYear()} Regrowth
-                                </li>
-                            </ul>
-
-                            {/* Column 2 - External Links */}
-                            <ul className="space-y-2 text-center">
-                                <li>
-                                    <a
-                                        href="https://benargo.com"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title="Ben Argo"
-                                        className="block px-3 py-2 text-gray-400 transition-colors hover:text-white"
-                                    >
-                                        <Icon icon="safari" style="brands" className="mr-2 w-5" />
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* Logos Section */}
-                        <div className="my-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                            <div className="text-center lg:col-start-2">
-                                <Link href="/" title="Regrowth">
+                        <div className="flex flex-col-reverse md:flex-row my-4 md:my-6 items-center justify-between">
+                            {/* Logos Section */}
+                            <div className="flex-none flex items-center md:gap-6 my-4 md:my-0">              
+                                <Link href="/" title="Regrowth" className="flex-1 md:flex-none flex items-center">
                                     <img
                                         src="/images/guild_emblem.webp"
                                         alt="Guild Emblem"
-                                        className="ml-4 inline-block max-h-36"
+                                        className="w-1/2 md:w-auto h-20 object-contain"
                                     />
+                                    <span className="sr-only">Regrowth</span>
                                 </Link>
-                            </div>
-                            <div className="text-center">
                                 <img
                                     src="/images/logo_tbcclassic.webp"
                                     alt="World of Warcraft Classic logo"
-                                    className="inline-block max-h-36"
+                                    className="flex-1 w-1/2 md:w-auto h-20 object-contain"
                                 />
                                 <span className="sr-only">World of Warcraft: Classic</span>
                             </div>
+                            {/* Footer Links */}
+                            <nav className="flex flex-col items-center justify-start gap-6 space-y-2 md:flex-row md:justify-between">
+                                <div className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400">
+                                    <Icon icon="copyright" style="regular" className="mr-2 w-5 h-5" />
+                                    <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
+                                </div>
+                                <Link
+                                    href="https://discord.gg/regrowth"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                >
+                                    <Icon icon="discord" style="brands" className="mr-2 w-5 h-5" />
+                                    <span className="text-nowrap">Join our Discord</span>
+                                </Link>
+                                <Link
+                                    href={route("privacypolicy")}
+                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                >
+                                    <Icon icon="user-secret" style="regular" className="mr-2 w-5 h-5" />
+                                    <span className="text-nowrap">Privacy policy</span>
+                                </Link>
+                                <Link
+                                    href={route("battlenet-usage")}
+                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                >
+                                    <Icon icon="battle-net" style="brands" className="mr-2 w-5 h-5" />
+                                    <span className="text-nowrap">Battle.net API Usage</span>
+                                </Link>
+                                
+                                <Link
+                                    href="https://benargo.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Ben Argo"
+                                    className="flex flex-row items-center p-1 md:px-3 md:py-2 mt-0 text-gray-400 transition-colors hover:text-white"
+                                >
+                                    <Icon icon="safari" style="brands" className="mr-2 w-5 h-5" />
+                                    <span className="text-nowrap">A Fizzywigs Production</span>
+                                </Link>
+                            </nav>
                         </div>
-
                         {/* Disclaimer */}
                         <div className="py-4">
                             <p className="text-sm text-gray-500">

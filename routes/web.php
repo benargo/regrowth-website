@@ -97,12 +97,13 @@ Route::get('/comps', function () {
     return redirect('https://docs.google.com/spreadsheets/d/1SYaMOFDtXxdRm7gQz6nG7c_B-N7rsf7P7QIRipkJkwg/view?pli=1&gid=934701754#gid=934701754', 303);
 });
 
-/**
- * Discord redirect
- */
-Route::get('/discord', function () {
-    return redirect('https://discord.gg/regrowth', 303);
-});
+Route::get('/info/battlenet-usage', function () {
+    return Inertia::render('BattlenetUsage');
+})->name('battlenet-usage');
+
+Route::get('/info/privacy', function () {
+    return Inertia::render('PrivacyPolicy');
+})->name('privacypolicy');
 
 // Route::middleware('auth')->group(function () {
 //     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

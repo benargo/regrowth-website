@@ -20,6 +20,12 @@
     background-size: cover;
 }
 
+.bg-ironforge {
+    background-image: url('../images/bg_ironforge.webp');
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-karazhan {
     background-image: url('../images/bg_karazhan.webp');
     background-position: center;
