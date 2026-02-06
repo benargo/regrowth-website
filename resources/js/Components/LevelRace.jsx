@@ -1,3 +1,5 @@
+import { usePoll } from '@inertiajs/react';
+
 const medalStyles = {
     0: {
         bg: 'bg-yellow-600',
@@ -20,6 +22,8 @@ const medalStyles = {
 };
 
 export default function LevelRace({ members }) {
+    usePoll(300000); // Refresh every 5 minutes
+
     const levels = Object.keys(members).sort((a, b) => b - a);
 
     return (
