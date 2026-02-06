@@ -32,6 +32,7 @@ return [
             'announcements' => env('DISCORD_CHANNEL_ANNOUNCEMENTS'),
             'lootcouncil' => env('DISCORD_CHANNEL_LOOTCOUNCIL'),
             'officer' => env('DISCORD_CHANNEL_OFFICER'),
+            'tbc_chat' => env('DISCORD_CHANNEL_TBC_CHAT'),
         ],
     ],
 

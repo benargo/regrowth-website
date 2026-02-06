@@ -53,4 +53,14 @@ class CharacterFactory extends Factory
             'rank_id' => GuildRank::factory(),
         ]);
     }
+
+    /**
+     * Indicate that the character has reached the level cap.
+     */
+    public function reachedLevelCap(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'reached_level_cap_at' => now(),
+        ]);
+    }
 }

@@ -176,7 +176,7 @@ class DiscordAuthenticationTest extends TestCase
 
         $response = $this->actingAs($user)->get('/login');
 
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/');
     }
 
     private function mockDiscordOAuth(): void

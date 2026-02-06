@@ -38,6 +38,7 @@ class CharacterTest extends ModelTestCase
             'name',
             'is_main',
             'is_loot_councillor',
+            'reached_level_cap_at',
         ]);
     }
 
@@ -49,6 +50,7 @@ class CharacterTest extends ModelTestCase
         $this->assertCasts($model, [
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
+            'reached_level_cap_at' => 'datetime',
         ]);
     }
 
@@ -105,6 +107,22 @@ class CharacterTest extends ModelTestCase
         $character = $this->create();
 
         $this->assertFalse($character->is_loot_councillor);
+    }
+
+    #[Test]
+    public function it_can_be_created_with_reached_level_cap(): void
+    {
+        $character = $this->factory()->reachedLevelCap()->create();
+
+        $this->assertNotNull($character->reached_level_cap_at);
+    }
+
+    #[Test]
+    public function reached_level_cap_at_is_null_by_default(): void
+    {
+        $character = $this->create();
+
+        $this->assertNull($character->reached_level_cap_at);
     }
 
     #[Test]

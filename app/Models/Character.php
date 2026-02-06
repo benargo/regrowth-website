@@ -38,6 +38,7 @@ class Character extends Model
     protected $casts = [
         'is_main' => 'boolean',
         'is_loot_councillor' => 'boolean',
+        'reached_level_cap_at' => 'datetime',
     ];
 
     /**
@@ -50,6 +51,7 @@ class Character extends Model
         'name',
         'is_main',
         'is_loot_councillor',
+        'reached_level_cap_at',
     ];
 
     /**
