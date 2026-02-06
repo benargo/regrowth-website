@@ -6,6 +6,7 @@ use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\GuildRosterController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
 use App\Http\Controllers\LootCouncil\ItemController;
@@ -16,9 +17,7 @@ use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Home');
-});
+Route::get('/', [HomeController::class, 'home'])->name('home');
 
 /**
  * Guild Roster

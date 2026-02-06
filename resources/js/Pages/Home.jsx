@@ -1,7 +1,8 @@
 import Master from "@/Layouts/Master";
 import CountdownTimer from "@/Components/CountdownTimer";
+import LevelRace from "@/Components/LevelRace";
 
-export default function Home() {
+export default function Home({ members }) {
     return (
         <Master title="Home">
             <div className="text-base">
@@ -32,6 +33,8 @@ export default function Home() {
                         </CountdownTimer>
                     </div>
                 </div>
+
+                <LevelRace members={members} />
             </div>
         </Master>
     );

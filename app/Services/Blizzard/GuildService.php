@@ -20,7 +20,7 @@ class GuildService extends Service
     /**
      * Default cache TTL values in seconds.
      */
-    protected int $cacheTtl = 10800;   // 3 hours
+    protected int $cacheTtl = 900;   // 15 minutes
 
     public function __construct(
         protected Client $client,
