@@ -24,11 +24,13 @@ abstract class DiscordService
 
     /**
      * Make a GET request to the Discord API.
+     *
+     * @param  array<string, mixed>  $query
      */
-    protected function get(string $endpoint): Response
+    protected function get(string $endpoint, array $query = []): Response
     {
         return Http::withHeaders($this->getAuthHeaders())
-            ->get(self::BASE_URL.$endpoint);
+            ->get(self::BASE_URL.$endpoint, $query);
     }
 
     /**

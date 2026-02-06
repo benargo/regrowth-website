@@ -41,4 +41,35 @@ class DiscordGuildService extends DiscordService
             'roles' => $data['roles'] ?? [],
         ];
     }
+
+    /**
+     * Search for guild members whose username or nickname starts with the provided string.
+     *
+     * @param  string  $query  Query string to match username(s) and nickname(s) against.
+     * @param  int  $limit  Max number of members to return (1-1000). Defaults to 1.
+     * @return array<int, array{
+     *     user: array,
+     *     nick: string|null,
+     *     avatar: string|null,
+     *     roles: array,
+     *     joined_at: string,
+     *     deaf: bool,
+     *     mute: bool
+     * }>
+     *
+     * @throws \RuntimeException
+     */
+    public function searchGuildMembers(string $query, int $limit = 1): array
+    {
+        $response = $this->get("/guilds/{$this->guildId}/members/search", [
+            'query' => $query,
+            'limit' => min(max($limit, 1), 1000),
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Failed to search guild members: '.$response->body());
+        }
+
+        return $response->json();
+    }
 }
