@@ -4,11 +4,14 @@ namespace Tests\Feature\Console\Commands;
 
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\LevelCapAchieved;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class TestLevelCapNotificationTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_it_sends_notification_with_single_name(): void
     {
         Notification::fake();

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Character;
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\LevelCapAchieved;
 use Illuminate\Console\Command;
@@ -36,8 +37,16 @@ class TestLevelCapNotification extends Command
             return self::FAILURE;
         }
 
+        // Look up existing characters or create test ones
+        $characters = collect($names)->map(function (string $name) {
+            return Character::firstOrCreate(
+                ['name' => $name],
+                ['reached_level_cap_at' => now()]
+            );
+        });
+
         DiscordNotifiable::channel('tbc_chat')->notify(
-            new LevelCapAchieved($names)
+            new LevelCapAchieved($characters)
         );
 
         $this->info('Test notification sent to Discord tbc_chat channel.');

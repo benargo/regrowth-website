@@ -59,11 +59,12 @@ class CheckLevelCapAchievements implements ShouldQueue
         Character::whereIn('id', $newLevelCapCharacters->pluck('id'))
             ->update(['reached_level_cap_at' => now()]);
 
-        // Send congratulations notification
-        $characterNames = $newLevelCapCharacters->pluck('name')->toArray();
+        // Refresh to get the updated timestamps for placement calculation
+        $newLevelCapCharacters = $newLevelCapCharacters->fresh();
 
+        // Send congratulations notification
         DiscordNotifiable::channel('tbc_chat')->notify(
-            new LevelCapAchieved($characterNames)
+            new LevelCapAchieved($newLevelCapCharacters)
         );
     }
 }
