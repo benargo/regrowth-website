@@ -4,7 +4,7 @@ namespace App\Services\WarcraftLogs\Data;
 
 use Carbon\Carbon;
 
-readonly class PlayerAttendanceStats
+class PlayerAttendanceStats
 {
     public function __construct(
         /**
@@ -34,7 +34,7 @@ readonly class PlayerAttendanceStats
     ) {}
 
     /**
-     * @return array{name: string, firstAttendance: string, totalReports: int, reportsAttended: int, percentage: float}
+     * @return array{name: string, firstAttendance: string, totalReports: int, reportsAttended: int, percentage: float, reports: array<int, PlayerAttendance>}
      */
     public function toArray(): array
     {

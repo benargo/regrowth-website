@@ -9,6 +9,24 @@ use Tests\TestCase;
 
 class ClientAuthenticationTest extends TestCase
 {
+    private const TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Ensure warcraftlogs config has all required keys for service provider
+        config([
+            'services.warcraftlogs' => array_merge(
+                config('services.warcraftlogs', []),
+                [
+                    'client_id' => 'test_client_id',
+                    'client_secret' => 'test_client_secret',
+                ]
+            ),
+        ]);
+    }
+
     /**
      * Tests the retrieval of a token by authentication.
      */
@@ -16,12 +34,11 @@ class ClientAuthenticationTest extends TestCase
     {
         $authenticationHandler = new AuthenticationHandler(
             'test_client_id',
-            'test_client_secret',
-            'https://www.warcraftlogs.com/oauth/token'
+            'test_client_secret'
         );
 
         Http::fake([
-            'https://www.warcraftlogs.com/oauth/token' => Http::response([
+            self::TOKEN_URL => Http::response([
                 'access_token' => 'test_access_token',
                 'expires_in' => 3600,
             ], 200),
@@ -37,8 +54,7 @@ class ClientAuthenticationTest extends TestCase
     {
         $authenticationHandler = new AuthenticationHandler(
             'test_client_id',
-            'test_client_secret',
-            'https://www.warcraftlogs.com/oauth/token'
+            'test_client_secret'
         );
 
         Cache::expects('get')

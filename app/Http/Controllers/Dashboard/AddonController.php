@@ -12,10 +12,11 @@ use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Services\Attendance\Calculators\GuildAttendanceCalculator;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
-use App\Services\WarcraftLogs\AttendanceService;
-use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
+use App\Services\WarcraftLogs\Attendance;
+use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,11 @@ use Inertia\Inertia;
 
 class AddonController extends Controller
 {
+    public function __construct(
+        protected GuildTags $guildTags,
+        protected Attendance $attendance,
+    ) {}
+
     // ==========================================
     // Data export
     // ==========================================
@@ -135,9 +141,7 @@ class AddonController extends Controller
 
     protected function buildPlayerAttendanceData(): Collection
     {
-        $wclGuildService = app(WarcraftLogsGuildService::class);
-
-        $tags = $wclGuildService->getGuildTags()->where('count_attendance', true);
+        $tags = $this->guildTags->toCollection()->where('count_attendance', true);
 
         $ranks = GuildRank::where('count_attendance', true)->get();
 
@@ -153,10 +157,12 @@ class AddonController extends Controller
                     && $ranks->pluck('id')->contains($member->rank->id);
             });
 
-        return app(AttendanceService::class)
-            ->tags($tags->pluck('id')->toArray())
+        $attendance = $this->attendance->tags($tags->pluck('id')->toArray())
             ->playerNames($members->pluck('character.name')->toArray())
-            ->calculate()
+            ->get();
+
+        return app(GuildAttendanceCalculator::class)
+            ->calculate($attendance)
             ->map(function ($stats) use ($members) {
                 return [
                     'id' => $members->firstWhere('character.name', $stats->name)?->character['id'] ?? null,
@@ -360,8 +366,8 @@ class AddonController extends Controller
             ->orderBy('name')
             ->get();
 
-        $tags = app(WarcraftLogsGuildService::class)
-            ->getGuildTags()
+        $tags = $this->guildTags
+            ->toCollection()
             ->map(function (GuildTag $tag) {
                 $phase = null;
                 if ($tag->phase instanceof Phase) {
@@ -375,6 +381,7 @@ class AddonController extends Controller
                     'phaseNumber' => $phase,
                 ];
             })
+            ->values()
             ->toArray();
 
         return Inertia::render('Dashboard/Addon/Settings', [

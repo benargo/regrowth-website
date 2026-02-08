@@ -46,6 +46,16 @@ class GuildTagTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_expected_casts(): void
+    {
+        $model = new GuildTag;
+
+        $this->assertCasts($model, [
+            'count_attendance' => 'boolean',
+        ]);
+    }
+
+    #[Test]
     public function it_has_default_count_attendance_of_false(): void
     {
         $model = new GuildTag;

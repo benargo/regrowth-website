@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Services\WarcraftLogs;
 
+use App\Exceptions\CacheException;
+use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\WarcraftLogsService;
 use Illuminate\Support\Facades\Cache;
@@ -13,14 +15,9 @@ use Tests\TestCase;
  */
 class TestableWarcraftLogsService extends WarcraftLogsService
 {
-    public function publicQuery(string $query, array $variables = [], ?int $timeout = null)
+    public function publicQuery(string $query, array $variables = [], ?int $ttl = null, ?int $timeout = null): array
     {
-        return $this->query($query, $variables, $timeout);
-    }
-
-    public function publicQueryData(string $query, array $variables = [], ?int $timeout = null): array
-    {
-        return $this->queryData($query, $variables, $timeout);
+        return $this->query($query, $variables, $ttl, $timeout);
     }
 
     public function publicQueryCacheKey(string $query, array $variables): string
@@ -28,27 +25,9 @@ class TestableWarcraftLogsService extends WarcraftLogsService
         return $this->queryCacheKey($query, $variables);
     }
 
-    public function publicGetCacheTtl(): int
-    {
-        return $this->getCacheTtl();
-    }
-
     public function publicGetGuildId(): int
     {
-        return $this->getGuildId();
-    }
-}
-
-/**
- * Concrete implementation with custom cache TTL for testing override.
- */
-class CustomCacheTtlService extends WarcraftLogsService
-{
-    protected const DEFAULT_CACHE_TTL = 300;
-
-    public function publicGetCacheTtl(): int
-    {
-        return $this->getCacheTtl();
+        return $this->guildId;
     }
 }
 
@@ -63,10 +42,11 @@ class WarcraftLogsServiceTest extends TestCase
             'graphql_url' => 'https://www.warcraftlogs.com/api/v2/client*',
             'guild_id' => 774848,
             'timeout' => 30,
-            'cache_ttl' => 3600,
         ], $configOverrides);
 
-        return new TestableWarcraftLogsService($config);
+        $auth = new AuthenticationHandler($config['client_id'], $config['client_secret']);
+
+        return new TestableWarcraftLogsService($config, $auth);
     }
 
     protected function fakeGraphqlResponse(array $data, int $status = 200): void
@@ -74,7 +54,7 @@ class WarcraftLogsServiceTest extends TestCase
         Http::preventStrayRequests();
 
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client**' => Http::response($data, $status),
+            'www.warcraftlogs.com/api/v2/client*' => Http::response($data, $status),
         ]);
 
         // Mock the auth token cache to return our test token
@@ -85,14 +65,27 @@ class WarcraftLogsServiceTest extends TestCase
 
     public function test_query_sends_graphql_request_with_authorization(): void
     {
-        $this->fakeGraphqlResponse([
-            'data' => ['guild' => ['id' => 774848]],
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+                'data' => ['guild' => ['id' => 774848]],
+            ], 200),
         ]);
 
-        $service = $this->getService();
-        $response = $service->publicQuery('query { guild { id } }');
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
 
-        $this->assertEquals(200, $response->status());
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        $service = $this->getService();
+        $data = $service->publicQuery('query { guild { id } }');
+
+        $this->assertEquals(['guild' => ['id' => 774848]], $data);
 
         Http::assertSent(function ($request) {
             return str_contains($request->url(), 'api/v2/client')
@@ -103,9 +96,22 @@ class WarcraftLogsServiceTest extends TestCase
 
     public function test_query_includes_variables_when_provided(): void
     {
-        $this->fakeGraphqlResponse([
-            'data' => ['guild' => ['id' => 774848]],
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+                'data' => ['guild' => ['id' => 774848]],
+            ], 200),
         ]);
+
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
 
         $service = $this->getService();
         $service->publicQuery('query($id: Int!) { guild(id: $id) { id } }', ['id' => 774848]);
@@ -116,7 +122,7 @@ class WarcraftLogsServiceTest extends TestCase
         });
     }
 
-    public function test_query_data_returns_data_portion(): void
+    public function test_query_returns_data_portion(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -136,12 +142,12 @@ class WarcraftLogsServiceTest extends TestCase
             });
 
         $service = $this->getService();
-        $data = $service->publicQueryData('query { guild { id name } }');
+        $data = $service->publicQuery('query { guild { id name } }');
 
         $this->assertEquals(['guild' => ['id' => 774848, 'name' => 'Test Guild']], $data);
     }
 
-    public function test_query_data_throws_on_graphql_errors(): void
+    public function test_query_throws_on_graphql_errors(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -168,7 +174,7 @@ class WarcraftLogsServiceTest extends TestCase
         $this->expectException(GraphQLException::class);
         $this->expectExceptionMessage('GraphQL query failed: Guild not found');
 
-        $service->publicQueryData('query { guild { id } }');
+        $service->publicQuery('query { guild { id } }');
     }
 
     public function test_graphql_exception_contains_all_errors(): void
@@ -197,7 +203,7 @@ class WarcraftLogsServiceTest extends TestCase
         $service = $this->getService();
 
         try {
-            $service->publicQueryData('query { guild { id } }');
+            $service->publicQuery('query { guild { id } }');
             $this->fail('Expected GraphQLException');
         } catch (GraphQLException $e) {
             $this->assertCount(2, $e->getErrors());
@@ -216,7 +222,7 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertFalse($exception->hasErrorMatching('/not found/i'));
     }
 
-    public function test_query_data_caches_responses(): void
+    public function test_query_caches_responses(): void
     {
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
@@ -230,19 +236,98 @@ class WarcraftLogsServiceTest extends TestCase
             ->with($expectedKey, 3600, \Mockery::type('callable'))
             ->andReturn(['guild' => ['id' => 774848]]);
 
-        $data = $service->publicQueryData('query { guild { id } }');
+        $data = $service->publicQuery('query { guild { id } }');
 
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
 
     public function test_fresh_bypasses_cache(): void
     {
-        $this->fakeGraphqlResponse([
-            'data' => ['guild' => ['id' => 774848]],
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+                'data' => ['guild' => ['id' => 774848]],
+            ], 200),
         ]);
 
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
         $service = $this->getService();
-        $data = $service->fresh()->publicQueryData('query { guild { id } }');
+        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
+
+        // fresh(true) should forget the cache key and then remember new value
+        Cache::shouldReceive('forget')
+            ->once()
+            ->with($expectedKey);
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->with($expectedKey, 3600, \Mockery::type('callable'))
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        $data = $service->fresh()->publicQuery('query { guild { id } }');
+
+        $this->assertEquals(['guild' => ['id' => 774848]], $data);
+    }
+
+    public function test_fresh_false_uses_cache_only(): void
+    {
+        $service = $this->getService();
+        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
+
+        Cache::shouldReceive('has')
+            ->once()
+            ->with($expectedKey)
+            ->andReturn(true);
+
+        Cache::shouldReceive('get')
+            ->once()
+            ->with($expectedKey)
+            ->andReturn(['guild' => ['id' => 774848]]);
+
+        $data = $service->fresh(false)->publicQuery('query { guild { id } }');
+
+        $this->assertEquals(['guild' => ['id' => 774848]], $data);
+    }
+
+    public function test_fresh_false_throws_when_cache_missing(): void
+    {
+        $service = $this->getService();
+        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
+
+        Cache::shouldReceive('has')
+            ->once()
+            ->with($expectedKey)
+            ->andReturn(false);
+
+        $this->expectException(CacheException::class);
+
+        $service->fresh(false)->publicQuery('query { guild { id } }');
+    }
+
+    public function test_ignore_cache_skips_cache_entirely(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+                'data' => ['guild' => ['id' => 774848]],
+            ], 200),
+        ]);
+
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
+        // ignoreCache() should not interact with Cache::remember at all
+        Cache::shouldNotReceive('remember');
+        Cache::shouldNotReceive('forget');
+
+        $service = $this->getService();
+        $data = $service->ignoreCache()->publicQuery('query { guild { id } }');
 
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
@@ -259,26 +344,7 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertNotEquals($key1, $key2);
         $this->assertNotEquals($key1, $key3);
         $this->assertNotEquals($key3, $key4);
-        $this->assertStringStartsWith('warcraftlogs.service.', $key1);
-    }
-
-    public function test_get_cache_ttl_returns_configured_value(): void
-    {
-        $service = $this->getService(['cache_ttl' => 7200]);
-
-        $this->assertEquals(7200, $service->publicGetCacheTtl());
-    }
-
-    public function test_extending_class_can_override_cache_ttl(): void
-    {
-        $service = new CustomCacheTtlService([
-            'client_id' => 'test_client_id',
-            'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
-            'cache_ttl' => 1800,
-        ]);
-
-        $this->assertEquals(1800, $service->publicGetCacheTtl());
+        $this->assertStringStartsWith('warcraftlogs.', $key1);
     }
 
     public function test_get_guild_id_returns_configured_value(): void
@@ -288,15 +354,36 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(123456, $service->publicGetGuildId());
     }
 
-    public function test_uses_default_values_when_config_options_missing(): void
+    public function test_uses_default_guild_id_when_not_configured(): void
     {
+        $auth = new AuthenticationHandler('test_client_id', 'test_client_secret');
+
         $service = new TestableWarcraftLogsService([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
             'token_url' => 'https://www.warcraftlogs.com/oauth/token',
-        ]);
+        ], $auth);
 
-        $this->assertEquals(3600, $service->publicGetCacheTtl());
         $this->assertEquals(0, $service->publicGetGuildId());
+    }
+
+    public function test_custom_ttl_passed_to_query(): void
+    {
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
+        $service = $this->getService();
+        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
+
+        // Custom TTL of 300 seconds should be used
+        Cache::shouldReceive('remember')
+            ->once()
+            ->with($expectedKey, 300, \Mockery::type('callable'))
+            ->andReturn(['guild' => ['id' => 774848]]);
+
+        $data = $service->publicQuery('query { guild { id } }', [], 300);
+
+        $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
 }

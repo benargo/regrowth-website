@@ -9,11 +9,14 @@ use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Services\Attendance\Calculators\GuildAttendanceCalculator;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
-use App\Services\WarcraftLogs\AttendanceService;
+use App\Services\WarcraftLogs\Attendance;
+use App\Services\WarcraftLogs\Data\GuildAttendance;
+use App\Services\WarcraftLogs\Data\PlayerAttendance;
 use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
-use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
+use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -29,14 +32,14 @@ class AddonControllerTest extends TestCase
     {
         parent::setUp();
 
-        // Mock WarcraftLogs GuildService to return empty tags by default
+        // Mock GuildTags to return empty tags by default
         // This prevents API calls during tests that don't specifically test attendance
-        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
-        $wclGuildService->shouldReceive('getGuildTags')
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
             ->andReturn(collect())
             ->byDefault();
 
-        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(GuildTags::class, $guildTags);
     }
 
     // ==========================================
@@ -865,11 +868,11 @@ class AddonControllerTest extends TestCase
         GuildTag::query()->delete();
 
         // Mock the WarcraftLogs GuildService to return empty tags
-        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
-        $wclGuildService->shouldReceive('getGuildTags')
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
             ->andReturn(collect());
 
-        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(GuildTags::class, $guildTags);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
@@ -893,11 +896,11 @@ class AddonControllerTest extends TestCase
         GuildTag::factory()->doesNotCountAttendance()->create();
 
         // Mock the WarcraftLogs GuildService
-        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
-        $wclGuildService->shouldReceive('getGuildTags')
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
             ->andReturn(GuildTag::all());
 
-        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
+        $this->app->instance(GuildTags::class, $guildTags);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
@@ -921,14 +924,24 @@ class AddonControllerTest extends TestCase
         $tag = GuildTag::factory()->countsAttendance()->create();
 
         // Mock the services
-        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
-        $wclGuildService->shouldReceive('getGuildTags')
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
             ->andReturn(collect([$tag]));
 
-        $attendanceService = Mockery::mock(AttendanceService::class);
-        $attendanceService->shouldReceive('tags')->andReturnSelf();
-        $attendanceService->shouldReceive('playerNames')->andReturnSelf();
-        $attendanceService->shouldReceive('calculate')
+        $attendance = Mockery::mock(Attendance::class);
+        $attendance->shouldReceive('tags')->andReturnSelf();
+        $attendance->shouldReceive('playerNames')->andReturnSelf();
+        $attendance->shouldReceive('get')
+            ->andReturn(collect([
+                new GuildAttendance(
+                    code: 'report1',
+                    startTime: Carbon::parse('2025-01-15 20:00:00'),
+                    players: [new PlayerAttendance(name: 'TestPlayer', presence: 1)],
+                ),
+            ]));
+
+        $calculator = Mockery::mock(GuildAttendanceCalculator::class);
+        $calculator->shouldReceive('calculate')
             ->andReturn(collect([
                 new PlayerAttendanceStats(
                     name: 'TestPlayer',
@@ -948,8 +961,9 @@ class AddonControllerTest extends TestCase
                 ),
             ]));
 
-        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
-        $this->app->instance(AttendanceService::class, $attendanceService);
+        $this->app->instance(GuildTags::class, $guildTags);
+        $this->app->instance(Attendance::class, $attendance);
+        $this->app->instance(GuildAttendanceCalculator::class, $calculator);
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
@@ -979,14 +993,24 @@ class AddonControllerTest extends TestCase
         $tag = GuildTag::factory()->countsAttendance()->create();
         $firstAttendance = Carbon::parse('2025-01-15 20:00:00');
 
-        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
-        $wclGuildService->shouldReceive('getGuildTags')
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
             ->andReturn(collect([$tag]));
 
-        $attendanceService = Mockery::mock(AttendanceService::class);
-        $attendanceService->shouldReceive('tags')->andReturnSelf();
-        $attendanceService->shouldReceive('playerNames')->andReturnSelf();
-        $attendanceService->shouldReceive('calculate')
+        $attendance = Mockery::mock(Attendance::class);
+        $attendance->shouldReceive('tags')->andReturnSelf();
+        $attendance->shouldReceive('playerNames')->andReturnSelf();
+        $attendance->shouldReceive('get')
+            ->andReturn(collect([
+                new GuildAttendance(
+                    code: 'report1',
+                    startTime: $firstAttendance,
+                    players: [new PlayerAttendance(name: 'TestPlayer', presence: 1)],
+                ),
+            ]));
+
+        $calculator = Mockery::mock(GuildAttendanceCalculator::class);
+        $calculator->shouldReceive('calculate')
             ->andReturn(collect([
                 new PlayerAttendanceStats(
                     name: 'TestPlayer',
@@ -1006,8 +1030,9 @@ class AddonControllerTest extends TestCase
                 ),
             ]));
 
-        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
-        $this->app->instance(AttendanceService::class, $attendanceService);
+        $this->app->instance(GuildTags::class, $guildTags);
+        $this->app->instance(Attendance::class, $attendance);
+        $this->app->instance(GuildAttendanceCalculator::class, $calculator);
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
@@ -1031,14 +1056,24 @@ class AddonControllerTest extends TestCase
 
         $tag = GuildTag::factory()->countsAttendance()->create();
 
-        $wclGuildService = Mockery::mock(WarcraftLogsGuildService::class);
-        $wclGuildService->shouldReceive('getGuildTags')
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
             ->andReturn(collect([$tag]));
 
-        $attendanceService = Mockery::mock(AttendanceService::class);
-        $attendanceService->shouldReceive('tags')->andReturnSelf();
-        $attendanceService->shouldReceive('playerNames')->andReturnSelf();
-        $attendanceService->shouldReceive('calculate')
+        $attendance = Mockery::mock(Attendance::class);
+        $attendance->shouldReceive('tags')->andReturnSelf();
+        $attendance->shouldReceive('playerNames')->andReturnSelf();
+        $attendance->shouldReceive('get')
+            ->andReturn(collect([
+                new GuildAttendance(
+                    code: 'report1',
+                    startTime: Carbon::now(),
+                    players: [new PlayerAttendance(name: 'TestPlayer', presence: 1)],
+                ),
+            ]));
+
+        $calculator = Mockery::mock(GuildAttendanceCalculator::class);
+        $calculator->shouldReceive('calculate')
             ->andReturn(collect([
                 new PlayerAttendanceStats(
                     name: 'TestPlayer',
@@ -1058,8 +1093,9 @@ class AddonControllerTest extends TestCase
                 ),
             ]));
 
-        $this->app->instance(WarcraftLogsGuildService::class, $wclGuildService);
-        $this->app->instance(AttendanceService::class, $attendanceService);
+        $this->app->instance(GuildTags::class, $guildTags);
+        $this->app->instance(Attendance::class, $attendance);
+        $this->app->instance(GuildAttendanceCalculator::class, $calculator);
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
@@ -1102,9 +1138,14 @@ class AddonControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $rank = GuildRank::factory()->create(['name' => 'Officer']);
+        $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
         Character::factory()->lootCouncillor()->create(['name' => 'Councillor1', 'rank_id' => $rank->id]);
         Character::factory()->lootCouncillor()->create(['name' => 'Councillor2', 'rank_id' => $rank->id]);
+
+        // Mock BlizzardGuildService for getGrmFreshness()
+        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
+        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
+        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
@@ -1124,8 +1165,13 @@ class AddonControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $rank = GuildRank::factory()->create(['name' => 'Officer']);
+        $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
         $character = Character::factory()->lootCouncillor()->create(['name' => 'TestCouncillor', 'rank_id' => $rank->id]);
+
+        // Mock BlizzardGuildService for getGrmFreshness()
+        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
+        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
+        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
@@ -1215,8 +1261,13 @@ class AddonControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $rank = GuildRank::factory()->create(['name' => 'Raider']);
+        $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
         Character::factory()->lootCouncillor()->create(['name' => 'JsonCouncillor', 'rank_id' => $rank->id]);
+
+        // Mock BlizzardGuildService for getGrmFreshness()
+        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
+        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
+        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
 
@@ -1326,8 +1377,8 @@ class AddonControllerTest extends TestCase
         Storage::fake('local');
         $user = User::factory()->officer()->create();
 
-        // Create a raider rank
-        $raiderRank = GuildRank::factory()->create(['name' => 'Raider']);
+        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
+        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Mock BlizzardGuildService to return 5 raiders
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1363,8 +1414,8 @@ class AddonControllerTest extends TestCase
         $csvContent .= "Player3,Raider,80,3,Main,\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        // Create a raider rank
-        $raiderRank = GuildRank::factory()->create(['name' => 'Raider']);
+        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
+        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Mock BlizzardGuildService to return 3 raiders (same as CSV)
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1400,8 +1451,8 @@ class AddonControllerTest extends TestCase
         $csvContent .= "Player5,Raider,80,5,Main,\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        // Create a raider rank
-        $raiderRank = GuildRank::factory()->create(['name' => 'Raider']);
+        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
+        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Mock BlizzardGuildService to return 3 raiders (difference of 2)
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1434,8 +1485,8 @@ class AddonControllerTest extends TestCase
         $csvContent .= "Player2,Raider,80,2,Main,\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        // Create a raider rank
-        $raiderRank = GuildRank::factory()->create(['name' => 'Raider']);
+        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
+        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Mock BlizzardGuildService to return 5 raiders (difference of 3)
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1472,11 +1523,11 @@ class AddonControllerTest extends TestCase
         $csvContent .= "Player4,Officer,80,4,Main,\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        // Create multiple raider ranks
-        $raiderRank = GuildRank::factory()->create(['name' => 'Raider']);
-        $coreRaiderRank = GuildRank::factory()->create(['name' => 'Core Raider']);
-        $trialRaiderRank = GuildRank::factory()->create(['name' => 'Trial Raider']);
-        GuildRank::factory()->create(['name' => 'Officer']);
+        // Create multiple raider ranks (doesn't count attendance to avoid triggering attendance calculation)
+        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
+        $coreRaiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Core Raider']);
+        $trialRaiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Trial Raider']);
+        GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
 
         // Mock BlizzardGuildService to return 3 raiders across different ranks
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1536,9 +1587,9 @@ class AddonControllerTest extends TestCase
         $csvContent .= "Player2,Member,80,2,Main,\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        // Create non-raider ranks only
-        $officerRank = GuildRank::factory()->create(['name' => 'Officer']);
-        $memberRank = GuildRank::factory()->create(['name' => 'Member']);
+        // Create non-raider ranks only (doesn't count attendance to avoid triggering attendance calculation)
+        $officerRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
+        $memberRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Member']);
 
         // Mock BlizzardGuildService to return non-raiders
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1570,8 +1621,8 @@ class AddonControllerTest extends TestCase
         $csvContent .= "Player2;Raider;80;2;Main;\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        // Create a raider rank
-        $raiderRank = GuildRank::factory()->create(['name' => 'Raider']);
+        // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
+        $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Mock BlizzardGuildService to return 2 raiders
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1591,5 +1642,406 @@ class AddonControllerTest extends TestCase
                 ->has('grmFreshness.dataIsStale')
             )
         );
+    }
+
+    // ==========================================
+    // Settings Endpoint Tests
+    // ==========================================
+
+    public function test_settings_requires_authentication(): void
+    {
+        $response = $this->get(route('dashboard.addon.settings'));
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_settings_forbids_guest_users(): void
+    {
+        $user = User::factory()->guest()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_settings_forbids_member_users(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_settings_forbids_raider_users(): void
+    {
+        $user = User::factory()->raider()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_settings_allows_officer_users(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertOk();
+    }
+
+    public function test_settings_renders_inertia_page(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/Addon/Settings')
+        );
+    }
+
+    public function test_settings_includes_councillors_in_settings(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $councillor = Character::factory()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('settings.councillors', 1)
+            ->where('settings.councillors.0.name', 'SettingsCouncillor')
+        );
+    }
+
+    public function test_settings_includes_guild_ranks_in_settings(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        // Clear any existing ranks and create our test rank
+        GuildRank::query()->delete();
+        GuildRank::factory()->create(['name' => 'Test Rank', 'position' => 1]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        // Note: GuildRank model transforms names to title case
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('settings.ranks', 1)
+            ->where('settings.ranks.0.name', 'Test Rank')
+        );
+    }
+
+    public function test_settings_includes_guild_tags_in_settings(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $tag = GuildTag::factory()->countsAttendance()->create(['name' => 'TestTag']);
+
+        // Mock the WarcraftLogs GuildService to return our tag
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
+            ->andReturn(collect([$tag]));
+        $this->app->instance(GuildTags::class, $guildTags);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('settings.tags', 1)
+            ->where('settings.tags.0.name', 'TestTag')
+            ->where('settings.tags.0.count_attendance', true)
+        );
+    }
+
+    public function test_settings_includes_characters_as_deferred_prop(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        Character::factory()->create(['name' => 'DeferredCharacter']);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('characters')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('characters')
+                ->where('characters', fn ($characters) => collect($characters)->contains('name', 'DeferredCharacter'))
+            )
+        );
+    }
+
+    public function test_settings_councillors_are_ordered_by_name(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        Character::factory()->lootCouncillor()->create(['name' => 'Zoe']);
+        Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
+        Character::factory()->lootCouncillor()->create(['name' => 'Mike']);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('settings.councillors', function ($councillors) {
+                $names = collect($councillors)->pluck('name')->toArray();
+
+                return $names === ['Alice', 'Mike', 'Zoe'];
+            })
+        );
+    }
+
+    public function test_settings_ranks_are_ordered_by_position(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        // Clear any existing ranks and create our test ranks
+        GuildRank::query()->delete();
+        GuildRank::factory()->create(['name' => 'Officer', 'position' => 2]);
+        GuildRank::factory()->create(['name' => 'Guild Master', 'position' => 1]);
+        GuildRank::factory()->create(['name' => 'Member', 'position' => 3]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+
+        // Note: GuildRank model transforms names to title case
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('settings.ranks', 3)
+            ->where('settings.ranks.0.name', 'Guild Master')
+            ->where('settings.ranks.1.name', 'Officer')
+            ->where('settings.ranks.2.name', 'Member')
+        );
+    }
+
+    // ==========================================
+    // Add Councillor Endpoint Tests
+    // ==========================================
+
+    public function test_add_councillor_requires_authentication(): void
+    {
+        $response = $this->post(route('dashboard.addon.settings.councillors.add'));
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_add_councillor_forbids_guest_users(): void
+    {
+        $user = User::factory()->guest()->create();
+        $character = Character::factory()->create(['name' => 'TestChar']);
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => $character->name,
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_add_councillor_forbids_member_users(): void
+    {
+        $user = User::factory()->member()->create();
+        $character = Character::factory()->create(['name' => 'TestChar']);
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => $character->name,
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_add_councillor_forbids_raider_users(): void
+    {
+        $user = User::factory()->raider()->create();
+        $character = Character::factory()->create(['name' => 'TestChar']);
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => $character->name,
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_add_councillor_allows_officer_users(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->create(['name' => 'TestChar']);
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => $character->name,
+        ]);
+
+        $response->assertRedirect();
+    }
+
+    public function test_add_councillor_requires_character_name(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), []);
+
+        $response->assertSessionHasErrors(['character_name']);
+    }
+
+    public function test_add_councillor_requires_character_name_to_be_string(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => 12345,
+        ]);
+
+        $response->assertSessionHasErrors(['character_name']);
+    }
+
+    public function test_add_councillor_requires_character_to_exist(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => 'NonExistentCharacter',
+        ]);
+
+        $response->assertSessionHasErrors(['character_name']);
+    }
+
+    public function test_add_councillor_sets_character_as_loot_councillor(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->create(['name' => 'NewCouncillor', 'is_loot_councillor' => false]);
+
+        $this->assertFalse($character->is_loot_councillor);
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => $character->name,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertTrue($character->fresh()->is_loot_councillor);
+    }
+
+    public function test_add_councillor_redirects_back(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->create(['name' => 'TestChar']);
+
+        $response = $this->actingAs($user)
+            ->from(route('dashboard.addon.settings'))
+            ->post(route('dashboard.addon.settings.councillors.add'), [
+                'character_name' => $character->name,
+            ]);
+
+        $response->assertRedirect(route('dashboard.addon.settings'));
+    }
+
+    public function test_add_councillor_is_idempotent(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create(['name' => 'AlreadyCouncillor']);
+
+        $this->assertTrue($character->is_loot_councillor);
+
+        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+            'character_name' => $character->name,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertTrue($character->fresh()->is_loot_councillor);
+    }
+
+    // ==========================================
+    // Remove Councillor Endpoint Tests
+    // ==========================================
+
+    public function test_remove_councillor_requires_authentication(): void
+    {
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_remove_councillor_forbids_guest_users(): void
+    {
+        $user = User::factory()->guest()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertForbidden();
+    }
+
+    public function test_remove_councillor_forbids_member_users(): void
+    {
+        $user = User::factory()->member()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertForbidden();
+    }
+
+    public function test_remove_councillor_forbids_raider_users(): void
+    {
+        $user = User::factory()->raider()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertForbidden();
+    }
+
+    public function test_remove_councillor_allows_officer_users(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertRedirect();
+    }
+
+    public function test_remove_councillor_unsets_character_as_loot_councillor(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create(['name' => 'RemoveMe']);
+
+        $this->assertTrue($character->is_loot_councillor);
+
+        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertRedirect();
+        $this->assertFalse($character->fresh()->is_loot_councillor);
+    }
+
+    public function test_remove_councillor_redirects_back(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)
+            ->from(route('dashboard.addon.settings'))
+            ->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertRedirect(route('dashboard.addon.settings'));
+    }
+
+    public function test_remove_councillor_returns_404_for_nonexistent_character(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', 99999));
+
+        $response->assertNotFound();
+    }
+
+    public function test_remove_councillor_is_idempotent(): void
+    {
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->create(['name' => 'NotCouncillor', 'is_loot_councillor' => false]);
+
+        $this->assertFalse($character->is_loot_councillor);
+
+        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+
+        $response->assertRedirect();
+        $this->assertFalse($character->fresh()->is_loot_councillor);
     }
 }

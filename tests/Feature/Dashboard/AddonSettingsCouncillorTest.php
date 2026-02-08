@@ -4,12 +4,28 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\Character;
 use App\Models\User;
+use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use Tests\TestCase;
 
 class AddonSettingsCouncillorTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Mock GuildTags to return empty tags by default
+        // This prevents API calls during tests that don't specifically test attendance
+        $guildTags = Mockery::mock(GuildTags::class);
+        $guildTags->shouldReceive('toCollection')
+            ->andReturn(collect())
+            ->byDefault();
+
+        $this->app->instance(GuildTags::class, $guildTags);
+    }
 
     // ==========================================
     // Add Councillor Tests

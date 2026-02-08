@@ -2,8 +2,6 @@
 
 namespace App\Services\WarcraftLogs;
 
-use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\Data\Guild;
 use App\Services\WarcraftLogs\Data\GuildAttendance;
 use App\Services\WarcraftLogs\Data\GuildAttendancePagination;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
@@ -12,78 +10,211 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 
-class GuildService extends WarcraftLogsService
+class Attendance extends WarcraftLogsService
 {
     protected int $cacheTtl = 43200; // 12 hours
 
     /**
-     * Normalize guild tag ID(s) to an array.
-     *
-     * @param  int|array<int>|null  $guildTagID
-     * @return array<int>
+     * The attendance data to calculate stats from.
      */
-    protected function normalizeGuildTagIDs(int|array|null $guildTagID): array
+    protected iterable $attendance = [];
+
+    /**
+     * The guild tags to filter by when fetching attendance.
+     *
+     * @var array<int>
+     */
+    protected array $tags = [];
+
+    /**
+     * Optional start date filter.
+     */
+    protected ?Carbon $startDate = null;
+
+    /**
+     * Optional end date filter.
+     */
+    protected ?Carbon $endDate = null;
+
+    /**
+     * Optional player names filter.
+     *
+     * @var array<string>|null
+     */
+    protected ?array $playerNames = null;
+
+    /**
+     * Optional zone ID filter.
+     */
+    protected ?int $zoneID = null;
+
+    /**
+     * Set the attendance data to work with.
+     */
+    public function setAttendance(iterable $attendance): static
     {
-        if ($guildTagID === null) {
-            return [];
+        $this->attendance = $attendance;
+
+        return $this;
+    }
+
+    /**
+     * Set the guild tags to filter by.
+     *
+     * @param  array<int>  $tags
+     */
+    public function tags(array $tags): static
+    {
+        $this->tags = $tags;
+
+        return $this;
+    }
+
+    /**
+     * Set the start date filter.
+     */
+    public function startDate(?Carbon $startDate): static
+    {
+        $this->startDate = $startDate;
+
+        return $this;
+    }
+
+    /**
+     * Set the end date filter.
+     */
+    public function endDate(?Carbon $endDate): static
+    {
+        $this->endDate = $endDate;
+
+        return $this;
+    }
+
+    /**
+     * Set the player names filter.
+     *
+     * @param  array<string>|null  $playerNames
+     */
+    public function playerNames(?array $playerNames): static
+    {
+        $this->playerNames = $playerNames;
+
+        return $this;
+    }
+
+    /**
+     * Set the zone ID filter.
+     */
+    public function zoneID(?int $zoneID): static
+    {
+        $this->zoneID = $zoneID;
+
+        return $this;
+    }
+
+    /**
+     * Fetch attendance data for all configured tags and merge the results.
+     *
+     * If no tags are configured, returns the set attendance data.
+     * Results are deduplicated by report code and sorted by date ascending.
+     *
+     * @return Collection<int, GuildAttendance>
+     */
+    public function get(): Collection
+    {
+        if (empty($this->tags)) {
+            return $this->sortAttendanceData($this->attendance);
         }
 
-        return is_array($guildTagID) ? $guildTagID : [$guildTagID];
-    }
+        $allRecords = collect();
 
-    /**
-     * Fetch the Regrowth guild using the configured guild ID.
-     *
-     * @throws GuildNotFoundException
-     * @throws GraphQLException
-     */
-    public function getGuild(): Guild
-    {
-        return $this->findGuild($this->getGuildId());
-    }
+        foreach ($this->tags as $tagID) {
+            $tagAttendance = $this->getAttendanceLazy(
+                guildTagID: $tagID,
+                startDate: $this->startDate,
+                endDate: $this->endDate,
+                playerNames: $this->playerNames,
+                zoneID: $this->zoneID,
+            );
 
-    /**
-     * Get guild tags from the API, falling back to database if API returns none.
-     *
-     * @return Collection<int, GuildTag>
-     *
-     * @throws GuildNotFoundException
-     * @throws GraphQLException
-     */
-    public function getGuildTags(): Collection
-    {
-        $this->getGuild();
-
-        return GuildTag::all();
-    }
-
-    /**
-     * Fetch a guild by its ID.
-     *
-     * @throws GuildNotFoundException
-     * @throws GraphQLException
-     */
-    public function findGuild(int $guildId): Guild
-    {
-        $query = $this->buildGuildQuery();
-
-        try {
-            $data = $this->queryData($query, ['id' => $guildId]);
-        } catch (GraphQLException $e) {
-            if ($e->hasErrorMatching('/does not exist/i') || $e->hasErrorMatching('/not found/i')) {
-                throw new GuildNotFoundException("Guild with ID {$guildId} not found");
+            foreach ($tagAttendance as $attendance) {
+                // Use report code as unique key to deduplicate
+                $allRecords[$attendance->code] = $attendance;
             }
-            throw $e;
         }
 
-        $guildData = $data['guildData']['guild'] ?? null;
-
-        if ($guildData === null) {
-            throw new GuildNotFoundException("Guild with ID {$guildId} not found");
-        }
-
-        return Guild::fromArray($guildData);
+        return $allRecords
+            ->sortBy(fn (GuildAttendance $a) => $a->startTime)
+            ->values();
     }
+
+    /**
+     * Fetch attendance data lazily for memory efficiency.
+     *
+     * If no tags are configured, returns the set attendance data.
+     * Note: When using multiple tags, deduplication is still performed but
+     * results are yielded as they are processed.
+     *
+     * @return LazyCollection<int, GuildAttendance>
+     */
+    public function lazy(): LazyCollection
+    {
+        if (empty($this->tags)) {
+            return LazyCollection::make($this->attendance);
+        }
+
+        return LazyCollection::make(function () {
+            $seenCodes = [];
+
+            foreach ($this->tags as $tagID) {
+                $tagAttendance = $this->getAttendanceLazy(
+                    guildTagID: $tagID,
+                    startDate: $this->startDate,
+                    endDate: $this->endDate,
+                    playerNames: $this->playerNames,
+                    zoneID: $this->zoneID,
+                );
+
+                foreach ($tagAttendance as $attendance) {
+                    // Skip duplicates (same report from different tags)
+                    if (isset($seenCodes[$attendance->code])) {
+                        continue;
+                    }
+                    $seenCodes[$attendance->code] = true;
+                    yield $attendance;
+                }
+            }
+        });
+    }
+
+    /**
+     * Get the first attendance date for a specific player.
+     */
+    public function getPlayerFirstAttendanceDate(string $playerName): ?Carbon
+    {
+        foreach ($this->attendance as $record) {
+            foreach ($record->players as $player) {
+                if ($player->name === $playerName) {
+                    return $record->startTime;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the attendance records sorted by date ascending.
+     *
+     * @param  iterable<GuildAttendance>  $attendance
+     * @return Collection<int, GuildAttendance>
+     */
+    protected function sortAttendanceData(iterable $attendance): Collection
+    {
+        return collect($attendance)->sortBy(fn (GuildAttendance $a) => $a->startTime)->values();
+    }
+
+    // ==================== API Query Methods ====================
 
     /**
      * Fetch a single page of attendance for the configured guild.
@@ -96,7 +227,7 @@ class GuildService extends WarcraftLogsService
     public function getAttendance(array $params = []): GuildAttendancePagination
     {
         return $this->getGuildAttendance(
-            $this->getGuildId(),
+            $this->guildId,
             $params['page'] ?? 1,
             $params['limit'] ?? 25,
             $params['startDate'] ?? null,
@@ -126,7 +257,7 @@ class GuildService extends WarcraftLogsService
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
     ): GuildAttendancePagination {
-        $tagIDs = $this->normalizeGuildTagIDs($guildTagID);
+        $tagIDs = GuildTags::normalizeGuildTagIDs($guildTagID);
 
         // Single tag or no tag: use existing logic
         if (count($tagIDs) <= 1) {
@@ -173,7 +304,7 @@ class GuildService extends WarcraftLogsService
         ?int $guildTagID = null,
         ?int $zoneID = null,
     ): GuildAttendancePagination {
-        $query = $this->buildAttendanceQuery($guildTagID, $zoneID);
+        $query = $this->buildGraphQuery($guildTagID, $zoneID);
 
         $variables = [
             'id' => $guildId,
@@ -190,7 +321,7 @@ class GuildService extends WarcraftLogsService
         }
 
         try {
-            $data = $this->queryData($query, $variables);
+            $data = $this->query($query, $variables);
         } catch (GraphQLException $e) {
             if ($e->hasErrorMatching('/does not exist/i') || $e->hasErrorMatching('/not found/i')) {
                 throw new GuildNotFoundException("Guild with ID {$guildId} not found");
@@ -328,7 +459,7 @@ class GuildService extends WarcraftLogsService
         ?int $zoneID = null,
     ): LazyCollection {
         return $this->getGuildAttendanceLazy(
-            $this->getGuildId(),
+            $this->guildId,
             $limit,
             $startDate,
             $endDate,
@@ -357,7 +488,7 @@ class GuildService extends WarcraftLogsService
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
     ): LazyCollection {
-        $tagIDs = $this->normalizeGuildTagIDs($guildTagID);
+        $tagIDs = GuildTags::normalizeGuildTagIDs($guildTagID);
 
         // No tags or single tag: existing behavior
         if (count($tagIDs) <= 1) {
@@ -481,44 +612,9 @@ class GuildService extends WarcraftLogsService
     }
 
     /**
-     * Build the GraphQL query for fetching guild data.
-     */
-    protected function buildGuildQuery(): string
-    {
-        return <<<'GRAPHQL'
-        query GetGuild($id: Int!) {
-            guildData {
-                guild(id: $id) {
-                    id
-                    name
-                    faction {
-                        id
-                        name
-                    }
-                    server {
-                        id
-                        name
-                        slug
-                        region {
-                            id
-                            name
-                            slug
-                        }
-                    }
-                    tags {
-                        id
-                        name
-                    }
-                }
-            }
-        }
-        GRAPHQL;
-    }
-
-    /**
      * Build the GraphQL query for fetching guild attendance data.
      */
-    protected function buildAttendanceQuery(?int $guildTagID = null, ?int $zoneID = null): string
+    protected function buildGraphQuery(?int $guildTagID = null, ?int $zoneID = null): string
     {
         $variableDefinitions = ['$id: Int!', '$page: Int', '$limit: Int'];
         $attendanceArgs = ['page: $page', 'limit: $limit'];

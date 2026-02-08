@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\AuthenticationHandler;
-use App\Services\WarcraftLogs\GuildService;
+use App\Services\WarcraftLogs\Guild;
+use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
-class WarcraftLogsServiceProvider extends ServiceProvider
+class WarcraftLogsServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register services.
@@ -19,13 +22,20 @@ class WarcraftLogsServiceProvider extends ServiceProvider
 
             return new AuthenticationHandler(
                 $config['client_id'],
-                $config['client_secret'],
-                $config['token_url']
+                $config['client_secret']
             );
         });
 
-        $this->app->singleton(GuildService::class, function (Application $app) {
-            return new GuildService(config('services.warcraftlogs'));
+        $this->app->singleton(Attendance::class, function (Application $app) {
+            return new Attendance(config('services.warcraftlogs'), $app->make(AuthenticationHandler::class));
+        });
+
+        $this->app->singleton(Guild::class, function (Application $app) {
+            return new Guild(config('services.warcraftlogs'), $app->make(AuthenticationHandler::class));
+        });
+
+        $this->app->singleton(GuildTags::class, function (Application $app) {
+            return new GuildTags(config('services.warcraftlogs'), $app->make(AuthenticationHandler::class));
         });
     }
 
@@ -35,5 +45,20 @@ class WarcraftLogsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array<int, string>
+     */
+    public function provides(): array
+    {
+        return [
+            Guild::class,
+            GuildTags::class,
+            Attendance::class,
+            AuthenticationHandler::class,
+        ];
     }
 }
