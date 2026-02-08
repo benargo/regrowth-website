@@ -1,5 +1,3 @@
-import {generateModels} from 'wow-model-viewer';
-
 const podiumData = [
     {
         rank: 1,
@@ -37,7 +35,7 @@ export default function Podium() {
     return (
         <div className="py-12">
             <div className="mx-auto max-w-4xl px-4">
-                <h2 className="mb-8 text-center text-3xl font-bold text-white">Race to 70 Podium</h2>
+                <h2 className="mb-8 text-center text-3xl font-bold text-white">The Race to Level 70</h2>
                 <div className="flex flex-col items-center gap-4 md:flex-row md:items-end md:justify-center md:gap-6">
                     {podiumData.map((place) => (
                         <div

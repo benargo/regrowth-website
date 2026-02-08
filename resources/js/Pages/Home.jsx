@@ -1,6 +1,5 @@
 import Master from "@/Layouts/Master";
 import CountdownTimer from "@/Components/CountdownTimer";
-import LevelRace from "@/Components/LevelRace";
 import Podium from "@/Components/Podium";
 
 export default function Home({ members }) {
@@ -36,8 +35,6 @@ export default function Home({ members }) {
                 </div>
 
                 <Podium />
-
-                <LevelRace members={members} />
             </div>
         </Master>
     );
