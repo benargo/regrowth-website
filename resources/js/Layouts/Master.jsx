@@ -294,7 +294,7 @@ export default function Master({ title, children }) {
                                     href={route("privacypolicy")}
                                     className="flex flex-row items-center p-1 h-8 text-gray-400 transition-colors hover:text-white"
                                 >
-                                    <Icon icon="user-secret" style="regular" className="mr-2 w-5 h-5" />
+                                    <Icon icon="user-secret" style="solid" className="mr-2 w-5 h-5" />
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
                                 <Link

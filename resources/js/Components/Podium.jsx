@@ -22,7 +22,7 @@ const podiumData = [
     {
         rank: 3,
         label: '3rd',
-        names: ['Izepo', 'Jsherratt'],
+        names: ['Izepo'],
         bg: 'bg-amber-800',
         border: 'border-amber-700',
         text: 'text-amber-100',
