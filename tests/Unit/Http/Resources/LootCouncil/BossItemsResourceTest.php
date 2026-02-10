@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Resources\LootCouncil\BossItemsResource;
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
 use App\Services\Blizzard\ItemService;
@@ -323,7 +323,7 @@ class BossItemsResourceTest extends TestCase
     {
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
-        ItemComment::factory()->count(3)->create(['item_id' => $item->id]);
+        Comment::factory()->count(3)->create(['item_id' => $item->id]);
 
         $items = $this->prepareItems([$item->id]);
 
@@ -374,8 +374,8 @@ class BossItemsResourceTest extends TestCase
         $boss = Boss::factory()->create();
         $item1 = Item::factory()->fromBoss($boss)->create();
         $item2 = Item::factory()->fromBoss($boss)->create();
-        ItemComment::factory()->count(2)->create(['item_id' => $item1->id]);
-        ItemComment::factory()->count(3)->create(['item_id' => $item2->id]);
+        Comment::factory()->count(2)->create(['item_id' => $item1->id]);
+        Comment::factory()->count(3)->create(['item_id' => $item2->id]);
 
         $items = $this->prepareItems([$item1->id, $item2->id]);
 

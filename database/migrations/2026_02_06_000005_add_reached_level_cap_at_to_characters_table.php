@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('characters', function (Blueprint $table) {
-            $table->timestamp('reached_level_cap_at')->nullable()->after('is_loot_councillor');
-        });
+        // Schema::table('characters', function (Blueprint $table) {
+        //     $table->timestamp('reached_level_cap_at')->nullable()->after('is_loot_councillor');
+        // });
     }
 
     /**

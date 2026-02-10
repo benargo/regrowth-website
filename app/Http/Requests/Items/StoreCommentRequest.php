@@ -2,17 +2,17 @@
 
 namespace App\Http\Requests\Items;
 
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreItemCommentRequest extends FormRequest
+class StoreCommentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()->can('create', ItemComment::class);
+        return $this->user()->can('create', Comment::class);
     }
 
     /**

@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ItemComment extends Model
+class Comment extends Model
 {
-    /** @use HasFactory<\Database\Factories\LootCouncil\ItemCommentFactory> */
+    /** @use HasFactory<\Database\Factories\LootCouncil\CommentFactory> */
     use HasFactory;
 
     use SoftDeletes;
@@ -20,7 +20,7 @@ class ItemComment extends Model
      *
      * @var string
      */
-    protected $table = 'lootcouncil_item_comments';
+    protected $table = 'lootcouncil_comments';
 
     /**
      * The model's default values for attributes.

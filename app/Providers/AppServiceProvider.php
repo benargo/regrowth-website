@@ -3,11 +3,11 @@
 namespace App\Providers;
 
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\DashboardPolicy;
-use App\Policies\ItemCommentPolicy;
+use App\Policies\CommentPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\PhasePolicy;
 use App\Policies\ViewAsRolePolicy;
@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
          */
         Gate::policy(GuildTag::class, WclGuildTagPolicy::class);
         Gate::policy(Item::class, ItemPolicy::class);
-        Gate::policy(ItemComment::class, ItemCommentPolicy::class);
+        Gate::policy(Comment::class, CommentPolicy::class);
         Gate::policy(Phase::class, PhasePolicy::class);
 
         /**

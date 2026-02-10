@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Items\StoreItemCommentRequest;
-use App\Http\Requests\Items\UpdateItemCommentRequest;
+use App\Http\Requests\Items\StoreCommentRequest;
+use App\Http\Requests\Items\UpdateCommentRequest;
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +21,7 @@ class CommentController extends Controller
     /**
      * Store a new comment for a specific loot item.
      */
-    public function store(StoreItemCommentRequest $request, Item $item): RedirectResponse
+    public function store(StoreCommentRequest $request, Item $item): RedirectResponse
     {
         $item->comments()->create([
             'user_id' => $request->user()->id,
@@ -36,10 +36,10 @@ class CommentController extends Controller
     /**
      * Update an existing comment for a specific loot item.
      */
-    public function update(UpdateItemCommentRequest $request, Item $item, ItemComment $comment): RedirectResponse
+    public function update(UpdateCommentRequest $request, Item $item, Comment $comment): RedirectResponse
     {
         // Create new comment with original timestamp
-        $newComment = new ItemComment([
+        $newComment = new Comment([
             'item_id' => $item->id,
             'user_id' => $comment->user_id,
             'body' => $request->validated('body', $comment->body), // Preserve original body if not provided
@@ -60,7 +60,7 @@ class CommentController extends Controller
     /**
      * Delete a comment for a specific loot item.
      */
-    public function destroy(Request $request, Item $item, ItemComment $comment): RedirectResponse
+    public function destroy(Request $request, Item $item, Comment $comment): RedirectResponse
     {
         Gate::authorize('delete', $comment);
 

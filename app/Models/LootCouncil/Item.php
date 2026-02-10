@@ -69,10 +69,10 @@ class Item extends Model
     /**
      * Get the comments for this item.
      *
-     * @return HasMany<ItemComment, $this>
+     * @return HasMany<Comment, $this>
      */
     public function comments(): HasMany
     {
-        return $this->hasMany(ItemComment::class);
+        return $this->hasMany(Comment::class);
     }
 }

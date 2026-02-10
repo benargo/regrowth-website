@@ -3,7 +3,7 @@
 namespace Tests\Feature\LootCouncil;
 
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -65,7 +65,7 @@ class CommentCacheTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->member()->create();
         $commentAuthor = User::factory()->raider()->create();
-        ItemComment::factory()->count(3)->create([
+        Comment::factory()->count(3)->create([
             'item_id' => $item->id,
             'user_id' => $commentAuthor->id,
         ]);
@@ -88,7 +88,7 @@ class CommentCacheTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->officer()->create();
         $commentAuthor = User::factory()->raider()->create();
-        ItemComment::factory()->count(3)->create([
+        Comment::factory()->count(3)->create([
             'item_id' => $item->id,
             'user_id' => $commentAuthor->id,
         ]);
@@ -111,7 +111,7 @@ class CommentCacheTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->member()->create();
         $commentAuthor = User::factory()->raider()->create();
-        ItemComment::factory()->create([
+        Comment::factory()->create([
             'item_id' => $item->id,
             'user_id' => $commentAuthor->id,
             'body' => 'Original cached comment',
@@ -122,7 +122,7 @@ class CommentCacheTest extends TestCase
 
         // Directly modify the database without going through the controller
         // This simulates what happens when cache is stale
-        ItemComment::where('item_id', $item->id)->update(['body' => 'Modified comment']);
+        Comment::where('item_id', $item->id)->update(['body' => 'Modified comment']);
 
         // Second request should return cached data (still showing original)
         $response = $this->actingAs($user)->get(route('loot.items.show', $item));
@@ -185,7 +185,7 @@ class CommentCacheTest extends TestCase
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
-        $comment = ItemComment::factory()->create([
+        $comment = Comment::factory()->create([
             'item_id' => $item->id,
             'user_id' => $user->id,
             'body' => 'Original comment',
@@ -212,7 +212,7 @@ class CommentCacheTest extends TestCase
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
-        $comment = ItemComment::factory()->create([
+        $comment = Comment::factory()->create([
             'item_id' => $item->id,
             'user_id' => $user->id,
             'body' => 'Original comment body',
@@ -241,7 +241,7 @@ class CommentCacheTest extends TestCase
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
-        $comment = ItemComment::factory()->create([
+        $comment = Comment::factory()->create([
             'item_id' => $item->id,
             'user_id' => $user->id,
         ]);
@@ -265,7 +265,7 @@ class CommentCacheTest extends TestCase
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
-        $comment = ItemComment::factory()->create([
+        $comment = Comment::factory()->create([
             'item_id' => $item->id,
             'user_id' => $user->id,
             'body' => 'Comment to be deleted',
@@ -296,7 +296,7 @@ class CommentCacheTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
 
         // Create enough comments for multiple pages
-        ItemComment::factory()->count(15)->create([
+        Comment::factory()->count(15)->create([
             'item_id' => $item->id,
             'user_id' => $commentAuthor->id,
         ]);
@@ -321,7 +321,7 @@ class CommentCacheTest extends TestCase
         $user = User::factory()->raider()->create();
 
         // Create enough comments for multiple pages
-        ItemComment::factory()->count(15)->create([
+        Comment::factory()->count(15)->create([
             'item_id' => $item->id,
             'user_id' => $user->id,
         ]);

@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -76,8 +76,8 @@ class RebuildLootCouncilCacheJob implements ShouldQueue
                     ->orderBy('encounter_order')
                     ->get();
 
-                $commentCounts = ItemComment::query()
-                    ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_item_comments.item_id')
+                $commentCounts = Comment::query()
+                    ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_comments.item_id')
                     ->whereNotNull('lootcouncil_items.boss_id')
                     ->selectRaw('lootcouncil_items.boss_id, count(*) as comments_count')
                     ->groupBy('lootcouncil_items.boss_id')

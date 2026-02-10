@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Console\Commands;
+namespace Tests\Retired\Console\Commands;
 
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\LevelCapAchieved;

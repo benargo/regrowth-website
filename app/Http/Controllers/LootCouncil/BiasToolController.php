@@ -5,7 +5,7 @@ namespace App\Http\Controllers\LootCouncil;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LootCouncil\BossItemsResource;
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -61,8 +61,8 @@ class BiasToolController extends Controller
                     ->get();
 
                 // Get comment counts per boss via a single query
-                $commentsCount = ItemComment::query()
-                    ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_item_comments.item_id')
+                $commentsCount = Comment::query()
+                    ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_comments.item_id')
                     ->whereNotNull('lootcouncil_items.boss_id')
                     ->selectRaw('lootcouncil_items.boss_id, count(*) as comments_count')
                     ->groupBy('lootcouncil_items.boss_id')
@@ -81,8 +81,8 @@ class BiasToolController extends Controller
 
                 if ($hasTrashDrops > 0) {
                     // Get comment counts per boss via a single query
-                    $commentsCount = ItemComment::query()
-                        ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_item_comments.item_id')
+                    $commentsCount = Comment::query()
+                        ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_comments.item_id')
                         ->whereNull('lootcouncil_items.boss_id')
                         ->selectRaw('lootcouncil_items.boss_id, count(*) as comments_count')
                         ->groupBy('lootcouncil_items.boss_id')

@@ -3,32 +3,32 @@
 namespace Tests\Unit\Models\LootCouncil;
 
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
-class ItemCommentTest extends ModelTestCase
+class CommentTest extends ModelTestCase
 {
     protected function modelClass(): string
     {
-        return ItemComment::class;
+        return Comment::class;
     }
 
     #[Test]
-    public function it_uses_lootcouncil_item_comments_table(): void
+    public function it_uses_lootcouncil_comments_table(): void
     {
-        $model = new ItemComment;
+        $model = new Comment;
 
-        $this->assertSame('lootcouncil_item_comments', $model->getTable());
+        $this->assertSame('lootcouncil_comments', $model->getTable());
     }
 
     #[Test]
     public function it_uses_auto_incrementing_id(): void
     {
-        $model = new ItemComment;
+        $model = new Comment;
 
         $this->assertSame('id', $model->getKeyName());
         $this->assertTrue($model->getIncrementing());
@@ -37,7 +37,7 @@ class ItemCommentTest extends ModelTestCase
     #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
-        $model = new ItemComment;
+        $model = new Comment;
 
         $this->assertFillable($model, [
             'item_id',
@@ -51,7 +51,7 @@ class ItemCommentTest extends ModelTestCase
     #[Test]
     public function it_defaults_is_resolved_to_false(): void
     {
-        $model = new ItemComment;
+        $model = new Comment;
 
         $this->assertFalse($model->is_resolved);
     }
@@ -89,7 +89,7 @@ class ItemCommentTest extends ModelTestCase
     {
         $this->assertContains(
             SoftDeletes::class,
-            class_uses_recursive(ItemComment::class)
+            class_uses_recursive(Comment::class)
         );
     }
 
@@ -187,8 +187,8 @@ class ItemCommentTest extends ModelTestCase
         $comment->delete();
 
         $this->assertSoftDeleted($comment);
-        $this->assertNull(ItemComment::find($comment->id));
-        $this->assertNotNull(ItemComment::withTrashed()->find($comment->id));
+        $this->assertNull(Comment::find($comment->id));
+        $this->assertNotNull(Comment::withTrashed()->find($comment->id));
     }
 
     #[Test]
@@ -200,7 +200,7 @@ class ItemCommentTest extends ModelTestCase
         $comment->restore();
 
         $this->assertNotSoftDeleted($comment);
-        $this->assertNotNull(ItemComment::find($comment->id));
+        $this->assertNotNull(Comment::find($comment->id));
     }
 
     #[Test]
@@ -211,7 +211,7 @@ class ItemCommentTest extends ModelTestCase
 
         $comment->forceDelete();
 
-        $this->assertNull(ItemComment::withTrashed()->find($commentId));
+        $this->assertNull(Comment::withTrashed()->find($commentId));
     }
 
     #[Test]
@@ -223,7 +223,7 @@ class ItemCommentTest extends ModelTestCase
         $comment->update(['deleted_by' => $deleter->id]);
         $comment->delete();
 
-        $trashedComment = ItemComment::withTrashed()->find($comment->id);
+        $trashedComment = Comment::withTrashed()->find($comment->id);
 
         $this->assertSame($deleter->id, $trashedComment->deleted_by);
         $this->assertTrue($trashedComment->deletedBy->is($deleter));

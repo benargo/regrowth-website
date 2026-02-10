@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class ItemCommentPolicy extends AuthorizationPolicy
+class CommentPolicy extends AuthorizationPolicy
 {
     use HandlesAuthorization;
 
@@ -21,7 +21,7 @@ class ItemCommentPolicy extends AuthorizationPolicy
     /**
      * Determine if the user can delete a comment.
      */
-    public function delete(User $user, ItemComment $comment): bool
+    public function delete(User $user, Comment $comment): bool
     {
         if ($this->userIsOfficer($user)) {
             return true;
@@ -33,7 +33,7 @@ class ItemCommentPolicy extends AuthorizationPolicy
     /**
      * Determine if the user can update a comment.
      */
-    public function update(User $user, ItemComment $comment): bool
+    public function update(User $user, Comment $comment): bool
     {
         if ($this->userIsOfficer($user)) {
             return true;
@@ -49,7 +49,7 @@ class ItemCommentPolicy extends AuthorizationPolicy
     /**
      * Determine if the user can mark a comment as resolved.
      */
-    public function markAsResolved(User $user, ItemComment $comment): bool
+    public function markAsResolved(User $user, Comment $comment): bool
     {
         return $this->userIsOfficer($user);
     }

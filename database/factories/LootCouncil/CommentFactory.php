@@ -3,21 +3,21 @@
 namespace Database\Factories\LootCouncil;
 
 use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemComment;
+use App\Models\LootCouncil\Comment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LootCouncil\ItemComment>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LootCouncil\Comment>
  */
-class ItemCommentFactory extends Factory
+class CommentFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var class-string<\Illuminate\Database\Eloquent\Model>
      */
-    protected $model = ItemComment::class;
+    protected $model = Comment::class;
 
     /**
      * Define the model's default state.
