@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * This migration is no longer needed, but we want to keep it around for reference in case we need to add this column in the future.
      */
     public function up(): void
     {
