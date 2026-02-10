@@ -70,16 +70,16 @@ class CommentCacheTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        Cache::tags(["item_{$item->id}_comments"])->flush();
+        Cache::tags(['lootcouncil'])->flush();
 
         $this->assertFalse(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
 
         $this->actingAs($user)->get(route('loot.items.show', $item));
 
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
     }
 
@@ -93,16 +93,16 @@ class CommentCacheTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        Cache::tags(["item_{$item->id}_comments"])->flush();
+        Cache::tags(['lootcouncil'])->flush();
 
         $this->assertFalse(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
 
         $this->actingAs($user)->get(route('loot.items.edit', $item));
 
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
     }
 
@@ -144,7 +144,7 @@ class CommentCacheTest extends TestCase
         $this->actingAs($user)->get(route('loot.items.show', $item));
 
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
 
         // Create a comment
@@ -153,7 +153,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         $this->assertFalse(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
     }
 
@@ -195,7 +195,7 @@ class CommentCacheTest extends TestCase
         $this->actingAs($user)->get(route('loot.items.show', $item));
 
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
 
         // Update the comment
@@ -204,7 +204,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         $this->assertFalse(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
     }
 
@@ -250,14 +250,14 @@ class CommentCacheTest extends TestCase
         $this->actingAs($user)->get(route('loot.items.show', $item));
 
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
 
         // Delete the comment
         $this->actingAs($user)->delete(route('loot.items.comments.destroy', [$item, $comment]));
 
         $this->assertFalse(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
     }
 
@@ -286,50 +286,6 @@ class CommentCacheTest extends TestCase
     }
 
     // ==========================================
-    // Cache isolation tests
-    // ==========================================
-
-    public function test_cache_invalidation_only_affects_specific_item(): void
-    {
-        $item1 = $this->createItem();
-        $item2 = $this->createItem();
-        $user = User::factory()->raider()->create();
-
-        ItemComment::factory()->create([
-            'item_id' => $item1->id,
-            'user_id' => $user->id,
-        ]);
-        ItemComment::factory()->create([
-            'item_id' => $item2->id,
-            'user_id' => $user->id,
-        ]);
-
-        // Populate cache for both items
-        $this->actingAs($user)->get(route('loot.items.show', $item1));
-        $this->actingAs($user)->get(route('loot.items.show', $item2));
-
-        $this->assertTrue(
-            Cache::tags(["item_{$item1->id}_comments"])->has("item_{$item1->id}_comments_page_1")
-        );
-        $this->assertTrue(
-            Cache::tags(["item_{$item2->id}_comments"])->has("item_{$item2->id}_comments_page_1")
-        );
-
-        // Create a comment on item1
-        $this->actingAs($user)->post(route('loot.items.comments.store', $item1), [
-            'body' => 'New comment on item 1',
-        ]);
-
-        // Item1 cache should be invalidated, item2 cache should remain
-        $this->assertFalse(
-            Cache::tags(["item_{$item1->id}_comments"])->has("item_{$item1->id}_comments_page_1")
-        );
-        $this->assertTrue(
-            Cache::tags(["item_{$item2->id}_comments"])->has("item_{$item2->id}_comments_page_1")
-        );
-    }
-
-    // ==========================================
     // Pagination cache tests
     // ==========================================
 
@@ -352,10 +308,10 @@ class CommentCacheTest extends TestCase
         $this->actingAs($user)->get(route('loot.items.show', ['item' => $item, 'page' => 2]));
 
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_2")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_2")
         );
     }
 
@@ -375,10 +331,10 @@ class CommentCacheTest extends TestCase
         $this->actingAs($user)->get(route('loot.items.show', ['item' => $item, 'page' => 2]));
 
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
         $this->assertTrue(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_2")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_2")
         );
 
         // Create a new comment (should invalidate all pages)
@@ -387,10 +343,10 @@ class CommentCacheTest extends TestCase
         ]);
 
         $this->assertFalse(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_1")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
         $this->assertFalse(
-            Cache::tags(["item_{$item->id}_comments"])->has("item_{$item->id}_comments_page_2")
+            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_2")
         );
     }
 }

@@ -34,6 +34,7 @@ class ItemResource extends JsonResource
             'quality' => $blizzardData['quality'] ?? null,
             'inventory_type' => $blizzardData['inventory_type']['name'] ?? null,
             'priorities' => PriorityResource::collection($this->whenLoaded('priorities')),
+            'comments_count' => $this->whenCounted('comments'),
             'notes' => $this->notes,
             'wowhead_url' => $this->getWowheadUrl($blizzardData['name'] ?? null),
         ];

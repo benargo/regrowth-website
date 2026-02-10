@@ -363,7 +363,7 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Loot/ItemShow')
+            ->component('LootBiasTool/ItemShow')
             ->has('comments.data', 3)
         );
     }

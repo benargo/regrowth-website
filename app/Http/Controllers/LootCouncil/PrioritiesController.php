@@ -5,11 +5,15 @@ namespace App\Http\Controllers\LootCouncil;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Items\UpdateItemPrioritiesRequest;
 use App\Models\LootCouncil\Item;
+use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Cache;
 
 class PrioritiesController extends Controller
 {
+    public function __construct(
+        protected LootCouncilCacheService $cacheService
+    ) {}
+
     /**
      * Update the priorities for a specific loot item.
      */
@@ -21,11 +25,7 @@ class PrioritiesController extends Controller
 
         $item->priorities()->sync($priorities);
 
-        if ($item->boss_id) {
-            Cache::forget("loot_items.boss_{$item->boss_id}");
-        } else {
-            Cache::forget("loot_items.trash_raid_{$item->raid_id}");
-        }
+        $this->cacheService->flush();
 
         return redirect()->back();
     }

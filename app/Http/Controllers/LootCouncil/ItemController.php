@@ -28,7 +28,7 @@ class ItemController extends Controller
 
         $page = $request->integer('page', 1);
 
-        $comments = Cache::tags(["item_{$item->id}_comments"])
+        $comments = Cache::tags(['lootcouncil'])
             ->remember(
                 "item_{$item->id}_comments_page_{$page}",
                 now()->addDay(),
@@ -38,7 +38,7 @@ class ItemController extends Controller
                     ->paginate(10)
             );
 
-        return Inertia::render('Loot/ItemShow', [
+        return Inertia::render('LootBiasTool/ItemShow', [
             'item' => new ItemResource($item),
             'can' => [
                 'create_comment' => $request->user()->can('create', ItemComment::class),
@@ -61,7 +61,7 @@ class ItemController extends Controller
 
         $page = $request->integer('page', 1);
 
-        $comments = Cache::tags(["item_{$item->id}_comments"])
+        $comments = Cache::tags(['lootcouncil'])
             ->remember(
                 "item_{$item->id}_comments_page_{$page}",
                 now()->addDay(),
@@ -71,9 +71,9 @@ class ItemController extends Controller
                     ->paginate(10)
             );
 
-        $allPriorities = Priority::all();
+        $allPriorities = Cache::tags(['lootcouncil'])->remember('priorities.all', now()->addYear(), fn () => Priority::all());
 
-        return Inertia::render('Loot/ItemEdit', [
+        return Inertia::render('LootBiasTool/ItemEdit', [
             'item' => new ItemResource($item),
             'allPriorities' => PriorityResource::collection($allPriorities),
             'can' => [

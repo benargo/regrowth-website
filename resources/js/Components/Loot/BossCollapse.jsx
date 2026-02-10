@@ -11,7 +11,7 @@ export function BossItemsSkeleton() {
     );
 }
 
-export default function BossCollapse({ title, bossId, onExpand, loading, children }) {
+export default function BossCollapse({ title, bossId, onExpand, loading, children, commentsCount }) {
     const [expanded, setExpanded] = useState(false);
     const hasTriggeredLoad = useRef(false);
 
@@ -44,6 +44,12 @@ export default function BossCollapse({ title, bossId, onExpand, loading, childre
                     <Icon icon="chevron-down" style="solid" />
                 </span>
                 <h3 className="text-lg font-semibold">{title}</h3>
+                {commentsCount > 0 && (
+                    <span className="ml-auto inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
+                        <Icon icon="comments" style="solid" className="h-4 w-4" />
+                        {commentsCount}
+                    </span>
+                )}
             </button>
             {expanded && (
                 <div className="border-t border-amber-600 px-4 py-3">

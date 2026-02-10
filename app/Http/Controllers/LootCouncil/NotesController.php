@@ -4,12 +4,16 @@ namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
 use App\Models\LootCouncil\Item;
+use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class NotesController extends Controller
 {
+    public function __construct(
+        protected LootCouncilCacheService $cacheService
+    ) {}
+
     /**
      * Update the officers' notes for a specific loot item.
      */
@@ -22,11 +26,7 @@ class NotesController extends Controller
         $item->notes = $request->input('notes');
         $item->save();
 
-        if ($item->boss_id) {
-            Cache::forget("loot_items.boss_{$item->boss_id}");
-        } else {
-            Cache::forget("loot_items.trash_raid_{$item->raid_id}");
-        }
+        $this->cacheService->flush();
 
         return redirect()->back();
     }

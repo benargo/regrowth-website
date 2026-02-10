@@ -1,9 +1,43 @@
 import Master from "@/Layouts/Master";
 import { useState, useRef, useEffect } from "react";
-import { router, Link } from "@inertiajs/react";
+import { router, Link, Deferred } from "@inertiajs/react";
 import BossCollapse from "@/Components/Loot/BossCollapse";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+
+function BossesSkeleton() {
+    return (
+        <div className="flex animate-pulse flex-col gap-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-14 rounded-md border border-amber-600/30 bg-amber-600/10" />
+            ))}
+        </div>
+    );
+}
+
+function BossesList({ bosses, selectedRaid, loadingBoss, onBossExpand, getItemsForBoss }) {
+    const currentBosses = bosses[selectedRaid] ?? [];
+
+    return (
+        <div className="flex flex-col gap-2">
+            {currentBosses.map((boss) => {
+                const isTrash = boss.id < 0;
+                return (
+                    <BossCollapse
+                        key={`${selectedRaid}-${boss.id}`}
+                        title={boss.name}
+                        bossId={boss.id}
+                        onExpand={onBossExpand}
+                        loading={loadingBoss === boss.id}
+                        commentsCount={boss.comments_count}
+                    >
+                        <BossItems items={getItemsForBoss(boss.id)} grouped={!isTrash} />
+                    </BossCollapse>
+                );
+            })}
+        </div>
+    );
+}
 
 function PriorityItem({ priority }) {
     return (
@@ -16,7 +50,7 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="italic text-gray-500">Item not subject to loot council.</p>;
+        return <p className="italic text-center lg:text-right text-gray-500">Item not subject to loot council.</p>;
     }
 
     // Sort by weight (ascending) and group by weight
@@ -34,7 +68,7 @@ function PriorityDisplay({ priorities }) {
     const weights = Object.keys(grouped).sort((a, b) => a - b);
 
     return (
-        <span className="flex flex-col items-center gap-1 lg:flex-row lg:text-right">
+        <span className="flex flex-col items-center gap-1 lg:flex-row lg:justify-end">
             {weights.map((weight, weightIndex) => (
                 <span key={weight} className="flex flex-col items-center gap-1 lg:flex-row">
                     {weightIndex > 0 && <span className="mx-1 text-xl font-bold text-amber-600">&gt;</span>}
@@ -53,30 +87,44 @@ function PriorityDisplay({ priorities }) {
 function ItemRow({ item }) {
     return (
         <Link
-            href={route("loot.items.show", { item: item.data.id })}
+            href={route("loot.items.show", { item: item.id })}
             className="flex flex-wrap items-center gap-4 rounded bg-brown-800/50 p-2 transition-colors hover:bg-brown-800/70"
         >
-            {item.data.icon && (
+            {item.icon && (
                 <a
-                    href={route("loot.items.show", { item: item.data.id })}
-                    data-wowhead={`item=${item.data.id}&domain=tbc`}
+                    href={route("loot.items.show", { item: item.id })}
+                    data-wowhead={`item=${item.id}&domain=tbc`}
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     <img
-                        src={item.data.icon}
-                        alt={item.data.name}
+                        src={item.icon}
+                        alt={item.name}
                         className="h-8 w-8 rounded"
-                        data-wowhead={`item=${item.data.id}&domain=tbc`}
+                        data-wowhead={`item=${item.id}&domain=tbc`}
                     />
                 </a>
             )}
-            <div className="text-left">
-                <h4 className="text-md font-bold">{item.data.name}</h4>
-                <p className="text-xs">Item ID: {item.data.id}</p>
+            <div className="flex-initial lg:flex-1 w-48 text-left">
+                <h4 className="text-md font-bold mb-1">{item.name}</h4>
+                <div className="flex flex-col lg:flex-row gap-1 lg:gap-2 items-start lg:items-center">
+                    <p className="text-sm text-gray-400">Item ID: {item.id}</p>
+                    {item.commentsCount > 0 && (
+                        <p className="inline-flex items-center gap-1 text-xs">
+                            <Icon icon="comments" style="solid" className="h-3 w-3" />
+                            {item.commentsCount} comment{item.commentsCount > 1 ? "s" : ""}
+                        </p>
+                    )}
+                    {item.hasNotes && (
+                        <p className="inline-flex items-center gap-1 text-xs">
+                            <Icon icon="sticky-note" style="solid" className="h-3 w-3" />
+                            Notes
+                        </p>
+                    )}
+                </div>
             </div>
-            <div className="mx-auto mb-2 lg:mb-0 lg:mr-0">
-                <PriorityDisplay priorities={item.data.priorities} />
+            <div className="flex-auto mx-auto lg:mb-0 lg:mr-0">
+                <PriorityDisplay priorities={item.priorities} />
             </div>
         </Link>
     );
@@ -91,21 +139,21 @@ function BossItems({ items, grouped = true }) {
         return (
             <div className="space-y-2">
                 {items.map((item) => (
-                    <ItemRow key={item.data.id} item={item} />
+                    <ItemRow key={item.id} item={item} />
                 ))}
             </div>
         );
     }
 
     // Separate grouped and ungrouped items
-    const groupedItems = items.filter((item) => item.data.group);
+    const groupedItems = items.filter((item) => item.group);
     const ungroupedItems = items
-        .filter((item) => !item.data.group)
-        .sort((a, b) => a.data.name.localeCompare(b.data.name));
+        .filter((item) => !item.group)
+        .sort((a, b) => a.name.localeCompare(b.name));
 
     // Group items by their group name and sort within each group
     const groups = groupedItems.reduce((acc, item) => {
-        const groupName = item.data.group;
+        const groupName = item.group;
         if (!acc[groupName]) {
             acc[groupName] = [];
         }
@@ -115,7 +163,7 @@ function BossItems({ items, grouped = true }) {
 
     // Sort items within each group by name
     Object.keys(groups).forEach((groupName) => {
-        groups[groupName].sort((a, b) => a.data.name.localeCompare(b.data.name));
+        groups[groupName].sort((a, b) => a.name.localeCompare(b.name));
     });
 
     const groupNames = Object.keys(groups);
@@ -126,14 +174,14 @@ function BossItems({ items, grouped = true }) {
                 <div key={groupName} className="mb-8 space-y-2">
                     <h4 className="text-sm font-semibold text-amber-500">{groupName}</h4>
                     {groups[groupName].map((item) => (
-                        <ItemRow key={item.data.id} item={item} />
+                        <ItemRow key={item.id} item={item} />
                     ))}
                 </div>
             ))}
             {ungroupedItems.length > 0 && (
                 <div className="space-y-2">
                     {ungroupedItems.map((item) => (
-                        <ItemRow key={item.data.id} item={item} />
+                        <ItemRow key={item.id} item={item} />
                     ))}
                 </div>
             )}
@@ -282,7 +330,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
 
         if (firstRaidInPhase) {
             router.visit(route("loot.index", { raid_id: firstRaidInPhase }), {
-                only: ["selected_raid_id"],
+                only: ["selected_raid_id", "bosses"],
                 preserveState: true,
                 preserveScroll: true,
             });
@@ -303,7 +351,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
         setLoadingBoss(null);
 
         router.visit(route("loot.index", { raid_id: raidId }), {
-            only: ["selected_raid_id"],
+            only: ["selected_raid_id", "bosses"],
             preserveState: true,
             preserveScroll: true,
         });
@@ -322,11 +370,11 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
             preserveState: true,
             preserveScroll: true,
             onSuccess: (page) => {
-                const bossItemsData = page.props.boss_items;
-                if (bossItemsData?.boss_id) {
+                const bossItemsData = page.props.boss_items.data;
+                if (bossItemsData?.bossId) {
                     setLoadedItems((prev) => ({
                         ...prev,
-                        [bossItemsData.boss_id]: bossItemsData.items,
+                        [bossItemsData.bossId]: bossItemsData.items,
                     }));
                 }
                 setLoadingBoss(null);
@@ -338,7 +386,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
     };
 
     const currentRaids = raids[selectedPhase] ?? [];
-    const currentBosses = bosses[selectedRaid] ?? [];
 
     const getItemsForBoss = (bossId) => {
         return loadedItems[bossId] ?? [];
@@ -392,28 +439,15 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
                         </button>
                     ))}
                 </div>
-                <div className="flex flex-col gap-2">
-                    {currentBosses.map((boss) => (
-                        <BossCollapse
-                            key={`${selectedRaid}-${boss.id}`}
-                            title={boss.name}
-                            bossId={boss.id}
-                            onExpand={handleBossExpand}
-                            loading={loadingBoss === boss.id}
-                        >
-                            <BossItems items={getItemsForBoss(boss.id)} />
-                        </BossCollapse>
-                    ))}
-                    <BossCollapse
-                        key={`${selectedRaid}-trash`}
-                        title="Trash drops"
-                        bossId={-1}
-                        onExpand={handleBossExpand}
-                        loading={loadingBoss === -1}
-                    >
-                        <BossItems items={getItemsForBoss(-1)} grouped={false} />
-                    </BossCollapse>
-                </div>
+                <Deferred data="bosses" fallback={<BossesSkeleton />}>
+                    <BossesList
+                        bosses={bosses}
+                        selectedRaid={selectedRaid}
+                        loadingBoss={loadingBoss}
+                        onBossExpand={handleBossExpand}
+                        getItemsForBoss={getItemsForBoss}
+                    />
+                </Deferred>
             </main>
         </Master>
     );

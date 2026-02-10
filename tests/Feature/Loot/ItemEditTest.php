@@ -129,7 +129,7 @@ class ItemEditTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Loot/ItemEdit')
+            ->component('LootBiasTool/ItemEdit')
             ->has('item.data')
             ->has('item.data.priorities', 2)
             ->has('allPriorities.data', 3)
