@@ -11,26 +11,31 @@ export function BossItemsSkeleton() {
     );
 }
 
-export default function BossCollapse({ title, bossId, onExpand, loading, children, commentsCount }) {
-    const [expanded, setExpanded] = useState(false);
-    const hasTriggeredLoad = useRef(false);
+export default function BossCollapse({ title, bossId, onExpand, onCollapse, loading, children, commentsCount, initialExpanded = false }) {
+    const [expanded, setExpanded] = useState(initialExpanded);
+    const hasTriggeredLoad = useRef(initialExpanded);
+
+    // Trigger load on mount if initially expanded (session restore)
+    useEffect(() => {
+        if (initialExpanded && onExpand) {
+            onExpand(bossId);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleToggle = () => {
         const newExpanded = !expanded;
         setExpanded(newExpanded);
 
-        // Trigger onExpand callback on first expansion
-        if (newExpanded && !hasTriggeredLoad.current && onExpand) {
-            hasTriggeredLoad.current = true;
-            onExpand(bossId);
+        if (newExpanded) {
+            // Trigger onExpand callback on first expansion
+            if (!hasTriggeredLoad.current && onExpand) {
+                hasTriggeredLoad.current = true;
+                onExpand(bossId);
+            }
+        } else {
+            onCollapse?.(bossId);
         }
     };
-
-    // Reset the load trigger when bossId changes (e.g., raid switch)
-    useEffect(() => {
-        hasTriggeredLoad.current = false;
-        setExpanded(false);
-    }, [bossId]);
 
     return (
         <div className="rounded-md border border-amber-600">
