@@ -1,23 +1,12 @@
 import { useState } from "react";
-import { useForm, router } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
+import CommentForm from "@/Components/Loot/CommentForm";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Icon from "@/Components/FontAwesome/Icon";
-import InputError from "@/Components/InputError";
 import Pill from "@/Components/Pill";
 
 export default function CommentItem({ comment, itemId }) {
     const [isEditing, setIsEditing] = useState(false);
-    const { data, setData, put, processing, errors, reset } = useForm({
-        body: comment.body,
-    });
-
-    function submitEdit(e) {
-        e.preventDefault();
-        put(route("loot.items.comments.update", { item: itemId, comment: comment.id }), {
-            preserveScroll: true,
-            onSuccess: () => setIsEditing(false),
-        });
-    }
 
     function handleDelete() {
         if (confirm("Are you sure you want to delete this comment?")) {
@@ -63,34 +52,13 @@ export default function CommentItem({ comment, itemId }) {
 
             {/* Comment body or edit form */}
             {isEditing ? (
-                <form onSubmit={submitEdit}>
-                    <textarea
-                        value={data.body}
-                        onChange={(e) => setData("body", e.target.value)}
-                        rows={4}
-                        className="w-full rounded-md border-gray-600 bg-brown-900 text-white focus:border-amber-500 focus:ring-amber-500"
-                    />
-                    <InputError message={errors.body} className="mt-2" />
-                    <div className="mt-3 flex gap-2">
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="rounded bg-amber-600 px-3 py-1 text-sm font-medium transition-colors hover:bg-amber-700"
-                        >
-                            {processing ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsEditing(false);
-                                reset();
-                            }}
-                            className="rounded bg-gray-600 px-3 py-1 text-sm font-medium transition-colors hover:bg-gray-700"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
+                <CommentForm
+                    itemId={itemId}
+                    commentId={comment.id}
+                    initialBody={comment.body}
+                    onSuccess={() => setIsEditing(false)}
+                    onCancel={() => setIsEditing(false)}
+                />
             ) : (
                 <FormattedMarkdown>{comment.body}</FormattedMarkdown>
             )}

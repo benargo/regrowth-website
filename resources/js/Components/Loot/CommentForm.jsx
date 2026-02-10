@@ -56,11 +56,11 @@ function validateCommentMarkdown(text) {
     return null;
 }
 
-export default function CommentForm({ itemId }) {
+export default function CommentForm({ itemId, commentId = null, initialBody = "", onSuccess = null, onCancel = null }) {
     const textareaRef = useRef(null);
     const [validationError, setValidationError] = useState(null);
-    const { data, setData, post, processing, errors, reset } = useForm({
-        body: "",
+    const { data, setData, post, put, processing, errors, reset } = useForm({
+        body: initialBody,
     });
 
     function applyFormat(format) {
@@ -110,13 +110,22 @@ export default function CommentForm({ itemId }) {
             setValidationError(error);
             return;
         }
-        post(route("loot.items.comments.store", { item: itemId }), {
-            preserveScroll: true,
-            onSuccess: () => {
-                reset("body");
-                setValidationError(null);
-            },
-        });
+
+        if (commentId) {
+            put(route("loot.items.comments.update", { item: itemId, comment: commentId }), {
+                preserveScroll: true,
+                onSuccess: () => onSuccess?.(),
+            });
+        } else {
+            post(route("loot.items.comments.store", { item: itemId }), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    reset("body");
+                    setValidationError(null);
+                    onSuccess?.();
+                },
+            });
+        }
     }
 
     return (
@@ -142,16 +151,27 @@ export default function CommentForm({ itemId }) {
                 />
                 <InputError message={validationError || errors.body} className="mt-2" />
             </div>
-            <button
-                type="submit"
-                disabled={processing || validationError}
-                className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 ${
-                    (processing || validationError) && "opacity-25"
-                }`}
-            >
-                <Icon icon="paper-plane" style="solid" className="mr-1" />
-                {processing ? "Posting..." : "Post Comment"}
-            </button>
+            <div className="flex gap-2">
+                <button
+                    type="submit"
+                    disabled={processing || validationError}
+                    className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 ${
+                        (processing || validationError) && "opacity-25"
+                    }`}
+                >
+                    <Icon icon="paper-plane" style="solid" className="mr-1" />
+                    {processing ? (commentId ? "Saving..." : "Posting...") : commentId ? "Save Changes" : "Post Comment"}
+                </button>
+                {onCancel && (
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="inline-flex items-center rounded-md border border-gray-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-gray-700"
+                    >
+                        Cancel
+                    </button>
+                )}
+            </div>
         </form>
     );
 }
