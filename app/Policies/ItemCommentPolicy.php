@@ -39,6 +39,18 @@ class ItemCommentPolicy extends AuthorizationPolicy
             return true;
         }
 
+        if ($comment->is_resolved) {
+            return false; // Only officers can edit resolved comments
+        }
+
         return $comment->user_id === $user->id;
+    }
+
+    /**
+     * Determine if the user can mark a comment as resolved.
+     */
+    public function markAsResolved(User $user, ItemComment $comment): bool
+    {
+        return $this->userIsOfficer($user);
     }
 }

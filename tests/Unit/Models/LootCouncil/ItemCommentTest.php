@@ -43,8 +43,45 @@ class ItemCommentTest extends ModelTestCase
             'item_id',
             'user_id',
             'body',
+            'is_resolved',
             'deleted_by',
         ]);
+    }
+
+    #[Test]
+    public function it_defaults_is_resolved_to_false(): void
+    {
+        $model = new ItemComment;
+
+        $this->assertFalse($model->is_resolved);
+    }
+
+    #[Test]
+    public function it_casts_is_resolved_to_boolean(): void
+    {
+        $comment = $this->create(['is_resolved' => 1]);
+
+        $this->assertIsBool($comment->is_resolved);
+        $this->assertTrue($comment->is_resolved);
+    }
+
+    #[Test]
+    public function it_can_be_marked_as_resolved(): void
+    {
+        $comment = $this->create(['is_resolved' => false]);
+
+        $comment->update(['is_resolved' => true]);
+
+        $this->assertTrue($comment->fresh()->is_resolved);
+        $this->assertTableHas(['id' => $comment->id, 'is_resolved' => true]);
+    }
+
+    #[Test]
+    public function factory_resolved_state_creates_resolved_comment(): void
+    {
+        $comment = $this->factory()->resolved()->create();
+
+        $this->assertTrue($comment->is_resolved);
     }
 
     #[Test]

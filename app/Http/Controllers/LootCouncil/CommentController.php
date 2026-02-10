@@ -38,20 +38,19 @@ class CommentController extends Controller
      */
     public function update(UpdateItemCommentRequest $request, Item $item, ItemComment $comment): RedirectResponse
     {
-        $originalCreatedAt = $comment->created_at;
-
-        // Soft delete the original comment, tracking who edited it
-        $comment->update(['deleted_by' => $request->user()->id]);
-        $comment->delete();
-
         // Create new comment with original timestamp
         $newComment = new ItemComment([
             'item_id' => $item->id,
             'user_id' => $comment->user_id,
-            'body' => $request->validated('body'),
+            'body' => $request->validated('body', $comment->body), // Preserve original body if not provided
+            'is_resolved' => $request->validated('isResolved', $comment->is_resolved), // Preserve resolved status if not provided
         ]);
-        $newComment->created_at = $originalCreatedAt;
+        $newComment->created_at = $comment->created_at;
         $newComment->save();
+
+        // Soft delete the original comment, tracking who edited it
+        $comment->update(['deleted_by' => $request->user()->id]);
+        $comment->delete();
 
         $this->cacheService->flush();
 

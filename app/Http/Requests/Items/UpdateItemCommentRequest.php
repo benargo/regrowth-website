@@ -24,7 +24,8 @@ class UpdateItemCommentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'body' => ['required', 'string', 'min:3', 'max:5000'],
+            'body' => ['sometimes', 'string', 'min:3', 'max:5000'],
+            'isResolved' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -39,6 +40,7 @@ class UpdateItemCommentRequest extends FormRequest
             'body.required' => 'Please enter a comment.',
             'body.min' => 'Comment must be at least 3 characters.',
             'body.max' => 'Comment must not exceed 5000 characters.',
+            'isResolved.boolean' => 'Invalid value for resolved status.',
         ];
     }
 }

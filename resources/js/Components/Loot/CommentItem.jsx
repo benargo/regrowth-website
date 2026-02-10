@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router } from "@inertiajs/react";
+import Checkbox from "@/Components/Checkbox";
 import CommentForm from "@/Components/Loot/CommentForm";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -16,6 +17,13 @@ export default function CommentItem({ comment, itemId }) {
         }
     }
 
+    function handleResolveToggle() {
+        router.put(route("loot.items.comments.update", { item: itemId, comment: comment.id }), {
+            preserveScroll: true,
+            isResolved: !comment.is_resolved,
+        });
+    }
+
     function formatDate(dateString) {
         const date = new Date(dateString);
         return date.toLocaleDateString("en-GB", {
@@ -28,7 +36,7 @@ export default function CommentItem({ comment, itemId }) {
     }
 
     return (
-        <div className="rounded-lg border border-gray-700 bg-brown-800 p-4">
+        <div className="rounded-lg border border-brown-700 bg-brown-800 p-4">
             {/* Header with user info and timestamp */}
             <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -65,7 +73,7 @@ export default function CommentItem({ comment, itemId }) {
 
             {/* Actions */}
             {!isEditing && (comment.can.edit || comment.can.delete) && (
-                <div className="mt-3 flex gap-4 border-t border-gray-700 pt-3 text-sm">
+                <div className="mt-3 pt-3 flex gap-4 border-t border-brown-700 text-sm">
                     {comment.can.edit && (
                         <button
                             onClick={() => setIsEditing(true)}
@@ -78,6 +86,28 @@ export default function CommentItem({ comment, itemId }) {
                         <button onClick={handleDelete} className="text-red-400 transition-colors hover:text-red-300">
                             <Icon icon="trash" style="solid" className="mr-1" /> Delete
                         </button>
+                    )}
+                    {comment.can.resolve && (
+                        <span className={`flex items-center ${comment.is_resolved && "text-green-400 hover:text-green-600"} ml-auto`}>
+                            <Checkbox
+                                id={`resolve-${comment.id}`}
+                                checked={comment.is_resolved}
+                                onChange={handleResolveToggle}
+                                className="checked:bg-green-400 hover:checked:bg-green-600 cursor-pointer"
+                            />
+                            <label 
+                                htmlFor={`resolve-${comment.id}`}
+                                className="pl-1 cursor-pointer select-none"
+                            >
+                                {comment.is_resolved ? "Resolved" : "Mark as resolved"}
+                            </label>
+                        </span>
+                    )}
+                    {!comment.can.resolve && comment.is_resolved && (
+                        <span className="flex items-center text-green-400 ml-auto">
+                            <Icon icon="check-circle" style="solid" className="mr-1" />
+                            Resolved
+                        </span>
                     )}
                 </div>
             )}

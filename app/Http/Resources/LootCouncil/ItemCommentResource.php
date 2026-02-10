@@ -18,42 +18,34 @@ class ItemCommentResource extends JsonResource
         return [
             'id' => $this->id,
             'body' => $this->body,
-            'item' => $this->getItemData(),
-            'user' => $this->getUserData(),
+            'item' => $this->getRelation('item'),
+            'user' => $this->getRelation('user'),
+            'is_resolved' => $this->is_resolved,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'can' => [
                 'edit' => $request->user()?->can('update', $this->resource) ?? false,
                 'delete' => $request->user()?->can('delete', $this->resource) ?? false,
+                'resolve' => $request->user()?->can('markAsResolved', $this->resource) ?? false,
             ],
         ];
     }
 
     /**
-     * Get item data for the response.
+     * Get a related model's data if it's loaded, otherwise return the foreign key ID.
      *
-     * @return array<string, mixed>
+     * @return array<string, mixed>|string|int
      */
-    protected function getItemData()
+    protected function getRelation(string $relation): mixed
     {
-        if (! $this->relationLoaded('item')) {
-            return $this->item_id;
+        if (! $this->relationLoaded($relation)) {
+            return $this->{"{$relation}_id"};
         }
 
-        return (new ItemResource($this->item))->toArray(request());
-    }
-
-    /**
-     * Get user data for the response.
-     *
-     * @return array<string, mixed>
-     */
-    protected function getUserData()
-    {
-        if (! $this->relationLoaded('user')) {
-            return $this->user_id;
-        }
-
-        return (new UserResource($this->user))->toArray(request());
+        return match ($relation) {
+            'item' => (new ItemResource($this->item))->toArray(request()),
+            'user' => (new UserResource($this->user))->toArray(request()),
+            default => $this->{$relation},
+        };
     }
 }

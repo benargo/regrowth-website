@@ -30,6 +30,7 @@ class ItemCommentFactory extends Factory
             'item_id' => Item::factory(),
             'user_id' => User::factory(),
             'body' => fake()->paragraph(),
+            'is_resolved' => false,
         ];
     }
 
@@ -60,6 +61,13 @@ class ItemCommentFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'body' => fake()->paragraphs(3, true),
+        ]);
+    }
+
+    public function resolved(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_resolved' => true,
         ]);
     }
 }

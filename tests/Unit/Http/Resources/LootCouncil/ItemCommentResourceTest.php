@@ -147,6 +147,28 @@ class ItemCommentResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_is_resolved_false_by_default(): void
+    {
+        $comment = ItemComment::factory()->create();
+
+        $resource = new ItemCommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertFalse($array['is_resolved']);
+    }
+
+    #[Test]
+    public function it_returns_is_resolved_true_when_resolved(): void
+    {
+        $comment = ItemComment::factory()->resolved()->create();
+
+        $resource = new ItemCommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertTrue($array['is_resolved']);
+    }
+
+    #[Test]
     public function it_returns_can_edit_false_for_guest_user(): void
     {
         $comment = ItemComment::factory()->create();
@@ -262,6 +284,47 @@ class ItemCommentResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_can_resolve_false_for_guest_user(): void
+    {
+        $comment = ItemComment::factory()->create();
+
+        $resource = new ItemCommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertFalse($array['can']['resolve']);
+    }
+
+    #[Test]
+    public function it_returns_can_resolve_false_for_raider(): void
+    {
+        $raider = User::factory()->raider()->create();
+        $comment = ItemComment::factory()->create();
+
+        $request = Request::create('/test');
+        $request->setUserResolver(fn () => $raider);
+
+        $resource = new ItemCommentResource($comment);
+        $array = $resource->toArray($request);
+
+        $this->assertFalse($array['can']['resolve']);
+    }
+
+    #[Test]
+    public function it_returns_can_resolve_true_for_officer(): void
+    {
+        $officer = User::factory()->officer()->create();
+        $comment = ItemComment::factory()->create();
+
+        $request = Request::create('/test');
+        $request->setUserResolver(fn () => $officer);
+
+        $resource = new ItemCommentResource($comment);
+        $array = $resource->toArray($request);
+
+        $this->assertTrue($array['can']['resolve']);
+    }
+
+    #[Test]
     public function it_returns_can_permissions_structure(): void
     {
         $comment = ItemComment::factory()->create();
@@ -272,6 +335,7 @@ class ItemCommentResourceTest extends TestCase
         $this->assertArrayHasKey('can', $array);
         $this->assertArrayHasKey('edit', $array['can']);
         $this->assertArrayHasKey('delete', $array['can']);
+        $this->assertArrayHasKey('resolve', $array['can']);
     }
 
     #[Test]
@@ -286,6 +350,7 @@ class ItemCommentResourceTest extends TestCase
         $this->assertArrayHasKey('body', $array);
         $this->assertArrayHasKey('item', $array);
         $this->assertArrayHasKey('user', $array);
+        $this->assertArrayHasKey('is_resolved', $array);
         $this->assertArrayHasKey('created_at', $array);
         $this->assertArrayHasKey('updated_at', $array);
         $this->assertArrayHasKey('can', $array);

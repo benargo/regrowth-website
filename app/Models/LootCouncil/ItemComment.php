@@ -23,15 +23,28 @@ class ItemComment extends Model
     protected $table = 'lootcouncil_item_comments';
 
     /**
+     * The model's default values for attributes.
+     */
+    protected $attributes = [
+        'is_resolved' => false,
+    ];
+
+    /**
      * The attributes that are mass assignable.
-     *
-     * @var list<string>
      */
     protected $fillable = [
         'item_id',
         'user_id',
         'body',
+        'is_resolved',
         'deleted_by',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     */
+    protected $casts = [
+        'is_resolved' => 'boolean',
     ];
 
     /**
