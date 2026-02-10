@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Notifications;
+namespace Tests\Retired\Notifications;
 
 use App\Models\Character;
 use App\Notifications\LevelCapAchieved;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootCouncil;
 
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;

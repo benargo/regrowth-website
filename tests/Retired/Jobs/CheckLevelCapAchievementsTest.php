@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Retired\Jobs;
 
 use App\Jobs\CheckLevelCapAchievements;
 use App\Models\Character;

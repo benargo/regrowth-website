@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Http\Controllers;
+namespace Tests\Feature\Datasets;
 
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
