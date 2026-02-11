@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Items\StoreCommentRequest;
-use App\Http\Requests\Items\UpdateCommentRequest;
-use App\Models\LootCouncil\Item;
+use App\Http\Requests\Comments\StoreCommentRequest;
+use App\Http\Requests\Comments\UpdateCommentRequest;
 use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,11 +36,11 @@ class CommentController extends Controller
     /**
      * Update an existing comment for a specific loot item.
      */
-    public function update(UpdateCommentRequest $request, Item $item, Comment $comment): RedirectResponse
+    public function update(UpdateCommentRequest $request, Comment $comment): RedirectResponse
     {
         // Create new comment with original timestamp
         $newComment = new Comment([
-            'item_id' => $item->id,
+            'item_id' => $comment->item_id,
             'user_id' => $comment->user_id,
             'body' => $request->validated('body', $comment->body), // Preserve original body if not provided
             'is_resolved' => $request->validated('isResolved', $comment->is_resolved), // Preserve resolved status if not provided

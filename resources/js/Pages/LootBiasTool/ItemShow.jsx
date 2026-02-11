@@ -1,5 +1,5 @@
 import Master from "@/Layouts/Master";
-import { Link } from "@inertiajs/react";
+import { Deferred, Link } from "@inertiajs/react";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";

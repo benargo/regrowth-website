@@ -53,10 +53,9 @@ export default function CommentsSection({ comments, itemId, canCreate }) {
                     <CommentForm itemId={itemId} />
                 </div>
             ) : (
-                <div className="mb-8 rounded-lg border border-gray-700 bg-brown-800/50 p-4 italic text-gray-400">
+                <div className="mb-8 flex flex-row items-center rounded-lg border border-gray-700 bg-brown-800/50 p-4 italic text-gray-400">
                     <Icon icon="lock" style="solid" className="mr-2" />
-                    {/* Only raiders may post comments. */}
-                    Only officers may post comments. Raiders will be invited to make comments in the future.
+                    <p>You do not have permission to post comments.</p>
                 </div>
             )}
 

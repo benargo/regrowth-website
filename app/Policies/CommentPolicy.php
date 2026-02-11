@@ -53,4 +53,12 @@ class CommentPolicy extends AuthorizationPolicy
     {
         return $this->userIsOfficer($user);
     }
+
+    /**
+     * Determine if the user can react to a comment.
+     */
+    public function react(User $user, Comment $comment): bool
+    {
+        return $comment->user_id !== $user->id; // Users cannot react to their own comments
+    }
 }

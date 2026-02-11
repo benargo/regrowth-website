@@ -5,6 +5,7 @@ namespace App\Http\Resources\LootCouncil;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class CommentResource extends JsonResource
 {
@@ -20,12 +21,14 @@ class CommentResource extends JsonResource
             'body' => $this->body,
             'item' => $this->getRelation('item'),
             'user' => $this->getRelation('user'),
+            'reactions' => $this->getReactions($request),
             'is_resolved' => $this->is_resolved,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'can' => [
                 'edit' => $request->user()?->can('update', $this->resource) ?? false,
                 'delete' => $request->user()?->can('delete', $this->resource) ?? false,
+                'react' => $request->user()?->can('react', $this->resource) ?? false,
                 'resolve' => $request->user()?->can('markAsResolved', $this->resource) ?? false,
             ],
         ];
@@ -47,5 +50,23 @@ class CommentResource extends JsonResource
             'user' => (new UserResource($this->user))->toArray(request()),
             default => $this->{$relation},
         };
+    }
+
+    /**
+     * Get the comment's reactions with user data.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function getReactions(Request $request): array
+    {
+        return Cache::tags(['lootcouncil'])->remember(
+            'comment_'.$this->id.'.reactions.all',
+            now()->addMinutes(10),
+            fn () => $this->reactions->map(fn ($reaction) => [
+                'id' => $reaction->id,
+                'user' => (new UserResource($reaction->user))->toArray($request),
+                'created_at' => $reaction->created_at,
+            ])->toArray()
+        );
     }
 }

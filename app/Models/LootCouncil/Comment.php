@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Comment extends Model
@@ -48,6 +49,16 @@ class Comment extends Model
     ];
 
     /**
+     * Get the user who deleted this comment.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function deletedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    /**
      * Get the item that this comment belongs to.
      *
      * @return BelongsTo<Item, $this>
@@ -58,6 +69,16 @@ class Comment extends Model
     }
 
     /**
+     * Get the reactions for this comment.
+     *
+     * @return HasMany<CommentReaction>
+     */
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(CommentReaction::class, 'comment_id');
+    }
+
+    /**
      * Get the user who wrote this comment.
      *
      * @return BelongsTo<User, $this>
@@ -65,15 +86,5 @@ class Comment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get the user who deleted this comment.
-     *
-     * @return BelongsTo<User, $this>
-     */
-    public function deletedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'deleted_by');
     }
 }

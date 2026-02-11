@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\LootCouncil;
 
-use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -199,7 +199,7 @@ class CommentCacheTest extends TestCase
         );
 
         // Update the comment
-        $this->actingAs($user)->put(route('loot.items.comments.update', [$item, $comment]), [
+        $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
             'body' => 'Updated comment',
         ]);
 
@@ -222,7 +222,7 @@ class CommentCacheTest extends TestCase
         $this->actingAs($user)->get(route('loot.items.show', $item));
 
         // Update the comment
-        $this->actingAs($user)->put(route('loot.items.comments.update', [$item, $comment]), [
+        $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
             'body' => 'Updated comment body',
         ]);
 
@@ -254,7 +254,7 @@ class CommentCacheTest extends TestCase
         );
 
         // Delete the comment
-        $this->actingAs($user)->delete(route('loot.items.comments.destroy', [$item, $comment]));
+        $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
 
         $this->assertFalse(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
@@ -276,7 +276,7 @@ class CommentCacheTest extends TestCase
         $response->assertSee('Comment to be deleted');
 
         // Delete the comment
-        $this->actingAs($user)->delete(route('loot.items.comments.destroy', [$item, $comment]));
+        $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
 
         // Next request should not show the deleted comment
         $response = $this->actingAs($user)->get(route('loot.items.show', $item));

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Items;
+namespace App\Http\Requests\Comments;
 
 use App\Models\LootCouncil\Comment;
 use Illuminate\Foundation\Http\FormRequest;

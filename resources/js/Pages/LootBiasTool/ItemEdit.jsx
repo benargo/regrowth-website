@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Link, useForm } from "@inertiajs/react";
+import { Deferred, Link, useForm } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";

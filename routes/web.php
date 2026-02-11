@@ -9,6 +9,7 @@ use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
+use App\Http\Controllers\LootCouncil\CommentReactionController;
 use App\Http\Controllers\LootCouncil\ItemController;
 use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
@@ -32,14 +33,14 @@ Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:viewAny,App\Mode
     Route::get('/items/{item}', [ItemController::class, 'view'])->name('loot.items.show');
     Route::get('/items/{item}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('loot.items.edit');
     Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('loot.items.priorities.update');
-
-    // Notes routes
     Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('loot.items.notes.store');
+    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');
 
     // Comment routes
-    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');
-    Route::put('/items/{item}/comments/{comment}', [CommentController::class, 'update'])->name('loot.items.comments.update');
-    Route::delete('/items/{item}/comments/{comment}', [CommentController::class, 'destroy'])->name('loot.items.comments.destroy');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('loot.comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('loot.comments.destroy');
+    Route::post('/comments/{comment}/reactions', [CommentReactionController::class, 'store'])->name('loot.comments.reactions.store');
+    Route::delete('/comments/{comment}/reactions/{reaction}', [CommentReactionController::class, 'destroy'])->name('loot.comments.reactions.destroy');
 });
 
 /*

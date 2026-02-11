@@ -3,13 +3,15 @@
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Resources\LootCouncil\CommentResource;
-use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\CommentReaction;
+use App\Models\LootCouncil\Item;
 use App\Models\User;
 use App\Services\Blizzard\ItemService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -23,6 +25,7 @@ class CommentResourceTest extends TestCase
         parent::setUp();
 
         $this->mockBlizzardServices();
+        $this->mockCacheService();
     }
 
     protected function mockBlizzardServices(): void
@@ -46,6 +49,17 @@ class CommentResourceTest extends TestCase
 
         $this->app->instance(ItemService::class, $itemService);
         $this->app->instance(MediaService::class, $mediaService);
+    }
+
+    protected function mockCacheService(): void
+    {
+        $cacheStore = Mockery::mock();
+        $cacheStore->shouldReceive('remember')
+            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
+
+        Cache::shouldReceive('tags')
+            ->with(['lootcouncil'])
+            ->andReturn($cacheStore);
     }
 
     #[Test]
@@ -350,9 +364,115 @@ class CommentResourceTest extends TestCase
         $this->assertArrayHasKey('body', $array);
         $this->assertArrayHasKey('item', $array);
         $this->assertArrayHasKey('user', $array);
+        $this->assertArrayHasKey('reactions', $array);
         $this->assertArrayHasKey('is_resolved', $array);
         $this->assertArrayHasKey('created_at', $array);
         $this->assertArrayHasKey('updated_at', $array);
         $this->assertArrayHasKey('can', $array);
+    }
+
+    #[Test]
+    public function it_returns_empty_reactions_when_no_reactions_exist(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertIsArray($array['reactions']);
+        $this->assertEmpty($array['reactions']);
+    }
+
+    #[Test]
+    public function it_returns_reactions_with_user_data(): void
+    {
+        $commentOwner = User::factory()->create();
+        $reactingUser = User::factory()->create(['username' => 'reactor']);
+        $comment = Comment::factory()->create(['user_id' => $commentOwner->id]);
+        CommentReaction::factory()->forComment($comment)->byUser($reactingUser)->create();
+
+        $comment->load('reactions.user');
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertIsArray($array['reactions']);
+        $this->assertCount(1, $array['reactions']);
+        $this->assertArrayHasKey('id', $array['reactions'][0]);
+        $this->assertArrayHasKey('user', $array['reactions'][0]);
+        $this->assertSame('reactor', $array['reactions'][0]['user']['username']);
+    }
+
+    #[Test]
+    public function it_returns_multiple_reactions(): void
+    {
+        $commentOwner = User::factory()->create();
+        $comment = Comment::factory()->create(['user_id' => $commentOwner->id]);
+
+        $reactingUser1 = User::factory()->create();
+        $reactingUser2 = User::factory()->create();
+        CommentReaction::factory()->forComment($comment)->byUser($reactingUser1)->create();
+        CommentReaction::factory()->forComment($comment)->byUser($reactingUser2)->create();
+
+        $comment->load('reactions.user');
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertCount(2, $array['reactions']);
+    }
+
+    #[Test]
+    public function it_returns_can_react_false_for_guest_user(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertFalse($array['can']['react']);
+    }
+
+    #[Test]
+    public function it_returns_can_react_false_for_comment_owner(): void
+    {
+        $user = User::factory()->create();
+        $comment = Comment::factory()->create(['user_id' => $user->id]);
+
+        $request = Request::create('/test');
+        $request->setUserResolver(fn () => $user);
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray($request);
+
+        $this->assertFalse($array['can']['react']);
+    }
+
+    #[Test]
+    public function it_returns_can_react_true_for_non_owner(): void
+    {
+        $commentOwner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $comment = Comment::factory()->create(['user_id' => $commentOwner->id]);
+
+        $request = Request::create('/test');
+        $request->setUserResolver(fn () => $otherUser);
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray($request);
+
+        $this->assertTrue($array['can']['react']);
+    }
+
+    #[Test]
+    public function it_returns_can_permissions_structure_includes_react(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertArrayHasKey('can', $array);
+        $this->assertArrayHasKey('react', $array['can']);
     }
 }

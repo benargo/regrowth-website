@@ -24,8 +24,8 @@ class ItemResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'raid' => $this->getRaidData(),
-            'boss' => $this->getBossData(),
+            'raid' => $this->getRelation('raid'),
+            'boss' => $this->getRelation('boss'),
             'group' => $this->group,
             'name' => $blizzardData['name'] ?? "Item #{$this->id}",
             'icon' => $iconUrl,
@@ -40,22 +40,22 @@ class ItemResource extends JsonResource
         ];
     }
 
-    public function getRaidData()
+    /**
+     * Get a related model's data if it's loaded, otherwise return the foreign key ID.
+     *
+     * @return array<string, mixed>|string|int
+     */
+    protected function getRelation(string $relation): mixed
     {
-        if (! $this->relationLoaded('raid')) {
-            return $this->raid_id;
+        if (! $this->relationLoaded($relation)) {
+            return $this->{"{$relation}_id"};
         }
 
-        return $this->raid;
-    }
-
-    public function getBossData()
-    {
-        if (! $this->relationLoaded('boss')) {
-            return $this->boss_id;
-        }
-
-        return $this->boss;
+        return match ($relation) {
+            'raid' => $this->raid,
+            'boss' => $this->boss,
+            default => $this->{$relation},
+        };
     }
 
     /**
