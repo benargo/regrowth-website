@@ -10,6 +10,7 @@ use App\Models\TBC\Raid;
 use App\Models\User;
 use App\Services\Blizzard\ItemService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\MockInterface;
@@ -24,6 +25,7 @@ class CommentTest extends TestCase
         parent::setUp();
 
         $this->mockItemService();
+        Notification::fake();
     }
 
     protected function mockItemService(): void

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Blizzard\ItemService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use Mockery;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -23,6 +24,7 @@ class CommentCacheTest extends TestCase
     {
         parent::setUp();
 
+        Notification::fake();
         $this->mockItemService();
     }
 

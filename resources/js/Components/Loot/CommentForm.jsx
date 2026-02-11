@@ -24,7 +24,7 @@ export default function CommentForm({ itemId, commentId = null, initialBody = ""
         }
 
         if (commentId) {
-            put(route("loot.items.comments.update", { item: itemId, comment: commentId }), {
+            put(route("loot.comments.update", { comment: commentId }), {
                 preserveScroll: true,
                 onSuccess: () => onSuccess?.(),
             });

@@ -7,6 +7,8 @@ use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Http\Requests\Comments\UpdateCommentRequest;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Notifications\DiscordNotifiable;
+use App\Notifications\NewLootCouncilComment;
 use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,10 +25,16 @@ class CommentController extends Controller
      */
     public function store(StoreCommentRequest $request, Item $item): RedirectResponse
     {
-        $item->comments()->create([
+        $comment = $item->comments()->create([
             'user_id' => $request->user()->id,
             'body' => $request->validated('body'),
         ]);
+
+        $comment->load(['user', 'item']);
+
+        DiscordNotifiable::channel('lootcouncil')->notify(
+            new NewLootCouncilComment($comment)
+        );
 
         $this->cacheService->flush();
 
