@@ -8,11 +8,6 @@ class ItemService extends Service
 {
     protected string $basePath = '/data/wow';
 
-    /**
-     * Default cache TTL values in seconds.
-     */
-    protected int $cacheTtl = 86400;   // 24 hours
-
     public function __construct(
         protected Client $client,
     ) {
@@ -28,7 +23,7 @@ class ItemService extends Service
     {
         return $this->cacheable(
             $this->itemCacheKey($itemId),
-            $this->cacheTtl,
+            2628000, // 1 month
             fn () => $this->getJson("/item/{$itemId}")
         );
     }
@@ -55,7 +50,7 @@ class ItemService extends Service
 
         return $this->cacheable(
             $this->searchCacheKey($query),
-            self::SEARCH_CACHE_TTL,
+            3600, // 1 hour
             fn () => $this->getJson('/search/item', $query)
         );
     }

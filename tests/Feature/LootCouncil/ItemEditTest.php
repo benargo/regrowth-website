@@ -65,11 +65,22 @@ class ItemEditTest extends TestCase
         return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 
+    /**
+     * Generate the edit URL with the name in the correct path position.
+     * The route helper puts optional parameters in query string, but we need it in the path.
+     */
+    protected function editUrl(Item $item, ?string $name = null): string
+    {
+        $slug = $name ?? 'test-item-'.$item->id;
+
+        return "/loot/items/{$item->id}/{$slug}/edit";
+    }
+
     public function test_edit_item_requires_authentication(): void
     {
         $item = $this->createTestItem();
 
-        $response = $this->get(route('loot.items.edit', $item));
+        $response = $this->get($this->editUrl($item));
 
         $response->assertRedirect('/login');
     }
@@ -79,7 +90,7 @@ class ItemEditTest extends TestCase
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.edit', $item));
+        $response = $this->actingAs($user)->get($this->editUrl($item));
 
         $response->assertForbidden();
     }
@@ -89,7 +100,7 @@ class ItemEditTest extends TestCase
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.edit', $item));
+        $response = $this->actingAs($user)->get($this->editUrl($item));
 
         $response->assertForbidden();
     }
@@ -99,7 +110,7 @@ class ItemEditTest extends TestCase
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.edit', $item));
+        $response = $this->actingAs($user)->get($this->editUrl($item));
 
         $response->assertForbidden();
     }
@@ -109,9 +120,35 @@ class ItemEditTest extends TestCase
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.edit', $item));
+        $response = $this->actingAs($user)->get($this->editUrl($item));
 
         $response->assertOk();
+    }
+
+    public function test_edit_item_redirects_from_incorrect_slug_to_correct_slug(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->get($this->editUrl($item, 'wrong-slug'));
+
+        // The controller uses route() which generates query string format, so we match that
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response->assertStatus(303);
+    }
+
+    public function test_edit_item_renders_with_correct_slug(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->get($this->editUrl($item));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('LootBiasTool/ItemEdit')
+            ->has('item.data')
+        );
     }
 
     public function test_edit_item_returns_item_and_all_priorities(): void
@@ -125,7 +162,7 @@ class ItemEditTest extends TestCase
         $item->priorities()->attach($priority1->id, ['weight' => 0]);
         $item->priorities()->attach($priority2->id, ['weight' => 1]);
 
-        $response = $this->actingAs($user)->get(route('loot.items.edit', $item));
+        $response = $this->actingAs($user)->get($this->editUrl($item));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -165,13 +202,13 @@ class ItemEditTest extends TestCase
         $item = $this->createTestItem();
         $priority = Priority::factory()->create();
 
-        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority->id, 'weight' => 0],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', $item));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
     }
 
     public function test_update_priorities_syncs_correctly(): void
@@ -184,14 +221,14 @@ class ItemEditTest extends TestCase
 
         $item->priorities()->attach($priority1->id, ['weight' => 0]);
 
-        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority2->id, 'weight' => 0],
                 ['priority_id' => $priority3->id, 'weight' => 1],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', $item));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);
@@ -237,12 +274,11 @@ class ItemEditTest extends TestCase
 
         $item->priorities()->attach($priority->id, ['weight' => 0]);
 
-        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', $item));
-
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
         $item->refresh();
         $this->assertCount(0, $item->priorities);
     }
@@ -254,14 +290,14 @@ class ItemEditTest extends TestCase
         $priority1 = Priority::factory()->create();
         $priority2 = Priority::factory()->create();
 
-        $response = $this->from(route('loot.items.edit', $item))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority1->id, 'weight' => 0],
                 ['priority_id' => $priority2->id, 'weight' => 0],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', $item));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);

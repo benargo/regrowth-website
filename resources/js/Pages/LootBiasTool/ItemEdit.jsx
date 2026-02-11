@@ -482,7 +482,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                     <div className="flex min-h-12 flex-col items-center justify-between md:flex-row">
                         <div className="flex-initial space-x-4">
                             <Link
-                                href={route("loot.items.show", { item: item.data.id })}
+                                href={route("loot.items.show", { item: item.data.id, name: item.data.slug })}
                                 className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
                             >
                                 <Icon icon="arrow-left" style="solid" className="mr-2" />

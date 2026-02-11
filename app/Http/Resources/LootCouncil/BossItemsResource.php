@@ -28,6 +28,7 @@ class BossItemsResource extends JsonResource
                     'boss' => $this->getRelation($item, 'boss'),
                     'group' => $item->group,
                     'name' => $blizzardData['name'] ?? "Item #{$item->id}",
+                    'slug' => Str::slug($blizzardData['name'] ?? "item-{$item->id}"),
                     'icon' => $iconUrl,
                     'priorities' => PriorityResource::collection($item->getRelation('priorities')),
                     'hasNotes' => $item->notes !== null,

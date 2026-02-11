@@ -76,7 +76,7 @@ class CommentCacheTest extends TestCase
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
 
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $this->assertTrue(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
@@ -99,7 +99,7 @@ class CommentCacheTest extends TestCase
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
         );
 
-        $this->actingAs($user)->get(route('loot.items.edit', $item));
+        $this->actingAs($user)->get("/loot/items/{$item->id}/test-item-{$item->id}/edit");
 
         $this->assertTrue(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
@@ -118,14 +118,14 @@ class CommentCacheTest extends TestCase
         ]);
 
         // First request populates the cache
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         // Directly modify the database without going through the controller
         // This simulates what happens when cache is stale
         Comment::where('item_id', $item->id)->update(['body' => 'Modified comment']);
 
         // Second request should return cached data (still showing original)
-        $response = $this->actingAs($user)->get(route('loot.items.show', $item));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $response->assertOk();
         $response->assertSee('Original cached comment');
@@ -141,7 +141,7 @@ class CommentCacheTest extends TestCase
         $user = User::factory()->raider()->create();
 
         // Populate the cache
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $this->assertTrue(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
@@ -163,7 +163,7 @@ class CommentCacheTest extends TestCase
         $user = User::factory()->raider()->create();
 
         // First request populates cache with no comments
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         // Create a new comment
         $this->actingAs($user)->post(route('loot.items.comments.store', $item), [
@@ -171,7 +171,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Next request should show the new comment
-        $response = $this->actingAs($user)->get(route('loot.items.show', $item));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $response->assertOk();
         $response->assertSee('Brand new comment');
@@ -192,7 +192,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Populate the cache
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $this->assertTrue(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
@@ -219,7 +219,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // First request populates the cache
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         // Update the comment
         $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
@@ -227,7 +227,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Next request should show the updated comment
-        $response = $this->actingAs($user)->get(route('loot.items.show', $item));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $response->assertOk();
         $response->assertSee('Updated comment body');
@@ -247,7 +247,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Populate the cache
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $this->assertTrue(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
@@ -272,14 +272,14 @@ class CommentCacheTest extends TestCase
         ]);
 
         // First request populates the cache
-        $response = $this->actingAs($user)->get(route('loot.items.show', $item));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
         $response->assertSee('Comment to be deleted');
 
         // Delete the comment
         $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
 
         // Next request should not show the deleted comment
-        $response = $this->actingAs($user)->get(route('loot.items.show', $item));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         $response->assertOk();
         $response->assertDontSee('Comment to be deleted');
@@ -302,10 +302,10 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Visit page 1
-        $this->actingAs($user)->get(route('loot.items.show', $item));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         // Visit page 2
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item, 'page' => 2]));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id, 'page' => 2]));
 
         $this->assertTrue(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
@@ -327,8 +327,8 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Visit multiple pages to cache them
-        $this->actingAs($user)->get(route('loot.items.show', $item));
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item, 'page' => 2]));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id, 'page' => 2]));
 
         $this->assertTrue(
             Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")

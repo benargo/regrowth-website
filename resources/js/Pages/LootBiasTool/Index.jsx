@@ -32,7 +32,15 @@ function BossesSkeleton() {
     );
 }
 
-function BossesList({ bosses, selectedRaid, loadedBoss, onBossExpand, onBossCollapse, expandedBosses, getItemsForBoss }) {
+function BossesList({
+    bosses,
+    selectedRaid,
+    loadedBoss,
+    onBossExpand,
+    onBossCollapse,
+    expandedBosses,
+    getItemsForBoss,
+}) {
     const currentBosses = bosses[selectedRaid] ?? [];
 
     return (
@@ -69,7 +77,7 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="italic text-center lg:text-right text-gray-500">Item not subject to loot council.</p>;
+        return <p className="text-center italic text-gray-500 lg:text-right">Item not subject to loot council.</p>;
     }
 
     // Sort by weight (ascending) and group by weight
@@ -106,12 +114,12 @@ function PriorityDisplay({ priorities }) {
 function ItemRow({ item }) {
     return (
         <Link
-            href={route("loot.items.show", { item: item.id })}
+            href={route("loot.items.show", { item: item.id, name: item.slug })}
             className="flex flex-wrap items-center gap-4 rounded bg-brown-800/50 p-2 transition-colors hover:bg-brown-800/70"
         >
             {item.icon && (
                 <a
-                    href={route("loot.items.show", { item: item.id })}
+                    href={route("loot.items.show", { item: item.id, name: item.slug })}
                     data-wowhead={`item=${item.id}&domain=tbc`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -124,9 +132,9 @@ function ItemRow({ item }) {
                     />
                 </a>
             )}
-            <div className="flex-initial lg:flex-1 w-48 text-left">
-                <h4 className="text-md font-bold mb-1">{item.name}</h4>
-                <div className="flex flex-col lg:flex-row gap-1 lg:gap-2 items-start lg:items-center">
+            <div className="w-48 flex-initial text-left lg:flex-1">
+                <h4 className="text-md mb-1 font-bold">{item.name}</h4>
+                <div className="flex flex-col items-start gap-1 lg:flex-row lg:items-center lg:gap-2">
                     <p className="text-sm text-gray-400">Item ID: {item.id}</p>
                     {item.commentsCount > 0 && (
                         <p className="inline-flex items-center gap-1 text-xs">
@@ -142,7 +150,7 @@ function ItemRow({ item }) {
                     )}
                 </div>
             </div>
-            <div className="flex-auto mx-auto lg:mb-0 lg:mr-0">
+            <div className="mx-auto flex-auto lg:mb-0 lg:mr-0">
                 <PriorityDisplay priorities={item.priorities} />
             </div>
         </Link>
@@ -166,9 +174,7 @@ function BossItems({ items, grouped = true }) {
 
     // Separate grouped and ungrouped items
     const groupedItems = items.filter((item) => item.group);
-    const ungroupedItems = items
-        .filter((item) => !item.group)
-        .sort((a, b) => a.name.localeCompare(b.name));
+    const ungroupedItems = items.filter((item) => !item.group).sort((a, b) => a.name.localeCompare(b.name));
 
     // Group items by their group name and sort within each group
     const groups = groupedItems.reduce((acc, item) => {

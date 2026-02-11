@@ -28,6 +28,7 @@ class ItemResource extends JsonResource
             'boss' => $this->getRelation('boss'),
             'group' => $this->group,
             'name' => $blizzardData['name'] ?? "Item #{$this->id}",
+            'slug' => Str::slug($blizzardData['name'] ?? "item-{$this->id}"),
             'icon' => $iconUrl,
             'item_class' => $blizzardData['item_class']['name'] ?? null,
             'item_subclass' => $blizzardData['item_subclass']['name'] ?? null,
