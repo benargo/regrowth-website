@@ -86,6 +86,15 @@ export default function Master({ title, children }) {
                                     Loot Bias
                                 </Link>
                             )}
+                            {can?.accessLoot && (
+                                <Link
+                                    href="https://thatsmybis.com/24119/regrowth/"
+                                    className="border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
+                                >
+                                    <Icon icon="clipboard-list" style="solid" className="mr-2" />
+                                    That&rsquo;s My Bis
+                                </Link>
+                            )}
                             <Link
                                 href="https://discord.gg/regrowth"
                                 className="border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
