@@ -60,7 +60,7 @@ class ItemController extends Controller
     /**
      * Show the form for editing a specific loot item.
      */
-    public function edit(ItemService $itemService, Request $request, Item $item, string $name = null)
+    public function edit(ItemService $itemService, Request $request, Item $item, ?string $name = null)
     {
         $slug = Str::slug(Arr::get($itemService->find($item->id), 'name') ?? "item-{$item->id}");
 

@@ -26,7 +26,7 @@ class RebuildLootCouncilCache extends Command
      */
     public function handle(): void
     {
-        dispatch(new RebuildLootCouncilCacheJob());
+        dispatch(new RebuildLootCouncilCacheJob);
         $this->info('Loot Council cache rebuild job dispatched successfully.');
     }
 }

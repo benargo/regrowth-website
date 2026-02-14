@@ -2,12 +2,12 @@
 
 namespace App\Providers;
 
-use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Policies\DashboardPolicy;
 use App\Policies\CommentPolicy;
+use App\Policies\DashboardPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\PhasePolicy;
 use App\Policies\ViewAsRolePolicy;

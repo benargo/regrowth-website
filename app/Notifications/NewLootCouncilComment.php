@@ -57,17 +57,17 @@ class NewLootCouncilComment extends Notification implements ShouldQueue
                 'timestamp' => $this->comment->created_at->toIso8601String(),
             ])
             ->components([
-            //     [
-            //         'type' => 1, // Action Row
-            //         'components' => [
-            //             [
-            //                 'type' => 2, // Button
-            //                 'style' => 3, // Success (green)
-            //                 'label' => 'Resolve',
-            //                 'custom_id' => "resolve_lc_comment:{$this->comment->id}",
-            //             ],
-            //         ],
-            //     ],
+                //     [
+                //         'type' => 1, // Action Row
+                //         'components' => [
+                //             [
+                //                 'type' => 2, // Button
+                //                 'style' => 3, // Success (green)
+                //                 'label' => 'Resolve',
+                //                 'custom_id' => "resolve_lc_comment:{$this->comment->id}",
+                //             ],
+                //         ],
+                //     ],
             ]);
     }
 

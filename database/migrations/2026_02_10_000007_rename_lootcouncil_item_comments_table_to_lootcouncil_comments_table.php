@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('lootcouncil_item_comments', function (Blueprint $table) {
-            $table->dropForeign(['item_id']);;
+            $table->dropForeign(['item_id']);
             $table->dropForeign(['user_id']);
             $table->dropForeign(['deleted_by']);
         });

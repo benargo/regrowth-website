@@ -3,8 +3,8 @@
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Resources\LootCouncil\BossItemsResource;
-use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
 use App\Services\Blizzard\ItemService;
