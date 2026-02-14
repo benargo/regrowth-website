@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\TBC\PhaseResource;
 use App\Http\Resources\UserResource;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
@@ -36,6 +37,14 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        $phases = PhaseResource::collection(
+            Cache::remember(
+                'phases.tbc.index', 
+                now()->addYear(), 
+                fn () => Phase::all()
+            )
+        )->toArray($request);
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -47,11 +56,11 @@ class HandleInertiaRequests extends Middleware
                 ],
                 'impersonating' => $request->session()->has('impersonating_user_id'),
             ],
-            'phases' => Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all()),
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),
             ],
+            'phases' => $phases,
         ];
     }
 }

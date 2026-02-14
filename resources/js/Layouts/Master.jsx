@@ -87,7 +87,7 @@ export default function Master({ title, children }) {
                                         </button>
                                     </Dropdown.Trigger>
                                     <Dropdown.Content align="left">
-                                        {phases?.map((phase) => (
+                                        {phases?.data?.map((phase) => (
                                             <Dropdown.Link
                                                 key={phase.id}
                                                 href={route("loot.phase", { phase: phase.id })}
@@ -120,6 +120,13 @@ export default function Master({ title, children }) {
                                     That&rsquo;s My Bis
                                 </Link>
                             )}
+                            <Link 
+                                href="https://www.warcraftlogs.com/guilds/774848-regrowth" 
+                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
+                            >
+                                <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs logo" className="mr-2 inline-block h-4" />
+                                Warcraft Logs
+                            </Link>
                             <Link
                                 href="https://discord.gg/regrowth"
                                 className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
@@ -199,34 +206,39 @@ export default function Master({ title, children }) {
                         </Link>
                         {can?.accessLoot && (
                             <>
-                                <span className="flex flex-row items-center px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                <Link
+                                    href={route("loot.index")}
+                                    className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                >
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot Bias
-                                </span>
-                                {phases?.map((phase) => (
-                                    <Link
-                                        key={phase.id}
-                                        href={route("loot.phase", { phase: phase.id })}
-                                        className="block rounded-md px-3 py-2 pl-7 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                    >
-                                        {phase.description}
-                                    </Link>
-                                ))}
-                                {can?.viewAllComments && (
-                                    <Link
-                                        href={route("loot.comments.index")}
-                                        className="flex flex-row items-center rounded-md px-3 py-2 pl-7 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                    >
-                                        <Icon icon="comments" style="solid" className="mr-2 h-6" />
-                                        All Comments
-                                    </Link>
-                                )}
+                                </Link>
+                                <div className="border-l-2 border-amber-800 ml-2">
+                                    {phases?.data?.map((phase) => (
+                                        <Link
+                                            key={phase.id}
+                                            href={route("loot.phase", { phase: phase.id })}
+                                            className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                        >
+                                            {phase.description}
+                                        </Link>
+                                    ))}
+                                    {can?.viewAllComments && (
+                                        <Link
+                                            href={route("loot.comments.index")}
+                                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                        >
+                                            <Icon icon="comments" style="solid" className="mr-2 h-6" />
+                                            All Comments
+                                        </Link>
+                                    )}
+                                </div>
                             </>
                         )}
                         {can?.accessLoot && (
                             <Link
                                 href="https://thatsmybis.com/24119/regrowth/"
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
+                                className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
                             >
                                 <img
                                     src="/images/logo_thatsmybis.webp"
@@ -236,6 +248,13 @@ export default function Master({ title, children }) {
                                 That&rsquo;s My Bis
                             </Link>
                         )}
+                        <Link
+                            href="https://www.warcraftlogs.com/guilds/774848-regrowth"
+                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                        >
+                            <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs logo" className="mr-2 inline-block h-4" />
+                            Warcraft Logs
+                        </Link>
                         <Link
                             href="https://discord.gg/regrowth"
                             className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"

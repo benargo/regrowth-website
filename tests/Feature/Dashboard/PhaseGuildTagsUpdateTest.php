@@ -184,7 +184,8 @@ class PhaseGuildTagsUpdateTest extends TestCase
         $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
 
-        Cache::put('phases.tbc.index', 'cached-data');
+        // Pre-populate with valid cached data so the middleware doesn't fail
+        Cache::put('phases.tbc.index', Phase::all());
         $this->assertTrue(Cache::has('phases.tbc.index'));
 
         $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [

@@ -70,7 +70,7 @@ export default function AddonExportSchema({ schema }) {
                                 Added <code>councillors</code> array to include loot councillor data.
                             </li>
                         </ul>
-                        <h3 className="text-md font-semibold">
+                        <h3 className="text-md mt-4 font-semibold">
                             Version 1.1.2 <span className="text-sm italic text-gray-400">(2026-02-03)</span>
                         </h3>
                         <ul className="mt-2 list-inside list-disc text-sm">

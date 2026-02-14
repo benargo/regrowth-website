@@ -1,9 +1,11 @@
 <?php
 
 use App\Jobs\CheckLevelCapAchievements;
+use App\Jobs\ExportAddonDataJob;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::call('model:prune')->dailyAt('03:00');
+Schedule::job(ExportAddonDataJob::class)->dailyAt('03:00');
 
 /**
  * This job must not run.
