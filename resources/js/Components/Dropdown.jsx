@@ -1,6 +1,6 @@
-import { Transition } from '@headlessui/react';
-import { Link } from '@inertiajs/react';
-import { createContext, useContext, useState } from 'react';
+import { Transition } from "@headlessui/react";
+import { Link } from "@inertiajs/react";
+import { createContext, useContext, useState } from "react";
 
 const DropDownContext = createContext();
 
@@ -25,36 +25,26 @@ const Trigger = ({ children }) => {
         <>
             <div onClick={toggleOpen}>{children}</div>
 
-            {open && (
-                <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setOpen(false)}
-                ></div>
-            )}
+            {open && <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>}
         </>
     );
 };
 
-const Content = ({
-    align = 'right',
-    width = '48',
-    contentClasses = 'py-1 bg-brown',
-    children,
-}) => {
+const Content = ({ align = "right", width = "48", contentClasses = "py-1 bg-brown", children }) => {
     const { open, setOpen } = useContext(DropDownContext);
 
-    let alignmentClasses = 'origin-top';
+    let alignmentClasses = "origin-top";
 
-    if (align === 'left') {
-        alignmentClasses = 'ltr:origin-top-left rtl:origin-top-right start-0';
-    } else if (align === 'right') {
-        alignmentClasses = 'ltr:origin-top-right rtl:origin-top-left end-0';
+    if (align === "left") {
+        alignmentClasses = "ltr:origin-top-left rtl:origin-top-right start-0";
+    } else if (align === "right") {
+        alignmentClasses = "ltr:origin-top-right rtl:origin-top-left end-0";
     }
 
-    let widthClasses = '';
+    let widthClasses = "";
 
-    if (width === '48') {
-        widthClasses = 'w-48';
+    if (width === "48") {
+        widthClasses = "w-48";
     }
 
     return (
@@ -72,26 +62,19 @@ const Content = ({
                     className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
                     onClick={() => setOpen(false)}
                 >
-                    <div
-                        className={
-                            `rounded-md ring-1 ring-black ring-opacity-5 ` +
-                            contentClasses
-                        }
-                    >
-                        {children}
-                    </div>
+                    <div className={`rounded-md ring-1 ring-black ring-opacity-5 ` + contentClasses}>{children}</div>
                 </div>
             </Transition>
         </>
     );
 };
 
-const DropdownLink = ({ className = '', children, ...props }) => {
+const DropdownLink = ({ className = "", children, ...props }) => {
     return (
         <Link
             {...props}
             className={
-                'block bg-brown w-full px-4 py-2 rounded-md text-start text-sm leading-5 text-white transition duration-150 ease-in-out hover:bg-brown-800 focus:bg-brown-100 focus:outline-none ' +
+                "block flex w-full flex-row items-center rounded-md bg-brown px-4 py-2 text-start text-sm leading-5 text-white transition duration-150 ease-in-out hover:bg-brown-800 focus:bg-brown-670 focus:outline-none " +
                 className
             }
         >

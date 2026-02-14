@@ -410,7 +410,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
 
         if (firstRaidInPhase) {
             setExpandedBosses(getStoredExpandedBosses(firstRaidInPhase));
-            router.visit(route("loot.index", { raid_id: firstRaidInPhase }), {
+            router.visit(route("loot.phase", { phase: phaseId, raid_id: firstRaidInPhase }), {
                 only: ["selected_raid_id", "bosses"],
                 preserveState: true,
                 preserveScroll: true,
@@ -437,7 +437,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
         loadQueueRef.current = [];
         setExpandedBosses(getStoredExpandedBosses(raidId));
 
-        router.visit(route("loot.index", { raid_id: raidId }), {
+        router.visit(route("loot.phase", { phase: selectedPhase, raid_id: raidId }), {
             only: ["selected_raid_id", "bosses"],
             preserveState: true,
             preserveScroll: true,
@@ -479,6 +479,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
     };
 
     const currentRaids = raids[selectedPhase] ?? [];
+    const currentPhase = phases.find((p) => p.id === selectedPhase);
 
     const getItemsForBoss = (bossId) => {
         return loadedItems[bossId] ?? [];
@@ -532,6 +533,17 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
                         </button>
                     ))}
                 </div>
+                {currentPhase?.start_date && (
+                    <p className="mb-4 text-sm text-gray-400">
+                        Phase {currentPhase.id}{" "}
+                        {new Date(currentPhase.start_date) > new Date() ? "starts on" : "started"}{" "}
+                        {new Date(currentPhase.start_date).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                        })}
+                    </p>
+                )}
                 <Deferred data="bosses" fallback={<BossesSkeleton />}>
                     <BossesList
                         bosses={bosses}

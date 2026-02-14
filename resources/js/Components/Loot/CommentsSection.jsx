@@ -1,46 +1,7 @@
-import { Link } from "@inertiajs/react";
 import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
 import Icon from "@/Components/FontAwesome/Icon";
-
-function Pagination({ links, meta }) {
-    if (!links || meta.last_page <= 1) {
-        return null;
-    }
-
-    return (
-        <nav className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-400">
-                Showing {meta.from} to {meta.to} of {meta.total} comments
-            </div>
-            <div className="flex gap-1">
-                {links.map((link, index) => {
-                    if (!link.url) {
-                        return (
-                            <span
-                                key={index}
-                                className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-500"
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        );
-                    }
-
-                    return (
-                        <Link
-                            key={index}
-                            href={link.url}
-                            preserveScroll
-                            className={`rounded px-3 py-1 text-sm transition-colors ${
-                                link.active ? "bg-amber-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                            }`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
-                    );
-                })}
-            </div>
-        </nav>
-    );
-}
+import Pagination from "@/Components/Pagination";
 
 export default function CommentsSection({ comments, itemId, canCreate }) {
     return (
@@ -66,7 +27,7 @@ export default function CommentsSection({ comments, itemId, canCreate }) {
                         {comments.data.map((comment) => (
                             <CommentItem key={comment.id} comment={comment} itemId={itemId} />
                         ))}
-                        <Pagination links={comments.links} meta={comments.meta} />
+                        <Pagination links={comments.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
                     <p className="py-8 text-center text-gray-400">

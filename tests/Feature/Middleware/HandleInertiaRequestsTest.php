@@ -3,6 +3,7 @@
 namespace Tests\Feature\Middleware;
 
 use App\Models\DiscordRole;
+use App\Models\TBC\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -151,6 +152,76 @@ class HandleInertiaRequestsTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.highest_role', null)
+            );
+    }
+
+    #[Test]
+    public function it_shares_can_view_all_comments_as_true_for_officers(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', true)
+            );
+    }
+
+    #[Test]
+    public function it_shares_can_view_all_comments_as_true_for_loot_councillors(): void
+    {
+        $user = User::factory()->lootCouncillor()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', true)
+            );
+    }
+
+    #[Test]
+    public function it_shares_can_view_all_comments_as_false_for_raiders(): void
+    {
+        $user = User::factory()->raider()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', false)
+            );
+    }
+
+    #[Test]
+    public function it_shares_can_view_all_comments_as_false_for_members(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', false)
+            );
+    }
+
+    #[Test]
+    public function it_shares_can_view_all_comments_as_false_for_guests(): void
+    {
+        $this->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', false)
+            );
+    }
+
+    #[Test]
+    public function it_shares_phases_with_inertia(): void
+    {
+        $phases = Phase::factory()->count(3)->create();
+
+        $this->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('phases', 3)
+            );
+    }
+
+    #[Test]
+    public function it_shares_empty_phases_when_none_exist(): void
+    {
+        $this->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('phases', 0)
             );
     }
 }

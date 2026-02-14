@@ -11,6 +11,14 @@ class CommentPolicy extends AuthorizationPolicy
     use HandlesAuthorization;
 
     /**
+     * Determine if the user can access the "All Comments" page.
+     */
+    public function viewAll(User $user): bool
+    {
+        return $this->userIsOfficer($user) || $this->userIsLootCouncillor($user);
+    }
+
+    /**
      * Determine if the user can create comments on loot items.
      */
     public function create(User $user): bool

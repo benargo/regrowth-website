@@ -67,6 +67,18 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate the user is a Loot Councillor.
+     */
+    public function lootCouncillor(): static
+    {
+        return $this->afterCreating(function ($user) {
+            $user->discordRoles()->syncWithoutDetaching([
+                DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 2])->id,
+            ]);
+        });
+    }
+
+    /**
      * Indicate the user is a Guest.
      */
     public function guest(): static

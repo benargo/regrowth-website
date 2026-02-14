@@ -670,4 +670,142 @@ class CommentTest extends TestCase
             ->where('comments.data.0.can.resolve', false)
         );
     }
+
+    // ==========================================
+    // Index page authorization tests
+    // ==========================================
+
+    public function test_guest_users_cannot_access_comments_index(): void
+    {
+        $user = User::factory()->guest()->create();
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_member_users_cannot_access_comments_index(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_raider_users_cannot_access_comments_index(): void
+    {
+        $user = User::factory()->raider()->create();
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_loot_councillors_can_access_comments_index(): void
+    {
+        $user = User::factory()->member()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertOk();
+    }
+
+    public function test_officers_can_access_comments_index(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertOk();
+    }
+
+    // ==========================================
+    // Index page tests
+    // ==========================================
+
+    public function test_comments_index_is_paginated(): void
+    {
+        $item1 = $this->createItem();
+        $item2 = $this->createItem();
+        $user = User::factory()->officer()->create();
+        $commentAuthor = User::factory()->raider()->create();
+
+        // Create 25 comments across two items
+        Comment::factory()->count(15)->create([
+            'item_id' => $item1->id,
+            'user_id' => $commentAuthor->id,
+        ]);
+        Comment::factory()->count(10)->create([
+            'item_id' => $item2->id,
+            'user_id' => $commentAuthor->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('LootBiasTool/Comments')
+            ->has('comments.data', 20) // 20 per page
+            ->has('comments.links')
+            ->has('comments.meta')
+        );
+    }
+
+    public function test_comments_index_includes_item_data(): void
+    {
+        $item1 = $this->createItem();
+        $item2 = $this->createItem();
+        $user = User::factory()->officer()->create();
+        $commentAuthor = User::factory()->raider()->create();
+
+        Comment::factory()->count(3)->create([
+            'item_id' => $item1->id,
+            'user_id' => $commentAuthor->id,
+        ]);
+        Comment::factory()->count(2)->create([
+            'item_id' => $item2->id,
+            'user_id' => $commentAuthor->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('LootBiasTool/Comments')
+            ->has('comments.data', 5)
+            ->has('comments.data.0.item')
+            ->has('comments.data.0.user')
+            ->has('comments.data.0.can')
+        );
+    }
+
+    public function test_comments_index_orders_by_latest(): void
+    {
+        $item = $this->createItem();
+        $user = User::factory()->officer()->create();
+        $commentAuthor = User::factory()->raider()->create();
+
+        $oldComment = Comment::factory()->create([
+            'item_id' => $item->id,
+            'user_id' => $commentAuthor->id,
+            'body' => 'Old comment',
+            'created_at' => now()->subDays(5),
+        ]);
+
+        $newComment = Comment::factory()->create([
+            'item_id' => $item->id,
+            'user_id' => $commentAuthor->id,
+            'body' => 'New comment',
+            'created_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('comments.data.0.id', $newComment->id)
+            ->where('comments.data.1.id', $oldComment->id)
+        );
+    }
 }

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LootCouncil\BossItemsResource;
-use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -24,21 +24,24 @@ class BiasToolController extends Controller
 
         $currentPhase = $phases->where('start_date', '<=', now())->sortByDesc('start_date')->first();
 
-        if ($currentPhase === null) {
-            $currentPhase = $phases->first();
-        }
+        return redirect()->route('loot.phase', ['phase' => $currentPhase->id]);
+    }
+
+    public function phase(Phase $phase, Request $request)
+    {
+        // Reload phases to ensure we have the latest data for the current phase (in case it was just switched)
+        $phases = Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all());
 
         // Preload raids and bosses for the current phase to minimize latency when switching between them
         $raids = Cache::remember('raids.tbc.index', now()->addYear(), fn () => Raid::all());
         $groupedRaids = $raids->groupBy('phase_id');
 
         // Determine which raid to load items for
-        $defaultRaidId = $groupedRaids[$currentPhase->id][0]->id ?? null;
+        $defaultRaidId = $groupedRaids[$phase->id][0]->id ?? null;
         $selectedRaidId = $request->input('raid_id', $defaultRaidId);
-        $selectedPhaseId = $raids->find($selectedRaidId)->phase_id ?? $currentPhase->id;
+        $selectedPhaseId = $raids->find($selectedRaidId)->phase_id ?? $phase->id;
 
-        return Inertia::render('LootBiasTool/Index', [
-            'phases' => $phases,
+        return Inertia::render('LootBiasTool/Phase', [
             'current_phase' => $selectedPhaseId,
             'raids' => $groupedRaids,
             'selected_raid_id' => (int) $selectedRaidId,

@@ -30,6 +30,8 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
  */
 Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:viewAny,App\Models\LootCouncil\Item']], function () {
     Route::get('/', [BiasToolController::class, 'index'])->name('loot.index');
+    Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->name('loot.phase');
+    Route::get('/comments', [CommentController::class, 'index'])->can('viewAll', 'App\Models\LootCouncil\Comment')->name('loot.comments.index');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');
     Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('loot.items.notes.store');
     Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('loot.items.priorities.update');

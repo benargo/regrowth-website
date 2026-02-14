@@ -3,8 +3,11 @@
 namespace App\Http\Middleware;
 
 use App\Http\Resources\UserResource;
+use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\TBC\Phase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -40,9 +43,11 @@ class HandleInertiaRequests extends Middleware
                 'can' => [
                     'accessDashboard' => $user?->can('access-dashboard') ?? false,
                     'accessLoot' => $user?->can('viewAny', Item::class) ?? false,
+                    'viewAllComments' => $user?->can('viewAll', Comment::class) ?? false,
                 ],
                 'impersonating' => $request->session()->has('impersonating_user_id'),
             ],
+            'phases' => Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all()),
             'flash' => [
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),

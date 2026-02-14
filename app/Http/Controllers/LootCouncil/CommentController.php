@@ -5,6 +5,7 @@ namespace App\Http\Controllers\LootCouncil;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Http\Requests\Comments\UpdateCommentRequest;
+use App\Http\Resources\LootCouncil\CommentResource;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Notifications\DiscordNotifiable;
@@ -13,12 +14,29 @@ use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 
 class CommentController extends Controller
 {
     public function __construct(
         protected LootCouncilCacheService $cacheService
     ) {}
+
+    /**
+     * Display a listing of comments for a specific loot item.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $comments = Comment::with(['user', 'item'])
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return Inertia::render('LootBiasTool/Comments', [
+            'comments' => CommentResource::collection($comments),
+        ]);
+    }
 
     /**
      * Store a new comment for a specific loot item.
