@@ -4,18 +4,10 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Models\LootCouncil\Item;
-use App\Models\LootCouncil\ItemPriority;
-use App\Models\LootCouncil\Priority;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\Attendance\Calculators\GuildAttendanceCalculator;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
-use App\Services\WarcraftLogs\Attendance;
-use App\Services\WarcraftLogs\Data\GuildAttendance;
-use App\Services\WarcraftLogs\Data\PlayerAttendance;
-use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,6 +32,24 @@ class AddonControllerTest extends TestCase
             ->byDefault();
 
         $this->app->instance(GuildTags::class, $guildTags);
+    }
+
+    /**
+     * Seed the export file in storage with the given overrides.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    protected function seedExportFile(array $overrides = []): void
+    {
+        $data = array_merge([
+            'system' => ['date_generated' => Carbon::now()->unix()],
+            'priorities' => [],
+            'items' => [],
+            'players' => [],
+            'councillors' => [],
+        ], $overrides);
+
+        Storage::disk('local')->put('addon/export.json', json_encode($data));
     }
 
     // ==========================================
@@ -82,6 +92,8 @@ class AddonControllerTest extends TestCase
 
     public function test_export_allows_officer_users(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
@@ -125,6 +137,8 @@ class AddonControllerTest extends TestCase
 
     public function test_export_json_allows_officer_users(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
@@ -181,6 +195,8 @@ class AddonControllerTest extends TestCase
 
     public function test_export_renders_inertia_page_with_base64_data(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
@@ -196,11 +212,12 @@ class AddonControllerTest extends TestCase
 
     public function test_export_returns_valid_base64_encoded_data(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
-        // Use assertInertia's loadDeferredProps to test the deferred data
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Base64')
             ->missing('exportedData')
@@ -211,22 +228,21 @@ class AddonControllerTest extends TestCase
         );
     }
 
-    public function test_export_includes_system_info_with_user_data(): void
+    public function test_export_injects_authenticated_user_into_stored_data(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Base64')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('exportedData', function ($exportedData) use ($user) {
                     $data = json_decode(base64_decode($exportedData), true);
 
-                    return isset($data['system'])
-                        && isset($data['system']['date_generated'])
-                        && isset($data['system']['user'])
+                    return isset($data['system']['user'])
                         && $data['system']['user']['id'] === $user->id
                         && $data['system']['user']['name'] === $user->displayName;
                 })
@@ -234,94 +250,44 @@ class AddonControllerTest extends TestCase
         );
     }
 
-    public function test_export_includes_priorities_that_have_items(): void
+    public function test_export_preserves_stored_data_alongside_injected_user(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $priorityWithItems = Priority::factory()->create(['title' => 'Tank']);
-        $priorityWithoutItems = Priority::factory()->create(['title' => 'Healer']);
-        $item = Item::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priorityWithItems->id,
+        Storage::fake('local');
+        $this->seedExportFile([
+            'priorities' => [['id' => 1, 'name' => 'Tank', 'icon' => null]],
+            'councillors' => [['id' => 1, 'name' => 'TestCouncillor', 'rank' => 'Officer']],
         ]);
+        $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Base64')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($priorityWithItems, $priorityWithoutItems) {
+                ->where('exportedData', function ($exportedData) use ($user) {
                     $data = json_decode(base64_decode($exportedData), true);
-                    $priorityIds = collect($data['priorities'])->pluck('id')->toArray();
 
-                    return in_array($priorityWithItems->id, $priorityIds)
-                        && ! in_array($priorityWithoutItems->id, $priorityIds);
+                    return $data['system']['user']['id'] === $user->id
+                        && count($data['priorities']) === 1
+                        && $data['priorities'][0]['name'] === 'Tank'
+                        && count($data['councillors']) === 1
+                        && $data['councillors'][0]['name'] === 'TestCouncillor';
                 })
             )
         );
     }
 
-    public function test_export_includes_items_that_have_priorities(): void
+    public function test_export_returns_empty_when_no_export_file_exists(): void
     {
+        Storage::fake('local');
         $user = User::factory()->officer()->create();
-
-        $itemWithPriorities = Item::factory()->create();
-        $itemWithoutPriorities = Item::factory()->create();
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $itemWithPriorities->id,
-            'priority_id' => $priority->id,
-        ]);
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Base64')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($itemWithPriorities, $itemWithoutPriorities) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemIds = collect($data['items'])->pluck('item_id')->toArray();
-
-                    return in_array($itemWithPriorities->id, $itemIds)
-                        && ! in_array($itemWithoutPriorities->id, $itemIds);
-                })
-            )
-        );
-    }
-
-    public function test_export_includes_item_priorities_with_weight(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create();
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-            'weight' => 75,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Base64')
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item, $priority) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    if (! $itemData) {
-                        return false;
-                    }
-
-                    $itemPriorityData = collect($itemData['priorities'])->firstWhere('priority_id', $priority->id);
-
-                    return $itemPriorityData && $itemPriorityData['weight'] === 75;
-                })
+                ->where('exportedData', '')
             )
         );
     }
@@ -332,6 +298,8 @@ class AddonControllerTest extends TestCase
 
     public function test_export_json_renders_inertia_page_with_json_data(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
@@ -347,6 +315,8 @@ class AddonControllerTest extends TestCase
 
     public function test_export_json_returns_valid_json_string(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
@@ -362,6 +332,8 @@ class AddonControllerTest extends TestCase
 
     public function test_export_json_returns_pretty_printed_json(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
@@ -377,6 +349,8 @@ class AddonControllerTest extends TestCase
 
     public function test_export_json_includes_complete_data_structure(): void
     {
+        Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
@@ -393,6 +367,21 @@ class AddonControllerTest extends TestCase
                         && isset($data['items'])
                         && isset($data['councillors']);
                 })
+            )
+        );
+    }
+
+    public function test_export_json_returns_empty_when_no_export_file_exists(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('exportedData')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('exportedData', '')
             )
         );
     }
@@ -523,776 +512,13 @@ class AddonControllerTest extends TestCase
     }
 
     // ==========================================
-    // Clean Notes Tests
-    // ==========================================
-
-    public function test_export_cleans_notes_by_removing_wowhead_links(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => 'Get !wh[Thunderfury](item=19019) from the boss']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'Get Thunderfury from the boss';
-                })
-            )
-        );
-    }
-
-    public function test_export_cleans_notes_by_removing_markdown_links(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => 'Check [this guide](https://example.com) for details']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'Check this guide for details';
-                })
-            )
-        );
-    }
-
-    public function test_export_cleans_notes_by_removing_bold_formatting(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => 'This is **very important** information']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'This is very important information';
-                })
-            )
-        );
-    }
-
-    public function test_export_cleans_notes_by_removing_italic_formatting(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => 'This is *emphasized* text']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'This is emphasized text';
-                })
-            )
-        );
-    }
-
-    public function test_export_cleans_notes_by_removing_underline_formatting(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => 'This is __underlined__ text']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'This is underlined text';
-                })
-            )
-        );
-    }
-
-    public function test_export_cleans_notes_by_removing_inline_code(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => 'Use the `command` here']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'Use the command here';
-                })
-            )
-        );
-    }
-
-    public function test_export_cleans_notes_by_removing_headers(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => '## Section Title']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'Section Title';
-                })
-            )
-        );
-    }
-
-    public function test_export_cleans_notes_by_removing_strikethrough(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => 'This is ~~deleted~~ text']);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'This is deleted text';
-                })
-            )
-        );
-    }
-
-    public function test_export_returns_empty_string_for_null_notes(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => null]);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    // Null notes should return either empty string or null
-                    return $itemData['notes'] === '' || $itemData['notes'] === null;
-                })
-            )
-        );
-    }
-
-    public function test_export_normalizes_whitespace_in_notes(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $item = Item::factory()->create(['notes' => "Multiple   spaces\nand\nnewlines"]);
-        $priority = Priority::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($item) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
-
-                    return $itemData['notes'] === 'Multiple spaces and newlines';
-                })
-            )
-        );
-    }
-
-    // ==========================================
-    // Priority Data Tests
-    // ==========================================
-
-    public function test_export_includes_priority_icon_from_media(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $priority = Priority::factory()->create([
-            'title' => 'Tank',
-            'media' => [
-                'media_type' => 'spell',
-                'media_id' => 12345,
-                'media_name' => 'spell_nature_strength',
-            ],
-        ]);
-        $item = Item::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($priority) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
-
-                    return $priorityData['icon'] === 'spell_nature_strength';
-                })
-            )
-        );
-    }
-
-    public function test_export_returns_null_icon_when_media_name_missing(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $priority = Priority::factory()->create([
-            'title' => 'Tank',
-            'media' => [
-                'media_type' => 'spell',
-                'media_id' => 12345,
-            ],
-        ]);
-        $item = Item::factory()->create();
-        ItemPriority::factory()->create([
-            'item_id' => $item->id,
-            'priority_id' => $priority->id,
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($priority) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $priorityData = collect($data['priorities'])->firstWhere('id', $priority->id);
-
-                    return $priorityData['icon'] === null;
-                })
-            )
-        );
-    }
-
-    // ==========================================
-    // Player Attendance Data Tests
-    // ==========================================
-
-    public function test_export_includes_empty_players_when_no_attendance_tags_exist(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        // Ensure no guild tags exist
-        GuildTag::query()->delete();
-
-        // Mock the WarcraftLogs GuildService to return empty tags
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect());
-
-        $this->app->instance(GuildTags::class, $guildTags);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-
-                    return isset($data['players']) && empty($data['players']);
-                })
-            )
-        );
-    }
-
-    public function test_export_includes_empty_players_when_no_tags_count_attendance(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        // Create a guild tag that doesn't count attendance
-        GuildTag::factory()->doesNotCountAttendance()->create();
-
-        // Mock the WarcraftLogs GuildService
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(GuildTag::all());
-
-        $this->app->instance(GuildTags::class, $guildTags);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-
-                    return isset($data['players']) && empty($data['players']);
-                })
-            )
-        );
-    }
-
-    public function test_export_includes_player_attendance_data_when_tags_exist(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        // Create a guild tag that counts attendance
-        $tag = GuildTag::factory()->countsAttendance()->create();
-
-        // Mock the services
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect([$tag]));
-
-        $attendance = Mockery::mock(Attendance::class);
-        $attendance->shouldReceive('tags')->andReturnSelf();
-        $attendance->shouldReceive('playerNames')->andReturnSelf();
-        $attendance->shouldReceive('get')
-            ->andReturn(collect([
-                new GuildAttendance(
-                    code: 'report1',
-                    startTime: Carbon::parse('2025-01-15 20:00:00'),
-                    players: [new PlayerAttendance(name: 'TestPlayer', presence: 1)],
-                ),
-            ]));
-
-        $calculator = Mockery::mock(GuildAttendanceCalculator::class);
-        $calculator->shouldReceive('calculate')
-            ->andReturn(collect([
-                new PlayerAttendanceStats(
-                    name: 'TestPlayer',
-                    firstAttendance: Carbon::parse('2025-01-15 20:00:00'),
-                    totalReports: 10,
-                    reportsAttended: 8,
-                    percentage: 80.0
-                ),
-            ]));
-
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')
-            ->andReturn(collect([
-                new GuildMember(
-                    character: ['id' => 1, 'name' => 'TestPlayer'],
-                    rank: 1,
-                ),
-            ]));
-
-        $this->app->instance(GuildTags::class, $guildTags);
-        $this->app->instance(Attendance::class, $attendance);
-        $this->app->instance(GuildAttendanceCalculator::class, $calculator);
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-
-                    return isset($data['players'])
-                        && count($data['players']) === 1
-                        && $data['players'][0]['name'] === 'TestPlayer'
-                        && isset($data['players'][0]['attendance'])
-                        && $data['players'][0]['attendance']['attended'] === 8
-                        && $data['players'][0]['attendance']['total'] === 10
-                        && $data['players'][0]['attendance']['percentage'] == 80.0;
-                })
-            )
-        );
-    }
-
-    public function test_export_player_attendance_includes_first_attendance_date(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $tag = GuildTag::factory()->countsAttendance()->create();
-        $firstAttendance = Carbon::parse('2025-01-15 20:00:00');
-
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect([$tag]));
-
-        $attendance = Mockery::mock(Attendance::class);
-        $attendance->shouldReceive('tags')->andReturnSelf();
-        $attendance->shouldReceive('playerNames')->andReturnSelf();
-        $attendance->shouldReceive('get')
-            ->andReturn(collect([
-                new GuildAttendance(
-                    code: 'report1',
-                    startTime: $firstAttendance,
-                    players: [new PlayerAttendance(name: 'TestPlayer', presence: 1)],
-                ),
-            ]));
-
-        $calculator = Mockery::mock(GuildAttendanceCalculator::class);
-        $calculator->shouldReceive('calculate')
-            ->andReturn(collect([
-                new PlayerAttendanceStats(
-                    name: 'TestPlayer',
-                    firstAttendance: $firstAttendance,
-                    totalReports: 5,
-                    reportsAttended: 5,
-                    percentage: 100.0
-                ),
-            ]));
-
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')
-            ->andReturn(collect([
-                new GuildMember(
-                    character: ['id' => 1, 'name' => 'TestPlayer'],
-                    rank: 1,
-                ),
-            ]));
-
-        $this->app->instance(GuildTags::class, $guildTags);
-        $this->app->instance(Attendance::class, $attendance);
-        $this->app->instance(GuildAttendanceCalculator::class, $calculator);
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-
-                    return isset($data['players'][0]['attendance']['first_attendance'])
-                        && $data['players'][0]['attendance']['first_attendance'] !== null;
-                })
-            )
-        );
-    }
-
-    public function test_export_json_includes_players_data(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $tag = GuildTag::factory()->countsAttendance()->create();
-
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect([$tag]));
-
-        $attendance = Mockery::mock(Attendance::class);
-        $attendance->shouldReceive('tags')->andReturnSelf();
-        $attendance->shouldReceive('playerNames')->andReturnSelf();
-        $attendance->shouldReceive('get')
-            ->andReturn(collect([
-                new GuildAttendance(
-                    code: 'report1',
-                    startTime: Carbon::now(),
-                    players: [new PlayerAttendance(name: 'TestPlayer', presence: 1)],
-                ),
-            ]));
-
-        $calculator = Mockery::mock(GuildAttendanceCalculator::class);
-        $calculator->shouldReceive('calculate')
-            ->andReturn(collect([
-                new PlayerAttendanceStats(
-                    name: 'TestPlayer',
-                    firstAttendance: Carbon::now(),
-                    totalReports: 5,
-                    reportsAttended: 4,
-                    percentage: 80.0
-                ),
-            ]));
-
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')
-            ->andReturn(collect([
-                new GuildMember(
-                    character: ['id' => 1, 'name' => 'TestPlayer'],
-                    rank: 1,
-                ),
-            ]));
-
-        $this->app->instance(GuildTags::class, $guildTags);
-        $this->app->instance(Attendance::class, $attendance);
-        $this->app->instance(GuildAttendanceCalculator::class, $calculator);
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode($exportedData, true);
-
-                    return isset($data['players']) && count($data['players']) === 1;
-                })
-            )
-        );
-    }
-
-    // ==========================================
-    // Councillor Data Tests
-    // ==========================================
-
-    public function test_export_includes_empty_councillors_when_none_exist(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-
-                    return isset($data['councillors']) && empty($data['councillors']);
-                })
-            )
-        );
-    }
-
-    public function test_export_includes_councillors_when_they_exist(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Councillor1', 'rank_id' => $rank->id]);
-        Character::factory()->lootCouncillor()->create(['name' => 'Councillor2', 'rank_id' => $rank->id]);
-
-        // Mock BlizzardGuildService for getGrmFreshness()
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-
-                    return isset($data['councillors']) && count($data['councillors']) === 2;
-                })
-            )
-        );
-    }
-
-    public function test_export_councillor_data_includes_id_name_and_rank(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
-        $character = Character::factory()->lootCouncillor()->create(['name' => 'TestCouncillor', 'rank_id' => $rank->id]);
-
-        // Mock BlizzardGuildService for getGrmFreshness()
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($character) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $councillor = collect($data['councillors'])->firstWhere('id', $character->id);
-
-                    return $councillor !== null
-                        && $councillor['name'] === 'TestCouncillor'
-                        && $councillor['rank'] === 'Officer';
-                })
-            )
-        );
-    }
-
-    public function test_export_councillor_includes_null_rank_when_no_rank_assigned(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $character = Character::factory()->lootCouncillor()->create(['name' => 'UnrankedCouncillor', 'rank_id' => null]);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($character) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $councillor = collect($data['councillors'])->firstWhere('id', $character->id);
-
-                    return $councillor !== null && $councillor['rank'] === null;
-                })
-            )
-        );
-    }
-
-    public function test_export_councillors_are_ordered_by_name(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        Character::factory()->lootCouncillor()->create(['name' => 'Zara']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Milo']);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $names = collect($data['councillors'])->pluck('name')->toArray();
-
-                    return $names === ['Alice', 'Milo', 'Zara'];
-                })
-            )
-        );
-    }
-
-    public function test_export_excludes_non_councillor_characters(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        Character::factory()->lootCouncillor()->create(['name' => 'IsCouncillor']);
-        Character::factory()->create(['name' => 'NotCouncillor']);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode(base64_decode($exportedData), true);
-                    $names = collect($data['councillors'])->pluck('name')->toArray();
-
-                    return in_array('IsCouncillor', $names)
-                        && ! in_array('NotCouncillor', $names);
-                })
-            )
-        );
-    }
-
-    public function test_export_json_includes_councillors_data(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $rank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
-        Character::factory()->lootCouncillor()->create(['name' => 'JsonCouncillor', 'rank_id' => $rank->id]);
-
-        // Mock BlizzardGuildService for getGrmFreshness()
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('exportedData')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) {
-                    $data = json_decode($exportedData, true);
-
-                    return isset($data['councillors'])
-                        && count($data['councillors']) === 1
-                        && $data['councillors'][0]['name'] === 'JsonCouncillor'
-                        && $data['councillors'][0]['rank'] === 'Raider';
-                })
-            )
-        );
-    }
-
-    // ==========================================
     // GRM Freshness Tests
     // ==========================================
 
     public function test_export_returns_grm_freshness_as_deferred_prop(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1315,6 +541,7 @@ class AddonControllerTest extends TestCase
     public function test_export_json_returns_grm_freshness_as_deferred_prop(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1337,6 +564,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_returns_epoch_timestamp_when_no_file_exists(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1356,6 +584,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_is_not_stale_when_no_file_exists_and_no_raiders(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
@@ -1375,6 +604,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_is_stale_when_no_file_exists_but_guild_has_raiders(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
@@ -1405,6 +635,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_is_not_stale_when_raider_counts_match(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create CSV with 3 raiders
@@ -1440,6 +671,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_is_not_stale_when_raider_count_difference_is_less_than_three(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create CSV with 5 raiders
@@ -1477,6 +709,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_is_stale_when_raider_count_difference_is_three_or_more(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create CSV with 2 raiders
@@ -1513,6 +746,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_counts_multiple_raider_rank_variants(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create CSV with different raider rank names
@@ -1552,6 +786,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_returns_file_last_modified_time(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create the CSV file
@@ -1568,8 +803,7 @@ class AddonControllerTest extends TestCase
             ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('grmFreshness.lastModified', function ($lastModified) {
-                    // The lastModified should be a human-readable string like "5 seconds ago"
-                    // or an ISO 8601 string, not the epoch timestamp
+                    // The lastModified should not be the epoch timestamp
                     return $lastModified !== Carbon::createFromTimestamp(0)->toIso8601String();
                 })
             )
@@ -1579,6 +813,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_ignores_non_raider_ranks_in_guild_roster(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create CSV with 0 raiders
@@ -1613,6 +848,7 @@ class AddonControllerTest extends TestCase
     public function test_grm_freshness_handles_semicolon_delimited_csv(): void
     {
         Storage::fake('local');
+        $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
         // Create CSV with semicolon delimiter

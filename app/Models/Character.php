@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\AddonSettingsProcessed;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -39,6 +40,16 @@ class Character extends Model
         'is_main' => 'boolean',
         'is_loot_councillor' => 'boolean',
         'reached_level_cap_at' => 'datetime',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => AddonSettingsProcessed::class,
+        'deleted' => AddonSettingsProcessed::class,
     ];
 
     /**

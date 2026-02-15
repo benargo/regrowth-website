@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Events\AddonSettingsProcessed;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Services\Blizzard\Data\GuildMember;
@@ -9,6 +10,7 @@ use App\Services\Blizzard\GuildService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Event;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -52,6 +54,17 @@ class CharacterTest extends ModelTestCase
             'is_loot_councillor' => 'boolean',
             'reached_level_cap_at' => 'datetime',
         ]);
+    }
+
+    #[Test]
+    public function it_dispatches_events_on_updated_and_deleted(): void
+    {
+        $model = new Character;
+
+        $this->assertSame([
+            'updated' => AddonSettingsProcessed::class,
+            'deleted' => AddonSettingsProcessed::class,
+        ], $model->dispatchesEvents());
     }
 
     #[Test]
@@ -223,6 +236,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function deleting_character_cascades_to_character_links(): void
     {
+        Event::fake([AddonSettingsProcessed::class]);
+
         $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
         $altCharacter = $this->create(['name' => 'AltChar']);
 

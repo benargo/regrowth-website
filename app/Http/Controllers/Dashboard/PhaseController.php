@@ -9,7 +9,7 @@ use App\Http\Resources\TBC\PhaseResource;
 use App\Http\Resources\WarcraftLogs\GuildTagResource;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\GuildService as WarcraftLogsGuildService;
+use App\Services\WarcraftLogs\GuildTags as WarcraftLogsGuildTagsService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
@@ -59,7 +59,7 @@ class PhaseController extends Controller
      */
     public function buildAllGuildTags()
     {
-        $allGuildTags = app(WarcraftLogsGuildService::class)->getGuild()->tags;
+        $allGuildTags = app(WarcraftLogsGuildTagsService::class)->toCollection();
 
         return GuildTagResource::collection($allGuildTags);
     }

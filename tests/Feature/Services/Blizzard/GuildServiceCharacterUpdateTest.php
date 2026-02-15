@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Services\Blizzard;
 
+use App\Events\AddonSettingsProcessed;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\GuildService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -18,6 +20,8 @@ class GuildServiceCharacterUpdateTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Event::fake([AddonSettingsProcessed::class]);
 
         config([
             'services.blizzard.client_id' => 'test_client_id',

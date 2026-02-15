@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Datasets;
 
+use App\Events\AddonSettingsProcessed;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class GuildTagControllerTest extends TestCase
@@ -60,6 +62,7 @@ class GuildTagControllerTest extends TestCase
 
     public function test_toggle_count_attendance_allows_officer_users(): void
     {
+        Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();
         $tag = GuildTag::factory()->doesNotCountAttendance()->create();
 
@@ -72,6 +75,7 @@ class GuildTagControllerTest extends TestCase
 
     public function test_toggle_count_attendance_can_enable_attendance(): void
     {
+        Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();
         $tag = GuildTag::factory()->doesNotCountAttendance()->create();
 
@@ -88,6 +92,7 @@ class GuildTagControllerTest extends TestCase
 
     public function test_toggle_count_attendance_can_disable_attendance(): void
     {
+        Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();
         $tag = GuildTag::factory()->countsAttendance()->create();
 
@@ -126,6 +131,7 @@ class GuildTagControllerTest extends TestCase
 
     public function test_toggle_count_attendance_does_not_affect_other_tags(): void
     {
+        Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();
         $tag1 = GuildTag::factory()->doesNotCountAttendance()->create();
         $tag2 = GuildTag::factory()->countsAttendance()->create();

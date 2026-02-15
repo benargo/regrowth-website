@@ -2,6 +2,7 @@
 
 namespace App\Models\WarcraftLogs;
 
+use App\Events\AddonSettingsProcessed;
 use App\Models\TBC\Phase;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,15 @@ class GuildTag extends Model
      */
     protected $casts = [
         'count_attendance' => 'boolean',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => AddonSettingsProcessed::class,
     ];
 
     /**
