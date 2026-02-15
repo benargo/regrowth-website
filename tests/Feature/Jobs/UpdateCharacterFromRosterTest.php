@@ -2,18 +2,27 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Events\AddonSettingsProcessed;
 use App\Jobs\UpdateCharacterFromRoster;
 use App\Models\Character;
 use App\Models\GuildRank;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\Skip;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class UpdateCharacterFromRosterTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake([AddonSettingsProcessed::class]);
+    }
 
     public function test_it_creates_a_new_character(): void
     {

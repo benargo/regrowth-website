@@ -2,6 +2,7 @@
 
 namespace App\Models\TBC;
 
+use App\Events\AddonSettingsProcessed;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,17 +23,6 @@ class Phase extends Model
     protected $table = 'tbc_phases';
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'number',
-        'description',
-        'start_date',
-    ];
-
-    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -43,6 +33,26 @@ class Phase extends Model
             'start_date' => 'datetime',
         ];
     }
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => AddonSettingsProcessed::class,
+    ];
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'number',
+        'description',
+        'start_date',
+    ];
 
     /**
      * Get the phase number attribute.

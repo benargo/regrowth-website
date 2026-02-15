@@ -2,15 +2,24 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Events\AddonSettingsProcessed;
 use App\Models\TBC\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class PhaseUpdateTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake(AddonSettingsProcessed::class);
+    }
 
     public function test_update_phase_requires_authentication(): void
     {

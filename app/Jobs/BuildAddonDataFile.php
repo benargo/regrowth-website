@@ -20,7 +20,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-class ExportAddonDataJob implements ShouldQueue
+class BuildAddonDataFile implements ShouldQueue
 {
     use Queueable;
 
@@ -73,6 +73,9 @@ class ExportAddonDataJob implements ShouldQueue
         Log::info('Addon export data generated successfully.');
     }
 
+    /**
+     * Build the priorities data for the addon export file.
+     */
     protected function buildPriorities(): Collection
     {
         return Priority::has('items')->get()->map(function (Priority $priority) {
@@ -84,6 +87,9 @@ class ExportAddonDataJob implements ShouldQueue
         });
     }
 
+    /**
+     * Build the items data for the addon export file, including their priorities and cleaned notes.
+     */
     protected function buildItems(): Collection
     {
         $items = Item::has('priorities')->select('id', 'notes')->get();
@@ -99,6 +105,9 @@ class ExportAddonDataJob implements ShouldQueue
         });
     }
 
+    /**
+     * Clean the notes by removing markdown and custom wowhead link syntax, leaving only plain text.
+     */
     protected function cleanNotes(?string $notes): ?string
     {
         if ($notes === null) {
@@ -131,6 +140,9 @@ class ExportAddonDataJob implements ShouldQueue
         return trim(preg_replace('/\s+/', ' ', $notes));
     }
 
+    /**
+     * Build the player attendance data for the addon export file.
+     */
     protected function buildPlayerAttendanceData(GuildTags $guildTags, Attendance $attendance): Collection
     {
         $tags = $guildTags->toCollection()->where('count_attendance', true);
@@ -169,6 +181,9 @@ class ExportAddonDataJob implements ShouldQueue
             });
     }
 
+    /**
+     * Build the list of loot councillors for the addon export file.
+     */
     protected function buildCouncillors(): Collection
     {
         return Character::where('is_loot_councillor', true)
@@ -188,7 +203,7 @@ class ExportAddonDataJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error('ExportAddonDataJob failed.', [
+        Log::error('BuildAddonDataFile failed.', [
             'error' => $exception->getMessage(),
             'trace' => $exception->getTraceAsString(),
         ]);

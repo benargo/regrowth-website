@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Jobs\ExportAddonDataJob;
+use App\Jobs\BuildAddonDataFile;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\LootCouncil\Item;
@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
 
-class ExportAddonDataJobTest extends TestCase
+class BuildAddonDataFileTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -49,7 +49,7 @@ class ExportAddonDataJobTest extends TestCase
             $attendance = Mockery::mock(Attendance::class);
         }
 
-        $job = new ExportAddonDataJob;
+        $job = new BuildAddonDataFile;
         $job->handle($guildTags, $attendance);
     }
 
@@ -580,12 +580,12 @@ class ExportAddonDataJobTest extends TestCase
         Log::shouldReceive('error')
             ->once()
             ->withArgs(function ($message, $context) {
-                return $message === 'ExportAddonDataJob failed.'
+                return $message === 'BuildAddonDataFile failed.'
                     && isset($context['error'])
                     && isset($context['trace']);
             });
 
-        $job = new ExportAddonDataJob;
+        $job = new BuildAddonDataFile;
         $job->failed(new \RuntimeException('Test failure'));
     }
 }

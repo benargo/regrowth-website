@@ -5,8 +5,10 @@ namespace Tests\Unit\Services\WarcraftLogs;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\GuildTags;
+use App\Events\AddonSettingsProcessed;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -16,6 +18,7 @@ class GuildTagsTest extends TestCase
 
     protected function fakeSuccessfulTagsResponse(array $tagsData): void
     {
+        Event::fake(AddonSettingsProcessed::class);
         Http::preventStrayRequests();
 
         Http::fake([
