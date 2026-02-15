@@ -225,7 +225,7 @@ function MegaMenu({ phases, raids, selectedPhase, selectedRaid, onPhaseSelect, o
     }, []);
 
     const currentRaids = raids[selectedPhase] ?? [];
-    const currentPhase = phases.data.find((p) => p.id === selectedPhase);
+    const currentPhase = phases.find((p) => p.id === selectedPhase);
     const currentRaid = currentRaids.find((r) => r.id === selectedRaid);
 
     const handlePhaseTap = (phaseId) => {
@@ -278,7 +278,7 @@ function MegaMenu({ phases, raids, selectedPhase, selectedRaid, onPhaseSelect, o
                 {phaseOpen && <div className="fixed inset-0 z-40" onClick={() => setPhaseOpen(false)} />}
                 {phaseOpen && (
                     <div className="absolute left-0 z-50 mt-1 w-full rounded-md border border-amber-600 bg-brown shadow-lg">
-                        {phases.data.map((phase) => (
+                        {phases.map((phase) => (
                             <button
                                 key={phase.id}
                                 type="button"
@@ -479,7 +479,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
     };
 
     const currentRaids = raids[selectedPhase] ?? [];
-    const currentPhase = phases.data.find((p) => p.id === selectedPhase);
+    const currentPhase = phases.find((p) => p.id === selectedPhase);
 
     const getItemsForBoss = (bossId) => {
         return loadedItems[bossId] ?? [];
@@ -503,7 +503,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
 
                 {/* Desktop navigation */}
                 <div className="animate-in fade-in mb-8 hidden flex-wrap gap-2 duration-300 md:flex">
-                    {phases.data.map((phase) => (
+                    {phases.map((phase) => (
                         <button
                             key={phase.id}
                             onClick={() => handlePhaseChange(phase.id)}

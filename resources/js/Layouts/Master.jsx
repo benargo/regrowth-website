@@ -87,7 +87,7 @@ export default function Master({ title, children }) {
                                         </button>
                                     </Dropdown.Trigger>
                                     <Dropdown.Content align="left">
-                                        {phases?.data?.map((phase) => (
+                                        {phases?.map((phase) => (
                                             <Dropdown.Link
                                                 key={phase.id}
                                                 href={route("loot.phase", { phase: phase.id })}
@@ -214,7 +214,7 @@ export default function Master({ title, children }) {
                                     Loot Bias
                                 </Link>
                                 <div className="border-l-2 border-amber-800 ml-2">
-                                    {phases?.data?.map((phase) => (
+                                    {phases?.map((phase) => (
                                         <Link
                                             key={phase.id}
                                             href={route("loot.phase", { phase: phase.id })}
