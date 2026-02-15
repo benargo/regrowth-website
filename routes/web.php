@@ -100,6 +100,9 @@ Route::get('/comps', function () {
     return redirect('https://docs.google.com/spreadsheets/d/1SYaMOFDtXxdRm7gQz6nG7c_B-N7rsf7P7QIRipkJkwg/view?pli=1&gid=934701754#gid=934701754', 303);
 });
 
+/**
+ * Static infoformation pages
+ */
 Route::get('/info/battlenet-usage', function () {
     return Inertia::render('BattlenetUsage');
 })->name('battlenet-usage');

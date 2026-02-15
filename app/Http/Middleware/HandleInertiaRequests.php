@@ -39,8 +39,8 @@ class HandleInertiaRequests extends Middleware
 
         $phases = PhaseResource::collection(
             Cache::remember(
-                'phases.tbc.index', 
-                now()->addYear(), 
+                'phases.tbc.index',
+                now()->addYear(),
                 fn () => Phase::all()
             )
         )->toArray($request);
