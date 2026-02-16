@@ -30,6 +30,15 @@ class GuildTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        $this->fakeNotRateLimited();
+    }
+
+    protected function fakeNotRateLimited(): void
+    {
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
     }
 
     protected function sampleGuildData(): array
@@ -120,6 +129,8 @@ class GuildTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        $this->fakeNotRateLimited();
 
         Cache::shouldReceive('remember')
             ->once()

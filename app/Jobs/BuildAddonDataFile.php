@@ -11,10 +11,12 @@ use App\Services\Attendance\Calculators\GuildAttendanceCalculator;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
 use App\Services\WarcraftLogs\Attendance;
+use App\Services\WarcraftLogs\Exceptions\RateLimitedException;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\FailOnException;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -40,7 +42,7 @@ class BuildAddonDataFile implements ShouldQueue
     }
 
     /**
-     * Prevent overlapping exports.
+     * Prevent overlapping exports and fail immediately on rate limit errors.
      *
      * @return array<int, object>
      */
@@ -48,6 +50,7 @@ class BuildAddonDataFile implements ShouldQueue
     {
         return [
             (new WithoutOverlapping('addon-data-export'))->dontRelease(),
+            new FailOnException([RateLimitedException::class]),
         ];
     }
 

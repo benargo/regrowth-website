@@ -3,10 +3,13 @@
 namespace App\Services\WarcraftLogs;
 
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
+use App\Services\WarcraftLogs\Exceptions\RateLimitedException;
 use App\Traits\Cacheable;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 abstract class WarcraftLogsService
 {
@@ -15,6 +18,10 @@ abstract class WarcraftLogsService
     protected const BASE_CACHE_KEY = 'warcraftlogs';
 
     protected const GRAPHQL_URL = 'https://www.warcraftlogs.com/api/v2/client';
+
+    protected const RATE_LIMIT_CACHE_KEY = 'warcraftlogs.rate_limited';
+
+    protected const RATE_LIMIT_COOLDOWN = 3600; // 1 hour
 
     protected AuthenticationHandler $auth;
 
@@ -55,9 +62,12 @@ abstract class WarcraftLogsService
      * @return array<string, mixed>
      *
      * @throws GraphQLException
+     * @throws RateLimitedException
      */
     protected function query(string $query, array $variables = [], ?int $ttl = null, ?int $timeout = null): array
     {
+        $this->ensureNotRateLimited();
+
         return $this->cacheable(
             $this->queryCacheKey($query, $variables),
             $ttl ?? $this->cacheTtl, // Cache for 1 hour by default
@@ -68,7 +78,17 @@ abstract class WarcraftLogsService
                     $payload['variables'] = $variables;
                 }
 
-                $response = $this->http($timeout)->post('', $payload)->throw()->json();
+                try {
+                    $response = $this->http($timeout)->post('', $payload)->throw()->json();
+                } catch (RequestException $e) {
+                    if ($e->response->status() === 429) {
+                        $this->activateRateLimitCooldown();
+
+                        throw new RateLimitedException;
+                    }
+
+                    throw $e;
+                }
 
                 if (isset($response['errors'])) {
                     throw new GraphQLException($response['errors']);
@@ -77,6 +97,28 @@ abstract class WarcraftLogsService
                 return $response['data'] ?? [];
             }
         );
+    }
+
+    /**
+     * Check if the API is currently rate limited and throw if so.
+     *
+     * @throws RateLimitedException
+     */
+    protected function ensureNotRateLimited(): void
+    {
+        if (Cache::has(self::RATE_LIMIT_CACHE_KEY)) {
+            throw new RateLimitedException;
+        }
+    }
+
+    /**
+     * Activate the rate limit cooldown, preventing further requests for one hour.
+     */
+    protected function activateRateLimitCooldown(): void
+    {
+        Cache::put(self::RATE_LIMIT_CACHE_KEY, true, self::RATE_LIMIT_COOLDOWN);
+
+        Log::warning('WarcraftLogs API rate limit exceeded. Pausing requests for one hour.');
     }
 
     /**

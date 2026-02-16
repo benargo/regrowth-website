@@ -53,6 +53,15 @@ class AttendanceTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        $this->fakeNotRateLimited();
+    }
+
+    protected function fakeNotRateLimited(): void
+    {
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
     }
 
     protected function sampleAttendanceData(): array
@@ -252,6 +261,10 @@ class AttendanceTest extends TestCase
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
+
         Cache::shouldReceive('remember')
             ->twice()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
@@ -310,6 +323,10 @@ class AttendanceTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
 
         Cache::shouldReceive('remember')
             ->twice()
@@ -392,6 +409,10 @@ class AttendanceTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
 
         Cache::shouldReceive('remember')
             ->twice()
@@ -606,6 +627,10 @@ class AttendanceTest extends TestCase
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
+
         Cache::shouldReceive('remember')
             ->once()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
@@ -665,6 +690,10 @@ class AttendanceTest extends TestCase
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
+
         Cache::shouldReceive('remember')
             ->twice()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
@@ -705,6 +734,10 @@ class AttendanceTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
 
         Cache::shouldReceive('remember')
             ->twice()
@@ -758,6 +791,10 @@ class AttendanceTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
 
         Cache::shouldReceive('remember')
             ->twice()
@@ -879,6 +916,10 @@ class AttendanceTest extends TestCase
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
+
         Cache::shouldReceive('remember')
             ->twice()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
@@ -947,6 +988,10 @@ class AttendanceTest extends TestCase
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
+
         Cache::shouldReceive('remember')
             ->twice()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
@@ -989,6 +1034,10 @@ class AttendanceTest extends TestCase
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
+
+        Cache::shouldReceive('has')
+            ->with('warcraftlogs.rate_limited')
+            ->andReturn(false);
 
         Cache::shouldReceive('remember')
             ->twice()
