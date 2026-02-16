@@ -505,4 +505,111 @@ class WarcraftLogsServiceTest extends TestCase
 
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
+
+    public function test_rate_limit_headers_are_cached_after_successful_query(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+                'data' => ['guild' => ['id' => 774848]],
+            ], 200, [
+                'x-ratelimit-limit' => '800',
+                'x-ratelimit-remaining' => '793',
+            ]),
+        ]);
+
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
+        $this->fakeNotRateLimited();
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        Cache::shouldReceive('put')
+            ->once()
+            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 793], 3600);
+
+        $service = $this->getService();
+        $service->publicQuery('query { guild { id } }');
+    }
+
+    public function test_low_rate_limit_remaining_logs_warning(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+                'data' => ['guild' => ['id' => 774848]],
+            ], 200, [
+                'x-ratelimit-limit' => '800',
+                'x-ratelimit-remaining' => '50',
+            ]),
+        ]);
+
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
+        $this->fakeNotRateLimited();
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        Cache::shouldReceive('put')
+            ->once()
+            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 50], 3600);
+
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('WarcraftLogs API rate limit tokens running low.', [
+                'remaining' => 50,
+                'limit' => 800,
+            ]);
+
+        $service = $this->getService();
+        $service->publicQuery('query { guild { id } }');
+    }
+
+    public function test_healthy_rate_limit_remaining_does_not_log_warning(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+                'data' => ['guild' => ['id' => 774848]],
+            ], 200, [
+                'x-ratelimit-limit' => '800',
+                'x-ratelimit-remaining' => '500',
+            ]),
+        ]);
+
+        Cache::shouldReceive('get')
+            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->andReturn('test_access_token');
+
+        $this->fakeNotRateLimited();
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        Cache::shouldReceive('put')
+            ->once()
+            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 500], 3600);
+
+        Log::spy();
+
+        $service = $this->getService();
+        $service->publicQuery('query { guild { id } }');
+
+        Log::shouldNotHaveReceived('warning');
+    }
 }

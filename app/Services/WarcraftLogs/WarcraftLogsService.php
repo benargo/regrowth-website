@@ -7,6 +7,7 @@ use App\Services\WarcraftLogs\Exceptions\RateLimitedException;
 use App\Traits\Cacheable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +23,8 @@ abstract class WarcraftLogsService
     protected const RATE_LIMIT_CACHE_KEY = 'warcraftlogs.rate_limited';
 
     protected const RATE_LIMIT_COOLDOWN = 3600; // 1 hour
+
+    protected const RATE_LIMIT_INFO_CACHE_KEY = 'warcraftlogs.rate_limit';
 
     protected AuthenticationHandler $auth;
 
@@ -79,7 +82,9 @@ abstract class WarcraftLogsService
                 }
 
                 try {
-                    $response = $this->http($timeout)->post('', $payload)->throw()->json();
+                    $response = $this->http($timeout)->post('', $payload);
+                    $this->trackRateLimitHeaders($response);
+                    $json = $response->throw()->json();
                 } catch (RequestException $e) {
                     if ($e->response->status() === 429) {
                         $this->activateRateLimitCooldown();
@@ -90,11 +95,11 @@ abstract class WarcraftLogsService
                     throw $e;
                 }
 
-                if (isset($response['errors'])) {
-                    throw new GraphQLException($response['errors']);
+                if (isset($json['errors'])) {
+                    throw new GraphQLException($json['errors']);
                 }
 
-                return $response['data'] ?? [];
+                return $json['data'] ?? [];
             }
         );
     }
@@ -119,6 +124,34 @@ abstract class WarcraftLogsService
         Cache::put(self::RATE_LIMIT_CACHE_KEY, true, self::RATE_LIMIT_COOLDOWN);
 
         Log::warning('WarcraftLogs API rate limit exceeded. Pausing requests for one hour.');
+    }
+
+    /**
+     * Track rate limit information from API response headers.
+     */
+    protected function trackRateLimitHeaders(Response $response): void
+    {
+        $limitHeader = $response->header('x-ratelimit-limit');
+        $remainingHeader = $response->header('x-ratelimit-remaining');
+
+        if ($limitHeader === '' || $remainingHeader === '') {
+            return;
+        }
+
+        $limit = (int) $limitHeader;
+        $remaining = (int) $remainingHeader;
+
+        Cache::put(self::RATE_LIMIT_INFO_CACHE_KEY, [
+            'limit' => $limit,
+            'remaining' => $remaining,
+        ], self::RATE_LIMIT_COOLDOWN);
+
+        if ($limit > 0 && $remaining <= (int) ceil($limit * 0.1)) {
+            Log::warning('WarcraftLogs API rate limit tokens running low.', [
+                'remaining' => $remaining,
+                'limit' => $limit,
+            ]);
+        }
     }
 
     /**
