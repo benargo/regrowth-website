@@ -50,10 +50,11 @@ class DailyQuestsSet
                 ];
             }
         }
+        
 
         $author = $this->notification->sentBy;
-        if ($this->notification->updatedBy !== null) {
-            $author = $this->notification->updatedBy;
+        if ($this->notification->updatedBy?->id !== null) {
+            $author = $this->notification->updatedBy ?? $author;
         }
 
         return [
