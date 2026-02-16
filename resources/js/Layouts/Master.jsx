@@ -48,7 +48,7 @@ export default function Master({ title, children }) {
 
                     {/* Mobile menu button */}
                     <button
-                        className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white lg:hidden"
+                        className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-brown-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white lg:hidden"
                         type="button"
                         onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                         aria-controls="mobile-menu"
@@ -76,6 +76,17 @@ export default function Master({ title, children }) {
                             >
                                 <Icon icon="users" style="solid" className="mr-2 h-6" />
                                 Roster
+                            </Link>
+                            <Link
+                                href={route("daily-quests.index")}
+                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
+                            >
+                                <img
+                                    src="/images/icon_quest.webp"
+                                    alt="Quest start icon"
+                                    className="mr-2 inline-block h-4 px-1"
+                                />
+                                Daily Quests
                             </Link>
                             {can?.accessLoot && (
                                 <Dropdown>
@@ -120,13 +131,6 @@ export default function Master({ title, children }) {
                                     That&rsquo;s My Bis
                                 </Link>
                             )}
-                            <Link 
-                                href="https://www.warcraftlogs.com/guilds/774848-regrowth" 
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
-                                <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs logo" className="mr-2 inline-block h-4" />
-                                Warcraft Logs
-                            </Link>
                             <Link
                                 href="https://discord.gg/regrowth"
                                 className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
@@ -204,6 +208,19 @@ export default function Master({ title, children }) {
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </Link>
+                        <Link
+                            href={route("daily-quests.index")}
+                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                        >
+                            <span className="w-[20px] justify-center inline-flex mr-2">
+                                <img
+                                    src="/images/icon_quest.webp"
+                                    alt="Quest start icon"
+                                    className="inline-block h-4 px-1"
+                                />
+                            </span>
+                            Daily Quests
+                        </Link>
                         {can?.accessLoot && (
                             <>
                                 <Link
@@ -213,20 +230,23 @@ export default function Master({ title, children }) {
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot Bias
                                 </Link>
-                                <div className="border-l-2 border-amber-800 ml-2">
-                                    {phases?.map((phase) => (
-                                        <Link
-                                            key={phase.id}
-                                            href={route("loot.phase", { phase: phase.id })}
-                                            className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                        >
-                                            {phase.description}
-                                        </Link>
-                                    ))}
+                                <div className="ml-2 pl-2 border-l-2 border-amber-800">
+                                    <p className="text-sm font-medium text-gray-400 mb-1">Phases</p>
+                                    <div className="grid grid-cols-5 gap-1 mb-2">
+                                        {phases?.map((phase) => (
+                                            <Link
+                                                key={phase.id}
+                                                href={route("loot.phase", { phase: phase.id })}
+                                                className="border border-amber-800 text-center rounded px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                            >
+                                                {phase.number}
+                                            </Link>
+                                        ))}
+                                    </div>
                                     {can?.viewAllComments && (
                                         <Link
                                             href={route("loot.comments.index")}
-                                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                            className="flex flex-row items-center rounded-md pl-1 pr-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
                                         >
                                             <Icon icon="comments" style="solid" className="mr-2 h-6" />
                                             All Comments
@@ -249,13 +269,6 @@ export default function Master({ title, children }) {
                             </Link>
                         )}
                         <Link
-                            href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
-                            <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs logo" className="mr-2 inline-block h-4" />
-                            Warcraft Logs
-                        </Link>
-                        <Link
                             href="https://discord.gg/regrowth"
                             className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
                         >
@@ -266,8 +279,8 @@ export default function Master({ title, children }) {
 
                     <div className="border-t border-amber-700 pb-3 pt-4">
                         {user ? (
-                            <div className="space-y-2 px-4">
-                                <div className="flex items-center space-x-3">
+                            <div className="space-y-2 px-2">
+                                <div className="flex items-center space-x-3 mx-2">
                                     <img src={user.avatar} alt={user.display_name} className="h-10 w-10 rounded-full" />
                                     <div>
                                         <div className="text-base font-medium text-white">{user.display_name}</div>
@@ -290,7 +303,7 @@ export default function Master({ title, children }) {
                                 {impersonating && (
                                     <Link
                                         href={route("auth.return-to-self")}
-                                        className="flex flex-row items-center w-full rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
+                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
                                     >
                                         <Icon icon="undo" style="regular" className="mr-2" />
                                         Return to my account
@@ -299,7 +312,7 @@ export default function Master({ title, children }) {
                                 {can?.accessDashboard && (
                                     <Link
                                         href={route("dashboard.index")}
-                                        className="flex flex-row items-center w-full rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
+                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
                                     >
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Officers' Control Panel
@@ -309,7 +322,7 @@ export default function Master({ title, children }) {
                                     href={route("logout")}
                                     method="post"
                                     as="button"
-                                    className="flex flex-row items-center w-full rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
+                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
                                 >
                                     <Icon icon="sign-out" style="regular" className="mr-2" />
                                     Logout
@@ -362,13 +375,39 @@ export default function Master({ title, children }) {
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
                                 </Link>
                                 <Link
+                                    href="https://www.warcraftlogs.com/guilds/774848-regrowth"
+                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 553 552"
+                                        fill="currentColor"
+                                        className="mr-2 h-[20px] w-[20px]"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="M291.31,249.46l-23.42,15.86-26.02-87.8-44.1,133.45-11.73-38.41h-53.63c-.1-45.61,22.73-88.84,61.02-115.06,45.52-31.17,105.41-34.05,153.82-7.52,45.72,25.05,73.9,73.45,73.47,123.06l-56.6-.45-16.14,46.54-13.65-44.39-26.59,27.54-16.43-52.81Z" />
+                                        <path d="M419.94,291.71c-5.47,56.44-41.11,102.79-94.61,120.37-69.49,22.84-148.69-4.95-179.62-73.49-6.6-15.08-10.71-29.94-12.35-46.82l42.11-.09,22.68,67.48,43.16-131.32,18.33,61.97,23.69-16.54,17.79,56.99,26.07-27.34,18.89,65.49,28.17-76.67,45.69-.03Z" />
+                                        <path d="M393.29,86.56c-71.53-44.07-161.83-44.13-233.19.01l-36.02-39.37C163.11,20.75,206.93,6.28,253.46,1.47c15.63-.73,30.45-.72,46.09-.02,46.59,4.73,90.45,19.24,129.65,45.74l-35.91,39.37Z" />
+                                        <path d="M81.09,427.95l-19.28,19.36C24.79,401.45,4.8,346.01,1.51,287.69c-.46-8.09-.92-15.32.04-23.38,2.86-50.16,17.43-97.88,46.32-140.9l39.45,35.94c-41.3,66.92-44.2,150.44-7.37,220.19-12.79,1.33-24.16,5.33-33,14.23l34.14,34.18Z" />
+                                        <path d="M472.33,428.15l33.89-34.36c-8.6-8.67-19.79-12.68-32.88-14.14,36.51-69.5,34.25-152.68-7.33-220.14l39.29-36.16c27.7,40.89,42.51,87.26,46.18,136.03.77,11.38.8,21.9-.04,33.27-4.11,56.77-24.24,110.4-60.02,154.71l-19.1-19.2Z" />
+                                        <path d="M428.46,471.65l19.47,19.12c-43.25,35.02-95.72,55.01-151.33,59.74-13.72.76-26.49.77-40.2-.01-55.5-4.78-107.77-24.74-151.01-59.65l19.13-19.49,34.16,34.19c9.21-9.01,12.85-20.07,14.27-32.97,65.39,34.49,142.63,34.13,207.4,0,1.25,12.93,5.05,23.8,14.04,33.07l34.05-34Z" />
+                                        <path d="M413.49,196.66c-13.24-23.86-32.99-43.43-57.8-57.39l87.48-95.19,83.7-18.45-18.41,83.74-94.97,87.29Z" />
+                                        <path d="M197.45,139.1c-24.86,13.79-44.14,32.9-57.97,57.26L44.8,109.35,26.38,25.65l83.71,18.41,87.36,95.04Z" />
+                                        <path d="M124.63,460.81l-71.19,71.13-32.83-32.65,71.19-71.27-33.49-33.62c9.65-6.48,20.98-7.82,32.74-7.24l74.07,74.04c1.16,11.16-.45,22.84-6.9,33.12l-33.6-33.52Z" />
+                                        <path d="M500.03,532.15l-71.39-71.34-33.67,33.57c-6.32-10.14-7.66-21.26-7.11-32.84l74.26-74.27c11.62-.66,22.66.8,32.86,7.06l-33.54,33.71,71.29,71.32-32.7,32.8Z" />
+                                        <path d="M159.67,436.81l-43.95-43.95,30.76-33.62c11.29,19.47,27.12,34.89,46.59,46.93l-33.4,30.64Z" />
+                                        <path d="M393.53,436.84l-33.28-30.67c19.2-11.88,34.65-26.96,46.65-46.75l30.65,33.42-44.02,43.99Z" />
+                                    </svg>
+                                    Warcraft Logs
+                                </Link>
+                                <Link
                                     href="https://discord.gg/regrowth"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white"
                                 >
                                     <Icon icon="discord" style="brands" className="mr-2 h-5 w-5" />
-                                    <span className="text-nowrap">Join our Discord</span>
+                                    <span className="text-nowrap">Discord</span>
                                 </Link>
                                 <Link
                                     href={route("privacypolicy")}

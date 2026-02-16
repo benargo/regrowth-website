@@ -8,6 +8,12 @@
     background-repeat: repeat;
 }
 
+.bg-dungeons {
+    background-image: url('../images/bg_dungeons.webp');
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-goldshire {
     background-image: url('../images/bg_goldshire.webp');
     background-position: center;

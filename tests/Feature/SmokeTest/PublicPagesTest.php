@@ -74,4 +74,12 @@ class PublicPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
+
+    public function test_daily_quests_page_loads(): void
+    {
+        $response = $this->get('/daily-quests');
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
 }

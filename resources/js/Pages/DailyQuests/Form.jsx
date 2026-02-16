@@ -93,7 +93,7 @@ export default function DailyQuestsForm({
     return (
         <Master title="Set Daily Quests">
             {/* Header */}
-            <SharedHeader backgroundClass="bg-officer-meeting" title="Set Daily Quests" />
+            <SharedHeader backgroundClass="bg-dungeons" title="Set Daily Quests" />
 
             {/* Content */}
             <div className="py-12 text-white">

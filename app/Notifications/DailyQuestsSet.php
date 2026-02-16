@@ -57,6 +57,7 @@ class DailyQuestsSet
             'title' => '📜 Today\'s Daily Quests',
             'color' => 15844367, // Gold color
             'description' => 'Here are the daily quests for '.$this->notification->date->format('l, d F Y').'.',
+            'url' => route('daily-quests.index'),
             'fields' => $fields,
             'timestamp' => now()->toIso8601String(),
             'footer' => [

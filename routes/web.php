@@ -94,6 +94,15 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
 });
 
 /**
+ * Daily quests
+ */
+Route::group(['prefix' => 'daily-quests', 'as' => 'daily-quests.'], function () {
+    Route::get('/', [DailyQuestsController::class, 'index'])->name('index');
+    // Route::get('/edit', [DailyQuestsController::class, 'form'])->name('form')->middleware('auth');
+    // Route::post('/store', [DailyQuestsController::class, 'store'])->name('store')->middleware('auth');
+});
+
+/**
  * Warcraft Logs Guild Tags Management
  */
 Route::patch('/wcl/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
