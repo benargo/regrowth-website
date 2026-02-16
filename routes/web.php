@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
@@ -84,6 +85,12 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      */
     Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
     Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
+
+    /**
+     * Daily Quests
+     */
+    Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
+    Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
 });
 
 /**

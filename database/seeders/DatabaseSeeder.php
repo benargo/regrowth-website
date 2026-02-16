@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Database\Seeders\LootCouncil\ItemsSeeder;
 use Database\Seeders\LootCouncil\PrioritySeeder;
 use Database\Seeders\TBC\BossSeeder;
+use Database\Seeders\TBC\DailyQuestSeeder;
 use Database\Seeders\TBC\PhaseSeeder;
 use Database\Seeders\TBC\RaidSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -25,6 +26,7 @@ class DatabaseSeeder extends Seeder
             BossSeeder::class,
             PrioritySeeder::class,
             ItemsSeeder::class,
+            DailyQuestSeeder::class,
         ]);
     }
 }

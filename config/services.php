@@ -30,6 +30,7 @@ return [
         'guild_id' => 829020506907869214,
         'channels' => [
             'announcements' => env('DISCORD_CHANNEL_ANNOUNCEMENTS'),
+            'daily_quests' => env('DISCORD_CHANNEL_DAILY_QUESTS'),
             'lootcouncil' => env('DISCORD_CHANNEL_LOOTCOUNCIL'),
             'officer' => env('DISCORD_CHANNEL_OFFICER'),
             'tbc_chat' => env('DISCORD_CHANNEL_TBC_CHAT'),

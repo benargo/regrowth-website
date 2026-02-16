@@ -63,6 +63,17 @@ export default function Index({ discordRoles }) {
                             <p className="text-sm mb-1">Generate reports on raider attendance over time.</p>
                         </DashboardCard>
                     </div> */}
+                    {/* Daily Quests */}
+                    <h2 className="mt-12 text-2xl font-semibold">Daily Quests</h2>
+                    <p className="text-md text-gray-400">Manage TBC daily quest selections.</p>
+                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        <DashboardCard href={route("dashboard.daily-quests.form")} icon="scroll">
+                            <h3 className="text-md">Set daily quests</h3>
+                            <p className="mb-1 text-sm">
+                                Choose today&rsquo;s daily quests and post them to Discord.
+                            </p>
+                        </DashboardCard>
+                    </div>
                     {/* Datasets */}
                     <h2 className="mt-12 text-2xl font-semibold">Datasets</h2>
                     <p className="text-md text-gray-400">Manage core datasets that power the site&rsquo;s features.</p>

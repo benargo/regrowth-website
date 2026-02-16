@@ -45,6 +45,26 @@ abstract class DiscordService
     }
 
     /**
+     * Make a PATCH request to the Discord API.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function patch(string $endpoint, array $data = []): Response
+    {
+        return Http::withHeaders($this->getAuthHeaders())
+            ->patch(self::BASE_URL.$endpoint, $data);
+    }
+
+    /**
+     * Make a DELETE request to the Discord API.
+     */
+    protected function delete(string $endpoint): Response
+    {
+        return Http::withHeaders($this->getAuthHeaders())
+            ->delete(self::BASE_URL.$endpoint);
+    }
+
+    /**
      * Get the authorization headers for Discord API requests.
      */
     protected function getAuthHeaders(): array

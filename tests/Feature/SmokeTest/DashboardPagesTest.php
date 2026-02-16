@@ -133,4 +133,14 @@ class DashboardPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
+
+    public function test_daily_quests_form_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.form'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
 }

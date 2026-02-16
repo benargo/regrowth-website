@@ -21,14 +21,14 @@ class DiscordNotifiable
         return $this->channel;
     }
 
-    public static function officer(): self
-    {
-        return new self('officer');
-    }
-
     public static function announcements(): self
     {
         return new self('announcements');
+    }
+
+    public static function officer(): self
+    {
+        return new self('officer');
     }
 
     public static function channel(string $channelNameOrId): self

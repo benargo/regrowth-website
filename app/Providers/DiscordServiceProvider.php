@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\DiscordMessageService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Discord\Provider as DiscordProvider;
@@ -19,6 +20,12 @@ class DiscordServiceProvider extends ServiceProvider
             $config = config('services.discord');
 
             return new DiscordGuildService($config['token'], $config['guild_id']);
+        });
+
+        $this->app->singleton(DiscordMessageService::class, function (Application $app) {
+            $config = config('services.discord');
+
+            return new DiscordMessageService($config['token']);
         });
     }
 
