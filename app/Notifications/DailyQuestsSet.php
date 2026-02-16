@@ -52,7 +52,7 @@ class DailyQuestsSet
         }
 
         $author = $this->notification->sentBy;
-        if ($this->notification->wasRecentlyCreated === false) {
+        if ($this->notification->updatedBy !== null) {
             $author = $this->notification->updatedBy;
         }
 
