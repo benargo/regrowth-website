@@ -51,11 +51,7 @@ class DailyQuestsSet
             }
         }
         
-
         $author = $this->notification->sentBy;
-        if ($this->notification->updatedBy?->id !== null) {
-            $author = $this->notification->updatedBy ?? $author;
-        }
 
         return [
             'title' => '📜 Today\'s Daily Quests',
@@ -64,8 +60,8 @@ class DailyQuestsSet
             'fields' => $fields,
             'timestamp' => now()->toIso8601String(),
             'footer' => [
-                'text' => 'Posted by '.$author->displayName.'.',
-                'icon_url' => $author->avatarUrl,
+                'text' => 'Posted by '.$author?->nickname.'.',
+                'icon_url' => $author?->avatarUrl,
             ],
         ];
     }
