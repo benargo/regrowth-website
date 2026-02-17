@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasPermissions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class DiscordRole extends Model
 {
     /** @use HasFactory<\Database\Factories\DiscordRoleFactory> */
-    use HasFactory;
+    use HasFactory, HasPermissions;
 
     /**
      * The primary key type.
@@ -26,6 +27,15 @@ class DiscordRole extends Model
     public $incrementing = false;
 
     /**
+     * The model's default values for attributes.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'is_visible' => false,
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -34,7 +44,6 @@ class DiscordRole extends Model
         'id',
         'name',
         'position',
-        'can_comment_on_loot_items',
     ];
 
     /**
@@ -47,7 +56,7 @@ class DiscordRole extends Model
         return [
             'id' => 'string',
             'position' => 'integer',
-            'can_comment_on_loot_items' => 'boolean',
+            'is_visible' => 'boolean',
         ];
     }
 

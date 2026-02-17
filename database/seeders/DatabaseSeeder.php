@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DiscordRoleSeeder::class,
+            PermissionSeeder::class,
             GuildRankSeeder::class,
             PhaseSeeder::class,
             RaidSeeder::class,

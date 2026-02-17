@@ -143,4 +143,33 @@ class DashboardPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
+
+    public function test_daily_quests_audit_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.audit'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    public function test_daily_quests_audit_page_requires_officer(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.audit'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_permissions_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.permissions.index'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
 }

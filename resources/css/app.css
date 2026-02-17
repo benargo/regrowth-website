@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+.bg-arcatraz {
+    background-image: url('../images/bg_arcatraz.webp');
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-brown-texture {
     background-image: url('../images/bg_brown_texture_repeat.jpg');
     background-position: center -200px;

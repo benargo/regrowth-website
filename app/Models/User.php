@@ -118,11 +118,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Determine if the user can comment on loot items
+     * Check if the user has a permission via any of their Discord roles.
+     */
+    public function hasPermissionViaDiscordRoles(string $permission): bool
+    {
+        return $this->discordRoles->contains(fn (DiscordRole $role) => $role->hasPermissionTo($permission));
+    }
+
+    /**
+     * Determine if the user can comment on loot items.
      */
     public function canCommentOnLootItems(): bool
     {
-        return $this->discordRoles->where('can_comment_on_loot_items', true)->isNotEmpty();
+        return $this->hasPermissionViaDiscordRoles('comment-on-loot-items');
     }
 
     /**

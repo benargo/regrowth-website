@@ -123,6 +123,12 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        'daily-quests' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/daily-quests.log'),
+            'level' => 'info',
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

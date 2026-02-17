@@ -5,6 +5,7 @@ use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
+use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\HomeController;
@@ -91,6 +92,15 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      */
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
+    Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])
+        ->can('audit', \App\Models\TBC\DailyQuestNotification::class)
+        ->name('daily-quests.audit');
+
+    /**
+     * Permissions management
+     */
+    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::post('/permissions/toggle', [PermissionController::class, 'toggle'])->name('permissions.toggle');
 });
 
 /**

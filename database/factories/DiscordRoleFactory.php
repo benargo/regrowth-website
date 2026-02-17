@@ -20,8 +20,18 @@ class DiscordRoleFactory extends Factory
             'id' => (string) fake()->unique()->numerify('##################'),
             'name' => fake()->word(),
             'position' => fake()->unique()->numberBetween(100, 999),
-            'can_comment_on_loot_items' => false,
+            'is_visible' => false,
         ];
+    }
+
+    /**
+     * Indicate the role is visible.
+     */
+    public function visible(): static
+    {
+        return $this->state(fn () => [
+            'is_visible' => true,
+        ]);
     }
 
     /**
@@ -33,6 +43,7 @@ class DiscordRoleFactory extends Factory
             'id' => '829021769448816691',
             'name' => 'Officer',
             'position' => 1,
+            'is_visible' => true,
         ]);
     }
 
@@ -45,6 +56,7 @@ class DiscordRoleFactory extends Factory
             'id' => '1467994755953852590',
             'name' => 'Loot Councillor',
             'position' => 2,
+            'is_visible' => true,
         ]);
     }
 
@@ -57,6 +69,7 @@ class DiscordRoleFactory extends Factory
             'id' => '1265247017215594496',
             'name' => 'Raider',
             'position' => 3,
+            'is_visible' => true,
         ]);
     }
 
@@ -69,6 +82,7 @@ class DiscordRoleFactory extends Factory
             'id' => '829022020301094922',
             'name' => 'Member',
             'position' => 4,
+            'is_visible' => true,
         ]);
     }
 
@@ -81,6 +95,7 @@ class DiscordRoleFactory extends Factory
             'id' => '829022292590985226',
             'name' => 'Guest',
             'position' => 5,
+            'is_visible' => true,
         ]);
     }
 }

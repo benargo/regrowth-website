@@ -21,4 +21,9 @@ class DailyQuestNotificationPolicy extends AuthorizationPolicy
     {
         return $this->userIsOfficer($user);
     }
+
+    public function audit(User $user): bool
+    {
+        return $this->userIsOfficer($user);
+    }
 }

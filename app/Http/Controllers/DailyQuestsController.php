@@ -8,6 +8,8 @@ use App\Models\TBC\DailyQuestNotification;
 use App\Services\Blizzard\ItemService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -16,9 +18,13 @@ use Inertia\Response;
 class DailyQuestsController extends Controller
 {
     const COOKING_QUEST_ICON = 'inv_misc_food_15';
+
     const FISHING_QUEST_ICON = 'trade_fishing';
+
     const DUNGEON_QUEST_ICON = 'inv_qiraj_jewelencased';
+
     const HEROIC_QUEST_ICON = 'spell_holy_championsbond';
+
     const PVP_QUEST_ICON = 'inv_bannerpvp_02';
 
     public function index(MediaService $mediaService): Response
@@ -92,6 +98,54 @@ class DailyQuestsController extends Controller
             ->each(fn ($old) => $old->delete());
 
         return back()->with('success', 'Daily quests set and posted to Discord!');
+    }
+
+    public function audit(Request $request): Response
+    {
+        $logPath = storage_path('logs/daily-quests.log');
+        $entries = collect();
+
+        if (file_exists($logPath)) {
+            $lines = file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+            $entries = collect($lines)
+                ->map(function (string $line) {
+                    if (! preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] \w+\.\w+: (.+)$/', $line, $matches)) {
+                        return null;
+                    }
+
+                    $timestamp = $matches[1];
+                    $message = $matches[2];
+
+                    if (! preg_match('/^(.+?) (posted|updated|deleted) daily quests for (\d{4}-\d{2}-\d{2})\.$/', $message, $parts)) {
+                        return null;
+                    }
+
+                    return [
+                        'timestamp' => $timestamp,
+                        'user' => $parts[1],
+                        'action' => $parts[2],
+                        'date' => $parts[3],
+                    ];
+                })
+                ->filter()
+                ->reverse()
+                ->values();
+        }
+
+        $page = (int) $request->input('page', 1);
+        $perPage = 50;
+        $paginator = new LengthAwarePaginator(
+            $entries->forPage($page, $perPage)->values(),
+            $entries->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url()]
+        );
+
+        return Inertia::render('Dashboard/DailyQuestsAuditLog', [
+            'entries' => $paginator,
+        ]);
     }
 
     /**

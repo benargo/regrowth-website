@@ -73,6 +73,12 @@ export default function Index({ discordRoles }) {
                                 Choose today&rsquo;s daily quests and post them to Discord.
                             </p>
                         </DashboardCard>
+                        <DashboardCard href={route("dashboard.daily-quests.audit")} icon="clipboard-list">
+                            <h3 className="text-md">Audit log</h3>
+                            <p className="mb-1 text-sm">
+                                View who posted, updated, or deleted daily quests.
+                            </p>
+                        </DashboardCard>
                     </div>
                     {/* Datasets */}
                     <h2 className="mt-12 text-2xl font-semibold">Datasets</h2>
@@ -92,11 +98,10 @@ export default function Index({ discordRoles }) {
                             <h3 className="text-md">Upload GRM data</h3>
                             <p className="mb-1 text-sm">Upload data from GRM to link mains and alts together.</p>
                         </DashboardCard>
-                        {/* TODO: Site permissions page */}
-                        {/* <DashboardCard href={route('dashboard.index')} icon="file-upload">
+                        <DashboardCard href={route("dashboard.permissions.index")} icon="shield-check">
                             <h3 className="text-md">Site permissions</h3>
-                            <p className="text-sm mb-1">Manage site permissions and access control.</p>
-                        </DashboardCard> */}
+                            <p className="mb-1 text-sm">Manage site permissions and access control.</p>
+                        </DashboardCard>
                     </div>
                     {/* Testing */}
                     <h2 className="mt-12 text-2xl font-semibold">Testing</h2>

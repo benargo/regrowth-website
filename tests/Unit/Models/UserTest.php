@@ -6,6 +6,7 @@ use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\Permission\Models\Permission;
 use Tests\Support\ModelTestCase;
 
 class UserTest extends ModelTestCase
@@ -294,5 +295,71 @@ class UserTest extends ModelTestCase
         ]);
 
         $this->assertNull($user->banner_url);
+    }
+
+    #[Test]
+    public function has_permission_via_discord_roles_returns_true_when_role_has_permission(): void
+    {
+        Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
+
+        $role = DiscordRole::factory()->create();
+        $role->givePermissionTo('test-permission');
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+        $user->load('discordRoles.permissions');
+
+        $this->assertTrue($user->hasPermissionViaDiscordRoles('test-permission'));
+    }
+
+    #[Test]
+    public function has_permission_via_discord_roles_returns_false_when_role_lacks_permission(): void
+    {
+        Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
+
+        $role = DiscordRole::factory()->create();
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+
+        $this->assertFalse($user->hasPermissionViaDiscordRoles('test-permission'));
+    }
+
+    #[Test]
+    public function has_permission_via_discord_roles_returns_false_when_user_has_no_roles(): void
+    {
+        Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
+
+        $user = User::factory()->create();
+
+        $this->assertFalse($user->hasPermissionViaDiscordRoles('test-permission'));
+    }
+
+    #[Test]
+    public function can_comment_on_loot_items_returns_true_via_permission(): void
+    {
+        Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+
+        $role = DiscordRole::factory()->create();
+        $role->givePermissionTo('comment-on-loot-items');
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+        $user->load('discordRoles.permissions');
+
+        $this->assertTrue($user->canCommentOnLootItems());
+    }
+
+    #[Test]
+    public function can_comment_on_loot_items_returns_false_without_permission(): void
+    {
+        Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+
+        $role = DiscordRole::factory()->create();
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+
+        $this->assertFalse($user->canCommentOnLootItems());
     }
 }

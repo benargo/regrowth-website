@@ -6,6 +6,7 @@ use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\Permission\Models\Permission;
 use Tests\Support\ModelTestCase;
 
 class DiscordRoleTest extends ModelTestCase
@@ -42,7 +43,6 @@ class DiscordRoleTest extends ModelTestCase
             'id',
             'name',
             'position',
-            'can_comment_on_loot_items',
         ]);
     }
 
@@ -54,8 +54,16 @@ class DiscordRoleTest extends ModelTestCase
         $this->assertCasts($model, [
             'id' => 'string',
             'position' => 'integer',
-            'can_comment_on_loot_items' => 'boolean',
+            'is_visible' => 'boolean',
         ]);
+    }
+
+    #[Test]
+    public function it_defaults_is_visible_to_false(): void
+    {
+        $model = new DiscordRole;
+
+        $this->assertFalse($model->is_visible);
     }
 
     #[Test]
@@ -73,31 +81,6 @@ class DiscordRoleTest extends ModelTestCase
             'position' => 50,
         ]);
         $this->assertModelExists($role);
-    }
-
-    #[Test]
-    public function can_comment_on_loot_items_defaults_to_false(): void
-    {
-        $role = $this->create([
-            'id' => '123456789012345678',
-            'name' => 'TestRole',
-            'position' => 50,
-        ]);
-
-        $this->assertFalse($role->can_comment_on_loot_items);
-    }
-
-    #[Test]
-    public function can_comment_on_loot_items_can_be_set_to_true(): void
-    {
-        $role = $this->create([
-            'id' => '123456789012345678',
-            'name' => 'TestRole',
-            'position' => 50,
-            'can_comment_on_loot_items' => true,
-        ]);
-
-        $this->assertTrue($role->can_comment_on_loot_items);
     }
 
     #[Test]
@@ -168,5 +151,62 @@ class DiscordRoleTest extends ModelTestCase
         ]);
 
         $this->assertCount(0, $role->users);
+    }
+
+    #[Test]
+    public function permissions_returns_belongs_to_many_relationship(): void
+    {
+        $role = new DiscordRole;
+
+        $this->assertInstanceOf(BelongsToMany::class, $role->permissions());
+    }
+
+    #[Test]
+    public function it_can_be_given_a_permission(): void
+    {
+        $role = $this->create([
+            'id' => '123456789012345678',
+            'name' => 'TestRole',
+            'position' => 50,
+        ]);
+
+        Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
+
+        $role->givePermissionTo('test-permission');
+
+        $this->assertTrue($role->hasPermissionTo('test-permission'));
+    }
+
+    #[Test]
+    public function it_can_have_a_permission_revoked(): void
+    {
+        $role = $this->create([
+            'id' => '123456789012345678',
+            'name' => 'TestRole',
+            'position' => 50,
+        ]);
+
+        Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
+
+        $role->givePermissionTo('test-permission');
+        $this->assertTrue($role->hasPermissionTo('test-permission'));
+
+        $role->revokePermissionTo('test-permission');
+        $role->load('permissions');
+        $this->assertFalse($role->hasPermissionTo('test-permission'));
+    }
+
+    #[Test]
+    public function has_permission_to_returns_false_when_permission_not_assigned(): void
+    {
+        $role = $this->create([
+            'id' => '123456789012345678',
+            'name' => 'TestRole',
+            'position' => 50,
+        ]);
+
+        Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
+
+        $this->assertFalse($role->hasPermissionTo('test-permission'));
     }
 }

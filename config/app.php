@@ -66,6 +66,7 @@ return [
     */
 
     'timezone' => 'Europe/Paris',
+    'schedule_timezone' => 'Europe/Paris',
 
     /*
     |--------------------------------------------------------------------------

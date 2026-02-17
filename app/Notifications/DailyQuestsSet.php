@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\DiscordRole;
 use App\Models\TBC\DailyQuestNotification;
 
 class DailyQuestsSet
@@ -18,6 +19,7 @@ class DailyQuestsSet
     public function getPayload(): array
     {
         return [
+            'mention_roles' => DiscordRole::where('name', 'Daily Quest Subscriber')->get()->pluck('id')->toArray(),
             'embeds' => [$this->buildEmbed()],
         ];
     }

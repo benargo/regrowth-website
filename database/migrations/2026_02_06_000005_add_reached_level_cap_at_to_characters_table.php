@@ -21,8 +21,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('characters', function (Blueprint $table) {
-            $table->dropColumn('reached_level_cap_at');
-        });
+        if (Schema::hasColumn('characters', 'reached_level_cap_at')) {
+            Schema::table('characters', function (Blueprint $table) {
+                $table->dropColumn('reached_level_cap_at');
+            });
+        }
     }
 };
