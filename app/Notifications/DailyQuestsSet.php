@@ -52,7 +52,7 @@ class DailyQuestsSet
                 ];
             }
         }
-        
+
         $author = $this->notification->sentBy;
 
         return [
