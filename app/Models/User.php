@@ -114,7 +114,7 @@ class User extends Authenticatable
      */
     public function highestRole(): ?string
     {
-        return $this->discordRoles->sortBy('position')->first()?->name;
+        return $this->discordRoles->where('is_visible', true)->sortBy('position')->first()?->name;
     }
 
     /**
