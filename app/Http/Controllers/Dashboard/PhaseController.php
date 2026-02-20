@@ -12,6 +12,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\GuildTags as WarcraftLogsGuildTagsService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
@@ -20,7 +21,7 @@ class PhaseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function listAll()
+    public function listAll(Request $request)
     {
         $phases = Phase::with(['raids', 'bosses', 'guildTags'])->orderBy('start_date', 'desc')->get();
 
@@ -28,7 +29,7 @@ class PhaseController extends Controller
         $currentPhaseId = $currentPhase ? $currentPhase->id : null;
 
         return Inertia::render('Dashboard/ManagePhases', [
-            'phases' => PhaseResource::collection($phases),
+            'phases' => PhaseResource::collection($phases)->toArray($request),
             'current_phase' => $currentPhaseId,
             'all_guild_tags' => Inertia::defer(fn () => $this->buildAllGuildTags()),
         ]);

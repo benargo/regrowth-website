@@ -176,7 +176,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
             <SharedHeader title="Manage TBC Phases" backgroundClass="bg-officer-meeting" />
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
-                    {phases.data.map((phase) => (
+                    {phases?.map((phase) => (
                         <div key={phase.id} className="my-4 rounded-md border border-amber-600">
                             <button
                                 onClick={() => togglePhase(phase.id)}
