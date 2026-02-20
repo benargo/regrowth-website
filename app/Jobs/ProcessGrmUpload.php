@@ -31,6 +31,13 @@ class ProcessGrmUpload implements ShouldQueue
     public int $backoff = 60;
 
     /**
+     * The number of seconds the job can run before timing out.
+     *
+     * @var int
+     */
+    public $timeout = 10800; // 3 hours
+
+    /**
      * Create a new job instance.
      *
      * @param  array{delimiter: string, headers: array<int, string>, rows: array<int, array<string, string>>}  $grmData
