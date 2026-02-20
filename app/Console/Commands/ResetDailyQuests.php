@@ -12,7 +12,7 @@ class ResetDailyQuests extends Command
      *
      * @var string
      */
-    protected $signature = 'discord:reset-daily-quests';
+    protected $signature = 'app:reset-daily-quests';
 
     /**
      * The console command description.

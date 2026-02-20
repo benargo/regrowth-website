@@ -28,7 +28,7 @@ class ResetDailyQuestsTest extends TestCase
             )
             ->create();
 
-        $this->artisan('discord:reset-daily-quests')
+        $this->artisan('app:reset-daily-quests')
             ->expectsOutput('Resetting daily quests...')
             ->assertSuccessful();
 
@@ -40,7 +40,7 @@ class ResetDailyQuestsTest extends TestCase
     #[Test]
     public function it_skips_when_no_notifications_exist(): void
     {
-        $this->artisan('discord:reset-daily-quests')
+        $this->artisan('app:reset-daily-quests')
             ->expectsOutput('Resetting daily quests...')
             ->expectsOutput('No daily quest notification messages found. Task skipped.')
             ->assertSuccessful();
@@ -53,7 +53,7 @@ class ResetDailyQuestsTest extends TestCase
 
         DailyQuestNotification::factory()->create();
 
-        $this->artisan('discord:reset-daily-quests')
+        $this->artisan('app:reset-daily-quests')
             ->assertSuccessful();
 
         Event::assertDispatched(DailyQuestNotificationDeleting::class);

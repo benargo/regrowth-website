@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schedule;
 /**
  * Reset daily quests at 3:00 AM server time.
  */
-Schedule::call('discord:reset-daily-quests')
+Schedule::call('app:reset-daily-quests')
     ->dailyAt('03:00')
     ->name('reset-daily-quests')
     ->withoutOverlapping();
