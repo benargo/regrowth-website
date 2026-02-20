@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\SmokeTest;
+namespace Tests\SmokeTest;
 
 use App\Models\LootCouncil\Item;
 use App\Models\TBC\Boss;

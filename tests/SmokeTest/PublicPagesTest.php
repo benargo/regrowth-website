@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\SmokeTest;
+namespace Tests\SmokeTest;
 
 use App\Services\Blizzard\GuildService;
 use App\Services\Blizzard\PlayableClassService;
