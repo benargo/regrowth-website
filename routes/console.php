@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\BuildAddonDataFile;
+use App\Jobs\SyncDiscordRoles;
 use Illuminate\Support\Facades\Schedule;
 
 /**
