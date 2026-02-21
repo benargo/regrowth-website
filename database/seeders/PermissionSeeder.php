@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\DiscordRole;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 
@@ -15,7 +14,6 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             'comment-on-loot-items',
-            'view-horizon-dashboard',
         ];
 
         foreach ($permissions as $permission) {

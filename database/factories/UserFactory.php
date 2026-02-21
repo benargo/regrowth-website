@@ -26,6 +26,7 @@ class UserFactory extends Factory
             'avatar' => fake()->optional(0.8)->md5(),
             'guild_avatar' => fake()->optional(0.8)->md5(),
             'banner' => null,
+            'is_admin' => false,
             'remember_token' => Str::random(10),
         ];
     }
@@ -98,6 +99,16 @@ class UserFactory extends Factory
         return $this->afterCreating(function ($user) use ($roleIds) {
             $user->discordRoles()->syncWithoutDetaching($roleIds);
         });
+    }
+
+    /**
+     * Indicate the user is an admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+        ]);
     }
 
     /**

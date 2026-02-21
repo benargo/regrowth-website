@@ -49,7 +49,16 @@ class UserTest extends ModelTestCase
 
         $this->assertCasts($model, [
             'id' => 'string',
+            'is_admin' => 'boolean',
         ]);
+    }
+
+    #[Test]
+    public function it_defaults_is_admin_to_false(): void
+    {
+        $model = new User;
+
+        $this->assertFalse($model->is_admin);
     }
 
     #[Test]

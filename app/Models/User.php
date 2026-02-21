@@ -29,6 +29,15 @@ class User extends Authenticatable
     public $incrementing = false;
 
     /**
+     * The model's default values for attributes.
+     * 
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_admin' => false,
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -49,7 +58,10 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
+        'username',
+        'discriminator',
         'remember_token',
+        'is_admin',
     ];
 
     /**
@@ -61,8 +73,59 @@ class User extends Authenticatable
     {
         return [
             'id' => 'string',
+            'is_admin' => 'boolean',
         ];
     }
+
+    /**
+     * Get the user's display name (nickname or username).
+     */
+    protected function displayName(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->nickname ?? $this->username
+        );
+    }
+
+    /**
+     * Get the user's Discord avatar URL.
+     */
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->guild_avatar) {
+                    $guild_id = Config::get('services.discord.guild_id');
+
+                    return "https://cdn.discordapp.com/guilds/{$guild_id}/users/{$this->id}/avatars/{$this->guild_avatar}.webp";
+                } elseif ($this->avatar) {
+                    return "https://cdn.discordapp.com/avatars/{$this->id}/{$this->avatar}.webp";
+                }
+                // Default Discord avatar based on user ID
+                $defaultIndex = ((int) $this->id >> 22) % 6;
+
+                return "https://cdn.discordapp.com/embed/avatars/{$defaultIndex}.png";
+            }
+        );
+    }
+
+    /**
+     * Get the user's Discord banner URL.
+     */
+    protected function bannerUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->banner
+                ? "https://cdn.discordapp.com/banners/{$this->id}/{$this->banner}.webp"
+                : null
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Discord Roles
+    |--------------------------------------------------------------------------
+    */
 
     public function discordRoles(): BelongsToMany
     {
@@ -117,6 +180,12 @@ class User extends Authenticatable
         return $this->discordRoles->where('is_visible', true)->sortBy('position')->first()?->name;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Permissions
+    |--------------------------------------------------------------------------
+    */
+
     /**
      * Check if the user has a permission via any of their Discord roles.
      */
@@ -131,49 +200,5 @@ class User extends Authenticatable
     public function canCommentOnLootItems(): bool
     {
         return $this->hasPermissionViaDiscordRoles('comment-on-loot-items');
-    }
-
-    /**
-     * Get the user's display name (nickname or username).
-     */
-    protected function displayName(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->nickname ?? $this->username
-        );
-    }
-
-    /**
-     * Get the user's Discord avatar URL.
-     */
-    protected function avatarUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if ($this->guild_avatar) {
-                    $guild_id = Config::get('services.discord.guild_id');
-
-                    return "https://cdn.discordapp.com/guilds/{$guild_id}/users/{$this->id}/avatars/{$this->guild_avatar}.webp";
-                } elseif ($this->avatar) {
-                    return "https://cdn.discordapp.com/avatars/{$this->id}/{$this->avatar}.webp";
-                }
-                // Default Discord avatar based on user ID
-                $defaultIndex = ((int) $this->id >> 22) % 6;
-
-                return "https://cdn.discordapp.com/embed/avatars/{$defaultIndex}.png";
-            }
-        );
-    }
-
-    /**
-     * Get the user's Discord banner URL.
-     */
-    protected function bannerUrl(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->banner
-                ? "https://cdn.discordapp.com/banners/{$this->id}/{$this->banner}.webp"
-                : null
-        );
     }
 }
