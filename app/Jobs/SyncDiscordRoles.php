@@ -57,6 +57,8 @@ class SyncDiscordRoles implements ShouldQueue
                 'deleted' => $deleted,
             ]);
         });
+
+        SyncDiscordUsers::dispatch();
     }
 
     /**
@@ -76,6 +78,6 @@ class SyncDiscordRoles implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['discord:roles'];
+        return ['discord', 'discord:roles'];
     }
 }

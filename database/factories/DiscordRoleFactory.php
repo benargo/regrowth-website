@@ -42,7 +42,7 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '829021769448816691',
             'name' => 'Officer',
-            'position' => 1,
+            'position' => 5,
             'is_visible' => true,
         ]);
     }
@@ -55,7 +55,7 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '1467994755953852590',
             'name' => 'Loot Councillor',
-            'position' => 2,
+            'position' => 4,
             'is_visible' => true,
         ]);
     }
@@ -81,7 +81,7 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '829022020301094922',
             'name' => 'Member',
-            'position' => 4,
+            'position' => 2,
             'is_visible' => true,
         ]);
     }
@@ -94,7 +94,7 @@ class DiscordRoleFactory extends Factory
         return $this->state(fn () => [
             'id' => '829022292590985226',
             'name' => 'Guest',
-            'position' => 5,
+            'position' => 1,
             'is_visible' => true,
         ]);
     }

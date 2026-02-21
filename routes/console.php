@@ -4,6 +4,11 @@ use App\Jobs\BuildAddonDataFile;
 use Illuminate\Support\Facades\Schedule;
 
 /**
+ * Synchronise Discord roles every hour to ensure we have the latest roles and permissions.
+ */
+Schedule::job(SyncDiscordRoles::class)->hourly()->name('sync-discord-roles');
+
+/**
  * Reset daily quests at 3:00 AM server time.
  */
 Schedule::call('app:reset-daily-quests')

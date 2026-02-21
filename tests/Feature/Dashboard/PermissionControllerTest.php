@@ -219,7 +219,7 @@ class PermissionControllerTest extends TestCase
     {
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 1],
+            ['name' => 'Officer', 'position' => 5],
         );
         $officerRole->update(['is_visible' => true]);
 
@@ -243,7 +243,7 @@ class PermissionControllerTest extends TestCase
     {
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 1],
+            ['name' => 'Officer', 'position' => 5],
         );
         $officerRole->update(['is_visible' => true]);
 

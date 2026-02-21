@@ -32,11 +32,11 @@ return new class extends Migration
         $now = Carbon::now();
 
         DB::table('discord_roles')->insert([
-            ['id' => '829021769448816691', 'name' => 'Officer', 'position' => 1, 'can_comment_on_loot_items' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => '1467994755953852590', 'name' => 'Loot Councillor', 'position' => 2, 'can_comment_on_loot_items' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => '829021769448816691', 'name' => 'Officer', 'position' => 5, 'can_comment_on_loot_items' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => '1467994755953852590', 'name' => 'Loot Councillor', 'position' => 4, 'can_comment_on_loot_items' => true, 'created_at' => $now, 'updated_at' => $now],
             ['id' => '1265247017215594496', 'name' => 'Raider', 'position' => 3, 'can_comment_on_loot_items' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => '829022020301094922', 'name' => 'Member', 'position' => 4, 'can_comment_on_loot_items' => false, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => '829022292590985226', 'name' => 'Guest', 'position' => 5, 'can_comment_on_loot_items' => false, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => '829022020301094922', 'name' => 'Member', 'position' => 2, 'can_comment_on_loot_items' => false, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => '829022292590985226', 'name' => 'Guest', 'position' => 1, 'can_comment_on_loot_items' => false, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         $knownRoleIds = DB::table('discord_roles')->pluck('id')->toArray();

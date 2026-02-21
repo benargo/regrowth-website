@@ -38,7 +38,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) {
             $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 1])->id,
+                DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5])->id,
             ]);
         });
     }
@@ -62,7 +62,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) {
             $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 4])->id,
+                DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2])->id,
             ]);
         });
     }
@@ -74,7 +74,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) {
             $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 2])->id,
+                DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 4])->id,
             ]);
         });
     }
@@ -86,7 +86,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) {
             $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '829022292590985226'], ['name' => 'Guest', 'position' => 5])->id,
+                DiscordRole::firstOrCreate(['id' => '829022292590985226'], ['name' => 'Guest', 'position' => 1])->id,
             ]);
         });
     }
