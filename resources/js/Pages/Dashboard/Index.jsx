@@ -1,5 +1,5 @@
 import Master from "@/Layouts/Master";
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Collapsible from "@/Components/Collapsible";
 
@@ -18,6 +18,9 @@ function DashboardCard({ href, icon, children }) {
 }
 
 export default function Index({ discordRoles }) {
+    const { auth } = usePage().props;
+    const user = auth?.user;
+
     return (
         <Master title="Officers’ Dashboard">
             {/* Header */}
@@ -121,18 +124,20 @@ export default function Index({ discordRoles }) {
                                 <h3 className="text-md">Site permissions</h3>
                                 <p className="mb-1 text-sm">Manage site permissions and access control.</p>
                             </DashboardCard>
-                            <a
-                                href={route("horizon.index")}
-                                className="flex items-center gap-4 rounded border border-amber-600 px-2 py-4 transition-colors hover:bg-amber-600/20"
-                            >
-                                <div className="mx-2 text-center">
-                                    <Icon icon="tachometer-alt" style="light" className="text-3xl" />
-                                </div>
-                                <div className="mr-2 flex flex-col gap-1">
-                                    <h3 className="text-md">Scheduled Jobs</h3>
-                                    <p className="mb-1 text-sm">Background job monitoring and management.</p>
-                                </div>
-                            </a>
+                            {user?.admin && (
+                                <a
+                                    href={route("horizon.index")}
+                                    className="flex items-center gap-4 rounded border border-amber-600 px-2 py-4 transition-colors hover:bg-amber-600/20"
+                                >
+                                    <div className="mx-2 text-center">
+                                        <Icon icon="tachometer-alt" style="light" className="text-3xl" />
+                                    </div>
+                                    <div className="mr-2 flex flex-col gap-1">
+                                        <h3 className="text-md">Scheduled Jobs</h3>
+                                        <p className="mb-1 text-sm">Background job monitoring and management.</p>
+                                    </div>
+                                </a>
+                            )}
                         </div>
                     </Collapsible>
 

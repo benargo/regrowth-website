@@ -215,6 +215,52 @@ class PermissionControllerTest extends TestCase
         $response->assertSessionHasErrors(['enabled']);
     }
 
+    public function test_toggle_forbids_non_admin_from_modifying_their_highest_role(): void
+    {
+        $officerRole = DiscordRole::firstOrCreate(
+            ['id' => '829021769448816691'],
+            ['name' => 'Officer', 'position' => 1],
+        );
+        $officerRole->update(['is_visible' => true]);
+
+        $user = User::factory()->officer()->create();
+        $permission = Permission::findByName('comment-on-loot-items');
+
+        $response = $this->actingAs($user)->post(route('dashboard.permissions.toggle'), [
+            'discord_role_id' => $officerRole->id,
+            'permission_id' => $permission->id,
+            'enabled' => true,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('role_has_permissions', [
+            'role_id' => $officerRole->id,
+            'permission_id' => $permission->id,
+        ]);
+    }
+
+    public function test_toggle_allows_admin_to_modify_their_highest_role(): void
+    {
+        $officerRole = DiscordRole::firstOrCreate(
+            ['id' => '829021769448816691'],
+            ['name' => 'Officer', 'position' => 1],
+        );
+        $officerRole->update(['is_visible' => true]);
+
+        $user = User::factory()->officer()->admin()->create();
+        $permission = Permission::findByName('comment-on-loot-items');
+
+        $response = $this->actingAs($user)->post(route('dashboard.permissions.toggle'), [
+            'discord_role_id' => $officerRole->id,
+            'permission_id' => $permission->id,
+            'enabled' => true,
+        ]);
+
+        $response->assertRedirect();
+        $officerRole->load('permissions');
+        $this->assertTrue($officerRole->hasPermissionTo('comment-on-loot-items'));
+    }
+
     public function test_toggle_does_not_affect_other_roles(): void
     {
         $user = User::factory()->officer()->create();

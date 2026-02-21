@@ -1,18 +1,18 @@
 import { useState } from "react";
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 
-function PermissionToggle({ enabled, processing, onToggle }) {
+function PermissionToggle({ enabled, processing, onToggle, disabled }) {
     return (
         <button
             onClick={onToggle}
-            disabled={processing}
+            disabled={disabled || processing}
             className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
                 enabled
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-gray-600 hover:bg-gray-700"
-            } ${processing ? "cursor-wait opacity-50" : ""}`}
+                    ? "bg-green-600" + (disabled ? "" : " hover:bg-green-700")
+                    : "bg-gray-600" + (disabled ? "" : " hover:bg-gray-700")
+            } ${processing ? "cursor-wait opacity-50" : ""} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         >
             {processing ? "..." : enabled ? "Enabled" : "Disabled"}
         </button>
@@ -27,7 +27,12 @@ function formatPermissionName(name) {
 }
 
 export default function ManagePermissions({ discordRoles, permissions }) {
+    const { auth } = usePage().props;
     const [processing, setProcessing] = useState({});
+
+    const isRoleDisabled = (role) => {
+        return !auth.user.admin && role.name === auth.user.highest_role;
+    };
 
     const hasPermission = (role, permission) => {
         return role.permissions.some((p) => p.id === permission.id);
@@ -83,30 +88,35 @@ export default function ManagePermissions({ discordRoles, permissions }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {discordRoles.map((role) => (
-                                    <tr
-                                        key={role.id}
-                                        className="border-b border-amber-600/30 hover:bg-amber-600/10"
-                                    >
-                                        <td className="px-4 py-3 font-medium">{role.name}</td>
-                                        {permissions.map((permission) => {
-                                            const enabled = hasPermission(role, permission);
-                                            const key = `${role.id}-${permission.id}`;
+                                {discordRoles.map((role) => {
+                                    const disabled = isRoleDisabled(role);
 
-                                            return (
-                                                <td key={permission.id} className="px-4 py-3 text-center">
-                                                    <PermissionToggle
-                                                        enabled={enabled}
-                                                        processing={!!processing[key]}
-                                                        onToggle={() =>
-                                                            togglePermission(role.id, permission.id, enabled)
-                                                        }
-                                                    />
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
+                                    return (
+                                        <tr
+                                            key={role.id}
+                                            className="border-b border-amber-600/30 hover:bg-amber-600/10"
+                                        >
+                                            <td className="px-4 py-3 font-medium">{role.name}</td>
+                                            {permissions.map((permission) => {
+                                                const enabled = hasPermission(role, permission);
+                                                const key = `${role.id}-${permission.id}`;
+
+                                                return (
+                                                    <td key={permission.id} className="px-4 py-3 text-center">
+                                                        <PermissionToggle
+                                                            enabled={enabled}
+                                                            processing={!!processing[key]}
+                                                            onToggle={() =>
+                                                                togglePermission(role.id, permission.id, enabled)
+                                                            }
+                                                            disabled={disabled}
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

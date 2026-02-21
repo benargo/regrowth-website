@@ -37,6 +37,12 @@ class PermissionController extends Controller
         $role = DiscordRole::findOrFail($request->validated('discord_role_id'));
         $permission = Permission::findOrFail($request->validated('permission_id'));
 
+        $user = $request->user();
+
+        if (! $user->is_admin && $user->highestRole() === $role->name) {
+            abort(403, 'You cannot modify permissions for your own highest role.');
+        }
+
         if ($request->validated('enabled')) {
             $role->givePermissionTo($permission);
         } else {

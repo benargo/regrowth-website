@@ -24,6 +24,7 @@ class UserResource extends JsonResource
             'banner' => $this->banner_url,
             'roles' => $this->discordRoles->pluck('id')->values()->toArray(),
             'highest_role' => $this->highestRole(),
+            'admin' => $this->is_admin,
         ];
     }
 }
