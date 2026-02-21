@@ -18,7 +18,8 @@ class PermissionController extends Controller
     public function index(): Response
     {
         $discordRoles = DiscordRole::with('permissions')
-            ->orderBy('position')
+            ->where('is_visible', true)
+            ->orderByDesc('position')
             ->get();
 
         $permissions = Permission::orderBy('name')->get();

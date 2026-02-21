@@ -52,7 +52,7 @@ class SyncDiscordRoles implements ShouldQueue
                 );
             }
 
-            Log::info('Discord roles synced.', [
+            Log::info('Synchronising Discord roles job completed.', [
                 'synced' => count($roles),
                 'deleted' => $deleted,
             ]);
@@ -64,8 +64,18 @@ class SyncDiscordRoles implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error('SyncDiscordRoles job failed.', [
+        Log::error('Synchronising Discord roles job failed.', [
             'error' => $exception->getMessage(),
         ]);
+    }
+
+    /**
+     * Get the tags that should be assigned to the job.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return ['discord:roles'];
     }
 }
