@@ -15,18 +15,11 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             'comment-on-loot-items',
+            'view-horizon-dashboard',
         ];
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
-        }
-
-        $commentPermissionRoles = ['Officer', 'Loot Councillor', 'Raider'];
-
-        $roles = DiscordRole::whereIn('name', $commentPermissionRoles)->get();
-
-        foreach ($roles as $role) {
-            $role->givePermissionTo('comment-on-loot-items');
         }
     }
 }
