@@ -14,12 +14,12 @@ class PhaseViewTest extends TestCase
 
     /**
      * Holds a user model that can be used across tests. Initialized in setUp method.
-     * 
+     *
      * @var User
      */
     protected $user;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

@@ -1,26 +1,20 @@
 import Master from "@/Layouts/Master";
 import { useState, useRef, useEffect } from "react";
-
-const expandedKey = (raidId) => `loot_bias_expanded_${raidId}`;
-
-function getStoredExpandedBosses(raidId) {
-    try {
-        const stored = sessionStorage.getItem(expandedKey(raidId));
-        return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-        return new Set();
-    }
-}
-
-function saveExpandedBosses(raidId, expandedSet) {
-    try {
-        sessionStorage.setItem(expandedKey(raidId), JSON.stringify([...expandedSet]));
-    } catch {}
-}
 import { router, Link, Deferred } from "@inertiajs/react";
-import BossCollapse from "@/Components/Loot/BossCollapse";
+import Collapsible from "@/Components/Collapsible";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+
+
+function BossItemsSkeleton() {
+    return (
+        <div className="animate-pulse space-y-2">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 rounded bg-amber-600/20" />
+            ))}
+        </div>
+    );
+}
 
 function BossesSkeleton() {
     return (
@@ -37,8 +31,6 @@ function BossesList({
     selectedRaid,
     loadedBoss,
     onBossExpand,
-    onBossCollapse,
-    expandedBosses,
     getItemsForBoss,
 }) {
     const currentBosses = bosses[selectedRaid] ?? [];
@@ -48,18 +40,27 @@ function BossesList({
             {currentBosses.map((boss) => {
                 const isTrash = boss.id < 0;
                 return (
-                    <BossCollapse
+                    <Collapsible
                         key={`${selectedRaid}-${boss.id}`}
                         title={boss.name}
-                        bossId={boss.id}
-                        onExpand={onBossExpand}
-                        onCollapse={onBossCollapse}
+                        onExpand={() => onBossExpand(boss.id)}
                         loading={loadedBoss === boss.id}
-                        commentsCount={boss.comments_count}
-                        initialExpanded={expandedBosses.has(boss.id)}
+                        skeleton={<BossItemsSkeleton />}
+                        sessionKey={`loot_bias_expanded_${selectedRaid}_${boss.id}`}
+                        className="border-amber-600"
+                        headerClassName="hover:bg-amber-600/10"
+                        bodyClassName="border-amber-600"
+                        headerRight={
+                            boss.comments_count > 0 && (
+                                <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
+                                    <Icon icon="comments" style="solid" className="h-4 w-4" />
+                                    {boss.comments_count}
+                                </span>
+                            )
+                        }
                     >
                         <BossItems items={getItemsForBoss(boss.id)} grouped={!isTrash} />
-                    </BossCollapse>
+                    </Collapsible>
                 );
             })}
         </div>
@@ -345,15 +346,12 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
     const [selectedRaid, setSelectedRaid] = useState(selected_raid_id);
     const [loadedItems, setLoadedItems] = useState({});
     const [loadedBoss, setloadedBoss] = useState(null);
-    const [expandedBosses, setExpandedBosses] = useState(() => getStoredExpandedBosses(selected_raid_id));
 
     // Refs to access current values inside callbacks and effects without stale closures
     const loadedItemsRef = useRef(loadedItems);
     loadedItemsRef.current = loadedItems;
     const loadedBossRef = useRef(null);
     loadedBossRef.current = loadedBoss;
-    const currentRaidRef = useRef(selectedRaid);
-    currentRaidRef.current = selectedRaid;
 
     // Queue of boss IDs waiting to have their items fetched
     const loadQueueRef = useRef([]);
@@ -409,7 +407,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
         loadQueueRef.current = [];
 
         if (firstRaidInPhase) {
-            setExpandedBosses(getStoredExpandedBosses(firstRaidInPhase));
             router.visit(route("loot.phase", { phase: phaseId, raid_id: firstRaidInPhase }), {
                 only: ["selected_raid_id", "bosses"],
                 preserveState: true,
@@ -425,9 +422,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
         setLoadedItems({});
         setloadedBoss(null);
         loadQueueRef.current = [];
-        if (firstRaidInPhase) {
-            setExpandedBosses(getStoredExpandedBosses(firstRaidInPhase));
-        }
     };
 
     const handleRaidChange = (raidId) => {
@@ -435,7 +429,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
         setLoadedItems({});
         setloadedBoss(null);
         loadQueueRef.current = [];
-        setExpandedBosses(getStoredExpandedBosses(raidId));
 
         router.visit(route("loot.phase", { phase: selectedPhase, raid_id: raidId }), {
             only: ["selected_raid_id", "bosses"],
@@ -445,16 +438,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
     };
 
     const handleBossExpand = (bossId) => {
-        setExpandedBosses((prev) => {
-            if (prev.has(bossId)) {
-                return prev;
-            }
-            const next = new Set(prev);
-            next.add(bossId);
-            saveExpandedBosses(currentRaidRef.current, next);
-            return next;
-        });
-
         if (loadedItemsRef.current[bossId] || loadedBossRef.current === bossId) {
             return;
         }
@@ -467,15 +450,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
         }
 
         doLoadBossRef.current(bossId);
-    };
-
-    const handleBossCollapse = (bossId) => {
-        setExpandedBosses((prev) => {
-            const next = new Set(prev);
-            next.delete(bossId);
-            saveExpandedBosses(currentRaidRef.current, next);
-            return next;
-        });
     };
 
     const currentRaids = raids[selectedPhase] ?? [];
@@ -550,8 +524,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
                         selectedRaid={selectedRaid}
                         loadedBoss={loadedBoss}
                         onBossExpand={handleBossExpand}
-                        onBossCollapse={handleBossCollapse}
-                        expandedBosses={expandedBosses}
                         getItemsForBoss={getItemsForBoss}
                     />
                 </Deferred>
