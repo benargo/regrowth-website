@@ -155,7 +155,7 @@ export default function ItemShow({ item, can, comments }) {
                             </div>
                             {/* Wowhead Link */}
                             <div className="flex-auto md:text-right">
-                                <Link
+                                <a
                                     href={item.data.wowhead_url}
                                     data-wowhead={`item=${item.data.id}&domain=tbc`}
                                     target="_blank"
@@ -168,7 +168,7 @@ export default function ItemShow({ item, can, comments }) {
                                         className="-mt-1 mr-2 inline-block h-5 w-5"
                                     />
                                     View on Wowhead
-                                </Link>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -178,9 +178,10 @@ export default function ItemShow({ item, can, comments }) {
                 {item.data.priorities.length > 0 ? (
                     <div className="mt-8 w-full">
                         <PriorityDisplay priorities={item.data.priorities} />
+                        <p className="text-gray-400">Beyond the above priorities, this item will be distributed <strong>MS &gt; OS</strong>.</p>
                     </div>
                 ) : (
-                    <p className="text-gray-300">No loot priorities have been set for this item.</p>
+                    <p className="text-gray-300">No loot priorities have been set for this item. This item will be distributed <strong>MS &gt; OS</strong>.</p>
                 )}
 
                 {/* Notes Section */}

@@ -78,7 +78,7 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="text-center italic text-gray-500 lg:text-right">Item not subject to loot council.</p>;
+        return <p className="text-center italic text-gray-500 lg:text-right">MS &gt; OS</p>;
     }
 
     // Sort by weight (ascending) and group by weight
