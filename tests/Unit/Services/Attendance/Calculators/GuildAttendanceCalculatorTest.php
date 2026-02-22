@@ -237,6 +237,147 @@ class GuildAttendanceCalculatorTest extends TestCase
         $this->assertInstanceOf(PlayerAttendanceStats::class, $stats->first());
     }
 
+    // ==================== Same-Day Raid Merging Tests ====================
+
+    public function test_calculate_merges_same_day_raids_into_single_record(): void
+    {
+        // Two raids on the same evening — Fizzywigs in one, not the other
+        $attendance = [
+            $this->makeAttendance('raid1', Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), [
+                ['name' => 'Fizzywigs', 'presence' => 1],
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+            $this->makeAttendance('raid2', Carbon::parse('2025-01-15 20:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+                ['name' => 'Jaina', 'presence' => 1],
+            ]),
+        ];
+
+        $stats = $this->makeCalculator()->calculate($attendance);
+
+        // Should be 1 total report (merged day), all players attended
+        $this->assertEquals(1, $stats->firstWhere('name', 'Fizzywigs')->totalReports);
+        $this->assertEquals(1, $stats->firstWhere('name', 'Fizzywigs')->reportsAttended);
+        $this->assertEquals(100.0, $stats->firstWhere('name', 'Fizzywigs')->percentage);
+
+        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->totalReports);
+        $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
+    }
+
+    public function test_calculate_raid_before_0500_belongs_to_previous_day(): void
+    {
+        // 03:00 on Jan 16 should be part of the Jan 15 raid day
+        $attendance = [
+            $this->makeAttendance('raid1', Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+            $this->makeAttendance('raid2', Carbon::parse('2025-01-16 03:00', 'Europe/Paris'), [
+                ['name' => 'Jaina', 'presence' => 1],
+            ]),
+        ];
+
+        $stats = $this->makeCalculator()->calculate($attendance);
+
+        // Both raids merge into one raid day
+        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->totalReports);
+        $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
+    }
+
+    public function test_calculate_raid_after_0500_belongs_to_current_day(): void
+    {
+        // 06:00 on Jan 16 should be a new raid day, separate from Jan 15
+        $attendance = [
+            $this->makeAttendance('raid1', Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+            $this->makeAttendance('raid2', Carbon::parse('2025-01-16 06:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+        ];
+
+        $stats = $this->makeCalculator()->calculate($attendance);
+
+        // Two separate raid days
+        $this->assertEquals(2, $stats->firstWhere('name', 'Thrall')->totalReports);
+    }
+
+    public function test_calculate_different_days_remain_separate(): void
+    {
+        $attendance = [
+            $this->makeAttendance('raid1', Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+            $this->makeAttendance('raid2', Carbon::parse('2025-01-22 19:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+        ];
+
+        $stats = $this->makeCalculator()->calculate($attendance);
+
+        $this->assertEquals(2, $stats->firstWhere('name', 'Thrall')->totalReports);
+        $this->assertEquals(2, $stats->firstWhere('name', 'Thrall')->reportsAttended);
+    }
+
+    public function test_calculate_merge_keeps_best_presence_value(): void
+    {
+        // Player has presence 0 in one raid, presence 1 in another — should count as attended
+        $attendance = [
+            $this->makeAttendance('raid1', Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 0],
+            ]),
+            $this->makeAttendance('raid2', Carbon::parse('2025-01-15 20:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+        ];
+
+        $stats = $this->makeCalculator()->calculate($attendance);
+
+        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->reportsAttended);
+        $this->assertEquals(100.0, $stats->firstWhere('name', 'Thrall')->percentage);
+    }
+
+    public function test_calculate_merge_prefers_present_over_benched(): void
+    {
+        // Presence 1 (present) should be preferred over 2 (benched)
+        $attendance = [
+            $this->makeAttendance('raid1', Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 2],
+            ]),
+            $this->makeAttendance('raid2', Carbon::parse('2025-01-15 20:00', 'Europe/Paris'), [
+                ['name' => 'Thrall', 'presence' => 1],
+            ]),
+        ];
+
+        $stats = $this->makeCalculator()->calculate($attendance);
+
+        // Both 1 and 2 count as attended, so either way it's 100%
+        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->reportsAttended);
+        $this->assertEquals(100.0, $stats->firstWhere('name', 'Thrall')->percentage);
+    }
+
+    public function test_calculate_merge_three_raids_same_day(): void
+    {
+        $attendance = [
+            $this->makeAttendance('raid1', Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), [
+                ['name' => 'Alice', 'presence' => 1],
+            ]),
+            $this->makeAttendance('raid2', Carbon::parse('2025-01-15 19:30', 'Europe/Paris'), [
+                ['name' => 'Bob', 'presence' => 1],
+            ]),
+            $this->makeAttendance('raid3', Carbon::parse('2025-01-15 20:00', 'Europe/Paris'), [
+                ['name' => 'Charlie', 'presence' => 1],
+            ]),
+        ];
+
+        $stats = $this->makeCalculator()->calculate($attendance);
+
+        // All three raids merge into one day — 3 players, 1 report each
+        $this->assertCount(3, $stats);
+        $this->assertEquals(1, $stats->firstWhere('name', 'Alice')->totalReports);
+        $this->assertEquals(1, $stats->firstWhere('name', 'Bob')->totalReports);
+        $this->assertEquals(1, $stats->firstWhere('name', 'Charlie')->totalReports);
+    }
+
     // ==================== Calculate And Aggregate Tests ====================
 
     public function test_calculate_and_aggregate_returns_empty_for_empty_input(): void

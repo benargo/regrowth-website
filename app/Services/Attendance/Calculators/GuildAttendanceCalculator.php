@@ -4,6 +4,7 @@ namespace App\Services\Attendance\Calculators;
 
 use App\Services\Attendance\Aggregators\ReportsAggregator;
 use App\Services\WarcraftLogs\Data\GuildAttendance;
+use App\Services\WarcraftLogs\Data\PlayerAttendance;
 use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -27,6 +28,7 @@ class GuildAttendanceCalculator
     public function calculate(iterable $attendance): Collection
     {
         $records = $this->sortAttendanceData($attendance);
+        $records = $this->mergeByRaidDay($records);
 
         if ($records->isEmpty()) {
             return collect();
@@ -106,6 +108,68 @@ class GuildAttendanceCalculator
         }
 
         return $this->reportsAggregator->aggregate($statsSets);
+    }
+
+    /**
+     * Merge attendance records that fall on the same raid day into a single record.
+     *
+     * A "raid day" runs from 05:00 to 04:59 the following morning in the app timezone.
+     * When multiple raids occur on the same raid day, players are considered present
+     * if they appeared in any of the merged raids, using their best presence value.
+     *
+     * @param  Collection<int, GuildAttendance>  $records  Sorted by startTime ascending.
+     * @return Collection<int, GuildAttendance>
+     */
+    protected function mergeByRaidDay(Collection $records): Collection
+    {
+        $timezone = config('app.timezone');
+
+        return $records
+            ->groupBy(fn (GuildAttendance $record) => $record->startTime->copy()->setTimezone($timezone)->subHours(5)->toDateString())
+            ->map(function (Collection $group) {
+                if ($group->count() === 1) {
+                    return $group->first();
+                }
+
+                /** @var array<string, int> $mergedPlayers */
+                $mergedPlayers = [];
+
+                foreach ($group as $record) {
+                    foreach ($record->players as $player) {
+                        $current = $mergedPlayers[$player->name] ?? null;
+
+                        if ($current === null || $this->presencePriority($player->presence) > $this->presencePriority($current)) {
+                            $mergedPlayers[$player->name] = $player->presence;
+                        }
+                    }
+                }
+
+                $players = array_map(
+                    fn (string $name, int $presence) => new PlayerAttendance(name: $name, presence: $presence),
+                    array_keys($mergedPlayers),
+                    array_values($mergedPlayers),
+                );
+
+                return new GuildAttendance(
+                    code: $group->pluck('code')->implode('+'),
+                    players: $players,
+                    startTime: $group->first()->startTime,
+                    zone: $group->first()->zone,
+                );
+            })
+            ->values();
+    }
+
+    /**
+     * Get the priority rank for a presence value (higher = better).
+     */
+    protected function presencePriority(int $presence): int
+    {
+        return match ($presence) {
+            1 => 2,
+            2 => 1,
+            default => 0,
+        };
     }
 
     /**
