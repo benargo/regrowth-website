@@ -10,7 +10,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
-abstract class WarcraftLogsService
+abstract class BaseService
 {
     use Cacheable;
     use RateLimited;

@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 
-class Attendance extends WarcraftLogsService
+class Attendance extends BaseService
 {
     protected int $cacheTtl = 43200; // 12 hours
 

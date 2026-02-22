@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Events\AddonSettingsProcessed;
+use App\Models\WarcraftLogs\Report;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -93,6 +94,15 @@ class Character extends Model
     public function linkedCharacters(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
+    }
+
+    /**
+     * Get the Warcraft Logs reports this character participated in.
+     */
+    public function warcraftLogsReports(): BelongsToMany
+    {
+        return $this->belongsToMany(Report::class, 'pivot_characters_wcl_reports', 'character_id', 'wcl_report_code')
+            ->withPivot('presence');
     }
 
     /**
