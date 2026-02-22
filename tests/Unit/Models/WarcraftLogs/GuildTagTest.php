@@ -4,7 +4,9 @@ namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -174,5 +176,30 @@ class GuildTagTest extends ModelTestCase
         $guildTag = $this->create(['tbc_phase_id' => null]);
 
         $this->assertNull($guildTag->phase);
+    }
+
+    #[Test]
+    public function it_has_many_reports(): void
+    {
+        $guildTag = $this->create();
+
+        $this->assertInstanceOf(HasMany::class, $guildTag->reports());
+    }
+
+    #[Test]
+    public function it_can_have_reports(): void
+    {
+        $guildTag = $this->create();
+        Report::factory()->count(3)->withGuildTag($guildTag)->create();
+
+        $this->assertCount(3, $guildTag->reports);
+    }
+
+    #[Test]
+    public function reports_returns_empty_collection_when_none_associated(): void
+    {
+        $guildTag = $this->create();
+
+        $this->assertCount(0, $guildTag->reports);
     }
 }

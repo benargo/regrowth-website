@@ -2,6 +2,7 @@
 
 namespace Database\Factories\WarcraftLogs;
 
+use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -46,6 +47,26 @@ class ReportFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'zone_id' => null,
             'zone_name' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the report belongs to a guild tag.
+     */
+    public function withGuildTag(?GuildTag $guildTag = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'guild_tag_id' => $guildTag?->id ?? GuildTag::factory(),
+        ]);
+    }
+
+    /**
+     * Indicate that the report has no guild tag.
+     */
+    public function withoutGuildTag(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'guild_tag_id' => null,
         ]);
     }
 

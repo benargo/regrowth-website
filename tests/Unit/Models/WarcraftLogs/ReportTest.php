@@ -4,9 +4,11 @@ namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Events\AddonSettingsProcessed;
 use App\Models\Character;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use App\Services\WarcraftLogs\Data\Zone;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
@@ -47,6 +49,7 @@ class ReportTest extends ModelTestCase
             'title',
             'start_time',
             'end_time',
+            'guild_tag_id',
             'zone_id',
             'zone_name',
         ]);
@@ -258,5 +261,66 @@ class ReportTest extends ModelTestCase
         $this->assertDatabaseMissing('pivot_characters_wcl_reports', [
             'character_id' => $character->id,
         ]);
+    }
+
+    #[Test]
+    public function it_belongs_to_a_guild_tag(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+        $report = $this->factory()->withGuildTag($guildTag)->create();
+
+        $this->assertRelation($report, 'guildTag', BelongsTo::class);
+        $this->assertSame($guildTag->id, $report->guildTag->id);
+    }
+
+    #[Test]
+    public function guild_tag_relationship_returns_null_when_no_guild_tag_associated(): void
+    {
+        $report = $this->factory()->withoutGuildTag()->create();
+
+        $this->assertNull($report->guildTag);
+    }
+
+    #[Test]
+    public function factory_with_guild_tag_state_associates_a_guild_tag(): void
+    {
+        $report = $this->factory()->withGuildTag()->create();
+
+        $this->assertNotNull($report->guild_tag_id);
+        $this->assertNotNull($report->guildTag);
+    }
+
+    #[Test]
+    public function factory_with_guild_tag_state_accepts_specific_guild_tag(): void
+    {
+        $guildTag = GuildTag::factory()->create(['name' => 'Main Roster']);
+
+        $report = $this->factory()->withGuildTag($guildTag)->create();
+
+        $this->assertSame($guildTag->id, $report->guild_tag_id);
+        $this->assertSame('Main Roster', $report->guildTag->name);
+    }
+
+    #[Test]
+    public function factory_without_guild_tag_state_sets_null_guild_tag(): void
+    {
+        $report = $this->factory()->withoutGuildTag()->create();
+
+        $this->assertNull($report->guild_tag_id);
+    }
+
+    #[Test]
+    public function deleting_guild_tag_sets_report_guild_tag_id_to_null(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+        $report = $this->factory()->withGuildTag($guildTag)->create();
+
+        $this->assertSame($guildTag->id, $report->guild_tag_id);
+
+        $guildTag->delete();
+
+        $report->refresh();
+
+        $this->assertNull($report->guild_tag_id);
     }
 }

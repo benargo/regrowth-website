@@ -7,6 +7,7 @@ use App\Services\WarcraftLogs\Data\Zone;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Report extends Model
@@ -51,6 +52,7 @@ class Report extends Model
         'title',
         'start_time',
         'end_time',
+        'guild_tag_id',
         'zone_id',
         'zone_name',
     ];
@@ -85,6 +87,16 @@ class Report extends Model
     {
         return $this->belongsToMany(Character::class, 'pivot_characters_wcl_reports', 'wcl_report_code', 'character_id')
             ->withPivot('presence');
+    }
+
+    /**
+     * Get the guild tag associated with this report.
+     *
+     * @return BelongsTo<GuildTag>
+     */
+    public function guildTag(): BelongsTo
+    {
+        return $this->belongsTo(GuildTag::class, 'guild_tag_id', 'id');
     }
 
     /**

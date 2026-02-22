@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('title');
             $table->timestamp('start_time');
             $table->timestamp('end_time');
+            $table->foreignId('guild_tag_id')->nullable()->constrained('wcl_guild_tags')->nullOnDelete();
             $table->unsignedInteger('zone_id')->nullable();
             $table->string('zone_name')->nullable();
             $table->timestamps();

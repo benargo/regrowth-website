@@ -5,11 +5,15 @@ namespace App\Services\WarcraftLogs;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report as ReportModel;
 use App\Services\WarcraftLogs\Data\Report;
+use App\Services\WarcraftLogs\Traits\Paginates;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 
 class Reports extends BaseService
 {
+    use Paginates;
+
     protected int $cacheTtl = 300; // 5 minutes
 
     /**
@@ -70,26 +74,37 @@ class Reports extends BaseService
     public function get(): Collection
     {
         if (empty($this->guildTagIDs)) {
-            return $this->fetchAllPages([
-                'guildID' => $this->guildId,
-            ])->sortByDesc(fn (Report $r) => $r->startTime)->values();
+            return $this->paginateAll(
+                fn (int $page) => $this->fetchReportsPage($page, null),
+            )->sortByDesc(fn (Report $r) => $r->startTime)->values();
         }
 
-        $allReports = collect();
+        return $this->paginateAllAcrossTags(
+            $this->guildTagIDs,
+            fn (int $tagID) => fn (int $page) => $this->fetchReportsPage($page, $tagID),
+        )->sortByDesc(fn (Report $r) => $r->startTime)->values();
+    }
 
-        foreach ($this->guildTagIDs as $tagID) {
-            $tagReports = $this->fetchAllPages([
-                'guildTagID' => $tagID,
-            ]);
-
-            foreach ($tagReports as $report) {
-                $allReports[$report->code] = $report;
-            }
+    /**
+     * Lazily fetch all reports across configured guild tags (or by guild ID if none set).
+     * Results are deduplicated by report code. Items are yielded as they are fetched.
+     *
+     * @return LazyCollection<int, Report>
+     */
+    public function lazy(): LazyCollection
+    {
+        if (empty($this->guildTagIDs)) {
+            return $this->paginateLazy(
+                fn (int $page) => $this->fetchReportsPage($page, null),
+            );
         }
 
-        return $allReports
-            ->sortByDesc(fn (Report $r) => $r->startTime)
-            ->values();
+        return $this->paginateLazyAcrossTags(
+            $this->guildTagIDs,
+            fn (int $tagID) => $this->paginateLazy(
+                fn (int $page) => $this->fetchReportsPage($page, $tagID),
+            ),
+        );
     }
 
     /**
@@ -119,50 +134,45 @@ class Reports extends BaseService
     }
 
     /**
-     * Fetch all pages of reports for the given variables.
+     * Fetch a single page of reports and return a normalized result.
      *
-     * @param  array<string, mixed>  $baseVariables
-     * @return Collection<int, Report>
+     * @return array{items: array<Report>, hasMorePages: bool}
      */
-    protected function fetchAllPages(array $baseVariables): Collection
+    protected function fetchReportsPage(int $page, ?int $guildTagID): array
     {
-        $reports = collect();
-        $page = 1;
-        $guildTagID = $baseVariables['guildTagID'] ?? null;
+        $variables = $guildTagID !== null
+            ? ['guildTagID' => $guildTagID]
+            : ['guildID' => $this->guildId];
 
-        do {
-            $variables = array_merge($baseVariables, [
-                'page' => $page,
-                'limit' => 100,
-            ]);
+        $variables['page'] = $page;
+        $variables['limit'] = 100;
 
-            if ($this->startTime !== null) {
-                $variables['startTime'] = $this->startTime;
-            }
+        if ($this->startTime !== null) {
+            $variables['startTime'] = $this->startTime;
+        }
 
-            if ($this->endTime !== null) {
-                $variables['endTime'] = $this->endTime;
-            }
+        if ($this->endTime !== null) {
+            $variables['endTime'] = $this->endTime;
+        }
 
-            $data = $this->query(
-                $this->buildGraphQuery($guildTagID),
-                $variables,
-                $this->cacheTtl,
-            );
+        $data = $this->query(
+            $this->buildGraphQuery($guildTagID),
+            $variables,
+            $this->cacheTtl,
+        );
 
-            $reportsData = $data['reportData']['reports'] ?? [];
-            $pageData = $reportsData['data'] ?? [];
+        $reportsData = $data['reportData']['reports'] ?? [];
+        $pageData = $reportsData['data'] ?? [];
 
-            foreach ($pageData as $reportData) {
-                $report = Report::fromArray($reportData);
-                $reports[$report->code] = $report;
-            }
+        $items = array_map(
+            fn (array $reportData) => Report::fromArray($reportData),
+            $pageData,
+        );
 
-            $hasMorePages = $reportsData['has_more_pages'] ?? false;
-            $page++;
-        } while ($hasMorePages);
-
-        return $reports;
+        return [
+            'items' => $items,
+            'hasMorePages' => $reportsData['has_more_pages'] ?? false,
+        ];
     }
 
     /**
@@ -203,6 +213,10 @@ class Reports extends BaseService
                         title
                         startTime
                         endTime
+                        guildTag {
+                            id
+                            name
+                        }
                         zone {
                             id
                             name

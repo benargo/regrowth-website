@@ -6,12 +6,15 @@ use App\Services\WarcraftLogs\Data\GuildAttendance;
 use App\Services\WarcraftLogs\Data\GuildAttendancePagination;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
+use App\Services\WarcraftLogs\Traits\Paginates;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 
 class Attendance extends BaseService
 {
+    use Paginates;
+
     protected int $cacheTtl = 43200; // 12 hours
 
     /**
@@ -126,22 +129,12 @@ class Attendance extends BaseService
             return $this->sortAttendanceData($this->attendance);
         }
 
-        $allRecords = collect();
-
-        foreach ($this->tags as $tagID) {
-            $tagAttendance = $this->getAttendanceLazy(
-                guildTagID: $tagID,
-                startDate: $this->startDate,
-                endDate: $this->endDate,
-                playerNames: $this->playerNames,
-                zoneID: $this->zoneID,
-            );
-
-            foreach ($tagAttendance as $attendance) {
-                // Use report code as unique key to deduplicate
-                $allRecords[$attendance->code] = $attendance;
-            }
-        }
+        $allRecords = $this->paginateAllAcrossTags(
+            $this->tags,
+            fn (int $tagID) => fn (int $page) => $this->fetchAttendancePage(
+                $page, $tagID, $this->startDate, $this->endDate, $this->playerNames, $this->zoneID,
+            ),
+        );
 
         return $allRecords
             ->sortBy(fn (GuildAttendance $a) => $a->startTime)
@@ -163,28 +156,18 @@ class Attendance extends BaseService
             return LazyCollection::make($this->attendance);
         }
 
-        return LazyCollection::make(function () {
-            $seenCodes = [];
-
-            foreach ($this->tags as $tagID) {
-                $tagAttendance = $this->getAttendanceLazy(
-                    guildTagID: $tagID,
-                    startDate: $this->startDate,
-                    endDate: $this->endDate,
-                    playerNames: $this->playerNames,
-                    zoneID: $this->zoneID,
-                );
-
-                foreach ($tagAttendance as $attendance) {
-                    // Skip duplicates (same report from different tags)
-                    if (isset($seenCodes[$attendance->code])) {
-                        continue;
-                    }
-                    $seenCodes[$attendance->code] = true;
-                    yield $attendance;
-                }
-            }
-        });
+        return $this->paginateLazyAcrossTags(
+            $this->tags,
+            fn (int $tagID) => $this->getSingleTagAttendanceLazy(
+                $this->guildId,
+                25,
+                $this->startDate,
+                $this->endDate,
+                $this->playerNames,
+                $tagID,
+                $this->zoneID,
+            ),
+        );
     }
 
     /**
@@ -400,25 +383,12 @@ class Attendance extends BaseService
         array $guildTagIDs,
         ?int $zoneID,
     ): GuildAttendancePagination {
-        $allRecords = collect();
-
-        foreach ($guildTagIDs as $tagID) {
-            // Fetch all pages for this tag to enable proper merging
-            $tagLazy = $this->getSingleTagAttendanceLazy(
-                $guildId,
-                100,
-                $startDate,
-                $endDate,
-                $playerNames,
-                $tagID,
-                $zoneID,
-            );
-
-            foreach ($tagLazy as $attendance) {
-                // Use report code as unique key to deduplicate
-                $allRecords[$attendance->code] = $attendance;
-            }
-        }
+        $allRecords = $this->paginateAllAcrossTags(
+            $guildTagIDs,
+            fn (int $tagID) => fn (int $fetchPage) => $this->fetchAttendancePage(
+                $fetchPage, $tagID, $startDate, $endDate, $playerNames, $zoneID, $guildId, 100,
+            ),
+        );
 
         // Sort by startTime descending
         $sorted = $allRecords->sortByDesc(fn (GuildAttendance $a) => $a->startTime)->values();
@@ -504,14 +474,17 @@ class Attendance extends BaseService
         }
 
         // Multiple tags: chain lazy collections, deduplicate
-        return $this->getMultiTagAttendanceLazy(
-            $guildId,
-            $limit,
-            $startDate,
-            $endDate,
-            $playerNames,
+        return $this->paginateLazyAcrossTags(
             $tagIDs,
-            $zoneID,
+            fn (int $tagID) => $this->getSingleTagAttendanceLazy(
+                $guildId,
+                $limit,
+                $startDate,
+                $endDate,
+                $playerNames,
+                $tagID,
+                $zoneID,
+            ),
         );
     }
 
@@ -532,83 +505,88 @@ class Attendance extends BaseService
         ?int $guildTagID,
         ?int $zoneID,
     ): LazyCollection {
-        return LazyCollection::make(function () use ($guildId, $limit, $startDate, $endDate, $playerNames, $guildTagID, $zoneID) {
-            $page = 1;
+        return $this->paginateLazy(function (int $page) use ($guildId, $limit, $startDate, $endDate, $playerNames, $guildTagID, $zoneID) {
+            $result = $this->querySingleTagAttendance($guildId, $page, $limit, null, null, null, $guildTagID, $zoneID);
 
-            do {
-                $result = $this->querySingleTagAttendance($guildId, $page, $limit, null, null, null, $guildTagID, $zoneID);
+            $items = [];
 
-                foreach ($result->data as $attendance) {
-                    // Apply date filters
-                    if ($startDate !== null && $attendance->startTime->lt($startDate)) {
-                        continue;
-                    }
-                    if ($endDate !== null && $attendance->startTime->gt($endDate)) {
-                        // Assuming records are ordered by date descending, stop iteration
-                        return;
-                    }
-
-                    // Apply player filter if specified
-                    if ($playerNames !== null) {
-                        $attendance = $attendance->filterPlayers($playerNames);
-                        // Skip if no matching players in this attendance record
-                        if (empty($attendance->players)) {
-                            continue;
-                        }
-                    }
-
-                    yield $attendance;
+            foreach ($result->data as $attendance) {
+                // Apply date filters
+                if ($startDate !== null && $attendance->startTime->lt($startDate)) {
+                    continue;
+                }
+                if ($endDate !== null && $attendance->startTime->gt($endDate)) {
+                    // Assuming records are ordered by date descending, stop iteration
+                    return ['items' => $items, 'hasMorePages' => false];
                 }
 
-                $page++;
-            } while ($result->hasMorePages);
+                // Apply player filter if specified
+                if ($playerNames !== null) {
+                    $attendance = $attendance->filterPlayers($playerNames);
+                    // Skip if no matching players in this attendance record
+                    if (empty($attendance->players)) {
+                        continue;
+                    }
+                }
+
+                $items[] = $attendance;
+            }
+
+            return ['items' => $items, 'hasMorePages' => $result->hasMorePages];
         });
     }
 
     /**
-     * Get attendance lazily for multiple tags, deduplicating by report code.
+     * Fetch a single page of attendance and return a normalized result for pagination.
      *
      * @param  array<string>|null  $playerNames  Filter to only include these players.
-     * @param  array<int>  $guildTagIDs
+     * @return array{items: array<GuildAttendance>, hasMorePages: bool}
      *
      * @throws GuildNotFoundException
      * @throws GraphQLException
      */
-    protected function getMultiTagAttendanceLazy(
-        int $guildId,
-        int $limit,
+    protected function fetchAttendancePage(
+        int $page,
+        int $guildTagID,
         ?Carbon $startDate,
         ?Carbon $endDate,
         ?array $playerNames,
-        array $guildTagIDs,
         ?int $zoneID,
-    ): LazyCollection {
-        return LazyCollection::make(function () use (
-            $guildId, $limit, $startDate, $endDate, $playerNames, $guildTagIDs, $zoneID
-        ) {
-            $seenCodes = [];
+        ?int $guildId = null,
+        ?int $limit = null,
+    ): array {
+        $result = $this->querySingleTagAttendance(
+            $guildId ?? $this->guildId,
+            $page,
+            $limit ?? 25,
+            null,
+            null,
+            null,
+            $guildTagID,
+            $zoneID,
+        );
 
-            foreach ($guildTagIDs as $tagID) {
-                $tagLazy = $this->getSingleTagAttendanceLazy(
-                    $guildId,
-                    $limit,
-                    $startDate,
-                    $endDate,
-                    $playerNames,
-                    $tagID,
-                    $zoneID,
-                );
+        $items = [];
 
-                foreach ($tagLazy as $attendance) {
-                    // Skip duplicates (same report from different tags)
-                    if (isset($seenCodes[$attendance->code])) {
-                        continue;
-                    }
-                    $seenCodes[$attendance->code] = true;
-                    yield $attendance;
+        foreach ($result->data as $attendance) {
+            if ($startDate !== null && $attendance->startTime->lt($startDate)) {
+                continue;
+            }
+            if ($endDate !== null && $attendance->startTime->gt($endDate)) {
+                return ['items' => $items, 'hasMorePages' => false];
+            }
+
+            if ($playerNames !== null) {
+                $attendance = $attendance->filterPlayers($playerNames);
+                if (empty($attendance->players)) {
+                    continue;
                 }
             }
-        });
+
+            $items[] = $attendance;
+        }
+
+        return ['items' => $items, 'hasMorePages' => $result->hasMorePages];
     }
 
     /**

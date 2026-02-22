@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\LazyCollection;
 use Tests\TestCase;
 
 class ReportsTest extends TestCase
@@ -343,6 +344,177 @@ class ReportsTest extends TestCase
 
         Http::assertSentCount(2);
     }
+
+    // ==================== lazy() Tests ====================
+
+    public function test_lazy_returns_lazy_collection(): void
+    {
+        Http::preventStrayRequests();
+
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
+                $this->fakeReportsResponse([]),
+                200,
+                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
+            ),
+        ]);
+
+        $this->fakeAuthToken();
+        $this->fakeNotRateLimited();
+        $this->fakeCachePassthrough();
+        $this->fakeRateLimitHeaders();
+
+        $service = $this->getService();
+        $result = $service->lazy();
+
+        $this->assertInstanceOf(LazyCollection::class, $result);
+    }
+
+    public function test_lazy_yields_report_records(): void
+    {
+        Http::preventStrayRequests();
+
+        $report1 = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
+        $report2 = $this->makeReportData('DEF456', 'Gruul', 1771612483423, 1771626471711);
+
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
+                $this->fakeReportsResponse([$report1, $report2]),
+                200,
+                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
+            ),
+        ]);
+
+        $this->fakeAuthToken();
+        $this->fakeNotRateLimited();
+        $this->fakeCachePassthrough();
+        $this->fakeRateLimitHeaders();
+
+        $service = $this->getService();
+        $records = $service->lazy()->all();
+
+        $this->assertCount(2, $records);
+        $this->assertContainsOnlyInstancesOf(Report::class, $records);
+    }
+
+    public function test_lazy_with_guild_tags_fetches_from_api(): void
+    {
+        Http::preventStrayRequests();
+
+        $report1 = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
+
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
+                $this->fakeReportsResponse([$report1]),
+                200,
+                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
+            ),
+        ]);
+
+        $this->fakeAuthToken();
+        $this->fakeNotRateLimited();
+        $this->fakeCachePassthrough();
+        $this->fakeRateLimitHeaders();
+
+        $guildTag = GuildTag::factory()->create();
+
+        $service = $this->getService();
+        $records = $service->byGuildTags(collect([$guildTag]))->lazy()->all();
+
+        $this->assertCount(1, $records);
+        $this->assertEquals('ABC123', $records[0]->code);
+    }
+
+    public function test_lazy_with_multiple_tags_deduplicates(): void
+    {
+        Http::preventStrayRequests();
+
+        $sharedReport = $this->makeReportData('SHARED1', 'Karazhan', 1771611168498, 1771625431211);
+
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
+                ->push($this->fakeReportsResponse([$sharedReport]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
+                ->push($this->fakeReportsResponse([$sharedReport]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
+        ]);
+
+        $this->fakeAuthToken();
+        $this->fakeNotRateLimited();
+        $this->fakeCachePassthrough();
+        $this->fakeRateLimitHeaders();
+
+        $tag1 = GuildTag::factory()->create();
+        $tag2 = GuildTag::factory()->create();
+
+        $service = $this->getService();
+        $records = $service->byGuildTags(collect([$tag1, $tag2]))->lazy()->all();
+
+        $this->assertCount(1, $records);
+        $this->assertEquals('SHARED1', $records[0]->code);
+    }
+
+    public function test_lazy_paginates_through_all_pages(): void
+    {
+        Http::preventStrayRequests();
+
+        $page1Reports = [$this->makeReportData('PAGE1A', 'Kara 1', 1771611168498, 1771625431211)];
+        $page2Reports = [$this->makeReportData('PAGE2A', 'Kara 2', 1771700000000, 1771710000000)];
+
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
+                ->push($this->fakeReportsResponse($page1Reports, hasMorePages: true, currentPage: 1), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
+                ->push($this->fakeReportsResponse($page2Reports, hasMorePages: false, currentPage: 2), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
+        ]);
+
+        $this->fakeAuthToken();
+        $this->fakeNotRateLimited();
+        $this->fakeCachePassthrough();
+        $this->fakeRateLimitHeaders();
+
+        $guildTag = GuildTag::factory()->create();
+
+        $service = $this->getService();
+        $records = $service->byGuildTags(collect([$guildTag]))->lazy()->all();
+
+        $this->assertCount(2, $records);
+        $codes = array_map(fn (Report $r) => $r->code, $records);
+        $this->assertContains('PAGE1A', $codes);
+        $this->assertContains('PAGE2A', $codes);
+    }
+
+    public function test_lazy_falls_back_to_guild_id_when_no_tags(): void
+    {
+        Http::preventStrayRequests();
+
+        $report = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
+
+        Http::fake([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
+                $this->fakeReportsResponse([$report]),
+                200,
+                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
+            ),
+        ]);
+
+        $this->fakeAuthToken();
+        $this->fakeNotRateLimited();
+        $this->fakeCachePassthrough();
+        $this->fakeRateLimitHeaders();
+
+        $service = $this->getService(['guild_id' => 774848]);
+        $records = $service->lazy()->all();
+
+        $this->assertCount(1, $records);
+
+        Http::assertSent(function ($request) {
+            $body = $request->data();
+
+            return str_contains($body['query'], 'guildID')
+                && ! str_contains($body['query'], 'guildTagID')
+                && $body['variables']['guildID'] === 774848;
+        });
+    }
+
+    // ==================== Report Data Object Tests ====================
 
     public function test_report_data_object_parses_correctly_with_zone(): void
     {
