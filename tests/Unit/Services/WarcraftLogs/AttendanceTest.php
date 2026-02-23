@@ -122,22 +122,6 @@ class AttendanceTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_start_date_returns_self_for_chaining(): void
-    {
-        $service = $this->makeService();
-        $result = $service->startDate(Carbon::now());
-
-        $this->assertSame($service, $result);
-    }
-
-    public function test_end_date_returns_self_for_chaining(): void
-    {
-        $service = $this->makeService();
-        $result = $service->endDate(Carbon::now());
-
-        $this->assertSame($service, $result);
-    }
-
     public function test_player_names_returns_self_for_chaining(): void
     {
         $service = $this->makeService();
@@ -168,8 +152,6 @@ class AttendanceTest extends TestCase
 
         $result = $service
             ->tags([1, 2])
-            ->startDate(Carbon::now()->subMonth())
-            ->endDate(Carbon::now())
             ->playerNames(['Thrall'])
             ->zoneID(1);
 
@@ -544,38 +526,6 @@ class AttendanceTest extends TestCase
         });
     }
 
-    public function test_get_attendance_filters_by_start_date(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getAttendance(['startDate' => Carbon::parse('2025-01-10')]);
-
-        // Only abc123 (Jan 15) should be included
-        $this->assertCount(1, $result->data);
-        $this->assertEquals('abc123', $result->data[0]->code);
-    }
-
-    public function test_get_attendance_filters_by_end_date(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getAttendance(['endDate' => Carbon::parse('2025-01-10')]);
-
-        // Only def456 (Jan 8) should be included
-        $this->assertCount(1, $result->data);
-        $this->assertEquals('def456', $result->data[0]->code);
-    }
-
     public function test_get_attendance_filters_by_player_names(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
@@ -831,25 +781,6 @@ class AttendanceTest extends TestCase
         $records = $service->getAttendanceLazy()->all();
 
         $this->assertCount(2, $records);
-    }
-
-    public function test_get_attendance_lazy_filters_by_date_range(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $records = $service->getAttendanceLazy(
-            startDate: Carbon::parse('2025-01-10'),
-            endDate: Carbon::parse('2025-01-20'),
-        )->all();
-
-        // Only abc123 (Jan 15) matches
-        $this->assertCount(1, $records);
-        $this->assertEquals('abc123', $records[0]->code);
     }
 
     public function test_get_attendance_lazy_filters_by_player_names(): void

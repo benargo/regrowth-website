@@ -30,16 +30,6 @@ class Attendance extends BaseService
     protected array $tags = [];
 
     /**
-     * Optional start date filter.
-     */
-    protected ?Carbon $startDate = null;
-
-    /**
-     * Optional end date filter.
-     */
-    protected ?Carbon $endDate = null;
-
-    /**
      * Optional player names filter.
      *
      * @var array<string>|null
@@ -69,26 +59,6 @@ class Attendance extends BaseService
     public function tags(array $tags): static
     {
         $this->tags = $tags;
-
-        return $this;
-    }
-
-    /**
-     * Set the start date filter.
-     */
-    public function startDate(?Carbon $startDate): static
-    {
-        $this->startDate = $startDate;
-
-        return $this;
-    }
-
-    /**
-     * Set the end date filter.
-     */
-    public function endDate(?Carbon $endDate): static
-    {
-        $this->endDate = $endDate;
 
         return $this;
     }
@@ -132,7 +102,7 @@ class Attendance extends BaseService
         $allRecords = $this->paginateAllAcrossTags(
             $this->tags,
             fn (int $tagID) => fn (int $page) => $this->fetchAttendancePage(
-                $page, $tagID, $this->startDate, $this->endDate, $this->playerNames, $this->zoneID,
+                $page, $tagID, $this->playerNames, $this->zoneID,
             ),
         );
 
@@ -161,8 +131,6 @@ class Attendance extends BaseService
             fn (int $tagID) => $this->getSingleTagAttendanceLazy(
                 $this->guildId,
                 25,
-                $this->startDate,
-                $this->endDate,
                 $this->playerNames,
                 $tagID,
                 $this->zoneID,
@@ -202,7 +170,7 @@ class Attendance extends BaseService
     /**
      * Fetch a single page of attendance for the configured guild.
      *
-     * @param  array{page?: int, limit?: int, startDate?: Carbon, endDate?: Carbon, playerNames?: array<string>, guildTagID?: int|array<int>, zoneID?: int}  $params
+     * @param  array{page?: int, limit?: int, playerNames?: array<string>, guildTagID?: int|array<int>, zoneID?: int}  $params
      *
      * @throws GuildNotFoundException
      * @throws GraphQLException
@@ -213,8 +181,6 @@ class Attendance extends BaseService
             $this->guildId,
             $params['page'] ?? 1,
             $params['limit'] ?? 25,
-            $params['startDate'] ?? null,
-            $params['endDate'] ?? null,
             $params['playerNames'] ?? null,
             $params['guildTagID'] ?? null,
             $params['zoneID'] ?? null,
@@ -234,8 +200,6 @@ class Attendance extends BaseService
         int $guildId,
         ?int $page = 1,
         ?int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
@@ -248,8 +212,6 @@ class Attendance extends BaseService
                 $guildId,
                 $page,
                 $limit,
-                $startDate,
-                $endDate,
                 $playerNames,
                 $tagIDs[0] ?? null,
                 $zoneID,
@@ -261,8 +223,6 @@ class Attendance extends BaseService
             $guildId,
             $page,
             $limit,
-            $startDate,
-            $endDate,
             $playerNames,
             $tagIDs,
             $zoneID,
@@ -281,8 +241,6 @@ class Attendance extends BaseService
         int $guildId,
         ?int $page = 1,
         ?int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         ?int $guildTagID = null,
         ?int $zoneID = null,
@@ -320,34 +278,15 @@ class Attendance extends BaseService
 
         $pagination = GuildAttendancePagination::fromArray($attendanceData);
 
-        // Apply filters if specified
-        if ($startDate !== null || $endDate !== null || $playerNames !== null) {
-            $filteredData = array_filter(
+        if ($playerNames !== null) {
+            $filteredData = array_map(
+                fn (GuildAttendance $attendance) => $attendance->filterPlayers($playerNames),
                 $pagination->data,
-                function (GuildAttendance $attendance) use ($startDate, $endDate) {
-                    if ($startDate !== null && $attendance->startTime->lt($startDate)) {
-                        return false;
-                    }
-                    if ($endDate !== null && $attendance->startTime->gt($endDate)) {
-                        return false;
-                    }
-
-                    return true;
-                },
             );
-
-            // Apply player filter to each attendance record
-            if ($playerNames !== null) {
-                $filteredData = array_map(
-                    fn (GuildAttendance $attendance) => $attendance->filterPlayers($playerNames),
-                    $filteredData,
-                );
-                // Remove attendance records with no matching players
-                $filteredData = array_filter(
-                    $filteredData,
-                    fn (GuildAttendance $attendance) => ! empty($attendance->players),
-                );
-            }
+            $filteredData = array_filter(
+                $filteredData,
+                fn (GuildAttendance $attendance) => ! empty($attendance->players),
+            );
 
             return new GuildAttendancePagination(
                 data: array_values($filteredData),
@@ -377,8 +316,6 @@ class Attendance extends BaseService
         int $guildId,
         ?int $page,
         ?int $limit,
-        ?Carbon $startDate,
-        ?Carbon $endDate,
         ?array $playerNames,
         array $guildTagIDs,
         ?int $zoneID,
@@ -386,7 +323,7 @@ class Attendance extends BaseService
         $allRecords = $this->paginateAllAcrossTags(
             $guildTagIDs,
             fn (int $tagID) => fn (int $fetchPage) => $this->fetchAttendancePage(
-                $fetchPage, $tagID, $startDate, $endDate, $playerNames, $zoneID, $guildId, 100,
+                $fetchPage, $tagID, $playerNames, $zoneID, $guildId, 100,
             ),
         );
 
@@ -422,8 +359,6 @@ class Attendance extends BaseService
      */
     public function getAttendanceLazy(
         ?int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
@@ -431,8 +366,6 @@ class Attendance extends BaseService
         return $this->getGuildAttendanceLazy(
             $this->guildId,
             $limit,
-            $startDate,
-            $endDate,
             $playerNames,
             $guildTagID,
             $zoneID,
@@ -452,8 +385,6 @@ class Attendance extends BaseService
     public function getGuildAttendanceLazy(
         int $guildId,
         int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
@@ -465,8 +396,6 @@ class Attendance extends BaseService
             return $this->getSingleTagAttendanceLazy(
                 $guildId,
                 $limit,
-                $startDate,
-                $endDate,
                 $playerNames,
                 $tagIDs[0] ?? null,
                 $zoneID,
@@ -479,8 +408,6 @@ class Attendance extends BaseService
             fn (int $tagID) => $this->getSingleTagAttendanceLazy(
                 $guildId,
                 $limit,
-                $startDate,
-                $endDate,
                 $playerNames,
                 $tagID,
                 $zoneID,
@@ -499,31 +426,19 @@ class Attendance extends BaseService
     protected function getSingleTagAttendanceLazy(
         int $guildId,
         int $limit,
-        ?Carbon $startDate,
-        ?Carbon $endDate,
         ?array $playerNames,
         ?int $guildTagID,
         ?int $zoneID,
     ): LazyCollection {
-        return $this->paginateLazy(function (int $page) use ($guildId, $limit, $startDate, $endDate, $playerNames, $guildTagID, $zoneID) {
-            $result = $this->querySingleTagAttendance($guildId, $page, $limit, null, null, null, $guildTagID, $zoneID);
+        return $this->paginateLazy(function (int $page) use ($guildId, $limit, $playerNames, $guildTagID, $zoneID) {
+            $result = $this->querySingleTagAttendance($guildId, $page, $limit, null, $guildTagID, $zoneID);
 
             $items = [];
 
             foreach ($result->data as $attendance) {
-                // Apply date filters
-                if ($startDate !== null && $attendance->startTime->lt($startDate)) {
-                    continue;
-                }
-                if ($endDate !== null && $attendance->startTime->gt($endDate)) {
-                    // Assuming records are ordered by date descending, stop iteration
-                    return ['items' => $items, 'hasMorePages' => false];
-                }
-
                 // Apply player filter if specified
                 if ($playerNames !== null) {
                     $attendance = $attendance->filterPlayers($playerNames);
-                    // Skip if no matching players in this attendance record
                     if (empty($attendance->players)) {
                         continue;
                     }
@@ -548,8 +463,6 @@ class Attendance extends BaseService
     protected function fetchAttendancePage(
         int $page,
         int $guildTagID,
-        ?Carbon $startDate,
-        ?Carbon $endDate,
         ?array $playerNames,
         ?int $zoneID,
         ?int $guildId = null,
@@ -560,8 +473,6 @@ class Attendance extends BaseService
             $page,
             $limit ?? 25,
             null,
-            null,
-            null,
             $guildTagID,
             $zoneID,
         );
@@ -569,13 +480,6 @@ class Attendance extends BaseService
         $items = [];
 
         foreach ($result->data as $attendance) {
-            if ($startDate !== null && $attendance->startTime->lt($startDate)) {
-                continue;
-            }
-            if ($endDate !== null && $attendance->startTime->gt($endDate)) {
-                return ['items' => $items, 'hasMorePages' => false];
-            }
-
             if ($playerNames !== null) {
                 $attendance = $attendance->filterPlayers($playerNames);
                 if (empty($attendance->players)) {
