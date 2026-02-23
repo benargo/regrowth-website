@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\DiscordRole;
 use App\Services\Discord\DiscordRoleService;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class SyncDiscordRoles implements ShouldQueue
 {
-    use Queueable;
+    use Batchable, Queueable;
 
     public int $tries = 3;
 
@@ -57,8 +58,6 @@ class SyncDiscordRoles implements ShouldQueue
                 'deleted' => $deleted,
             ]);
         });
-
-        SyncDiscordUsers::dispatch();
     }
 
     /**

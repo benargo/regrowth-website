@@ -6,6 +6,7 @@ use App\Models\DiscordRole;
 use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class SyncDiscordUsers implements ShouldQueue
 {
-    use Queueable;
+    use Batchable, Queueable;
 
     public int $tries = 3;
 

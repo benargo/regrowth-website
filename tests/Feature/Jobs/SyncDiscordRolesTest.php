@@ -3,11 +3,9 @@
 namespace Tests\Feature\Jobs;
 
 use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUsers;
 use App\Models\DiscordRole;
 use App\Services\Discord\DiscordRoleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
@@ -91,19 +89,6 @@ class SyncDiscordRolesTest extends TestCase
         SyncDiscordRoles::dispatchSync();
 
         $this->assertDatabaseMissing('discord_roles', ['id' => '000000000000000000']);
-    }
-
-    public function test_it_dispatches_sync_discord_user_job_on_completion(): void
-    {
-        Queue::fake(SyncDiscordUsers::class);
-
-        $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
-        });
-
-        SyncDiscordRoles::dispatchSync();
-
-        Queue::assertPushed(SyncDiscordUsers::class);
     }
 
     public function test_it_preserves_is_visible_on_existing_roles(): void
