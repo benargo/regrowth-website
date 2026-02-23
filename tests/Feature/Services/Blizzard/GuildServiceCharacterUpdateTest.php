@@ -2,12 +2,9 @@
 
 namespace Tests\Feature\Services\Blizzard;
 
-use App\Events\AddonSettingsProcessed;
-use App\Models\Character;
-use App\Models\GuildRank;
+use App\Events\GuildRosterFetched;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\GuildService;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
@@ -20,8 +17,6 @@ class GuildServiceCharacterUpdateTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        Event::fake([AddonSettingsProcessed::class]);
 
         config([
             'services.blizzard.client_id' => 'test_client_id',
@@ -39,9 +34,9 @@ class GuildServiceCharacterUpdateTest extends TestCase
         ]);
     }
 
-    public function test_roster_creates_character_when_guild_rank_exists(): void
+    public function test_roster_dispatches_guild_roster_fetched_event(): void
     {
-        $guildRank = GuildRank::factory()->create(['position' => 0]);
+        Event::fake([GuildRosterFetched::class]);
 
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -70,99 +65,14 @@ class GuildServiceCharacterUpdateTest extends TestCase
         $client = new Client('client_id', 'client_secret');
         $service = new GuildService($client);
 
-        $service->shouldUpdateCharacters()->roster();
+        $service->roster();
 
-        $this->assertDatabaseHas('characters', [
-            'id' => 123,
-            'name' => 'TestChar',
-            'rank_id' => $guildRank->id,
-        ]);
+        Event::assertDispatched(GuildRosterFetched::class);
     }
 
-    public function test_roster_updates_existing_character(): void
+    public function test_event_carries_full_roster_including_multiple_members(): void
     {
-        $guildRank = GuildRank::factory()->create(['position' => 0]);
-        $character = Character::factory()->create([
-            'id' => 123,
-            'name' => 'OldName',
-            'rank_id' => null,
-        ]);
-
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response([
-                'members' => [
-                    [
-                        'character' => [
-                            'id' => 123,
-                            'name' => 'NewName',
-                            'level' => 60,
-                            'realm' => ['id' => 1, 'name' => 'Thunderstrike', 'slug' => 'thunderstrike'],
-                            'playable_class' => ['id' => 11],
-                            'playable_race' => ['id' => 4],
-                            'faction' => ['type' => 'ALLIANCE'],
-                        ],
-                        'rank' => 0,
-                    ],
-                ],
-            ]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new GuildService($client);
-
-        $service->shouldUpdateCharacters()->roster();
-
-        $this->assertDatabaseHas('characters', [
-            'id' => 123,
-            'name' => 'NewName',
-            'rank_id' => $guildRank->id,
-        ]);
-        $this->assertDatabaseCount('characters', 1);
-    }
-
-    public function test_roster_does_not_create_character_when_guild_rank_not_found(): void
-    {
-        $this->expectException(ModelNotFoundException::class);
-
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response([
-                'members' => [
-                    [
-                        'character' => [
-                            'id' => 123,
-                            'name' => 'TestChar',
-                            'level' => 60,
-                            'realm' => ['id' => 1, 'name' => 'Thunderstrike', 'slug' => 'thunderstrike'],
-                            'playable_class' => ['id' => 11],
-                            'playable_race' => ['id' => 4],
-                            'faction' => ['type' => 'ALLIANCE'],
-                        ],
-                        'rank' => 0,
-                    ],
-                ],
-            ]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new GuildService($client);
-
-        $service->shouldUpdateCharacters()->roster();
-    }
-
-    public function test_roster_creates_multiple_characters(): void
-    {
-        $guildMaster = GuildRank::factory()->create(['position' => 0]);
-        $officer = GuildRank::factory()->create(['position' => 3]);
+        Event::fake([GuildRosterFetched::class]);
 
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -203,29 +113,18 @@ class GuildServiceCharacterUpdateTest extends TestCase
         $client = new Client('client_id', 'client_secret');
         $service = new GuildService($client);
 
-        $service->shouldUpdateCharacters()->roster();
+        $service->roster();
 
-        $this->assertDatabaseHas('characters', [
-            'id' => 123,
-            'name' => 'GuildMasterChar',
-            'rank_id' => $guildMaster->id,
-        ]);
-        $this->assertDatabaseHas('characters', [
-            'id' => 456,
-            'name' => 'OfficerChar',
-            'rank_id' => $officer->id,
-        ]);
+        Event::assertDispatched(GuildRosterFetched::class, function (GuildRosterFetched $event) {
+            return count($event->roster['members']) === 2
+                && $event->roster['members'][0]['character']['id'] === 123
+                && $event->roster['members'][1]['character']['id'] === 456;
+        });
     }
 
-    public function test_roster_updates_character_rank(): void
+    public function test_event_not_dispatched_on_cache_hit(): void
     {
-        $oldRank = GuildRank::factory()->create(['position' => 5]);
-        $newRank = GuildRank::factory()->create(['position' => 3]);
-        $character = Character::factory()->create([
-            'id' => 123,
-            'name' => 'TestChar',
-            'rank_id' => $oldRank->id,
-        ]);
+        Event::fake([GuildRosterFetched::class]);
 
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -233,32 +132,15 @@ class GuildServiceCharacterUpdateTest extends TestCase
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ]),
-            'eu.api.blizzard.com/*' => Http::response([
-                'members' => [
-                    [
-                        'character' => [
-                            'id' => 123,
-                            'name' => 'TestChar',
-                            'level' => 60,
-                            'realm' => ['id' => 1, 'name' => 'Thunderstrike', 'slug' => 'thunderstrike'],
-                            'playable_class' => ['id' => 11],
-                            'playable_race' => ['id' => 4],
-                            'faction' => ['type' => 'ALLIANCE'],
-                        ],
-                        'rank' => 3,
-                    ],
-                ],
-            ]),
+            'eu.api.blizzard.com/*' => Http::response(['members' => []]),
         ]);
 
         $client = new Client('client_id', 'client_secret');
         $service = new GuildService($client);
 
-        $service->shouldUpdateCharacters()->roster();
+        $service->roster();  // API hit — event dispatched
+        $service->roster();  // Cache hit — no event
 
-        $this->assertDatabaseHas('characters', [
-            'id' => 123,
-            'rank_id' => $newRank->id,
-        ]);
+        Event::assertDispatchedTimes(GuildRosterFetched::class, 1);
     }
 }

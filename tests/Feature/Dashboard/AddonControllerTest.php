@@ -11,6 +11,7 @@ use App\Services\Blizzard\GuildService as BlizzardGuildService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
@@ -32,6 +33,15 @@ class AddonControllerTest extends TestCase
             ->byDefault();
 
         $this->app->instance(GuildTags::class, $guildTags);
+
+        // Mock BlizzardGuildService to return empty members by default
+        // This prevents real API calls during tests that don't specifically test GRM freshness
+        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
+        $blizzardGuildService->shouldReceive('members')
+            ->andReturn(new Collection)
+            ->byDefault();
+
+        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
     }
 
     /**

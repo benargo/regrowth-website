@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\Blizzard;
 
+use App\Events\GuildRosterFetched;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService;
@@ -9,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -19,6 +21,9 @@ class GuildServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Prevent event listeners (e.g. DispatchCharacterUpdates) from running during service unit tests.
+        Event::fake();
 
         config([
             'services.blizzard.client_id' => 'test_client_id',
@@ -510,6 +515,86 @@ class GuildServiceTest extends TestCase
             }
 
             return true;
+        });
+    }
+
+    public function test_roster_dispatches_guild_roster_fetched_event_when_api_is_called(): void
+    {
+        Event::fake([GuildRosterFetched::class]);
+
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response(['members' => []]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new GuildService($client);
+
+        $service->roster();
+
+        Event::assertDispatched(GuildRosterFetched::class);
+    }
+
+    public function test_roster_does_not_dispatch_event_on_cache_hit(): void
+    {
+        Event::fake([GuildRosterFetched::class]);
+
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response(['members' => []]),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new GuildService($client);
+
+        $service->roster();  // API hit — event dispatched
+        $service->roster();  // Cache hit — no event
+
+        Event::assertDispatchedTimes(GuildRosterFetched::class, 1);
+    }
+
+    public function test_roster_event_carries_roster_data(): void
+    {
+        Event::fake([GuildRosterFetched::class]);
+
+        $expectedResponse = [
+            'members' => [
+                [
+                    'character' => [
+                        'id' => 123,
+                        'name' => 'TestChar',
+                        'level' => 60,
+                    ],
+                    'rank' => 0,
+                ],
+            ],
+        ];
+
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response($expectedResponse),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new GuildService($client);
+
+        $service->roster();
+
+        Event::assertDispatched(GuildRosterFetched::class, function (GuildRosterFetched $event) {
+            return count($event->roster['members']) === 1
+                && $event->roster['members'][0]['character']['name'] === 'TestChar';
         });
     }
 }

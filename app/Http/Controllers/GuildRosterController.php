@@ -49,7 +49,7 @@ class GuildRosterController extends Controller
     {
         $guildService = app(GuildService::class);
 
-        $roster = $guildService->shouldUpdateCharacters()->roster();
+        $roster = $guildService->roster();
 
         $members = collect($roster['members'])->map(function ($memberData) {
             $member = GuildMember::fromArray($memberData);

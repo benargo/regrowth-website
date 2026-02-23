@@ -2,8 +2,7 @@
 
 namespace App\Services\Blizzard;
 
-use App\Jobs\UpdateCharacterFromRoster;
-use App\Models\Character;
+use App\Events\GuildRosterFetched;
 use App\Services\Blizzard\Data\GuildMember;
 use Illuminate\Support\Collection;
 
@@ -14,8 +13,6 @@ class GuildService extends Service
     protected string $nameSlug = 'regrowth';
 
     protected string $basePath = '/data/wow/guild';
-
-    protected bool $shouldUpdateCharacters = false;
 
     /**
      * Default cache TTL values in seconds.
@@ -42,31 +39,11 @@ class GuildService extends Service
             function () use ($realmSlug, $nameSlug) {
                 $roster = $this->getJson("/{$realmSlug}/{$nameSlug}/roster");
 
-                // Dispatch character update jobs if enabled
-                $this->updateCharacters($roster);
+                GuildRosterFetched::dispatch($roster);
 
                 return $roster;
             }
         );
-    }
-
-    /**
-     * Set whether characters should be updated.
-     */
-    public function shouldUpdateCharacters(bool $shouldUpdateCharacters = true): static
-    {
-        $this->shouldUpdateCharacters = $shouldUpdateCharacters;
-
-        return $this;
-    }
-
-    protected function updateCharacters(array $roster): void
-    {
-        if ($this->shouldUpdateCharacters) {
-            foreach ($roster['members'] as $memberData) {
-                UpdateCharacterFromRoster::dispatch($memberData);
-            }
-        }
     }
 
     /**
