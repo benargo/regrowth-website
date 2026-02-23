@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
@@ -153,6 +154,24 @@ class SyncDiscordUsersTest extends TestCase
 
         // Errored user was preserved
         $this->assertDatabaseHas('users', ['id' => '300000000000000000']);
+    }
+
+    // ==========================================
+    // Batch Cancellation
+    // ==========================================
+
+    public function test_it_skips_execution_when_batch_is_cancelled(): void
+    {
+        $batch = Bus::batch([])->dispatch();
+        $batch->cancel();
+
+        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+            $mock->shouldNotReceive('getGuildMember');
+        });
+
+        $job = new SyncDiscordUsers();
+        $job->batchId = $batch->id;
+        dispatch_sync($job);
     }
 
     public function test_it_only_syncs_recognized_role_ids(): void

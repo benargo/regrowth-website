@@ -100,9 +100,10 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService = Mockery::mock(Reports::class);
         $reportsService->shouldNotReceive('byGuildTags');
         $reportsService->shouldNotReceive('toDatabase');
+        $this->app->instance(Reports::class, $reportsService);
 
         $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
         $job->batchId = $batch->id;
-        $job->handle($reportsService);
+        dispatch_sync($job);
     }
 }

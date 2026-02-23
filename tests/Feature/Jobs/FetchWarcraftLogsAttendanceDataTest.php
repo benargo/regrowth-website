@@ -319,9 +319,10 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldNotReceive('tags');
         $attendanceService->shouldNotReceive('lazy');
+        $this->app->instance(Attendance::class, $attendanceService);
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
         $job->batchId = $batch->id;
-        $job->handle($attendanceService);
+        dispatch_sync($job);
     }
 }

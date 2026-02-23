@@ -12,11 +12,20 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Collection;
 
 class FetchWarcraftLogsAttendanceData implements ShouldQueue
 {
     use Batchable, Queueable;
+
+    /**
+     * Get the middleware the job should pass through.
+     */
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled];
+    }
 
     /**
      * Create a new job instance.
@@ -34,11 +43,6 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
      */
     public function handle(Attendance $attendanceService): void
     {
-        // Check if the batch has been cancelled before doing any work
-        if ($this->batch()?->cancelled()) {
-            return;
-        }
-
         // Validate that we have guild tags to process
         if ($this->guildTags->isEmpty()) {
             throw new EmptyCollectionException('No guild tags configured for attendance tracking.');

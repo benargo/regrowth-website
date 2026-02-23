@@ -9,6 +9,7 @@ use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Log;
 
@@ -28,6 +29,7 @@ class SyncDiscordUsers implements ShouldQueue
     public function middleware(): array
     {
         return [
+            new SkipIfBatchCancelled,
             new WithoutOverlapping,
         ];
     }

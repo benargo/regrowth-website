@@ -8,10 +8,19 @@ use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 
 class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
 {
     use Batchable, Queueable;
+
+    /**
+     * Get the middleware the job should pass through.
+     */
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled];
+    }
 
     /**
      * Create a new job instance.
@@ -27,10 +36,6 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
      */
     public function handle(Reports $reportsService): void
     {
-        if ($this->batch()?->cancelled()) {
-            return;
-        }
-
         $reportsService
             ->byGuildTags(collect([$this->guildTag]))
             ->startTime($this->since)
