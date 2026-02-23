@@ -1,0 +1,90 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Exceptions\EmptyCollectionException;
+use App\Models\Character;
+use App\Models\WarcraftLogs\Report;
+use App\Services\WarcraftLogs\Attendance;
+use App\Services\WarcraftLogs\Data\GuildAttendance;
+use Carbon\Carbon;
+use Illuminate\Bus\Batchable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Collection;
+
+class FetchWarcraftLogsAttendanceData implements ShouldQueue
+{
+    use Batchable, Queueable;
+
+    /**
+     * Create a new job instance.
+     */
+    public function __construct(
+        protected Collection $guildTags,
+        protected ?Carbon $since = null,
+        protected ?Carbon $before = null,
+    ) {}
+
+    /**
+     * Execute the job.
+     *
+     * @throws \Exception if no guild tags or ranks are configured for attendance tracking.
+     */
+    public function handle(Attendance $attendanceService): void
+    {
+        // Check if the batch has been cancelled before doing any work
+        if ($this->batch()?->cancelled()) {
+            return;
+        }
+
+        // Validate that we have guild tags to process
+        if ($this->guildTags->isEmpty()) {
+            throw new EmptyCollectionException('No guild tags configured for attendance tracking.');
+        }
+
+        $tagIds = $this->guildTags->pluck('id')->toArray();
+
+        $attendance = $attendanceService->tags($tagIds)->lazy();
+
+        if ($this->since !== null) {
+            $attendance = $attendance->filter(
+                fn (GuildAttendance $record) => $record->startTime->gte($this->since)
+            );
+        }
+
+        if ($this->before !== null) {
+            $attendance = $attendance->filter(
+                fn (GuildAttendance $record) => $record->startTime->lte($this->before)
+            );
+        }
+
+        $characters = Character::with('rank')
+            ->whereHas('rank', fn (Builder $q) => $q->where('count_attendance', true))
+            ->get()
+            ->keyBy('name');
+
+        foreach ($attendance as $guildAttendance) {
+            $report = Report::find($guildAttendance->code);
+
+            if ($report === null) {
+                continue;
+            }
+
+            $syncData = [];
+
+            foreach ($guildAttendance->players as $player) {
+                $character = $characters->get($player->name);
+
+                if ($character === null) {
+                    continue;
+                }
+
+                $syncData[$character->id] = ['presence' => $player->presence];
+            }
+
+            $report->characters()->syncWithoutDetaching($syncData);
+        }
+    }
+}
