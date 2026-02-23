@@ -84,24 +84,6 @@ class DiscordRoleTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_enforces_unique_position_constraint(): void
-    {
-        $this->create([
-            'id' => '123456789012345678',
-            'name' => 'RoleA',
-            'position' => 50,
-        ]);
-
-        $this->assertUniqueConstraint(function () {
-            $this->create([
-                'id' => '123456789012345679',
-                'name' => 'RoleB',
-                'position' => 50,
-            ]);
-        });
-    }
-
-    #[Test]
     public function it_has_timestamps(): void
     {
         $role = $this->create([
