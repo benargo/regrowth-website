@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Services\Attendance\Aggregators;
+namespace Tests\Unit\Services\AttendanceCalculator\Aggregators;
 
-use App\Services\Attendance\Aggregators\ReportsAggregator;
-use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
+use App\Services\AttendanceCalculator\Aggregators\ReportsAggregator;
+use App\Services\AttendanceCalculator\CharacterAttendanceStats;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
@@ -15,12 +15,14 @@ class ReportsAggregatorTest extends TestCase
         Carbon $firstAttendance,
         int $totalReports,
         int $reportsAttended,
-    ): PlayerAttendanceStats {
+        int $id = 1,
+    ): CharacterAttendanceStats {
         $percentage = $totalReports > 0
             ? round(($reportsAttended / $totalReports) * 100, 2)
             : 0.0;
 
-        return new PlayerAttendanceStats(
+        return new CharacterAttendanceStats(
+            id: $id,
             name: $name,
             firstAttendance: $firstAttendance,
             totalReports: $totalReports,
@@ -55,7 +57,7 @@ class ReportsAggregatorTest extends TestCase
         $jan01 = Carbon::parse('2025-01-01');
 
         $stats = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 42),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -65,6 +67,7 @@ class ReportsAggregatorTest extends TestCase
 
         $thrall = $result->first();
         $this->assertEquals('Thrall', $thrall->name);
+        $this->assertEquals(42, $thrall->id);
         $this->assertTrue($thrall->firstAttendance->eq($jan01));
         $this->assertEquals(10, $thrall->totalReports);
         $this->assertEquals(8, $thrall->reportsAttended);
@@ -76,8 +79,8 @@ class ReportsAggregatorTest extends TestCase
         $jan01 = Carbon::parse('2025-01-01');
 
         $stats = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
-            $this->makeStats('Jaina', $jan01, 10, 9),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 1),
+            $this->makeStats('Jaina', $jan01, 10, 9, id: 2),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -93,10 +96,10 @@ class ReportsAggregatorTest extends TestCase
         $jan01 = Carbon::parse('2025-01-01');
 
         $set1 = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 1),
         ]);
         $set2 = collect([
-            $this->makeStats('Thrall', $jan01, 5, 5),
+            $this->makeStats('Thrall', $jan01, 5, 5, id: 1),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -116,10 +119,10 @@ class ReportsAggregatorTest extends TestCase
         $jan15 = Carbon::parse('2025-01-15');
 
         $set1 = collect([
-            $this->makeStats('Thrall', $jan15, 5, 5),
+            $this->makeStats('Thrall', $jan15, 5, 5, id: 1),
         ]);
         $set2 = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 1),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -136,10 +139,10 @@ class ReportsAggregatorTest extends TestCase
 
         // Earliest date is in first set
         $set1 = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 1),
         ]);
         $set2 = collect([
-            $this->makeStats('Thrall', $jan15, 5, 5),
+            $this->makeStats('Thrall', $jan15, 5, 5, id: 1),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -154,10 +157,10 @@ class ReportsAggregatorTest extends TestCase
         $jan01 = Carbon::parse('2025-01-01');
 
         $set1 = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 1),
         ]);
         $set2 = collect([
-            $this->makeStats('Jaina', $jan01, 5, 5),
+            $this->makeStats('Jaina', $jan01, 5, 5, id: 2),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -173,11 +176,11 @@ class ReportsAggregatorTest extends TestCase
         $jan01 = Carbon::parse('2025-01-01');
 
         $set1 = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
-            $this->makeStats('Jaina', $jan01, 10, 10),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 1),
+            $this->makeStats('Jaina', $jan01, 10, 10, id: 2),
         ]);
         $set2 = collect([
-            $this->makeStats('Thrall', $jan01, 5, 5),
+            $this->makeStats('Thrall', $jan01, 5, 5, id: 1),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -201,9 +204,9 @@ class ReportsAggregatorTest extends TestCase
         $jan01 = Carbon::parse('2025-01-01');
 
         $stats = collect([
-            $this->makeStats('Zara', $jan01, 10, 10),
-            $this->makeStats('Alice', $jan01, 10, 10),
-            $this->makeStats('Milo', $jan01, 10, 10),
+            $this->makeStats('Zara', $jan01, 10, 10, id: 1),
+            $this->makeStats('Alice', $jan01, 10, 10, id: 2),
+            $this->makeStats('Milo', $jan01, 10, 10, id: 3),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -222,11 +225,11 @@ class ReportsAggregatorTest extends TestCase
 
         // Set 1: 80% (8/10)
         $set1 = collect([
-            $this->makeStats('Thrall', $jan01, 10, 8),
+            $this->makeStats('Thrall', $jan01, 10, 8, id: 1),
         ]);
         // Set 2: 100% (5/5)
         $set2 = collect([
-            $this->makeStats('Thrall', $jan01, 5, 5),
+            $this->makeStats('Thrall', $jan01, 5, 5, id: 1),
         ]);
 
         $aggregator = new ReportsAggregator;
@@ -242,7 +245,8 @@ class ReportsAggregatorTest extends TestCase
         $jan01 = Carbon::parse('2025-01-01');
 
         $stats = collect([
-            new PlayerAttendanceStats(
+            new CharacterAttendanceStats(
+                id: 1,
                 name: 'Thrall',
                 firstAttendance: $jan01,
                 totalReports: 0,
@@ -258,15 +262,30 @@ class ReportsAggregatorTest extends TestCase
         $this->assertEquals(0.0, $thrall->percentage);
     }
 
+    // ==================== ID Preservation Tests ====================
+
+    public function test_aggregate_preserves_character_id(): void
+    {
+        $jan01 = Carbon::parse('2025-01-01');
+
+        $set1 = collect([$this->makeStats('Thrall', $jan01, 10, 8, id: 99)]);
+        $set2 = collect([$this->makeStats('Thrall', $jan01, 5, 5, id: 99)]);
+
+        $aggregator = new ReportsAggregator;
+        $result = $aggregator->aggregate(collect([$set1, $set2]));
+
+        $this->assertEquals(99, $result->first()->id);
+    }
+
     // ==================== Edge Cases ====================
 
     public function test_aggregate_handles_three_or_more_sets(): void
     {
         $jan01 = Carbon::parse('2025-01-01');
 
-        $set1 = collect([$this->makeStats('Thrall', $jan01, 10, 8)]);
-        $set2 = collect([$this->makeStats('Thrall', $jan01, 10, 9)]);
-        $set3 = collect([$this->makeStats('Thrall', $jan01, 10, 10)]);
+        $set1 = collect([$this->makeStats('Thrall', $jan01, 10, 8, id: 1)]);
+        $set2 = collect([$this->makeStats('Thrall', $jan01, 10, 9, id: 1)]);
+        $set3 = collect([$this->makeStats('Thrall', $jan01, 10, 10, id: 1)]);
 
         $aggregator = new ReportsAggregator;
         $result = $aggregator->aggregate(collect([$set1, $set2, $set3]));

@@ -1,27 +1,28 @@
 <?php
 
-namespace App\Services\Attendance\Aggregators;
+namespace App\Services\AttendanceCalculator\Aggregators;
 
-use App\Services\WarcraftLogs\Data\PlayerAttendanceStats;
+use App\Services\AttendanceCalculator\CharacterAttendanceStats;
 use Illuminate\Support\Collection;
 
 class ReportsAggregator
 {
     /**
-     * Aggregate PlayerAttendanceStats from multiple sources.
+     * Aggregate CharacterAttendanceStats from multiple sources.
      *
-     * For each player:
+     * For each character:
+     * - Keep the first `id` encountered (same character across all sources)
      * - Keep the earliest `firstAttendance` across all sources
      * - Sum `totalReports` from all sources
      * - Sum `reportsAttended` from all sources
      * - Recalculate percentage from summed values
      *
-     * @param  Collection<int, Collection<int, PlayerAttendanceStats>>  $statsSets
-     * @return Collection<int, PlayerAttendanceStats>
+     * @param  Collection<int, Collection<int, CharacterAttendanceStats>>  $statsSets
+     * @return Collection<int, CharacterAttendanceStats>
      */
-    public function aggregate(Collection $statsSets): Collection
+    public static function aggregate(Collection $statsSets): Collection
     {
-        /** @var array<string, array{firstAttendance: \Carbon\Carbon, totalReports: int, reportsAttended: int}> $aggregated */
+        /** @var array<string, array{id: int, firstAttendance: \Carbon\Carbon, totalReports: int, reportsAttended: int}> $aggregated */
         $aggregated = [];
 
         foreach ($statsSets as $statsCollection) {
@@ -30,6 +31,7 @@ class ReportsAggregator
 
                 if (! isset($aggregated[$name])) {
                     $aggregated[$name] = [
+                        'id' => $stats->id,
                         'firstAttendance' => $stats->firstAttendance,
                         'totalReports' => $stats->totalReports,
                         'reportsAttended' => $stats->reportsAttended,
@@ -46,14 +48,15 @@ class ReportsAggregator
             }
         }
 
-        // Convert to PlayerAttendanceStats objects
+        // Convert to CharacterAttendanceStats objects
         $result = [];
         foreach ($aggregated as $name => $data) {
             $percentage = $data['totalReports'] > 0
                 ? round(($data['reportsAttended'] / $data['totalReports']) * 100, 2)
                 : 0.0;
 
-            $result[$name] = new PlayerAttendanceStats(
+            $result[$name] = new CharacterAttendanceStats(
+                id: $data['id'],
                 name: $name,
                 firstAttendance: $data['firstAttendance'],
                 totalReports: $data['totalReports'],
@@ -62,6 +65,6 @@ class ReportsAggregator
             );
         }
 
-        return collect($result)->sortBy(fn (PlayerAttendanceStats $s) => $s->name)->values();
+        return collect($result)->sortBy(fn (CharacterAttendanceStats $s) => $s->name)->values();
     }
 }

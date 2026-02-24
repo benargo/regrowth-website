@@ -42,7 +42,7 @@ class DispatchCharacterUpdatesTest extends TestCase
     {
         Bus::fake();
 
-        Cache::put('guild.roster.updates.last_dispatched', true, now()->addHours(6));
+        Cache::put('character_updates_listener.last_dispatched', true, now()->addHours(6));
 
         $roster = [
             'members' => [
@@ -73,7 +73,7 @@ class DispatchCharacterUpdatesTest extends TestCase
         Bus::assertBatchCount(1);
 
         // Simulate throttle expiry
-        Cache::forget('guild.roster.updates.last_dispatched');
+        Cache::forget('character_updates_listener.last_dispatched');
 
         // Second call after expiry — dispatches again
         $listener->handle(new GuildRosterFetched($roster));

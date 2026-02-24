@@ -1,6 +1,5 @@
 <?php
 
-use App\Jobs\BuildAddonDataFile;
 use Illuminate\Support\Facades\Schedule;
 
 /**
@@ -9,9 +8,9 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('app:sync-discord')->hourly()->name('sync-discord')->withoutOverlapping();
 
 /**
- * Refresh Warcraft Logs reports every 6 hours to keep the data up to date.
+ * Refresh Warcraft Logs reports every evening to keep the data up to date.
  */
-Schedule::command('app:refresh-warcraft-logs-reports --latest')->everySixHours()->name('refresh-warcraft-logs-reports')->withoutOverlapping();
+Schedule::command('app:refresh-warcraft-logs-reports --latest')->twiceDailyAt('18:00', '23:15')->name('refresh-warcraft-logs-reports')->withoutOverlapping();
 
 /**
  * Reset daily quests at 3:00 AM server time.
@@ -22,11 +21,11 @@ Schedule::command('app:reset-daily-quests')
     ->withoutOverlapping();
 
 /**
- * Build the addon data file daily at 3:15 AM server time.
+ * Export the Regrowth Addon data daily at 3:15 AM server time.
  *
- * This is a resource-intensive job, so we run it after the 3am job to avoid overloading the server.
+ * This is a resource-intensive batch, so we run it after the 3am job to avoid overloading the server.
  */
-Schedule::job(BuildAddonDataFile::class)->dailyAt('03:15')->name('build-addon-data-file')->withoutOverlapping();
+Schedule::command('app:prep-addon-data')->dailyAt('03:15')->name('prepare-regrowth-addon-data')->withoutOverlapping();
 
 /**
  * This should be the last job to run each day.

@@ -3,7 +3,6 @@
 namespace App\Services\WarcraftLogs;
 
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report as ReportModel;
 use App\Services\WarcraftLogs\Data\Report;
 use App\Services\WarcraftLogs\Traits\Paginates;
 use Carbon\Carbon;
@@ -105,32 +104,6 @@ class Reports extends BaseService
                 fn (int $page) => $this->fetchReportsPage($page, $tagID),
             ),
         );
-    }
-
-    /**
-     * Fetch all reports and persist them to the database via updateOrCreate.
-     * Returns the same collection of Data\Report objects as get().
-     *
-     * @return Collection<int, Report>
-     */
-    public function toDatabase(): Collection
-    {
-        $reports = $this->get();
-
-        $reports->each(function (Report $report) {
-            ReportModel::updateOrCreate(
-                ['code' => $report->code],
-                [
-                    'title' => $report->title,
-                    'start_time' => $report->startTime,
-                    'end_time' => $report->endTime,
-                    'zone_id' => $report->zone?->id,
-                    'zone_name' => $report->zone?->name,
-                ],
-            );
-        });
-
-        return $reports;
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs;
 
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Services\WarcraftLogs\Data\Report as ReportData;
 use App\Services\WarcraftLogs\Reports;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,6 +24,13 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
     {
         $guildTag = GuildTag::factory()->create();
 
+        $report = new ReportData(
+            code: 'ABC123',
+            title: 'Test Report',
+            startTime: Carbon::parse('2025-01-01 19:00:00'),
+            endTime: Carbon::parse('2025-01-01 22:00:00'),
+        );
+
         $reportsService = Mockery::mock(Reports::class);
         $reportsService->shouldReceive('byGuildTags')
             ->once()
@@ -30,10 +38,12 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
             ->andReturnSelf();
         $reportsService->shouldReceive('startTime')->once()->with(null)->andReturnSelf();
         $reportsService->shouldReceive('endTime')->once()->with(null)->andReturnSelf();
-        $reportsService->shouldReceive('toDatabase')->once()->andReturn(collect());
+        $reportsService->shouldReceive('get')->once()->andReturn(collect([$report]));
 
         $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
         $job->handle($reportsService);
+
+        $this->assertDatabaseHas('wcl_reports', ['code' => 'ABC123', 'title' => 'Test Report']);
     }
 
     // ==========================================
@@ -49,7 +59,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldReceive('byGuildTags')->once()->andReturnSelf();
         $reportsService->shouldReceive('startTime')->once()->with($since)->andReturnSelf();
         $reportsService->shouldReceive('endTime')->once()->with(null)->andReturnSelf();
-        $reportsService->shouldReceive('toDatabase')->once()->andReturn(collect());
+        $reportsService->shouldReceive('get')->once()->andReturn(collect());
 
         $job = new FetchWarcraftLogsReportsByGuildTag($guildTag, since: $since);
         $job->handle($reportsService);
@@ -64,7 +74,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldReceive('byGuildTags')->once()->andReturnSelf();
         $reportsService->shouldReceive('startTime')->once()->with(null)->andReturnSelf();
         $reportsService->shouldReceive('endTime')->once()->with($before)->andReturnSelf();
-        $reportsService->shouldReceive('toDatabase')->once()->andReturn(collect());
+        $reportsService->shouldReceive('get')->once()->andReturn(collect());
 
         $job = new FetchWarcraftLogsReportsByGuildTag($guildTag, before: $before);
         $job->handle($reportsService);
@@ -80,7 +90,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldReceive('byGuildTags')->once()->andReturnSelf();
         $reportsService->shouldReceive('startTime')->once()->with($since)->andReturnSelf();
         $reportsService->shouldReceive('endTime')->once()->with($before)->andReturnSelf();
-        $reportsService->shouldReceive('toDatabase')->once()->andReturn(collect());
+        $reportsService->shouldReceive('get')->once()->andReturn(collect());
 
         $job = new FetchWarcraftLogsReportsByGuildTag($guildTag, since: $since, before: $before);
         $job->handle($reportsService);
@@ -99,7 +109,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
 
         $reportsService = Mockery::mock(Reports::class);
         $reportsService->shouldNotReceive('byGuildTags');
-        $reportsService->shouldNotReceive('toDatabase');
+        $reportsService->shouldNotReceive('get');
         $this->app->instance(Reports::class, $reportsService);
 
         $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);

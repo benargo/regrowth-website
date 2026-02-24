@@ -1,12 +1,17 @@
 <?php
 
-namespace App\Services\WarcraftLogs\Data;
+namespace App\Services\AttendanceCalculator;
 
 use Carbon\Carbon;
 
-class PlayerAttendanceStats
+class CharacterAttendanceStats
 {
     public function __construct(
+        /**
+         * The ID of the player.
+         */
+        public int $id,
+
         /**
          * The name of the player.
          */
@@ -34,11 +39,12 @@ class PlayerAttendanceStats
     ) {}
 
     /**
-     * @return array{name: string, firstAttendance: string, totalReports: int, reportsAttended: int, percentage: float, reports: array<int, PlayerAttendance>}
+     * @return array{id: int, name: string, firstAttendance: string, totalReports: int, reportsAttended: int, percentage: float}
      */
     public function toArray(): array
     {
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'firstAttendance' => $this->firstAttendance->setTimezone(config('app.timezone'))->toIso8601String(),
             'totalReports' => $this->totalReports,

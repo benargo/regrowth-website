@@ -50,7 +50,7 @@ readonly class Report
             title: $data['title'],
             startTime: Carbon::createFromTimestampMs($data['startTime']),
             endTime: Carbon::createFromTimestampMs($data['endTime']),
-            guildTag: Arr::exists($data, 'guildTag.id') ? GuildTag::find(Arr::get($data, 'guildTag.id')) : null,
+            guildTag: Arr::has($data, 'guildTag.id') ? GuildTag::find(Arr::get($data, 'guildTag.id')) : null,
             zone: isset($data['zone']) ? Zone::fromArray($data['zone']) : null,
         );
     }

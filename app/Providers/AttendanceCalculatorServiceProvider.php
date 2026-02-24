@@ -2,12 +2,12 @@
 
 namespace App\Providers;
 
-use App\Services\Attendance\Aggregators\ReportsAggregator;
-use App\Services\Attendance\Calculators\GuildAttendanceCalculator;
+use App\Services\AttendanceCalculator\Aggregators\ReportsAggregator;
+use App\Services\AttendanceCalculator\AttendanceCalculator;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
-class RegrowthAttendanceServiceProvider extends ServiceProvider implements DeferrableProvider
+class AttendanceCalculatorServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register services.
@@ -34,7 +34,7 @@ class RegrowthAttendanceServiceProvider extends ServiceProvider implements Defer
     {
         return [
             ReportsAggregator::class,
-            GuildAttendanceCalculator::class,
+            AttendanceCalculator::class,
         ];
     }
 }

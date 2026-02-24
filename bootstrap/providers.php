@@ -5,6 +5,6 @@ return [
     App\Providers\BlizzardServiceProvider::class,
     App\Providers\DiscordServiceProvider::class,
     App\Providers\HorizonServiceProvider::class,
-    App\Providers\RegrowthAttendanceProvider::class,
+    App\Providers\AttendanceCalculatorServiceProvider::class,
     App\Providers\WarcraftLogsServiceProvider::class,
 ];

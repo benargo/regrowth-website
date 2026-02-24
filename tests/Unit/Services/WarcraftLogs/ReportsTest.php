@@ -3,7 +3,6 @@
 namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report as ReportModel;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Data\Report;
 use App\Services\WarcraftLogs\Data\Zone;
@@ -516,6 +515,39 @@ class ReportsTest extends TestCase
 
     // ==================== Report Data Object Tests ====================
 
+    public function test_report_data_object_parses_guild_tag_correctly(): void
+    {
+        $guildTag = GuildTag::factory()->create(['name' => 'Main Roster']);
+
+        $data = [
+            'code' => 'ABC123',
+            'title' => 'Test Report',
+            'startTime' => 1771611168498,
+            'endTime' => 1771625431211,
+            'guildTag' => ['id' => $guildTag->id, 'name' => $guildTag->name],
+        ];
+
+        $report = Report::fromArray($data);
+
+        $this->assertInstanceOf(GuildTag::class, $report->guildTag);
+        $this->assertSame($guildTag->id, $report->guildTag->id);
+        $this->assertSame('Main Roster', $report->guildTag->name);
+    }
+
+    public function test_report_data_object_guild_tag_is_null_when_absent(): void
+    {
+        $data = [
+            'code' => 'ABC123',
+            'title' => 'Test Report',
+            'startTime' => 1771611168498,
+            'endTime' => 1771625431211,
+        ];
+
+        $report = Report::fromArray($data);
+
+        $this->assertNull($report->guildTag);
+    }
+
     public function test_report_data_object_parses_correctly_with_zone(): void
     {
         $data = [
@@ -575,149 +607,5 @@ class ReportsTest extends TestCase
         $this->assertEquals(1771611168498.0, $array['startTime']);
         $this->assertEquals(1771625431211.0, $array['endTime']);
         $this->assertEquals(['id' => 1047, 'name' => 'Karazhan'], $array['zone']);
-    }
-
-    public function test_to_database_creates_report_records(): void
-    {
-        Http::preventStrayRequests();
-
-        $report1 = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211, ['id' => 1047, 'name' => 'Karazhan']);
-        $report2 = $this->makeReportData('DEF456', 'Gruul', 1771612483423, 1771626471711);
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response(
-                $this->fakeReportsResponse([$report1, $report2]),
-                200,
-                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
-            ),
-        ]);
-
-        $this->fakeAuthToken();
-        $this->fakeNotRateLimited();
-        $this->fakeCachePassthrough();
-        $this->fakeRateLimitHeaders();
-
-        $service = $this->getService();
-        $results = $service->toDatabase();
-
-        $this->assertCount(2, $results);
-        $this->assertDatabaseCount('wcl_reports', 2);
-        $this->assertDatabaseHas('wcl_reports', ['code' => 'ABC123', 'title' => 'Karazhan']);
-        $this->assertDatabaseHas('wcl_reports', ['code' => 'DEF456', 'title' => 'Gruul']);
-    }
-
-    public function test_to_database_updates_existing_report_records(): void
-    {
-        Http::preventStrayRequests();
-
-        ReportModel::factory()->create([
-            'code' => 'ABC123',
-            'title' => 'Old Title',
-        ]);
-
-        $report = $this->makeReportData('ABC123', 'New Title', 1771611168498, 1771625431211);
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response(
-                $this->fakeReportsResponse([$report]),
-                200,
-                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
-            ),
-        ]);
-
-        $this->fakeAuthToken();
-        $this->fakeNotRateLimited();
-        $this->fakeCachePassthrough();
-        $this->fakeRateLimitHeaders();
-
-        $service = $this->getService();
-        $service->toDatabase();
-
-        $this->assertDatabaseCount('wcl_reports', 1);
-        $this->assertDatabaseHas('wcl_reports', ['code' => 'ABC123', 'title' => 'New Title']);
-    }
-
-    public function test_to_database_stores_zone_data(): void
-    {
-        Http::preventStrayRequests();
-
-        $report = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211, ['id' => 1047, 'name' => 'Karazhan']);
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response(
-                $this->fakeReportsResponse([$report]),
-                200,
-                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
-            ),
-        ]);
-
-        $this->fakeAuthToken();
-        $this->fakeNotRateLimited();
-        $this->fakeCachePassthrough();
-        $this->fakeRateLimitHeaders();
-
-        $service = $this->getService();
-        $service->toDatabase();
-
-        $this->assertDatabaseHas('wcl_reports', [
-            'code' => 'ABC123',
-            'zone_id' => 1047,
-            'zone_name' => 'Karazhan',
-        ]);
-    }
-
-    public function test_to_database_handles_null_zone(): void
-    {
-        Http::preventStrayRequests();
-
-        $report = $this->makeReportData('ABC123', 'Test Report', 1771611168498, 1771625431211);
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response(
-                $this->fakeReportsResponse([$report]),
-                200,
-                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
-            ),
-        ]);
-
-        $this->fakeAuthToken();
-        $this->fakeNotRateLimited();
-        $this->fakeCachePassthrough();
-        $this->fakeRateLimitHeaders();
-
-        $service = $this->getService();
-        $service->toDatabase();
-
-        $this->assertDatabaseHas('wcl_reports', [
-            'code' => 'ABC123',
-            'zone_id' => null,
-            'zone_name' => null,
-        ]);
-    }
-
-    public function test_to_database_returns_data_report_collection(): void
-    {
-        Http::preventStrayRequests();
-
-        $report = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response(
-                $this->fakeReportsResponse([$report]),
-                200,
-                ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
-            ),
-        ]);
-
-        $this->fakeAuthToken();
-        $this->fakeNotRateLimited();
-        $this->fakeCachePassthrough();
-        $this->fakeRateLimitHeaders();
-
-        $service = $this->getService();
-        $results = $service->toDatabase();
-
-        $this->assertCount(1, $results);
-        $this->assertContainsOnlyInstancesOf(Report::class, $results);
     }
 }

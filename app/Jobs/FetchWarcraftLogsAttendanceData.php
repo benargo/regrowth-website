@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class FetchWarcraftLogsAttendanceData implements ShouldQueue
 {
@@ -43,6 +44,8 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
      */
     public function handle(Attendance $attendanceService): void
     {
+        Log::info('Starting to fetch and sync attendance data for '.($this->since ? 'reports since '.$this->since->toIso8601String() : 'all reports').'.');
+
         // Validate that we have guild tags to process
         if ($this->guildTags->isEmpty()) {
             throw new EmptyCollectionException('No guild tags configured for attendance tracking.');
@@ -90,5 +93,17 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
 
             $report->characters()->syncWithoutDetaching($syncData);
         }
+
+        Log::info('Completed fetching and syncing attendance data for '.($this->since ? 'reports since '.$this->since->toIso8601String() : 'all reports').'. Processed '.$attendance->count().' attendance records.');
+    }
+
+    /**
+     * Get the tags that should be assigned to the job.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return ['warcraftlogs', 'attendance'];
     }
 }
