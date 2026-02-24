@@ -6,12 +6,15 @@ use App\Services\WarcraftLogs\Data\GuildAttendance;
 use App\Services\WarcraftLogs\Data\GuildAttendancePagination;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
+use App\Services\WarcraftLogs\Traits\Paginates;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 
-class Attendance extends WarcraftLogsService
+class Attendance extends BaseService
 {
+    use Paginates;
+
     protected int $cacheTtl = 43200; // 12 hours
 
     /**
@@ -25,16 +28,6 @@ class Attendance extends WarcraftLogsService
      * @var array<int>
      */
     protected array $tags = [];
-
-    /**
-     * Optional start date filter.
-     */
-    protected ?Carbon $startDate = null;
-
-    /**
-     * Optional end date filter.
-     */
-    protected ?Carbon $endDate = null;
 
     /**
      * Optional player names filter.
@@ -66,26 +59,6 @@ class Attendance extends WarcraftLogsService
     public function tags(array $tags): static
     {
         $this->tags = $tags;
-
-        return $this;
-    }
-
-    /**
-     * Set the start date filter.
-     */
-    public function startDate(?Carbon $startDate): static
-    {
-        $this->startDate = $startDate;
-
-        return $this;
-    }
-
-    /**
-     * Set the end date filter.
-     */
-    public function endDate(?Carbon $endDate): static
-    {
-        $this->endDate = $endDate;
 
         return $this;
     }
@@ -126,22 +99,12 @@ class Attendance extends WarcraftLogsService
             return $this->sortAttendanceData($this->attendance);
         }
 
-        $allRecords = collect();
-
-        foreach ($this->tags as $tagID) {
-            $tagAttendance = $this->getAttendanceLazy(
-                guildTagID: $tagID,
-                startDate: $this->startDate,
-                endDate: $this->endDate,
-                playerNames: $this->playerNames,
-                zoneID: $this->zoneID,
-            );
-
-            foreach ($tagAttendance as $attendance) {
-                // Use report code as unique key to deduplicate
-                $allRecords[$attendance->code] = $attendance;
-            }
-        }
+        $allRecords = $this->paginateAllAcrossTags(
+            $this->tags,
+            fn (int $tagID) => fn (int $page) => $this->fetchAttendancePage(
+                $page, $tagID, $this->playerNames, $this->zoneID,
+            ),
+        );
 
         return $allRecords
             ->sortBy(fn (GuildAttendance $a) => $a->startTime)
@@ -163,28 +126,16 @@ class Attendance extends WarcraftLogsService
             return LazyCollection::make($this->attendance);
         }
 
-        return LazyCollection::make(function () {
-            $seenCodes = [];
-
-            foreach ($this->tags as $tagID) {
-                $tagAttendance = $this->getAttendanceLazy(
-                    guildTagID: $tagID,
-                    startDate: $this->startDate,
-                    endDate: $this->endDate,
-                    playerNames: $this->playerNames,
-                    zoneID: $this->zoneID,
-                );
-
-                foreach ($tagAttendance as $attendance) {
-                    // Skip duplicates (same report from different tags)
-                    if (isset($seenCodes[$attendance->code])) {
-                        continue;
-                    }
-                    $seenCodes[$attendance->code] = true;
-                    yield $attendance;
-                }
-            }
-        });
+        return $this->paginateLazyAcrossTags(
+            $this->tags,
+            fn (int $tagID) => $this->getSingleTagAttendanceLazy(
+                $this->guildId,
+                25,
+                $this->playerNames,
+                $tagID,
+                $this->zoneID,
+            ),
+        );
     }
 
     /**
@@ -219,7 +170,7 @@ class Attendance extends WarcraftLogsService
     /**
      * Fetch a single page of attendance for the configured guild.
      *
-     * @param  array{page?: int, limit?: int, startDate?: Carbon, endDate?: Carbon, playerNames?: array<string>, guildTagID?: int|array<int>, zoneID?: int}  $params
+     * @param  array{page?: int, limit?: int, playerNames?: array<string>, guildTagID?: int|array<int>, zoneID?: int}  $params
      *
      * @throws GuildNotFoundException
      * @throws GraphQLException
@@ -230,8 +181,6 @@ class Attendance extends WarcraftLogsService
             $this->guildId,
             $params['page'] ?? 1,
             $params['limit'] ?? 25,
-            $params['startDate'] ?? null,
-            $params['endDate'] ?? null,
             $params['playerNames'] ?? null,
             $params['guildTagID'] ?? null,
             $params['zoneID'] ?? null,
@@ -251,8 +200,6 @@ class Attendance extends WarcraftLogsService
         int $guildId,
         ?int $page = 1,
         ?int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
@@ -265,8 +212,6 @@ class Attendance extends WarcraftLogsService
                 $guildId,
                 $page,
                 $limit,
-                $startDate,
-                $endDate,
                 $playerNames,
                 $tagIDs[0] ?? null,
                 $zoneID,
@@ -278,8 +223,6 @@ class Attendance extends WarcraftLogsService
             $guildId,
             $page,
             $limit,
-            $startDate,
-            $endDate,
             $playerNames,
             $tagIDs,
             $zoneID,
@@ -298,8 +241,6 @@ class Attendance extends WarcraftLogsService
         int $guildId,
         ?int $page = 1,
         ?int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         ?int $guildTagID = null,
         ?int $zoneID = null,
@@ -337,34 +278,15 @@ class Attendance extends WarcraftLogsService
 
         $pagination = GuildAttendancePagination::fromArray($attendanceData);
 
-        // Apply filters if specified
-        if ($startDate !== null || $endDate !== null || $playerNames !== null) {
-            $filteredData = array_filter(
+        if ($playerNames !== null) {
+            $filteredData = array_map(
+                fn (GuildAttendance $attendance) => $attendance->filterPlayers($playerNames),
                 $pagination->data,
-                function (GuildAttendance $attendance) use ($startDate, $endDate) {
-                    if ($startDate !== null && $attendance->startTime->lt($startDate)) {
-                        return false;
-                    }
-                    if ($endDate !== null && $attendance->startTime->gt($endDate)) {
-                        return false;
-                    }
-
-                    return true;
-                },
             );
-
-            // Apply player filter to each attendance record
-            if ($playerNames !== null) {
-                $filteredData = array_map(
-                    fn (GuildAttendance $attendance) => $attendance->filterPlayers($playerNames),
-                    $filteredData,
-                );
-                // Remove attendance records with no matching players
-                $filteredData = array_filter(
-                    $filteredData,
-                    fn (GuildAttendance $attendance) => ! empty($attendance->players),
-                );
-            }
+            $filteredData = array_filter(
+                $filteredData,
+                fn (GuildAttendance $attendance) => ! empty($attendance->players),
+            );
 
             return new GuildAttendancePagination(
                 data: array_values($filteredData),
@@ -394,31 +316,16 @@ class Attendance extends WarcraftLogsService
         int $guildId,
         ?int $page,
         ?int $limit,
-        ?Carbon $startDate,
-        ?Carbon $endDate,
         ?array $playerNames,
         array $guildTagIDs,
         ?int $zoneID,
     ): GuildAttendancePagination {
-        $allRecords = collect();
-
-        foreach ($guildTagIDs as $tagID) {
-            // Fetch all pages for this tag to enable proper merging
-            $tagLazy = $this->getSingleTagAttendanceLazy(
-                $guildId,
-                100,
-                $startDate,
-                $endDate,
-                $playerNames,
-                $tagID,
-                $zoneID,
-            );
-
-            foreach ($tagLazy as $attendance) {
-                // Use report code as unique key to deduplicate
-                $allRecords[$attendance->code] = $attendance;
-            }
-        }
+        $allRecords = $this->paginateAllAcrossTags(
+            $guildTagIDs,
+            fn (int $tagID) => fn (int $fetchPage) => $this->fetchAttendancePage(
+                $fetchPage, $tagID, $playerNames, $zoneID, $guildId, 100,
+            ),
+        );
 
         // Sort by startTime descending
         $sorted = $allRecords->sortByDesc(fn (GuildAttendance $a) => $a->startTime)->values();
@@ -452,8 +359,6 @@ class Attendance extends WarcraftLogsService
      */
     public function getAttendanceLazy(
         ?int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
@@ -461,8 +366,6 @@ class Attendance extends WarcraftLogsService
         return $this->getGuildAttendanceLazy(
             $this->guildId,
             $limit,
-            $startDate,
-            $endDate,
             $playerNames,
             $guildTagID,
             $zoneID,
@@ -482,8 +385,6 @@ class Attendance extends WarcraftLogsService
     public function getGuildAttendanceLazy(
         int $guildId,
         int $limit = 25,
-        ?Carbon $startDate = null,
-        ?Carbon $endDate = null,
         ?array $playerNames = null,
         int|array|null $guildTagID = null,
         ?int $zoneID = null,
@@ -495,8 +396,6 @@ class Attendance extends WarcraftLogsService
             return $this->getSingleTagAttendanceLazy(
                 $guildId,
                 $limit,
-                $startDate,
-                $endDate,
                 $playerNames,
                 $tagIDs[0] ?? null,
                 $zoneID,
@@ -504,14 +403,15 @@ class Attendance extends WarcraftLogsService
         }
 
         // Multiple tags: chain lazy collections, deduplicate
-        return $this->getMultiTagAttendanceLazy(
-            $guildId,
-            $limit,
-            $startDate,
-            $endDate,
-            $playerNames,
+        return $this->paginateLazyAcrossTags(
             $tagIDs,
-            $zoneID,
+            fn (int $tagID) => $this->getSingleTagAttendanceLazy(
+                $guildId,
+                $limit,
+                $playerNames,
+                $tagID,
+                $zoneID,
+            ),
         );
     }
 
@@ -526,89 +426,71 @@ class Attendance extends WarcraftLogsService
     protected function getSingleTagAttendanceLazy(
         int $guildId,
         int $limit,
-        ?Carbon $startDate,
-        ?Carbon $endDate,
         ?array $playerNames,
         ?int $guildTagID,
         ?int $zoneID,
     ): LazyCollection {
-        return LazyCollection::make(function () use ($guildId, $limit, $startDate, $endDate, $playerNames, $guildTagID, $zoneID) {
-            $page = 1;
+        return $this->paginateLazy(function (int $page) use ($guildId, $limit, $playerNames, $guildTagID, $zoneID) {
+            $result = $this->querySingleTagAttendance($guildId, $page, $limit, null, $guildTagID, $zoneID);
 
-            do {
-                $result = $this->querySingleTagAttendance($guildId, $page, $limit, null, null, null, $guildTagID, $zoneID);
+            $items = [];
 
-                foreach ($result->data as $attendance) {
-                    // Apply date filters
-                    if ($startDate !== null && $attendance->startTime->lt($startDate)) {
+            foreach ($result->data as $attendance) {
+                // Apply player filter if specified
+                if ($playerNames !== null) {
+                    $attendance = $attendance->filterPlayers($playerNames);
+                    if (empty($attendance->players)) {
                         continue;
                     }
-                    if ($endDate !== null && $attendance->startTime->gt($endDate)) {
-                        // Assuming records are ordered by date descending, stop iteration
-                        return;
-                    }
-
-                    // Apply player filter if specified
-                    if ($playerNames !== null) {
-                        $attendance = $attendance->filterPlayers($playerNames);
-                        // Skip if no matching players in this attendance record
-                        if (empty($attendance->players)) {
-                            continue;
-                        }
-                    }
-
-                    yield $attendance;
                 }
 
-                $page++;
-            } while ($result->hasMorePages);
+                $items[] = $attendance;
+            }
+
+            return ['items' => $items, 'hasMorePages' => $result->hasMorePages];
         });
     }
 
     /**
-     * Get attendance lazily for multiple tags, deduplicating by report code.
+     * Fetch a single page of attendance and return a normalized result for pagination.
      *
      * @param  array<string>|null  $playerNames  Filter to only include these players.
-     * @param  array<int>  $guildTagIDs
+     * @return array{items: array<GuildAttendance>, hasMorePages: bool}
      *
      * @throws GuildNotFoundException
      * @throws GraphQLException
      */
-    protected function getMultiTagAttendanceLazy(
-        int $guildId,
-        int $limit,
-        ?Carbon $startDate,
-        ?Carbon $endDate,
+    protected function fetchAttendancePage(
+        int $page,
+        int $guildTagID,
         ?array $playerNames,
-        array $guildTagIDs,
         ?int $zoneID,
-    ): LazyCollection {
-        return LazyCollection::make(function () use (
-            $guildId, $limit, $startDate, $endDate, $playerNames, $guildTagIDs, $zoneID
-        ) {
-            $seenCodes = [];
+        ?int $guildId = null,
+        ?int $limit = null,
+    ): array {
+        $result = $this->querySingleTagAttendance(
+            $guildId ?? $this->guildId,
+            $page,
+            $limit ?? 25,
+            null,
+            $guildTagID,
+            $zoneID,
+        );
 
-            foreach ($guildTagIDs as $tagID) {
-                $tagLazy = $this->getSingleTagAttendanceLazy(
-                    $guildId,
-                    $limit,
-                    $startDate,
-                    $endDate,
-                    $playerNames,
-                    $tagID,
-                    $zoneID,
-                );
+        $items = [];
 
-                foreach ($tagLazy as $attendance) {
-                    // Skip duplicates (same report from different tags)
-                    if (isset($seenCodes[$attendance->code])) {
-                        continue;
-                    }
-                    $seenCodes[$attendance->code] = true;
-                    yield $attendance;
+        foreach ($result->data as $attendance) {
+            if ($playerNames !== null) {
+                $attendance = $attendance->filterPlayers($playerNames);
+                if (empty($attendance->players)) {
+                    continue;
                 }
             }
-        });
+
+            $items[] = $attendance;
+        }
+
+        return ['items' => $items, 'hasMorePages' => $result->hasMorePages];
     }
 
     /**

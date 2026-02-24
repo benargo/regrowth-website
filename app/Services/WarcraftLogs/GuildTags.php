@@ -5,7 +5,7 @@ namespace App\Services\WarcraftLogs;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Arr;
 
-class GuildTags extends WarcraftLogsService
+class GuildTags extends BaseService
 {
     private $cacheTtl = 43200; // 12 hours
 

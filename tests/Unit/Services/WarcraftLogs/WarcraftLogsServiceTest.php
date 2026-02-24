@@ -4,9 +4,9 @@ namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Exceptions\CacheException;
 use App\Services\WarcraftLogs\AuthenticationHandler;
+use App\Services\WarcraftLogs\BaseService;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\Exceptions\RateLimitedException;
-use App\Services\WarcraftLogs\WarcraftLogsService;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 /**
- * Concrete implementation for testing the abstract WarcraftLogsService.
+ * Concrete implementation for testing the abstract BaseService.
  */
-class TestableWarcraftLogsService extends WarcraftLogsService
+class TestableWarcraftLogsService extends BaseService
 {
     public function publicQuery(string $query, array $variables = [], ?int $ttl = null, ?int $timeout = null): array
     {

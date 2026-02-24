@@ -1,5 +1,4 @@
 import Master from "@/Layouts/Master";
-import CountdownTimer from "@/Components/CountdownTimer";
 import Podium from "@/Components/Podium";
 
 export default function Home({ members }) {
@@ -28,9 +27,6 @@ export default function Home({ members }) {
                                 <h2 className="text-2xl md:text-3xl">Thunderstrike</h2>
                             </div>
                         </div>
-                        <CountdownTimer targetDate="2026-02-05T23:00:00Z" className="my-10 text-center text-white">
-                            <h2 className="text-4xl md:text-3xl font-bold mb-2">Countdown to TBC launch</h2>
-                        </CountdownTimer>
                     </div>
                 </div>
 

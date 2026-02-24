@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Character;
 use App\Models\GuildRank;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Queue\Queueable;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class UpdateCharacterFromRoster implements ShouldQueue
 {
-    use Queueable;
+    use Batchable, Queueable;
 
     /**
      * The character being updated.
@@ -72,5 +73,10 @@ class UpdateCharacterFromRoster implements ShouldQueue
                 'error' => $exception->getMessage(),
             ]);
         }
+    }
+
+    public function tags(): array
+    {
+        return ['blizzard', 'guild', 'roster'];
     }
 }

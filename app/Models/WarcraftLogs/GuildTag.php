@@ -7,6 +7,7 @@ use App\Models\TBC\Phase;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GuildTag extends Model
 {
@@ -72,9 +73,21 @@ class GuildTag extends Model
 
     /**
      * Get the TBC phase associated with the guild tag.
+     *
+     * @return BelongsTo<Phase>
      */
     public function phase(): BelongsTo
     {
         return $this->belongsTo(Phase::class, 'tbc_phase_id');
+    }
+
+    /**
+     * Get the reports associated with the guild tag.
+     *
+     * @return HasMany<Report>
+     */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'guild_tag_id', 'id');
     }
 }

@@ -4,16 +4,11 @@ namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
 use App\Models\LootCouncil\Item;
-use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class NotesController extends Controller
 {
-    public function __construct(
-        protected LootCouncilCacheService $cacheService
-    ) {}
-
     /**
      * Update the officers' notes for a specific loot item.
      */
@@ -25,8 +20,6 @@ class NotesController extends Controller
 
         $item->notes = $request->input('notes');
         $item->save();
-
-        $this->cacheService->flush();
 
         return redirect()->back();
     }

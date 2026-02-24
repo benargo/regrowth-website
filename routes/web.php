@@ -20,7 +20,7 @@ use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', [HomeController::class, 'home'])->name('home');
+Route::get('/', fn () => Inertia::render('Home'))->name('home');
 
 /**
  * Guild Roster

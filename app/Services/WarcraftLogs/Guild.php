@@ -6,7 +6,7 @@ use App\Services\WarcraftLogs\Data\Faction;
 use App\Services\WarcraftLogs\Data\Server;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
 
-class Guild extends WarcraftLogsService
+class Guild extends BaseService
 {
     private int $cacheTtl = 43200; // 12 hours
 

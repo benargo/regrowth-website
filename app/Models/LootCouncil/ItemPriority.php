@@ -2,11 +2,13 @@
 
 namespace App\Models\LootCouncil;
 
+use App\Events\ItemPriorityDeleted;
+use App\Events\ItemPrioritySaved;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class ItemPriority extends Model
+class ItemPriority extends Pivot
 {
     /** @use HasFactory<\Database\Factories\LootCouncil\ItemPriorityFactory> */
     use HasFactory;
@@ -17,6 +19,30 @@ class ItemPriority extends Model
      * @var string
      */
     protected $table = 'lootcouncil_item_priorities';
+
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'saved' => ItemPrioritySaved::class,
+        'deleted' => ItemPriorityDeleted::class,
+    ];
 
     /**
      * The attributes that are mass assignable.

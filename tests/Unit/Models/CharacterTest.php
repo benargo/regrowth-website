@@ -5,6 +5,7 @@ namespace Tests\Unit\Models;
 use App\Events\AddonSettingsProcessed;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\WarcraftLogs\Report;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService;
 use Illuminate\Database\Eloquent\Builder;
@@ -423,6 +424,34 @@ class CharacterTest extends ModelTestCase
         $character = new Character;
 
         $this->assertCount(0, $character->prunable()->get());
+    }
+
+    #[Test]
+    public function warcraft_logs_reports_returns_belongs_to_many_relationship(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsToMany::class, $character->warcraftLogsReports());
+    }
+
+    #[Test]
+    public function it_can_attach_warcraft_logs_reports(): void
+    {
+        $character = $this->create();
+        $report = Report::factory()->create();
+
+        $character->warcraftLogsReports()->attach($report->code);
+
+        $this->assertCount(1, $character->warcraftLogsReports);
+        $this->assertSame($report->code, $character->warcraftLogsReports->first()->code);
+    }
+
+    #[Test]
+    public function warcraft_logs_reports_returns_empty_collection_when_none_attached(): void
+    {
+        $character = $this->create();
+
+        $this->assertCount(0, $character->warcraftLogsReports);
     }
 
     /**
