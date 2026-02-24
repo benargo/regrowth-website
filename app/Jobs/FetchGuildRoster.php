@@ -26,4 +26,14 @@ class FetchGuildRoster implements ShouldQueue
     {
         $guildService->roster();
     }
+
+    /**
+     * Get the tags that should be assigned to the job.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return ['blizzard', 'guild', 'roster'];
+    }
 }

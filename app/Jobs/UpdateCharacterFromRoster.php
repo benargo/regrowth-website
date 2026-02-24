@@ -74,4 +74,9 @@ class UpdateCharacterFromRoster implements ShouldQueue
             ]);
         }
     }
+
+    public function tags(): array
+    {
+        return ['blizzard', 'guild', 'roster'];
+    }
 }
