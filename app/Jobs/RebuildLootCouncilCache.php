@@ -12,7 +12,7 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
-class RebuildLootCouncilCacheJob implements ShouldQueue
+class RebuildLootCouncilCache implements ShouldQueue
 {
     use Queueable;
 
@@ -160,7 +160,7 @@ class RebuildLootCouncilCacheJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error('RebuildLootCouncilCacheJob failed.', [
+        Log::error('RebuildLootCouncilCache failed.', [
             'error' => $exception->getMessage(),
             'trace' => $exception->getTraceAsString(),
         ]);

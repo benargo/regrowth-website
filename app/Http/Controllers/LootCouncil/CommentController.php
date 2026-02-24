@@ -10,7 +10,6 @@ use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\NewLootCouncilComment;
-use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -18,10 +17,6 @@ use Inertia\Inertia;
 
 class CommentController extends Controller
 {
-    public function __construct(
-        protected LootCouncilCacheService $cacheService
-    ) {}
-
     /**
      * Display a listing of comments for a specific loot item.
      *
@@ -54,8 +49,6 @@ class CommentController extends Controller
             new NewLootCouncilComment($comment)
         );
 
-        $this->cacheService->flush();
-
         return redirect()->back();
     }
 
@@ -78,8 +71,6 @@ class CommentController extends Controller
         $comment->update(['deleted_by' => $request->user()->id]);
         $comment->delete();
 
-        $this->cacheService->flush();
-
         return redirect()->back();
     }
 
@@ -92,8 +83,6 @@ class CommentController extends Controller
 
         $comment->update(['deleted_by' => $request->user()->id]);
         $comment->delete();
-
-        $this->cacheService->flush();
 
         return redirect()->back();
     }

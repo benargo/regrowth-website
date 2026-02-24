@@ -2,6 +2,8 @@
 
 namespace App\Models\LootCouncil;
 
+use App\Events\CommentReactionCreated;
+use App\Events\CommentReactionDeleted;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +25,16 @@ class CommentReaction extends Model
     protected $fillable = [
         'comment_id',
         'user_id',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => CommentReactionCreated::class,
+        'deleted' => CommentReactionDeleted::class,
     ];
 
     /**

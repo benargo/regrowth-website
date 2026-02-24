@@ -3,7 +3,8 @@
 namespace App\Listeners;
 
 use App\Events\AddonSettingsProcessed;
-use App\Events\LootBiasPrioritiesProcessed;
+use App\Events\ItemPriorityDeleted;
+use App\Events\ItemPrioritySaved;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
@@ -35,7 +36,7 @@ class PrepareRegrowthAddonData implements ShouldQueue
     /**
      * Handle the event.
      */
-    public function handle(AddonSettingsProcessed|LootBiasPrioritiesProcessed $event): void
+    public function handle(AddonSettingsProcessed|ItemPrioritySaved|ItemPriorityDeleted $event): void
     {
         if (! Cache::add($this->cacheKey, true, $this->throttleSeconds)) {
             return;

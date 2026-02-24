@@ -2,6 +2,9 @@
 
 namespace App\Models\LootCouncil;
 
+use App\Events\CommentCreated;
+use App\Events\CommentDeleted;
+use App\Events\CommentUpdated;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -46,6 +49,17 @@ class Comment extends Model
      */
     protected $casts = [
         'is_resolved' => 'boolean',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => CommentCreated::class,
+        'deleted' => CommentDeleted::class,
+        'updated' => CommentUpdated::class,
     ];
 
     /**

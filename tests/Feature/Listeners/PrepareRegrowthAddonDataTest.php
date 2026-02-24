@@ -3,7 +3,6 @@
 namespace Tests\Feature\Listeners;
 
 use App\Events\AddonSettingsProcessed;
-use App\Events\LootBiasPrioritiesProcessed;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Jobs\RegrowthAddon\Export\BuildCouncillors;
@@ -190,20 +189,6 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         $listener = new PrepareRegrowthAddonData;
         $listener->handle(new AddonSettingsProcessed);
-
-        Bus::assertChained([
-            Bus::chainedBatch(fn (PendingBatch $batch) => true),
-            Bus::chainedBatch(fn (PendingBatch $batch) => true),
-            new BuildDataFile,
-        ]);
-    }
-
-    public function test_it_dispatches_chain_on_loot_bias_priorities_processed_event(): void
-    {
-        Bus::fake();
-
-        $listener = new PrepareRegrowthAddonData;
-        $listener->handle(new LootBiasPrioritiesProcessed);
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),

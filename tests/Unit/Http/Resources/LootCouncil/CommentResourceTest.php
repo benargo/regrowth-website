@@ -12,6 +12,7 @@ use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -24,6 +25,7 @@ class CommentResourceTest extends TestCase
     {
         parent::setUp();
 
+        Queue::fake();
         $this->mockBlizzardServices();
         $this->mockCacheService();
     }
@@ -56,6 +58,7 @@ class CommentResourceTest extends TestCase
         $cacheStore = Mockery::mock();
         $cacheStore->shouldReceive('remember')
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
+        $cacheStore->shouldReceive('flush')->andReturn(true);
 
         Cache::shouldReceive('tags')
             ->with(['lootcouncil'])

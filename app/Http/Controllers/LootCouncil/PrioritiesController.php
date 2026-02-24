@@ -5,15 +5,10 @@ namespace App\Http\Controllers\LootCouncil;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Items\UpdateItemPrioritiesRequest;
 use App\Models\LootCouncil\Item;
-use App\Services\LootCouncil\LootCouncilCacheService;
 use Illuminate\Http\RedirectResponse;
 
 class PrioritiesController extends Controller
 {
-    public function __construct(
-        protected LootCouncilCacheService $cacheService
-    ) {}
-
     /**
      * Update the priorities for a specific loot item.
      */
@@ -24,8 +19,6 @@ class PrioritiesController extends Controller
             ->all();
 
         $item->priorities()->sync($priorities);
-
-        $this->cacheService->flush();
 
         return redirect()->back();
     }

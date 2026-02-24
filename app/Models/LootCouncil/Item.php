@@ -2,6 +2,7 @@
 
 namespace App\Models\LootCouncil;
 
+use App\Events\ItemSaved;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Raid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,6 +36,15 @@ class Item extends Model
     ];
 
     /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'saved' => ItemSaved::class,
+    ];
+
+    /**
      * Get the raid that this item drops from.
      *
      * @return BelongsTo<Raid, $this>
@@ -62,6 +72,7 @@ class Item extends Model
     public function priorities(): BelongsToMany
     {
         return $this->belongsToMany(Priority::class, 'lootcouncil_item_priorities', 'item_id', 'priority_id')
+            ->using(ItemPriority::class)
             ->withPivot('weight')
             ->withTimestamps();
     }
