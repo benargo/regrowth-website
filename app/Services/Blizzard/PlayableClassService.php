@@ -2,6 +2,8 @@
 
 namespace App\Services\Blizzard;
 
+use Illuminate\Support\Arr;
+
 class PlayableClassService extends Service
 {
     protected string $basePath = '/data/wow';
@@ -53,6 +55,22 @@ class PlayableClassService extends Service
     public function media(int $playableClassId): array
     {
         return app(MediaService::class)->find('playable-class', $playableClassId);
+    }
+
+    /**
+     * Get the icon URL for a playable class.
+     */
+    public function iconUrl(int $playableClassId): ?string
+    {
+        $mediaService = app(MediaService::class);
+
+        $media = $mediaService->find('playable-class', $playableClassId);
+
+        $assets = $mediaService->getAssetUrls($media['assets'] ?? []);
+
+        $fileDataId = Arr::get($media, 'assets.0.file_data_id');
+
+        return $fileDataId !== null ? Arr::get($assets, $fileDataId) : null;
     }
 
     /**
