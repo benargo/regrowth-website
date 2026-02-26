@@ -14,7 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 
 class Character extends Model
 {
@@ -109,17 +111,21 @@ class Character extends Model
     {
         return Attribute::make(
             get: function () {
-                $characterService = app(CharacterService::class);
-                $characterData = $characterService->getProfile($this->name);
-                if (Arr::has($characterData, 'character_class.id')) {
-                    $playableClassService = app(PlayableClassService::class);
-                    $playableClass = $playableClassService->find(Arr::get($characterData, 'character_class.id'));
+                try {
+                    $characterService = app(CharacterService::class);
+                    $characterData = $characterService->getProfile($this->name);
+                    if (Arr::has($characterData, 'character_class.id')) {
+                        $playableClassService = app(PlayableClassService::class);
+                        $playableClass = $playableClassService->find(Arr::get($characterData, 'character_class.id'));
 
-                    return [
-                        'id' => Arr::get($characterData, 'character_class.id'),
-                        'name' => Arr::get($playableClass, 'name'),
-                        'icon_url' => $playableClassService->iconUrl(Arr::get($characterData, 'character_class.id')) ?? null,
-                    ];
+                        return [
+                            'id' => Arr::get($characterData, 'character_class.id'),
+                            'name' => Arr::get($playableClass, 'name'),
+                            'icon_url' => $playableClassService->iconUrl(Arr::get($characterData, 'character_class.id')) ?? null,
+                        ];
+                    }
+                } catch (RequestException $e) {
+                    Log::warning('Failed to fetch Blizzard character profile for ' . $this->name . ': ' . $e->getMessage());
                 }
 
                 return null;
