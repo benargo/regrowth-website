@@ -19,7 +19,7 @@ class RefreshWarcraftLogsReports extends Command
      *
      * @var string
      */
-    protected $signature = 'app:refresh-warcraft-logs-reports {--latest}';
+    protected $signature = 'app:refresh-warcraft-logs-reports {--latest} {--all}';
 
     /**
      * The console command description.
@@ -40,11 +40,15 @@ class RefreshWarcraftLogsReports extends Command
             $since = $latestReport?->end_time?->addSecond();
         }
 
-        $guildTags = GuildTag::where('count_attendance', true)->get();
+        if ($this->option('all')) {
+            $guildTags = GuildTag::all();
+        } else {
+            $guildTags = GuildTag::where('count_attendance', true)->get();
+        }
 
         $jobs = $guildTags->map(fn ($guildTag) => new FetchWarcraftLogsReportsByGuildTag($guildTag, $since));
 
-        $jobs->push(new FetchGuildRoster);
+        $jobs->prepend(new FetchGuildRoster);
 
         $jobs->push(new FetchWarcraftLogsAttendanceData($guildTags, $since));
 

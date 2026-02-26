@@ -51,9 +51,11 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
             throw new EmptyCollectionException('No guild tags configured for attendance tracking.');
         }
 
-        $tagIds = $this->guildTags->pluck('id')->toArray();
+        $tagIds = $this->guildTags->pluck('id');
+        $taggedCodes = Report::whereIn('guild_tag_id', $tagIds)->pluck('code', 'code');
 
-        $attendance = $attendanceService->tags($tagIds)->lazy();
+        $attendance = $attendanceService->lazy()
+            ->filter(fn (GuildAttendance $record) => $taggedCodes->has($record->code));
 
         if ($this->since !== null) {
             $attendance = $attendance->filter(
