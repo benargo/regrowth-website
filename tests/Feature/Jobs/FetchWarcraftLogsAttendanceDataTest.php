@@ -31,7 +31,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $guildTag = GuildTag::factory()->countsAttendance()->create();
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $report = Report::factory()->create(['code' => 'abc123']);
+        $report = Report::factory()->create(['code' => 'abc123', 'guild_tag_id' => $guildTag->id]);
 
         $guildAttendance = new GuildAttendance(
             code: 'abc123',
@@ -40,7 +40,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->with([$guildTag->id])->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
@@ -58,7 +57,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $guildTag = GuildTag::factory()->countsAttendance()->create();
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
-        $report = Report::factory()->create(['code' => 'bench001']);
+        $report = Report::factory()->create(['code' => 'bench001', 'guild_tag_id' => $guildTag->id]);
 
         $guildAttendance = new GuildAttendance(
             code: 'bench001',
@@ -67,7 +66,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
@@ -89,7 +87,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $guildTag = GuildTag::factory()->countsAttendance()->create();
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
         $character = Character::factory()->create(['name' => 'Sylvanas', 'rank_id' => $rank->id]);
-        $report = Report::factory()->create(['code' => 'skp001']);
+        $report = Report::factory()->create(['code' => 'skp001', 'guild_tag_id' => $guildTag->id]);
 
         $guildAttendance = new GuildAttendance(
             code: 'skp001',
@@ -98,7 +96,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
@@ -114,7 +111,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     {
         $guildTag = GuildTag::factory()->countsAttendance()->create();
         $character = Character::factory()->create(['name' => 'Illidan', 'rank_id' => null]);
-        $report = Report::factory()->create(['code' => 'norank1']);
+        $report = Report::factory()->create(['code' => 'norank1', 'guild_tag_id' => $guildTag->id]);
 
         $guildAttendance = new GuildAttendance(
             code: 'norank1',
@@ -123,7 +120,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
@@ -141,7 +137,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     public function test_it_skips_players_not_found_in_the_database(): void
     {
         $guildTag = GuildTag::factory()->countsAttendance()->create();
-        $report = Report::factory()->create(['code' => 'unk001']);
+        $report = Report::factory()->create(['code' => 'unk001', 'guild_tag_id' => $guildTag->id]);
 
         $guildAttendance = new GuildAttendance(
             code: 'unk001',
@@ -150,7 +146,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
@@ -159,11 +154,13 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $this->assertDatabaseCount('pivot_characters_wcl_reports', 0);
     }
 
-    public function test_it_skips_reports_not_found_in_the_database(): void
+    public function test_it_skips_reports_not_associated_with_configured_tags(): void
     {
         $guildTag = GuildTag::factory()->countsAttendance()->create();
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Arthas', 'rank_id' => $rank->id]);
+
+        // No report created with the guild_tag_id — simulates a report not belonging to any configured tag
 
         $guildAttendance = new GuildAttendance(
             code: 'missing1',
@@ -172,7 +169,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
@@ -190,8 +186,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $guildTag = GuildTag::factory()->countsAttendance()->create();
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Varian', 'rank_id' => $rank->id]);
-        $includedReport = Report::factory()->create(['code' => 'incl001']);
-        $excludedReport = Report::factory()->create(['code' => 'excl001']);
+        $includedReport = Report::factory()->create(['code' => 'incl001', 'guild_tag_id' => $guildTag->id]);
+        $excludedReport = Report::factory()->create(['code' => 'excl001', 'guild_tag_id' => $guildTag->id]);
 
         $since = Carbon::parse('2025-06-01');
 
@@ -208,7 +204,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$beforeRecord, $afterRecord]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]), since: $since);
@@ -223,8 +218,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $guildTag = GuildTag::factory()->countsAttendance()->create();
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Anduin', 'rank_id' => $rank->id]);
-        $includedReport = Report::factory()->create(['code' => 'incl002']);
-        $excludedReport = Report::factory()->create(['code' => 'excl002']);
+        $includedReport = Report::factory()->create(['code' => 'incl002', 'guild_tag_id' => $guildTag->id]);
+        $excludedReport = Report::factory()->create(['code' => 'excl002', 'guild_tag_id' => $guildTag->id]);
 
         $before = Carbon::parse('2025-06-01');
 
@@ -241,7 +236,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$beforeRecord, $afterRecord]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]), before: $before);
@@ -257,9 +251,9 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Garrosh', 'rank_id' => $rank->id]);
 
-        Report::factory()->create(['code' => 'tooold1']);
-        Report::factory()->create(['code' => 'inrange1']);
-        Report::factory()->create(['code' => 'toonew1']);
+        Report::factory()->create(['code' => 'tooold1', 'guild_tag_id' => $guildTag->id]);
+        Report::factory()->create(['code' => 'inrange1', 'guild_tag_id' => $guildTag->id]);
+        Report::factory()->create(['code' => 'toonew1', 'guild_tag_id' => $guildTag->id]);
 
         $since = Carbon::parse('2025-06-01');
         $before = Carbon::parse('2025-06-30');
@@ -283,7 +277,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         );
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldReceive('tags')->once()->andReturnSelf();
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$tooOld, $inRange, $tooNew]));
 
         $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]), since: $since, before: $before);
@@ -303,7 +296,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $this->expectException(EmptyCollectionException::class);
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldNotReceive('tags');
+        $attendanceService->shouldNotReceive('lazy');
 
         $job = new FetchWarcraftLogsAttendanceData(collect());
         $job->handle($attendanceService);
@@ -317,7 +310,6 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $batch->cancel();
 
         $attendanceService = Mockery::mock(Attendance::class);
-        $attendanceService->shouldNotReceive('tags');
         $attendanceService->shouldNotReceive('lazy');
         $this->app->instance(Attendance::class, $attendanceService);
 

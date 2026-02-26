@@ -114,14 +114,6 @@ class AttendanceTest extends TestCase
 
     // ==================== Fluent Builder Tests ====================
 
-    public function test_tags_returns_self_for_chaining(): void
-    {
-        $service = $this->makeService();
-        $result = $service->tags([1, 2]);
-
-        $this->assertSame($service, $result);
-    }
-
     public function test_player_names_returns_self_for_chaining(): void
     {
         $service = $this->makeService();
@@ -151,7 +143,6 @@ class AttendanceTest extends TestCase
         $service = $this->makeService();
 
         $result = $service
-            ->tags([1, 2])
             ->playerNames(['Thrall'])
             ->zoneID(1);
 
@@ -175,7 +166,7 @@ class AttendanceTest extends TestCase
         $this->assertContainsOnlyInstancesOf(GuildAttendance::class, $result);
     }
 
-    public function test_get_returns_empty_collection_when_no_attendance_set(): void
+    public function test_get_returns_empty_collection_when_empty_attendance_set(): void
     {
         $service = $this->makeService();
         $result = $service->setAttendance([])->get();
@@ -197,7 +188,7 @@ class AttendanceTest extends TestCase
         $this->assertEquals('newer', $result[1]->code);
     }
 
-    public function test_get_with_tags_fetches_from_api(): void
+    public function test_get_fetches_from_api_when_no_attendance_set(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -206,121 +197,64 @@ class AttendanceTest extends TestCase
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $service = $this->makeService();
-        $result = $service->tags([1])->get();
+        $result = $service->get();
 
         $this->assertInstanceOf(Collection::class, $result);
         $this->assertCount(2, $result);
     }
 
-    public function test_get_with_multiple_tags_deduplicates_by_report_code(): void
+    public function test_get_includes_benched_players(): void
     {
-        Http::preventStrayRequests();
-
-        $sharedData = [
-            'data' => [
-                [
-                    'code' => 'sharedreport',
-                    'startTime' => 1736971200000,
-                    'players' => [['name' => 'Thrall', 'type' => 'Shaman', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 25,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guildData' => ['guild' => ['attendance' => $sharedData]]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
+        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
         Cache::shouldReceive('remember')
-            ->twice()
+            ->once()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $service = $this->makeService();
-        $result = $service->tags([1, 2])->get();
+        $result = $service->get();
 
-        $this->assertCount(1, $result);
-        $this->assertEquals('sharedreport', $result[0]->code);
+        // sampleAttendanceData has Sylvanas with presence: 2 in abc123
+        $abc123 = $result->firstWhere('code', 'abc123');
+        $this->assertNotNull($abc123);
+
+        $benchedPlayer = collect($abc123->players)->firstWhere('name', 'Sylvanas');
+        $this->assertNotNull($benchedPlayer);
+        $this->assertEquals(2, $benchedPlayer->presence);
     }
 
-    public function test_get_with_multiple_tags_merges_unique_reports(): void
+    public function test_get_does_not_pass_guild_tag_id_to_api(): void
     {
-        Http::preventStrayRequests();
-
-        $tag1Data = [
-            'data' => [
-                [
-                    'code' => 'tag1report',
-                    'startTime' => 1736971200000, // Jan 15
-                    'players' => [['name' => 'Thrall', 'type' => 'Shaman', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 25,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        $tag2Data = [
-            'data' => [
-                [
-                    'code' => 'tag2report',
-                    'startTime' => 1736366400000, // Jan 8
-                    'players' => [['name' => 'Jaina', 'type' => 'Mage', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 25,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag1Data]]]], 200)
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag2Data]]]], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
+        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
         Cache::shouldReceive('remember')
-            ->twice()
+            ->once()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $service = $this->makeService();
-        $result = $service->tags([1, 2])->get();
+        $service->get();
 
-        $this->assertCount(2, $result);
-        // Sorted by startTime ascending
-        $this->assertEquals('tag2report', $result[0]->code); // Jan 8
-        $this->assertEquals('tag1report', $result[1]->code); // Jan 15
+        Http::assertSent(function ($request) {
+            $body = json_decode($request->body(), true);
+
+            return ! isset($body['variables']['guildTagID']);
+        });
+    }
+
+    public function test_get_sorts_api_results_by_start_time_ascending(): void
+    {
+        // Sample data has abc123 (Jan 15) then def456 (Jan 8) — reversed order
+        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
+
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
+
+        $service = $this->makeService();
+        $result = $service->get();
+
+        $this->assertEquals('def456', $result[0]->code); // Jan 8 first
+        $this->assertEquals('abc123', $result[1]->code); // Jan 15 second
     }
 
     // ==================== lazy() Tests ====================
@@ -347,7 +281,7 @@ class AttendanceTest extends TestCase
         $this->assertContainsOnlyInstancesOf(GuildAttendance::class, $result);
     }
 
-    public function test_lazy_with_tags_fetches_from_api(): void
+    public function test_lazy_fetches_from_api_when_no_attendance_set(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -356,54 +290,28 @@ class AttendanceTest extends TestCase
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $service = $this->makeService();
-        $result = $service->tags([1])->lazy()->all();
+        $result = $service->lazy()->all();
 
         $this->assertCount(2, $result);
     }
 
-    public function test_lazy_with_multiple_tags_deduplicates_by_report_code(): void
+    public function test_lazy_includes_benched_players(): void
     {
-        Http::preventStrayRequests();
-
-        $sharedData = [
-            'data' => [
-                [
-                    'code' => 'sharedlazy',
-                    'startTime' => 1736971200000,
-                    'players' => [['name' => 'Thrall', 'type' => 'Shaman', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 25,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guildData' => ['guild' => ['attendance' => $sharedData]]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
+        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
         Cache::shouldReceive('remember')
-            ->twice()
+            ->once()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $service = $this->makeService();
-        $result = $service->tags([1, 2])->lazy()->all();
+        $records = $service->lazy()->all();
 
-        $this->assertCount(1, $result);
+        $abc123 = collect($records)->firstWhere('code', 'abc123');
+        $this->assertNotNull($abc123);
+
+        $benchedPlayer = collect($abc123->players)->firstWhere('name', 'Sylvanas');
+        $this->assertNotNull($benchedPlayer);
+        $this->assertEquals(2, $benchedPlayer->presence);
     }
 
     // ==================== getPlayerFirstAttendanceDate() Tests ====================
@@ -487,24 +395,6 @@ class AttendanceTest extends TestCase
             $body = json_decode($request->body(), true);
 
             return $body['variables']['page'] === 2 && $body['variables']['limit'] === 50;
-        });
-    }
-
-    public function test_get_attendance_passes_guild_tag_id(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $service->getAttendance(['guildTagID' => 1]);
-
-        Http::assertSent(function ($request) {
-            $body = json_decode($request->body(), true);
-
-            return isset($body['variables']['guildTagID']) && $body['variables']['guildTagID'] === 1;
         });
     }
 
@@ -592,171 +482,22 @@ class AttendanceTest extends TestCase
         $service->getGuildAttendance(99999);
     }
 
-    public function test_get_guild_attendance_accepts_array_of_tag_ids(): void
+    public function test_get_guild_attendance_does_not_pass_guild_tag_id(): void
     {
-        Http::preventStrayRequests();
-
-        $tag1Data = [
-            'data' => [
-                [
-                    'code' => 'tag1report',
-                    'startTime' => 1736971200000,
-                    'players' => [['name' => 'Thrall', 'type' => 'Shaman', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 100,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        $tag2Data = [
-            'data' => [
-                [
-                    'code' => 'tag2report',
-                    'startTime' => 1736366400000,
-                    'players' => [['name' => 'Jaina', 'type' => 'Mage', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 100,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag1Data]]]], 200)
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag2Data]]]], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
+        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
         Cache::shouldReceive('remember')
-            ->twice()
+            ->once()
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $service = $this->makeService();
-        $result = $service->getGuildAttendance(774848, guildTagID: [1, 2]);
+        $service->getGuildAttendance(774848);
 
-        $this->assertCount(2, $result->data);
-    }
+        Http::assertSent(function ($request) {
+            $body = json_decode($request->body(), true);
 
-    public function test_get_guild_attendance_with_multiple_tags_deduplicates(): void
-    {
-        Http::preventStrayRequests();
-
-        $sharedData = [
-            'data' => [
-                [
-                    'code' => 'sharedreport',
-                    'startTime' => 1736971200000,
-                    'players' => [['name' => 'Thrall', 'type' => 'Shaman', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 100,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guildData' => ['guild' => ['attendance' => $sharedData]]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
-
-        Cache::shouldReceive('remember')
-            ->twice()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getGuildAttendance(774848, guildTagID: [1, 2]);
-
-        $this->assertCount(1, $result->data);
-    }
-
-    public function test_get_guild_attendance_with_multiple_tags_paginates_merged_results(): void
-    {
-        Http::preventStrayRequests();
-
-        // Create more records than the requested limit
-        $tag1Data = [
-            'data' => [
-                ['code' => 'r1', 'startTime' => 1736971200000, 'players' => []],
-                ['code' => 'r2', 'startTime' => 1736884800000, 'players' => []],
-            ],
-            'total' => 2,
-            'per_page' => 100,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 2,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        $tag2Data = [
-            'data' => [
-                ['code' => 'r3', 'startTime' => 1736798400000, 'players' => []],
-                ['code' => 'r4', 'startTime' => 1736712000000, 'players' => []],
-            ],
-            'total' => 2,
-            'per_page' => 100,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 2,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag1Data]]]], 200)
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag2Data]]]], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
-
-        Cache::shouldReceive('remember')
-            ->twice()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getGuildAttendance(774848, page: 1, limit: 2, guildTagID: [1, 2]);
-
-        $this->assertCount(2, $result->data);
-        $this->assertEquals(4, $result->total);
-        $this->assertTrue($result->hasMorePages);
-        $this->assertEquals(2, $result->lastPage);
+            return ! isset($body['variables']['guildTagID']);
+        });
     }
 
     // ==================== API Method Tests - getAttendanceLazy() ====================
@@ -797,68 +538,6 @@ class AttendanceTest extends TestCase
         // Only def456 has Anduin
         $this->assertCount(1, $records);
         $this->assertEquals('def456', $records[0]->code);
-    }
-
-    public function test_get_attendance_lazy_accepts_array_of_tag_ids(): void
-    {
-        Http::preventStrayRequests();
-
-        $tag1Data = [
-            'data' => [
-                [
-                    'code' => 'lazy1',
-                    'startTime' => 1736971200000,
-                    'players' => [['name' => 'Thrall', 'type' => 'Shaman', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 25,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        $tag2Data = [
-            'data' => [
-                [
-                    'code' => 'lazy2',
-                    'startTime' => 1736366400000,
-                    'players' => [['name' => 'Jaina', 'type' => 'Mage', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 25,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag1Data]]]], 200)
-                ->push(['data' => ['guildData' => ['guild' => ['attendance' => $tag2Data]]]], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
-
-        Cache::shouldReceive('remember')
-            ->twice()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $records = $service->getAttendanceLazy(guildTagID: [1, 2])->all();
-
-        $this->assertCount(2, $records);
     }
 
     // ==================== API Method Tests - getGuildAttendanceLazy() ====================
@@ -933,100 +612,5 @@ class AttendanceTest extends TestCase
         $this->assertCount(2, $records);
         $this->assertEquals('page1', $records[0]->code);
         $this->assertEquals('page2', $records[1]->code);
-    }
-
-    public function test_get_guild_attendance_lazy_with_multiple_tags_deduplicates(): void
-    {
-        Http::preventStrayRequests();
-
-        $sharedData = [
-            'data' => [
-                [
-                    'code' => 'sharedlazy',
-                    'startTime' => 1736971200000,
-                    'players' => [['name' => 'Thrall', 'type' => 'Shaman', 'presence' => 1]],
-                ],
-            ],
-            'total' => 1,
-            'per_page' => 25,
-            'current_page' => 1,
-            'from' => 1,
-            'to' => 1,
-            'last_page' => 1,
-            'has_more_pages' => false,
-        ];
-
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guildData' => ['guild' => ['attendance' => $sharedData]]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
-            ->andReturn(false);
-
-        Cache::shouldReceive('remember')
-            ->twice()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $records = $service->getGuildAttendanceLazy(774848, guildTagID: [1, 2])->all();
-
-        $this->assertCount(1, $records);
-    }
-
-    // ==================== Backwards Compatibility Tests ====================
-
-    public function test_get_guild_attendance_with_null_tag_works(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getGuildAttendance(774848, guildTagID: null);
-
-        $this->assertInstanceOf(GuildAttendancePagination::class, $result);
-    }
-
-    public function test_get_guild_attendance_with_single_int_tag_works(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getGuildAttendance(774848, guildTagID: 1);
-
-        $this->assertInstanceOf(GuildAttendancePagination::class, $result);
-
-        Http::assertSent(function ($request) {
-            $body = json_decode($request->body(), true);
-
-            return isset($body['variables']['guildTagID']) && $body['variables']['guildTagID'] === 1;
-        });
-    }
-
-    public function test_get_guild_attendance_with_single_tag_array_uses_single_tag_logic(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getGuildAttendance(774848, guildTagID: [1]);
-
-        $this->assertInstanceOf(GuildAttendancePagination::class, $result);
     }
 }

@@ -19,7 +19,7 @@ class RefreshWarcraftLogsReports extends Command
      *
      * @var string
      */
-    protected $signature = 'app:refresh-warcraft-logs-reports {--latest}';
+    protected $signature = 'app:refresh-warcraft-logs-reports {--latest} {--all}';
 
     /**
      * The console command description.
@@ -40,22 +40,26 @@ class RefreshWarcraftLogsReports extends Command
             $since = $latestReport?->end_time?->addSecond();
         }
 
-        $guildTags = GuildTag::where('count_attendance', true)->get();
+        if ($this->option('all')) {
+            $guildTags = GuildTag::all();
+        } else {
+            $guildTags = GuildTag::where('count_attendance', true)->get();
+        }
 
         $jobs = $guildTags->map(fn ($guildTag) => new FetchWarcraftLogsReportsByGuildTag($guildTag, $since));
 
-        $jobs->push(new FetchGuildRoster);
+        $jobs->prepend(new FetchGuildRoster);
 
         $jobs->push(new FetchWarcraftLogsAttendanceData($guildTags, $since));
 
         Bus::batch($jobs->toArray())->before(function (Batch $batch) {
-            Log::info('Starting batch to refresh Warcraft Logs reports for '.$batch->jobs->count().' guild tags.');
+            Log::info('Starting batch to refresh Warcraft Logs reports.');
         })->progress(function (Batch $batch) {
             Log::info('Batch progress: '.$batch->progress().'% ('.$batch->processedJobs().'/'.$batch->totalJobs.')');
         })->catch(function (Batch $batch, \Throwable $e) {
             Log::error('Batch failed with error: '.$e->getMessage());
         })->then(function (Batch $batch) {
-            Log::info('Batch completed successfully. Refreshed reports for '.$batch->processedJobs().' guild tags.');
+            Log::info('Batch completed successfully. Refreshed reports.');
         })->dispatch();
     }
 }

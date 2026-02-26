@@ -171,6 +171,54 @@ class RefreshWarcraftLogsReportsTest extends TestCase
     }
 
     // ==========================================
+    // --all Option
+    // ==========================================
+
+    #[Test]
+    public function it_includes_all_guild_tags_when_all_flag_is_set(): void
+    {
+        Bus::fake();
+
+        $attendanceTag = GuildTag::factory()->countsAttendance()->create();
+        $nonAttendanceTag = GuildTag::factory()->doesNotCountAttendance()->create();
+
+        $this->artisan('app:refresh-warcraft-logs-reports', ['--all' => true])
+            ->assertSuccessful();
+
+        Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag, $nonAttendanceTag) {
+            $fetchReportJobs = $batch->jobs->filter(
+                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+            );
+
+            return $fetchReportJobs->count() === 2
+                && $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($attendanceTag))
+                && $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($nonAttendanceTag));
+        });
+    }
+
+    #[Test]
+    public function it_only_includes_attendance_guild_tags_when_all_flag_is_absent(): void
+    {
+        Bus::fake();
+
+        $attendanceTag = GuildTag::factory()->countsAttendance()->create();
+        $nonAttendanceTag = GuildTag::factory()->doesNotCountAttendance()->create();
+
+        $this->artisan('app:refresh-warcraft-logs-reports')
+            ->assertSuccessful();
+
+        Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag, $nonAttendanceTag) {
+            $fetchReportJobs = $batch->jobs->filter(
+                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+            );
+
+            return $fetchReportJobs->count() === 1
+                && $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($attendanceTag))
+                && ! $fetchReportJobs->contains(fn ($job) => $job->guildTag->is($nonAttendanceTag));
+        });
+    }
+
+    // ==========================================
     // Batch Count
     // ==========================================
 
