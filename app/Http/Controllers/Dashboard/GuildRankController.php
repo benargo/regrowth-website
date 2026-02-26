@@ -87,9 +87,8 @@ class GuildRankController extends Controller
      */
     public function toggleCountAttendance(ToggleGuildRankAttendanceRequest $request, GuildRank $guildRank): RedirectResponse
     {
-        $guildRank->update([
-            'count_attendance' => $request->validated('count_attendance'),
-        ]);
+        $guildRank->count_attendance = $request->validated('count_attendance');
+        $guildRank->save();
 
         return $this->back();
     }
