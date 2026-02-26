@@ -49,13 +49,13 @@ class RefreshWarcraftLogsReports extends Command
         $jobs->push(new FetchWarcraftLogsAttendanceData($guildTags, $since));
 
         Bus::batch($jobs->toArray())->before(function (Batch $batch) {
-            Log::info('Starting batch to refresh Warcraft Logs reports for '.$batch->jobs->count().' guild tags.');
+            Log::info('Starting batch to refresh Warcraft Logs reports.');
         })->progress(function (Batch $batch) {
             Log::info('Batch progress: '.$batch->progress().'% ('.$batch->processedJobs().'/'.$batch->totalJobs.')');
         })->catch(function (Batch $batch, \Throwable $e) {
             Log::error('Batch failed with error: '.$e->getMessage());
         })->then(function (Batch $batch) {
-            Log::info('Batch completed successfully. Refreshed reports for '.$batch->processedJobs().' guild tags.');
+            Log::info('Batch completed successfully. Refreshed reports.');
         })->dispatch();
     }
 }
