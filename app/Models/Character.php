@@ -4,6 +4,9 @@ namespace App\Models;
 
 use App\Events\AddonSettingsProcessed;
 use App\Models\WarcraftLogs\Report;
+use App\Services\Blizzard\CharacterService;
+use App\Services\Blizzard\GuildService;
+use App\Services\Blizzard\PlayableClassService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Arr;
 
 class Character extends Model
 {
@@ -91,9 +95,36 @@ class Character extends Model
         );
     }
 
+    /**
+     * Get the characters linked to this character.
+     *
+     * This relationship is defined in both directions to allow for easy retrieval of linked characters regardless of the direction of the link.
+     */
     public function linkedCharacters(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
+    }
+
+    public function playableClass(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $characterService = app(CharacterService::class);
+                $characterData = $characterService->getProfile($this->name);
+                if (Arr::has($characterData, 'character_class.id')) {
+                    $playableClassService = app(PlayableClassService::class);
+                    $playableClass = $playableClassService->find(Arr::get($characterData, 'character_class.id'));
+
+                    return [
+                        'id' => Arr::get($characterData, 'character_class.id'),
+                        'name' => Arr::get($playableClass, 'name'),
+                        'icon_url' => $playableClassService->iconUrl(Arr::get($characterData, 'character_class.id')) ?? null,
+                    ];
+                }
+
+                return null;
+            }
+        );
     }
 
     /**
@@ -110,7 +141,7 @@ class Character extends Model
      */
     public function prunable(): Builder
     {
-        $guildService = app()->make('App\Services\Blizzard\GuildService');
+        $guildService = app(GuildService::class);
         $memberIds = $guildService->members()->pluck('character.id')->toArray();
 
         return static::whereNotIn('id', $memberIds)->where('updated_at', '<=', now()->subDays(14));
