@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\DiscordRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -37,9 +38,10 @@ class UserFactory extends Factory
     public function officer(): static
     {
         return $this->afterCreating(function ($user) {
-            $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5])->id,
-            ]);
+            $role = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+            $permission = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+            $role->givePermissionTo($permission);
+            $user->discordRoles()->syncWithoutDetaching([$role->id]);
         });
     }
 
@@ -49,9 +51,10 @@ class UserFactory extends Factory
     public function raider(): static
     {
         return $this->afterCreating(function ($user) {
-            $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 3])->id,
-            ]);
+            $role = DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true]);
+            $permission = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+            $role->givePermissionTo($permission);
+            $user->discordRoles()->syncWithoutDetaching([$role->id]);
         });
     }
 
@@ -62,7 +65,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) {
             $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2])->id,
+                DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 3, 'is_visible' => true])->id,
             ]);
         });
     }
@@ -73,9 +76,10 @@ class UserFactory extends Factory
     public function lootCouncillor(): static
     {
         return $this->afterCreating(function ($user) {
-            $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 4])->id,
-            ]);
+            $role = DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true]);
+            $permission = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+            $role->givePermissionTo($permission);
+            $user->discordRoles()->syncWithoutDetaching([$role->id]);
         });
     }
 
@@ -86,7 +90,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function ($user) {
             $user->discordRoles()->syncWithoutDetaching([
-                DiscordRole::firstOrCreate(['id' => '829022292590985226'], ['name' => 'Guest', 'position' => 1])->id,
+                DiscordRole::firstOrCreate(['id' => '829022292590985226'], ['name' => 'Guest', 'position' => 2, 'is_visible' => true])->id,
             ]);
         });
     }

@@ -1,10 +1,8 @@
 <?php
 
-use App\Models\DiscordRole;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Spatie\Permission\Models\Permission;
 
 return new class extends Migration
 {
@@ -29,12 +27,6 @@ return new class extends Migration
             $table->primary(['discord_role_id', 'permission_id'], 'discord_role_permission_primary');
         });
 
-        // Assign existing permissions to roles based on the old 'can_comment_on_loot_items' column
-        DiscordRole::where('can_comment_on_loot_items', true)->each(function (DiscordRole $role) {
-            $permission = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
-            $role->givePermissionTo($permission);
-        });
-
         // Remove the old column after migrating permissions
         Schema::table('discord_roles', function (Blueprint $table) {
             $table->dropColumn('can_comment_on_loot_items');
@@ -53,11 +45,5 @@ return new class extends Migration
         Schema::table('discord_roles', function (Blueprint $table) {
             $table->boolean('can_comment_on_loot_items')->default(false);
         });
-
-        // Restore 'can_comment_on_loot_items' to officers.
-        $officerRole = DiscordRole::find('829021769448816691'); // Officer role ID
-        if ($officerRole) {
-            $officerRole->update(['can_comment_on_loot_items' => true]);
-        }
     }
 };

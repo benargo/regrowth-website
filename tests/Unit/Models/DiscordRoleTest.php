@@ -43,6 +43,7 @@ class DiscordRoleTest extends ModelTestCase
             'id',
             'name',
             'position',
+            'is_visible',
         ]);
     }
 
