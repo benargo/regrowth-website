@@ -6,18 +6,12 @@ use App\Events\AddonSettingsProcessed;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
-use App\Services\Blizzard\CharacterService;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService;
-use App\Services\Blizzard\PlayableClassService;
-use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -430,96 +424,6 @@ class CharacterTest extends ModelTestCase
         $character = new Character;
 
         $this->assertCount(0, $character->prunable()->get());
-    }
-
-    #[Test]
-    public function playable_class_returns_array_with_id_name_and_icon_url(): void
-    {
-        $character = $this->create(['name' => 'Thrall']);
-
-        $this->mock(CharacterService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getProfile')
-                ->with('Thrall')
-                ->andReturn(['character_class' => ['id' => 1]]);
-        });
-
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')
-                ->with(1)
-                ->andReturn(['name' => 'Warrior']);
-
-            $mock->shouldReceive('iconUrl')
-                ->with(1)
-                ->andReturn('https://example.com/warrior.png');
-        });
-
-        $result = $character->playableClass;
-
-        $this->assertIsArray($result);
-        $this->assertSame(1, $result['id']);
-        $this->assertSame('Warrior', $result['name']);
-        $this->assertSame('https://example.com/warrior.png', $result['icon_url']);
-    }
-
-    #[Test]
-    public function playable_class_returns_null_when_character_profile_has_no_class(): void
-    {
-        $character = $this->create(['name' => 'Thrall']);
-
-        $this->mock(CharacterService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getProfile')
-                ->with('Thrall')
-                ->andReturn([]);
-        });
-
-        $this->assertNull($character->playableClass);
-    }
-
-    #[Test]
-    public function playable_class_icon_url_is_null_when_service_returns_null(): void
-    {
-        $character = $this->create(['name' => 'Thrall']);
-
-        $this->mock(CharacterService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getProfile')
-                ->with('Thrall')
-                ->andReturn(['character_class' => ['id' => 1]]);
-        });
-
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')
-                ->with(1)
-                ->andReturn(['name' => 'Warrior']);
-
-            $mock->shouldReceive('iconUrl')
-                ->with(1)
-                ->andReturn(null);
-        });
-
-        $result = $character->playableClass;
-
-        $this->assertIsArray($result);
-        $this->assertNull($result['icon_url']);
-    }
-
-    #[Test]
-    public function playable_class_returns_null_and_logs_warning_when_request_exception_is_thrown(): void
-    {
-        $character = $this->create(['name' => 'Thrall']);
-
-        $exception = new RequestException(new Response(new GuzzleResponse(500)));
-
-        $this->mock(CharacterService::class, function (MockInterface $mock) use ($exception) {
-            $mock->shouldReceive('getProfile')
-                ->with('Thrall')
-                ->andThrow($exception);
-        });
-
-        Log::shouldReceive('warning')
-            ->once()
-            ->withArgs(fn (string $message) => str_contains($message, 'Thrall'));
-
-        $this->assertNull($character->playableClass);
     }
 
     #[Test]

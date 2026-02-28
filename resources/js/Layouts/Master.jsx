@@ -212,7 +212,7 @@ export default function Master({ title, children }) {
                             href={route("daily-quests.index")}
                             className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
                         >
-                            <span className="w-[20px] justify-center inline-flex mr-2">
+                            <span className="mr-2 inline-flex w-[20px] justify-center">
                                 <img
                                     src="/images/icon_quest.webp"
                                     alt="Quest start icon"
@@ -230,14 +230,14 @@ export default function Master({ title, children }) {
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot Bias
                                 </Link>
-                                <div className="ml-2 pl-2 border-l-2 border-amber-800">
-                                    <p className="text-sm font-medium text-gray-400 mb-1">Phases</p>
-                                    <div className="grid grid-cols-5 gap-1 mb-2">
+                                <div className="ml-2 border-l-2 border-amber-800 pl-2">
+                                    <p className="mb-1 text-sm font-medium text-gray-400">Phases</p>
+                                    <div className="mb-2 grid grid-cols-5 gap-1">
                                         {phases?.map((phase) => (
                                             <Link
                                                 key={phase.id}
                                                 href={route("loot.phase", { phase: phase.id })}
-                                                className="border border-amber-800 text-center rounded px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                                className="rounded border border-amber-800 px-3 py-2 text-center text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
                                             >
                                                 {phase.number}
                                             </Link>
@@ -246,7 +246,7 @@ export default function Master({ title, children }) {
                                     {can?.viewAllComments && (
                                         <Link
                                             href={route("loot.comments.index")}
-                                            className="flex flex-row items-center rounded-md pl-1 pr-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                            className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
                                         >
                                             <Icon icon="comments" style="solid" className="mr-2 h-6" />
                                             All Comments
@@ -280,7 +280,7 @@ export default function Master({ title, children }) {
                     <div className="border-t border-amber-700 pb-3 pt-4">
                         {user ? (
                             <div className="space-y-2 px-2">
-                                <div className="flex items-center space-x-3 mx-2">
+                                <div className="mx-2 flex items-center space-x-3">
                                     <img src={user.avatar} alt={user.display_name} className="h-10 w-10 rounded-full" />
                                     <div>
                                         <div className="text-base font-medium text-white">{user.display_name}</div>
@@ -369,14 +369,14 @@ export default function Master({ title, children }) {
                                 <span className="sr-only">World of Warcraft: Classic</span>
                             </div>
                             {/* Footer Links */}
-                            <nav className="flex flex-col items-center justify-start gap-6 md:flex-row md:flex-wrap md:justify-between">
-                                <Link href="/" className="flex h-8 flex-row items-center p-1 text-gray-400">
+                            <nav className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2">
+                                <Link href="/" className="flex h-8 flex-row items-center p-1 text-gray-400 md:ml-2">
                                     <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
                                 </Link>
                                 <Link
                                     href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white"
+                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -404,21 +404,21 @@ export default function Master({ title, children }) {
                                     href="https://discord.gg/regrowth"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white"
+                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="discord" style="brands" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">Discord</span>
                                 </Link>
                                 <Link
                                     href={route("privacypolicy")}
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white"
+                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="user-secret" style="solid" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
                                 <Link
                                     href={route("battlenet-usage")}
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white"
+                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="battle-net" style="brands" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">Battle.net API Usage</span>
@@ -429,7 +429,7 @@ export default function Master({ title, children }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title="Ben Argo"
-                                    className="mt-0 flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white"
+                                    className="mt-0 flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="safari" style="brands" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">A Fizzywigs Production</span>

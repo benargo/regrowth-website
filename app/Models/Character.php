@@ -6,6 +6,7 @@ use App\Events\AddonSettingsProcessed;
 use App\Models\WarcraftLogs\Report;
 use App\Services\Blizzard\CharacterService;
 use App\Services\Blizzard\GuildService;
+use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\PlayableClassService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -125,10 +126,16 @@ class Character extends Model
                         ];
                     }
                 } catch (RequestException $e) {
-                    Log::warning('Failed to fetch Blizzard character profile for ' . $this->name . ': ' . $e->getMessage());
+                    Log::warning('Failed to fetch Blizzard character profile for '.$this->name.': '.$e->getMessage());
                 }
 
-                return null;
+                $mediaService = app(MediaService::class);
+
+                return [
+                    'id' => null,
+                    'name' => 'Unknown Class',
+                    'icon_url' => $mediaService->getIconUrlByName('inv_misc_questionmark') ?? null,
+                ];
             }
         );
     }

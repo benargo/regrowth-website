@@ -17,6 +17,7 @@ class PhaseResource extends JsonResource
         return [
             'id' => $this->id,
             'number' => $this->number,
+            'name' => "Phase {$this->number}",
             'description' => $this->description,
             'start_date' => $this->start_date?->toIso8601String(),
             'has_started' => $this->hasStarted(),

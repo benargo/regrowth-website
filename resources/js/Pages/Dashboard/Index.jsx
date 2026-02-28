@@ -37,10 +37,6 @@ export default function Index({ discordRoles }) {
                     <h2 className="text-2xl font-semibold">Loot Council</h2>
                     <p className="text-md text-gray-400">Manage loot distribution priorities and addon settings.</p>
                     <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <DashboardCard href={route("loot.index")} icon="balance-scale-left">
-                            <h3 className="text-md">Loot bias tool</h3>
-                            <p className="mb-1 text-sm">Set priorities to manage loot distribution fairly.</p>
-                        </DashboardCard>
                         <DashboardCard href={route("dashboard.addon.export")} icon="file-export">
                             <h3 className="text-md">Export addon data</h3>
                             <p className="mb-1 text-sm">Generate data files for in-game addons.</p>
@@ -50,23 +46,19 @@ export default function Index({ discordRoles }) {
                             <p className="mb-1 text-sm">Fine tune the addon to the guild's needs.</p>
                         </DashboardCard>
                     </div>
-                    {/* TODO: Raiding */}
-                    {/* <h2 className="text-2xl font-semibold mt-12">Raiding</h2>
+                    {/* Raiding */}
+                    <h2 className="mt-12 text-2xl font-semibold">Raiding</h2>
                     <p className="text-md text-gray-400">Manage raid team compositions and attendance tracking.</p>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 my-4">
-                        <DashboardCard href={route('dashboard.raids.view')} icon="users-class">
+                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        {/* <DashboardCard href={route('dashboard.raids.view')} icon="users-class">
                             <h3 className="text-md">Manage raid teams</h3>
                             <p className="text-sm mb-1">Create and modify raid team compositions and assignments.</p>
+                        </DashboardCard> */}
+                        <DashboardCard href={route("raids.attendance.index")} icon="clipboard-list-check">
+                            <h3 className="text-md">Attendance tracker</h3>
+                            <p className="mb-1 text-sm">Log and review raid attendance records.</p>
                         </DashboardCard>
-                        <DashboardCard href={route('dashboard.attendance.view')} icon="clipboard-list-check">
-                            <h3 className="text-md">Track attendance</h3>
-                            <p className="text-sm mb-1">Log and review raid attendance records.</p>
-                        </DashboardCard>
-                        <DashboardCard href={route('dashboard.attendance.reports')} icon="chart-line">
-                            <h3 className="text-md">Attendance reports</h3>
-                            <p className="text-sm mb-1">Generate reports on raider attendance over time.</p>
-                        </DashboardCard>
-                    </div> */}
+                    </div>
                     {/* Daily Quests */}
                     <h2 className="mt-12 text-2xl font-semibold">Daily Quests</h2>
                     <p className="text-md text-gray-400">Manage TBC daily quest selections.</p>

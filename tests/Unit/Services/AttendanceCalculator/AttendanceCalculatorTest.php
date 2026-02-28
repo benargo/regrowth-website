@@ -8,6 +8,8 @@ use App\Models\GuildRank;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
+use App\Services\AttendanceCalculator\AttendanceMatrix;
+use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
 use App\Services\AttendanceCalculator\CharacterAttendanceStats;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,6 +30,11 @@ class AttendanceCalculatorTest extends TestCase
     protected function makeCalculator(): AttendanceCalculator
     {
         return new AttendanceCalculator;
+    }
+
+    protected function makeMatrix(): AttendanceMatrix
+    {
+        return new AttendanceMatrix($this->makeCalculator());
     }
 
     protected function makeRank(bool $countsAttendance = true): GuildRank
@@ -684,5 +691,356 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->reportsAttended);
         $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
         $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->reportsAttended);
+    }
+
+    // ==================== matrixForWholeGuild: Return Type Tests ====================
+
+    public function test_matrix_for_whole_guild_returns_attendance_matrix_instance(): void
+    {
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        $this->assertInstanceOf(AttendanceMatrix::class, $matrix);
+    }
+
+    // ==================== matrixForWholeGuild: Empty Input Tests ====================
+
+    public function test_matrix_returns_empty_when_no_counting_ranks_exist(): void
+    {
+        GuildRank::factory()->doesNotCountAttendance()->create();
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        $this->assertEmpty($matrix->raids);
+        $this->assertEmpty($matrix->rows);
+    }
+
+    public function test_matrix_returns_empty_when_no_qualifying_reports_exist(): void
+    {
+        $rank = $this->makeRank();
+        Character::factory()->create(['rank_id' => $rank->id]);
+        $this->makeTag(false);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        $this->assertEmpty($matrix->raids);
+        $this->assertEmpty($matrix->rows);
+    }
+
+    // ==================== matrixForWholeGuild: Column Tests ====================
+
+    public function test_matrix_columns_are_in_reverse_chronological_order(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        // Most recent raid is raids[0], oldest is last
+        $this->assertEquals('08/01', $matrix->raids[0]['date']);
+        $this->assertEquals('01/01', $matrix->raids[1]['date']);
+    }
+
+    public function test_matrix_raid_date_is_formatted_as_dd_mm(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+        $report = $this->makeReport($tag, Carbon::parse('2025-03-05 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        $this->assertEquals('05/03', $matrix->raids[0]['date']);
+    }
+
+    public function test_matrix_raid_column_includes_day_of_week(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+        // 2025-01-01 is a Wednesday
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        $this->assertEquals('Wed', $matrix->raids[0]['dayOfWeek']);
+    }
+
+    // ==================== matrixForWholeGuild: Row Tests ====================
+
+    public function test_matrix_rows_are_sorted_alphabetically_by_name(): void
+    {
+        $rank = $this->makeRank();
+        $tag = $this->makeTag();
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+
+        foreach (['Zara', 'Alice', 'Milo'] as $name) {
+            $character = Character::factory()->create(['name' => $name, 'rank_id' => $rank->id]);
+            $this->attachCharacter($report, $character, 1);
+        }
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        $this->assertEquals('Alice', $matrix->rows[0]['name']);
+        $this->assertEquals('Milo', $matrix->rows[1]['name']);
+        $this->assertEquals('Zara', $matrix->rows[2]['name']);
+    }
+
+    public function test_matrix_row_percentage_is_calculated_correctly(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $report3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report3, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        $this->assertEquals(66.67, $row['percentage']);
+    }
+
+    // ==================== matrixForWholeGuild: Cell Value Tests ====================
+
+    public function test_matrix_cells_before_first_attendance_are_null(): void
+    {
+        $rank = $this->makeRank();
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        // Thrall attends from raid 1; Jaina only joins on raid 2
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $thrall, 1);
+        $this->attachCharacter($report2, $thrall, 1);
+        $this->attachCharacter($report2, $jaina, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $jainaRow = collect($matrix->rows)->firstWhere('name', 'Jaina');
+
+        // Columns are newest-first: raids[0]=Jan 8, raids[1]=Jan 1
+        // attendance[0] = Jan 8 = Jaina's first raid — should be 1
+        $this->assertEquals(1, $jainaRow['attendance'][0]);
+        // attendance[1] = Jan 1 = before Jaina's first attendance — should be null
+        $this->assertNull($jainaRow['attendance'][1]);
+    }
+
+    public function test_matrix_absent_cell_after_first_attendance_is_zero(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        // Thrall is absent from report 2
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        // Columns are newest-first: raids[0]=Jan 8 (absent), raids[1]=Jan 1 (present)
+        $this->assertEquals(0, $row['attendance'][0]);
+        $this->assertEquals(1, $row['attendance'][1]);
+    }
+
+    public function test_matrix_presence_1_cell_is_one(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        $this->assertEquals(1, $row['attendance'][0]);
+    }
+
+    public function test_matrix_presence_2_cell_is_two(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 2);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        $this->assertEquals(2, $row['attendance'][0]);
+    }
+
+    public function test_matrix_same_day_raids_are_merged_into_one_column(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        // Two raids on the same evening — one column should appear
+        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacter($raid1, $thrall, 1);
+        $this->attachCharacter($raid2, $jaina, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+
+        $this->assertCount(1, $matrix->raids);
+        $thrallRow = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $jainaRow = collect($matrix->rows)->firstWhere('name', 'Jaina');
+        $this->assertEquals(1, $thrallRow['attendance'][0]);
+        $this->assertEquals(1, $jainaRow['attendance'][0]);
+    }
+
+    public function test_matrix_to_array_returns_correct_structure(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $array = $matrix->toArray();
+
+        $this->assertArrayHasKey('raids', $array);
+        $this->assertArrayHasKey('rows', $array);
+        $this->assertArrayHasKey('code', $array['raids'][0]);
+        $this->assertArrayHasKey('dayOfWeek', $array['raids'][0]);
+        $this->assertArrayHasKey('date', $array['raids'][0]);
+        $this->assertArrayHasKey('name', $array['rows'][0]);
+        $this->assertArrayHasKey('percentage', $array['rows'][0]);
+        $this->assertArrayHasKey('attendance', $array['rows'][0]);
+        $this->assertArrayHasKey('playable_class', $array['rows'][0]);
+    }
+
+    // ==================== matrixWithFilters: Row Field Tests ====================
+
+    public function test_matrix_rows_include_id_and_rank_id(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters);
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        $this->assertArrayHasKey('id', $row);
+        $this->assertArrayHasKey('rank_id', $row);
+        $this->assertEquals($character->id, $row['id']);
+        $this->assertEquals($rank->id, $row['rank_id']);
+    }
+
+    // ==================== matrixWithFilters: Guild Tag Filter Tests ====================
+
+    public function test_matrix_with_filters_guild_tag_filter_includes_only_selected_tag(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag1 = $this->makeTag();
+        $tag2 = $this->makeTag();
+
+        $report1 = $this->makeReport($tag1, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag2, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $thrall, 1);
+        $this->attachCharacter($report2, $jaina, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            guildTagIds: [$tag1->id],
+        ));
+
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertNotContains('Jaina', $names);
+    }
+
+    // ==================== matrixWithFilters: Zone Filter Tests ====================
+
+    public function test_matrix_with_filters_zone_filter_includes_only_reports_for_that_zone(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = Report::factory()->withGuildTag($tag)->withZone(1001, 'Black Temple')->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
+        $report2 = Report::factory()->withGuildTag($tag)->withZone(1002, 'Sunwell Plateau')->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'Europe/Paris')]);
+        $this->attachCharacter($report1, $thrall, 1);
+        $this->attachCharacter($report2, $jaina, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            zoneIds: [1001],
+        ));
+
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertNotContains('Jaina', $names);
+    }
+
+    // ==================== matrixWithFilters: Date Filter Tests ====================
+
+    public function test_matrix_with_filters_since_date_excludes_older_reports(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $oldReport = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $newReport = $this->makeReport($tag, Carbon::parse('2025-02-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($oldReport, $thrall, 1);
+        $this->attachCharacter($newReport, $jaina, 1);
+
+        // sinceDate = Jan 15 at 05:00 UTC, excludes Jan 1 report
+        $sinceDate = Carbon::parse('2025-01-15 05:00:00', 'UTC');
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            sinceDate: $sinceDate,
+        ));
+
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertNotContains('Thrall', $names);
+        $this->assertContains('Jaina', $names);
+    }
+
+    public function test_matrix_with_filters_before_date_excludes_newer_reports(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $oldReport = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $newReport = $this->makeReport($tag, Carbon::parse('2025-02-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($oldReport, $thrall, 1);
+        $this->attachCharacter($newReport, $jaina, 1);
+
+        // beforeDate = Jan 15 at 05:00 UTC, excludes Feb 1 report
+        $beforeDate = Carbon::parse('2025-01-15 05:00:00', 'UTC');
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            beforeDate: $beforeDate,
+        ));
+
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertNotContains('Jaina', $names);
     }
 }

@@ -8,14 +8,13 @@ use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\GuildRosterController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
 use App\Http\Controllers\LootCouncil\CommentReactionController;
 use App\Http\Controllers\LootCouncil\ItemController;
 use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Raid\AttendanceController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,22 +29,30 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
 /**
  * Loot Bias Tools
  */
-Route::group(['prefix' => 'loot', 'middleware' => ['auth', 'can:viewAny,App\Models\LootCouncil\Item']], function () {
-    Route::get('/', [BiasToolController::class, 'index'])->name('loot.index');
-    Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->name('loot.phase');
-    Route::get('/comments', [CommentController::class, 'index'])->can('viewAll', 'App\Models\LootCouncil\Comment')->name('loot.comments.index');
-    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('loot.items.comments.store');
-    Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('loot.items.notes.store');
-    Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('loot.items.priorities.update');
+Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth', 'can:viewAny,App\Models\LootCouncil\Item']], function () {
+    Route::get('/', [BiasToolController::class, 'index'])->name('index');
+    Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->name('phase');
+    Route::get('/comments', [CommentController::class, 'index'])->can('viewAll', 'App\Models\LootCouncil\Comment')->name('comments.index');
+    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
+    Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('items.notes.store');
+    Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('items.priorities.update');
     Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit'])->can('update', 'item');
-    Route::get('/items/{item}/{name?}', [ItemController::class, 'view'])->name('loot.items.show');
-    Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('loot.items.edit');
+    Route::get('/items/{item}/{name?}', [ItemController::class, 'view'])->name('items.show');
+    Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('items.edit');
 
     // Comment routes
-    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('loot.comments.update');
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('loot.comments.destroy');
-    Route::post('/comments/{comment}/reactions', [CommentReactionController::class, 'store'])->name('loot.comments.reactions.store');
-    Route::delete('/comments/{comment}/reactions/{reaction}', [CommentReactionController::class, 'destroy'])->name('loot.comments.reactions.destroy');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::post('/comments/{comment}/reactions', [CommentReactionController::class, 'store'])->name('comments.reactions.store');
+    Route::delete('/comments/{comment}/reactions/{reaction}', [CommentReactionController::class, 'destroy'])->name('comments.reactions.destroy');
+});
+
+/**
+ * Raid planning and attendance
+ */
+Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], function () {
+    Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance-dashboard')->name('attendance.index');
+    Route::get('/attendance/matrix', [AttendanceController::class, 'matrix'])->middleware('can:view-attendance-dashboard')->name('attendance.matrix');
 });
 
 /*
@@ -136,11 +143,5 @@ Route::get('/info/battlenet-usage', function () {
 Route::get('/info/privacy', function () {
     return Inertia::render('PrivacyPolicy');
 })->name('privacypolicy');
-
-// Route::middleware('auth')->group(function () {
-//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-// });
 
 require __DIR__.'/auth.php';

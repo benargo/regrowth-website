@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\AttendanceCalculator\Aggregators\ReportsAggregator;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
+use App\Services\AttendanceCalculator\AttendanceMatrix;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
@@ -35,6 +36,7 @@ class AttendanceCalculatorServiceProvider extends ServiceProvider implements Def
         return [
             ReportsAggregator::class,
             AttendanceCalculator::class,
+            AttendanceMatrix::class,
         ];
     }
 }

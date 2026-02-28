@@ -44,6 +44,7 @@ class DiscordRole extends Model
         'id',
         'name',
         'position',
+        'is_visible',
     ];
 
     /**

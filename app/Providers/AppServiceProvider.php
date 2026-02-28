@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\TBC\Phase;
+use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\CommentPolicy;
 use App\Policies\DashboardPolicy;
@@ -46,5 +47,6 @@ class AppServiceProvider extends ServiceProvider
          */
         Gate::define('access-dashboard', [DashboardPolicy::class, 'access']);
         Gate::define('view-as-role', [ViewAsRolePolicy::class, 'viewAsRole']);
+        Gate::define('view-attendance-dashboard', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-attendance-dashboard'));
     }
 }
