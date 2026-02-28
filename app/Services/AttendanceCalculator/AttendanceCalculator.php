@@ -6,11 +6,17 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
+use App\Services\AttendanceCalculator\Aggregators\ReportsAggregator;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class AttendanceCalculator
 {
+    public function __construct(
+        protected readonly ReportsAggregator $reportsAggregator,
+        protected string $timezone = 'UTC',
+    ) {}
+
     /**
      * The guild ranks that count towards attendance, keyed by ID for quick access.
      *
@@ -180,16 +186,14 @@ class AttendanceCalculator
      */
     public function mergeByRaidDay(Collection $records): Collection
     {
-        $timezone = config('app.timezone');
-
         return $records
-            ->groupBy(fn (array $record) => $record['startTime']->copy()->setTimezone($timezone)->subHours(5)->toDateString())
+            ->groupBy(fn (array $record) => $record['startTime']->copy()->setTimezone($this->timezone)->subHours(5)->toDateString())
             ->map(function (Collection $group) {
                 if ($group->count() === 1) {
                     return $group->first();
                 }
 
-                /** @var array<string, array{id: int, presence: int}> $mergedPlayers */
+                /** @var array<string, array{id: int, rank_id: int|null, presence: int}> $mergedPlayers */
                 $mergedPlayers = [];
 
                 foreach ($group as $record) {

@@ -7,6 +7,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
+use App\Services\AttendanceCalculator\Aggregators\ReportsAggregator;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
 use App\Services\AttendanceCalculator\AttendanceMatrix;
 use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
@@ -29,12 +30,12 @@ class AttendanceCalculatorTest extends TestCase
 
     protected function makeCalculator(): AttendanceCalculator
     {
-        return new AttendanceCalculator;
+        return new AttendanceCalculator(new ReportsAggregator, config('app.timezone'));
     }
 
     protected function makeMatrix(): AttendanceMatrix
     {
-        return new AttendanceMatrix($this->makeCalculator());
+        return new AttendanceMatrix($this->makeCalculator(), config('app.timezone'));
     }
 
     protected function makeRank(bool $countsAttendance = true): GuildRank

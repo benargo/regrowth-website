@@ -27,6 +27,7 @@ class AttendanceMatrix
 
     public function __construct(
         protected readonly AttendanceCalculator $calculator,
+        protected string $timezone = 'UTC',
     ) {}
 
     /**
@@ -124,13 +125,11 @@ class AttendanceMatrix
             return $this->load([], []);
         }
 
-        $timezone = config('app.timezone');
-
         // Build the ordered raids list (columns).
         $raids = $records->map(fn (array $record) => [
             'code' => $record['code'],
-            'dayOfWeek' => $record['startTime']->copy()->setTimezone($timezone)->format('D'),
-            'date' => $record['startTime']->copy()->setTimezone($timezone)->format('d/m'),
+            'dayOfWeek' => $record['startTime']->copy()->setTimezone($this->timezone)->format('D'),
+            'date' => $record['startTime']->copy()->setTimezone($this->timezone)->format('d/m'),
         ])->reverse()->values()->all();
 
         // First pass: find each character's ID, rank, and first-appearance index.

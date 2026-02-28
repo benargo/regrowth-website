@@ -15,7 +15,17 @@ class AttendanceCalculatorServiceProvider extends ServiceProvider implements Def
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(ReportsAggregator::class, function () {
+            return new ReportsAggregator;
+        });
+
+        $this->app->singleton(AttendanceCalculator::class, function ($app) {
+            return new AttendanceCalculator($app->make(ReportsAggregator::class), config('app.timezone'));
+        });
+
+        $this->app->singleton(AttendanceMatrix::class, function ($app) {
+            return new AttendanceMatrix($app->make(AttendanceCalculator::class), config('app.timezone'));
+        });
     }
 
     /**
