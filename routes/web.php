@@ -15,6 +15,7 @@ use App\Http\Controllers\LootCouncil\ItemController;
 use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\Raid\AttendanceController;
+use App\Http\Controllers\Raid\AttendanceMatrixController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -51,8 +52,9 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth', 'can
  * Raid planning and attendance
  */
 Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], function () {
+    // Attendance routes
     Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance-dashboard')->name('attendance.index');
-    Route::get('/attendance/matrix', [AttendanceController::class, 'matrix'])->middleware('can:view-attendance-dashboard')->name('attendance.matrix');
+    Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance-dashboard')->name('attendance.matrix');
 });
 
 /*
