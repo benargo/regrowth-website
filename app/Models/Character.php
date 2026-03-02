@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Events\AddonSettingsProcessed;
+use App\Events\CharacterDeleted;
+use App\Events\CharacterUpdated;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -49,8 +50,8 @@ class Character extends Model
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
-        'updated' => AddonSettingsProcessed::class,
-        'deleted' => AddonSettingsProcessed::class,
+        'updated' => CharacterUpdated::class,
+        'deleted' => CharacterDeleted::class,
     ];
 
     /**

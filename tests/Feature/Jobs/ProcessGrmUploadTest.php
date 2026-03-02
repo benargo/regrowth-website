@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Events\CharacterUpdated;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\Character;
 use App\Models\GuildRank;
@@ -9,6 +10,7 @@ use App\Notifications\DiscordNotifiable;
 use App\Notifications\GrmUploadFailed;
 use App\Services\Blizzard\CharacterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -278,6 +280,51 @@ class ProcessGrmUploadTest extends TestCase
             'id' => 12345,
             'is_main' => true,
         ]);
+    }
+
+    public function test_it_dispatches_character_updated_event_once_after_successful_batch(): void
+    {
+        Event::fake([CharacterUpdated::class]);
+
+        $this->mockCharacterService([
+            'CharOne' => 11111,
+            'CharTwo' => 22222,
+        ]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'CharOne', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+                ['Name' => 'CharTwo', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Alt', 'Player Alts' => ''],
+            ],
+        ]);
+
+        $job->handle(app(CharacterService::class));
+
+        Event::assertDispatchedTimes(CharacterUpdated::class, 1);
+    }
+
+    public function test_it_does_not_dispatch_character_updated_event_when_no_characters_are_processed(): void
+    {
+        Event::fake([CharacterUpdated::class]);
+
+        $this->mock(CharacterService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getStatus')
+                ->andThrow(new \RuntimeException('Character not found'));
+        });
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ]);
+
+        $job->handle(app(CharacterService::class));
+
+        Event::assertNotDispatched(CharacterUpdated::class);
     }
 
     public function test_it_skips_empty_character_names(): void

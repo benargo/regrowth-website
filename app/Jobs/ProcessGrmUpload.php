@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\CharacterUpdated;
 use App\Exceptions\CharacterTooLowLevelException;
 use App\Models\Character;
 use App\Models\GuildRank;
@@ -68,33 +69,48 @@ class ProcessGrmUpload implements ShouldQueue
         $warningCount = 0;
         $skippedCount = 0;
 
-        foreach ($rows as $row) {
-            try {
-                $this->processRow($row, $altDelimiter, $characterService);
-                $processedCount++;
-            } catch (CharacterTooLowLevelException $e) {
-                $skippedCount++;
-                $characterName = $row['Name'] ?? 'Unknown';
-                Log::notice("GRM Upload: Character too low level {$characterName}", [
-                    'error' => $e->getMessage(),
-                    'row' => $row,
-                ]);
-            } catch (CharacterNotFoundException $e) {
-                $warningCount++;
-                $characterName = $row['Name'] ?? 'Unknown';
-                Log::warning("GRM Upload: Character not found via Blizzard API for {$characterName}", [
-                    'error' => $e->getMessage(),
-                    'row' => $row,
-                ]);
-            } catch (\Exception $e) {
-                $errorCount++;
-                $characterName = $row['Name'] ?? 'Unknown';
-                $errors[] = "{$characterName}: {$e->getMessage()}";
-                Log::warning("GRM Upload: Failed to process character {$characterName}", [
-                    'error' => $e->getMessage(),
-                    'row' => $row,
-                ]);
+        Character::withoutEvents(function () use (
+            $rows,
+            $altDelimiter,
+            $characterService,
+            &$processedCount,
+            &$errorCount,
+            &$errors,
+            &$warningCount,
+            &$skippedCount,
+        ) {
+            foreach ($rows as $row) {
+                try {
+                    $this->processRow($row, $altDelimiter, $characterService);
+                    $processedCount++;
+                } catch (CharacterTooLowLevelException $e) {
+                    $skippedCount++;
+                    $characterName = $row['Name'] ?? 'Unknown';
+                    Log::notice("GRM Upload: Character too low level {$characterName}", [
+                        'error' => $e->getMessage(),
+                        'row' => $row,
+                    ]);
+                } catch (CharacterNotFoundException $e) {
+                    $warningCount++;
+                    $characterName = $row['Name'] ?? 'Unknown';
+                    Log::warning("GRM Upload: Character not found via Blizzard API for {$characterName}", [
+                        'error' => $e->getMessage(),
+                        'row' => $row,
+                    ]);
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    $characterName = $row['Name'] ?? 'Unknown';
+                    $errors[] = "{$characterName}: {$e->getMessage()}";
+                    Log::warning("GRM Upload: Failed to process character {$characterName}", [
+                        'error' => $e->getMessage(),
+                        'row' => $row,
+                    ]);
+                }
             }
+        });
+
+        if ($processedCount > 0) {
+            CharacterUpdated::dispatch();
         }
 
         Log::info('GRM Upload completed', [
