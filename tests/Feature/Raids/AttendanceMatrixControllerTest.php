@@ -12,6 +12,7 @@ use App\Services\Blizzard\GuildService;
 use App\Services\Blizzard\PlayableClassService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use Spatie\Permission\Models\Permission;
@@ -27,6 +28,7 @@ class AttendanceMatrixControllerTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        Cache::tags('warcraftlogs')->flush();
 
         $permission = Permission::firstOrCreate(['name' => 'view-attendance-dashboard', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
@@ -173,6 +175,7 @@ class AttendanceMatrixControllerTest extends TestCase
             ->has('filters.guild_tag_ids')
             ->has('filters.since_date')
             ->has('filters.before_date')
+            ->has('earliestDate')
         );
     }
 
@@ -289,6 +292,133 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => 'not-a-date']));
 
         $response->assertSessionHasErrors(['before_date']);
+    }
+
+    public function test_matrix_accepts_since_date_of_today(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $today = Carbon::today(config('app.timezone'))->toDateString();
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => $today]));
+
+        $response->assertSessionDoesntHaveErrors(['since_date']);
+    }
+
+    public function test_matrix_rejects_since_date_in_the_future(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => $tomorrow]));
+
+        $response->assertSessionHasErrors(['since_date']);
+    }
+
+    public function test_matrix_accepts_before_date_of_today(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $today = Carbon::today(config('app.timezone'))->toDateString();
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => $today]));
+
+        $response->assertSessionDoesntHaveErrors(['before_date']);
+    }
+
+    public function test_matrix_rejects_before_date_in_the_future(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => $tomorrow]));
+
+        $response->assertSessionHasErrors(['before_date']);
+    }
+
+    public function test_matrix_accepts_since_date_equal_to_minimum(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+
+        $user = User::factory()->officer()->create();
+
+        // Min date is 2025-01-04 (one day before earliest report date in app timezone)
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2025-01-04']));
+
+        $response->assertSessionDoesntHaveErrors(['since_date']);
+    }
+
+    public function test_matrix_rejects_since_date_before_minimum(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+
+        $user = User::factory()->officer()->create();
+
+        // Min date is 2025-01-04, so 2025-01-03 should be rejected
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2025-01-03']));
+
+        $response->assertSessionHasErrors(['since_date']);
+    }
+
+    public function test_matrix_accepts_before_date_equal_to_minimum(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => '2025-01-04']));
+
+        $response->assertSessionDoesntHaveErrors(['before_date']);
+    }
+
+    public function test_matrix_rejects_before_date_before_minimum(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => '2025-01-03']));
+
+        $response->assertSessionHasErrors(['before_date']);
+    }
+
+    public function test_matrix_accepts_any_date_when_no_reports_exist(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2000-01-01', 'before_date' => '2000-01-01']));
+
+        $response->assertSessionDoesntHaveErrors(['since_date', 'before_date']);
+    }
+
+    // ==================== matrix: Earliest Date Prop ====================
+
+    public function test_matrix_earliest_date_is_null_when_no_reports_exist(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('earliestDate', null)
+        );
+    }
+
+    public function test_matrix_earliest_date_is_day_before_earliest_report(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'Europe/Paris')]);
+        Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('earliestDate', '2025-01-04')
+        );
     }
 
     // ==================== matrix: Server-Side Filter Behavior ====================

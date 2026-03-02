@@ -120,9 +120,10 @@ function FilterDropdown({ label, options, selected, onChange, dusk }) {
     );
 }
 
-function DateFilterButton({ label, value, onChange, dusk }) {
+function DateFilterButton({ label, value, onChange, dusk, min }) {
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState(value);
+    const today = new Date().toISOString().split("T")[0];
 
     const open = () => {
         setDraft(value);
@@ -166,6 +167,8 @@ function DateFilterButton({ label, value, onChange, dusk }) {
                     <TextInput
                         type="date"
                         value={draft}
+                        min={min}
+                        max={today}
                         onChange={(e) => setDraft(e.target.value)}
                         className="block w-full bg-brown-800/50 text-white [color-scheme:dark]"
                     />
@@ -325,7 +328,7 @@ function MatrixTable({ raids, rows }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function Matrix({ matrix, ranks, zones, guildTags, filters }) {
+export default function Matrix({ matrix, ranks, zones, guildTags, filters, earliestDate }) {
     // ── Client-side filter state (no server reload) ──────────────────────────
     const [characterName, setCharacterName] = useState("");
     // null = "all selected" (initial state before matrix loads or after explicit reset)
@@ -458,12 +461,14 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters }) {
                                 value={beforeDate}
                                 onChange={setBeforeDate}
                                 dusk="filter-before-date"
+                                min={earliestDate}
                             />
                             <DateFilterButton
                                 label="After"
                                 value={sinceDate}
                                 onChange={setSinceDate}
                                 dusk="filter-since-date"
+                                min={earliestDate}
                             />
                         </div>
                     </div>

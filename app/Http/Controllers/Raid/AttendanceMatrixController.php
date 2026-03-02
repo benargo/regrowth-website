@@ -10,6 +10,7 @@ use App\Models\WarcraftLogs\Report;
 use App\Services\AttendanceCalculator\AttendanceMatrix;
 use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,11 +42,20 @@ class AttendanceMatrixController extends Controller
     {
         $filters = $this->resolveFilters($request);
 
+        $earliestDate = Cache::tags('warcraftlogs')->remember(
+            'attendance_matrix_earliest_date',
+            now()->addDays(7),
+            fn () => Report::min('start_time'),
+        );
+
         return Inertia::render('Raids/Attendance/Matrix', [
             'ranks' => GuildRank::where('count_attendance', true)->orderBy('position')->get(),
             'zones' => Report::select('zone_id', 'zone_name')->distinct()->get()->map(fn ($r) => ['id' => $r->zone_id, 'name' => $r->zone_name])->sortBy('name')->values(),
             'guildTags' => GuildTag::orderBy('name')->get(),
             'filters' => $this->serializeFilters($filters, $request),
+            'earliestDate' => $earliestDate
+                ? Carbon::parse($earliestDate, 'UTC')->timezone($this->timezone)->subDay()->toDateString()
+                : null,
             'matrix' => Inertia::defer(fn () => $this->matrix->matrixWithFilters($filters)),
         ]);
     }
@@ -81,7 +91,7 @@ class AttendanceMatrixController extends Controller
 
     /**
      * Serialize the filters into a format suitable for passing to the view. This method should take the AttendanceMatrixFilters instance and convert it into an array format that can be easily used in the Inertia response. The serialized filters should include the zone IDs, guild tag IDs, and date ranges in a format that can be easily consumed by the frontend components.
-     * 
+     *
      * @return array{zone_ids: array<int, int>, guild_tag_ids: array<int, int>, since_date: string|null, before_date: string|null}
      */
     private function serializeFilters(AttendanceMatrixFilters $filters, AttendanceMatrixRequest $request): array
