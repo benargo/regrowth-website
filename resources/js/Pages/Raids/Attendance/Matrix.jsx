@@ -333,7 +333,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     const [characterName, setCharacterName] = useState("");
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
-    const [selectedRankIds, setSelectedRankIds] = useState(() => ranks.map((r) => r.id));
+    const [selectedRankIds, setSelectedRankIds] = useState(() => ranks.filter((r) => r.count_attendance).map((r) => r.id));
 
     const availableClasses = useMemo(() => {
         if (!matrix?.rows) return [];

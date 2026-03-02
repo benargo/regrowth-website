@@ -179,6 +179,21 @@ class AttendanceMatrixControllerTest extends TestCase
         );
     }
 
+    public function test_matrix_ranks_includes_all_ranks_regardless_of_count_attendance(): void
+    {
+        $counting = GuildRank::factory()->create();
+        $nonCounting = GuildRank::factory()->doesNotCountAttendance()->create();
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('ranks', 2)
+            ->where('ranks', fn ($ranks) => collect($ranks)->pluck('id')->sort()->values()->toArray() === collect([$counting->id, $nonCounting->id])->sort()->values()->toArray())
+        );
+    }
+
     public function test_matrix_default_guild_tag_ids_include_only_attendance_counting_tags(): void
     {
         $countingTag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();

@@ -49,7 +49,7 @@ class AttendanceMatrixController extends Controller
         );
 
         return Inertia::render('Raids/Attendance/Matrix', [
-            'ranks' => GuildRank::where('count_attendance', true)->orderBy('position')->get(),
+            'ranks' => GuildRank::orderBy('position')->get(),
             'zones' => Report::select('zone_id', 'zone_name')->distinct()->get()->map(fn ($r) => ['id' => $r->zone_id, 'name' => $r->zone_name])->sortBy('name')->values(),
             'guildTags' => GuildTag::orderBy('name')->get(),
             'filters' => $this->serializeFilters($filters, $request),
