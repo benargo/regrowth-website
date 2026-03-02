@@ -4,6 +4,7 @@ namespace Tests\Feature\Listeners;
 
 use App\Events\AddonSettingsProcessed;
 use App\Events\CharacterUpdated;
+use App\Events\GrmUploadProcessed;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Jobs\RegrowthAddon\Export\BuildCouncillors;
@@ -11,6 +12,7 @@ use App\Jobs\RegrowthAddon\Export\BuildDataFile;
 use App\Jobs\RegrowthAddon\Export\BuildItems;
 use App\Jobs\RegrowthAddon\Export\BuildPlayerAttendance;
 use App\Jobs\RegrowthAddon\Export\BuildPriorities;
+use App\Jobs\SendGrmUploadNotification;
 use App\Listeners\PrepareRegrowthAddonData;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -52,6 +54,7 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
             new BuildDataFile,
         ]);
@@ -86,6 +89,7 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
             new BuildDataFile,
         ]);
@@ -112,7 +116,7 @@ class PrepareRegrowthAddonDataTest extends TestCase
     // Chain Contents Tests
     // ==========================================
 
-    public function test_chain_includes_a_fetch_batch_with_roster_and_attendance_jobs(): void
+    public function test_chain_includes_a_fetch_batch_with_roster_job(): void
     {
         Bus::fake();
 
@@ -124,8 +128,24 @@ class PrepareRegrowthAddonDataTest extends TestCase
                 $jobClasses = $batch->jobs->map(fn ($job) => get_class($job))->toArray();
 
                 return in_array(FetchGuildRoster::class, $jobClasses)
-                    && in_array(FetchWarcraftLogsAttendanceData::class, $jobClasses);
+                    && ! in_array(FetchWarcraftLogsAttendanceData::class, $jobClasses);
             }),
+            FetchWarcraftLogsAttendanceData::class,
+            Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            new BuildDataFile,
+        ]);
+    }
+
+    public function test_chain_includes_fetch_warcraft_logs_attendance_data_as_standalone_step(): void
+    {
+        Bus::fake();
+
+        $listener = new PrepareRegrowthAddonData;
+        $listener->handle(new AddonSettingsProcessed);
+
+        Bus::assertChained([
+            Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
             new BuildDataFile,
         ]);
@@ -140,6 +160,7 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(function (PendingBatch $batch) {
                 $jobClasses = $batch->jobs->map(fn ($job) => get_class($job))->toArray();
 
@@ -161,6 +182,7 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(fn (PendingBatch $batch) => $batch->jobs->count() === 4),
             new BuildDataFile,
         ]);
@@ -175,6 +197,7 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
             new BuildDataFile,
         ]);
@@ -193,6 +216,7 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
             new BuildDataFile,
         ]);
@@ -207,8 +231,81 @@ class PrepareRegrowthAddonDataTest extends TestCase
 
         Bus::assertChained([
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
             Bus::chainedBatch(fn (PendingBatch $batch) => true),
             new BuildDataFile,
         ]);
+    }
+
+    // ==========================================
+    // GRM Upload Event Tests
+    // ==========================================
+
+    public function test_it_appends_send_grm_upload_notification_job_when_triggered_by_grm_upload(): void
+    {
+        Bus::fake();
+
+        $listener = new PrepareRegrowthAddonData;
+        $listener->handle(new GrmUploadProcessed(5, 1, 0, 0, []));
+
+        Bus::assertChained([
+            Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
+            Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            new BuildDataFile,
+            new SendGrmUploadNotification(5, 1, 0, 0, []),
+        ]);
+    }
+
+    public function test_it_does_not_append_notification_job_for_non_grm_events(): void
+    {
+        Bus::fake();
+
+        $listener = new PrepareRegrowthAddonData;
+        $listener->handle(new CharacterUpdated);
+
+        Bus::assertChained([
+            Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            FetchWarcraftLogsAttendanceData::class,
+            Bus::chainedBatch(fn (PendingBatch $batch) => true),
+            new BuildDataFile,
+        ]);
+    }
+
+    public function test_it_sends_immediate_notification_when_throttled_and_triggered_by_grm_upload(): void
+    {
+        Bus::fake();
+
+        Cache::put($this->getThrottleCacheKey(), true, now()->addMinutes(10));
+
+        $listener = new PrepareRegrowthAddonData;
+        $listener->handle(new GrmUploadProcessed(5, 0, 0, 0, []));
+
+        // No chain/batch should be dispatched — only the single notification job
+        Bus::assertNothingBatched();
+        Bus::assertDispatched(SendGrmUploadNotification::class);
+    }
+
+    public function test_it_does_not_send_immediate_notification_when_throttled_and_not_a_grm_upload(): void
+    {
+        Bus::fake();
+
+        Cache::put($this->getThrottleCacheKey(), true, now()->addMinutes(10));
+
+        $listener = new PrepareRegrowthAddonData;
+        $listener->handle(new CharacterUpdated);
+
+        Bus::assertNothingDispatched();
+    }
+
+    /**
+     * Retrieve the throttle cache key from the listener using reflection.
+     */
+    protected function getThrottleCacheKey(): string
+    {
+        $listener = new PrepareRegrowthAddonData;
+        $reflection = new \ReflectionProperty($listener, 'cacheKey');
+
+        return $reflection->getValue($listener);
     }
 }

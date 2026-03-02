@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Events\CharacterUpdated;
+use App\Events\GrmUploadProcessed;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Notifications\DiscordNotifiable;
+use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
 use App\Services\Blizzard\CharacterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -209,7 +210,7 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseMissing('characters', ['name' => 'FailChar']);
     }
 
-    public function test_it_sends_discord_notification_on_errors(): void
+    public function test_it_sends_immediate_discord_notification_when_no_characters_are_processed(): void
     {
         $this->mock(CharacterService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getStatus')
@@ -230,6 +231,46 @@ class ProcessGrmUploadTest extends TestCase
             new DiscordNotifiable('officer'),
             GrmUploadFailed::class
         );
+    }
+
+    public function test_it_sends_immediate_completed_notification_when_all_characters_are_skipped(): void
+    {
+        Event::fake([GrmUploadProcessed::class]);
+
+        $this->mockCharacterService(['LowChar' => 99999]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'LowChar', 'Rank' => 'Raider', 'Level' => '10', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ]);
+
+        $job->handle(app(CharacterService::class));
+
+        Event::assertNotDispatched(GrmUploadProcessed::class);
+        Notification::assertSentTo(
+            new DiscordNotifiable('officer'),
+            GrmUploadCompleted::class
+        );
+    }
+
+    public function test_it_does_not_send_immediate_notification_when_characters_are_processed(): void
+    {
+        $this->mockCharacterService(['TestChar' => 12345]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ]);
+
+        $job->handle(app(CharacterService::class));
+
+        Notification::assertNothingSent();
     }
 
     public function test_it_does_not_create_duplicate_character_links(): void
@@ -282,9 +323,9 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_dispatches_character_updated_event_once_after_successful_batch(): void
+    public function test_it_dispatches_grm_upload_processed_event_once_after_successful_batch(): void
     {
-        Event::fake([CharacterUpdated::class]);
+        Event::fake([GrmUploadProcessed::class]);
 
         $this->mockCharacterService([
             'CharOne' => 11111,
@@ -302,12 +343,46 @@ class ProcessGrmUploadTest extends TestCase
 
         $job->handle(app(CharacterService::class));
 
-        Event::assertDispatchedTimes(CharacterUpdated::class, 1);
+        Event::assertDispatchedTimes(GrmUploadProcessed::class, 1);
     }
 
-    public function test_it_does_not_dispatch_character_updated_event_when_no_characters_are_processed(): void
+    public function test_grm_upload_processed_event_carries_correct_metrics(): void
     {
-        Event::fake([CharacterUpdated::class]);
+        Event::fake([GrmUploadProcessed::class]);
+
+        $this->mock(CharacterService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getStatus')
+                ->with('GoodChar')
+                ->andReturn(['id' => 11111]);
+
+            $mock->shouldReceive('getStatus')
+                ->with('FailChar')
+                ->andThrow(new \RuntimeException('API error'));
+        });
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'GoodChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+                ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ]);
+
+        $job->handle(app(CharacterService::class));
+
+        Event::assertDispatched(GrmUploadProcessed::class, function (GrmUploadProcessed $event) {
+            return $event->processedCount === 1
+                && $event->errorCount === 1
+                && $event->skippedCount === 0
+                && $event->warningCount === 0
+                && count($event->errors) === 1;
+        });
+    }
+
+    public function test_it_does_not_dispatch_grm_upload_processed_event_when_no_characters_are_processed(): void
+    {
+        Event::fake([GrmUploadProcessed::class]);
 
         $this->mock(CharacterService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getStatus')
@@ -324,7 +399,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $job->handle(app(CharacterService::class));
 
-        Event::assertNotDispatched(CharacterUpdated::class);
+        Event::assertNotDispatched(GrmUploadProcessed::class);
     }
 
     public function test_it_skips_empty_character_names(): void

@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Contracts\Events\PreparesRegrowthAddonData;
+use App\Events\GrmUploadProcessed;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
@@ -11,8 +12,11 @@ use App\Jobs\RegrowthAddon\Export\BuildDataFile;
 use App\Jobs\RegrowthAddon\Export\BuildItems;
 use App\Jobs\RegrowthAddon\Export\BuildPlayerAttendance;
 use App\Jobs\RegrowthAddon\Export\BuildPriorities;
+use App\Jobs\SendGrmUploadNotification;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
+use App\Notifications\DiscordNotifiable;
+use App\Notifications\GrmUploadFailed;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -36,7 +40,19 @@ class PrepareRegrowthAddonData implements ShouldQueue
      */
     public function handle(PreparesRegrowthAddonData $event): void
     {
+        $isGrmUpload = $event instanceof GrmUploadProcessed;
+
         if (! Cache::add($this->cacheKey, true, $this->throttleSeconds)) {
+            if ($isGrmUpload) {
+                dispatch(new SendGrmUploadNotification(
+                    $event->processedCount,
+                    $event->skippedCount,
+                    $event->warningCount,
+                    $event->errorCount,
+                    $event->errors,
+                ));
+            }
+
             return;
         }
 
@@ -49,10 +65,9 @@ class PrepareRegrowthAddonData implements ShouldQueue
 
         $jobs->push(new FetchGuildRoster);
 
-        $jobs->push(new FetchWarcraftLogsAttendanceData($guildTags, $since));
-
-        Bus::chain([
+        $chain = [
             Bus::batch($jobs->toArray()),
+            new FetchWarcraftLogsAttendanceData($guildTags, $since),
             Bus::batch([
                 new BuildPriorities,
                 new BuildItems,
@@ -60,9 +75,32 @@ class PrepareRegrowthAddonData implements ShouldQueue
                 new BuildCouncillors,
             ]),
             new BuildDataFile,
-        ])->catch(function (Throwable $e) {
+        ];
+
+        if ($isGrmUpload) {
+            $chain[] = new SendGrmUploadNotification(
+                $event->processedCount,
+                $event->skippedCount,
+                $event->warningCount,
+                $event->errorCount,
+                $event->errors,
+            );
+        }
+
+        Bus::chain($chain)->catch(function (Throwable $e) use ($isGrmUpload, $event) {
             Log::error('Addon export batch failed: '.$e->getMessage());
             Cache::tags(['regrowth-addon:build'])->flush();
+
+            if ($isGrmUpload) {
+                DiscordNotifiable::officer()->notify(
+                    new GrmUploadFailed(
+                        $event->processedCount,
+                        $event->errorCount,
+                        $event->errors,
+                        'Addon export failed: '.$e->getMessage()
+                    )
+                );
+            }
         })->dispatch();
     }
 }

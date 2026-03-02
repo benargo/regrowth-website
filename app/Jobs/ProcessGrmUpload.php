@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Events\CharacterUpdated;
+use App\Events\GrmUploadProcessed;
 use App\Exceptions\CharacterTooLowLevelException;
 use App\Models\Character;
 use App\Models\GuildRank;
@@ -109,10 +109,6 @@ class ProcessGrmUpload implements ShouldQueue
             }
         });
 
-        if ($processedCount > 0) {
-            CharacterUpdated::dispatch();
-        }
-
         Log::info('GRM Upload completed', [
             'processed' => $processedCount,
             'errors' => $errorCount,
@@ -120,14 +116,22 @@ class ProcessGrmUpload implements ShouldQueue
             'total' => count($rows),
         ]);
 
-        if ($errorCount > 0) {
-            DiscordNotifiable::officer()->notify(
-                new GrmUploadFailed($processedCount, $errorCount, $errors)
-            );
+        if ($processedCount > 0) {
+            // Dispatch the event with metrics so the addon export chain can send the
+            // notification once it completes, rather than notifying immediately.
+            GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
         } else {
-            DiscordNotifiable::officer()->notify(
-                new GrmUploadCompleted($processedCount, $skippedCount, $warningCount)
-            );
+            // No characters were updated so no addon export will be triggered;
+            // send the notification immediately.
+            if ($errorCount > 0) {
+                DiscordNotifiable::officer()->notify(
+                    new GrmUploadFailed($processedCount, $errorCount, $errors)
+                );
+            } else {
+                DiscordNotifiable::officer()->notify(
+                    new GrmUploadCompleted($processedCount, $skippedCount, $warningCount)
+                );
+            }
         }
     }
 
