@@ -8,7 +8,6 @@ use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\GuildRosterController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
 use App\Http\Controllers\LootCouncil\CommentReactionController;
@@ -86,6 +85,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      */
     Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
     Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
+    Route::get('/grm-upload/status', [GrmController::class, 'getUploadStatus'])->name('grm-upload.status');
 
     /**
      * Daily Quests

@@ -2,7 +2,8 @@
 
 namespace Tests\Unit\Models;
 
-use App\Events\AddonSettingsProcessed;
+use App\Events\CharacterDeleted;
+use App\Events\CharacterUpdated;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
@@ -63,8 +64,8 @@ class CharacterTest extends ModelTestCase
         $model = new Character;
 
         $this->assertSame([
-            'updated' => AddonSettingsProcessed::class,
-            'deleted' => AddonSettingsProcessed::class,
+            'updated' => CharacterUpdated::class,
+            'deleted' => CharacterDeleted::class,
         ], $model->dispatchesEvents());
     }
 
@@ -237,7 +238,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function deleting_character_cascades_to_character_links(): void
     {
-        Event::fake([AddonSettingsProcessed::class]);
+        Event::fake([CharacterDeleted::class]);
 
         $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
         $altCharacter = $this->create(['name' => 'AltChar']);

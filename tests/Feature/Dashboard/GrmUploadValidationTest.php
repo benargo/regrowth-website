@@ -5,6 +5,7 @@ namespace Tests\Feature\Dashboard;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -142,6 +143,19 @@ class GrmUploadValidationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['grm_data']);
+    }
+
+    public function test_upload_initializes_progress_cache(): void
+    {
+        Queue::fake();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+            'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
+        ]);
+
+        $this->assertTrue(Cache::has(ProcessGrmUpload::PROGRESS_CACHE_KEY));
+        $this->assertEquals('queued', Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY)['status']);
     }
 
     public function test_upload_passes_correct_data_to_job(): void

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\GrmUploadProcessed;
 use App\Exceptions\CharacterTooLowLevelException;
 use App\Models\Character;
 use App\Models\GuildRank;
@@ -14,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Queue\Middleware\Skip;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ProcessGrmUpload implements ShouldQueue
@@ -54,10 +56,32 @@ class ProcessGrmUpload implements ShouldQueue
     }
 
     /**
+     * The cache key used to track upload progress.
+     */
+    public const PROGRESS_CACHE_KEY = 'grm-upload:progress';
+
+    /**
+     * The number of hours the progress cache entry lives.
+     */
+    public const PROGRESS_CACHE_TTL_HOURS = 4;
+
+    /**
      * Execute the job.
      */
     public function handle(CharacterService $characterService): void
     {
+        Cache::put(self::PROGRESS_CACHE_KEY, [
+            'status' => 'processing',
+            'step' => 1,
+            'total' => 3,
+            'message' => 'Processing GRM roster data...',
+            'processedCount' => 0,
+            'skippedCount' => 0,
+            'warningCount' => 0,
+            'errorCount' => 0,
+            'errors' => [],
+        ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
         $delimiter = $this->grmData['delimiter'];
         $altDelimiter = $delimiter === ',' ? ';' : ',';
         $rows = $this->grmData['rows'];
@@ -68,34 +92,45 @@ class ProcessGrmUpload implements ShouldQueue
         $warningCount = 0;
         $skippedCount = 0;
 
-        foreach ($rows as $row) {
-            try {
-                $this->processRow($row, $altDelimiter, $characterService);
-                $processedCount++;
-            } catch (CharacterTooLowLevelException $e) {
-                $skippedCount++;
-                $characterName = $row['Name'] ?? 'Unknown';
-                Log::notice("GRM Upload: Character too low level {$characterName}", [
-                    'error' => $e->getMessage(),
-                    'row' => $row,
-                ]);
-            } catch (CharacterNotFoundException $e) {
-                $warningCount++;
-                $characterName = $row['Name'] ?? 'Unknown';
-                Log::warning("GRM Upload: Character not found via Blizzard API for {$characterName}", [
-                    'error' => $e->getMessage(),
-                    'row' => $row,
-                ]);
-            } catch (\Exception $e) {
-                $errorCount++;
-                $characterName = $row['Name'] ?? 'Unknown';
-                $errors[] = "{$characterName}: {$e->getMessage()}";
-                Log::warning("GRM Upload: Failed to process character {$characterName}", [
-                    'error' => $e->getMessage(),
-                    'row' => $row,
-                ]);
+        Character::withoutEvents(function () use (
+            $rows,
+            $altDelimiter,
+            $characterService,
+            &$processedCount,
+            &$errorCount,
+            &$errors,
+            &$warningCount,
+            &$skippedCount,
+        ) {
+            foreach ($rows as $row) {
+                try {
+                    $this->processRow($row, $altDelimiter, $characterService);
+                    $processedCount++;
+                } catch (CharacterTooLowLevelException $e) {
+                    $skippedCount++;
+                    $characterName = $row['Name'] ?? 'Unknown';
+                    Log::notice("GRM Upload: Character too low level {$characterName}", [
+                        'error' => $e->getMessage(),
+                        'row' => $row,
+                    ]);
+                } catch (CharacterNotFoundException $e) {
+                    $warningCount++;
+                    $characterName = $row['Name'] ?? 'Unknown';
+                    Log::warning("GRM Upload: Character not found via Blizzard API for {$characterName}", [
+                        'error' => $e->getMessage(),
+                        'row' => $row,
+                    ]);
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    $characterName = $row['Name'] ?? 'Unknown';
+                    $errors[] = "{$characterName}: {$e->getMessage()}";
+                    Log::warning("GRM Upload: Failed to process character {$characterName}", [
+                        'error' => $e->getMessage(),
+                        'row' => $row,
+                    ]);
+                }
             }
-        }
+        });
 
         Log::info('GRM Upload completed', [
             'processed' => $processedCount,
@@ -104,14 +139,58 @@ class ProcessGrmUpload implements ShouldQueue
             'total' => count($rows),
         ]);
 
-        if ($errorCount > 0) {
-            DiscordNotifiable::officer()->notify(
-                new GrmUploadFailed($processedCount, $errorCount, $errors)
-            );
+        if ($processedCount > 0) {
+            // Dispatch the event with metrics so the addon export chain can send the
+            // notification once it completes, rather than notifying immediately.
+            Cache::put(self::PROGRESS_CACHE_KEY, [
+                'status' => 'processing',
+                'step' => 2,
+                'total' => 3,
+                'message' => 'Preparing Regrowth addon data...',
+                'processedCount' => $processedCount,
+                'skippedCount' => $skippedCount,
+                'warningCount' => $warningCount,
+                'errorCount' => $errorCount,
+                'errors' => $errors,
+            ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
+            GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
         } else {
-            DiscordNotifiable::officer()->notify(
-                new GrmUploadCompleted($processedCount, $skippedCount, $warningCount)
-            );
+            // No characters were updated so no addon export will be triggered;
+            // send the notification immediately.
+            if ($errorCount > 0) {
+                Cache::put(self::PROGRESS_CACHE_KEY, [
+                    'status' => 'failed',
+                    'step' => 3,
+                    'total' => 3,
+                    'message' => 'Upload completed with errors.',
+                    'processedCount' => $processedCount,
+                    'skippedCount' => $skippedCount,
+                    'warningCount' => $warningCount,
+                    'errorCount' => $errorCount,
+                    'errors' => $errors,
+                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
+                DiscordNotifiable::officer()->notify(
+                    new GrmUploadFailed($processedCount, $errorCount, $errors)
+                );
+            } else {
+                Cache::put(self::PROGRESS_CACHE_KEY, [
+                    'status' => 'completed',
+                    'step' => 3,
+                    'total' => 3,
+                    'message' => 'Upload complete!',
+                    'processedCount' => $processedCount,
+                    'skippedCount' => $skippedCount,
+                    'warningCount' => $warningCount,
+                    'errorCount' => 0,
+                    'errors' => [],
+                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
+                DiscordNotifiable::officer()->notify(
+                    new GrmUploadCompleted($processedCount, $skippedCount, $warningCount)
+                );
+            }
         }
     }
 
@@ -259,6 +338,18 @@ class ProcessGrmUpload implements ShouldQueue
             'trace' => $exception->getTraceAsString(),
         ]);
 
+        Cache::put(self::PROGRESS_CACHE_KEY, [
+            'status' => 'failed',
+            'step' => 1,
+            'total' => 3,
+            'message' => 'Processing failed: '.$exception->getMessage(),
+            'processedCount' => 0,
+            'skippedCount' => 0,
+            'warningCount' => 0,
+            'errorCount' => 1,
+            'errors' => [$exception->getMessage()],
+        ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
         try {
             DiscordNotifiable::officer()->notifyNow(
                 new GrmUploadFailed(0, 1, [], $exception->getMessage())
@@ -268,5 +359,15 @@ class ProcessGrmUpload implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Get the tags that should be assigned to the job.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return ['grm-upload'];
     }
 }
