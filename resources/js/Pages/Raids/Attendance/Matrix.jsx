@@ -6,17 +6,14 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
 import TextInput from "@/Components/TextInput";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
+import Pill from "@/Components/Pill";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
 function SearchInput({ value, onChange, placeholder = "Search by name...", dusk }) {
     return (
         <div className="relative">
-            <Icon
-                icon="search"
-                style="solid"
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-            />
+            <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
                 type="text"
                 value={value}
@@ -62,11 +59,7 @@ function FilterDropdown({ label, options, selected, onChange, dusk }) {
     const count = selected.length;
     const total = options.length;
     const buttonText =
-        count === 0 || count === total
-            ? `All ${label}`
-            : count === 1
-              ? `1 ${label.slice(0, -1)}`
-              : `${count} ${label}`;
+        count === 0 || count === total ? `All ${label}` : count === 1 ? `1 ${label.slice(0, -1)}` : `${count} ${label}`;
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -266,7 +259,13 @@ function AttendanceCell({ value }) {
     return null;
 }
 
-function MatrixTable({ raids, rows }) {
+function MatrixTable({ raids, rows, ranks }) {
+    const rankMap = Object.fromEntries(ranks.map((r) => [r.id, r]));
+    const rankSlug = (name) =>
+        name
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "");
     if (rows.length === 0) {
         return (
             <div className="py-16 text-center text-gray-400">
@@ -278,13 +277,16 @@ function MatrixTable({ raids, rows }) {
 
     return (
         <div dusk="matrix-table" className="overflow-x-auto">
-            <table className="w-full min-w-max border-collapse">
+            <table className="min-w-max table-auto border-collapse">
                 <thead className="border-b border-amber-600">
                     <tr>
-                        <th className="w-40 bg-brown-900 px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-0 md:z-20">
+                        <th className="bg-brown-900 px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-0 md:z-20">
                             Name
                         </th>
-                        <th className="bg-brown-900 px-4 py-3 text-right text-sm font-semibold text-amber-500 lg:sticky lg:left-40 lg:z-20">
+                        <th className="hidden bg-brown-900 px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-[max-content] md:z-20 md:table-cell">
+                            Rank
+                        </th>
+                        <th className="bg-brown-900 px-4 py-3 text-right text-sm font-semibold text-amber-500 lg:sticky lg:z-20">
                             %
                         </th>
                         {raids.map((raid) => (
@@ -303,15 +305,31 @@ function MatrixTable({ raids, rows }) {
                         <tr key={row.name} className="transition-colors hover:bg-brown-800/50">
                             <td
                                 dusk="character-name"
-                                className="w-40 bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:left-0 md:z-10"
+                                className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10"
                             >
-                                {row.playable_class && (
-                                    <img src={row.playable_class.icon_url} alt={row.playable_class.name} className="mr-2 rounded-sm inline-block h-4 w-4" />
-                                )}
-                                {row.name}
+                                <div className="flex flex-col gap-1 lg:flex-row lg:gap-2">
+                                    <p className="flex flex-grow-0 flex-row items-center font-semibold">
+                                        {row.playable_class && (
+                                            <img
+                                                src={row.playable_class.icon_url}
+                                                alt={row.playable_class.name}
+                                                className="mr-2 inline-block hidden h-4 w-4 rounded-sm md:inline-flex"
+                                            />
+                                        )}
+                                        {row.name}
+                                    </p>
+                                </div>
                             </td>
-                            <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:left-40 lg:z-10">
-                                {row.percentage.toFixed(2)}%
+                            <td className="hidden whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 md:table-cell lg:sticky lg:z-10">
+                                <p
+                                    className={`flex-grow-0 flex-row items-center md:flex text-guild-rank-${rankSlug(rankMap[row.rank_id].name)}`}
+                                >
+                                    {rankMap[row.rank_id].name}
+                                </p>
+                            </td>
+                            <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:z-10">
+                                <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
+                                <span className="inline md:hidden">{row.percentage.toFixed(0)}%</span>
                             </td>
                             {row.attendance.map((value, idx) => (
                                 <td key={idx} className="px-3 py-2 text-center">
@@ -333,7 +351,9 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     const [characterName, setCharacterName] = useState("");
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
-    const [selectedRankIds, setSelectedRankIds] = useState(() => ranks.filter((r) => r.count_attendance).map((r) => r.id));
+    const [selectedRankIds, setSelectedRankIds] = useState(() =>
+        ranks.filter((r) => r.count_attendance).map((r) => r.id),
+    );
 
     const availableClasses = useMemo(() => {
         if (!matrix?.rows) return [];
@@ -403,7 +423,9 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
 
     // ── Client-side row filtering ────────────────────────────────────────────
     const filteredRows = (matrix?.rows ?? [])
-        .filter((row) => !characterName || normaliseCharacterName(row.name).includes(normaliseCharacterName(characterName)))
+        .filter(
+            (row) => !characterName || normaliseCharacterName(row.name).includes(normaliseCharacterName(characterName)),
+        )
         .filter((row) => selectedRankIds.includes(row.rank_id))
         .filter((row) => selectedClassIds === null || selectedClassIds.includes(row.playable_class?.id ?? null));
 
@@ -477,7 +499,12 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                     {showSkeleton ? (
                         <MatrixSkeleton />
                     ) : (
-                        <MatrixTable key={filteredRows.length === 0 ? "empty" : "data"} raids={matrix?.raids ?? []} rows={filteredRows} />
+                        <MatrixTable
+                            key={filteredRows.length === 0 ? "empty" : "data"}
+                            raids={matrix?.raids ?? []}
+                            rows={filteredRows}
+                            ranks={ranks}
+                        />
                     )}
                 </div>
             </div>
