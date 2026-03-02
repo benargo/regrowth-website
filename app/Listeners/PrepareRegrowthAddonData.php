@@ -103,4 +103,20 @@ class PrepareRegrowthAddonData implements ShouldQueue
             }
         })->dispatch();
     }
+
+    /**
+     * Get the tags that should be assigned to the job.
+     *
+     * @return array<int, string>
+     */
+    public function tags(PreparesRegrowthAddonData $event): array
+    {
+        $tags = ['regrowth-addon-export'];
+
+        if ($event instanceof GrmUploadProcessed) {
+            $tags[] = 'grm-upload';
+        }
+
+        return $tags;
+    }
 }

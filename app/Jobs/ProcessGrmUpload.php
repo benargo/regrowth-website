@@ -289,4 +289,14 @@ class ProcessGrmUpload implements ShouldQueue
             ]);
         }
     }
+
+    /**
+     * Get the tags that should be assigned to the job.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return ['grm-upload'];
+    }
 }
