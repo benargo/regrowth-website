@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Jobs\ProcessGrmUpload;
 use App\Jobs\SendGrmUploadNotification;
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -128,5 +130,42 @@ class SendGrmUploadNotificationTest extends TestCase
             new DiscordNotifiable('officer'),
             GrmUploadFailed::class
         );
+    }
+
+    public function test_it_updates_cache_to_completed_when_no_errors(): void
+    {
+        $job = new SendGrmUploadNotification(
+            processedCount: 5,
+            skippedCount: 1,
+            warningCount: 0,
+            errorCount: 0,
+            errors: [],
+        );
+
+        $job->handle();
+
+        $progress = Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY);
+        $this->assertEquals('completed', $progress['status']);
+        $this->assertEquals(3, $progress['step']);
+        $this->assertEquals(5, $progress['processedCount']);
+    }
+
+    public function test_it_updates_cache_to_failed_when_errors_exist(): void
+    {
+        $job = new SendGrmUploadNotification(
+            processedCount: 3,
+            skippedCount: 0,
+            warningCount: 0,
+            errorCount: 2,
+            errors: ['CharA: API error', 'CharB: not found'],
+        );
+
+        $job->handle();
+
+        $progress = Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY);
+        $this->assertEquals('failed', $progress['status']);
+        $this->assertEquals(3, $progress['step']);
+        $this->assertEquals(2, $progress['errorCount']);
+        $this->assertCount(2, $progress['errors']);
     }
 }

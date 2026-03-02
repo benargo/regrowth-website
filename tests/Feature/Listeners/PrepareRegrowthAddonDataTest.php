@@ -7,6 +7,7 @@ use App\Events\CharacterUpdated;
 use App\Events\GrmUploadProcessed;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\FetchWarcraftLogsAttendanceData;
+use App\Jobs\ProcessGrmUpload;
 use App\Jobs\RegrowthAddon\Export\BuildCouncillors;
 use App\Jobs\RegrowthAddon\Export\BuildDataFile;
 use App\Jobs\RegrowthAddon\Export\BuildItems;
@@ -14,11 +15,14 @@ use App\Jobs\RegrowthAddon\Export\BuildPlayerAttendance;
 use App\Jobs\RegrowthAddon\Export\BuildPriorities;
 use App\Jobs\SendGrmUploadNotification;
 use App\Listeners\PrepareRegrowthAddonData;
+use App\Notifications\DiscordNotifiable;
+use App\Notifications\GrmUploadFailed;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class PrepareRegrowthAddonDataTest extends TestCase
@@ -296,6 +300,49 @@ class PrepareRegrowthAddonDataTest extends TestCase
         $listener->handle(new CharacterUpdated);
 
         Bus::assertNothingDispatched();
+    }
+
+    // ==========================================
+    // failed() Handler Tests
+    // ==========================================
+
+    public function test_failed_updates_cache_and_notifies_when_triggered_by_grm_upload(): void
+    {
+        Notification::fake();
+
+        config([
+            'services.discord.channels.officer' => '1407688195386114119',
+        ]);
+
+        $event = new GrmUploadProcessed(10, 2, 1, 0, []);
+        $exception = new \RuntimeException('Serialization failed');
+
+        $listener = new PrepareRegrowthAddonData;
+        $listener->failed($event, $exception);
+
+        $progress = Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY);
+        $this->assertEquals('failed', $progress['status']);
+        $this->assertEquals(2, $progress['step']);
+        $this->assertStringContainsString('Serialization failed', $progress['message']);
+
+        Notification::assertSentTo(
+            new DiscordNotifiable('officer'),
+            GrmUploadFailed::class
+        );
+    }
+
+    public function test_failed_does_not_update_cache_for_non_grm_events(): void
+    {
+        Notification::fake();
+
+        $event = new AddonSettingsProcessed;
+        $exception = new \RuntimeException('Something went wrong');
+
+        $listener = new PrepareRegrowthAddonData;
+        $listener->failed($event, $exception);
+
+        $this->assertNull(Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY));
+        Notification::assertNothingSent();
     }
 
     /**

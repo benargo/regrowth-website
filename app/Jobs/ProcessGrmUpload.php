@@ -15,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Queue\Middleware\Skip;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ProcessGrmUpload implements ShouldQueue
@@ -55,10 +56,32 @@ class ProcessGrmUpload implements ShouldQueue
     }
 
     /**
+     * The cache key used to track upload progress.
+     */
+    public const PROGRESS_CACHE_KEY = 'grm-upload:progress';
+
+    /**
+     * The number of hours the progress cache entry lives.
+     */
+    public const PROGRESS_CACHE_TTL_HOURS = 4;
+
+    /**
      * Execute the job.
      */
     public function handle(CharacterService $characterService): void
     {
+        Cache::put(self::PROGRESS_CACHE_KEY, [
+            'status' => 'processing',
+            'step' => 1,
+            'total' => 3,
+            'message' => 'Processing GRM roster data...',
+            'processedCount' => 0,
+            'skippedCount' => 0,
+            'warningCount' => 0,
+            'errorCount' => 0,
+            'errors' => [],
+        ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
         $delimiter = $this->grmData['delimiter'];
         $altDelimiter = $delimiter === ',' ? ';' : ',';
         $rows = $this->grmData['rows'];
@@ -119,15 +142,51 @@ class ProcessGrmUpload implements ShouldQueue
         if ($processedCount > 0) {
             // Dispatch the event with metrics so the addon export chain can send the
             // notification once it completes, rather than notifying immediately.
+            Cache::put(self::PROGRESS_CACHE_KEY, [
+                'status' => 'processing',
+                'step' => 2,
+                'total' => 3,
+                'message' => 'Preparing Regrowth addon data...',
+                'processedCount' => $processedCount,
+                'skippedCount' => $skippedCount,
+                'warningCount' => $warningCount,
+                'errorCount' => $errorCount,
+                'errors' => $errors,
+            ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
             GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
         } else {
             // No characters were updated so no addon export will be triggered;
             // send the notification immediately.
             if ($errorCount > 0) {
+                Cache::put(self::PROGRESS_CACHE_KEY, [
+                    'status' => 'failed',
+                    'step' => 3,
+                    'total' => 3,
+                    'message' => 'Upload completed with errors.',
+                    'processedCount' => $processedCount,
+                    'skippedCount' => $skippedCount,
+                    'warningCount' => $warningCount,
+                    'errorCount' => $errorCount,
+                    'errors' => $errors,
+                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
                 DiscordNotifiable::officer()->notify(
                     new GrmUploadFailed($processedCount, $errorCount, $errors)
                 );
             } else {
+                Cache::put(self::PROGRESS_CACHE_KEY, [
+                    'status' => 'completed',
+                    'step' => 3,
+                    'total' => 3,
+                    'message' => 'Upload complete!',
+                    'processedCount' => $processedCount,
+                    'skippedCount' => $skippedCount,
+                    'warningCount' => $warningCount,
+                    'errorCount' => 0,
+                    'errors' => [],
+                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+
                 DiscordNotifiable::officer()->notify(
                     new GrmUploadCompleted($processedCount, $skippedCount, $warningCount)
                 );
@@ -278,6 +337,18 @@ class ProcessGrmUpload implements ShouldQueue
             'error' => $exception->getMessage(),
             'trace' => $exception->getTraceAsString(),
         ]);
+
+        Cache::put(self::PROGRESS_CACHE_KEY, [
+            'status' => 'failed',
+            'step' => 1,
+            'total' => 3,
+            'message' => 'Processing failed: '.$exception->getMessage(),
+            'processedCount' => 0,
+            'skippedCount' => 0,
+            'warningCount' => 0,
+            'errorCount' => 1,
+            'errors' => [$exception->getMessage()],
+        ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
 
         try {
             DiscordNotifiable::officer()->notifyNow(
