@@ -2,8 +2,14 @@
 
 namespace App\Services\Blizzard;
 
+use App\Services\Blizzard\Exceptions\InvalidRaceException;
+use Illuminate\Http\Client\RequestException;
+
 class PlayableRaceService extends Service
 {
+    /**
+     * The base path for this service's API endpoints.
+     */
     protected string $basePath = '/data/wow';
 
     /**
@@ -11,9 +17,11 @@ class PlayableRaceService extends Service
      */
     protected int $cacheTtl = 2592000; // 30 days
 
-    public function __construct(
-        protected Client $client,
-    ) {
+    /**
+     * Constructor to initialize the Blizzard API client with the appropriate namespace
+     */
+    public function __construct(Client $client)
+    {
         parent::__construct($client->withNamespace('static-classicann-eu'));
     }
 
@@ -35,14 +43,25 @@ class PlayableRaceService extends Service
      * Find a playable race by its ID.
      *
      * @return array<string, mixed>
+     *
+     * @throws InvalidRaceException
+     * @throws RequestException
      */
     public function find(int $playableRaceId): array
     {
-        return $this->cacheable(
-            $this->findCacheKey($playableRaceId),
-            $this->cacheTtl,
-            fn () => $this->getJson("/playable-race/{$playableRaceId}")
-        );
+        try {
+            return $this->cacheable(
+                $this->findCacheKey($playableRaceId),
+                $this->cacheTtl,
+                fn () => $this->getJson("/playable-race/{$playableRaceId}")
+            );
+        } catch (RequestException $e) {
+            if ($e->response->status() === 404 && $e->response->json('type') === 'BLZWEBAPI00000404') {
+                throw new InvalidRaceException("Playable race {$playableRaceId} not found.", 404, $e);
+            }
+
+            throw $e;
+        }
     }
 
     /**

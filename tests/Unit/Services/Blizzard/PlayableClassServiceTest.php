@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\Blizzard;
 
 use App\Services\Blizzard\Client;
+use App\Services\Blizzard\Exceptions\InvalidClassException;
 use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\PlayableClassService;
 use Illuminate\Http\Client\RequestException;
@@ -311,6 +312,30 @@ class PlayableClassServiceTest extends TestCase
         $service = new PlayableClassService($client);
 
         $this->expectException(RequestException::class);
+
+        $service->find(999);
+    }
+
+    public function test_find_throws_invalid_class_exception_on_blizzard_404(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'code' => 404,
+                'type' => 'BLZWEBAPI00000404',
+                'detail' => 'Not Found',
+            ], 404),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new PlayableClassService($client);
+
+        $this->expectException(InvalidClassException::class);
+        $this->expectExceptionCode(404);
 
         $service->find(999);
     }
