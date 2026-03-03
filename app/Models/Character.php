@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -125,7 +126,7 @@ class Character extends Model
                             'icon_url' => $playableClassService->iconUrl(Arr::get($characterData, 'character_class.id')) ?? null,
                         ];
                     }
-                } catch (RequestException $e) {
+                } catch (RequestException|ConnectionException $e) {
                     Log::warning('Failed to fetch Blizzard character profile for '.$this->name.': '.$e->getMessage());
                 }
 

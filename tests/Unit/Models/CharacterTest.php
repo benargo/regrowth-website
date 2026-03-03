@@ -6,12 +6,19 @@ use App\Events\AddonSettingsProcessed;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
+use App\Services\Blizzard\CharacterService;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService;
+use App\Services\Blizzard\MediaService;
+use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response as ClientResponse;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -452,6 +459,48 @@ class CharacterTest extends ModelTestCase
         $character = $this->create();
 
         $this->assertCount(0, $character->warcraftLogsReports);
+    }
+
+    #[Test]
+    public function playable_class_returns_unknown_class_on_request_exception(): void
+    {
+        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch Blizzard character profile'));
+
+        $this->mock(CharacterService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getProfile')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+        });
+
+        $character = $this->create(['name' => 'Testchar']);
+
+        $playableClass = $character->playable_class;
+
+        $this->assertNull($playableClass['id']);
+        $this->assertSame('Unknown Class', $playableClass['name']);
+    }
+
+    #[Test]
+    public function playable_class_returns_unknown_class_on_connection_exception(): void
+    {
+        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch Blizzard character profile'));
+
+        $this->mock(CharacterService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getProfile')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+        });
+
+        $character = $this->create(['name' => 'Testchar']);
+
+        $playableClass = $character->playable_class;
+
+        $this->assertNull($playableClass['id']);
+        $this->assertSame('Unknown Class', $playableClass['name']);
     }
 
     /**
