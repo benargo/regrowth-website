@@ -3,8 +3,6 @@
 namespace App\Services\Blizzard\Data;
 
 use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\PlayableClassService;
-use Illuminate\Support\Arr;
 
 readonly class PlayableClass
 {
@@ -13,21 +11,6 @@ readonly class PlayableClass
         public string $name,
         public ?string $icon_url,
     ) {}
-
-    /**
-     * Build a PlayableClass from a Blizzard API class ID.
-     */
-    public static function fromId(int $id): self
-    {
-        $service = app(PlayableClassService::class);
-        $data = $service->find($id);
-
-        return new self(
-            id: $id,
-            name: Arr::get($data, 'name', 'Unknown Class'),
-            icon_url: $service->iconUrl($id),
-        );
-    }
 
     /**
      * Build a fallback PlayableClass when the class is unknown or unavailable.

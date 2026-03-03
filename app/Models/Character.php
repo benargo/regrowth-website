@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 
 class Character extends Model
@@ -134,7 +135,14 @@ class Character extends Model
                 }
 
                 try {
-                    return PlayableClass::fromId($this->playable_class_id)->toArray();
+                    $service = app(PlayableClassService::class);
+                    $data = $service->find($this->playable_class_id);
+
+                    return new PlayableClass(
+                        id: $this->playable_class_id,
+                        name: Arr::get($data, 'name'),
+                        icon_url: $service->iconUrl($this->playable_class_id),
+                    )->toArray();
                 } catch (RequestException|ConnectionException $e) {
                     Log::warning('Failed to fetch playable class for id '.$this->playable_class_id.': '.$e->getMessage());
 
@@ -168,7 +176,13 @@ class Character extends Model
                 }
 
                 try {
-                    return PlayableRace::fromId($this->playable_race_id)->toArray();
+                    $service = app(PlayableRaceService::class);
+                    $data = $service->find($this->playable_race_id);
+
+                    return new PlayableRace(
+                        id: $this->playable_race_id,
+                        name: Arr::get($data, 'name'),
+                    )->toArray();
                 } catch (RequestException|ConnectionException $e) {
                     Log::warning('Failed to fetch playable race for id '.$this->playable_race_id.': '.$e->getMessage());
 
