@@ -251,4 +251,90 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $this->assertTrue($hasWithoutOverlapping);
     }
+
+    public function test_it_sets_playable_class_id_from_character_data(): void
+    {
+        GuildRank::factory()->create(['position' => 1]);
+
+        $job = new UpdateCharacterFromRoster([
+            'character' => [
+                'id' => 12345,
+                'name' => 'TestCharacter',
+                'level' => 80,
+                'playable_class' => ['id' => 2],
+            ],
+            'rank' => 1,
+        ]);
+
+        $job->handle();
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'playable_class_id' => 2,
+        ]);
+    }
+
+    public function test_it_sets_playable_race_id_from_character_data(): void
+    {
+        GuildRank::factory()->create(['position' => 1]);
+
+        $job = new UpdateCharacterFromRoster([
+            'character' => [
+                'id' => 12345,
+                'name' => 'TestCharacter',
+                'level' => 80,
+                'playable_race' => ['id' => 3],
+            ],
+            'rank' => 1,
+        ]);
+
+        $job->handle();
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'playable_race_id' => 3,
+        ]);
+    }
+
+    public function test_it_sets_playable_class_id_to_null_when_missing(): void
+    {
+        GuildRank::factory()->create(['position' => 1]);
+
+        $job = new UpdateCharacterFromRoster([
+            'character' => [
+                'id' => 12345,
+                'name' => 'TestCharacter',
+                'level' => 80,
+            ],
+            'rank' => 1,
+        ]);
+
+        $job->handle();
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'playable_class_id' => null,
+        ]);
+    }
+
+    public function test_it_sets_playable_race_id_to_null_when_missing(): void
+    {
+        GuildRank::factory()->create(['position' => 1]);
+
+        $job = new UpdateCharacterFromRoster([
+            'character' => [
+                'id' => 12345,
+                'name' => 'TestCharacter',
+                'level' => 80,
+            ],
+            'rank' => 1,
+        ]);
+
+        $job->handle();
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'playable_race_id' => null,
+        ]);
+    }
 }
