@@ -65,16 +65,23 @@ class AttendanceMatrix
             $query->where('start_time', '<', $filters->beforeDate);
         }
 
-        $rankIds = ! empty($filters->rankIds)
+        $resolvedRankIds = ! empty($filters->rankIds)
             ? $filters->rankIds
             : GuildRank::where('count_attendance', true)->pluck('id')->toArray();
 
-        $query->with(['characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $rankIds))]);
+        if ($filters->includeLinkedCharacters) {
+            // Load all characters regardless of rank so alts from any rank
+            // can contribute attendance. mergeLinkedCharacters() will filter
+            // the output to only mains from the resolved rank IDs.
+            $query->with('characters');
+        } else {
+            $query->with(['characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $resolvedRankIds))]);
+        }
 
         $this->calculateMatrix($query->get());
 
         if ($filters->includeLinkedCharacters && ! empty($this->rows)) {
-            $this->rows = $this->mergeLinkedCharacters();
+            $this->rows = $this->mergeLinkedCharacters($resolvedRankIds);
         }
 
         return $this;
@@ -209,9 +216,10 @@ class AttendanceMatrix
      * Only characters flagged as is_main appear in the output. Their linked alts'
      * attendance is aggregated per raid using: 1 (present) > 2 (late) > 0 (absent) > null.
      *
+     * @param  array<int, int>  $rankIds  Only mains whose rank_id is in this list will appear in output.
      * @return array<int, array{name: string, id: int, rank_id: int|null, playable_class: array|null, percentage: float, attendance: array<int, int|null>, attendance_names: array<int, array<int, string>>}>
      */
-    protected function mergeLinkedCharacters(): array
+    protected function mergeLinkedCharacters(array $rankIds = []): array
     {
         $raidCount = count($this->raids);
         $rowsById = collect($this->rows)->keyBy('id');
@@ -257,6 +265,10 @@ class AttendanceMatrix
                 continue;
             }
 
+            if (! empty($rankIds) && ! in_array($row['rank_id'], $rankIds, true)) {
+                continue;
+            }
+
             $altRows = array_values(array_filter(
                 array_map(fn ($altId) => $rowsById->get($altId), $mainToAltIds[$id] ?? []),
             ));
@@ -275,6 +287,10 @@ class AttendanceMatrix
             $mainChar = $missingMains->get($mainId);
 
             if ($mainChar === null) {
+                continue;
+            }
+
+            if (! empty($rankIds) && ! in_array($mainChar->rank_id, $rankIds, true)) {
                 continue;
             }
 

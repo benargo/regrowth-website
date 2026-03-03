@@ -390,7 +390,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
     const [selectedRankIds, setSelectedRankIds] = useState(() =>
-        ranks.filter((r) => r.count_attendance).map((r) => r.id),
+        filters.rank_ids?.length ? filters.rank_ids : ranks.filter((r) => r.count_attendance).map((r) => r.id),
     );
 
     const availableClasses = useMemo(() => {
@@ -429,6 +429,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
         // which correctly includes reports that may have a null zone_id.
         const allZonesSelected = selectedZoneIds.length === zones.length;
         return {
+            rank_ids: selectedRankIds,
             zone_ids: allZonesSelected ? undefined : selectedZoneIds,
             guild_tag_ids: selectedGuildTagIds,
             since_date: sinceDate || null,
@@ -455,7 +456,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
             return;
         }
         reloadMatrix(buildServerFilters());
-    }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters]);
+    }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters, selectedRankIds]);
 
     // Trigger reload when date filters change (skip initial mount)
     const datesInitialized = useRef(false);
@@ -472,7 +473,6 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
         .filter(
             (row) => !characterName || normaliseCharacterName(row.name).includes(normaliseCharacterName(characterName)),
         )
-        .filter((row) => selectedRankIds.includes(row.rank_id))
         .filter((row) => selectedClassIds === null || selectedClassIds.includes(row.playable_class?.id ?? null));
 
     const showSkeleton = isReloading || !matrix;

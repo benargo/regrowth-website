@@ -1259,4 +1259,61 @@ class AttendanceCalculatorTest extends TestCase
 
         $this->assertEmpty($matrix->rows);
     }
+
+    // ==================== matrixWithFilters: Rank Filter + Linked Characters ====================
+
+    public function test_rank_filter_with_linked_characters_shows_only_mains_of_selected_ranks_but_merges_alt_attendance(): void
+    {
+        $rank1 = $this->makeRank();
+        $rank2 = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank1->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank2->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        // Only the alt attends — main is absent
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $alt, 1);
+
+        // Filter to rank1 only (main's rank); alt is in rank2
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            rankIds: [$rank1->id],
+            includeLinkedCharacters: true,
+        ));
+
+        // Only the main row appears (from rank1)
+        $this->assertCount(1, $matrix->rows);
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertNotContains('Shaman', $names);
+
+        // Alt's attendance is merged into the main's row
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $this->assertEquals(1, $row['attendance'][0]);
+        $this->assertEquals(100.0, $row['percentage']);
+    }
+
+    public function test_rank_filter_with_linked_characters_excludes_mains_of_unselected_ranks(): void
+    {
+        $rank1 = $this->makeRank();
+        $rank2 = $this->makeRank();
+        // Main is in rank2 (not selected), alt is in rank1 (selected)
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank2->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank1->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $alt, 1);
+
+        // Filter to rank1 only — main is in rank2, so should not appear
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            rankIds: [$rank1->id],
+            includeLinkedCharacters: true,
+        ));
+
+        $this->assertEmpty($matrix->rows);
+    }
 }

@@ -47,6 +47,8 @@ class AttendanceMatrixRequest extends FormRequest
         }
 
         return [
+            'rank_ids' => ['nullable', 'array'],
+            'rank_ids.*' => ['integer'],
             'zone_ids' => ['nullable', 'array'],
             'zone_ids.*' => ['integer'],
             'guild_tag_ids' => ['nullable', 'array'],
