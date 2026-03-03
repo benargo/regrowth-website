@@ -39,8 +39,12 @@ class AttendanceMatrixRequest extends FormRequest
         $beforeDateRules = $dateRules;
 
         // Ensure since_date is not after before_date when both are present
-        $sinceDateRules[] = 'before_or_equal:before_date';
-        $beforeDateRules[] = 'after_or_equal:since_date';
+        if ($this->filled('before_date')) {
+            $sinceDateRules[] = 'before_or_equal:before_date';
+        }
+        if ($this->filled('since_date')) {
+            $beforeDateRules[] = 'after_or_equal:since_date';
+        }
 
         return [
             'zone_ids' => ['nullable', 'array'],

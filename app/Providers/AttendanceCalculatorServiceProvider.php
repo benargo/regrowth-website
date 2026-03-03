@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Services\AttendanceCalculator\Aggregators\ReportsAggregator;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
 use App\Services\AttendanceCalculator\AttendanceMatrix;
 use Illuminate\Contracts\Support\DeferrableProvider;
@@ -15,12 +14,8 @@ class AttendanceCalculatorServiceProvider extends ServiceProvider implements Def
      */
     public function register(): void
     {
-        $this->app->singleton(ReportsAggregator::class, function () {
-            return new ReportsAggregator;
-        });
-
         $this->app->singleton(AttendanceCalculator::class, function ($app) {
-            return new AttendanceCalculator($app->make(ReportsAggregator::class), config('app.timezone'));
+            return new AttendanceCalculator(config('app.timezone'));
         });
 
         $this->app->singleton(AttendanceMatrix::class, function ($app) {
@@ -44,7 +39,6 @@ class AttendanceCalculatorServiceProvider extends ServiceProvider implements Def
     public function provides(): array
     {
         return [
-            ReportsAggregator::class,
             AttendanceCalculator::class,
             AttendanceMatrix::class,
         ];
