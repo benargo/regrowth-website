@@ -29,6 +29,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
         Cache::tags('warcraftlogs')->flush();
+        Cache::tags(['attendance', 'attendance:matrix'])->flush();
 
         $permission = Permission::firstOrCreate(['name' => 'view-attendance-dashboard', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
@@ -558,5 +559,76 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['include_linked_characters' => 'banana']));
 
         $response->assertSessionHasErrors(['include_linked_characters']);
+    }
+
+    // ==================== matrix: Caching ====================
+
+    public function test_matrix_result_is_served_from_cache_on_second_request(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        $report->characters()->attach($thrall->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+        $params = ['guild_tag_ids' => [$tag->id]];
+
+        // First request populates the cache.
+        $this->actingAs($user)->get(route('raids.attendance.matrix', $params))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.name', 'Thrall')
+                )
+            );
+
+        // Add a new character to the DB — if caching is working this should not appear.
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $report2 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
+        $report2->characters()->attach($jaina->id, ['presence' => 1]);
+
+        // Second request with identical filters should return the cached result.
+        $this->actingAs($user)->get(route('raids.attendance.matrix', $params))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.name', 'Thrall')
+                )
+            );
+    }
+
+    public function test_matrix_cache_is_distinct_per_filter_combination(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+
+        $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+
+        $report1 = Report::factory()->withGuildTag($tag1)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        $report2 = Report::factory()->withGuildTag($tag2)->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
+        $report1->characters()->attach($thrall->id, ['presence' => 1]);
+        $report2->characters()->attach($jaina->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+
+        // Warm both caches with their respective filter sets.
+        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => [$tag1->id]]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.name', 'Thrall')
+                )
+            );
+
+        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => [$tag2->id]]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('matrix.rows', 1)
+                    ->where('matrix.rows.0.name', 'Jaina')
+                )
+            );
     }
 }

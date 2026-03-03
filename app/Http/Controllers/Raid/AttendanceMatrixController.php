@@ -56,7 +56,12 @@ class AttendanceMatrixController extends Controller
             'earliestDate' => $earliestDate
                 ? Carbon::parse($earliestDate, 'UTC')->timezone($this->timezone)->subDay()->toDateString()
                 : null,
-            'matrix' => Inertia::defer(fn () => $this->matrix->matrixWithFilters($filters)),
+            'matrix' => Inertia::defer(function () use ($filters) {
+                $cacheKey = $this->matrixCacheKey($filters);
+
+                return Cache::tags(['attendance', 'attendance:matrix'])
+                    ->remember($cacheKey, now()->addHours(24), fn () => $this->matrix->matrixWithFilters($filters));
+            }),
         ]);
     }
 
@@ -88,6 +93,37 @@ class AttendanceMatrixController extends Controller
             beforeDate: $beforeDate,
             includeLinkedCharacters: $request->boolean('include_linked_characters', true),
         );
+    }
+
+    /**
+     * Build a deterministic cache key for the given filters.
+     *
+     * Arrays are sorted before hashing so `[1, 2]` and `[2, 1]` produce the same key.
+     */
+    private function matrixCacheKey(AttendanceMatrixFilters $filters): string
+    {
+        $zoneIds = $filters->zoneIds;
+
+        if ($zoneIds !== null) {
+            sort($zoneIds);
+        }
+
+        $guildTagIds = $filters->guildTagIds;
+        sort($guildTagIds);
+
+        $rankIds = $filters->rankIds;
+        sort($rankIds);
+
+        $payload = [
+            'zone_ids' => $zoneIds,
+            'guild_tag_ids' => $guildTagIds,
+            'rank_ids' => $rankIds,
+            'since_date' => $filters->sinceDate?->toISOString(),
+            'before_date' => $filters->beforeDate?->toISOString(),
+            'include_linked_characters' => $filters->includeLinkedCharacters,
+        ];
+
+        return 'attendance:matrix:'.hash('crc32', json_encode($payload));
     }
 
     /**
