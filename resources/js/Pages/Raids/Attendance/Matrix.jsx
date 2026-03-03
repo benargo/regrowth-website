@@ -61,8 +61,11 @@ function FilterDropdown({ label, options, selected, onChange, dusk }) {
 
     const count = selected.length;
     const total = options.length;
-    const buttonText =
-        count === 0 || count === total ? `All ${label}` : count === 1 ? `1 ${label.slice(0, -1)}` : `${count} ${label}`;
+    let buttonText;
+    if (count === 0) buttonText = `No ${label}`;
+    else if (count === total) buttonText = `All ${label}`;
+    else if (count === 1) buttonText = `1 ${label.slice(0, -1)}`;
+    else buttonText = `${count} ${label}`;
 
     return (
         <div className="relative" ref={dropdownRef}>
