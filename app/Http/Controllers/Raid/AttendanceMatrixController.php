@@ -60,7 +60,11 @@ class AttendanceMatrixController extends Controller
                 $cacheKey = $this->matrixCacheKey($filters);
 
                 return Cache::tags(['attendance', 'attendance:matrix'])
-                    ->remember($cacheKey, now()->addHours(24), fn () => $this->matrix->matrixWithFilters($filters));
+                    ->remember($cacheKey, now()->addHours(24), function () use ($filters) {
+                        $matrix = $this->matrix->matrixWithFilters($filters);
+
+                        return method_exists($matrix, 'toArray') ? $matrix->toArray() : $matrix;
+                    });
             }),
         ]);
     }
