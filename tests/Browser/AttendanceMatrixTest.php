@@ -80,6 +80,7 @@ class AttendanceMatrixTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($user) {
             $browser->loginAs($user)
                 ->visit(route('raids.attendance.matrix'))
+                ->waitFor('@matrix-skeleton', 5)
                 ->assertPresent('@matrix-skeleton');
         });
     }
@@ -214,9 +215,9 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 // Rows are sorted alphabetically: Jaina (first), Thrall (last).
-                // Columns are newest-first: td:nth-child(3) = report2 (Jan 8), td:nth-child(4) = report1 (Jan 1).
-                // Jaina's td:nth-child(4) corresponds to report1 (before she first attended), so no presence icon.
-                ->assertMissing('table tbody tr:first-child td:nth-child(4) [dusk]');
+                // Table columns: 1=Name, 2=Rank, 3=%, 4=report2 (Jan 8, newest), 5=report1 (Jan 1, oldest).
+                // Jaina's td:nth-child(5) corresponds to report1 (before she first attended), so no presence icon.
+                ->assertMissing('table tbody tr:first-child td:nth-child(5) [dusk]');
         });
     }
 
@@ -353,7 +354,7 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 ->click('@filter-class')
-                ->press('None')
+                ->click('@filter-class-none')
                 ->waitUntilMissing('@matrix-table')
                 ->assertSee('No attendance data available.')
                 ->assertMissing('@matrix-table');
@@ -370,9 +371,9 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 ->click('@filter-class')
-                ->press('None')
+                ->click('@filter-class-none')
                 ->waitUntilMissing('@matrix-table')
-                ->press('All')
+                ->click('@filter-class-all')
                 ->waitFor('@matrix-table', 30)
                 ->assertPresent('@matrix-table');
         });
@@ -388,7 +389,7 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 ->click('@filter-rank')
-                ->press('None')
+                ->click('@filter-rank-none')
                 ->waitUntilMissing('@matrix-table')
                 ->assertSee('No attendance data available.')
                 ->assertMissing('@matrix-table');
@@ -405,9 +406,9 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 ->click('@filter-rank')
-                ->press('None')
+                ->click('@filter-rank-none')
                 ->waitUntilMissing('@matrix-table')
-                ->press('All')
+                ->click('@filter-rank-all')
                 ->waitFor('@matrix-table', 30)
                 ->assertPresent('@matrix-table');
         });
@@ -534,8 +535,8 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 ->click('@filter-zone')
-                ->waitFor('button[dusk="filter-zone"] + div')
-                ->press('None')
+                ->waitFor('@filter-zone-none')
+                ->click('@filter-zone-none')
                 ->waitUntilMissing('@matrix-table', 5)
                 ->assertSee('No attendance data available.')
                 ->assertMissing('@matrix-table');
@@ -559,10 +560,10 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 ->click('@filter-zone')
-                ->waitFor('button[dusk="filter-zone"] + div')
-                ->press('None')
+                ->waitFor('@filter-zone-none')
+                ->click('@filter-zone-none')
                 ->waitUntilMissing('@matrix-table', 5)
-                ->press('All')
+                ->click('@filter-zone-all')
                 ->waitFor('@matrix-table', 30)
                 ->assertPresent('@matrix-table');
         });
@@ -593,11 +594,12 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->assertSeeIn('@matrix-table', 'Thrall')
                 ->assertSeeIn('@matrix-table', 'Jaina')
                 ->click('@filter-since-date')
-                ->waitFor('#modal');
+                ->waitFor('#modal')
+                ->pause(400); // wait for the HeadlessUI enter transition (300 ms) to complete
 
             $this->setReactDateInput($browser, '#modal input[type="date"]', '2025-01-15');
 
-            $browser->press('Apply')
+            $browser->click('@modal-apply-button')
                 ->waitUntilMissing('@matrix-table', 5)
                 ->waitFor('@matrix-table', 30)
                 // since_date = 2025-01-15 excludes Thrall's Jan 1 report; only Jaina's Feb 1 report remains.
@@ -633,11 +635,12 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->assertSeeIn('@matrix-table', 'Thrall')
                 ->assertSeeIn('@matrix-table', 'Jaina')
                 ->click('@filter-before-date')
-                ->waitFor('#modal');
+                ->waitFor('#modal')
+                ->pause(400); // wait for the HeadlessUI enter transition (300 ms) to complete
 
             $this->setReactDateInput($browser, '#modal input[type="date"]', '2025-01-15');
 
-            $browser->press('Apply')
+            $browser->click('@modal-apply-button')
                 ->waitUntilMissing('@matrix-table', 5)
                 ->waitFor('@matrix-table', 30)
                 // before_date = 2025-01-15 excludes Jaina's Feb 1 report; only Thrall's Jan 1 report remains.
@@ -657,11 +660,12 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->visit(route('raids.attendance.matrix'))
                 ->waitFor('@matrix-table', 30)
                 ->click('@filter-since-date')
-                ->waitFor('#modal');
+                ->waitFor('#modal')
+                ->pause(400); // wait for the HeadlessUI enter transition (300 ms) to complete
 
             $this->setReactDateInput($browser, '#modal input[type="date"]', '2025-06-01');
 
-            $browser->press('Cancel')
+            $browser->click('@modal-cancel-button')
                 // Modal closes, no reload is triggered.
                 ->assertMissing('#modal')
                 ->assertMissing('@matrix-skeleton')
@@ -694,18 +698,20 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->waitFor('@matrix-table', 30)
                 // Apply a before_date filter to exclude Jaina.
                 ->click('@filter-before-date')
-                ->waitFor('#modal');
+                ->waitFor('#modal')
+                ->pause(400); // wait for the HeadlessUI enter transition (300 ms) to complete
 
             $this->setReactDateInput($browser, '#modal input[type="date"]', '2025-01-15');
 
-            $browser->press('Apply')
+            $browser->click('@modal-apply-button')
                 ->waitFor('@matrix-table', 30)
                 ->assertDontSeeIn('@matrix-table', 'Jaina')
                 ->assertSeeIn('@filter-before-date', 'set')
                 // Open the filter again and clear the date.
                 ->click('@filter-before-date')
                 ->waitFor('#modal')
-                ->press('Clear')
+                ->pause(400)
+                ->click('@modal-clear-button')
                 // Clearing triggers a reload; both characters should be visible again.
                 ->waitFor('@matrix-table', 30)
                 ->assertDontSeeIn('@filter-before-date', 'set')
@@ -738,18 +744,20 @@ class AttendanceMatrixTest extends DuskTestCase
                 ->waitFor('@matrix-table', 30)
                 // Apply a since_date filter to exclude Thrall.
                 ->click('@filter-since-date')
-                ->waitFor('#modal');
+                ->waitFor('#modal')
+                ->pause(400); // wait for the HeadlessUI enter transition (300 ms) to complete
 
             $this->setReactDateInput($browser, '#modal input[type="date"]', '2025-01-15');
 
-            $browser->press('Apply')
+            $browser->click('@modal-apply-button')
                 ->waitFor('@matrix-table', 30)
                 ->assertDontSeeIn('@matrix-table', 'Thrall')
                 ->assertSeeIn('@filter-since-date', 'set')
                 // Open the filter again and clear the date.
                 ->click('@filter-since-date')
                 ->waitFor('#modal')
-                ->press('Clear')
+                ->pause(400)
+                ->click('@modal-clear-button')
                 // Clearing triggers a reload; both characters should be visible again.
                 ->waitFor('@matrix-table', 30)
                 ->assertDontSeeIn('@filter-since-date', 'set')

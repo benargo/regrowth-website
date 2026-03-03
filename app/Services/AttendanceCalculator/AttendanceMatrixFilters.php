@@ -9,8 +9,8 @@ class AttendanceMatrixFilters
     public function __construct(
         /** @var array<int, int> */
         public readonly array $rankIds = [],
-        /** @var array<int, int> */
-        public readonly array $zoneIds = [],
+        /** @var array<int, int>|null null means no zone filter; [] means filter for no zones */
+        public readonly ?array $zoneIds = null,
         /** @var array<int, int> */
         public readonly array $guildTagIds = [],
         public readonly ?Carbon $sinceDate = null,

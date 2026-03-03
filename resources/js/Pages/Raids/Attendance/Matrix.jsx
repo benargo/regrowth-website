@@ -6,7 +6,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
 import TextInput from "@/Components/TextInput";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
-import Pill from "@/Components/Pill";
+import Tooltip from "@/Components/Tooltip";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -56,6 +56,9 @@ function FilterDropdown({ label, options, selected, onChange, dusk }) {
     const selectAll = () => onChange(options.map((o) => o.id));
     const selectNone = () => onChange([]);
 
+    const allButtonDusk = dusk ? `${dusk}-all` : undefined;
+    const noneButtonDusk = dusk ? `${dusk}-none` : undefined;
+
     const count = selected.length;
     const total = options.length;
     const buttonText =
@@ -80,12 +83,14 @@ function FilterDropdown({ label, options, selected, onChange, dusk }) {
                     <div className="flex border-b border-brown-700">
                         <button
                             onClick={selectAll}
+                            dusk={allButtonDusk}
                             className="flex-1 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
                         >
                             All
                         </button>
                         <button
                             onClick={selectNone}
+                            dusk={noneButtonDusk}
                             className="flex-1 border-l border-brown-700 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
                         >
                             None
@@ -169,6 +174,7 @@ function DateFilterButton({ label, value, onChange, dusk, min }) {
                         <button
                             type="button"
                             onClick={clear}
+                            dusk="modal-clear-button"
                             className="inline-flex items-center gap-2 rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-600"
                         >
                             <Icon icon="times" style="solid" />
@@ -178,6 +184,7 @@ function DateFilterButton({ label, value, onChange, dusk, min }) {
                             <button
                                 type="button"
                                 onClick={close}
+                                dusk="modal-cancel-button"
                                 className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-brown-600"
                             >
                                 Cancel
@@ -185,6 +192,7 @@ function DateFilterButton({ label, value, onChange, dusk, min }) {
                             <button
                                 type="button"
                                 onClick={apply}
+                                dusk="modal-apply-button"
                                 className="inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-amber-700"
                             >
                                 Apply
@@ -294,8 +302,10 @@ function MatrixTable({ raids, rows, ranks }) {
                                 key={raid.code}
                                 className="whitespace-nowrap px-3 py-3 text-center text-sm font-semibold text-amber-500"
                             >
-                                <p>{raid.dayOfWeek}</p>
-                                <p>{raid.date}</p>
+                                <Tooltip text={raid.zoneName} position="bottom">
+                                    <p>{raid.dayOfWeek}</p>
+                                    <p>{raid.date}</p>
+                                </Tooltip>
                             </th>
                         ))}
                     </tr>
@@ -384,12 +394,18 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     const [isReloading, setIsReloading] = useState(false);
 
     // ── Server-side reload ───────────────────────────────────────────────────
-    const buildServerFilters = () => ({
-        zone_ids: selectedZoneIds,
-        guild_tag_ids: selectedGuildTagIds,
-        since_date: sinceDate || null,
-        before_date: beforeDate || null,
-    });
+    const buildServerFilters = () => {
+        // Only send zone_ids when a subset is selected. When all zones are selected
+        // (or no zones exist), omit the parameter so the backend applies no zone filter,
+        // which correctly includes reports that may have a null zone_id.
+        const allZonesSelected = selectedZoneIds.length === zones.length;
+        return {
+            zone_ids: allZonesSelected ? undefined : selectedZoneIds,
+            guild_tag_ids: selectedGuildTagIds,
+            since_date: sinceDate || null,
+            before_date: beforeDate || null,
+        };
+    };
 
     const reloadMatrix = (filterData) => {
         setIsReloading(true);
@@ -457,7 +473,9 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 label="Classes"
                                 options={availableClasses}
                                 selected={effectiveClassIds}
-                                onChange={setSelectedClassIds}
+                                onChange={(ids) =>
+                                    setSelectedClassIds(ids.length === availableClasses.length ? null : ids)
+                                }
                                 dusk="filter-class"
                             />
                         </div>

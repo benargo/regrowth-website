@@ -12,7 +12,7 @@ class AttendanceMatrix
     /**
      * The raids that form the columns of the matrix, in chronological order.
      *
-     * @var array<int, array{code: string, date: string}>
+     * @var array<int, array{code: string, dayOfWeek: string, date: string, zoneName: string|null}>
      */
     public array $raids;
 
@@ -51,7 +51,7 @@ class AttendanceMatrix
             $query->whereHas('guildTag', fn ($q) => $q->where('count_attendance', true));
         }
 
-        if (! empty($filters->zoneIds)) {
+        if ($filters->zoneIds !== null) {
             $query->whereIn('zone_id', $filters->zoneIds);
         }
 
@@ -104,10 +104,11 @@ class AttendanceMatrix
      */
     protected function calculateMatrix(Collection $reports): self
     {
-        /** @var array<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}> $raidRecords */
+        /** @var array<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}> $raidRecords */
         $raidRecords = $reports->map(fn (Report $report) => [
             'code' => $report->code,
             'startTime' => $report->start_time,
+            'zoneName' => $report->zone_name,
             'players' => $report->characters->mapWithKeys(fn ($character) => [
                 $character->name => [
                     'id' => $character->id,
@@ -130,6 +131,7 @@ class AttendanceMatrix
             'code' => $record['code'],
             'dayOfWeek' => $record['startTime']->copy()->setTimezone($this->timezone)->format('D'),
             'date' => $record['startTime']->copy()->setTimezone($this->timezone)->format('d/m'),
+            'zoneName' => $record['zoneName'],
         ])->reverse()->values()->all();
 
         // First pass: find each character's ID, rank, and first-appearance index.

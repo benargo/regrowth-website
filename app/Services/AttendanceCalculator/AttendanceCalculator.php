@@ -181,8 +181,8 @@ class AttendanceCalculator
      * When multiple raids occur on the same raid day, characters are considered present
      * if they appeared in any of the merged raids, using their best presence value.
      *
-     * @param  Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>  $records  Sorted by startTime ascending.
-     * @return Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>
+     * @param  Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>  $records  Sorted by startTime ascending.
+     * @return Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>
      */
     public function mergeByRaidDay(Collection $records): Collection
     {
@@ -209,6 +209,7 @@ class AttendanceCalculator
                 return [
                     'code' => collect($group)->pluck('code')->implode('+'),
                     'startTime' => $group->first()['startTime'],
+                    'zoneName' => $group->first()['zoneName'] ?? null,
                     'players' => $mergedPlayers,
                 ];
             })

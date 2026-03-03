@@ -17,7 +17,7 @@ export default function Tooltip({ children, text, position = "top", ...props }) 
         <div className="group/tooltip relative inline-block" {...props}>
             {children}
             <div
-                className={`pointer-events-none absolute whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 ${positionClasses[position]}`}
+                className={`pointer-events-none absolute z-30 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 ${positionClasses[position]}`}
             >
                 {text}
                 <div

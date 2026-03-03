@@ -50,7 +50,7 @@ class AttendanceMatrixController extends Controller
 
         return Inertia::render('Raids/Attendance/Matrix', [
             'ranks' => GuildRank::orderBy('position')->get(),
-            'zones' => Report::select('zone_id', 'zone_name')->distinct()->get()->map(fn ($r) => ['id' => $r->zone_id, 'name' => $r->zone_name])->sortBy('name')->values(),
+            'zones' => Report::select('zone_id', 'zone_name')->whereNotNull('zone_id')->distinct()->get()->map(fn ($r) => ['id' => $r->zone_id, 'name' => $r->zone_name])->sortBy('name')->values(),
             'guildTags' => GuildTag::orderBy('name')->get(),
             'filters' => $this->serializeFilters($filters, $request),
             'earliestDate' => $earliestDate
@@ -65,9 +65,9 @@ class AttendanceMatrixController extends Controller
      */
     private function resolveFilters(AttendanceMatrixRequest $request): AttendanceMatrixFilters
     {
-        $zoneIds = $request->filled('zone_ids')
-            ? array_map('intval', $request->input('zone_ids'))
-            : [];
+        $zoneIds = $request->has('zone_ids')
+            ? array_map('intval', $request->input('zone_ids', []))
+            : null;
 
         $guildTagIds = $request->filled('guild_tag_ids')
             ? array_map('intval', $request->input('guild_tag_ids'))
