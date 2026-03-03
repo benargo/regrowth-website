@@ -6,14 +6,12 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
-use App\Services\AttendanceCalculator\Aggregators\ReportsAggregator;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class AttendanceCalculator
 {
     public function __construct(
-        protected readonly ReportsAggregator $reportsAggregator,
         protected string $timezone = 'UTC',
     ) {}
 
