@@ -27,8 +27,8 @@
 }
 
 .bg-illidan {
-    background-image: url('../images/bg_illidan.jpg');
-    background-position: 50% 10%;
+    background-image: url('../images/bg_illidan.webp');
+    background-position: center;
     background-size: cover;
 }
 

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\Skip;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 
 class UpdateCharacterFromRoster implements ShouldQueue
@@ -34,8 +35,8 @@ class UpdateCharacterFromRoster implements ShouldQueue
     public function middleware(): array
     {
         return [
-            Skip::when($this->characterData['character']['level'] < 60),
-            new WithoutOverlapping($this->characterData['character']['id']),
+            Skip::when(Arr::get($this->characterData, 'character.level') < 60),
+            new WithoutOverlapping(Arr::get($this->characterData, 'character.id')),
         ];
     }
 
@@ -46,11 +47,15 @@ class UpdateCharacterFromRoster implements ShouldQueue
      */
     public function handle(): void
     {
-        $this->character = Character::firstOrNew(['id' => $this->characterData['character']['id']]);
+        $this->character = Character::firstOrNew(['id' => Arr::get($this->characterData, 'character.id')]);
 
-        $this->character->fill(['name' => $this->characterData['character']['name']]);
+        $this->character->fill([
+            'name' => Arr::get($this->characterData, 'character.name'),
+            'playable_class_id' => Arr::get($this->characterData, 'character.playable_class.id'),
+            'playable_race_id' => Arr::get($this->characterData, 'character.playable_race.id'),
+        ]);
 
-        $guildRank = GuildRank::where('position', $this->characterData['rank'])->firstOrFail();
+        $guildRank = GuildRank::where('position', Arr::get($this->characterData, 'rank'))->firstOrFail();
         $this->character->rank()->associate($guildRank);
 
         $this->character->save();
@@ -64,7 +69,7 @@ class UpdateCharacterFromRoster implements ShouldQueue
         if ($exception instanceof ModelNotFoundException) {
             Log::error('Guild rank not found for character update.', [
                 'character_id' => $this->character?->id,
-                'rank_position' => $this->characterData['rank'],
+                'rank_position' => Arr::get($this->characterData, 'rank'),
                 'error' => $exception->getMessage(),
             ]);
         } else {

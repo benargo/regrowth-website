@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\Blizzard;
 
 use App\Services\Blizzard\Client;
+use App\Services\Blizzard\Exceptions\InvalidClassException;
 use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\PlayableClassService;
 use Illuminate\Http\Client\RequestException;
@@ -315,6 +316,30 @@ class PlayableClassServiceTest extends TestCase
         $service->find(999);
     }
 
+    public function test_find_throws_invalid_class_exception_on_blizzard_404(): void
+    {
+        Http::fake([
+            'eu.battle.net/oauth/token' => Http::response([
+                'access_token' => 'test_token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
+            'eu.api.blizzard.com/*' => Http::response([
+                'code' => 404,
+                'type' => 'BLZWEBAPI00000404',
+                'detail' => 'Not Found',
+            ], 404),
+        ]);
+
+        $client = new Client('client_id', 'client_secret');
+        $service = new PlayableClassService($client);
+
+        $this->expectException(InvalidClassException::class);
+        $this->expectExceptionCode(404);
+
+        $service->find(999);
+    }
+
     public function test_find_fresh_bypasses_cache(): void
     {
         $callCount = 0;
@@ -412,6 +437,110 @@ class PlayableClassServiceTest extends TestCase
         $service = new PlayableClassService($client);
 
         $service->media(1);
+    }
+
+    public function test_icon_url_returns_url_for_valid_class(): void
+    {
+        $media = [
+            'assets' => [
+                ['file_data_id' => 123, 'key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/warrior.jpg'],
+            ],
+        ];
+
+        $this->instance(
+            MediaService::class,
+            $this->createMockMediaService(function (MockInterface $mock) use ($media) {
+                $mock->shouldReceive('find')
+                    ->once()
+                    ->with('playable-class', 1)
+                    ->andReturn($media);
+                $mock->shouldReceive('getAssetUrls')
+                    ->once()
+                    ->with($media['assets'])
+                    ->andReturn([123 => 'https://example.com/blizzard/media/123.jpg']);
+            })
+        );
+
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
+        $service = new PlayableClassService($client);
+
+        $result = $service->iconUrl(1);
+
+        $this->assertEquals('https://example.com/blizzard/media/123.jpg', $result);
+    }
+
+    public function test_icon_url_returns_null_when_assets_are_empty(): void
+    {
+        $media = ['assets' => []];
+
+        $this->instance(
+            MediaService::class,
+            $this->createMockMediaService(function (MockInterface $mock) use ($media) {
+                $mock->shouldReceive('find')
+                    ->once()
+                    ->with('playable-class', 1)
+                    ->andReturn($media);
+                $mock->shouldReceive('getAssetUrls')
+                    ->once()
+                    ->with([])
+                    ->andReturn([]);
+            })
+        );
+
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
+        $service = new PlayableClassService($client);
+
+        $this->assertNull($service->iconUrl(1));
+    }
+
+    public function test_icon_url_returns_null_when_assets_key_is_missing(): void
+    {
+        $this->instance(
+            MediaService::class,
+            $this->createMockMediaService(function (MockInterface $mock) {
+                $mock->shouldReceive('find')
+                    ->once()
+                    ->with('playable-class', 1)
+                    ->andReturn([]);
+                $mock->shouldReceive('getAssetUrls')
+                    ->once()
+                    ->with([])
+                    ->andReturn([]);
+            })
+        );
+
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
+        $service = new PlayableClassService($client);
+
+        $this->assertNull($service->iconUrl(1));
+    }
+
+    public function test_icon_url_returns_null_when_asset_download_fails(): void
+    {
+        $media = [
+            'assets' => [
+                ['file_data_id' => 123, 'key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/warrior.jpg'],
+            ],
+        ];
+
+        $this->instance(
+            MediaService::class,
+            $this->createMockMediaService(function (MockInterface $mock) use ($media) {
+                $mock->shouldReceive('find')
+                    ->once()
+                    ->with('playable-class', 1)
+                    ->andReturn($media);
+                $mock->shouldReceive('getAssetUrls')
+                    ->once()
+                    ->with($media['assets'])
+                    ->andReturn([123 => null]);
+            })
+        );
+
+        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
+        $service = new PlayableClassService($client);
+
+        $this->assertNull($service->iconUrl(1));
     }
 
     public function test_with_namespace_affects_cache_keys(): void

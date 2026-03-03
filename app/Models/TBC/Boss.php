@@ -30,6 +30,13 @@ class Boss extends Model
     ];
 
     /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<string>
+     */
+    protected $hidden = ['created_at', 'updated_at'];
+
+    /**
      * Get the raid that this boss belongs to.
      *
      * @return BelongsTo<Raid, $this>

@@ -11,6 +11,10 @@ use Illuminate\Support\Collection;
 
 class AttendanceCalculator
 {
+    public function __construct(
+        protected string $timezone = 'UTC',
+    ) {}
+
     /**
      * The guild ranks that count towards attendance, keyed by ID for quick access.
      *
@@ -96,7 +100,7 @@ class AttendanceCalculator
      */
     protected function calculate(Collection $reports): Collection
     {
-        /** @var array<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, presence: int}>}> $raidRecords */
+        /** @var array<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, presence: int, playableClass: array|null}>}> $raidRecords */
         $raidRecords = $reports->map(fn (Report $report) => [
             'code' => $report->code,
             'startTime' => $report->start_time,
@@ -175,21 +179,19 @@ class AttendanceCalculator
      * When multiple raids occur on the same raid day, characters are considered present
      * if they appeared in any of the merged raids, using their best presence value.
      *
-     * @param  Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, presence: int}>}>  $records  Sorted by startTime ascending.
-     * @return Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, presence: int}>}>
+     * @param  Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>  $records  Sorted by startTime ascending.
+     * @return Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>
      */
-    protected function mergeByRaidDay(Collection $records): Collection
+    public function mergeByRaidDay(Collection $records): Collection
     {
-        $timezone = config('app.timezone');
-
         return $records
-            ->groupBy(fn (array $record) => $record['startTime']->copy()->setTimezone($timezone)->subHours(5)->toDateString())
+            ->groupBy(fn (array $record) => $record['startTime']->copy()->setTimezone($this->timezone)->subHours(5)->toDateString())
             ->map(function (Collection $group) {
                 if ($group->count() === 1) {
                     return $group->first();
                 }
 
-                /** @var array<string, array{id: int, presence: int}> $mergedPlayers */
+                /** @var array<string, array{id: int, rank_id: int|null, presence: int}> $mergedPlayers */
                 $mergedPlayers = [];
 
                 foreach ($group as $record) {
@@ -205,6 +207,7 @@ class AttendanceCalculator
                 return [
                     'code' => collect($group)->pluck('code')->implode('+'),
                     'startTime' => $group->first()['startTime'],
+                    'zoneName' => $group->first()['zoneName'] ?? null,
                     'players' => $mergedPlayers,
                 ];
             })
@@ -214,7 +217,7 @@ class AttendanceCalculator
     /**
      * Get the priority rank for a presence value (higher = better).
      */
-    protected function presencePriority(int $presence): int
+    public function presencePriority(int $presence): int
     {
         return match ($presence) {
             1 => 2,
@@ -226,10 +229,10 @@ class AttendanceCalculator
     /**
      * Get the raid records sorted by startTime ascending.
      *
-     * @param  Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, presence: int}>}>  $records
-     * @return Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, presence: int}>}>
+     * @param  Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>  $records
+     * @return Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>
      */
-    protected function sortRaidRecords(Collection $records): Collection
+    public function sortRaidRecords(Collection $records): Collection
     {
         return $records->sortBy(fn (array $record) => $record['startTime'])->values();
     }

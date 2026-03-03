@@ -49,6 +49,19 @@ export default {
                     artifact: '#e6cc80',
                     heirloom: '#00ccff',
                 },
+                'guild-rank': {
+                    DEFAULT: '#1f8b4c',
+                    'guild-master': '#aa3b3b',
+                    'officer': '#aa3b3b',
+                    'raider': '#e67e22',
+                    'trial-raider': '#e67e22',
+                    'warden': '#1f8b4c',
+                    'champion': '#1f8b4c',
+                    'veteran': '#1f8b4c',
+                    'member': '#1f8b4c',
+                    'initiate': '#1f8b4c',
+                    'inactive': '#1f8b4c',
+                },
                 wowhead: {
                     DEFAULT: '#a71a19',
                     'links': '#ffd100',
@@ -62,6 +75,7 @@ export default {
 
     safelist: [
         { pattern: /(bg|text|border)-discord-(officer|raider|member|lootcouncillor|guest)/, },
-        { pattern: /(bg|text|border)-quality-(poor|common|uncommon|rare|epic|legendary|artifact|heirloom)/, }
+        { pattern: /(bg|text|border)-quality-(poor|common|uncommon|rare|epic|legendary|artifact|heirloom)/, },
+        { pattern: /(bg|text|border)-guild-rank-(guild-master|officer|raider|trial-raider|warden|champion|veteran|member|initiate|inactive)/, },
     ],
 };

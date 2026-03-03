@@ -21,6 +21,8 @@ class CharacterFactory extends Factory
             'name' => fake()->name(),
             'rank_id' => null,
             'is_main' => false,
+            'playable_class_id' => null,
+            'playable_race_id' => null,
         ];
     }
 
@@ -61,6 +63,26 @@ class CharacterFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'reached_level_cap_at' => now(),
+        ]);
+    }
+
+    /**
+     * Indicate that the character has a playable class.
+     */
+    public function withPlayableClass(int $classId = 1): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'playable_class_id' => $classId,
+        ]);
+    }
+
+    /**
+     * Indicate that the character has a playable race.
+     */
+    public function withPlayableRace(int $raceId = 1): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'playable_race_id' => $raceId,
         ]);
     }
 }
