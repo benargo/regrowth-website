@@ -309,7 +309,7 @@ function MatrixTable({ raids, rows, ranks }) {
     }
 
     return (
-        <div dusk="matrix-table" className="overflow-x-auto">
+        <div dusk="matrix-table" className="overflow-x-auto overflow-y-hidden">
             <table className="min-w-max table-auto border-collapse">
                 <thead className="border-b border-amber-600">
                     <tr>
