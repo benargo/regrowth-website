@@ -78,8 +78,8 @@ class AttendanceMatrixController extends Controller
             ? array_map('intval', $request->input('zone_ids', []))
             : null;
 
-        $guildTagIds = $request->filled('guild_tag_ids')
-            ? array_map('intval', $request->input('guild_tag_ids'))
+        $guildTagIds = $request->has('guild_tag_ids')
+            ? array_map('intval', $request->input('guild_tag_ids', []))
             : GuildTag::where('count_attendance', true)->pluck('id')->toArray();
 
         $sinceDate = $request->filled('since_date')
