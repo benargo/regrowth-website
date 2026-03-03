@@ -2,6 +2,7 @@
 
 namespace App\Services\AttendanceCalculator;
 
+use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
@@ -20,8 +21,9 @@ class AttendanceMatrix
      * The per-character attendance rows.
      *
      * Attendance values: null = before first raid, 0 = absent, 1 = present, 2 = late.
+     * When linked characters are merged, attendance_names lists the character names who attended each raid.
      *
-     * @var array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>}>
+     * @var array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>, attendance_names?: array<int, array<int, string>>}>
      */
     public array $rows;
 
@@ -69,7 +71,13 @@ class AttendanceMatrix
 
         $query->with(['characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $rankIds))]);
 
-        return $this->calculateMatrix($query->get());
+        $this->calculateMatrix($query->get());
+
+        if ($filters->includeLinkedCharacters && ! empty($this->rows)) {
+            $this->rows = $this->mergeLinkedCharacters();
+        }
+
+        return $this;
     }
 
     /**
@@ -193,5 +201,166 @@ class AttendanceMatrix
         usort($rows, fn (array $a, array $b) => strcmp($a['name'], $b['name']));
 
         return $this->load($raids, $rows);
+    }
+
+    /**
+     * Collapse alt character rows into their main character's row.
+     *
+     * Only characters flagged as is_main appear in the output. Their linked alts'
+     * attendance is aggregated per raid using: 1 (present) > 2 (late) > 0 (absent) > null.
+     *
+     * @return array<int, array{name: string, id: int, rank_id: int|null, playable_class: array|null, percentage: float, attendance: array<int, int|null>, attendance_names: array<int, array<int, string>>}>
+     */
+    protected function mergeLinkedCharacters(): array
+    {
+        $raidCount = count($this->raids);
+        $rowsById = collect($this->rows)->keyBy('id');
+        $characterIds = $rowsById->keys()->all();
+
+        // Load all matrix characters with their linked characters to resolve is_main and alt relationships.
+        $characters = Character::whereIn('id', $characterIds)
+            ->with('linkedCharacters')
+            ->get()
+            ->keyBy('id');
+
+        // Build alt → main and main → alts maps by inspecting each alt's linked characters.
+        $altToMainId = [];
+        $mainToAltIds = [];
+
+        foreach ($characters as $character) {
+            if (! $character->is_main) {
+                $main = $character->linkedCharacters->firstWhere('is_main', true);
+
+                if ($main !== null) {
+                    $altToMainId[$character->id] = $main->id;
+                    $mainToAltIds[$main->id][] = $character->id;
+                }
+            }
+        }
+
+        // Some mains may not have attended any raids themselves (so no row in the matrix),
+        // but their alts may have. Load those missing mains separately.
+        $mainIdsInMatrix = $characters->filter(fn ($c) => $c->is_main)->keys()->all();
+        $mainIdsNotInMatrix = array_values(array_diff(array_unique(array_values($altToMainId)), $mainIdsInMatrix));
+
+        $missingMains = Character::whereIn('id', $mainIdsNotInMatrix)->get()->keyBy('id');
+
+        // Build merged rows for all mains present in the matrix.
+        $result = [];
+
+        foreach ($rowsById as $id => $row) {
+            if (isset($altToMainId[$id])) {
+                continue;
+            }
+
+            if (! ($characters[$id]->is_main ?? false)) {
+                continue;
+            }
+
+            $altRows = array_values(array_filter(
+                array_map(fn ($altId) => $rowsById->get($altId), $mainToAltIds[$id] ?? []),
+            ));
+
+            $result[] = $this->buildMergedRow($row, $altRows, $raidCount);
+        }
+
+        // Create synthetic rows for mains who never raided but whose alts did.
+        foreach ($mainIdsNotInMatrix as $mainId) {
+            $altIds = $mainToAltIds[$mainId] ?? [];
+
+            if (empty($altIds)) {
+                continue;
+            }
+
+            $mainChar = $missingMains->get($mainId);
+
+            if ($mainChar === null) {
+                continue;
+            }
+
+            $altRows = array_values(array_filter(
+                array_map(fn ($altId) => $rowsById->get($altId), $altIds),
+            ));
+
+            $syntheticRow = [
+                'name' => $mainChar->name,
+                'id' => $mainChar->id,
+                'rank_id' => $mainChar->rank_id,
+                'playable_class' => $mainChar->playable_class,
+                'percentage' => 0.0,
+                'attendance' => array_fill(0, $raidCount, null),
+            ];
+
+            $result[] = $this->buildMergedRow($syntheticRow, $altRows, $raidCount);
+        }
+
+        usort($result, fn (array $a, array $b) => strcmp($a['name'], $b['name']));
+
+        return $result;
+    }
+
+    /**
+     * Merge a main character's row with their alts' rows into a single combined row.
+     *
+     * For each raid position the winning value is the lowest non-null presence value across all
+     * characters: 1 (present) beats 2 (late) beats 0 (absent); all-null stays null.
+     * attendance_names lists the names of characters who contributed a presence value (1 or 2).
+     *
+     * @param  array{name: string, id: int, rank_id: int|null, playable_class: array|null, percentage: float, attendance: array<int, int|null>}  $mainRow
+     * @param  array<int, array{name: string, id: int, rank_id: int|null, playable_class: array|null, percentage: float, attendance: array<int, int|null>}>  $altRows
+     * @return array{name: string, id: int, rank_id: int|null, playable_class: array|null, percentage: float, attendance: array<int, int|null>, attendance_names: array<int, array<int, string>>}
+     */
+    protected function buildMergedRow(array $mainRow, array $altRows, int $raidCount): array
+    {
+        $allRows = [$mainRow, ...$altRows];
+        $attendance = [];
+        $attendanceNames = [];
+        $totalReports = 0;
+        $reportsAttended = 0;
+
+        for ($i = 0; $i < $raidCount; $i++) {
+            $values = array_map(fn ($row) => $row['attendance'][$i] ?? null, $allRows);
+            $nonNull = array_values(array_filter($values, fn ($v) => $v !== null));
+
+            if (empty($nonNull)) {
+                $attendance[] = null;
+                $attendanceNames[] = [];
+
+                continue;
+            }
+
+            $totalReports++;
+            $presenceValues = array_filter($nonNull, fn ($v) => in_array($v, [1, 2], true));
+
+            if (! empty($presenceValues)) {
+                $attendance[] = min($presenceValues);
+                $reportsAttended++;
+
+                $names = [];
+
+                foreach ($allRows as $row) {
+                    if (in_array($row['attendance'][$i] ?? null, [1, 2], true)) {
+                        $names[] = $row['name'];
+                    }
+                }
+
+                $attendanceNames[] = $names;
+            } else {
+                $attendance[] = 0;
+                $attendanceNames[] = [];
+            }
+        }
+
+        $percentage = $totalReports > 0 ? round(($reportsAttended / $totalReports) * 100, 2) : 0.0;
+
+        return [
+            'name' => $mainRow['name'],
+            'id' => $mainRow['id'],
+            'rank_id' => $mainRow['rank_id'],
+            'playable_class' => $mainRow['playable_class'] ?? null,
+            'percentage' => $percentage,
+            'attendance' => $attendance,
+            'attendance_names' => $attendanceNames,
+        ];
     }
 }

@@ -1044,4 +1044,220 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Jaina', $names);
     }
+
+    // ==================== matrixWithFilters: Linked Characters ====================
+
+    protected function linkCharacters(Character $main, Character $alt): void
+    {
+        \DB::table('character_links')->insert([
+            ['character_id' => $main->id, 'linked_character_id' => $alt->id, 'created_at' => now(), 'updated_at' => now()],
+            ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+    }
+
+    public function test_include_linked_characters_shows_only_is_main_rows(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $main, 1);
+        $this->attachCharacter($report, $alt, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertNotContains('Shaman', $names);
+        $this->assertCount(1, $matrix->rows);
+    }
+
+    public function test_include_linked_characters_false_shows_all_rows(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $main, 1);
+        $this->attachCharacter($report, $alt, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: false,
+        ));
+
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertContains('Shaman', $names);
+        $this->assertCount(2, $matrix->rows);
+    }
+
+    public function test_include_linked_characters_merges_alt_attendance_into_main(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        // Only the alt attends — the main is absent
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $alt, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $this->assertNotNull($row);
+        // Alt was present, so merged cell = 1
+        $this->assertEquals(1, $row['attendance'][0]);
+        $this->assertEquals(100.0, $row['percentage']);
+    }
+
+    public function test_include_linked_characters_aggregates_percentage_across_alts(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        // Raid 1: only alt attends. Raid 2: only main attends.
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $alt, 1);
+        $this->attachCharacter($report2, $main, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $this->assertEquals(100.0, $row['percentage']);
+    }
+
+    public function test_include_linked_characters_presence_1_beats_presence_2(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        // Main is late (2), alt is present (1) for the same raid
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $main, 2);
+        $this->attachCharacter($report, $alt, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $this->assertEquals(1, $row['attendance'][0]);
+    }
+
+    public function test_include_linked_characters_attendance_names_populated_for_attending_characters(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $main, 1);
+        $this->attachCharacter($report, $alt, 2);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $this->assertArrayHasKey('attendance_names', $row);
+        // Both characters attended — names listed in order of rows (main first)
+        $this->assertContains('Thrall', $row['attendance_names'][0]);
+        $this->assertContains('Shaman', $row['attendance_names'][0]);
+    }
+
+    public function test_include_linked_characters_absent_raid_has_empty_attendance_names(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report2, $main, 1); // main present on newest raid (Jan 8)
+        // both absent on oldest raid (Jan 1)
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        // raids[0] = newest (Jan 8, main present), raids[1] = oldest (Jan 1, both absent)
+        $this->assertNotEmpty($row['attendance_names'][0]); // newest: main attended
+        $this->assertEmpty($row['attendance_names'][1]);    // oldest: nobody attended
+    }
+
+    public function test_include_linked_characters_creates_synthetic_row_for_main_not_in_matrix(): void
+    {
+        $rank = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        // Only the alt ever raids — main has no reports
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $alt, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertNotContains('Shaman', $names);
+
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $this->assertEquals(1, $row['attendance'][0]);
+        $this->assertEquals(100.0, $row['percentage']);
+    }
+
+    public function test_include_linked_characters_excludes_standalone_non_main_characters(): void
+    {
+        $rank = $this->makeRank();
+        // is_main = false, no link
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 1);
+
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $this->assertEmpty($matrix->rows);
+    }
 }

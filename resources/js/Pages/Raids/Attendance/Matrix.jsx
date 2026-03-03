@@ -205,6 +205,25 @@ function DateFilterButton({ label, value, onChange, dusk, min }) {
     );
 }
 
+function ToggleFilter({ label, value, onChange, dusk }) {
+    return (
+        <label className="flex cursor-pointer items-center gap-3 rounded border border-amber-600 bg-brown-800 px-4 py-2">
+            <span className="text-sm text-white">{label}</span>
+            <div className="relative ml-auto">
+                <input
+                    type="checkbox"
+                    checked={value}
+                    onChange={(e) => onChange(e.target.checked)}
+                    dusk={dusk}
+                    className="peer sr-only"
+                />
+                <div className="h-6 w-10 rounded-full bg-brown-700 transition-colors peer-checked:bg-amber-600" />
+                <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
+            </div>
+        </label>
+    );
+}
+
 // ─── Matrix components ────────────────────────────────────────────────────────
 
 function MatrixSkeleton() {
@@ -251,20 +270,26 @@ function MatrixSkeleton() {
     );
 }
 
-function AttendanceCell({ value }) {
+function AttendanceCell({ value, names }) {
+    let icon = null;
+
     if (value === 1) {
-        return <Icon dusk="presence-present" icon="check" style="solid" className="text-green-500" />;
+        icon = <Icon dusk="presence-present" icon="check" style="solid" className="text-green-500" />;
+    } else if (value === 2) {
+        icon = <Icon dusk="presence-late" icon="couch" style="regular" className="text-amber-500" />;
+    } else if (value === 0) {
+        icon = <Icon dusk="presence-absent" icon="circle" style="regular" className="text-red-500" />;
     }
 
-    if (value === 2) {
-        return <Icon dusk="presence-late" icon="couch" style="regular" className="text-amber-500" />;
+    if (icon && names?.length > 0) {
+        return (
+            <Tooltip text={names.join(", ")} position="bottom">
+                {icon}
+            </Tooltip>
+        );
     }
 
-    if (value === 0) {
-        return <Icon dusk="presence-absent" icon="circle" style="regular" className="text-red-500" />;
-    }
-
-    return null;
+    return icon;
 }
 
 function MatrixTable({ raids, rows, ranks }) {
@@ -343,7 +368,7 @@ function MatrixTable({ raids, rows, ranks }) {
                             </td>
                             {row.attendance.map((value, idx) => (
                                 <td key={idx} className="px-3 py-2 text-center">
-                                    <AttendanceCell value={value} />
+                                    <AttendanceCell value={value} names={row.attendance_names?.[idx]} />
                                 </td>
                             ))}
                         </tr>
@@ -390,6 +415,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
     const [beforeDate, setBeforeDate] = useState(filters.before_date ?? "");
+    const [includeLinkedCharacters, setIncludeLinkedCharacters] = useState(filters.include_linked_characters);
 
     const [isReloading, setIsReloading] = useState(false);
 
@@ -404,6 +430,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
             guild_tag_ids: selectedGuildTagIds,
             since_date: sinceDate || null,
             before_date: beforeDate || null,
+            include_linked_characters: includeLinkedCharacters ? 1 : 0,
         };
     };
 
@@ -425,7 +452,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
             return;
         }
         reloadMatrix(buildServerFilters());
-    }, [selectedZoneIds, selectedGuildTagIds]);
+    }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters]);
 
     // Trigger reload when date filters change (skip initial mount)
     const datesInitialized = useRef(false);
@@ -481,7 +508,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                         </div>
 
                         {/* Row 2: Server-side filters */}
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                             <FilterDropdown
                                 label="Zones"
                                 options={zones}
@@ -509,6 +536,12 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 onChange={setSinceDate}
                                 dusk="filter-since-date"
                                 min={earliestDate}
+                            />
+                            <ToggleFilter
+                                label="Combine linked characters"
+                                value={includeLinkedCharacters}
+                                onChange={setIncludeLinkedCharacters}
+                                dusk="filter-include-linked-characters"
                             />
                         </div>
                     </div>

@@ -41,6 +41,7 @@ class AttendanceMatrixRequest extends FormRequest
             'guild_tag_ids.*' => ['integer'],
             'since_date' => $dateRules,
             'before_date' => $dateRules,
+            'include_linked_characters' => ['nullable', 'boolean'],
         ];
     }
 

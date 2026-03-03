@@ -86,13 +86,14 @@ class AttendanceMatrixController extends Controller
             guildTagIds: $guildTagIds,
             sinceDate: $sinceDate,
             beforeDate: $beforeDate,
+            includeLinkedCharacters: $request->boolean('include_linked_characters', true),
         );
     }
 
     /**
      * Serialize the filters into a format suitable for passing to the view. This method should take the AttendanceMatrixFilters instance and convert it into an array format that can be easily used in the Inertia response. The serialized filters should include the zone IDs, guild tag IDs, and date ranges in a format that can be easily consumed by the frontend components.
      *
-     * @return array{zone_ids: array<int, int>, guild_tag_ids: array<int, int>, since_date: string|null, before_date: string|null}
+     * @return array{zone_ids: array<int, int>|null, guild_tag_ids: array<int, int>, since_date: string|null, before_date: string|null, include_linked_characters: bool}
      */
     private function serializeFilters(AttendanceMatrixFilters $filters, AttendanceMatrixRequest $request): array
     {
@@ -101,6 +102,7 @@ class AttendanceMatrixController extends Controller
             'guild_tag_ids' => $filters->guildTagIds,
             'since_date' => $request->input('since_date'),
             'before_date' => $request->input('before_date'),
+            'include_linked_characters' => $filters->includeLinkedCharacters,
         ];
     }
 }

@@ -15,5 +15,6 @@ class AttendanceMatrixFilters
         public readonly array $guildTagIds = [],
         public readonly ?Carbon $sinceDate = null,
         public readonly ?Carbon $beforeDate = null,
+        public readonly bool $includeLinkedCharacters = false,
     ) {}
 }

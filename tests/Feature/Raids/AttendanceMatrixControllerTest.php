@@ -118,7 +118,7 @@ class AttendanceMatrixControllerTest extends TestCase
     public function test_matrix_deferred_prop_returns_raids_and_rows(): void
     {
         $rank = GuildRank::factory()->create();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
         $report->characters()->attach($character->id, ['presence' => 1]);
@@ -441,8 +441,8 @@ class AttendanceMatrixControllerTest extends TestCase
     public function test_matrix_guild_tag_filter_limits_data_to_selected_tag(): void
     {
         $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
         $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
@@ -467,8 +467,8 @@ class AttendanceMatrixControllerTest extends TestCase
     public function test_matrix_since_date_filter_excludes_older_reports(): void
     {
         $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
 
@@ -493,8 +493,8 @@ class AttendanceMatrixControllerTest extends TestCase
     public function test_matrix_before_date_filter_excludes_newer_reports(): void
     {
         $rank = GuildRank::factory()->create();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
 
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
 
@@ -514,5 +514,49 @@ class AttendanceMatrixControllerTest extends TestCase
                 ->where('matrix.rows.0.name', 'Thrall')
             )
         );
+    }
+
+    // ==================== matrix: include_linked_characters Filter ====================
+
+    public function test_matrix_filters_include_include_linked_characters(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('filters.include_linked_characters')
+        );
+    }
+
+    public function test_matrix_include_linked_characters_defaults_to_true_when_not_specified(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('filters.include_linked_characters', true)
+        );
+    }
+
+    public function test_matrix_include_linked_characters_can_be_set_to_false(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['include_linked_characters' => false]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('filters.include_linked_characters', false)
+        );
+    }
+
+    public function test_matrix_include_linked_characters_rejects_non_boolean(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['include_linked_characters' => 'banana']));
+
+        $response->assertSessionHasErrors(['include_linked_characters']);
     }
 }
