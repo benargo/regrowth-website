@@ -34,13 +34,21 @@ class AttendanceMatrixRequest extends FormRequest
             $dateRules[] = 'after_or_equal:'.$minDate;
         }
 
+        // Derive specific rules for the range boundaries so we can enforce ordering
+        $sinceDateRules = $dateRules;
+        $beforeDateRules = $dateRules;
+
+        // Ensure since_date is not after before_date when both are present
+        $sinceDateRules[] = 'before_or_equal:before_date';
+        $beforeDateRules[] = 'after_or_equal:since_date';
+
         return [
             'zone_ids' => ['nullable', 'array'],
             'zone_ids.*' => ['integer'],
             'guild_tag_ids' => ['nullable', 'array'],
             'guild_tag_ids.*' => ['integer'],
-            'since_date' => $dateRules,
-            'before_date' => $dateRules,
+            'since_date' => $sinceDateRules,
+            'before_date' => $beforeDateRules,
             'include_linked_characters' => ['nullable', 'boolean'],
         ];
     }
