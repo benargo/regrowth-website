@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Notifications;
 
+use App\Models\DiscordRole;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\Permission;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -28,6 +30,9 @@ class NewLootCouncilCommentTest extends TestCase
 
         $this->mockItemService();
         Notification::fake();
+
+        $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+        DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true])->givePermissionTo($commentOnLootItems);
     }
 
     protected function mockItemService(): void

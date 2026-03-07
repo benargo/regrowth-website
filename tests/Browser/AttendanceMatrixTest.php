@@ -5,13 +5,13 @@ namespace Tests\Browser;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GuildRank;
+use App\Models\Permission;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\DuskTestCase;
 
@@ -25,7 +25,7 @@ class AttendanceMatrixTest extends DuskTestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $permission = Permission::firstOrCreate(['name' => 'view-attendance-dashboard', 'guard_name' => 'web']);
+        $permission = Permission::firstOrCreate(['name' => 'view-attendance', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]

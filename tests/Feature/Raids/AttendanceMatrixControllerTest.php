@@ -5,6 +5,7 @@ namespace Tests\Feature\Raids;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GuildRank;
+use App\Models\Permission;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
@@ -15,7 +16,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -31,7 +31,7 @@ class AttendanceMatrixControllerTest extends TestCase
         Cache::tags('warcraftlogs')->flush();
         Cache::tags(['attendance', 'attendance:matrix'])->flush();
 
-        $permission = Permission::firstOrCreate(['name' => 'view-attendance-dashboard', 'guard_name' => 'web']);
+        $permission = Permission::firstOrCreate(['name' => 'view-attendance', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]

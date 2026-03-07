@@ -3,9 +3,9 @@
 namespace Tests\Feature\Raids;
 
 use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -19,7 +19,7 @@ class AttendanceControllerTest extends TestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $permission = Permission::firstOrCreate(['name' => 'view-attendance-dashboard', 'guard_name' => 'web']);
+        $permission = Permission::firstOrCreate(['name' => 'view-attendance', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]

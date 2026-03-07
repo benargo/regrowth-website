@@ -15,7 +15,7 @@ class AttendanceMatrixRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Gate::allows('view-attendance-dashboard');
+        return Gate::allows('view-attendance');
     }
 
     /**
