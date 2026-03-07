@@ -3,27 +3,56 @@
 namespace Database\Seeders;
 
 use App\Models\DiscordRole;
+use App\Models\Permission;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Arr;
 
 class PermissionSeeder extends Seeder
 {
+    /**
+     * The permissions to seed, organised by name.
+     *
+     * The 'group' field is used for categorisation in the dashboard and should be in snake_case. It is optional, but recommended for better organisation.
+     */
+    private array $permissions = [
+        /**
+         * Loot bias tool permissions
+         */
+        ['name' => 'comment-on-loot-items', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'react-to-comments', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'view-all-comments', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+
+        /**
+         * Raid management permissions
+         */
+        ['name' => 'manage-reports', 'group' => 'raid-management', 'guard_name' => 'web'],
+        ['name' => 'view-attendance', 'group' => 'raid-management', 'guard_name' => 'web'],
+        ['name' => 'view-reports', 'group' => 'raid-management', 'guard_name' => 'web'],
+
+        /**
+         * Hidden permissions (not shown in the dashboard, but still used for access control)
+         */
+        ['name' => 'view-officer-dashboard', 'guard_name' => 'web'],
+        ['name' => 'impersonate-roles', 'guard_name' => 'web'],
+    ];
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $permissions = [
-            'comment-on-loot-items',
-            'view-attendance-dashboard',
-        ];
+        $officerRole = DiscordRole::find('829021769448816691');
 
         // Create permissions if they don't exist
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        foreach ($this->permissions as $permission) {
+            Permission::updateOrCreate(
+                ['name' => $permission['name'], 'guard_name' => $permission['guard_name']],
+                $permission
+            );
+            $officerRole?->givePermissionTo($permission['name']);
         }
 
-        // Ensure the Officer role has the appropriate permissions.
-        DiscordRole::find('829021769448816691')?->givePermissionTo('view-attendance-dashboard');
+        // Delete any permissions that are no longer in the list
+        Permission::whereNotIn('name', Arr::pluck($this->permissions, 'name'))->where('guard_name', 'web')->delete();
     }
 }
