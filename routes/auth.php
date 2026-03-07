@@ -25,8 +25,10 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| View As Role Route
+| View As Role Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'can:view-as-role'])->get('/view-as/{role}', [ViewAsRoleController::class, 'viewAsRole'])->name('auth.view-as');
-Route::middleware(['auth'])->get('/return-to-self', [ViewAsRoleController::class, 'stopViewingAs'])->name('auth.return-to-self');
+Route::group(['prefix' => 'view-as', 'middleware' => ['auth', 'can:impersonate-roles']], function () {
+    Route::get('/self', [ViewAsRoleController::class, 'stopViewingAs'])->name('auth.return-to-self');
+    Route::get('/{role}', [ViewAsRoleController::class, 'viewAsRole'])->name('auth.view-as');
+});

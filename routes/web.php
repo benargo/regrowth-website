@@ -16,6 +16,7 @@ use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\Raid\AttendanceController;
 use App\Http\Controllers\Raid\AttendanceMatrixController;
+use App\Http\Controllers\Raid\ReportsController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,7 +34,6 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
 Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth', 'can:viewAny,App\Models\LootCouncil\Item']], function () {
     Route::get('/', [BiasToolController::class, 'index'])->name('index');
     Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->name('phase');
-    Route::get('/comments', [CommentController::class, 'index'])->can('viewAll', 'App\Models\LootCouncil\Comment')->name('comments.index');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
     Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('items.notes.store');
     Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('items.priorities.update');
@@ -42,6 +42,7 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth', 'can
     Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('items.edit');
 
     // Comment routes
+    Route::get('/comments', [CommentController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Comment')->name('comments.index');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('/comments/{comment}/reactions', [CommentReactionController::class, 'store'])->name('comments.reactions.store');
@@ -53,14 +54,17 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth', 'can
  */
 Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], function () {
     // Attendance routes
-    Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance-dashboard')->name('attendance.index');
-    Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance-dashboard')->name('attendance.matrix');
+    Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance')->name('attendance.index');
+    Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance')->name('attendance.matrix');
+
+    // Reports routes
+    Route::get('/reports', [ReportsController::class, 'index'])->can('viewAny', 'App\Models\WarcraftLogs\Report')->name('reports.index');
 });
 
 /*
  * Officers' Dashboard
  */
-Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:access-dashboard']], function () {
+Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:view-officer-dashboard']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('index');
 
     /**
@@ -110,7 +114,8 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      * Permissions management
      */
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-    Route::post('/permissions/toggle', [PermissionController::class, 'toggle'])->name('permissions.toggle');
+    Route::post('/permissions/toggle', [PermissionController::class, 'toggle'])->name('permissions.toggle'); // Must come before the group route to avoid conflicts with the {group} parameter.
+    Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.show-group');
 });
 
 /**
