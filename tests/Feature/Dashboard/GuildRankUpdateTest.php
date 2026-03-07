@@ -4,14 +4,11 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\GuildRank;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class GuildRankUpdateTest extends TestCase
+class GuildRankUpdateTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     public function test_update_requires_authentication(): void
     {
         $rank = GuildRank::factory()->create();
@@ -61,10 +58,9 @@ class GuildRankUpdateTest extends TestCase
 
     public function test_update_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.ranks.update', $rank), [
+        $response = $this->actingAs($this->officer)->put(route('dashboard.ranks.update', $rank), [
             'name' => 'New Name',
         ]);
 
@@ -73,20 +69,18 @@ class GuildRankUpdateTest extends TestCase
 
     public function test_update_validates_name_required(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.ranks.update', $rank), []);
+        $response = $this->actingAs($this->officer)->put(route('dashboard.ranks.update', $rank), []);
 
         $response->assertSessionHasErrors(['name']);
     }
 
     public function test_update_validates_name_must_be_string(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.ranks.update', $rank), [
+        $response = $this->actingAs($this->officer)->put(route('dashboard.ranks.update', $rank), [
             'name' => 12345,
         ]);
 
@@ -95,10 +89,9 @@ class GuildRankUpdateTest extends TestCase
 
     public function test_update_validates_name_max_length(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.ranks.update', $rank), [
+        $response = $this->actingAs($this->officer)->put(route('dashboard.ranks.update', $rank), [
             'name' => str_repeat('a', 256),
         ]);
 
@@ -107,10 +100,9 @@ class GuildRankUpdateTest extends TestCase
 
     public function test_update_saves_name_to_database(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create(['name' => 'Old Name']);
 
-        $this->actingAs($user)->put(route('dashboard.ranks.update', $rank), [
+        $this->actingAs($this->officer)->put(route('dashboard.ranks.update', $rank), [
             'name' => 'New Name',
         ]);
 
@@ -119,9 +111,8 @@ class GuildRankUpdateTest extends TestCase
 
     public function test_update_returns_404_for_nonexistent_rank(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.ranks.update', 99999), [
+        $response = $this->actingAs($this->officer)->put(route('dashboard.ranks.update', 99999), [
             'name' => 'New Name',
         ]);
 
@@ -130,13 +121,12 @@ class GuildRankUpdateTest extends TestCase
 
     public function test_update_clears_guild_ranks_cache(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create();
 
         Cache::put('guild_ranks.index', 'cached-data');
         $this->assertTrue(Cache::has('guild_ranks.index'));
 
-        $this->actingAs($user)->put(route('dashboard.ranks.update', $rank), [
+        $this->actingAs($this->officer)->put(route('dashboard.ranks.update', $rank), [
             'name' => 'New Name',
         ]);
 

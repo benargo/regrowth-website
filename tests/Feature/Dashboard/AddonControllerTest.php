@@ -10,17 +10,14 @@ use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class AddonControllerTest extends TestCase
+class AddonControllerTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -104,9 +101,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertOk();
     }
@@ -149,9 +145,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertOk();
     }
@@ -192,9 +187,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertOk();
     }
@@ -207,9 +200,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Base64')
@@ -224,9 +216,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Base64')
@@ -242,19 +233,18 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($user) {
+                ->where('exportedData', function ($exportedData) {
                     $data = json_decode(base64_decode($exportedData), true);
 
                     return isset($data['system']['user'])
-                        && $data['system']['user']['id'] === $user->id
-                        && $data['system']['user']['name'] === $user->displayName;
+                        && $data['system']['user']['id'] === $this->officer->id
+                        && $data['system']['user']['name'] === $this->officer->displayName;
                 })
             )
         );
@@ -267,17 +257,16 @@ class AddonControllerTest extends TestCase
             'priorities' => [['id' => 1, 'name' => 'Tank', 'icon' => null]],
             'councillors' => [['id' => 1, 'name' => 'TestCouncillor', 'rank' => 'Officer']],
         ]);
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('exportedData', function ($exportedData) use ($user) {
+                ->where('exportedData', function ($exportedData) {
                     $data = json_decode(base64_decode($exportedData), true);
 
-                    return $data['system']['user']['id'] === $user->id
+                    return $data['system']['user']['id'] === $this->officer->id
                         && count($data['priorities']) === 1
                         && $data['priorities'][0]['name'] === 'Tank'
                         && count($data['councillors']) === 1
@@ -290,9 +279,8 @@ class AddonControllerTest extends TestCase
     public function test_export_returns_empty_when_no_export_file_exists(): void
     {
         Storage::fake('local');
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
@@ -310,9 +298,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/JSON')
@@ -327,9 +314,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/JSON')
@@ -344,9 +330,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/JSON')
@@ -361,9 +346,8 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/JSON')
@@ -384,9 +368,8 @@ class AddonControllerTest extends TestCase
     public function test_export_json_returns_empty_when_no_export_file_exists(): void
     {
         Storage::fake('local');
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
@@ -402,9 +385,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_renders_inertia_page_with_schema(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Schema')
@@ -414,9 +395,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_includes_json_schema_metadata(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema', fn (Assert $schema) => $schema
@@ -432,9 +411,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_defines_system_properties(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.system')
@@ -445,9 +422,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_defines_priorities_properties(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.priorities')
@@ -457,9 +432,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_defines_items_properties(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.items')
@@ -469,9 +442,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_defines_players_properties(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.players')
@@ -481,9 +452,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_defines_player_attendance_properties(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.players.items.properties.name')
@@ -497,9 +466,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_defines_councillors_properties(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.councillors')
@@ -512,9 +479,7 @@ class AddonControllerTest extends TestCase
 
     public function test_export_schema_id_contains_version_1_2_0(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $schema = $response->original->getData()['page']['props']['schema'];
 
@@ -529,13 +494,12 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
         $blizzardGuildService->shouldReceive('members')->andReturn(collect());
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Base64')
@@ -552,13 +516,12 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
         $blizzardGuildService->shouldReceive('members')->andReturn(collect());
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/JSON')
@@ -575,13 +538,12 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
         $blizzardGuildService->shouldReceive('members')->andReturn(collect());
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('grmFreshness')
@@ -595,13 +557,12 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
         $blizzardGuildService->shouldReceive('members')->andReturn(collect());
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('grmFreshness')
@@ -615,7 +576,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
@@ -631,7 +591,7 @@ class AddonControllerTest extends TestCase
         ]));
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         // 5 raiders in guild, 0 in GRM file = difference of 5 >= 3 = stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -646,7 +606,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create CSV with 3 raiders
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
@@ -667,7 +626,7 @@ class AddonControllerTest extends TestCase
         ]));
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         // 3 raiders in both = difference of 0 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -682,7 +641,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create CSV with 5 raiders
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
@@ -705,7 +663,7 @@ class AddonControllerTest extends TestCase
         ]));
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         // 5 in CSV, 3 in guild = difference of 2 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -720,7 +678,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create CSV with 2 raiders
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
@@ -742,7 +699,7 @@ class AddonControllerTest extends TestCase
         ]));
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         // 2 in CSV, 5 in guild = difference of 3 >= 3 = stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -757,7 +714,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create CSV with different raider rank names
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
@@ -782,7 +738,7 @@ class AddonControllerTest extends TestCase
         ]));
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         // 3 raiders in CSV (Player1, Player2, Player3), 3 in guild = difference of 0 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -797,7 +753,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create the CSV file
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nPlayer1,Member,80,1,Main,\n";
@@ -807,7 +762,7 @@ class AddonControllerTest extends TestCase
         $blizzardGuildService->shouldReceive('members')->andReturn(collect());
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('grmFreshness')
@@ -824,7 +779,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create CSV with 0 raiders
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\n";
@@ -844,7 +798,7 @@ class AddonControllerTest extends TestCase
         ]));
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         // 0 raiders in both = difference of 0 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -859,7 +813,6 @@ class AddonControllerTest extends TestCase
     {
         Storage::fake('local');
         $this->seedExportFile();
-        $user = User::factory()->officer()->create();
 
         // Create CSV with semicolon delimiter
         $csvContent = "Name;Rank;Level;Last Online (Days);Main/Alt;Player Alts\n";
@@ -878,7 +831,7 @@ class AddonControllerTest extends TestCase
         ]));
         $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         // Note: The current implementation uses str_getcsv which defaults to comma delimiter
         // This test documents the current behavior - semicolon CSV won't parse correctly
@@ -930,18 +883,14 @@ class AddonControllerTest extends TestCase
 
     public function test_settings_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         $response->assertOk();
     }
 
     public function test_settings_renders_inertia_page(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Settings')
@@ -950,11 +899,9 @@ class AddonControllerTest extends TestCase
 
     public function test_settings_includes_councillors_in_settings(): void
     {
-        $user = User::factory()->officer()->create();
-
         $councillor = Character::factory()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('settings.councillors', 1)
@@ -964,13 +911,11 @@ class AddonControllerTest extends TestCase
 
     public function test_settings_includes_guild_ranks_in_settings(): void
     {
-        $user = User::factory()->officer()->create();
-
         // Clear any existing ranks and create our test rank
         GuildRank::query()->delete();
         GuildRank::factory()->create(['name' => 'Test Rank', 'position' => 1]);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         // Note: GuildRank model transforms names to title case
         $response->assertInertia(fn (Assert $page) => $page
@@ -981,8 +926,6 @@ class AddonControllerTest extends TestCase
 
     public function test_settings_includes_guild_tags_in_settings(): void
     {
-        $user = User::factory()->officer()->create();
-
         $tag = GuildTag::factory()->countsAttendance()->create(['name' => 'TestTag']);
 
         // Mock the WarcraftLogs GuildService to return our tag
@@ -991,7 +934,7 @@ class AddonControllerTest extends TestCase
             ->andReturn(collect([$tag]));
         $this->app->instance(GuildTags::class, $guildTags);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('settings.tags', 1)
@@ -1002,11 +945,9 @@ class AddonControllerTest extends TestCase
 
     public function test_settings_includes_characters_as_deferred_prop(): void
     {
-        $user = User::factory()->officer()->create();
-
         Character::factory()->create(['name' => 'DeferredCharacter']);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('characters')
@@ -1019,13 +960,11 @@ class AddonControllerTest extends TestCase
 
     public function test_settings_councillors_are_ordered_by_name(): void
     {
-        $user = User::factory()->officer()->create();
-
         Character::factory()->lootCouncillor()->create(['name' => 'Zoe']);
         Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
         Character::factory()->lootCouncillor()->create(['name' => 'Mike']);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('settings.councillors', function ($councillors) {
@@ -1038,15 +977,13 @@ class AddonControllerTest extends TestCase
 
     public function test_settings_ranks_are_ordered_by_position(): void
     {
-        $user = User::factory()->officer()->create();
-
         // Clear any existing ranks and create our test ranks
         GuildRank::query()->delete();
         GuildRank::factory()->create(['name' => 'Officer', 'position' => 2]);
         GuildRank::factory()->create(['name' => 'Guild Master', 'position' => 1]);
         GuildRank::factory()->create(['name' => 'Member', 'position' => 3]);
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         // Note: GuildRank model transforms names to title case
         $response->assertInertia(fn (Assert $page) => $page
@@ -1106,10 +1043,9 @@ class AddonControllerTest extends TestCase
 
     public function test_add_councillor_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -1118,18 +1054,14 @@ class AddonControllerTest extends TestCase
 
     public function test_add_councillor_requires_character_name(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), []);
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), []);
 
         $response->assertSessionHasErrors(['character_name']);
     }
 
     public function test_add_councillor_requires_character_name_to_be_string(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => 12345,
         ]);
 
@@ -1138,9 +1070,7 @@ class AddonControllerTest extends TestCase
 
     public function test_add_councillor_requires_character_to_exist(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => 'NonExistentCharacter',
         ]);
 
@@ -1149,12 +1079,11 @@ class AddonControllerTest extends TestCase
 
     public function test_add_councillor_sets_character_as_loot_councillor(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->create(['name' => 'NewCouncillor', 'is_loot_councillor' => false]);
 
         $this->assertFalse($character->is_loot_councillor);
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -1164,10 +1093,9 @@ class AddonControllerTest extends TestCase
 
     public function test_add_councillor_redirects_back(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
 
-        $response = $this->actingAs($user)
+        $response = $this->actingAs($this->officer)
             ->from(route('dashboard.addon.settings'))
             ->post(route('dashboard.addon.settings.councillors.add'), [
                 'character_name' => $character->name,
@@ -1178,12 +1106,11 @@ class AddonControllerTest extends TestCase
 
     public function test_add_councillor_is_idempotent(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create(['name' => 'AlreadyCouncillor']);
 
         $this->assertTrue($character->is_loot_councillor);
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -1236,22 +1163,20 @@ class AddonControllerTest extends TestCase
 
     public function test_remove_councillor_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect();
     }
 
     public function test_remove_councillor_unsets_character_as_loot_councillor(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create(['name' => 'RemoveMe']);
 
         $this->assertTrue($character->is_loot_councillor);
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect();
         $this->assertFalse($character->fresh()->is_loot_councillor);
@@ -1259,10 +1184,9 @@ class AddonControllerTest extends TestCase
 
     public function test_remove_councillor_redirects_back(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)
+        $response = $this->actingAs($this->officer)
             ->from(route('dashboard.addon.settings'))
             ->delete(route('dashboard.addon.settings.councillors.remove', $character));
 
@@ -1271,21 +1195,18 @@ class AddonControllerTest extends TestCase
 
     public function test_remove_councillor_returns_404_for_nonexistent_character(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', 99999));
+        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', 99999));
 
         $response->assertNotFound();
     }
 
     public function test_remove_councillor_is_idempotent(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->create(['name' => 'NotCouncillor', 'is_loot_councillor' => false]);
 
         $this->assertFalse($character->is_loot_councillor);
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect();
         $this->assertFalse($character->fresh()->is_loot_councillor);

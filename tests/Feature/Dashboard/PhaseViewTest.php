@@ -3,34 +3,16 @@
 namespace Tests\Feature\Dashboard;
 
 use App\Models\TBC\Phase;
-use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class PhaseViewTest extends TestCase
+class PhaseViewTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
-    /**
-     * Holds a user model that can be used across tests. Initialized in setUp method.
-     *
-     * @var User
-     */
-    protected $user;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->user = User::factory()->officer()->create();
-    }
-
     public function test_manage_phases_page_loads_with_phase_that_has_start_date(): void
     {
         Phase::factory()->started()->create();
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -44,7 +26,7 @@ class PhaseViewTest extends TestCase
     {
         Phase::factory()->unscheduled()->create();
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -58,11 +40,11 @@ class PhaseViewTest extends TestCase
     {
         $phase = Phase::factory()->started()->create();
 
-        $this->actingAs($this->user)->put(route('dashboard.phases.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
             'start_date' => '2026-03-15T14:00',
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -76,11 +58,11 @@ class PhaseViewTest extends TestCase
     {
         $phase = Phase::factory()->started()->create();
 
-        $this->actingAs($this->user)->put(route('dashboard.phases.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
             'start_date' => null,
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -96,11 +78,11 @@ class PhaseViewTest extends TestCase
         $tag1 = GuildTag::factory()->create();
         $tag2 = GuildTag::factory()->create();
 
-        $this->actingAs($this->user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [$tag1->id, $tag2->id],
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -116,11 +98,11 @@ class PhaseViewTest extends TestCase
         GuildTag::factory()->withPhase($phase)->create();
         GuildTag::factory()->withPhase($phase)->create();
 
-        $this->actingAs($this->user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -135,11 +117,11 @@ class PhaseViewTest extends TestCase
         $phase = Phase::factory()->create();
         $tag = GuildTag::factory()->doesNotCountAttendance()->withPhase($phase)->create();
 
-        $this->actingAs($this->user)->patch(route('wcl.guild-tags.toggle-attendance', $tag), [
+        $this->actingAs($this->officer)->patch(route('wcl.guild-tags.toggle-attendance', $tag), [
             'count_attendance' => true,
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -155,11 +137,11 @@ class PhaseViewTest extends TestCase
         $phase = Phase::factory()->create();
         $tag = GuildTag::factory()->countsAttendance()->withPhase($phase)->create();
 
-        $this->actingAs($this->user)->patch(route('wcl.guild-tags.toggle-attendance', $tag), [
+        $this->actingAs($this->officer)->patch(route('wcl.guild-tags.toggle-attendance', $tag), [
             'count_attendance' => false,
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page

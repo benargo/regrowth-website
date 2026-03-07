@@ -4,15 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\TBC\DailyQuest;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class DailyQuestsControllerTest extends TestCase
+class DailyQuestsControllerTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function form_requires_authentication(): void
     {
@@ -34,7 +31,6 @@ class DailyQuestsControllerTest extends TestCase
     #[Test]
     public function form_displays_quests_grouped_by_type(): void
     {
-        $user = User::factory()->officer()->create();
 
         $cookingQuest = DailyQuest::factory()->cooking()->create();
         $fishingQuest = DailyQuest::factory()->fishing()->create();
@@ -42,7 +38,7 @@ class DailyQuestsControllerTest extends TestCase
         $heroicQuest = DailyQuest::factory()->heroic()->create();
         $pvpQuest = DailyQuest::factory()->pvp()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.form'));
+        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.form'));
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
@@ -60,15 +56,13 @@ class DailyQuestsControllerTest extends TestCase
     {
         Queue::fake();
 
-        $user = User::factory()->officer()->create();
-
         $cookingQuest = DailyQuest::factory()->cooking()->create();
         $fishingQuest = DailyQuest::factory()->fishing()->create();
         $dungeonQuest = DailyQuest::factory()->dungeon()->create();
         $heroicQuest = DailyQuest::factory()->heroic()->create();
         $pvpQuest = DailyQuest::factory()->pvp()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.daily-quests.store'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.daily-quests.store'), [
             'cooking_quest_id' => $cookingQuest->id,
             'fishing_quest_id' => $fishingQuest->id,
             'dungeon_quest_id' => $dungeonQuest->id,
@@ -85,18 +79,17 @@ class DailyQuestsControllerTest extends TestCase
             'dungeon_quest_id' => $dungeonQuest->id,
             'heroic_quest_id' => $heroicQuest->id,
             'pvp_quest_id' => $pvpQuest->id,
-            'sent_by_user_id' => $user->id,
+            'sent_by_user_id' => $this->officer->id,
         ]);
     }
 
     #[Test]
     public function store_validates_quest_types(): void
     {
-        $user = User::factory()->officer()->create();
         $cookingQuest = DailyQuest::factory()->cooking()->create();
 
         // Try to use a cooking quest for fishing (wrong type)
-        $response = $this->actingAs($user)->post(route('dashboard.daily-quests.store'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.daily-quests.store'), [
             'cooking_quest_id' => $cookingQuest->id,
             'fishing_quest_id' => $cookingQuest->id, // Wrong type!
             'dungeon_quest_id' => DailyQuest::factory()->dungeon()->create()->id,

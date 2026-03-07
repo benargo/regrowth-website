@@ -5,14 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Models\TBC\Phase;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class PhaseGuildTagsUpdateTest extends TestCase
+class PhaseGuildTagsUpdateTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     public function test_update_guild_tags_requires_authentication(): void
     {
         $phase = Phase::factory()->create();
@@ -62,10 +59,9 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -74,12 +70,11 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_associates_tags_with_phase(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
         $tag1 = GuildTag::factory()->create();
         $tag2 = GuildTag::factory()->create();
 
-        $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [$tag1->id, $tag2->id],
         ]);
 
@@ -92,12 +87,11 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_removes_previous_associations(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
         $existingTag = GuildTag::factory()->withPhase($phase)->create();
         $newTag = GuildTag::factory()->create();
 
-        $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [$newTag->id],
         ]);
 
@@ -110,12 +104,11 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_can_clear_all_associations(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
         $tag1 = GuildTag::factory()->withPhase($phase)->create();
         $tag2 = GuildTag::factory()->withPhase($phase)->create();
 
-        $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -128,20 +121,18 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_validates_guild_tag_ids_is_required(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), []);
+        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), []);
 
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
 
     public function test_update_guild_tags_validates_guild_tag_ids_must_be_array(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => 'not-an-array',
         ]);
 
@@ -150,10 +141,9 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_validates_guild_tag_ids_must_exist(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [99999],
         ]);
 
@@ -162,13 +152,12 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_does_not_affect_tags_from_other_phases(): void
     {
-        $user = User::factory()->officer()->create();
         $phase1 = Phase::factory()->create();
         $phase2 = Phase::factory()->create();
         $tagForPhase1 = GuildTag::factory()->withPhase($phase1)->create();
         $tagForPhase2 = GuildTag::factory()->withPhase($phase2)->create();
 
-        $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase1), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase1), [
             'guild_tag_ids' => [],
         ]);
 
@@ -181,14 +170,13 @@ class PhaseGuildTagsUpdateTest extends TestCase
 
     public function test_update_guild_tags_clears_phases_cache(): void
     {
-        $user = User::factory()->officer()->create();
         $phase = Phase::factory()->create();
 
         // Pre-populate with valid cached data so the middleware doesn't fail
         Cache::put('phases.tbc.index', Phase::all());
         $this->assertTrue(Cache::has('phases.tbc.index'));
 
-        $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 

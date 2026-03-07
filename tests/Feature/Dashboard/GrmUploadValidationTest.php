@@ -4,15 +4,12 @@ namespace Tests\Feature\Dashboard;
 
 use App\Jobs\ProcessGrmUpload;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class GrmUploadValidationTest extends TestCase
+class GrmUploadValidationTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     public function test_upload_requires_authentication(): void
     {
         $response = $this->post(route('dashboard.grm-upload.upload'), [
@@ -58,9 +55,8 @@ class GrmUploadValidationTest extends TestCase
     public function test_upload_allows_officer_users(): void
     {
         Queue::fake();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -70,9 +66,8 @@ class GrmUploadValidationTest extends TestCase
     public function test_upload_dispatches_processing_job(): void
     {
         Queue::fake();
-        $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -81,18 +76,16 @@ class GrmUploadValidationTest extends TestCase
 
     public function test_upload_validates_grm_data_required(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), []);
+        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), []);
 
         $response->assertSessionHasErrors(['grm_data']);
     }
 
     public function test_upload_validates_csv_has_header_and_data_rows(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => 'Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts',
         ]);
 
@@ -101,9 +94,8 @@ class GrmUploadValidationTest extends TestCase
 
     public function test_upload_validates_required_headers_present(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name,Rank\nTestChar,Raider",
         ]);
 
@@ -113,9 +105,8 @@ class GrmUploadValidationTest extends TestCase
     public function test_upload_accepts_comma_delimited_csv(): void
     {
         Queue::fake();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -125,9 +116,8 @@ class GrmUploadValidationTest extends TestCase
     public function test_upload_accepts_semicolon_delimited_csv(): void
     {
         Queue::fake();
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name;Rank;Level;Last Online (Days);Main/Alt;Player Alts\nTestChar;Raider;80;1;Main;",
         ]);
 
@@ -136,9 +126,8 @@ class GrmUploadValidationTest extends TestCase
 
     public function test_upload_rejects_csv_without_valid_delimiter(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name|Rank|Level|Last Online (Days)|Main/Alt|Player Alts\nTestChar|Raider|80|1|Main|",
         ]);
 
@@ -148,9 +137,8 @@ class GrmUploadValidationTest extends TestCase
     public function test_upload_initializes_progress_cache(): void
     {
         Queue::fake();
-        $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -161,9 +149,8 @@ class GrmUploadValidationTest extends TestCase
     public function test_upload_passes_correct_data_to_job(): void
     {
         Queue::fake();
-        $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,AltOne;AltTwo",
         ]);
 
@@ -180,9 +167,8 @@ class GrmUploadValidationTest extends TestCase
     public function test_upload_detects_semicolon_delimiter_when_more_common(): void
     {
         Queue::fake();
-        $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name;Rank;Level;Last Online (Days);Main/Alt;Player Alts\nTestChar;Raider;80;1;Main;AltOne,AltTwo",
         ]);
 

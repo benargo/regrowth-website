@@ -6,17 +6,14 @@ use App\Models\DiscordRole;
 use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class DiscordAuthenticationTest extends TestCase
+class DiscordAuthenticationTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function login_redirects_to_discord(): void
     {

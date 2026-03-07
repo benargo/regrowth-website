@@ -2,6 +2,8 @@
 
 namespace Tests\SmokeTest;
 
+use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\User;
 use App\Services\Blizzard\GuildService as BlizzardGuildService;
 use App\Services\WarcraftLogs\GuildTags;
@@ -9,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class DashboardPagesTest extends TestCase
@@ -18,6 +21,15 @@ class DashboardPagesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $viewOfficerDashboard = Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
+        $officerRole = DiscordRole::firstOrCreate(
+            ['id' => '829021769448816691'],
+            ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
+        );
+        $officerRole->givePermissionTo($viewOfficerDashboard);
 
         // Mock GuildTags to prevent WarcraftLogs API calls
         $guildTags = Mockery::mock(GuildTags::class);
@@ -163,11 +175,22 @@ class DashboardPagesTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_permissions_page_loads(): void
+    public function test_permissions_index_redirects(): void
     {
+        Permission::factory()->inGroup('test-group')->create();
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.permissions.index'));
+
+        $response->assertRedirect(route('dashboard.permissions.show-group', ['group' => 'test-group']));
+    }
+
+    public function test_permissions_show_group_page_loads(): void
+    {
+        Permission::factory()->inGroup('test-group')->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.permissions.show-group', ['group' => 'test-group']));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
