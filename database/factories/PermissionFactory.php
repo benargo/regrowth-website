@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Permission;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Spatie\Permission\Models\Permission;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Spatie\Permission\Models\Permission>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Permission>
  */
 class PermissionFactory extends Factory
 {
@@ -22,16 +22,15 @@ class PermissionFactory extends Factory
         return [
             'name' => fake()->unique()->slug(2),
             'guard_name' => 'web',
+            'group' => null,
         ];
     }
 
     /**
-     * Indicate this is the comment-on-loot-items permission.
+     * Indicate this permission belongs to a specific group.
      */
-    public function commentOnLootItems(): static
+    public function inGroup(string $group): static
     {
-        return $this->state(fn () => [
-            'name' => 'comment-on-loot-items',
-        ]);
+        return $this->state(fn () => ['group' => $group]);
     }
 }
