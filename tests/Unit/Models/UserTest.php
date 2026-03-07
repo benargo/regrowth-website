@@ -3,10 +3,10 @@
 namespace Tests\Unit\Models;
 
 use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\Permission\Models\Permission;
 use Tests\Support\ModelTestCase;
 
 class UserTest extends ModelTestCase
@@ -356,7 +356,7 @@ class UserTest extends ModelTestCase
         $user->discordRoles()->attach($role->id);
         $user->load('discordRoles.permissions');
 
-        $this->assertTrue($user->canCommentOnLootItems());
+        $this->assertTrue($user->hasPermissionViaDiscordRoles('comment-on-loot-items'));
     }
 
     #[Test]
@@ -369,6 +369,6 @@ class UserTest extends ModelTestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($role->id);
 
-        $this->assertFalse($user->canCommentOnLootItems());
+        $this->assertFalse($user->hasPermissionViaDiscordRoles('comment-on-loot-items'));
     }
 }

@@ -3,10 +3,10 @@
 namespace Tests\Unit\Models;
 
 use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\Permission\Models\Permission;
 use Tests\Support\ModelTestCase;
 
 class DiscordRoleTest extends ModelTestCase

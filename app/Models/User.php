@@ -30,7 +30,7 @@ class User extends Authenticatable
 
     /**
      * The model's default values for attributes.
-     * 
+     *
      * @var array<string, mixed>
      */
     protected $attributes = [
@@ -192,13 +192,5 @@ class User extends Authenticatable
     public function hasPermissionViaDiscordRoles(string $permission): bool
     {
         return $this->discordRoles->contains(fn (DiscordRole $role) => $role->hasPermissionTo($permission));
-    }
-
-    /**
-     * Determine if the user can comment on loot items.
-     */
-    public function canCommentOnLootItems(): bool
-    {
-        return $this->hasPermissionViaDiscordRoles('comment-on-loot-items');
     }
 }
