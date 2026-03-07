@@ -13,9 +13,9 @@ class CommentPolicy extends AuthorizationPolicy
     /**
      * Determine if the user can access the "All Comments" page.
      */
-    public function viewAll(User $user): bool
+    public function viewAny(User $user): bool
     {
-        return $this->userIsOfficer($user) || $this->userIsLootCouncillor($user);
+        return $user->hasPermissionViaDiscordRoles('view-all-comments');
     }
 
     /**
@@ -23,7 +23,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->canCommentOnLootItems();
+        return $user->hasPermissionViaDiscordRoles('comment-on-loot-items');
     }
 
     /**
@@ -67,6 +67,10 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function react(User $user, Comment $comment): bool
     {
-        return $comment->user_id !== $user->id; // Users cannot react to their own comments
+        if ($comment->user_id === $user->id) {
+            return false; // Users cannot react to their own comments
+        }
+
+        return $user->hasPermissionViaDiscordRoles('react-to-comments');
     }
 }
