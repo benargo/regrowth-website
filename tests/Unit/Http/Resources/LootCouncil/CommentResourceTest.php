@@ -454,9 +454,22 @@ class CommentResourceTest extends TestCase
     #[Test]
     public function it_returns_can_react_true_for_non_owner(): void
     {
+
         $commentOwner = User::factory()->create();
-        $otherUser = User::factory()->create();
         $comment = Comment::factory()->create(['user_id' => $commentOwner->id]);
+
+        // Create a non-owner user with the react-to-comments permission
+        $otherUser = User::factory()->create();
+        $discordRole = $otherUser->discordRoles()->create([
+            'id' => '1234567890',
+            'name' => 'Test Role',
+            'position' => 1,
+            'is_visible' => true,
+        ]);
+        $discordRole->permissions()->create([
+            'name' => 'react-to-comments',
+            'guard_name' => 'web',
+        ]);
 
         $request = Request::create('/test');
         $request->setUserResolver(fn () => $otherUser);

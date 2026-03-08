@@ -3,10 +3,10 @@ import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
-import Modal from "@/Components/Modal";
-import TextInput from "@/Components/TextInput";
+import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
+import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -118,93 +118,6 @@ function FilterDropdown({ label, options, selected, onChange, dusk }) {
                 </div>
             )}
         </div>
-    );
-}
-
-function DateFilterButton({ label, value, onChange, dusk, min }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [draft, setDraft] = useState(value);
-    const today = new Date().toISOString().split("T")[0];
-
-    const open = () => {
-        setDraft(value);
-        setIsOpen(true);
-    };
-
-    const close = () => setIsOpen(false);
-
-    const apply = () => {
-        onChange(draft);
-        close();
-    };
-
-    const clear = () => {
-        onChange("");
-        close();
-    };
-
-    return (
-        <>
-            <button
-                onClick={open}
-                dusk={dusk}
-                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-brown-700 ${value ? "border-amber-500 bg-brown-800 text-white" : "border-amber-600 bg-brown-800 text-gray-400"}`}
-            >
-                <span className="flex items-center gap-2 truncate">
-                    <Icon icon="calendar" style="regular" className="shrink-0 text-amber-500" />
-                    {value ? `${label}: ${value}` : label}
-                </span>
-                {value && (
-                    <span className="ml-2 shrink-0 rounded-full bg-amber-600 px-1.5 py-0.5 text-xs text-white">
-                        set
-                    </span>
-                )}
-            </button>
-
-            <Modal show={isOpen} onClose={close} maxWidth="sm">
-                <div className="p-6">
-                    <h2 className="mb-1 text-lg font-bold text-white">{label} date</h2>
-                    <p className="mb-4 text-sm text-gray-400">Leave blank to show all available dates.</p>
-                    <TextInput
-                        type="date"
-                        value={draft}
-                        min={min}
-                        max={today}
-                        onChange={(e) => setDraft(e.target.value)}
-                        className="block w-full bg-brown-800/50 text-white [color-scheme:dark]"
-                    />
-                    <div className="mt-6 flex justify-between gap-3">
-                        <button
-                            type="button"
-                            onClick={clear}
-                            dusk="modal-clear-button"
-                            className="inline-flex items-center gap-2 rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-600"
-                        >
-                            <Icon icon="times" style="solid" />
-                            Clear
-                        </button>
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={close}
-                                dusk="modal-cancel-button"
-                                className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-brown-600"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={apply}
-                                dusk="modal-apply-button"
-                                className="inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-amber-700"
-                            >
-                                Apply
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Modal>
-        </>
     );
 }
 
@@ -390,7 +303,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
     const [selectedRankIds, setSelectedRankIds] = useState(() =>
-        ranks.filter((r) => r.count_attendance).map((r) => r.id),
+        decodeFilter(filters.rank_ids, ranks.filter((r) => r.count_attendance).map((r) => r.id)),
     );
 
     const availableClasses = useMemo(() => {
@@ -411,31 +324,26 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
 
     // ── Server-side filter state (trigger partial reload) ────────────────────
     const [selectedZoneIds, setSelectedZoneIds] = useState(() =>
-        filters.zone_ids?.length ? filters.zone_ids : zones.map((z) => z.id),
+        decodeFilter(filters.zone_ids, zones.map((z) => z.id)),
     );
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
-        filters.guild_tag_ids?.length ? filters.guild_tag_ids : guildTags.map((g) => g.id),
+        decodeFilter(filters.guild_tag_ids, guildTags.map((g) => g.id)),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
     const [beforeDate, setBeforeDate] = useState(filters.before_date ?? "");
-    const [includeLinkedCharacters, setIncludeLinkedCharacters] = useState(filters.include_linked_characters);
+    const [includeLinkedCharacters, setIncludeLinkedCharacters] = useState(filters.combine_linked_characters);
 
     const [isReloading, setIsReloading] = useState(false);
 
     // ── Server-side reload ───────────────────────────────────────────────────
-    const buildServerFilters = () => {
-        // Only send zone_ids when a subset is selected. When all zones are selected
-        // (or no zones exist), omit the parameter so the backend applies no zone filter,
-        // which correctly includes reports that may have a null zone_id.
-        const allZonesSelected = selectedZoneIds.length === zones.length;
-        return {
-            zone_ids: allZonesSelected ? undefined : selectedZoneIds,
-            guild_tag_ids: selectedGuildTagIds,
-            since_date: sinceDate || null,
-            before_date: beforeDate || null,
-            include_linked_characters: includeLinkedCharacters ? 1 : 0,
-        };
-    };
+    const buildServerFilters = () => ({
+        rank_ids: encodeFilter(selectedRankIds, ranks),
+        zone_ids: encodeFilter(selectedZoneIds, zones),
+        guild_tag_ids: encodeFilter(selectedGuildTagIds, guildTags),
+        since_date: sinceDate || undefined,
+        before_date: beforeDate || undefined,
+        combine_linked_characters: includeLinkedCharacters ? undefined : 0,
+    });
 
     const reloadMatrix = (filterData) => {
         setIsReloading(true);
@@ -449,13 +357,16 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
 
     // Trigger reload when dropdown filters change (skip initial mount)
     const isMounted = useRef(false);
+    const hasEmptyFilter = selectedZoneIds.length === 0 || selectedGuildTagIds.length === 0;
+
     useEffect(() => {
         if (!isMounted.current) {
             isMounted.current = true;
             return;
         }
+        if (hasEmptyFilter) return;
         reloadMatrix(buildServerFilters());
-    }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters]);
+    }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters, selectedRankIds]);
 
     // Trigger reload when date filters change (skip initial mount)
     const datesInitialized = useRef(false);
@@ -464,6 +375,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
             datesInitialized.current = true;
             return;
         }
+        if (hasEmptyFilter) return;
         reloadMatrix(buildServerFilters());
     }, [sinceDate, beforeDate]);
 
@@ -472,10 +384,9 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
         .filter(
             (row) => !characterName || normaliseCharacterName(row.name).includes(normaliseCharacterName(characterName)),
         )
-        .filter((row) => selectedRankIds.includes(row.rank_id))
         .filter((row) => selectedClassIds === null || selectedClassIds.includes(row.playable_class?.id ?? null));
 
-    const showSkeleton = isReloading || !matrix;
+    const showSkeleton = !hasEmptyFilter && (isReloading || !matrix);
 
     return (
         <Master title="Attendance Matrix">
@@ -530,14 +441,12 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 label="Before"
                                 value={beforeDate}
                                 onChange={setBeforeDate}
-                                dusk="filter-before-date"
                                 min={earliestDate}
                             />
                             <DateFilterButton
                                 label="After"
                                 value={sinceDate}
                                 onChange={setSinceDate}
-                                dusk="filter-since-date"
                                 min={earliestDate}
                             />
                             <ToggleFilter
@@ -552,6 +461,8 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                     {/* Matrix */}
                     {showSkeleton ? (
                         <MatrixSkeleton />
+                    ) : hasEmptyFilter ? (
+                        <MatrixTable key="empty" raids={[]} rows={[]} ranks={ranks} />
                     ) : (
                         <MatrixTable
                             key={filteredRows.length === 0 ? "empty" : "data"}

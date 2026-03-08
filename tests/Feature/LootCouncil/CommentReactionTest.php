@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\LootCouncil;
 
+use App\Models\DiscordRole;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
 use App\Models\LootCouncil\Item;
+use App\Models\Permission;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -24,6 +26,11 @@ class CommentReactionTest extends TestCase
         parent::setUp();
 
         $this->mockItemService();
+
+        $reactToComments = Permission::firstOrCreate(['name' => 'react-to-comments', 'guard_name' => 'web']);
+        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])->givePermissionTo($reactToComments);
+        DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true])->givePermissionTo($reactToComments);
+        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 3, 'is_visible' => true])->givePermissionTo($reactToComments);
     }
 
     protected function mockItemService(): void

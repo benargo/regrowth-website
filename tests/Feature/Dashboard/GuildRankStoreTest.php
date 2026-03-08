@@ -4,14 +4,11 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\GuildRank;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class GuildRankStoreTest extends TestCase
+class GuildRankStoreTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     public function test_store_requires_authentication(): void
     {
         $response = $this->post(route('dashboard.ranks.store'), [
@@ -56,9 +53,8 @@ class GuildRankStoreTest extends TestCase
 
     public function test_store_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.ranks.store'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => 'New Rank',
         ]);
 
@@ -67,18 +63,16 @@ class GuildRankStoreTest extends TestCase
 
     public function test_store_validates_name_required(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.ranks.store'), []);
+        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), []);
 
         $response->assertSessionHasErrors(['name']);
     }
 
     public function test_store_validates_name_must_be_string(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.ranks.store'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => 12345,
         ]);
 
@@ -87,9 +81,8 @@ class GuildRankStoreTest extends TestCase
 
     public function test_store_validates_name_max_length(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.ranks.store'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => str_repeat('a', 256),
         ]);
 
@@ -98,9 +91,8 @@ class GuildRankStoreTest extends TestCase
 
     public function test_store_creates_rank_in_database(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('dashboard.ranks.store'), [
+        $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => 'New Rank',
         ]);
 
@@ -111,12 +103,11 @@ class GuildRankStoreTest extends TestCase
 
     public function test_store_assigns_next_available_position(): void
     {
-        $user = User::factory()->officer()->create();
         GuildRank::factory()->create(['position' => 0]);
         GuildRank::factory()->create(['position' => 1]);
         GuildRank::factory()->create(['position' => 2]);
 
-        $this->actingAs($user)->post(route('dashboard.ranks.store'), [
+        $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => 'New Rank',
         ]);
 
@@ -128,9 +119,8 @@ class GuildRankStoreTest extends TestCase
 
     public function test_store_assigns_position_zero_when_no_ranks_exist(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('dashboard.ranks.store'), [
+        $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => 'First Rank',
         ]);
 
@@ -142,12 +132,11 @@ class GuildRankStoreTest extends TestCase
 
     public function test_store_clears_guild_ranks_cache(): void
     {
-        $user = User::factory()->officer()->create();
 
         Cache::put('guild_ranks.index', 'cached-data');
         $this->assertTrue(Cache::has('guild_ranks.index'));
 
-        $this->actingAs($user)->post(route('dashboard.ranks.store'), [
+        $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => 'New Rank',
         ]);
 

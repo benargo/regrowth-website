@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class WclGuildTagPolicy extends AuthorizationPolicy
+class GuildTagsPolicy extends AuthorizationPolicy
 {
     use HandlesAuthorization;
 

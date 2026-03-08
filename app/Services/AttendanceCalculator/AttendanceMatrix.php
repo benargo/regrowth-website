@@ -5,7 +5,6 @@ namespace App\Services\AttendanceCalculator;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class AttendanceMatrix
@@ -65,16 +64,27 @@ class AttendanceMatrix
             $query->where('start_time', '<', $filters->beforeDate);
         }
 
-        $rankIds = ! empty($filters->rankIds)
+        $resolvedRankIds = ! empty($filters->rankIds)
             ? $filters->rankIds
             : GuildRank::where('count_attendance', true)->pluck('id')->toArray();
 
-        $query->with(['characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $rankIds))]);
+        if ($filters->includeLinkedCharacters) {
+            // Load all characters regardless of rank so alts from any rank
+            // can contribute attendance. mergeLinkedCharacters() will filter
+            // the output to only mains from the resolved rank IDs.
+            // linkedReports is loaded so mergeLinkedReports() can group reports.
+            $query->with(['characters', 'linkedReports']);
+        } else {
+            $query->with([
+                'characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $resolvedRankIds)),
+                'linkedReports',
+            ]);
+        }
 
         $this->calculateMatrix($query->get());
 
         if ($filters->includeLinkedCharacters && ! empty($this->rows)) {
-            $this->rows = $this->mergeLinkedCharacters();
+            $this->rows = $this->mergeLinkedCharacters($resolvedRankIds);
         }
 
         return $this;
@@ -105,30 +115,15 @@ class AttendanceMatrix
     /**
      * Build the attendance matrix from a collection of reports.
      *
-     * Returns one column per merged raid day, and one row per character. Attendance
+     * Returns one column per linked raid group, and one row per character. Attendance
      * values are: null = before the character's first raid, 0 = absent, 1 = present, 2 = late.
      *
-     * @param  Collection<int, Report>  $reports
+     * @param  Collection<int, Report>  $reports  Reports with 'characters' and 'linkedReports' eager loaded.
      */
     protected function calculateMatrix(Collection $reports): self
     {
-        /** @var array<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}> $raidRecords */
-        $raidRecords = $reports->map(fn (Report $report) => [
-            'code' => $report->code,
-            'startTime' => $report->start_time,
-            'zoneName' => $report->zone_name,
-            'players' => $report->characters->mapWithKeys(fn ($character) => [
-                $character->name => [
-                    'id' => $character->id,
-                    'rank_id' => $character->rank_id,
-                    'playable_class' => $character->playable_class ?? null,
-                    'presence' => $character->pivot->presence,
-                ],
-            ])->all(),
-        ])->all();
-
-        $records = $this->calculator->sortRaidRecords(collect($raidRecords));
-        $records = $this->calculator->mergeByRaidDay($records);
+        $records = $this->calculator->mergeLinkedReports($reports);
+        $records = $this->calculator->sortRaidRecords($records);
 
         if ($records->isEmpty()) {
             return $this->load([], []);
@@ -209,9 +204,10 @@ class AttendanceMatrix
      * Only characters flagged as is_main appear in the output. Their linked alts'
      * attendance is aggregated per raid using: 1 (present) > 2 (late) > 0 (absent) > null.
      *
+     * @param  array<int, int>  $rankIds  Only mains whose rank_id is in this list will appear in output.
      * @return array<int, array{name: string, id: int, rank_id: int|null, playable_class: array|null, percentage: float, attendance: array<int, int|null>, attendance_names: array<int, array<int, string>>}>
      */
-    protected function mergeLinkedCharacters(): array
+    protected function mergeLinkedCharacters(array $rankIds = []): array
     {
         $raidCount = count($this->raids);
         $rowsById = collect($this->rows)->keyBy('id');
@@ -257,6 +253,10 @@ class AttendanceMatrix
                 continue;
             }
 
+            if (! empty($rankIds) && ! in_array($row['rank_id'], $rankIds, true)) {
+                continue;
+            }
+
             $altRows = array_values(array_filter(
                 array_map(fn ($altId) => $rowsById->get($altId), $mainToAltIds[$id] ?? []),
             ));
@@ -275,6 +275,10 @@ class AttendanceMatrix
             $mainChar = $missingMains->get($mainId);
 
             if ($mainChar === null) {
+                continue;
+            }
+
+            if (! empty($rankIds) && ! in_array($mainChar->rank_id, $rankIds, true)) {
                 continue;
             }
 

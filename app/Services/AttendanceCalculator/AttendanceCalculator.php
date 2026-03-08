@@ -51,7 +51,10 @@ class AttendanceCalculator
         $rankIds = $ranks->pluck('id');
 
         $reports = Report::whereHas('guildTag', fn ($query) => $query->where('count_attendance', true))
-            ->with(['characters' => fn ($query) => $query->whereHas('rank', fn ($q) => $q->whereIn('id', $rankIds))])
+            ->with([
+                'characters' => fn ($query) => $query->whereHas('rank', fn ($q) => $q->whereIn('id', $rankIds)),
+                'linkedReports',
+            ])
             ->get();
 
         return $this->calculate($reports);
@@ -66,7 +69,10 @@ class AttendanceCalculator
     {
         $reports = Report::whereHas('guildTag', fn ($query) => $query->where('count_attendance', true))
             ->whereHas('characters', fn ($query) => $query->where('id', $character->id)->whereHas('rank', fn ($q) => $q->where('count_attendance', true)))
-            ->with(['characters' => fn ($query) => $query->where('id', $character->id)->whereHas('rank', fn ($q) => $q->where('count_attendance', true))])
+            ->with([
+                'characters' => fn ($query) => $query->where('id', $character->id)->whereHas('rank', fn ($q) => $q->where('count_attendance', true)),
+                'linkedReports',
+            ])
             ->get();
 
         return $this->calculate($reports);
@@ -84,7 +90,10 @@ class AttendanceCalculator
             return collect();
         }
 
-        $report->load(['characters' => fn ($query) => $query->whereHas('rank', fn ($q) => $q->where('count_attendance', true))]);
+        $report->load([
+            'characters' => fn ($query) => $query->whereHas('rank', fn ($q) => $q->where('count_attendance', true)),
+            'linkedReports',
+        ]);
 
         return $this->calculate(collect([$report]));
     }
@@ -92,7 +101,7 @@ class AttendanceCalculator
     /**
      * Calculate attendance statistics by querying the database pivot table.
      *
-     * Fetches all qualifying ranks and reports, merges same-day raids, and
+     * Fetches all qualifying ranks and reports, merges linked reports, and
      * calculates each character's attendance percentage from their first appearance.
      *
      * @param  Collection<int, Report>  $reports
@@ -100,20 +109,8 @@ class AttendanceCalculator
      */
     protected function calculate(Collection $reports): Collection
     {
-        /** @var array<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, presence: int, playableClass: array|null}>}> $raidRecords */
-        $raidRecords = $reports->map(fn (Report $report) => [
-            'code' => $report->code,
-            'startTime' => $report->start_time,
-            'players' => $report->characters->mapWithKeys(fn ($character) => [
-                $character->name => [
-                    'id' => $character->id,
-                    'presence' => $character->pivot->presence,
-                ],
-            ])->all(),
-        ])->all();
-
-        $records = $this->sortRaidRecords(collect($raidRecords));
-        $records = $this->mergeByRaidDay($records);
+        $records = $this->mergeLinkedReports($reports);
+        $records = $this->sortRaidRecords($records);
 
         if ($records->isEmpty()) {
             return collect();
@@ -173,45 +170,104 @@ class AttendanceCalculator
     }
 
     /**
-     * Merge raid records that fall on the same raid day into a single record.
+     * Merge reports that are linked together in the database into single raid records.
      *
-     * A "raid day" runs from 05:00 to 04:59 the following morning in the app timezone.
-     * When multiple raids occur on the same raid day, characters are considered present
-     * if they appeared in any of the merged raids, using their best presence value.
+     * Reports connected via the pivot_wcl_reports_links table are treated as a single
+     * raid, and their player data is merged keeping the best presence per player.
+     * Uses union-find to resolve connected components within the provided collection.
      *
-     * @param  Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>  $records  Sorted by startTime ascending.
-     * @return Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>
+     * @param  Collection<int, Report>  $reports  Reports with 'characters' and 'linkedReports' eager loaded.
+     * @return Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, playable_class: mixed, presence: int}>}>
      */
-    public function mergeByRaidDay(Collection $records): Collection
+    public function mergeLinkedReports(Collection $reports): Collection
     {
-        return $records
-            ->groupBy(fn (array $record) => $record['startTime']->copy()->setTimezone($this->timezone)->subHours(5)->toDateString())
-            ->map(function (Collection $group) {
-                if ($group->count() === 1) {
-                    return $group->first();
+        if ($reports->isEmpty()) {
+            return collect();
+        }
+
+        $codes = $reports->pluck('code')->all();
+        $codeSet = array_flip($codes);
+
+        // Union-Find initialisation
+        $parent = array_combine($codes, $codes);
+
+        $find = function (string $code) use (&$parent, &$find): string {
+            if ($parent[$code] !== $code) {
+                $parent[$code] = $find($parent[$code]);
+            }
+
+            return $parent[$code];
+        };
+
+        // Union reports connected by a link that is within our fetched set
+        foreach ($reports as $report) {
+            foreach ($report->linkedReports as $linked) {
+                if (! isset($codeSet[$linked->code])) {
+                    continue;
                 }
 
-                /** @var array<string, array{id: int, rank_id: int|null, presence: int}> $mergedPlayers */
-                $mergedPlayers = [];
+                $rootA = $find($report->code);
+                $rootB = $find($linked->code);
 
-                foreach ($group as $record) {
-                    foreach ($record['players'] as $name => $playerData) {
-                        $current = $mergedPlayers[$name] ?? null;
-
-                        if ($current === null || $this->presencePriority($playerData['presence']) > $this->presencePriority($current['presence'])) {
-                            $mergedPlayers[$name] = $playerData;
-                        }
-                    }
+                if ($rootA !== $rootB) {
+                    $parent[$rootB] = $rootA;
                 }
+            }
+        }
+
+        // Group reports by their root
+        $groups = [];
+        foreach ($reports as $report) {
+            $root = $find($report->code);
+            $groups[$root][] = $report;
+        }
+
+        // Merge each group into a single raid record
+        return collect($groups)->map(function (array $group): array {
+            if (count($group) === 1) {
+                $report = $group[0];
 
                 return [
-                    'code' => collect($group)->pluck('code')->implode('+'),
-                    'startTime' => $group->first()['startTime'],
-                    'zoneName' => $group->first()['zoneName'] ?? null,
-                    'players' => $mergedPlayers,
+                    'code' => $report->code,
+                    'startTime' => $report->start_time,
+                    'zoneName' => $report->zone_name ?? null,
+                    'players' => $report->characters->mapWithKeys(fn ($char) => [
+                        $char->name => [
+                            'id' => $char->id,
+                            'rank_id' => $char->rank_id ?? null,
+                            'playable_class' => $char->playable_class ?? null,
+                            'presence' => $char->pivot->presence,
+                        ],
+                    ])->all(),
                 ];
-            })
-            ->values();
+            }
+
+            $sortedGroup = collect($group)->sortBy('start_time');
+            $mergedPlayers = [];
+
+            foreach ($group as $report) {
+                foreach ($report->characters as $char) {
+                    $current = $mergedPlayers[$char->name] ?? null;
+                    $playerData = [
+                        'id' => $char->id,
+                        'rank_id' => $char->rank_id ?? null,
+                        'playable_class' => $char->playable_class ?? null,
+                        'presence' => $char->pivot->presence,
+                    ];
+
+                    if ($current === null || $this->presencePriority($playerData['presence']) > $this->presencePriority($current['presence'])) {
+                        $mergedPlayers[$char->name] = $playerData;
+                    }
+                }
+            }
+
+            return [
+                'code' => collect($group)->pluck('code')->sort()->implode('+'),
+                'startTime' => $sortedGroup->first()->start_time,
+                'zoneName' => $sortedGroup->first()->zone_name ?? null,
+                'players' => $mergedPlayers,
+            ];
+        })->values();
     }
 
     /**

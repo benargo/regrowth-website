@@ -74,13 +74,9 @@ class AttendanceMatrixController extends Controller
      */
     private function resolveFilters(AttendanceMatrixRequest $request): AttendanceMatrixFilters
     {
-        $zoneIds = $request->has('zone_ids')
-            ? array_map('intval', $request->input('zone_ids', []))
-            : null;
-
-        $guildTagIds = $request->has('guild_tag_ids')
-            ? array_map('intval', $request->input('guild_tag_ids', []))
-            : GuildTag::where('count_attendance', true)->pluck('id')->toArray();
+        $rankIds = $request->rankIds() ?? [];
+        $zoneIds = $request->zoneIds();
+        $guildTagIds = $request->guildTagIds() ?? GuildTag::where('count_attendance', true)->pluck('id')->toArray();
 
         $sinceDate = $request->filled('since_date')
             ? Carbon::parse($request->input('since_date'), $this->timezone)->addDay()->setTime(5, 0, 0)->utc()
@@ -91,11 +87,12 @@ class AttendanceMatrixController extends Controller
             : null;
 
         return new AttendanceMatrixFilters(
+            rankIds: $rankIds,
             zoneIds: $zoneIds,
             guildTagIds: $guildTagIds,
             sinceDate: $sinceDate,
             beforeDate: $beforeDate,
-            includeLinkedCharacters: $request->boolean('include_linked_characters', true),
+            includeLinkedCharacters: $request->combineLinkedCharacters(),
         );
     }
 
@@ -124,7 +121,7 @@ class AttendanceMatrixController extends Controller
             'rank_ids' => $rankIds,
             'since_date' => $filters->sinceDate?->toISOString(),
             'before_date' => $filters->beforeDate?->toISOString(),
-            'include_linked_characters' => $filters->includeLinkedCharacters,
+            'combine_linked_characters' => $filters->includeLinkedCharacters,
         ];
 
         return 'attendance:matrix:'.hash('crc32', json_encode($payload));
@@ -133,16 +130,17 @@ class AttendanceMatrixController extends Controller
     /**
      * Serialize the filters into a format suitable for passing to the view. This method should take the AttendanceMatrixFilters instance and convert it into an array format that can be easily used in the Inertia response. The serialized filters should include the zone IDs, guild tag IDs, and date ranges in a format that can be easily consumed by the frontend components.
      *
-     * @return array{zone_ids: array<int, int>|null, guild_tag_ids: array<int, int>, since_date: string|null, before_date: string|null, include_linked_characters: bool}
+     * @return array{rank_ids: array<int, int>, zone_ids: array<int, int>|null, guild_tag_ids: array<int, int>, since_date: string|null, before_date: string|null, combine_linked_characters: bool}
      */
     private function serializeFilters(AttendanceMatrixFilters $filters, AttendanceMatrixRequest $request): array
     {
         return [
-            'zone_ids' => $filters->zoneIds,
-            'guild_tag_ids' => $filters->guildTagIds,
+            'rank_ids' => $request->input('rank_ids'),
+            'zone_ids' => $request->input('zone_ids'),
+            'guild_tag_ids' => $request->input('guild_tag_ids'),
             'since_date' => $request->input('since_date'),
             'before_date' => $request->input('before_date'),
-            'include_linked_characters' => $filters->includeLinkedCharacters,
+            'combine_linked_characters' => $filters->includeLinkedCharacters,
         ];
     }
 }

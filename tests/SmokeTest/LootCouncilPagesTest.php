@@ -2,7 +2,9 @@
 
 namespace Tests\SmokeTest;
 
+use App\Models\DiscordRole;
 use App\Models\LootCouncil\Item;
+use App\Models\Permission;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -23,6 +25,9 @@ class LootCouncilPagesTest extends TestCase
         parent::setUp();
 
         $this->mockBlizzardServices();
+
+        $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
+        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])->givePermissionTo($viewAllComments);
     }
 
     protected function mockBlizzardServices(): void

@@ -362,9 +362,9 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $thrall->totalReports);
     }
 
-    // ==================== wholeGuild: Same-Day Raid Merging Tests ====================
+    // ==================== wholeGuild: Linked Report Merging Tests ====================
 
-    public function test_calculate_merges_same_day_raids_into_single_record(): void
+    public function test_calculate_merges_linked_raids_into_single_record(): void
     {
         $rank = $this->makeRank();
         $fizzywigs = Character::factory()->create(['name' => 'Fizzywigs', 'rank_id' => $rank->id]);
@@ -372,9 +372,10 @@ class AttendanceCalculatorTest extends TestCase
         $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
-        // Two raids on the same evening — Fizzywigs in one, not the other
+        // Two linked raids — Fizzywigs in one, not the other
         $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
         $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->linkReports($raid1, $raid2);
 
         $this->attachCharacter($raid1, $fizzywigs, 1);
         $this->attachCharacter($raid1, $thrall, 1);
@@ -383,7 +384,7 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        // Should be 1 total report (merged day), all players attended
+        // Should be 1 total report (merged), all players attended
         $this->assertEquals(1, $stats->firstWhere('name', 'Fizzywigs')->totalReports);
         $this->assertEquals(1, $stats->firstWhere('name', 'Fizzywigs')->reportsAttended);
         $this->assertEquals(100.0, $stats->firstWhere('name', 'Fizzywigs')->percentage);
@@ -392,47 +393,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
     }
 
-    public function test_calculate_raid_before_0500_belongs_to_previous_day(): void
-    {
-        $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
-        $tag = $this->makeTag();
-
-        // 03:00 on Jan 16 should be part of the Jan 15 raid day
-        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
-        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-16 03:00', 'Europe/Paris'));
-
-        $this->attachCharacter($raid1, $thrall, 1);
-        $this->attachCharacter($raid2, $jaina, 1);
-
-        $stats = $this->makeCalculator()->wholeGuild();
-
-        // Both raids merge into one raid day
-        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->totalReports);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
-    }
-
-    public function test_calculate_raid_after_0500_belongs_to_current_day(): void
-    {
-        $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $tag = $this->makeTag();
-
-        // 06:00 on Jan 16 should be a new raid day, separate from Jan 15
-        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
-        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-16 06:00', 'Europe/Paris'));
-
-        $this->attachCharacter($raid1, $thrall, 1);
-        $this->attachCharacter($raid2, $thrall, 1);
-
-        $stats = $this->makeCalculator()->wholeGuild();
-
-        // Two separate raid days
-        $this->assertEquals(2, $stats->firstWhere('name', 'Thrall')->totalReports);
-    }
-
-    public function test_calculate_different_days_remain_separate(): void
+    public function test_calculate_unlinked_reports_remain_separate(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -459,6 +420,7 @@ class AttendanceCalculatorTest extends TestCase
         // Presence 0 in one raid, presence 1 in another — should count as attended
         $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
         $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->linkReports($raid1, $raid2);
 
         $this->attachCharacter($raid1, $thrall, 0);
         $this->attachCharacter($raid2, $thrall, 1);
@@ -478,6 +440,7 @@ class AttendanceCalculatorTest extends TestCase
         // Presence 1 (present) should be preferred over 2 (benched)
         $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
         $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->linkReports($raid1, $raid2);
 
         $this->attachCharacter($raid1, $thrall, 2);
         $this->attachCharacter($raid2, $thrall, 1);
@@ -489,7 +452,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $stats->firstWhere('name', 'Thrall')->percentage);
     }
 
-    public function test_calculate_merge_three_raids_same_day(): void
+    public function test_calculate_merge_three_linked_raids(): void
     {
         $rank = $this->makeRank();
         $alice = Character::factory()->create(['name' => 'Alice', 'rank_id' => $rank->id]);
@@ -500,6 +463,8 @@ class AttendanceCalculatorTest extends TestCase
         $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
         $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:30', 'Europe/Paris'));
         $raid3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->linkReports($raid1, $raid2);
+        $this->linkReports($raid2, $raid3);
 
         $this->attachCharacter($raid1, $alice, 1);
         $this->attachCharacter($raid2, $bob, 1);
@@ -507,7 +472,7 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        // All three raids merge into one day — 3 players, 1 report each
+        // All three raids merge into one — 3 players, 1 report each
         $this->assertCount(3, $stats);
         $this->assertEquals(1, $stats->firstWhere('name', 'Alice')->totalReports);
         $this->assertEquals(1, $stats->firstWhere('name', 'Bob')->totalReports);
@@ -691,6 +656,113 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->reportsAttended);
         $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
         $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->reportsAttended);
+    }
+
+    // ==================== mergeLinkedReports: Unit Tests ====================
+
+    public function test_merge_linked_reports_returns_single_report_as_is(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $thrall, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(1, $records);
+        $this->assertEquals($report->code, $records->first()['code']);
+        $this->assertArrayHasKey('Thrall', $records->first()['players']);
+    }
+
+    public function test_merge_linked_reports_merges_linked_pair_into_one_record(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->linkReports($raid1, $raid2);
+
+        $this->attachCharacter($raid1, $thrall, 1);
+        $this->attachCharacter($raid2, $jaina, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(1, $records);
+        $this->assertArrayHasKey('Thrall', $records->first()['players']);
+        $this->assertArrayHasKey('Jaina', $records->first()['players']);
+    }
+
+    public function test_merge_linked_reports_keeps_best_presence_when_merging(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->linkReports($raid1, $raid2);
+
+        // Absence in raid1, present in raid2 — best presence (1) should win
+        $this->attachCharacter($raid1, $thrall, 0);
+        $this->attachCharacter($raid2, $thrall, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(1, $records);
+        $this->assertEquals(1, $records->first()['players']['Thrall']['presence']);
+    }
+
+    public function test_merge_linked_reports_leaves_unlinked_reports_as_separate_records(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-22 19:00', 'Europe/Paris'));
+
+        $this->attachCharacter($raid1, $thrall, 1);
+        $this->attachCharacter($raid2, $thrall, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(2, $records);
+    }
+
+    public function test_merge_linked_reports_handles_three_reports_in_same_group(): void
+    {
+        $rank = $this->makeRank();
+        $alice = Character::factory()->create(['name' => 'Alice', 'rank_id' => $rank->id]);
+        $bob = Character::factory()->create(['name' => 'Bob', 'rank_id' => $rank->id]);
+        $charlie = Character::factory()->create(['name' => 'Charlie', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:30', 'Europe/Paris'));
+        $raid3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        // Chain: raid1 ↔ raid2 ↔ raid3 — all transitively linked
+        $this->linkReports($raid1, $raid2);
+        $this->linkReports($raid2, $raid3);
+
+        $this->attachCharacter($raid1, $alice, 1);
+        $this->attachCharacter($raid2, $bob, 1);
+        $this->attachCharacter($raid3, $charlie, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(1, $records);
+        $this->assertArrayHasKey('Alice', $records->first()['players']);
+        $this->assertArrayHasKey('Bob', $records->first()['players']);
+        $this->assertArrayHasKey('Charlie', $records->first()['players']);
     }
 
     // ==================== matrixForWholeGuild: Return Type Tests ====================
@@ -884,16 +956,17 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(2, $row['attendance'][0]);
     }
 
-    public function test_matrix_same_day_raids_are_merged_into_one_column(): void
+    public function test_matrix_linked_raids_are_merged_into_one_column(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
-        // Two raids on the same evening — one column should appear
+        // Two linked raids — one column should appear
         $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
         $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->linkReports($raid1, $raid2);
         $this->attachCharacter($raid1, $thrall, 1);
         $this->attachCharacter($raid2, $jaina, 1);
 
@@ -1051,6 +1124,14 @@ class AttendanceCalculatorTest extends TestCase
         \DB::table('character_links')->insert([
             ['character_id' => $main->id, 'linked_character_id' => $alt->id, 'created_at' => now(), 'updated_at' => now()],
             ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+    }
+
+    protected function linkReports(Report $report1, Report $report2): void
+    {
+        \DB::table('pivot_wcl_reports_links')->insert([
+            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
@@ -1254,6 +1335,63 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $character, 1);
 
         $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            includeLinkedCharacters: true,
+        ));
+
+        $this->assertEmpty($matrix->rows);
+    }
+
+    // ==================== matrixWithFilters: Rank Filter + Linked Characters ====================
+
+    public function test_rank_filter_with_linked_characters_shows_only_mains_of_selected_ranks_but_merges_alt_attendance(): void
+    {
+        $rank1 = $this->makeRank();
+        $rank2 = $this->makeRank();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank1->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank2->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        // Only the alt attends — main is absent
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $alt, 1);
+
+        // Filter to rank1 only (main's rank); alt is in rank2
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            rankIds: [$rank1->id],
+            includeLinkedCharacters: true,
+        ));
+
+        // Only the main row appears (from rank1)
+        $this->assertCount(1, $matrix->rows);
+        $names = collect($matrix->rows)->pluck('name');
+        $this->assertContains('Thrall', $names);
+        $this->assertNotContains('Shaman', $names);
+
+        // Alt's attendance is merged into the main's row
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $this->assertEquals(1, $row['attendance'][0]);
+        $this->assertEquals(100.0, $row['percentage']);
+    }
+
+    public function test_rank_filter_with_linked_characters_excludes_mains_of_unselected_ranks(): void
+    {
+        $rank1 = $this->makeRank();
+        $rank2 = $this->makeRank();
+        // Main is in rank2 (not selected), alt is in rank1 (selected)
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank2->id]);
+        $alt = Character::factory()->create(['name' => 'Shaman', 'rank_id' => $rank1->id]);
+        $tag = $this->makeTag();
+
+        $this->linkCharacters($main, $alt);
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $alt, 1);
+
+        // Filter to rank1 only — main is in rank2, so should not appear
+        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+            rankIds: [$rank1->id],
             includeLinkedCharacters: true,
         ));
 

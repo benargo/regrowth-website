@@ -5,14 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Models\Character;
 use App\Models\User;
 use App\Services\WarcraftLogs\GuildTags;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class AddonSettingsCouncillorTest extends TestCase
+class AddonSettingsCouncillorTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -75,10 +72,9 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_add_councillor_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -87,12 +83,11 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_add_councillor_sets_character_is_loot_councillor_to_true(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->create(['is_loot_councillor' => false]);
 
         $this->assertFalse($character->is_loot_councillor);
 
-        $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -103,18 +98,16 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_add_councillor_validates_character_name_is_required(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), []);
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), []);
 
         $response->assertSessionHasErrors(['character_name']);
     }
 
     public function test_add_councillor_validates_character_name_must_be_string(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => 12345,
         ]);
 
@@ -123,9 +116,8 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_add_councillor_validates_character_name_must_exist(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => 'NonexistentCharacter',
         ]);
 
@@ -134,11 +126,10 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_add_councillor_does_not_affect_other_characters(): void
     {
-        $user = User::factory()->officer()->create();
         $character1 = Character::factory()->create(['is_loot_councillor' => false]);
         $character2 = Character::factory()->create(['is_loot_councillor' => false]);
 
-        $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => $character1->name,
         ]);
 
@@ -194,22 +185,20 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_remove_councillor_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect();
     }
 
     public function test_remove_councillor_sets_character_is_loot_councillor_to_false(): void
     {
-        $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
         $this->assertTrue($character->is_loot_councillor);
 
-        $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
 
         $character->refresh();
 
@@ -218,11 +207,10 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_remove_councillor_does_not_affect_other_characters(): void
     {
-        $user = User::factory()->officer()->create();
         $character1 = Character::factory()->lootCouncillor()->create();
         $character2 = Character::factory()->lootCouncillor()->create();
 
-        $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character1));
+        $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character1));
 
         $character1->refresh();
         $character2->refresh();
@@ -233,9 +221,8 @@ class AddonSettingsCouncillorTest extends TestCase
 
     public function test_remove_councillor_returns_404_for_nonexistent_character(): void
     {
-        $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', 99999));
+        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', 99999));
 
         $response->assertNotFound();
     }

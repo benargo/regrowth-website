@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\LootCouncil;
 
+use App\Models\DiscordRole;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\Permission;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -26,6 +28,18 @@ class CommentTest extends TestCase
 
         $this->mockItemService();
         Notification::fake();
+
+        $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+        $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
+
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole->givePermissionTo($commentOnLootItems);
+        $officerRole->givePermissionTo($viewAllComments);
+
+        $raiderRole = DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true]);
+        $raiderRole->givePermissionTo($commentOnLootItems);
+
+        DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true])->givePermissionTo($viewAllComments);
     }
 
     protected function mockItemService(): void

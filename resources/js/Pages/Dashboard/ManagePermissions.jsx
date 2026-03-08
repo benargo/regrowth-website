@@ -1,7 +1,36 @@
+/**
+ * ManagePermissions Page
+ *
+ * Allows admins (and non-admins with restrictions) to manage which Discord roles
+ * have access to specific site permissions.
+ *
+ * Props (via Inertia):
+ * @prop {Array}  discordRoles  - List of Discord role objects. Each role has:
+ *                                  - id: number
+ *                                  - name: string
+ *                                  - permissions: Array of permission objects { id, name }
+ * @prop {Array}  groups        - List of all permission groups (strings) for filtering
+ * @prop {Array}  permissions   - List of all available permissions for the current group { id, name, group }
+ *
+ * Auth (via usePage):
+ * @prop {Object} auth.user              - The authenticated user
+ * @prop {bool}   auth.user.admin        - Whether the user is a full admin
+ * @prop {string} auth.user.highest_role - The user's highest Discord role name;
+ *                                         non-admins cannot toggle permissions for their own role
+ *
+ * Behaviour:
+ * - Each cell in the table is a toggle button that calls `dashboard.permissions.toggle`
+ *   via a POST request (see PermissionController@toggle).
+ * - Toggles are disabled for a non-admin user's own highest role to prevent privilege escalation.
+ * - Processing state is tracked per toggle (keyed as `${roleId}-${permissionId}`) to show
+ *   individual loading states without locking the whole table.
+ */
+
 import { useState } from "react";
 import { router, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import Dropdown from "@/Components/Dropdown";
 
 function PermissionToggle({ enabled, processing, onToggle, disabled }) {
     return (
@@ -26,7 +55,7 @@ function formatPermissionName(name) {
         .join(" ");
 }
 
-export default function ManagePermissions({ discordRoles, permissions }) {
+export default function ManagePermissions({ discordRoles, groups, permissions }) {
     const { auth } = usePage().props;
     const [processing, setProcessing] = useState({});
 
@@ -65,14 +94,45 @@ export default function ManagePermissions({ discordRoles, permissions }) {
     return (
         <Master title="Manage Permissions">
             <SharedHeader title="Manage Permissions" backgroundClass="bg-arcatraz" />
-
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
                     <p className="mb-6 text-gray-400">
                         Control which Discord roles have access to specific site features. Changes take effect
                         immediately.
                     </p>
+                    {/* Group navigation */}
+                    <nav className="mb-6">
+                        <Dropdown>
+                            <Dropdown.Trigger>
+                                <button className="flex items-center justify-between rounded border border-amber-600 px-4 py-2 text-amber-600 transition-colors hover:bg-amber-600/20">
+                                    {groups.find((g) => g.active)?.name ?? "Select Group"}
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M19 9l-7 7-7-7"
+                                        />
+                                    </svg>
+                                </button>
+                            </Dropdown.Trigger>
+                            <Dropdown.Content align="left" width="48">
+                                <div className="rounded-md border border-amber-600 bg-brown shadow-lg">
+                                    {groups.map((group) => (
+                                        <Dropdown.Link
+                                            key={group.slug}
+                                            href={route("dashboard.permissions.show-group", { group: group.slug })}
+                                            className={group.active ? "bg-brown-800" : ""}
+                                        >
+                                            {group.name}
+                                        </Dropdown.Link>
+                                    ))}
+                                </div>
+                            </Dropdown.Content>
+                        </Dropdown>
+                    </nav>
 
+                    {/* Permission table */}
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse">
                             <thead>

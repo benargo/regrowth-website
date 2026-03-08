@@ -49,10 +49,19 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $user ? (new UserResource($user))->resolve($request) : null,
-                'can' => [
-                    'accessDashboard' => $user?->can('access-dashboard') ?? false,
-                    'accessLoot' => $user?->can('viewAny', Item::class) ?? false,
-                    'viewAllComments' => $user?->can('viewAll', Comment::class) ?? false,
+                'permissions' => [
+                    'comments' => [
+                        'viewAny' => $user?->can('viewAny', Comment::class) ?? false,
+                    ],
+                    'items' => [
+                        'viewAny' => $user?->can('viewAny', Item::class) ?? false,
+                    ],
+                    'officerDashboard' => [
+                        'view' => $user?->can('view-officer-dashboard') ?? false,
+                    ],
+                    'thatsmybis' => [
+                        'access' => $user?->isRaider() ?? false,
+                    ],
                 ],
                 'impersonating' => $request->session()->has('impersonating_user_id'),
             ],

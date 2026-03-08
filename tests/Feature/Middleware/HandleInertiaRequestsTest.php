@@ -3,6 +3,7 @@
 namespace Tests\Feature\Middleware;
 
 use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\TBC\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,6 +15,18 @@ class HandleInertiaRequestsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
+        $viewOfficerDashboard = Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole->givePermissionTo($viewAllComments);
+        $officerRole->givePermissionTo($viewOfficerDashboard);
+        DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true])->givePermissionTo($viewAllComments);
+    }
+
     #[Test]
     public function it_shares_can_access_control_panel_as_true_for_officers(): void
     {
@@ -21,7 +34,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', true)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.officerDashboard.view', true)
             );
     }
 
@@ -32,7 +45,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.officerDashboard.view', false)
             );
     }
 
@@ -43,7 +56,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.officerDashboard.view', false)
             );
     }
 
@@ -51,7 +64,7 @@ class HandleInertiaRequestsTest extends TestCase
     public function it_shares_can_access_control_panel_as_false_for_guests(): void
     {
         $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.accessDashboard', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.officerDashboard.view', false)
             );
     }
 
@@ -162,7 +175,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', true)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.comments.viewAny', true)
             );
     }
 
@@ -173,7 +186,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', true)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.comments.viewAny', true)
             );
     }
 
@@ -184,7 +197,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.comments.viewAny', false)
             );
     }
 
@@ -195,7 +208,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.comments.viewAny', false)
             );
     }
 
@@ -203,7 +216,7 @@ class HandleInertiaRequestsTest extends TestCase
     public function it_shares_can_view_all_comments_as_false_for_guests(): void
     {
         $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.can.viewAllComments', false)
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions.comments.viewAny', false)
             );
     }
 

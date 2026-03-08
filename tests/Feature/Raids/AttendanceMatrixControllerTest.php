@@ -5,6 +5,7 @@ namespace Tests\Feature\Raids;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GuildRank;
+use App\Models\Permission;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
@@ -15,7 +16,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -31,7 +31,7 @@ class AttendanceMatrixControllerTest extends TestCase
         Cache::tags('warcraftlogs')->flush();
         Cache::tags(['attendance', 'attendance:matrix'])->flush();
 
-        $permission = Permission::firstOrCreate(['name' => 'view-attendance-dashboard', 'guard_name' => 'web']);
+        $permission = Permission::firstOrCreate(['name' => 'view-attendance', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
@@ -205,7 +205,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('filters.guild_tag_ids', [$countingTag->id])
+            ->where('filters.guild_tag_ids', null)
         );
     }
 
@@ -220,58 +220,40 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['zone_ids', 'guild_tag_ids', 'since_date', 'before_date']);
     }
 
-    public function test_matrix_accepts_valid_zone_ids_array(): void
+    public function test_matrix_accepts_valid_zone_ids_string(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => [1, 2, 3]]));
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => '1,2,3']));
 
         $response->assertSessionDoesntHaveErrors(['zone_ids']);
     }
 
-    public function test_matrix_rejects_zone_ids_when_not_an_array(): void
+    public function test_matrix_rejects_zone_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => 1]));
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['zone_ids']);
     }
 
-    public function test_matrix_rejects_zone_ids_containing_non_integers(): void
+    public function test_matrix_accepts_valid_guild_tag_ids_string(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => ['abc', 'def']]));
-
-        $response->assertSessionHasErrors(['zone_ids.0']);
-    }
-
-    public function test_matrix_accepts_valid_guild_tag_ids_array(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => [1, 2, 3]]));
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => '1,2,3']));
 
         $response->assertSessionDoesntHaveErrors(['guild_tag_ids']);
     }
 
-    public function test_matrix_rejects_guild_tag_ids_when_not_an_array(): void
+    public function test_matrix_rejects_guild_tag_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => 1]));
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['guild_tag_ids']);
-    }
-
-    public function test_matrix_rejects_guild_tag_ids_containing_non_integers(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => ['abc', 'def']]));
-
-        $response->assertSessionHasErrors(['guild_tag_ids.0']);
     }
 
     public function test_matrix_accepts_valid_since_date(): void
@@ -455,7 +437,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => [$tag1->id]]));
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => (string) $tag1->id]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -517,48 +499,48 @@ class AttendanceMatrixControllerTest extends TestCase
         );
     }
 
-    // ==================== matrix: include_linked_characters Filter ====================
+    // ==================== matrix: combine_linked_characters Filter ====================
 
-    public function test_matrix_filters_include_include_linked_characters(): void
+    public function test_matrix_filters_include_combine_linked_characters_filter(): void
     {
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('filters.include_linked_characters')
+            ->has('filters.combine_linked_characters')
         );
     }
 
-    public function test_matrix_include_linked_characters_defaults_to_true_when_not_specified(): void
+    public function test_matrix_combine_linked_characters_defaults_to_true_when_not_specified(): void
     {
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('filters.include_linked_characters', true)
+            ->where('filters.combine_linked_characters', true)
         );
     }
 
-    public function test_matrix_include_linked_characters_can_be_set_to_false(): void
+    public function test_matrix_combine_linked_characters_can_be_set_to_false(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['include_linked_characters' => false]));
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['combine_linked_characters' => false]));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('filters.include_linked_characters', false)
+            ->where('filters.combine_linked_characters', false)
         );
     }
 
-    public function test_matrix_include_linked_characters_rejects_non_boolean(): void
+    public function test_matrix_combine_linked_characters_rejects_non_boolean(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['include_linked_characters' => 'banana']));
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['combine_linked_characters' => 'banana']));
 
-        $response->assertSessionHasErrors(['include_linked_characters']);
+        $response->assertSessionHasErrors(['combine_linked_characters']);
     }
 
     // ==================== matrix: Caching ====================
@@ -572,7 +554,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $report->characters()->attach($thrall->id, ['presence' => 1]);
 
         $user = User::factory()->officer()->create();
-        $params = ['guild_tag_ids' => [$tag->id]];
+        $params = ['guild_tag_ids' => (string) $tag->id];
 
         // First request populates the cache.
         $this->actingAs($user)->get(route('raids.attendance.matrix', $params))
@@ -615,7 +597,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Warm both caches with their respective filter sets.
-        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => [$tag1->id]]))
+        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => (string) $tag1->id]))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
@@ -623,7 +605,7 @@ class AttendanceMatrixControllerTest extends TestCase
                 )
             );
 
-        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => [$tag2->id]]))
+        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => (string) $tag2->id]))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)

@@ -4,14 +4,11 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\GuildRank;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\TestCase;
+use Tests\Support\DashboardTestCase;
 
-class GuildRankToggleAttendanceTest extends TestCase
+class GuildRankToggleAttendanceTest extends DashboardTestCase
 {
-    use RefreshDatabase;
-
     public function test_toggle_count_attendance_requires_authentication(): void
     {
         $rank = GuildRank::factory()->create();
@@ -61,10 +58,9 @@ class GuildRankToggleAttendanceTest extends TestCase
 
     public function test_toggle_count_attendance_allows_officer_users(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 
-        $response = $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -73,12 +69,11 @@ class GuildRankToggleAttendanceTest extends TestCase
 
     public function test_toggle_count_attendance_can_enable_attendance(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 
         $this->assertFalse($rank->count_attendance);
 
-        $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -89,12 +84,11 @@ class GuildRankToggleAttendanceTest extends TestCase
 
     public function test_toggle_count_attendance_can_disable_attendance(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
 
         $this->assertTrue($rank->count_attendance);
 
-        $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
             'count_attendance' => false,
         ]);
 
@@ -105,20 +99,18 @@ class GuildRankToggleAttendanceTest extends TestCase
 
     public function test_toggle_count_attendance_validates_count_attendance_is_required(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), []);
+        $response = $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), []);
 
         $response->assertSessionHasErrors(['count_attendance']);
     }
 
     public function test_toggle_count_attendance_validates_count_attendance_must_be_boolean(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
             'count_attendance' => 'not-a-boolean',
         ]);
 
@@ -127,11 +119,10 @@ class GuildRankToggleAttendanceTest extends TestCase
 
     public function test_toggle_count_attendance_does_not_affect_other_ranks(): void
     {
-        $user = User::factory()->officer()->create();
         $rank1 = GuildRank::factory()->doesNotCountAttendance()->create();
         $rank2 = GuildRank::factory()->create(['count_attendance' => true]);
 
-        $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank1), [
+        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank1), [
             'count_attendance' => true,
         ]);
 
@@ -144,13 +135,12 @@ class GuildRankToggleAttendanceTest extends TestCase
 
     public function test_toggle_count_attendance_clears_guild_ranks_cache(): void
     {
-        $user = User::factory()->officer()->create();
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 
         Cache::put('guild_ranks.index', 'cached-data');
         $this->assertTrue(Cache::has('guild_ranks.index'));
 
-        $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
