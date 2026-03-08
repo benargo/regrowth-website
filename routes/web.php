@@ -58,7 +58,10 @@ Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], 
     Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance')->name('attendance.matrix');
 
     // Reports routes
-    Route::get('/reports', [ReportController::class, 'index'])->can('viewAny', 'App\Models\WarcraftLogs\Report')->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/{report}', [ReportController::class, 'show'])->can('view', 'report')->name('reports.show');
+    Route::post('/reports/{report}/links', [ReportController::class, 'storeLinks'])->can('update', 'report')->name('reports.store-links');
+    Route::patch('/reports/{report}/links', [ReportController::class, 'destroyLinks'])->can('update', 'report')->name('reports.destroy-links');
 });
 
 /*

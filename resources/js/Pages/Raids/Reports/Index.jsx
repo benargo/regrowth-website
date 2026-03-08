@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { router } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import Tooltip from "@/Components/Tooltip";
 import DateFilterButton from "@/Components/DateFilterButton";
 import Pagination from "@/Components/Pagination";
 import formatDate from "@/Helpers/FormatDate";
@@ -111,7 +112,7 @@ function ReportsSkeleton() {
             <table className="w-full border-collapse">
                 <thead className="border-b border-amber-600/30">
                     <tr>
-                        {["w-32", "w-48", "w-24", "w-24", "w-16"].map((w, i) => (
+                        {["w-32", "w-48", "w-24", "w-24", "w-16", "w-8"].map((w, i) => (
                             <th key={i} className="px-4 py-3 text-left">
                                 <div className={`h-4 ${w} rounded bg-brown-700`} />
                             </th>
@@ -135,6 +136,9 @@ function ReportsSkeleton() {
                             </td>
                             <td className="px-4 py-3">
                                 <div className="h-4 w-12 rounded bg-brown-700" />
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                                <div className="mx-auto h-4 w-4 rounded bg-brown-700" />
                             </td>
                         </tr>
                     ))}
@@ -162,8 +166,9 @@ function ReportsTable({ reports }) {
                         <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Date</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Title</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Zone</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Guild Tag</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Tag</th>
                         <th className="px-4 py-3 text-right text-sm font-semibold text-amber-500">Duration</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-amber-500">Linked</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-brown-700">
@@ -185,21 +190,30 @@ function ReportsTable({ reports }) {
                                     </p>
                                 </td>
                                 <td className="px-4 py-3 text-sm">
-                                    <a
-                                        href={`https://www.warcraftlogs.com/reports/${report.code}`}
+                                    <Link
+                                        href={route('raids.reports.show', report.code)}
                                         target="_blank"
-                                        rel="noopener noreferrer"
-                                        dusk="report-link"
                                         className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                     >
                                         {report.title}
-                                        <Icon icon="arrow-up-right-from-square" style="solid" className="ml-1.5 text-xs opacity-60" />
-                                    </a>
+                                    </Link>
                                 </td>
                                 <td className="px-4 py-3 text-sm text-gray-300">{report.zone?.name ?? "—"}</td>
                                 <td className="px-4 py-3 text-sm text-gray-300">{report.guild_tag?.name ?? "—"}</td>
                                 <td className="px-4 py-3 text-right text-sm text-gray-300">
                                     {formatDuration(durationMinutes)}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                    {report.linked_reports_count > 0 ? (
+                                        <Tooltip
+                                            text={`${report.linked_reports_count}`}
+                                            position="right"
+                                        >
+                                            <Icon icon="link" style="solid" className="text-amber-500" />
+                                        </Tooltip>
+                                    ) : (
+                                        <Icon icon="link" style="solid" className="text-gray-600" />
+                                    )}
                                 </td>
                             </tr>
                         );
@@ -296,7 +310,7 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                             dusk="filter-zone"
                         />
                         <FilterDropdown
-                            label="Guild Tags"
+                            label="Tags"
                             options={guildTags}
                             selected={selectedGuildTagIds}
                             onChange={setSelectedGuildTagIds}

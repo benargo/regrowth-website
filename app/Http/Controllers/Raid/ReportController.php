@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Raid;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Raid\DestroyReportLinksRequest;
 use App\Http\Requests\Raid\ReportsIndexRequest;
+use App\Http\Requests\Raid\StoreReportLinksRequest;
+use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Http\Resources\WarcraftLogs\ReportResource;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -66,6 +72,7 @@ class ReportController extends Controller
                 return ReportResource::collection(
                     Report::query()
                         ->with('guildTag')
+                        ->withCount('linkedReports')
                         ->when($zoneIds !== null, fn ($q) => $q->whereIn('zone_id', $zoneIds))
                         ->when($guildTagIds !== null, fn ($q) => $q->whereIn('guild_tag_id', $guildTagIds))
                         ->when($days !== null, function ($q) use ($days) {
@@ -84,5 +91,106 @@ class ReportController extends Controller
                 );
             }),
         ]);
+    }
+
+    /**
+     * Display the details of a single WarcraftLogs report.
+     */
+    public function show(Request $request, Report $report): Response
+    {
+        $report->load(['guildTag', 'characters.rank', 'linkedReports']);
+
+        return Inertia::render('Raids/Reports/Show', [
+            'report' => new ReportResource($report),
+            'canManageLinks' => $request->user()->can('update', $report),
+            'impactedReports' => Inertia::optional(function () use ($report) {
+                return LinkedReportResource::collection(
+                    $report->linkedReports()->wherePivotNotNull('created_by')->get()
+                );
+            }),
+            'nearbyReports' => Inertia::optional(function () use ($request, $report) {
+                $page = max(1, $request->integer('nearby_page', 1));
+                $perPage = 15;
+
+                $newerCount = Report::where('start_time', '>', $report->start_time)->count();
+                $page1Offset = max(0, $newerCount - 7);
+                $offset = $page1Offset + ($page - 1) * $perPage;
+
+                $total = Report::count();
+                $totalFromStart = $total - $page1Offset;
+
+                $reports = Report::orderBy('start_time', 'desc')
+                    ->skip($offset)
+                    ->take($perPage)
+                    ->get();
+
+                $paginator = new LengthAwarePaginator($reports, $totalFromStart, $perPage, $page, [
+                    'path' => $request->url(),
+                    'pageName' => 'nearby_page',
+                ]);
+
+                return LinkedReportResource::collection($paginator);
+            }),
+        ]);
+    }
+
+    /**
+     * Remove all manually created bidirectional links for the given report.
+     */
+    public function destroyLinks(DestroyReportLinksRequest $request, Report $report): RedirectResponse
+    {
+        $linkedCodes = $report->linkedReports()
+            ->wherePivotNotNull('created_by')
+            ->pluck('code')
+            ->all();
+
+        if (! empty($linkedCodes)) {
+            // Delete forward direction: report → linked
+            $report->linkedReports()->detach($linkedCodes);
+
+            // Delete reverse direction: linked → report
+            DB::table('pivot_wcl_reports_links')
+                ->whereIn('report_1', $linkedCodes)
+                ->where('report_2', $report->code)
+                ->delete();
+        }
+
+        Cache::tags('warcraftlogs')->flush();
+
+        return back();
+    }
+
+    /**
+     * Create bidirectional links between the given report and all selected reports,
+     * including links between the selected reports themselves.
+     */
+    public function storeLinks(StoreReportLinksRequest $request, Report $report): RedirectResponse
+    {
+        $selectedReports = Report::whereIn('code', $request->validated('codes'))->get();
+
+        $allReports = $selectedReports->push($report);
+
+        foreach ($allReports as $r1) {
+            $r1->load('linkedReports');
+
+            $existingCodes = $r1->linkedReports->pluck('code')->all();
+
+            $newCodes = $allReports
+                ->where('code', '!=', $r1->code)
+                ->pluck('code')
+                ->diff($existingCodes);
+
+            $pivotData = $newCodes
+                ->mapWithKeys(fn ($code) => [$code => ['created_by' => $request->user()->getKey()]])
+                ->all();
+
+            if (! empty($pivotData)) {
+                $r1->linkedReports()->attach($pivotData);
+            }
+        }
+
+        Cache::tags('warcraftlogs')->flush();
+
+        return back();
     }
 }
