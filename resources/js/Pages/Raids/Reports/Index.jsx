@@ -3,8 +3,7 @@ import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
-import Modal from "@/Components/Modal";
-import TextInput from "@/Components/TextInput";
+import DateFilterButton from "@/Components/DateFilterButton";
 import Pagination from "@/Components/Pagination";
 
 // ─── Filter components ────────────────────────────────────────────────────────
@@ -89,93 +88,6 @@ function FilterDropdown({ label, options, selected, onChange, dusk }) {
                 </div>
             )}
         </div>
-    );
-}
-
-function DateFilterButton({ label, value, onChange, dusk, min }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [draft, setDraft] = useState(value);
-    const today = new Date().toISOString().split("T")[0];
-
-    const open = () => {
-        setDraft(value);
-        setIsOpen(true);
-    };
-
-    const close = () => setIsOpen(false);
-
-    const apply = () => {
-        onChange(draft);
-        close();
-    };
-
-    const clear = () => {
-        onChange("");
-        close();
-    };
-
-    return (
-        <>
-            <button
-                onClick={open}
-                dusk={dusk}
-                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-brown-700 ${value ? "border-amber-500 bg-brown-800 text-white" : "border-amber-600 bg-brown-800 text-gray-400"}`}
-            >
-                <span className="flex items-center gap-2 truncate">
-                    <Icon icon="calendar" style="regular" className="shrink-0 text-amber-500" />
-                    {value ? `${label}: ${value}` : label}
-                </span>
-                {value && (
-                    <span className="ml-2 shrink-0 rounded-full bg-amber-600 px-1.5 py-0.5 text-xs text-white">
-                        set
-                    </span>
-                )}
-            </button>
-
-            <Modal show={isOpen} onClose={close} maxWidth="sm">
-                <div className="p-6">
-                    <h2 className="mb-1 text-lg font-bold text-white">{label} date</h2>
-                    <p className="mb-4 text-sm text-gray-400">Leave blank to show all available dates.</p>
-                    <TextInput
-                        type="date"
-                        value={draft}
-                        min={min}
-                        max={today}
-                        onChange={(e) => setDraft(e.target.value)}
-                        className="block w-full bg-brown-800/50 text-white [color-scheme:dark]"
-                    />
-                    <div className="mt-6 flex justify-between gap-3">
-                        <button
-                            type="button"
-                            onClick={clear}
-                            dusk="modal-clear-button"
-                            className="inline-flex items-center gap-2 rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-600"
-                        >
-                            <Icon icon="times" style="solid" />
-                            Clear
-                        </button>
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={close}
-                                dusk="modal-cancel-button"
-                                className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-brown-600"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={apply}
-                                dusk="modal-apply-button"
-                                className="inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-amber-700"
-                            >
-                                Apply
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Modal>
-        </>
     );
 }
 
@@ -389,14 +301,12 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                             label="After"
                             value={sinceDate}
                             onChange={setSinceDate}
-                            dusk="filter-since-date"
                             min={earliestDate}
                         />
                         <DateFilterButton
                             label="Before"
                             value={beforeDate}
                             onChange={setBeforeDate}
-                            dusk="filter-before-date"
                             min={earliestDate}
                         />
                     </div>
