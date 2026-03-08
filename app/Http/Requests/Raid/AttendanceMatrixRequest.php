@@ -50,6 +50,7 @@ class AttendanceMatrixRequest extends FormRequest
         }
 
         return [
+            'character' => ['nullable', 'integer', 'exists:characters,id'],
             'rank_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
             'zone_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
             'guild_tag_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],

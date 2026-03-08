@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\WarcraftLogs;
 
+use App\Http\Resources\UserResource;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -32,7 +33,7 @@ class LinkedReportResource extends JsonResource
                 'name' => $this->zone_name,
             ],
             'pivot' => $this->whenPivotLoaded('pivot_wcl_reports_links', fn () => [
-                'created_by' => $this->pivot->created_by,
+                'created_by' => $this->pivot->creator ? new UserResource($this->pivot->creator) : null,
                 'created_at' => $this->pivot->created_at,
                 'updated_at' => $this->pivot->updated_at,
             ]),

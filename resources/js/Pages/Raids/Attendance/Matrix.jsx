@@ -7,6 +7,7 @@ import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
+import GuildRankLabel from "@/Components/GuildRankLabel";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -210,11 +211,6 @@ function AttendanceCell({ value, names }) {
 
 function MatrixTable({ raids, rows, ranks }) {
     const rankMap = Object.fromEntries(ranks.map((r) => [r.id, r]));
-    const rankSlug = (name) =>
-        name
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, "");
     if (rows.length === 0) {
         return (
             <div className="py-16 text-center text-gray-400">
@@ -272,11 +268,7 @@ function MatrixTable({ raids, rows, ranks }) {
                                 </div>
                             </td>
                             <td className="hidden whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 md:table-cell lg:sticky lg:z-10">
-                                <p
-                                    className={`flex-grow-0 flex-row items-center md:flex text-guild-rank-${rankSlug(rankMap[row.rank_id].name)}`}
-                                >
-                                    {rankMap[row.rank_id].name}
-                                </p>
+                                <GuildRankLabel rank={rankMap[row.rank_id]} />
                             </td>
                             <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:z-10">
                                 <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
@@ -299,7 +291,7 @@ function MatrixTable({ raids, rows, ranks }) {
 
 export default function Matrix({ matrix, ranks, zones, guildTags, filters, earliestDate }) {
     // ── Client-side filter state (no server reload) ──────────────────────────
-    const [characterName, setCharacterName] = useState("");
+    const [characterName, setCharacterName] = useState(filters.character ?? "");
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
     const [selectedRankIds, setSelectedRankIds] = useState(() =>

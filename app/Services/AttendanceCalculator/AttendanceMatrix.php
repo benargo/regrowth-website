@@ -87,6 +87,14 @@ class AttendanceMatrix
             $this->rows = $this->mergeLinkedCharacters($resolvedRankIds);
         }
 
+        if ($filters->character !== null) {
+            $characterId = $filters->character->id;
+            $this->rows = array_values(array_filter(
+                $this->rows,
+                fn (array $row) => $row['id'] === $characterId,
+            ));
+        }
+
         return $this;
     }
 

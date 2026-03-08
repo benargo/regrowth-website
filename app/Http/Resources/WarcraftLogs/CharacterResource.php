@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\WarcraftLogs;
 
+use App\Http\Resources\GuildRankResource;
 use App\Models\Character;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -33,6 +34,7 @@ class CharacterResource extends JsonResource
             'pivot' => $this->whenPivotLoaded('pivot_characters_wcl_reports', fn () => [
                 'presence' => $this->pivot->presence,
             ]),
+            'rank' => $this->whenLoaded('rank', fn () => new GuildRankResource($this->rank)),
         ];
     }
 }

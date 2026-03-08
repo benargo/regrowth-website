@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
+use App\Http\Resources\UserResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
+use App\Models\User;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -77,6 +79,23 @@ class LinkedReportResourceTest extends TestCase
         $this->assertNull($array['pivot']['created_by']);
         $this->assertArrayHasKey('created_at', $array['pivot']);
         $this->assertArrayHasKey('updated_at', $array['pivot']);
+    }
+
+    #[Test]
+    public function it_returns_created_by_as_user_resource_when_user_exists(): void
+    {
+        $user = User::factory()->create();
+        $report1 = Report::factory()->withoutGuildTag()->create();
+        $report2 = Report::factory()->withoutGuildTag()->create();
+        $report1->linkedReports()->attach($report2, ['created_by' => $user->id]);
+
+        $loadedReport = $report1->load('linkedReports');
+        $linkedReport = $loadedReport->linkedReports->first();
+
+        $array = (new LinkedReportResource($linkedReport))->toArray(new Request);
+
+        $this->assertInstanceOf(UserResource::class, $array['pivot']['created_by']);
+        $this->assertSame($user->id, $array['pivot']['created_by']->resource->id);
     }
 
     #[Test]
