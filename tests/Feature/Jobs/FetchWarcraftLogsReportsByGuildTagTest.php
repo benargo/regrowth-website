@@ -254,6 +254,90 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'BBB222', 'report_2' => 'AAA111', 'created_by' => $officer->id]);
     }
 
+    // ==========================================
+    // Touching
+    // ==========================================
+
+    public function test_it_touches_report_updated_at_when_auto_links_are_inserted(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        $originalTime = now()->subHour();
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        // Backdate the reports after the first run to isolate the touch from the second run
+        \App\Models\WarcraftLogs\Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
+
+        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2->handle($this->mockReportsService([$report1, $report2]));
+
+        // No new links inserted on second run, so timestamps must remain unchanged
+        $this->assertEquals($originalTime->toDateTimeString(), \App\Models\WarcraftLogs\Report::find('AAA111')->updated_at->toDateTimeString());
+        $this->assertEquals($originalTime->toDateTimeString(), \App\Models\WarcraftLogs\Report::find('BBB222')->updated_at->toDateTimeString());
+    }
+
+    public function test_it_touches_report_updated_at_when_stale_auto_links_are_deleted(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        // Two reports on different days, so no auto-links should be created
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        // Seed a stale auto-link
+        DB::table('pivot_wcl_reports_links')->insert([
+            ['report_1' => 'AAA111', 'report_2' => 'BBB222', 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // Backdate reports so we can observe the touch
+        $originalTime = now()->subHour();
+        \App\Models\WarcraftLogs\Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
+
+        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2->handle($this->mockReportsService([$report1, $report2]));
+
+        // Both reports referenced in the deleted link must be touched
+        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('AAA111')->updated_at);
+        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('BBB222')->updated_at);
+    }
+
+    public function test_it_touches_report_updated_at_when_new_auto_links_are_inserted(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        $report1Data = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2Data = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        // Persist both reports first so we can track their updated_at
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1Data, $report2Data]));
+
+        // Backdate to isolate the initial persist from our assertion
+        $originalTime = now()->subHour();
+        \App\Models\WarcraftLogs\Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
+        DB::table('pivot_wcl_reports_links')->truncate();
+
+        // Run again — links should now be inserted and reports touched
+        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2->handle($this->mockReportsService([$report1Data, $report2Data]));
+
+        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('AAA111')->updated_at);
+        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('BBB222')->updated_at);
+    }
+
     public function test_it_does_not_duplicate_existing_valid_auto_links(): void
     {
         config(['app.timezone' => 'Europe/Paris']);

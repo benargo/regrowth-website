@@ -145,6 +145,7 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
 
         // Delete stale auto-links no longer in the desired set.
         $staleKeys = $existingAutoPairs->keys()->filter(fn ($key) => ! isset($desiredPairs[$key]));
+        $affectedCodes = collect();
 
         foreach ($staleKeys as $key) {
             [$code1, $code2] = $existingAutoPairs[$key];
@@ -153,6 +154,7 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
                 ->where('report_2', $code2)
                 ->whereNull('created_by')
                 ->delete();
+            $affectedCodes->push($code1, $code2);
         }
 
         // Insert new auto-links that don't exist at all yet.
@@ -170,6 +172,13 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
 
         if (! empty($toInsert)) {
             DB::table('pivot_wcl_reports_links')->insert($toInsert);
+            foreach ($toInsert as $row) {
+                $affectedCodes->push($row['report_1'], $row['report_2']);
+            }
+        }
+
+        if ($affectedCodes->isNotEmpty()) {
+            ReportModel::whereIn('code', $affectedCodes->unique()->values()->all())->touch();
         }
     }
 

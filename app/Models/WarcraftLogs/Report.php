@@ -3,6 +3,7 @@
 namespace App\Models\WarcraftLogs;
 
 use App\Models\Character;
+use App\Models\CharacterReport;
 use App\Services\WarcraftLogs\Data\Zone;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -86,6 +87,7 @@ class Report extends Model
     public function characters(): BelongsToMany
     {
         return $this->belongsToMany(Character::class, 'pivot_characters_wcl_reports', 'wcl_report_code', 'character_id')
+            ->using(CharacterReport::class)
             ->withPivot('presence');
     }
 
@@ -109,7 +111,7 @@ class Report extends Model
             'pivot_wcl_reports_links',
             'report_1',
             'report_2'
-        )->withPivot('created_by')->withTimestamps();
+        )->using(ReportLink::class)->withPivot('created_by')->withTimestamps();
     }
 
     /**

@@ -288,6 +288,56 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     }
 
     // ==========================================
+    // Touching
+    // ==========================================
+
+    public function test_it_touches_the_report_updated_at_when_attendance_is_synced(): void
+    {
+        $guildTag = GuildTag::factory()->countsAttendance()->create();
+        $rank = GuildRank::factory()->create(['count_attendance' => true]);
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+
+        $originalTime = now()->subHour();
+        $report = Report::factory()->create(['code' => 'touch01', 'guild_tag_id' => $guildTag->id, 'updated_at' => $originalTime]);
+
+        $guildAttendance = new GuildAttendance(
+            code: 'touch01',
+            players: [new PlayerAttendance(name: 'Thrall', presence: 1)],
+            startTime: Carbon::parse('2025-06-01'),
+        );
+
+        $attendanceService = Mockery::mock(Attendance::class);
+        $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
+
+        $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
+        $job->handle($attendanceService);
+
+        $this->assertGreaterThan($originalTime, $report->fresh()->updated_at);
+    }
+
+    public function test_it_does_not_touch_the_report_when_no_attendance_data_is_synced(): void
+    {
+        $guildTag = GuildTag::factory()->countsAttendance()->create();
+
+        $originalTime = now()->subHour();
+        $report = Report::factory()->create(['code' => 'notouch1', 'guild_tag_id' => $guildTag->id, 'updated_at' => $originalTime]);
+
+        $guildAttendance = new GuildAttendance(
+            code: 'notouch1',
+            players: [],
+            startTime: Carbon::parse('2025-06-01'),
+        );
+
+        $attendanceService = Mockery::mock(Attendance::class);
+        $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
+
+        $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
+        $job->handle($attendanceService);
+
+        $this->assertEquals($originalTime->toDateTimeString(), $report->fresh()->updated_at->toDateTimeString());
+    }
+
+    // ==========================================
     // Edge Cases
     // ==========================================
 

@@ -214,6 +214,7 @@ class Character extends Model
     public function warcraftLogsReports(): BelongsToMany
     {
         return $this->belongsToMany(Report::class, 'pivot_characters_wcl_reports', 'character_id', 'wcl_report_code')
+            ->using(CharacterReport::class)
             ->withPivot('presence');
     }
 

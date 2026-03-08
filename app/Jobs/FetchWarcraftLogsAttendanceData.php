@@ -104,6 +104,7 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
                     ['character_id', 'wcl_report_code'],
                     ['presence']
                 );
+                $report->touch();
             }
         }
 
