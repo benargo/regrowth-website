@@ -172,6 +172,7 @@ class AttendanceMatrixControllerTest extends TestCase
             ->has('zones')
             ->has('guildTags')
             ->has('filters')
+            ->has('filters.character')
             ->has('filters.zone_ids')
             ->has('filters.guild_tag_ids')
             ->has('filters.since_date')
@@ -192,6 +193,29 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->has('ranks', 2)
             ->where('ranks', fn ($ranks) => collect($ranks)->pluck('id')->sort()->values()->toArray() === collect([$counting->id, $nonCounting->id])->sort()->values()->toArray())
+        );
+    }
+
+    public function test_matrix_character_filter_is_null_when_not_specified(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('filters.character', null)
+        );
+    }
+
+    public function test_matrix_character_filter_returns_character_name(): void
+    {
+        $character = Character::factory()->main()->create(['name' => 'Thrall']);
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => $character->id]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('filters.character', 'Thrall')
         );
     }
 
@@ -217,7 +241,35 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
-        $response->assertSessionDoesntHaveErrors(['zone_ids', 'guild_tag_ids', 'since_date', 'before_date']);
+        $response->assertSessionDoesntHaveErrors(['character', 'zone_ids', 'guild_tag_ids', 'since_date', 'before_date']);
+    }
+
+    public function test_matrix_accepts_valid_character_id(): void
+    {
+        $character = Character::factory()->main()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => $character->id]));
+
+        $response->assertSessionDoesntHaveErrors(['character']);
+    }
+
+    public function test_matrix_rejects_nonexistent_character_id(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => 99999]));
+
+        $response->assertSessionHasErrors(['character']);
+    }
+
+    public function test_matrix_rejects_non_integer_character(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => 'thrall']));
+
+        $response->assertSessionHasErrors(['character']);
     }
 
     public function test_matrix_accepts_valid_zone_ids_string(): void
@@ -420,6 +472,30 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     // ==================== matrix: Server-Side Filter Behavior ====================
+
+    public function test_matrix_character_filter_limits_data_to_that_character(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
+        $report->characters()->attach($thrall->id, ['presence' => 1]);
+        $report->characters()->attach($jaina->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => $thrall->id]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('matrix.rows', 1)
+                ->where('matrix.rows.0.name', 'Thrall')
+            )
+        );
+    }
 
     public function test_matrix_guild_tag_filter_limits_data_to_selected_tag(): void
     {

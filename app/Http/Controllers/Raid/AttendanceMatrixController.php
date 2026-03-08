@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Raid;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
+use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
@@ -74,6 +75,7 @@ class AttendanceMatrixController extends Controller
      */
     private function resolveFilters(AttendanceMatrixRequest $request): AttendanceMatrixFilters
     {
+        $character = $request->input('character') ? Character::find($request->input('character')) : null;
         $rankIds = $request->rankIds() ?? [];
         $zoneIds = $request->zoneIds();
         $guildTagIds = $request->guildTagIds() ?? GuildTag::where('count_attendance', true)->pluck('id')->toArray();
@@ -87,6 +89,7 @@ class AttendanceMatrixController extends Controller
             : null;
 
         return new AttendanceMatrixFilters(
+            character: $character,
             rankIds: $rankIds,
             zoneIds: $zoneIds,
             guildTagIds: $guildTagIds,
@@ -116,6 +119,7 @@ class AttendanceMatrixController extends Controller
         sort($rankIds);
 
         $payload = [
+            'character' => $filters->character?->id,
             'zone_ids' => $zoneIds,
             'guild_tag_ids' => $guildTagIds,
             'rank_ids' => $rankIds,
@@ -130,11 +134,12 @@ class AttendanceMatrixController extends Controller
     /**
      * Serialize the filters into a format suitable for passing to the view. This method should take the AttendanceMatrixFilters instance and convert it into an array format that can be easily used in the Inertia response. The serialized filters should include the zone IDs, guild tag IDs, and date ranges in a format that can be easily consumed by the frontend components.
      *
-     * @return array{rank_ids: array<int, int>, zone_ids: array<int, int>|null, guild_tag_ids: array<int, int>, since_date: string|null, before_date: string|null, combine_linked_characters: bool}
+     * @return array{character: int|null, rank_ids: array<int, int>, zone_ids: array<int, int>|null, guild_tag_ids: array<int, int>, since_date: string|null, before_date: string|null, combine_linked_characters: bool}
      */
     private function serializeFilters(AttendanceMatrixFilters $filters, AttendanceMatrixRequest $request): array
     {
         return [
+            'character' => $filters->character?->name,
             'rank_ids' => $request->input('rank_ids'),
             'zone_ids' => $request->input('zone_ids'),
             'guild_tag_ids' => $request->input('guild_tag_ids'),
