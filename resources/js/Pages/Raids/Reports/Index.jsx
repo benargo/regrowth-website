@@ -5,6 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import DateFilterButton from "@/Components/DateFilterButton";
 import Pagination from "@/Components/Pagination";
+import formatDate from "@/Helpers/FormatDate";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -167,9 +168,13 @@ function ReportsTable({ reports }) {
                 <tbody className="divide-y divide-brown-700">
                     {reports.data.map((report) => (
                         <tr key={report.code} className="transition-colors hover:bg-brown-800/50">
-                            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-300">
-                                <p>{report.day_of_week}</p>
-                                <p className="text-xs text-gray-500">{report.date}</p>
+                            <td className="whitespace-nowrap px-4 py-3">
+                                <p className="text-xs text-gray-500">{report.day_of_week}</p>
+                                <p className="text-sm text-gray-300">
+                                    <span className="md:hidden">{formatDate(report.date).short}</span>
+                                    <span className="hidden md:inline lg:hidden">{formatDate(report.date).medium}</span>
+                                    <span className="hidden lg:inline">{formatDate(report.date).long}</span>
+                                </p>
                             </td>
                             <td className="px-4 py-3 text-sm">
                                 <a
