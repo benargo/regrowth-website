@@ -117,7 +117,7 @@ class ReportControllerTest extends TestCase
                 ->has('reports')
                 ->has('reports.data', 1)
                 ->has('reports.links')
-                ->has('reports.total')
+                ->has('reports.meta.total')
             )
         );
     }
@@ -178,13 +178,13 @@ class ReportControllerTest extends TestCase
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('reports.data.0.code')
                 ->has('reports.data.0.title')
-                ->has('reports.data.0.date')
-                ->has('reports.data.0.day_of_week')
-                ->has('reports.data.0.zone_name')
+                ->has('reports.data.0.start_time')
+                ->has('reports.data.0.end_time')
+                ->has('reports.data.0.zone')
+                ->has('reports.data.0.zone.id')
+                ->has('reports.data.0.zone.name')
                 ->has('reports.data.0.guild_tag')
-                ->has('reports.data.0.duration_minutes')
                 ->where('reports.data.0.title', 'Test Raid')
-                ->where('reports.data.0.duration_minutes', 210)
             )
         );
     }
@@ -219,7 +219,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => [1]]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => '1']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -238,7 +238,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => [$tag1->id]]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => (string) $tag1->id]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -259,7 +259,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Filter for Monday only (Carbon day 1)
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => [1]]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => '1']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -305,6 +305,70 @@ class ReportControllerTest extends TestCase
         );
     }
 
+    public function test_zone_ids_none_returns_no_reports(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->count(3)->withGuildTag($tag)->create();
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => 'none']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data', 0)
+            )
+        );
+    }
+
+    public function test_guild_tag_ids_none_returns_no_reports(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->count(3)->withGuildTag($tag)->create();
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => 'none']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data', 0)
+            )
+        );
+    }
+
+    public function test_days_none_returns_no_reports(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->count(3)->withGuildTag($tag)->create();
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => 'none']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data', 0)
+            )
+        );
+    }
+
+    public function test_zone_ids_all_returns_all_reports(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->count(3)->withGuildTag($tag)->create();
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => 'all']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data', 3)
+            )
+        );
+    }
+
     public function test_no_filters_returns_all_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
@@ -332,29 +396,29 @@ class ReportControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['zone_ids', 'guild_tag_ids', 'days', 'since_date', 'before_date']);
     }
 
-    public function test_index_rejects_zone_ids_when_not_an_array(): void
+    public function test_index_rejects_zone_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => 1]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['zone_ids']);
     }
 
-    public function test_index_rejects_guild_tag_ids_when_not_an_array(): void
+    public function test_index_rejects_guild_tag_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => 1]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
 
-    public function test_index_rejects_days_when_not_an_array(): void
+    public function test_index_rejects_days_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => 1]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => 'not-valid']));
 
         $response->assertSessionHasErrors(['days']);
     }
@@ -363,16 +427,16 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => [7]]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => '7']));
 
-        $response->assertSessionHasErrors(['days.0']);
+        $response->assertSessionHasErrors(['days']);
     }
 
     public function test_index_accepts_valid_days_range(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => [0, 1, 2, 3, 4, 5, 6]]));
+        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => '0,1,2,3,4,5,6']));
 
         $response->assertSessionDoesntHaveErrors(['days']);
     }

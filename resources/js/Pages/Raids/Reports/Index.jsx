@@ -6,6 +6,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import DateFilterButton from "@/Components/DateFilterButton";
 import Pagination from "@/Components/Pagination";
 import formatDate from "@/Helpers/FormatDate";
+import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -166,35 +167,43 @@ function ReportsTable({ reports }) {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-brown-700">
-                    {reports.data.map((report) => (
-                        <tr key={report.code} className="transition-colors hover:bg-brown-800/50">
-                            <td className="whitespace-nowrap px-4 py-3">
-                                <p className="text-xs text-gray-500">{report.day_of_week}</p>
-                                <p className="text-sm text-gray-300">
-                                    <span className="md:hidden">{formatDate(report.date).short}</span>
-                                    <span className="hidden md:inline lg:hidden">{formatDate(report.date).medium}</span>
-                                    <span className="hidden lg:inline">{formatDate(report.date).long}</span>
-                                </p>
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                                <a
-                                    href={`https://www.warcraftlogs.com/reports/${report.code}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    dusk="report-link"
-                                    className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
-                                >
-                                    {report.title}
-                                    <Icon icon="arrow-up-right-from-square" style="solid" className="ml-1.5 text-xs opacity-60" />
-                                </a>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-300">{report.zone_name ?? "—"}</td>
-                            <td className="px-4 py-3 text-sm text-gray-300">{report.guild_tag?.name ?? "—"}</td>
-                            <td className="px-4 py-3 text-right text-sm text-gray-300">
-                                {formatDuration(report.duration_minutes)}
-                            </td>
-                        </tr>
-                    ))}
+                    {reports.data.map((report) => {
+                        const startDate = new Date(report.start_time);
+                        const endDate = new Date(report.end_time);
+                        const durationMinutes = Math.floor((endDate - startDate) / 60000);
+                        const dayOfWeek = startDate.toLocaleString("en-GB", { weekday: "long" });
+                        const formattedDate = formatDate(report.start_time);
+
+                        return (
+                            <tr key={report.code} className="transition-colors hover:bg-brown-800/50">
+                                <td className="whitespace-nowrap px-4 py-3">
+                                    <p className="text-xs text-gray-500">{dayOfWeek}</p>
+                                    <p className="text-sm text-gray-300">
+                                        <span className="md:hidden">{formattedDate.short}</span>
+                                        <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
+                                        <span className="hidden lg:inline">{formattedDate.long}</span>
+                                    </p>
+                                </td>
+                                <td className="px-4 py-3 text-sm">
+                                    <a
+                                        href={`https://www.warcraftlogs.com/reports/${report.code}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        dusk="report-link"
+                                        className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
+                                    >
+                                        {report.title}
+                                        <Icon icon="arrow-up-right-from-square" style="solid" className="ml-1.5 text-xs opacity-60" />
+                                    </a>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-300">{report.zone?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-sm text-gray-300">{report.guild_tag?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-right text-sm text-gray-300">
+                                    {formatDuration(durationMinutes)}
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>
@@ -217,32 +226,28 @@ const DAYS = [
 
 export default function Index({ reports, zones, guildTags, filters, earliestDate }) {
     const [selectedZoneIds, setSelectedZoneIds] = useState(() =>
-        filters.zone_ids?.length ? filters.zone_ids : zones.map((z) => z.id),
+        decodeFilter(filters.zone_ids, zones.map((z) => z.id)),
     );
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
-        filters.guild_tag_ids?.length ? filters.guild_tag_ids : guildTags.map((g) => g.id),
+        decodeFilter(filters.guild_tag_ids, guildTags.map((g) => g.id)),
     );
     const [selectedDays, setSelectedDays] = useState(() =>
-        filters.days?.length ? filters.days : DAYS.map((d) => d.id),
+        decodeFilter(filters.days, DAYS.map((d) => d.id)),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
     const [beforeDate, setBeforeDate] = useState(filters.before_date ?? "");
 
     const [isReloading, setIsReloading] = useState(false);
 
-    const buildFilters = () => {
-        const allZonesSelected = selectedZoneIds.length === zones.length;
-        const allTagsSelected = selectedGuildTagIds.length === guildTags.length;
-        const allDaysSelected = selectedDays.length === DAYS.length;
+    const hasEmptyFilter = selectedZoneIds.length === 0 || selectedGuildTagIds.length === 0 || selectedDays.length === 0;
 
-        return {
-            zone_ids: allZonesSelected ? undefined : selectedZoneIds,
-            guild_tag_ids: allTagsSelected ? undefined : selectedGuildTagIds,
-            days: allDaysSelected ? undefined : selectedDays,
-            since_date: sinceDate || null,
-            before_date: beforeDate || null,
-        };
-    };
+    const buildFilters = () => ({
+        zone_ids: encodeFilter(selectedZoneIds, zones),
+        guild_tag_ids: encodeFilter(selectedGuildTagIds, guildTags),
+        days: encodeFilter(selectedDays, DAYS),
+        since_date: sinceDate || undefined,
+        before_date: beforeDate || undefined,
+    });
 
     const reloadReports = (filterData) => {
         setIsReloading(true);
@@ -260,6 +265,7 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
             isMounted.current = true;
             return;
         }
+        if (hasEmptyFilter) return;
         reloadReports(buildFilters());
     }, [selectedZoneIds, selectedGuildTagIds, selectedDays]);
 
@@ -269,10 +275,11 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
             datesInitialized.current = true;
             return;
         }
+        if (hasEmptyFilter) return;
         reloadReports(buildFilters());
     }, [sinceDate, beforeDate]);
 
-    const showSkeleton = isReloading || !reports;
+    const showSkeleton = !hasEmptyFilter && (isReloading || !reports);
 
     return (
         <Master title="Raid Reports">
@@ -319,12 +326,14 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                     {/* Reports */}
                     {showSkeleton ? (
                         <ReportsSkeleton />
+                    ) : hasEmptyFilter ? (
+                        <ReportsTable reports={{ data: [] }} />
                     ) : (
                         <>
                             <ReportsTable reports={reports} />
                             <Pagination
-                                links={reports.links}
-                                meta={reports}
+                                links={reports.meta.links}
+                                meta={reports.meta}
                                 itemName="reports"
                             />
                         </>

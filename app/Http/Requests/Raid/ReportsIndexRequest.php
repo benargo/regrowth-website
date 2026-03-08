@@ -3,12 +3,15 @@
 namespace App\Http\Requests\Raid;
 
 use App\Models\WarcraftLogs\Report;
+use App\Traits\ParsesFilterParam;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Cache;
 
 class ReportsIndexRequest extends FormRequest
 {
+    use ParsesFilterParam;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -44,15 +47,27 @@ class ReportsIndexRequest extends FormRequest
         }
 
         return [
-            'zone_ids' => ['nullable', 'array'],
-            'zone_ids.*' => ['integer'],
-            'guild_tag_ids' => ['nullable', 'array'],
-            'guild_tag_ids.*' => ['integer'],
-            'days' => ['nullable', 'array'],
-            'days.*' => ['integer', 'min:0', 'max:6'],
+            'zone_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
+            'guild_tag_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
+            'days' => ['nullable', 'string', 'regex:/^(all|none|[0-6](,[0-6])*)$/'],
             'since_date' => $sinceDateRules,
             'before_date' => $beforeDateRules,
         ];
+    }
+
+    public function zoneIds(): ?array
+    {
+        return $this->parseFilterParam('zone_ids');
+    }
+
+    public function guildTagIds(): ?array
+    {
+        return $this->parseFilterParam('guild_tag_ids');
+    }
+
+    public function days(): ?array
+    {
+        return $this->parseFilterParam('days');
     }
 
     /**
