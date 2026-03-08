@@ -291,6 +291,35 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     // Edge Cases
     // ==========================================
 
+    public function test_it_handles_duplicate_character_entries_without_throwing(): void
+    {
+        $guildTag = GuildTag::factory()->countsAttendance()->create();
+        $rank = GuildRank::factory()->create(['count_attendance' => true]);
+        $character = Character::factory()->create(['name' => 'Rexxar', 'rank_id' => $rank->id]);
+        $report = Report::factory()->create(['code' => 'dup001', 'guild_tag_id' => $guildTag->id]);
+
+        $guildAttendance = new GuildAttendance(
+            code: 'dup001',
+            players: [new PlayerAttendance(name: 'Rexxar', presence: 1)],
+            startTime: Carbon::parse('2025-06-01'),
+        );
+
+        $attendanceService = Mockery::mock(Attendance::class);
+        $attendanceService->shouldReceive('lazy')->twice()->andReturn(LazyCollection::make([$guildAttendance]));
+
+        // Run the job twice to simulate concurrent execution or a re-run
+        $job = new FetchWarcraftLogsAttendanceData(collect([$guildTag]));
+        $job->handle($attendanceService);
+        $job->handle($attendanceService);
+
+        $this->assertDatabaseCount('pivot_characters_wcl_reports', 1);
+        $this->assertDatabaseHas('pivot_characters_wcl_reports', [
+            'character_id' => $character->id,
+            'wcl_report_code' => 'dup001',
+            'presence' => 1,
+        ]);
+    }
+
     public function test_it_throws_an_exception_when_guild_tags_are_empty(): void
     {
         $this->expectException(EmptyCollectionException::class);

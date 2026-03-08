@@ -11,11 +11,20 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
 {
     use Batchable, Queueable;
+
+    /**
+     * The timezone to use when determining raid day boundaries for auto-linking reports.
+     *
+     * @var string
+     */
+    private $timezone = 'UTC';
 
     /**
      * Get the middleware the job should pass through.
@@ -32,7 +41,9 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
         public GuildTag $guildTag,
         public ?Carbon $since = null,
         public ?Carbon $before = null,
-    ) {}
+    ) {
+        $this->timezone = config('app.timezone', 'UTC');
+    }
 
     /**
      * Execute the job.
@@ -70,6 +81,96 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
                 $reportModel->save();
             }
         });
+
+        $this->syncReportLinks();
+    }
+
+    /**
+     * Synchronise auto-links for all reports belonging to this guild tag.
+     *
+     * Reports that fall within the same raid day (05:00–04:59 in the application timezone)
+     * are linked together. Existing manual links (created_by IS NOT NULL) are never touched.
+     * Stale auto-links are removed and missing auto-links are inserted.
+     */
+    protected function syncReportLinks(): void
+    {
+        $allReports = ReportModel::where('guild_tag_id', $this->guildTag->id)
+            ->select('code', 'start_time')
+            ->get();
+
+        if ($allReports->isEmpty()) {
+            return;
+        }
+
+        $allCodes = $allReports->pluck('code')->all();
+
+        /** @var Collection<string, Collection<int, ReportModel>> $groups */
+        $groups = $allReports->groupBy(
+            fn (ReportModel $report) => $report->start_time
+                ->copy()
+                ->setTimezone($this->timezone)
+                ->subHours(5)
+                ->toDateString()
+        );
+
+        // Compute all desired auto-link ordered pairs (bidirectional).
+        /** @var array<string, array{0: string, 1: string}> $desiredPairs */
+        $desiredPairs = [];
+        foreach ($groups as $group) {
+            if ($group->count() < 2) {
+                continue;
+            }
+
+            $codes = $group->pluck('code')->all();
+            foreach ($codes as $code1) {
+                foreach ($codes as $code2) {
+                    if ($code1 !== $code2) {
+                        $desiredPairs["$code1|$code2"] = [$code1, $code2];
+                    }
+                }
+            }
+        }
+
+        // Fetch all existing links where report_1 belongs to this guild tag's reports.
+        $existingLinks = DB::table('pivot_wcl_reports_links')
+            ->whereIn('report_1', $allCodes)
+            ->get();
+
+        $existingAutoPairs = $existingLinks
+            ->whereNull('created_by')
+            ->mapWithKeys(fn ($row) => ["$row->report_1|$row->report_2" => [$row->report_1, $row->report_2]]);
+
+        $existingPairKeys = $existingLinks
+            ->mapWithKeys(fn ($row) => ["$row->report_1|$row->report_2" => true]);
+
+        // Delete stale auto-links no longer in the desired set.
+        $staleKeys = $existingAutoPairs->keys()->filter(fn ($key) => ! isset($desiredPairs[$key]));
+
+        foreach ($staleKeys as $key) {
+            [$code1, $code2] = $existingAutoPairs[$key];
+            DB::table('pivot_wcl_reports_links')
+                ->where('report_1', $code1)
+                ->where('report_2', $code2)
+                ->whereNull('created_by')
+                ->delete();
+        }
+
+        // Insert new auto-links that don't exist at all yet.
+        $toInsert = collect($desiredPairs)
+            ->filter(fn ($pair, $key) => ! isset($existingPairKeys[$key]))
+            ->map(fn ($pair) => [
+                'report_1' => $pair[0],
+                'report_2' => $pair[1],
+                'created_by' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ])
+            ->values()
+            ->all();
+
+        if (! empty($toInsert)) {
+            DB::table('pivot_wcl_reports_links')->insert($toInsert);
+        }
     }
 
     /**

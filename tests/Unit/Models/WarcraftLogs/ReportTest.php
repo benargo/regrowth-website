@@ -4,6 +4,7 @@ namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Events\AddonSettingsProcessed;
 use App\Models\Character;
+use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use App\Services\WarcraftLogs\Data\Zone;
@@ -322,5 +323,68 @@ class ReportTest extends ModelTestCase
         $report->refresh();
 
         $this->assertNull($report->guild_tag_id);
+    }
+
+    // ==================== linkedReports ====================
+
+    #[Test]
+    public function linked_reports_returns_belongs_to_many_relationship(): void
+    {
+        $report = new Report;
+
+        $this->assertInstanceOf(BelongsToMany::class, $report->linkedReports());
+    }
+
+    #[Test]
+    public function linked_reports_returns_linked_reports(): void
+    {
+        $report1 = $this->create();
+        $report2 = $this->create();
+
+        \DB::table('pivot_wcl_reports_links')->insert([
+            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $linked = $report1->linkedReports;
+
+        $this->assertCount(1, $linked);
+        $this->assertSame($report2->code, $linked->first()->code);
+    }
+
+    #[Test]
+    public function linked_reports_returns_manually_linked_reports_with_created_by(): void
+    {
+        $report1 = $this->create();
+        $report2 = $this->create();
+        $officer = User::factory()->officer()->create();
+
+        \DB::table('pivot_wcl_reports_links')->insert([
+            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $linked = $report1->linkedReports;
+
+        $this->assertCount(1, $linked);
+        $this->assertSame($report2->code, $linked->first()->code);
+        $this->assertSame($officer->id, $linked->first()->pivot->created_by);
+    }
+
+    #[Test]
+    public function deleting_report_cascades_to_linked_reports_pivot(): void
+    {
+        $report1 = $this->create();
+        $report2 = $this->create();
+
+        \DB::table('pivot_wcl_reports_links')->insert([
+            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $report1->delete();
+
+        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $report1->code]);
+        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_2' => $report1->code]);
     }
 }

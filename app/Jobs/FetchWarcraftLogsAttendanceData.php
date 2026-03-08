@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class FetchWarcraftLogsAttendanceData implements ShouldQueue
@@ -90,10 +91,20 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
                     continue;
                 }
 
-                $syncData[$character->id] = ['presence' => $player->presence];
+                $syncData[] = [
+                    'character_id' => $character->id,
+                    'wcl_report_code' => $report->code,
+                    'presence' => $player->presence,
+                ];
             }
 
-            $report->characters()->syncWithoutDetaching($syncData);
+            if (! empty($syncData)) {
+                DB::table('pivot_characters_wcl_reports')->upsert(
+                    $syncData,
+                    ['character_id', 'wcl_report_code'],
+                    ['presence']
+                );
+            }
         }
 
         Log::info('Completed fetching and syncing attendance data for '.($this->since ? 'reports since '.$this->since->toIso8601String() : 'all reports').'. Processed '.$attendance->count().' attendance records.');

@@ -5,7 +5,6 @@ namespace App\Services\AttendanceCalculator;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class AttendanceMatrix
@@ -73,9 +72,13 @@ class AttendanceMatrix
             // Load all characters regardless of rank so alts from any rank
             // can contribute attendance. mergeLinkedCharacters() will filter
             // the output to only mains from the resolved rank IDs.
-            $query->with('characters');
+            // linkedReports is loaded so mergeLinkedReports() can group reports.
+            $query->with(['characters', 'linkedReports']);
         } else {
-            $query->with(['characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $resolvedRankIds))]);
+            $query->with([
+                'characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $resolvedRankIds)),
+                'linkedReports',
+            ]);
         }
 
         $this->calculateMatrix($query->get());
@@ -112,30 +115,15 @@ class AttendanceMatrix
     /**
      * Build the attendance matrix from a collection of reports.
      *
-     * Returns one column per merged raid day, and one row per character. Attendance
+     * Returns one column per linked raid group, and one row per character. Attendance
      * values are: null = before the character's first raid, 0 = absent, 1 = present, 2 = late.
      *
-     * @param  Collection<int, Report>  $reports
+     * @param  Collection<int, Report>  $reports  Reports with 'characters' and 'linkedReports' eager loaded.
      */
     protected function calculateMatrix(Collection $reports): self
     {
-        /** @var array<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, presence: int}>}> $raidRecords */
-        $raidRecords = $reports->map(fn (Report $report) => [
-            'code' => $report->code,
-            'startTime' => $report->start_time,
-            'zoneName' => $report->zone_name,
-            'players' => $report->characters->mapWithKeys(fn ($character) => [
-                $character->name => [
-                    'id' => $character->id,
-                    'rank_id' => $character->rank_id,
-                    'playable_class' => $character->playable_class ?? null,
-                    'presence' => $character->pivot->presence,
-                ],
-            ])->all(),
-        ])->all();
-
-        $records = $this->calculator->sortRaidRecords(collect($raidRecords));
-        $records = $this->calculator->mergeByRaidDay($records);
+        $records = $this->calculator->mergeLinkedReports($reports);
+        $records = $this->calculator->sortRaidRecords($records);
 
         if ($records->isEmpty()) {
             return $this->load([], []);

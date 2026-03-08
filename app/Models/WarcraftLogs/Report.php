@@ -100,6 +100,19 @@ class Report extends Model
     }
 
     /**
+     * Get the reports that are linked to this report.
+     */
+    public function linkedReports(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Report::class,
+            'pivot_wcl_reports_links',
+            'report_1',
+            'report_2'
+        )->withPivot('created_by')->withTimestamps();
+    }
+
+    /**
      * Get the zone attribute as a Zone object.
      */
     public function zone(): Attribute

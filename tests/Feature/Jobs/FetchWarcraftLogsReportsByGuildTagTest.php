@@ -3,12 +3,14 @@
 namespace Tests\Feature\Jobs;
 
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
+use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Data\Report as ReportData;
 use App\Services\WarcraftLogs\Reports;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Mockery;
 use Tests\TestCase;
 
@@ -115,5 +117,162 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
         $job->batchId = $batch->id;
         dispatch_sync($job);
+    }
+
+    // ==========================================
+    // Report Linking — Same Raid Day
+    // ==========================================
+
+    protected function mockReportsService(array $reports): Reports
+    {
+        $reportsService = Mockery::mock(Reports::class);
+        $reportsService->shouldReceive('byGuildTags')->once()->andReturnSelf();
+        $reportsService->shouldReceive('startTime')->once()->andReturnSelf();
+        $reportsService->shouldReceive('endTime')->once()->andReturnSelf();
+        $reportsService->shouldReceive('get')->once()->andReturn(collect($reports));
+
+        return $reportsService;
+    }
+
+    public function test_it_links_reports_that_fall_on_the_same_raid_day(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'AAA111', 'report_2' => 'BBB222', 'created_by' => null]);
+        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'BBB222', 'report_2' => 'AAA111', 'created_by' => null]);
+    }
+
+    public function test_it_does_not_link_reports_on_different_raid_days(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
+    }
+
+    public function test_it_respects_the_0500_cutoff_when_linking(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        // 19:00 on Jan 15 and 03:00 on Jan 16 both fall within the same raid day (Jan 15, 05:00–Jan 16, 04:59)
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-16 03:00:00', 'Europe/Paris'), Carbon::parse('2025-01-16 04:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'AAA111', 'report_2' => 'BBB222']);
+        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'BBB222', 'report_2' => 'AAA111']);
+    }
+
+    public function test_it_does_not_link_report_after_0500_to_previous_day(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        // 06:00 on Jan 16 is a new raid day, separate from Jan 15
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-16 06:00:00', 'Europe/Paris'), Carbon::parse('2025-01-16 08:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
+    }
+
+    public function test_it_removes_stale_auto_links_when_reports_are_no_longer_on_the_same_raid_day(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        // Pre-create two reports already in the DB on different days
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        // Seed a stale auto-link that shouldn't exist
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        DB::table('pivot_wcl_reports_links')->insert([
+            ['report_1' => 'AAA111', 'report_2' => 'BBB222', 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => 'BBB222', 'report_2' => 'AAA111', 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->assertDatabaseCount('pivot_wcl_reports_links', 2);
+
+        // Run the job again — the stale links should be removed
+        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
+    }
+
+    public function test_it_does_not_override_manual_links_created_by_officers(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+        $officer = User::factory()->officer()->create();
+
+        // Two reports on different days — job would not auto-link them
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        // Officer manually creates a link between the two reports
+        DB::table('pivot_wcl_reports_links')->insert([
+            ['report_1' => 'AAA111', 'report_2' => 'BBB222', 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => 'BBB222', 'report_2' => 'AAA111', 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // Run the job again — the manual links must be preserved
+        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'AAA111', 'report_2' => 'BBB222', 'created_by' => $officer->id]);
+        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'BBB222', 'report_2' => 'AAA111', 'created_by' => $officer->id]);
+    }
+
+    public function test_it_does_not_duplicate_existing_valid_auto_links(): void
+    {
+        config(['app.timezone' => 'Europe/Paris']);
+
+        $guildTag = GuildTag::factory()->create();
+
+        $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
+        $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
+
+        // Run once — creates links
+        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseCount('pivot_wcl_reports_links', 2);
+
+        // Run again — must not insert duplicates
+        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2->handle($this->mockReportsService([$report1, $report2]));
+
+        $this->assertDatabaseCount('pivot_wcl_reports_links', 2);
     }
 }
