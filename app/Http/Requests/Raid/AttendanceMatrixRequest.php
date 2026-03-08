@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Raid;
 
 use App\Models\WarcraftLogs\Report;
+use App\Traits\ParsesFilterParam;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Cache;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Gate;
 
 class AttendanceMatrixRequest extends FormRequest
 {
+    use ParsesFilterParam;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -47,16 +50,33 @@ class AttendanceMatrixRequest extends FormRequest
         }
 
         return [
-            'rank_ids' => ['nullable', 'array'],
-            'rank_ids.*' => ['integer'],
-            'zone_ids' => ['nullable', 'array'],
-            'zone_ids.*' => ['integer'],
-            'guild_tag_ids' => ['nullable', 'array'],
-            'guild_tag_ids.*' => ['integer'],
+            'rank_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
+            'zone_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
+            'guild_tag_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
             'since_date' => $sinceDateRules,
             'before_date' => $beforeDateRules,
-            'include_linked_characters' => ['nullable', 'boolean'],
+            'combine_linked_characters' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function zoneIds(): ?array
+    {
+        return $this->parseFilterParam('zone_ids');
+    }
+
+    public function guildTagIds(): ?array
+    {
+        return $this->parseFilterParam('guild_tag_ids');
+    }
+
+    public function rankIds(): ?array
+    {
+        return $this->parseFilterParam('rank_ids');
+    }
+
+    public function combineLinkedCharacters(): bool
+    {
+        return $this->boolean('combine_linked_characters', true);
     }
 
     /**
@@ -67,7 +87,7 @@ class AttendanceMatrixRequest extends FormRequest
     {
         $earliestRaw = Cache::tags('warcraftlogs')->remember(
             'attendance_matrix_earliest_date',
-            now()->addDays(7),
+            now()->addDay(),
             fn () => Report::min('start_time'),
         );
 

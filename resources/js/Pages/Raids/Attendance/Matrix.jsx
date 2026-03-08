@@ -6,6 +6,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
+import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -302,7 +303,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
     const [selectedRankIds, setSelectedRankIds] = useState(() =>
-        filters.rank_ids?.length ? filters.rank_ids : ranks.filter((r) => r.count_attendance).map((r) => r.id),
+        decodeFilter(filters.rank_ids, ranks.filter((r) => r.count_attendance).map((r) => r.id)),
     );
 
     const availableClasses = useMemo(() => {
@@ -323,32 +324,26 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
 
     // ── Server-side filter state (trigger partial reload) ────────────────────
     const [selectedZoneIds, setSelectedZoneIds] = useState(() =>
-        filters.zone_ids?.length ? filters.zone_ids : zones.map((z) => z.id),
+        decodeFilter(filters.zone_ids, zones.map((z) => z.id)),
     );
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
-        filters.guild_tag_ids?.length ? filters.guild_tag_ids : guildTags.map((g) => g.id),
+        decodeFilter(filters.guild_tag_ids, guildTags.map((g) => g.id)),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
     const [beforeDate, setBeforeDate] = useState(filters.before_date ?? "");
-    const [includeLinkedCharacters, setIncludeLinkedCharacters] = useState(filters.include_linked_characters);
+    const [includeLinkedCharacters, setIncludeLinkedCharacters] = useState(filters.combine_linked_characters);
 
     const [isReloading, setIsReloading] = useState(false);
 
     // ── Server-side reload ───────────────────────────────────────────────────
-    const buildServerFilters = () => {
-        // Only send zone_ids when a subset is selected. When all zones are selected
-        // (or no zones exist), omit the parameter so the backend applies no zone filter,
-        // which correctly includes reports that may have a null zone_id.
-        const allZonesSelected = selectedZoneIds.length === zones.length;
-        return {
-            rank_ids: selectedRankIds,
-            zone_ids: allZonesSelected ? undefined : selectedZoneIds,
-            guild_tag_ids: selectedGuildTagIds,
-            since_date: sinceDate || null,
-            before_date: beforeDate || null,
-            include_linked_characters: includeLinkedCharacters ? 1 : 0,
-        };
-    };
+    const buildServerFilters = () => ({
+        rank_ids: encodeFilter(selectedRankIds, ranks),
+        zone_ids: encodeFilter(selectedZoneIds, zones),
+        guild_tag_ids: encodeFilter(selectedGuildTagIds, guildTags),
+        since_date: sinceDate || undefined,
+        before_date: beforeDate || undefined,
+        combine_linked_characters: includeLinkedCharacters ? undefined : 0,
+    });
 
     const reloadMatrix = (filterData) => {
         setIsReloading(true);
@@ -362,11 +357,14 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
 
     // Trigger reload when dropdown filters change (skip initial mount)
     const isMounted = useRef(false);
+    const hasEmptyFilter = selectedZoneIds.length === 0 || selectedGuildTagIds.length === 0;
+
     useEffect(() => {
         if (!isMounted.current) {
             isMounted.current = true;
             return;
         }
+        if (hasEmptyFilter) return;
         reloadMatrix(buildServerFilters());
     }, [selectedZoneIds, selectedGuildTagIds, includeLinkedCharacters, selectedRankIds]);
 
@@ -377,6 +375,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
             datesInitialized.current = true;
             return;
         }
+        if (hasEmptyFilter) return;
         reloadMatrix(buildServerFilters());
     }, [sinceDate, beforeDate]);
 
@@ -387,7 +386,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
         )
         .filter((row) => selectedClassIds === null || selectedClassIds.includes(row.playable_class?.id ?? null));
 
-    const showSkeleton = isReloading || !matrix;
+    const showSkeleton = !hasEmptyFilter && (isReloading || !matrix);
 
     return (
         <Master title="Attendance Matrix">
@@ -462,6 +461,8 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                     {/* Matrix */}
                     {showSkeleton ? (
                         <MatrixSkeleton />
+                    ) : hasEmptyFilter ? (
+                        <MatrixTable key="empty" raids={[]} rows={[]} ranks={ranks} />
                     ) : (
                         <MatrixTable
                             key={filteredRows.length === 0 ? "empty" : "data"}
