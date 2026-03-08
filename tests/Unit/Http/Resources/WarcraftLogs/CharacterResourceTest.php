@@ -2,8 +2,10 @@
 
 namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
+use App\Http\Resources\GuildRankResource;
 use App\Http\Resources\WarcraftLogs\CharacterResource;
 use App\Models\Character;
+use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -30,6 +32,7 @@ class CharacterResourceTest extends TestCase
         $this->assertArrayHasKey('playable_class', $array);
         $this->assertArrayHasKey('playable_race', $array);
         $this->assertArrayHasKey('pivot', $array);
+        $this->assertArrayHasKey('rank', $array);
     }
 
     #[Test]
@@ -54,6 +57,28 @@ class CharacterResourceTest extends TestCase
         $array = (new CharacterResource($character))->toArray(new Request);
 
         $this->assertInstanceOf(MissingValue::class, $array['pivot']);
+    }
+
+    #[Test]
+    public function it_omits_rank_when_not_loaded(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['rank']);
+    }
+
+    #[Test]
+    public function it_includes_rank_as_guild_rank_resource_when_loaded(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $character = Character::factory()->for($rank, 'rank')->create();
+
+        $array = (new CharacterResource($character->load('rank')))->toArray(new Request);
+
+        $this->assertInstanceOf(GuildRankResource::class, $array['rank']);
+        $this->assertSame($rank->id, $array['rank']->resource->id);
     }
 
     #[Test]
