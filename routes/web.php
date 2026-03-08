@@ -16,7 +16,7 @@ use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\Raid\AttendanceController;
 use App\Http\Controllers\Raid\AttendanceMatrixController;
-use App\Http\Controllers\Raid\ReportsController;
+use App\Http\Controllers\Raid\ReportController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -58,7 +58,7 @@ Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], 
     Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance')->name('attendance.matrix');
 
     // Reports routes
-    Route::get('/reports', [ReportsController::class, 'index'])->can('viewAny', 'App\Models\WarcraftLogs\Report')->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])->can('viewAny', 'App\Models\WarcraftLogs\Report')->name('reports.index');
 });
 
 /*

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ReportsController extends Controller
+class ReportController extends Controller
 {
     /**
      * The timezone to use for parsing date inputs.

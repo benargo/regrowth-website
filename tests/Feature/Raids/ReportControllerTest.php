@@ -14,7 +14,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
-class ReportsControllerTest extends TestCase
+class ReportControllerTest extends TestCase
 {
     use RefreshDatabase;
 

@@ -13,7 +13,7 @@ use App\Policies\CommentPolicy;
 use App\Policies\GuildTagsPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\PhasePolicy;
-use App\Policies\ReportsPolicy;
+use App\Policies\ReportPolicy;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
@@ -48,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Item::class, ItemPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
         Gate::policy(Phase::class, PhasePolicy::class);
-        Gate::policy(Report::class, ReportsPolicy::class);
+        Gate::policy(Report::class, ReportPolicy::class);
 
         /**
          * Authorization Gates
