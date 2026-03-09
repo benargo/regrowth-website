@@ -1,5 +1,4 @@
 import Master from "@/Layouts/Master";
-import Podium from "@/Components/Podium";
 
 export default function Home({ members }) {
     return (
@@ -29,8 +28,6 @@ export default function Home({ members }) {
                         </div>
                     </div>
                 </div>
-
-                <Podium />
             </div>
         </Master>
     );

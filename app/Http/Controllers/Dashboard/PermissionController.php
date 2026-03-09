@@ -79,7 +79,7 @@ class PermissionController extends Controller
 
         $user = $request->user();
 
-        if (! $user->is_admin && $user->highestRole() === $role->name) {
+        if (! $user->is_admin && $user->highestRole()?->is($role)) {
             abort(403, 'You cannot modify permissions for your own highest role.');
         }
 

@@ -31,22 +31,22 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
 /**
  * Loot Bias Tools
  */
-Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth', 'can:viewAny,App\Models\LootCouncil\Item']], function () {
-    Route::get('/', [BiasToolController::class, 'index'])->name('index');
-    Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->name('phase');
-    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
+Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], function () {
+    Route::get('/', [BiasToolController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('index');
+    Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('phase');
+    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->can('create', 'App\Models\LootCouncil\Comment')->name('items.comments.store');
     Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('items.notes.store');
     Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('items.priorities.update');
     Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit'])->can('update', 'item');
-    Route::get('/items/{item}/{name?}', [ItemController::class, 'view'])->name('items.show');
+    Route::get('/items/{item}/{name?}', [ItemController::class, 'view'])->can('view', 'item')->name('items.show');
     Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('items.edit');
 
     // Comment routes
     Route::get('/comments', [CommentController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Comment')->name('comments.index');
-    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
-    Route::post('/comments/{comment}/reactions', [CommentReactionController::class, 'store'])->name('comments.reactions.store');
-    Route::delete('/comments/{comment}/reactions/{reaction}', [CommentReactionController::class, 'destroy'])->name('comments.reactions.destroy');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->can('update', 'comment')->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->can('delete', 'comment')->name('comments.destroy');
+    Route::post('/comments/{comment}/reactions', [CommentReactionController::class, 'store'])->can('react', 'comment')->name('comments.reactions.store');
+    Route::delete('/comments/{comment}/reactions/{reaction}', [CommentReactionController::class, 'destroy'])->can('react', 'comment')->name('comments.reactions.destroy');
 });
 
 /**
@@ -83,17 +83,17 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     /**
      * Guild ranks management
      */
-    Route::get('/manage-ranks', [GuildRankController::class, 'list'])->name('ranks.view');
-    Route::post('/manage-ranks', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
+    Route::get('/ranks', [GuildRankController::class, 'list'])->name('ranks.view');
+    Route::post('/ranks/new', [GuildRankController::class, 'store'])->name('ranks.store');
+    Route::post('/ranks/update-positions', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
     Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
-    Route::post('/ranks', [GuildRankController::class, 'store'])->name('ranks.store');
     Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
     Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
 
     /**
      * Phases management
      */
-    Route::get('/manage-phases', [PhaseController::class, 'listAll'])->name('phases.view');
+    Route::get('/phases', [PhaseController::class, 'listAll'])->name('phases.view');
     Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
     Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
 
@@ -110,7 +110,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
     Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])
-        ->can('audit', \App\Models\TBC\DailyQuestNotification::class)
+        ->can('audit', 'App\Models\TBC\DailyQuestNotification')
         ->name('daily-quests.audit');
 
     /**
@@ -133,7 +133,7 @@ Route::group(['prefix' => 'daily-quests', 'as' => 'daily-quests.'], function () 
 /**
  * Warcraft Logs Guild Tags Management
  */
-Route::patch('/wcl/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
+Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
     ->middleware('auth')
     ->name('wcl.guild-tags.toggle-attendance');
 

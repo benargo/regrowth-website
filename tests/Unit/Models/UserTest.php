@@ -178,7 +178,7 @@ class UserTest extends ModelTestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach([$officer->id, $raider->id, $member->id]);
 
-        $this->assertSame('Officer', $user->highestRole());
+        $this->assertTrue($user->highestRole()->is($officer));
     }
 
     #[Test]
@@ -192,7 +192,7 @@ class UserTest extends ModelTestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach([$raider->id, $member->id]);
 
-        $this->assertSame('Raider', $user->highestRole());
+        $this->assertTrue($user->highestRole()->is($raider));
     }
 
     #[Test]
@@ -304,6 +304,49 @@ class UserTest extends ModelTestCase
         ]);
 
         $this->assertNull($user->banner_url);
+    }
+
+    #[Test]
+    public function permissions_returns_empty_collection_when_user_has_no_roles(): void
+    {
+        $user = User::factory()->create();
+
+        $this->assertEmpty($user->permissions());
+    }
+
+    #[Test]
+    public function permissions_returns_permissions_from_highest_role(): void
+    {
+        Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
+
+        $user = User::factory()->officer()->create();
+        $user->discordRoles->first()->givePermissionTo('view-officer-dashboard');
+        $user->load('discordRoles.permissions');
+
+        $this->assertTrue($user->permissions()->contains('name', 'view-officer-dashboard'));
+    }
+
+    #[Test]
+    public function permissions_does_not_include_permissions_from_lower_roles(): void
+    {
+        Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+
+        $officer = DiscordRole::find('829021769448816691') ??
+            DiscordRole::factory()->officer()->create();
+        $officer->givePermissionTo('view-officer-dashboard');
+
+        $member = DiscordRole::find('829022020301094922') ??
+            DiscordRole::factory()->member()->create();
+        $member->givePermissionTo('comment-on-loot-items');
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach([$officer->id, $member->id]);
+        $user->load('discordRoles.permissions');
+
+        // Officer is the highest role — only its permissions are returned
+        $this->assertTrue($user->permissions()->contains('name', 'view-officer-dashboard'));
+        $this->assertFalse($user->permissions()->contains('name', 'comment-on-loot-items'));
     }
 
     #[Test]

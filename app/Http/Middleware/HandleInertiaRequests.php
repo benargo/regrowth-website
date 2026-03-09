@@ -3,9 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Http\Resources\TBC\PhaseResource;
+use App\Http\Resources\UserPermissionResource;
 use App\Http\Resources\UserResource;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
 use App\Models\TBC\Phase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -49,20 +48,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $user ? (new UserResource($user))->resolve($request) : null,
-                'permissions' => [
-                    'comments' => [
-                        'viewAny' => $user?->can('viewAny', Comment::class) ?? false,
-                    ],
-                    'items' => [
-                        'viewAny' => $user?->can('viewAny', Item::class) ?? false,
-                    ],
-                    'officerDashboard' => [
-                        'view' => $user?->can('view-officer-dashboard') ?? false,
-                    ],
-                    'thatsmybis' => [
-                        'access' => $user?->isRaider() ?? false,
-                    ],
-                ],
+                'permissions' => $user ? (new UserPermissionResource($user))->resolve($request) : [],
                 'impersonating' => $request->session()->has('impersonating_user_id'),
             ],
             'flash' => [

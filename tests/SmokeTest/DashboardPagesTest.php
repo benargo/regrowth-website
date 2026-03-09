@@ -24,12 +24,12 @@ class DashboardPagesTest extends TestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $viewOfficerDashboard = Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
             ['name' => 'Officer', 'position' => 6, 'is_visible' => true]
         );
-        $officerRole->givePermissionTo($viewOfficerDashboard);
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
 
         // Mock GuildTags to prevent WarcraftLogs API calls
         $guildTags = Mockery::mock(GuildTags::class);
@@ -120,7 +120,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get('/dashboard/manage-ranks');
+        $response = $this->actingAs($user)->get(route('dashboard.ranks.view'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -130,7 +130,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get('/dashboard/manage-phases');
+        $response = $this->actingAs($user)->get(route('dashboard.phases.view'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Http\Resources\LootCouncil\ItemResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
-use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use App\Services\Blizzard\ItemService;
@@ -49,10 +48,6 @@ class ItemController extends Controller
 
         return Inertia::render('LootBiasTool/ItemShow', [
             'item' => new ItemResource($item),
-            'can' => [
-                'create_comment' => $request->user()->can('create', Comment::class),
-                'edit_item' => $request->user()->can('update', $item),
-            ],
             'comments' => CommentResource::collection($comments),
         ]);
     }
@@ -91,10 +86,6 @@ class ItemController extends Controller
         return Inertia::render('LootBiasTool/ItemEdit', [
             'item' => new ItemResource($item),
             'allPriorities' => PriorityResource::collection($allPriorities),
-            'can' => [
-                'create_comment' => $request->user()->can('create', Comment::class),
-                'edit_item' => $request->user()->can('edit-loot-items'),
-            ],
             'comments' => CommentResource::collection($comments),
         ]);
     }

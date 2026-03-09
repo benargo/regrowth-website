@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\LootCouncil;
 
+use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
@@ -11,6 +13,16 @@ use Tests\TestCase;
 class BiasToolIndexTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
+        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
+        DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
+        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
+    }
 
     public function test_loot_index_requires_authentication(): void
     {
