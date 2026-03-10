@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AccountController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\ViewAsRoleController;
 use Illuminate\Support\Facades\Route;
@@ -25,7 +26,16 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| View As Role Routes
+| User account settings routes
+|--------------------------------------------------------------------------
+*/
+Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => ['auth']], function () {
+    Route::get('/', [AccountController::class, 'index'])->name('index');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Impersonation routes
 |--------------------------------------------------------------------------
 */
 Route::group(['prefix' => 'view-as', 'middleware' => ['auth', 'can:impersonate-roles']], function () {
