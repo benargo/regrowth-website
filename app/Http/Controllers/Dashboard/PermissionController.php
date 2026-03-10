@@ -74,6 +74,9 @@ class PermissionController extends Controller
      */
     public function update(string $group, Permission $permission, TogglePermissionRequest $request): RedirectResponse
     {
+        if ($permission->group !== $group) {
+            abort(404, 'Permission not found in the specified group.');
+        }
         $role = DiscordRole::findOrFail($request->validated('discord_role_id'));
 
         $user = $request->user();
