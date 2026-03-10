@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
+use App\Models\TBC\DailyQuestNotification;
+use App\Models\GuildRank;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\TBC\Phase;
@@ -10,9 +12,9 @@ use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use App\Policies\CommentPolicy;
-use App\Policies\GuildTagsPolicy;
+use App\Policies\DailyQuestNotificationPolicy;
+use App\Policies\DatasetPolicy;
 use App\Policies\ItemPolicy;
-use App\Policies\PhasePolicy;
 use App\Policies\ReportPolicy;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Support\Facades\Gate;
@@ -44,10 +46,12 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Policies
          */
-        Gate::policy(GuildTag::class, GuildTagsPolicy::class);
-        Gate::policy(Item::class, ItemPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
-        Gate::policy(Phase::class, PhasePolicy::class);
+        Gate::policy(DailyQuestNotification::class, DailyQuestNotificationPolicy::class);
+        Gate::policy(GuildRank::class, DatasetPolicy::class);
+        Gate::policy(GuildTag::class, DatasetPolicy::class);
+        Gate::policy(Item::class, ItemPolicy::class);
+        Gate::policy(Phase::class, DatasetPolicy::class);
         Gate::policy(Report::class, ReportPolicy::class);
 
         /**

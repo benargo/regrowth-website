@@ -31,7 +31,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function delete(User $user, Comment $comment): bool
     {
-        if ($this->userIsOfficer($user)) {
+        if ($user->hasPermissionViaDiscordRoles('delete-any-comment')) {
             return true;
         }
 
@@ -43,7 +43,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function update(User $user, Comment $comment): bool
     {
-        if ($this->userIsOfficer($user)) {
+        if ($user->hasPermissionViaDiscordRoles('edit-any-comment')) {
             return true;
         }
 
@@ -59,7 +59,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function markAsResolved(User $user, Comment $comment): bool
     {
-        return $this->userIsOfficer($user);
+        return $user->hasPermissionViaDiscordRoles('mark-comment-as-resolved');
     }
 
     /**

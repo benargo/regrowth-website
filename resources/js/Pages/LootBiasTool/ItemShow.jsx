@@ -4,6 +4,7 @@ import CommentsSection from "@/Components/Loot/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import Notes from "@/Components/Loot/Notes";
+import usePermission from "@/Hooks/Permissions";
 
 function PriorityItem({ priority }) {
     return (
@@ -69,7 +70,10 @@ function PriorityDisplay({ priorities }) {
     );
 }
 
-export default function ItemShow({ item, can, comments }) {
+export default function ItemShow({ item, comments }) {
+    const canEditItem = usePermission('edit-items');
+    const canCreateComment = usePermission('comment-on-loot-items');
+
     return (
         <Master title={item.data.name}>
             <SharedHeader backgroundClass="bg-karazhan" title="Loot Bias" />
@@ -87,7 +91,7 @@ export default function ItemShow({ item, can, comments }) {
                             </Link>
                         </div>
                         <div className="flex items-center space-x-4">
-                            {can.edit_item && (
+                            {canEditItem && (
                                 <Link
                                     href={route("loot.items.edit", { item: item.data.id, name: item.data.slug })}
                                     className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
@@ -188,7 +192,7 @@ export default function ItemShow({ item, can, comments }) {
                 <Notes notes={item.data.notes} itemId={item.data.id} canEdit={false} />
 
                 {/* Comments Section */}
-                <CommentsSection comments={comments} itemId={item.data.id} canCreate={can?.create_comment} />
+                <CommentsSection comments={comments} itemId={item.data.id} canCreate={canCreateComment} />
             </main>
         </Master>
     );

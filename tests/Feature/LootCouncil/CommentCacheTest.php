@@ -29,9 +29,20 @@ class CommentCacheTest extends TestCase
         Notification::fake();
         $this->mockItemService();
 
+        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
-        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])->givePermissionTo($commentOnLootItems);
-        DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true])->givePermissionTo($commentOnLootItems);
+        $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
+
+        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
+
+        $raiderRole = DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true]);
+        $raiderRole->givePermissionTo($viewLootBiasTool);
+        $raiderRole->givePermissionTo($commentOnLootItems);
+
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole->givePermissionTo($viewLootBiasTool);
+        $officerRole->givePermissionTo($commentOnLootItems);
+        $officerRole->givePermissionTo($editItems);
     }
 
     protected function mockItemService(): void

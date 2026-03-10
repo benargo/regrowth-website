@@ -173,11 +173,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's highest role name.
+     * Get the user's highest role.
      */
-    public function highestRole(): ?string
+    public function highestRole(): ?DiscordRole
     {
-        return $this->discordRoles->where('is_visible', true)->sortByDesc('position')->first()?->name;
+        return $this->discordRoles->where('is_visible', true)->sortByDesc('position')->first() ?: null;
     }
 
     /*
@@ -185,6 +185,19 @@ class User extends Authenticatable
     | Permissions
     |--------------------------------------------------------------------------
     */
+
+    /**
+     * Get all permissions the user has access to via their highest Discord role.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Permission>
+     */
+    public function permissions(): \Illuminate\Database\Eloquent\Collection
+    {
+        $this->loadMissing('discordRoles.permissions');
+
+        return $this->highestRole()?->permissions
+            ?? new \Illuminate\Database\Eloquent\Collection;
+    }
 
     /**
      * Check if the user has a permission via any of their Discord roles.

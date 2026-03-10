@@ -19,7 +19,12 @@ class PermissionSeeder extends Seeder
          * Loot bias tool permissions
          */
         ['name' => 'comment-on-loot-items', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'delete-any-comment', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'edit-any-comment', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'edit-items', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'mark-comment-as-resolved', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
         ['name' => 'react-to-comments', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'view-loot-bias-tool', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
         ['name' => 'view-all-comments', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
 
         /**
@@ -30,10 +35,17 @@ class PermissionSeeder extends Seeder
         ['name' => 'view-reports', 'group' => 'raid-management', 'guard_name' => 'web'],
 
         /**
+         * Daily quests permissions
+         */
+        ['name' => 'set-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
+        ['name' => 'update-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
+
+        /**
          * Hidden permissions (not shown in the dashboard, but still used for access control)
          */
-        ['name' => 'view-officer-dashboard', 'guard_name' => 'web'],
+        ['name' => 'edit-datasets', 'guard_name' => 'web'],
         ['name' => 'impersonate-roles', 'guard_name' => 'web'],
+        ['name' => 'view-officer-dashboard', 'guard_name' => 'web'],
     ];
 
     /**

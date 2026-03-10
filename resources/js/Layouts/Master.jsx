@@ -4,12 +4,16 @@ import Dropdown from "@/Components/Dropdown";
 import FlashMessage from "@/Components/FlashMessage";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
+import usePermission from "@/Hooks/Permissions";
 
 export default function Master({ title, children }) {
     const { auth, flash, phases } = usePage().props;
     const user = auth?.user;
-    const permissions = auth?.permissions;
     const impersonating = auth?.impersonating;
+
+    const canViewLootBiasTool = usePermission('view-loot-bias-tool');
+    const canViewAllComments = usePermission('view-all-comments');
+    const canViewOfficerDashboard = usePermission('view-officer-dashboard');
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [flashError, setFlashError] = useState(flash?.error);
@@ -88,7 +92,7 @@ export default function Master({ title, children }) {
                                 />
                                 Daily Quests
                             </Link>
-                            {permissions?.items.viewAny && (
+                            {canViewLootBiasTool && (
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <button className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white">
@@ -106,7 +110,7 @@ export default function Master({ title, children }) {
                                                 {phase.description}
                                             </Dropdown.Link>
                                         ))}
-                                        {permissions?.comments.viewAny && (
+                                        {canViewAllComments && (
                                             <>
                                                 <div className="my-1 border-t border-amber-700" />
                                                 <Dropdown.Link href={route("loot.comments.index")}>
@@ -118,19 +122,17 @@ export default function Master({ title, children }) {
                                     </Dropdown.Content>
                                 </Dropdown>
                             )}
-                            {permissions?.items.viewAny && (
-                                <Link
-                                    href="https://thatsmybis.com/24119/regrowth/"
-                                    className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                                >
-                                    <img
-                                        src="/images/logo_thatsmybis.webp"
-                                        alt="That's My Bis logo"
-                                        className="mr-2 inline-block h-5"
-                                    />
-                                    That&rsquo;s My Bis
-                                </Link>
-                            )}
+                            <Link
+                                href="https://thatsmybis.com/24119/regrowth/"
+                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
+                            >
+                                <img
+                                    src="/images/logo_thatsmybis.webp"
+                                    alt="That's My Bis logo"
+                                    className="mr-2 inline-block h-5"
+                                />
+                                That&rsquo;s My Bis
+                            </Link>
                             <Link
                                 href="https://discord.gg/regrowth"
                                 className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
@@ -173,7 +175,7 @@ export default function Master({ title, children }) {
                                                 Return to my account
                                             </Dropdown.Link>
                                         )}
-                                        {permissions?.officerDashboard.view && (
+                                        {canViewOfficerDashboard && (
                                             <Dropdown.Link href={route("dashboard.index")}>
                                                 <Icon icon="cogs" style="regular" className="mr-2 h-6" />
                                                 Officers&rsquo; Dashboard
@@ -221,7 +223,7 @@ export default function Master({ title, children }) {
                             </span>
                             Daily Quests
                         </Link>
-                        {permissions?.items.viewAny && (
+                        {canViewLootBiasTool && (
                             <>
                                 <Link
                                     href={route("loot.index")}
@@ -243,7 +245,7 @@ export default function Master({ title, children }) {
                                             </Link>
                                         ))}
                                     </div>
-                                    {permissions?.comments.viewAny && (
+                                    {canViewAllComments && (
                                         <Link
                                             href={route("loot.comments.index")}
                                             className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
@@ -255,19 +257,17 @@ export default function Master({ title, children }) {
                                 </div>
                             </>
                         )}
-                        {permissions?.thatsmybis.access && (
-                            <Link
-                                href="https://thatsmybis.com/24119/regrowth/"
-                                className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                            >
-                                <img
-                                    src="/images/logo_thatsmybis.webp"
-                                    alt="That's My Bis logo"
-                                    className="mr-2 inline-block h-5"
-                                />
-                                That&rsquo;s My Bis
-                            </Link>
-                        )}
+                        <Link
+                            href="https://thatsmybis.com/24119/regrowth/"
+                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                        >
+                            <img
+                                src="/images/logo_thatsmybis.webp"
+                                alt="That's My Bis logo"
+                                className="mr-2 inline-block h-5"
+                            />
+                            That&rsquo;s My Bis
+                        </Link>
                         <Link
                             href="https://discord.gg/regrowth"
                             className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
@@ -309,7 +309,7 @@ export default function Master({ title, children }) {
                                         Return to my account
                                     </Link>
                                 )}
-                                {permissions?.officerDashboard.view && (
+                                {canViewOfficerDashboard && (
                                     <Link
                                         href={route("dashboard.index")}
                                         className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"

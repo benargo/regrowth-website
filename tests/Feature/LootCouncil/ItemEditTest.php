@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\LootCouncil;
 
+use App\Models\DiscordRole;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
+use App\Models\Permission;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -24,7 +26,21 @@ class ItemEditTest extends TestCase
     {
         parent::setUp();
 
+        $this->setUpPermissions();
         $this->mockBlizzardServices();
+    }
+
+    protected function setUpPermissions(): void
+    {
+        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
+        $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
+
+        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
+        DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 3, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
+
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true]);
+        $officerRole->givePermissionTo($viewLootBiasTool);
+        $officerRole->givePermissionTo($editItems);
     }
 
     protected function mockBlizzardServices(): void

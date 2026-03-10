@@ -3,6 +3,8 @@
 namespace Tests\Feature\Datasets;
 
 use App\Events\AddonSettingsProcessed;
+use App\Models\DiscordRole;
+use App\Models\Permission;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,6 +14,14 @@ use Tests\TestCase;
 class GuildTagControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])
+            ->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
+    }
 
     public function test_toggle_count_attendance_requires_authentication(): void
     {

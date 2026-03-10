@@ -3,9 +3,11 @@
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Resources\LootCouncil\CommentResource;
+use App\Models\DiscordRole;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
 use App\Models\LootCouncil\Item;
+use App\Models\Permission;
 use App\Models\User;
 use App\Services\Blizzard\ItemService;
 use App\Services\Blizzard\MediaService;
@@ -28,6 +30,7 @@ class CommentResourceTest extends TestCase
         Queue::fake();
         $this->mockBlizzardServices();
         $this->mockCacheService();
+        $this->setUpPermissions();
     }
 
     protected function mockBlizzardServices(): void
@@ -63,6 +66,14 @@ class CommentResourceTest extends TestCase
         Cache::shouldReceive('tags')
             ->with(['lootcouncil'])
             ->andReturn($cacheStore);
+    }
+
+    protected function setUpPermissions(): void
+    {
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-any-comment', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'mark-comment-as-resolved', 'guard_name' => 'web']));
     }
 
     #[Test]

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\DiscordRole;
+use App\Models\Permission;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -106,6 +107,24 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'is_admin' => true,
         ]);
+    }
+
+    /**
+     * Indicate the user has the given permissions via a temporary Discord role.
+     */
+    public function withPermissions(string ...$permissions): static
+    {
+        return $this->afterCreating(function ($user) use ($permissions) {
+            $role = DiscordRole::factory()->create();
+
+            foreach ($permissions as $permission) {
+                $role->givePermissionTo(
+                    Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web'])
+                );
+            }
+
+            $user->discordRoles()->syncWithoutDetaching([$role->id]);
+        });
     }
 
     /**
