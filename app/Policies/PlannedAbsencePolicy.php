@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\PlannedAbsence;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class PlannedAbsencePolicy
 {
@@ -21,7 +20,7 @@ class PlannedAbsencePolicy
      */
     public function view(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->hasPermissionViaDiscordRoles('view-planned-absences') || $plannedAbsence->user()->is($user);
+        return $user->hasPermissionViaDiscordRoles('view-planned-absences') || $plannedAbsence->createdBy()->is($user);
     }
 
     /**
@@ -37,7 +36,7 @@ class PlannedAbsencePolicy
      */
     public function update(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->hasPermissionViaDiscordRoles('update-planned-absences') || $plannedAbsence->user()->is($user);
+        return $user->hasPermissionViaDiscordRoles('update-planned-absences') || $plannedAbsence->createdBy()->is($user);
     }
 
     /**
@@ -45,7 +44,7 @@ class PlannedAbsencePolicy
      */
     public function delete(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->hasPermissionViaDiscordRoles('delete-planned-absences') || $plannedAbsence->user()->is($user);
+        return $user->hasPermissionViaDiscordRoles('delete-planned-absences') || $plannedAbsence->createdBy()->is($user);
     }
 
     /**

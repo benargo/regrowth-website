@@ -2,12 +2,16 @@
 
 namespace Tests\Unit\Models;
 
+use App\Events\PlannedAbsenceDeleted;
+use App\Events\PlannedAbsenceSaved;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -16,6 +20,27 @@ class PlannedAbsenceTest extends ModelTestCase
     protected function modelClass(): string
     {
         return PlannedAbsence::class;
+    }
+
+    #[Test]
+    public function it_uses_uuids(): void
+    {
+        $model = new PlannedAbsence;
+
+        $this->assertContains(HasUuids::class, class_uses_recursive($model));
+        $this->assertSame('string', $model->getKeyType());
+        $this->assertFalse($model->getIncrementing());
+    }
+
+    #[Test]
+    public function factory_generates_uuid_for_id(): void
+    {
+        $absence = $this->create();
+
+        $this->assertMatchesRegularExpression(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
+            $absence->id
+        );
     }
 
     #[Test]
@@ -182,5 +207,37 @@ class PlannedAbsenceTest extends ModelTestCase
 
         $this->assertModelExists($absence);
         $this->assertNull($absence->deleted_at);
+    }
+
+    #[Test]
+    public function it_dispatches_planned_absence_saved_event_on_create(): void
+    {
+        Event::fake();
+
+        $this->create();
+
+        Event::assertDispatched(PlannedAbsenceSaved::class);
+    }
+
+    #[Test]
+    public function it_dispatches_planned_absence_saved_event_on_update(): void
+    {
+        $absence = $this->create();
+        Event::fake();
+
+        $absence->update(['reason' => 'Updated reason']);
+
+        Event::assertDispatched(PlannedAbsenceSaved::class);
+    }
+
+    #[Test]
+    public function it_dispatches_planned_absence_deleted_event_on_delete(): void
+    {
+        $absence = $this->create();
+        Event::fake();
+
+        $absence->delete();
+
+        Event::assertDispatched(PlannedAbsenceDeleted::class);
     }
 }

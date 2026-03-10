@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Events\PlannedAbsenceDeleted;
+use App\Events\PlannedAbsenceSaved;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
@@ -12,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PlannedAbsence extends Model
 {
-    use HasFactory, Prunable, SoftDeletes;
+    use HasFactory, HasUuids, Prunable, SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -32,6 +35,16 @@ class PlannedAbsence extends Model
         'end_date',
         'reason',
         'created_by',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'saved' => PlannedAbsenceSaved::class,
+        'deleted' => PlannedAbsenceDeleted::class,
     ];
 
     /**

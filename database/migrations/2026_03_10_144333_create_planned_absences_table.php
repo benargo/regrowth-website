@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('planned_absences', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->foreignId('character_id')->nullable()->nullOnDelete()->constrained('characters');
             $table->datetime('start_date');
             $table->datetime('end_date')->nullable();
