@@ -187,4 +187,3 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
         </Master>
     );
 }
-    
