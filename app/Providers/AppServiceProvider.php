@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
-use App\Models\DailyQuestNotification;
+use App\Models\TBC\DailyQuestNotification;
 use App\Models\GuildRank;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
