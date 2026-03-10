@@ -24,7 +24,7 @@ class PermissionController extends Controller
             return Permission::whereNotNull('group')->orderBy('group')->value('group');
         });
 
-        return redirect()->route('dashboard.permissions.show-group', ['group' => $firstPermissionGroup]);
+        return redirect()->route('dashboard.permissions.group.show', ['group' => $firstPermissionGroup]);
     }
 
     /**
@@ -72,10 +72,9 @@ class PermissionController extends Controller
     /**
      * Toggle a permission for a Discord role.
      */
-    public function toggle(TogglePermissionRequest $request): RedirectResponse
+    public function update(string $group, Permission $permission, TogglePermissionRequest $request): RedirectResponse
     {
         $role = DiscordRole::findOrFail($request->validated('discord_role_id'));
-        $permission = Permission::findOrFail($request->validated('permission_id'));
 
         $user = $request->user();
 
@@ -88,6 +87,8 @@ class PermissionController extends Controller
         } else {
             $role->revokePermissionTo($permission);
         }
+
+        Cache::tags(['discord', 'permissions'])->forget('discord_roles:permissions');
 
         return back();
     }

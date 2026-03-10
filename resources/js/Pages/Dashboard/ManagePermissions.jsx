@@ -19,7 +19,7 @@
  *                                         non-admins cannot toggle permissions for their own role
  *
  * Behaviour:
- * - Each cell in the table is a toggle button that calls `dashboard.permissions.toggle`
+ * - Each cell in the table is a toggle button that calls `dashboard.permissions.permission.update`
  *   via a POST request (see PermissionController@toggle).
  * - Toggles are disabled for a non-admin user's own highest role to prevent privilege escalation.
  * - Processing state is tracked per toggle (keyed as `${roleId}-${permissionId}`) to show
@@ -67,15 +67,17 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
         return role.permissions.some((p) => p.id === permission.id);
     };
 
-    const togglePermission = (roleId, permissionId, currentState) => {
-        const key = `${roleId}-${permissionId}`;
+    const togglePermission = (roleId, permission, currentState) => {
+        const key = `${roleId}-${permission.id}`;
         setProcessing((prev) => ({ ...prev, [key]: true }));
 
-        router.post(
-            route("dashboard.permissions.toggle"),
+        router.patch(
+            route("dashboard.permissions.permission.update", {
+                group: permission.group,
+                permission: permission.id,
+            }),
             {
                 discord_role_id: roleId,
-                permission_id: permissionId,
                 enabled: !currentState,
             },
             {
@@ -121,7 +123,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                                     {groups.map((group) => (
                                         <Dropdown.Link
                                             key={group.slug}
-                                            href={route("dashboard.permissions.show-group", { group: group.slug })}
+                                            href={route("dashboard.permissions.group.show", { group: group.slug })}
                                             className={group.active ? "bg-brown-800" : ""}
                                         >
                                             {group.name}
@@ -167,7 +169,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                                                             enabled={enabled}
                                                             processing={!!processing[key]}
                                                             onToggle={() =>
-                                                                togglePermission(role.id, permission.id, enabled)
+                                                                togglePermission(role.id, permission, enabled)
                                                             }
                                                             disabled={disabled}
                                                         />
@@ -185,3 +187,4 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
         </Master>
     );
 }
+    

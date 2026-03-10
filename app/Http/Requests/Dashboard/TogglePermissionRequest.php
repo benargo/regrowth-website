@@ -23,7 +23,6 @@ class TogglePermissionRequest extends FormRequest
     {
         return [
             'discord_role_id' => ['required', 'string', 'exists:discord_roles,id'],
-            'permission_id' => ['required', 'integer', 'exists:permissions,id'],
             'enabled' => ['required', 'boolean'],
         ];
     }
@@ -38,8 +37,6 @@ class TogglePermissionRequest extends FormRequest
         return [
             'discord_role_id.required' => 'A Discord role is required.',
             'discord_role_id.exists' => 'The selected Discord role does not exist.',
-            'permission_id.required' => 'A permission is required.',
-            'permission_id.exists' => 'The selected permission does not exist.',
             'enabled.required' => 'The enabled field is required.',
             'enabled.boolean' => 'The enabled field must be true or false.',
         ];

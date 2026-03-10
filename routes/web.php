@@ -117,8 +117,8 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      * Permissions management
      */
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-    Route::post('/permissions/toggle', [PermissionController::class, 'toggle'])->name('permissions.toggle'); // Must come before the group route to avoid conflicts with the {group} parameter.
-    Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.show-group');
+    Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
+    Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
 });
 
 /**

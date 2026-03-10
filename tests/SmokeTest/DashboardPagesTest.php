@@ -182,7 +182,7 @@ class DashboardPagesTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.permissions.index'));
 
-        $response->assertRedirect(route('dashboard.permissions.show-group', ['group' => 'test-group']));
+        $response->assertRedirect(route('dashboard.permissions.group.show', ['group' => 'test-group']));
     }
 
     public function test_permissions_show_group_page_loads(): void
@@ -190,7 +190,7 @@ class DashboardPagesTest extends TestCase
         Permission::factory()->inGroup('test-group')->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.permissions.show-group', ['group' => 'test-group']));
+        $response = $this->actingAs($user)->get(route('dashboard.permissions.group.show', ['group' => 'test-group']));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
