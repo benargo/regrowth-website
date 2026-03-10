@@ -4,9 +4,11 @@ namespace Tests\SmokeTest;
 
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -18,6 +20,7 @@ class RaidsPagesTest extends TestCase
     {
         parent::setUp();
 
+        Cache::flush();
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $officerRole = DiscordRole::firstOrCreate(
@@ -25,7 +28,7 @@ class RaidsPagesTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
 
-        foreach (['view-attendance', 'view-reports'] as $permissionName) {
+        foreach (['view-attendance', 'view-reports', 'view-planned-absences', 'create-planned-absences', 'update-planned-absences'] as $permissionName) {
             $permission = Permission::firstOrCreate(['name' => $permissionName, 'guard_name' => 'web']);
             $officerRole->givePermissionTo($permission);
         }
@@ -60,5 +63,87 @@ class RaidsPagesTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Regrowth');
+    }
+
+    public function test_planned_absences_index_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    public function test_planned_absences_index_redirects_unauthenticated_users(): void
+    {
+        $response = $this->get(route('raids.absences.index'));
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_planned_absences_index_returns_403_for_users_without_permission(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_planned_absences_create_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    public function test_planned_absences_create_redirects_unauthenticated_users(): void
+    {
+        $response = $this->get(route('raids.absences.create'));
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_planned_absences_create_returns_403_for_users_without_permission(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+
+        $response->assertForbidden();
+    }
+
+    public function test_planned_absences_edit_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    public function test_planned_absences_edit_redirects_unauthenticated_users(): void
+    {
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $response = $this->get(route('raids.absences.edit', $absence));
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_planned_absences_edit_returns_403_for_users_without_permission(): void
+    {
+        $member = User::factory()->member()->create();
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $response = $this->actingAs($member)->get(route('raids.absences.edit', $absence));
+
+        $response->assertForbidden();
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Resources\TBC\PhaseResource;
 use App\Http\Resources\UserResource;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\PlannedAbsence;
 use App\Models\TBC\Phase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -58,6 +59,9 @@ class HandleInertiaRequests extends Middleware
                     ],
                     'officerDashboard' => [
                         'view' => $user?->can('view-officer-dashboard') ?? false,
+                    ],
+                    'plannedAbsences' => [
+                        'viewAny' => $user?->can('viewAny', PlannedAbsence::class) ?? false,
                     ],
                     'thatsmybis' => [
                         'access' => $user?->isRaider() ?? false,
