@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\UserResource;
 use App\Models\DiscordRole;
+use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -313,5 +314,29 @@ class UserResourceTest extends TestCase
         $this->assertArrayHasKey('banner', $array);
         $this->assertArrayHasKey('roles', $array);
         $this->assertArrayHasKey('highest_role', $array);
+    }
+
+    #[Test]
+    public function it_omits_planned_absences_created_when_not_loaded(): void
+    {
+        $user = User::factory()->create();
+
+        $resource = new UserResource($user);
+        $array = $resource->resolve(new Request);
+
+        $this->assertArrayNotHasKey('planned_absences_created', $array);
+    }
+
+    #[Test]
+    public function it_returns_planned_absences_created_when_loaded(): void
+    {
+        $user = User::factory()->create();
+        PlannedAbsence::factory()->count(2)->create(['created_by' => $user->id]);
+
+        $resource = new UserResource($user->fresh()->load('plannedAbsencesCreated'));
+        $array = $resource->resolve(new Request);
+
+        $this->assertArrayHasKey('planned_absences_created', $array);
+        $this->assertCount(2, $array['planned_absences_created']);
     }
 }

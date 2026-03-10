@@ -4,8 +4,10 @@ namespace Tests\Unit\Models;
 
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -80,6 +82,34 @@ class UserTest extends ModelTestCase
 
         $this->assertTableHas(['id' => '123456789012345678', 'username' => 'testuser']);
         $this->assertModelExists($user);
+    }
+
+    #[Test]
+    public function planned_absences_created_returns_has_many_relationship(): void
+    {
+        $model = new User;
+
+        $this->assertInstanceOf(HasMany::class, $model->plannedAbsencesCreated());
+    }
+
+    #[Test]
+    public function planned_absences_created_returns_absences_created_by_user(): void
+    {
+        $user = User::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
+
+        $this->assertCount(1, $user->plannedAbsencesCreated);
+        $this->assertTrue($user->plannedAbsencesCreated->contains($absence));
+    }
+
+    #[Test]
+    public function planned_absences_created_does_not_return_absences_created_by_other_users(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        PlannedAbsence::factory()->create(['created_by' => $otherUser->id]);
+
+        $this->assertCount(0, $user->plannedAbsencesCreated);
     }
 
     #[Test]
