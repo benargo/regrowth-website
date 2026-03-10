@@ -20,7 +20,7 @@
  *
  * Behaviour:
  * - Each cell in the table is a toggle button that calls `dashboard.permissions.permission.update`
- *   via a POST request (see PermissionController@toggle).
+ *   via a PATCH request (see PermissionController@update).
  * - Toggles are disabled for a non-admin user's own highest role to prevent privilege escalation.
  * - Processing state is tracked per toggle (keyed as `${roleId}-${permissionId}`) to show
  *   individual loading states without locking the whole table.
