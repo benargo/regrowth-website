@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Http\Resources\UserResource;
-use App\Http\Resources\WarcraftLogs\CharacterResource;
+use App\Http\Resources\CharacterResource;
 use App\Models\PlannedAbsence;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

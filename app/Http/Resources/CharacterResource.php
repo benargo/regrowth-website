@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\WarcraftLogs;
+namespace App\Http\Resources;
 
 use App\Http\Resources\GuildRankResource;
 use App\Models\Character;

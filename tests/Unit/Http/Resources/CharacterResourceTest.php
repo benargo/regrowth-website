@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Http\Resources\WarcraftLogs;
+namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\GuildRankResource;
-use App\Http\Resources\WarcraftLogs\CharacterResource;
+use App\Http\Resources\CharacterResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\WarcraftLogs\Report;
