@@ -108,7 +108,7 @@ class PlannedAbsenceResourceTest extends TestCase
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
-        $this->assertSame('15/06/2026', $array['start_date']);
+        $this->assertSame('2026-06-15', $array['start_date']);
     }
 
     #[Test]
@@ -120,6 +120,6 @@ class PlannedAbsenceResourceTest extends TestCase
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
-        $this->assertSame('20/06/2026', $array['end_date']);
+        $this->assertSame('2026-06-20', $array['end_date']);
     }
 }

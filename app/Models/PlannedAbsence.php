@@ -52,7 +52,7 @@ class PlannedAbsence extends Model
      */
     public function serializeDate(DateTimeInterface $date): string
     {
-        return $date->format('d/m/Y');
+        return $date->format('Y-m-d');
     }
 
     /**
