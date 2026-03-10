@@ -30,6 +30,14 @@ class PermissionSeeder extends Seeder
         ['name' => 'view-reports', 'group' => 'raid-management', 'guard_name' => 'web'],
 
         /**
+         * Planned absences permissions
+         */
+        ['name' => 'create-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
+        ['name' => 'view-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
+        ['name' => 'update-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
+        ['name' => 'delete-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
+
+        /**
          * Hidden permissions (not shown in the dashboard, but still used for access control)
          */
         ['name' => 'view-officer-dashboard', 'guard_name' => 'web'],
