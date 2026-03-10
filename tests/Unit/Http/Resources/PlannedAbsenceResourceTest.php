@@ -3,10 +3,13 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Http\Resources\UserResource;
+use App\Http\Resources\WarcraftLogs\CharacterResource;
 use App\Models\PlannedAbsence;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\MissingValue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -22,7 +25,7 @@ class PlannedAbsenceResourceTest extends TestCase
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('character_id', $array);
+        $this->assertArrayHasKey('character', $array);
         $this->assertArrayHasKey('start_date', $array);
         $this->assertArrayHasKey('end_date', $array);
         $this->assertArrayHasKey('reason', $array);
@@ -40,17 +43,50 @@ class PlannedAbsenceResourceTest extends TestCase
 
         $this->assertSame($absence->id, $array['id']);
         $this->assertSame('I will be on holiday.', $array['reason']);
-        $this->assertSame($absence->created_by, $array['created_by']);
     }
 
     #[Test]
-    public function it_returns_null_character_id_when_not_set(): void
+    public function it_omits_character_when_not_loaded(): void
     {
-        $absence = PlannedAbsence::factory()->create(['character_id' => null]);
+        $absence = PlannedAbsence::factory()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
-        $this->assertNull($array['character_id']);
+        $this->assertInstanceOf(MissingValue::class, $array['character']);
+    }
+
+    #[Test]
+    public function it_includes_character_when_loaded(): void
+    {
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+        $absence->load('character');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertInstanceOf(CharacterResource::class, $array['character']);
+        $this->assertSame($absence->character_id, $array['character']->resource->id);
+    }
+
+    #[Test]
+    public function it_omits_created_by_when_not_loaded(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['created_by']);
+    }
+
+    #[Test]
+    public function it_includes_created_by_when_loaded(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+        $absence->load('createdBy');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertInstanceOf(UserResource::class, $array['created_by']);
+        $this->assertSame($absence->createdBy->id, $array['created_by']->resource->id);
     }
 
     #[Test]
