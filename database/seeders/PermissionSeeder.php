@@ -38,6 +38,7 @@ class PermissionSeeder extends Seeder
          * Planned absences permissions
          */
         ['name' => 'create-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
+        ['name' => 'create-planned-absences-for-others', 'group' => 'planned-absences', 'guard_name' => 'web'],
         ['name' => 'view-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
         ['name' => 'update-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
         ['name' => 'delete-planned-absences', 'group' => 'planned-absences', 'guard_name' => 'web'],
@@ -47,7 +48,7 @@ class PermissionSeeder extends Seeder
          */
         ['name' => 'set-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
         ['name' => 'update-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
-    
+
         /**
          * Hidden permissions (not shown in the dashboard, but still used for access control)
          */
