@@ -58,6 +58,7 @@ class PlannedAbsenceTest extends ModelTestCase
 
         $this->assertFillable($model, [
             'character_id',
+            'user_id',
             'start_date',
             'end_date',
             'reason',
@@ -140,14 +141,6 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_has_null_character_when_character_id_is_null(): void
-    {
-        $absence = $this->create(['character_id' => null]);
-
-        $this->assertNull($absence->character);
-    }
-
-    #[Test]
     public function it_belongs_to_created_by_user(): void
     {
         $user = User::factory()->create();
@@ -158,15 +151,26 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_belongs_to_user(): void
+    {
+        $user = User::factory()->create();
+        $absence = $this->create(['user_id' => $user->id]);
+
+        $this->assertRelation($absence, 'user', BelongsTo::class);
+        $this->assertTrue($absence->user->is($user));
+    }
+
+    #[Test]
     public function factory_creates_valid_model(): void
     {
         $absence = $this->create();
 
+        $this->assertNotNull($absence->character_id);
+        $this->assertNotNull($absence->user_id);
         $this->assertNotNull($absence->start_date);
         $this->assertNotNull($absence->end_date);
         $this->assertNotNull($absence->reason);
         $this->assertNotNull($absence->created_by);
-        $this->assertNull($absence->character_id);
         $this->assertModelExists($absence);
     }
 

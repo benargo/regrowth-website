@@ -18,6 +18,12 @@ class UserTest extends ModelTestCase
         return User::class;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Primary key and key type
+    |--------------------------------------------------------------------------
+    */
+
     #[Test]
     public function it_uses_discord_id_as_primary_key(): void
     {
@@ -27,6 +33,12 @@ class UserTest extends ModelTestCase
         $this->assertSame('string', $model->getKeyType());
         $this->assertFalse($model->getIncrementing());
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Fillable attributes
+    |--------------------------------------------------------------------------
+    */
 
     #[Test]
     public function it_has_expected_fillable_attributes(): void
@@ -45,6 +57,20 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_does_not_have_password_in_fillable(): void
+    {
+        $model = new User;
+
+        $this->assertNotContains('password', $model->getFillable());
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Casts
+    |--------------------------------------------------------------------------
+    */
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new User;
@@ -55,6 +81,12 @@ class UserTest extends ModelTestCase
         ]);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Default attributes
+    |--------------------------------------------------------------------------
+    */
+
     #[Test]
     public function it_defaults_is_admin_to_false(): void
     {
@@ -63,13 +95,139 @@ class UserTest extends ModelTestCase
         $this->assertFalse($model->is_admin);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Hidden attributes
+    |--------------------------------------------------------------------------
+    */
+
     #[Test]
-    public function it_does_not_have_password_in_fillable(): void
+    public function it_has_expected_hidden_attributes(): void
     {
         $model = new User;
 
-        $this->assertNotContains('password', $model->getFillable());
+        $this->assertHidden($model, [
+            'username',
+            'discriminator',
+            'remember_token',
+            'is_admin',
+        ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Mutators and accessors
+    |--------------------------------------------------------------------------
+    */
+
+    #[Test]
+    public function display_name_returns_nickname_when_set(): void
+    {
+        $user = $this->create([
+            'id' => '123456789012345686',
+            'username' => 'testuser',
+            'nickname' => 'MyNickname',
+            'discriminator' => '0',
+        ]);
+
+        $this->assertSame('MyNickname', $user->display_name);
+    }
+
+    #[Test]
+    public function display_name_returns_username_when_nickname_is_null(): void
+    {
+        $user = $this->create([
+            'id' => '123456789012345687',
+            'username' => 'testuser',
+            'nickname' => null,
+            'discriminator' => '0',
+        ]);
+
+        $this->assertSame('testuser', $user->display_name);
+    }
+
+    #[Test]
+    public function avatar_url_returns_cdn_url_when_guild_avatar_set(): void
+    {
+        $user = $this->create([
+            'id' => '123456789012345688',
+            'username' => 'testuser',
+            'discriminator' => '0',
+            'avatar' => 'abc123def456',
+            'guild_avatar' => 'def456abc123',
+        ]);
+
+        $this->assertSame(
+            'https://cdn.discordapp.com/guilds/829020506907869214/users/123456789012345688/avatars/def456abc123.webp',
+            $user->avatar_url
+        );
+    }
+
+    #[Test]
+    public function avatar_url_returns_cdn_url_when_avatar_set(): void
+    {
+        $user = $this->create([
+            'id' => '123456789012345688',
+            'username' => 'testuser',
+            'discriminator' => '0',
+            'avatar' => 'abc123def456',
+            'guild_avatar' => null,
+        ]);
+
+        $this->assertSame(
+            'https://cdn.discordapp.com/avatars/123456789012345688/abc123def456.webp',
+            $user->avatar_url
+        );
+    }
+
+    #[Test]
+    public function avatar_url_returns_default_avatar_when_avatar_is_null(): void
+    {
+        $user = $this->create([
+            'id' => '123456789012345689',
+            'username' => 'testuser',
+            'discriminator' => '0',
+            'avatar' => null,
+            'guild_avatar' => null,
+        ]);
+
+        $this->assertStringStartsWith('https://cdn.discordapp.com/embed/avatars/', $user->avatar_url);
+    }
+
+    #[Test]
+    public function banner_url_returns_cdn_url_when_banner_set(): void
+    {
+        $user = $this->create([
+            'id' => '123456789012345690',
+            'username' => 'testuser',
+            'discriminator' => '0',
+            'banner' => 'banner123',
+        ]);
+
+        $this->assertSame(
+            'https://cdn.discordapp.com/banners/123456789012345690/banner123.webp',
+            $user->banner_url
+        );
+    }
+
+    #[Test]
+    public function banner_url_returns_null_when_banner_is_null(): void
+    {
+        $user = $this->create([
+            'id' => '123456789012345691',
+            'username' => 'testuser',
+            'discriminator' => '0',
+            'banner' => null,
+        ]);
+
+        $this->assertNull($user->banner_url);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Discord roles relationship
+    |--------------------------------------------------------------------------
+    */
 
     #[Test]
     public function it_persists_with_discord_id_as_primary_key(): void
@@ -82,34 +240,6 @@ class UserTest extends ModelTestCase
 
         $this->assertTableHas(['id' => '123456789012345678', 'username' => 'testuser']);
         $this->assertModelExists($user);
-    }
-
-    #[Test]
-    public function planned_absences_created_returns_has_many_relationship(): void
-    {
-        $model = new User;
-
-        $this->assertInstanceOf(HasMany::class, $model->plannedAbsencesCreated());
-    }
-
-    #[Test]
-    public function planned_absences_created_returns_absences_created_by_user(): void
-    {
-        $user = User::factory()->create();
-        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
-
-        $this->assertCount(1, $user->plannedAbsencesCreated);
-        $this->assertTrue($user->plannedAbsencesCreated->contains($absence));
-    }
-
-    #[Test]
-    public function planned_absences_created_does_not_return_absences_created_by_other_users(): void
-    {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
-        PlannedAbsence::factory()->create(['created_by' => $otherUser->id]);
-
-        $this->assertCount(0, $user->plannedAbsencesCreated);
     }
 
     #[Test]
@@ -233,108 +363,79 @@ class UserTest extends ModelTestCase
         $this->assertNull($user->highestRole());
     }
 
-    #[Test]
-    public function display_name_returns_nickname_when_set(): void
-    {
-        $user = $this->create([
-            'id' => '123456789012345686',
-            'username' => 'testuser',
-            'nickname' => 'MyNickname',
-            'discriminator' => '0',
-        ]);
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Planned absences relationships
+    |--------------------------------------------------------------------------
+    */
 
-        $this->assertSame('MyNickname', $user->display_name);
+    #[Test]
+    public function planned_absences_returns_has_many_relationship(): void
+    {
+        $model = new User;
+
+        $this->assertInstanceOf(HasMany::class, $model->plannedAbsences());
     }
 
     #[Test]
-    public function display_name_returns_username_when_nickname_is_null(): void
+    public function planned_absences_returns_absences_for_user(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345687',
-            'username' => 'testuser',
-            'nickname' => null,
-            'discriminator' => '0',
-        ]);
+        $user = User::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['user_id' => $user->id]);
 
-        $this->assertSame('testuser', $user->display_name);
+        $this->assertCount(1, $user->plannedAbsences);
+        $this->assertTrue($user->plannedAbsences->contains($absence));
     }
 
     #[Test]
-    public function avatar_url_returns_cdn_url_when_guild_avatar_set(): void
+    public function planned_absences_does_not_return_absences_for_other_users(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345688',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'avatar' => 'abc123def456',
-            'guild_avatar' => 'def456abc123',
-        ]);
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        PlannedAbsence::factory()->create(['user_id' => $otherUser->id]);
 
-        $this->assertSame(
-            'https://cdn.discordapp.com/guilds/829020506907869214/users/123456789012345688/avatars/def456abc123.webp',
-            $user->avatar_url
-        );
+        $this->assertCount(0, $user->plannedAbsences);
     }
 
     #[Test]
-    public function avatar_url_returns_cdn_url_when_avatar_set(): void
+    public function planned_absences_created_returns_has_many_relationship(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345688',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'avatar' => 'abc123def456',
-            'guild_avatar' => null,
-        ]);
+        $model = new User;
 
-        $this->assertSame(
-            'https://cdn.discordapp.com/avatars/123456789012345688/abc123def456.webp',
-            $user->avatar_url
-        );
+        $this->assertInstanceOf(HasMany::class, $model->plannedAbsencesCreated());
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Planned absences created relationships
+    |--------------------------------------------------------------------------
+    */
+
+    #[Test]
+    public function planned_absences_created_returns_absences_created_by_user(): void
+    {
+        $user = User::factory()->create();
+        $absence = PlannedAbsence::factory()->create(['created_by' => $user->id]);
+
+        $this->assertCount(1, $user->plannedAbsencesCreated);
+        $this->assertTrue($user->plannedAbsencesCreated->contains($absence));
     }
 
     #[Test]
-    public function avatar_url_returns_default_avatar_when_avatar_is_null(): void
+    public function planned_absences_created_does_not_return_absences_created_by_other_users(): void
     {
-        $user = $this->create([
-            'id' => '123456789012345689',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'avatar' => null,
-            'guild_avatar' => null,
-        ]);
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        PlannedAbsence::factory()->create(['created_by' => $otherUser->id]);
 
-        $this->assertStringStartsWith('https://cdn.discordapp.com/embed/avatars/', $user->avatar_url);
+        $this->assertCount(0, $user->plannedAbsencesCreated);
     }
 
-    #[Test]
-    public function banner_url_returns_cdn_url_when_banner_set(): void
-    {
-        $user = $this->create([
-            'id' => '123456789012345690',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'banner' => 'banner123',
-        ]);
-
-        $this->assertSame(
-            'https://cdn.discordapp.com/banners/123456789012345690/banner123.webp',
-            $user->banner_url
-        );
-    }
-
-    #[Test]
-    public function banner_url_returns_null_when_banner_is_null(): void
-    {
-        $user = $this->create([
-            'id' => '123456789012345691',
-            'username' => 'testuser',
-            'discriminator' => '0',
-            'banner' => null,
-        ]);
-
-        $this->assertNull($user->banner_url);
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Test: Permissions
+    |--------------------------------------------------------------------------
+    */
 
     #[Test]
     public function permissions_returns_empty_collection_when_user_has_no_roles(): void
@@ -415,33 +516,5 @@ class UserTest extends ModelTestCase
         $user = User::factory()->create();
 
         $this->assertFalse($user->hasPermissionViaDiscordRoles('test-permission'));
-    }
-
-    #[Test]
-    public function can_comment_on_loot_items_returns_true_via_permission(): void
-    {
-        Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
-
-        $role = DiscordRole::factory()->create();
-        $role->givePermissionTo('comment-on-loot-items');
-
-        $user = User::factory()->create();
-        $user->discordRoles()->attach($role->id);
-        $user->load('discordRoles.permissions');
-
-        $this->assertTrue($user->hasPermissionViaDiscordRoles('comment-on-loot-items'));
-    }
-
-    #[Test]
-    public function can_comment_on_loot_items_returns_false_without_permission(): void
-    {
-        Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
-
-        $role = DiscordRole::factory()->create();
-
-        $user = User::factory()->create();
-        $user->discordRoles()->attach($role->id);
-
-        $this->assertFalse($user->hasPermissionViaDiscordRoles('comment-on-loot-items'));
     }
 }

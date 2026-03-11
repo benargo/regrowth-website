@@ -17,11 +17,12 @@ class PlannedAbsenceResource extends JsonResource
         return [
             'id' => $this->id,
             'character' => $this->whenLoaded('character', fn () => new CharacterResource($this->character)),
-            'start_date' => $this->start_date?->format('Y-m-d'),
+            'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),
+            'start_date' => $this->start_date->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
             'reason' => $this->reason,
             'created_by' => $this->whenLoaded('createdBy', fn () => new UserResource($this->createdBy)),
-            'created_at' => $this->created_at?->toDateTimeString(),
+            'created_at' => $this->created_at->toDateTimeString(),
         ];
     }
 }

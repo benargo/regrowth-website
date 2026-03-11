@@ -122,6 +122,20 @@ class User extends Authenticatable
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Planned Absences
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get the planned absences associated with the user.
+     */
+    public function plannedAbsences(): HasMany
+    {
+        return $this->hasMany(PlannedAbsence::class);
+    }
+
     /**
      * Get the planned absences created by the user.
      */

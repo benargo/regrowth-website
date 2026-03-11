@@ -31,6 +31,7 @@ class PlannedAbsence extends Model
      */
     protected $fillable = [
         'character_id',
+        'user_id',
         'start_date',
         'end_date',
         'reason',
@@ -77,7 +78,19 @@ class PlannedAbsence extends Model
     }
 
     /**
+     * Get the user associated with this planned absence.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
      * Get the user who created this planned absence.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function createdBy(): BelongsTo
     {

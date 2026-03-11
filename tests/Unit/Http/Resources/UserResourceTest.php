@@ -314,6 +314,31 @@ class UserResourceTest extends TestCase
         $this->assertArrayHasKey('banner', $array);
         $this->assertArrayHasKey('roles', $array);
         $this->assertArrayHasKey('highest_role', $array);
+        $this->assertArrayHasKey('admin', $array);
+    }
+
+    #[Test]
+    public function it_omits_planned_absences_when_not_loaded(): void
+    {
+        $user = User::factory()->create();
+
+        $resource = new UserResource($user);
+        $array = $resource->resolve(new Request);
+
+        $this->assertArrayNotHasKey('planned_absences', $array);
+    }
+
+    #[Test]
+    public function it_returns_planned_absences_when_loaded(): void
+    {
+        $user = User::factory()->create();
+        PlannedAbsence::factory()->count(2)->create(['user_id' => $user->id]);
+
+        $resource = new UserResource($user->fresh()->load('plannedAbsences'));
+        $array = $resource->resolve(new Request);
+
+        $this->assertArrayHasKey('planned_absences', $array);
+        $this->assertCount(2, $array['planned_absences']);
     }
 
     #[Test]

@@ -22,7 +22,8 @@ class PlannedAbsenceFactory extends Factory
         $end = fake()->dateTimeBetween($start, (clone $start)->modify('+2 weeks'));
 
         return [
-            'character_id' => null,
+            'character_id' => Character::factory(),
+            'user_id' => User::factory(),
             'start_date' => $start,
             'end_date' => $end,
             'reason' => fake()->paragraph(),

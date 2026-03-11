@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Http\Resources\UserResource;
-use App\Http\Resources\CharacterResource;
 use App\Models\PlannedAbsence;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,6 +26,7 @@ class PlannedAbsenceResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('character', $array);
+        $this->assertArrayHasKey('user', $array);
         $this->assertArrayHasKey('start_date', $array);
         $this->assertArrayHasKey('end_date', $array);
         $this->assertArrayHasKey('reason', $array);
@@ -65,6 +66,28 @@ class PlannedAbsenceResourceTest extends TestCase
 
         $this->assertInstanceOf(CharacterResource::class, $array['character']);
         $this->assertSame($absence->character_id, $array['character']->resource->id);
+    }
+
+    #[Test]
+    public function it_omits_user_when_not_loaded(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['user']);
+    }
+
+    #[Test]
+    public function it_includes_user_when_loaded(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+        $absence->load('user');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertInstanceOf(UserResource::class, $array['user']);
+        $this->assertSame($absence->user->id, $array['user']->resource->id);
     }
 
     #[Test]
