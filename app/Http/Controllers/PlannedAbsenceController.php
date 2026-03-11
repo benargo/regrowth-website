@@ -9,6 +9,7 @@ use App\Http\Requests\PlannedAbsences\UpdatePlannedAbsenceRequest;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
+use App\Models\DiscordRole;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
