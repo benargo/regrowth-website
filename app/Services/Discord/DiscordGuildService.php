@@ -35,6 +35,7 @@ class DiscordGuildService extends DiscordService
         $data = $response->json();
 
         return [
+            'user' => $data['user'] ?? [],
             'nick' => $data['nick'] ?? null,
             'avatar' => $data['avatar'] ?? null,
             'banner' => $data['banner'] ?? null,

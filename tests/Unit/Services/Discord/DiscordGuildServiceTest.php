@@ -40,6 +40,8 @@ class DiscordGuildServiceTest extends TestCase
 
         $memberData = $this->service->getGuildMember('123456789012345678');
 
+        $this->assertSame('123456789012345678', $memberData['user']['id']);
+        $this->assertSame('testuser', $memberData['user']['username']);
         $this->assertSame('TestNickname', $memberData['nick']);
         $this->assertSame('abc123', $memberData['avatar']);
         $this->assertContains('829021769448816691', $memberData['roles']);
@@ -65,6 +67,7 @@ class DiscordGuildServiceTest extends TestCase
 
         $memberData = $this->service->getGuildMember('123456789012345678');
 
+        $this->assertSame('123456789012345678', $memberData['user']['id']);
         $this->assertNull($memberData['nick']);
         $this->assertNull($memberData['avatar']);
         $this->assertNull($memberData['banner']);
@@ -124,6 +127,10 @@ class DiscordGuildServiceTest extends TestCase
     {
         Http::fake([
             'discord.com/api/v10/guilds/829020506907869214/members/123456789012345678' => Http::response([
+                'user' => [
+                    'id' => '123456789012345678',
+                    'username' => 'TestUser',
+                ],
                 'nick' => 'TestUser',
                 'avatar' => null,
                 'banner' => null,
@@ -133,6 +140,7 @@ class DiscordGuildServiceTest extends TestCase
 
         $memberData = $this->service->getGuildMember('123456789012345678');
 
+        $this->assertSame('123456789012345678', $memberData['user']['id']);
         $this->assertIsArray($memberData['roles']);
         $this->assertEmpty($memberData['roles']);
     }
