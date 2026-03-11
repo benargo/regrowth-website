@@ -15,7 +15,7 @@ class AccountController extends Controller
      */
     public function index(Request $request): Response
     {
-        $user = $request->user()->load(['discordRoles', 'plannedAbsencesCreated.character']);
+        $user = $request->user()->load(['discordRoles', 'plannedAbsences.character']);
 
         return Inertia::render('Account/Index', [
             'roles' => $user->discordRoles
@@ -23,7 +23,7 @@ class AccountController extends Controller
                 ->sortByDesc('position')
                 ->values()
                 ->map(fn ($role) => ['id' => $role->id, 'name' => $role->name]),
-            'planned_absences' => PlannedAbsenceResource::collection($user->plannedAbsencesCreated),
+            'planned_absences' => PlannedAbsenceResource::collection($user->plannedAbsences),
         ]);
     }
 }

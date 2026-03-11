@@ -91,13 +91,13 @@ class AccountControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_returns_planned_absences_created_by_user(): void
+    public function index_returns_planned_absences_for_user(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
 
-        PlannedAbsence::factory()->withCharacter()->create(['created_by' => $user->id]);
-        PlannedAbsence::factory()->withCharacter()->create(['created_by' => $other->id]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $user->id]);
+        PlannedAbsence::factory()->withCharacter()->create(['user_id' => $other->id]);
 
         $response = $this->actingAs($user)->get(route('account.index'));
 
@@ -113,8 +113,8 @@ class AccountControllerTest extends TestCase
         $character = Character::factory()->main()->create(['name' => 'Aragorn']);
         $user = User::factory()->create();
         PlannedAbsence::factory()->create([
+            'user_id' => $user->id,
             'character_id' => $character->id,
-            'created_by' => $user->id,
             'start_date' => '2026-04-01',
             'reason' => 'Holiday.',
         ]);
