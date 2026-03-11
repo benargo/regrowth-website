@@ -1,4 +1,4 @@
-export default function Tooltip({ children, text, position = "top", ...props }) {
+export default function Tooltip({ children, text, body, position = "top", ...props }) {
     const positionClasses = {
         top: "bottom-full left-1/2 mb-2 -translate-x-1/2",
         bottom: "top-full left-1/2 mt-2 -translate-x-1/2",
@@ -17,12 +17,10 @@ export default function Tooltip({ children, text, position = "top", ...props }) 
         <div className="group/tooltip relative inline-block" {...props}>
             {children}
             <div
-                className={`pointer-events-none absolute z-30 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 ${positionClasses[position]}`}
+                className={`pointer-events-none absolute z-30 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tooltip:opacity-100 ${body ? "max-w-xs" : "whitespace-nowrap"} ${positionClasses[position]}`}
             >
-                {text}
-                <div
-                    className={`absolute border-4 border-transparent ${arrowClasses[position]}`}
-                ></div>
+                {body ?? text}
+                <div className={`absolute border-4 border-transparent ${arrowClasses[position]}`}></div>
             </div>
         </div>
     );

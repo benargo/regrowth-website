@@ -2,8 +2,10 @@
 
 namespace App\Services\AttendanceCalculator;
 
+use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlannedAbsence;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Support\Collection;
 
@@ -22,7 +24,7 @@ class AttendanceMatrix
      * Attendance values: null = before first raid, 0 = absent, 1 = present, 2 = late.
      * When linked characters are merged, attendance_names lists the character names who attended each raid.
      *
-     * @var array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>, attendance_names?: array<int, array<int, string>>}>
+     * @var array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>, planned_absences: array<int, PlannedAbsence|null>, attendance_names?: array<int, array<int, string>>}>
      */
     public array $rows;
 
@@ -110,13 +112,28 @@ class AttendanceMatrix
     }
 
     /**
-     * @return array{raids: array<int, array{code: string, date: string}>, rows: array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>}>}
+     * @return array{raids: array<int, array{code: string, date: string}>, rows: array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>, planned_absences: array<int, string|null>}>, planned_absences: array<int, mixed>}
      */
     public function toArray(): array
     {
+        $referencedAbsences = collect();
+
+        $rows = array_map(function (array $row) use (&$referencedAbsences) {
+            return array_merge($row, [
+                'planned_absences' => array_map(function (?PlannedAbsence $absence) use (&$referencedAbsences) {
+                    if ($absence !== null) {
+                        $referencedAbsences->put($absence->id, $absence);
+                    }
+
+                    return $absence?->id;
+                }, $row['planned_absences']),
+            ]);
+        }, $this->rows);
+
         return [
             'raids' => $this->raids,
-            'rows' => $this->rows,
+            'rows' => $rows,
+            'planned_absences' => PlannedAbsenceResource::collection($referencedAbsences->values())->resolve(),
         ];
     }
 
@@ -162,6 +179,13 @@ class AttendanceMatrix
             }
         }
 
+        // Load planned absences for all characters appearing in these records.
+        $characterIds = array_column($characterInfo, 'id');
+
+        $absencesByCharacterId = PlannedAbsence::whereIn('character_id', $characterIds)
+            ->get()
+            ->groupBy('character_id');
+
         // Second pass: build per-character attendance arrays and calculate percentages.
         $rows = [];
 
@@ -169,23 +193,33 @@ class AttendanceMatrix
             $totalReports = 0;
             $reportsAttended = 0;
             $attendance = [];
+            $plannedAbsences = [];
 
             foreach ($records->values()->reverse() as $index => $record) {
+                $isAbsenceCovered = $this->calculator->isCoveredByPlannedAbsence(
+                    $absencesByCharacterId->get($info['id'], collect()),
+                    $record['startTime'],
+                );
+
                 if ($index < $info['firstIndex']) {
                     $attendance[] = null;
+                    $plannedAbsences[] = null;
 
                     continue;
                 }
 
-                $totalReports++;
-
                 $presence = $record['players'][$name]['presence'] ?? null;
+                $attended = in_array($presence, [1, 2], true);
 
-                if (in_array($presence, [1, 2], true)) {
-                    $reportsAttended++;
-                    $attendance[] = $presence;
-                } else {
-                    $attendance[] = 0;
+                $attendance[] = $attended ? $presence : 0;
+                $plannedAbsences[] = $isAbsenceCovered;
+
+                if ($isAbsenceCovered === null) {
+                    $totalReports++;
+
+                    if ($attended) {
+                        $reportsAttended++;
+                    }
                 }
             }
 
@@ -198,6 +232,7 @@ class AttendanceMatrix
                 'playable_class' => $info['playable_class'] ?? null,
                 'percentage' => $percentage,
                 'attendance' => $attendance,
+                'planned_absences' => $plannedAbsences,
             ];
         }
 
@@ -301,6 +336,7 @@ class AttendanceMatrix
                 'playable_class' => $mainChar->playable_class,
                 'percentage' => 0.0,
                 'attendance' => array_fill(0, $raidCount, null),
+                'planned_absences' => array_fill(0, $raidCount, null),
             ];
 
             $result[] = $this->buildMergedRow($syntheticRow, $altRows, $raidCount);
@@ -341,12 +377,11 @@ class AttendanceMatrix
                 continue;
             }
 
-            $totalReports++;
+            $isAbsenceCovered = $mainRow['planned_absences'][$i] ?? null;
             $presenceValues = array_filter($nonNull, fn ($v) => in_array($v, [1, 2], true));
 
             if (! empty($presenceValues)) {
                 $attendance[] = min($presenceValues);
-                $reportsAttended++;
 
                 $names = [];
 
@@ -361,6 +396,14 @@ class AttendanceMatrix
                 $attendance[] = 0;
                 $attendanceNames[] = [];
             }
+
+            if ($isAbsenceCovered === null) {
+                $totalReports++;
+
+                if (! empty($presenceValues)) {
+                    $reportsAttended++;
+                }
+            }
         }
 
         $percentage = $totalReports > 0 ? round(($reportsAttended / $totalReports) * 100, 2) : 0.0;
@@ -372,6 +415,7 @@ class AttendanceMatrix
             'playable_class' => $mainRow['playable_class'] ?? null,
             'percentage' => $percentage,
             'attendance' => $attendance,
+            'planned_absences' => $mainRow['planned_absences'] ?? array_fill(0, $raidCount, null),
             'attendance_names' => $attendanceNames,
         ];
     }

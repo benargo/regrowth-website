@@ -5,6 +5,7 @@ namespace App\Services\AttendanceCalculator;
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlannedAbsence;
 use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -131,6 +132,13 @@ class AttendanceCalculator
             }
         }
 
+        // Load planned absences for all characters appearing in these records
+        $characterIds = array_column($characterInfo, 'id');
+
+        $absencesByCharacterId = PlannedAbsence::whereIn('character_id', $characterIds)
+            ->get()
+            ->groupBy('character_id');
+
         // Second pass: for each character, count reports since their first attendance
         $stats = [];
 
@@ -141,6 +149,11 @@ class AttendanceCalculator
             foreach ($records as $record) {
                 // Only count reports on or after the character's first attendance
                 if ($record['startTime']->lt($info['firstAttendance'])) {
+                    continue;
+                }
+
+                // Exclude reports covered by a planned absence from both numerator and denominator
+                if ($this->isCoveredByPlannedAbsence($absencesByCharacterId->get($info['id'], collect()), $record['startTime'])) {
                     continue;
                 }
 
@@ -268,6 +281,30 @@ class AttendanceCalculator
                 'players' => $mergedPlayers,
             ];
         })->values();
+    }
+
+    /**
+     * Determine whether a raid's start time falls within any of the character's planned absences.
+     *
+     * Compares by calendar date in the configured timezone, since planned absences represent days rather than exact times.
+     * Returns the matching PlannedAbsence if covered, or null if not.
+     *
+     * @param  Collection<int, PlannedAbsence>  $absences
+     */
+    public function isCoveredByPlannedAbsence(Collection $absences, Carbon $startTime): ?PlannedAbsence
+    {
+        $raidDate = $startTime->copy()->setTimezone($this->timezone)->startOfDay();
+
+        foreach ($absences as $absence) {
+            $absenceStart = $absence->start_date->copy()->startOfDay();
+            $absenceEnd = $absence->end_date?->copy()->endOfDay();
+
+            if ($raidDate->gte($absenceStart) && ($absenceEnd === null || $raidDate->lte($absenceEnd))) {
+                return $absence;
+            }
+        }
+
+        return null;
     }
 
     /**

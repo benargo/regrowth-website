@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\AttendanceCalculator;
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlannedAbsence;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
@@ -1396,5 +1397,298 @@ class AttendanceCalculatorTest extends TestCase
         ));
 
         $this->assertEmpty($matrix->rows);
+    }
+
+    // ==================== Planned Absence Tests ====================
+
+    public function test_planned_absence_excludes_report_from_total_and_attended(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $report3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 0); // absent — covered by planned absence
+        $this->attachCharacter($report3, $character, 1);
+
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+
+        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+
+        // Report 2 is excluded from both numerator and denominator
+        $this->assertEquals(2, $thrall->totalReports);
+        $this->assertEquals(2, $thrall->reportsAttended);
+        $this->assertEquals(100.0, $thrall->percentage);
+    }
+
+    public function test_planned_absence_does_not_affect_other_characters(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $thrall, 1);
+        $this->attachCharacter($report2, $thrall, 0);
+        $this->attachCharacter($report1, $jaina, 1);
+        $this->attachCharacter($report2, $jaina, 0);
+
+        // Only Thrall has a planned absence for report 2
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $thrall->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+
+        $stats = $this->makeCalculator()->wholeGuild();
+        $thrallStats = $stats->firstWhere('name', 'Thrall');
+        $jainaStats = $stats->firstWhere('name', 'Jaina');
+
+        // Thrall's absent report is excluded
+        $this->assertEquals(1, $thrallStats->totalReports);
+        $this->assertEquals(1, $thrallStats->reportsAttended);
+        $this->assertEquals(100.0, $thrallStats->percentage);
+
+        // Jaina is unaffected — her absent report still counts against her
+        $this->assertEquals(2, $jainaStats->totalReports);
+        $this->assertEquals(1, $jainaStats->reportsAttended);
+        $this->assertEquals(50.0, $jainaStats->percentage);
+    }
+
+    public function test_planned_absence_with_no_end_date_covers_all_subsequent_raids(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $report3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 0);
+        $this->attachCharacter($report3, $character, 0);
+
+        // Open-ended absence from Jan 8 onwards
+        PlannedAbsence::factory()->withoutEndDate()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-08',
+        ]);
+
+        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+
+        // Only report 1 is counted; reports 2 and 3 are excluded by the open-ended absence
+        $this->assertEquals(1, $thrall->totalReports);
+        $this->assertEquals(1, $thrall->reportsAttended);
+        $this->assertEquals(100.0, $thrall->percentage);
+    }
+
+    public function test_planned_absence_only_excludes_reports_within_date_range(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris')); // covered
+        $report3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 0);
+        $this->attachCharacter($report3, $character, 1);
+
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-06',
+            'end_date' => '2025-01-10',
+        ]);
+
+        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+
+        // Reports 1 and 3 count normally; report 2 is excluded
+        $this->assertEquals(2, $thrall->totalReports);
+        $this->assertEquals(2, $thrall->reportsAttended);
+        $this->assertEquals(100.0, $thrall->percentage);
+    }
+
+    public function test_multiple_planned_absences_for_same_character(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris')); // absence 1
+        $report3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $report4 = $this->makeReport($tag, Carbon::parse('2025-01-22 20:00', 'Europe/Paris')); // absence 2
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 0);
+        $this->attachCharacter($report3, $character, 1);
+        $this->attachCharacter($report4, $character, 0);
+
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-22',
+            'end_date' => '2025-01-22',
+        ]);
+
+        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+
+        // Only reports 1 and 3 count
+        $this->assertEquals(2, $thrall->totalReports);
+        $this->assertEquals(2, $thrall->reportsAttended);
+        $this->assertEquals(100.0, $thrall->percentage);
+    }
+
+    public function test_soft_deleted_planned_absence_is_not_applied(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 0);
+
+        $absence = PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+        $absence->delete();
+
+        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+
+        // Soft-deleted absence is ignored; the missed report counts against attendance
+        $this->assertEquals(2, $thrall->totalReports);
+        $this->assertEquals(1, $thrall->reportsAttended);
+        $this->assertEquals(50.0, $thrall->percentage);
+    }
+
+    // ==================== Matrix Planned Absence Display Tests ====================
+
+    public function test_matrix_planned_absence_marks_cell_with_flag(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 0); // absent, covered by planned absence
+
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        // Columns are newest-first: raids[0]=Jan 8 (absence-covered), raids[1]=Jan 1
+        $this->assertNotNull($row['planned_absences'][0]);
+        $this->assertNull($row['planned_absences'][1]);
+
+        // Jan 8 excluded from denominator; only Jan 1 (attended) counts → 100%
+        $this->assertEquals(100.0, $row['percentage']);
+    }
+
+    public function test_matrix_planned_absence_does_not_affect_other_characters(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $thrall, 0);
+        $this->attachCharacter($report, $jaina, 0);
+
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $thrall->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $thrallRow = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $jainaRow = collect($matrix->rows)->firstWhere('name', 'Jaina');
+
+        $this->assertNotNull($thrallRow['planned_absences'][0]);
+        $this->assertNull($jainaRow['planned_absences'][0]);
+
+        // Thrall's only raid is absence-covered, so 0 countable reports → 0%
+        $this->assertEquals(0.0, $thrallRow['percentage']);
+        // Jaina's raid counts normally → absent → 0/1 = 0%
+        $this->assertEquals(0.0, $jainaRow['percentage']);
+    }
+
+    public function test_matrix_planned_absence_outside_range_is_not_marked(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
+        $report2 = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris')); // covered
+        $report3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report1, $character, 1);
+        $this->attachCharacter($report2, $character, 0);
+        $this->attachCharacter($report3, $character, 1);
+
+        PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        // Newest-first: raids[0]=Jan 15, raids[1]=Jan 8, raids[2]=Jan 1
+        $this->assertNull($row['planned_absences'][0]);    // Jan 15 — not covered
+        $this->assertNotNull($row['planned_absences'][1]); // Jan 8 — covered
+        $this->assertNull($row['planned_absences'][2]);    // Jan 1 — not covered
+
+        // Jan 8 excluded from denominator; Jan 1 + Jan 15 both attended → 2/2 = 100%
+        $this->assertEquals(100.0, $row['percentage']);
+    }
+
+    public function test_matrix_soft_deleted_absence_is_not_marked(): void
+    {
+        $rank = $this->makeRank();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $report = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
+        $this->attachCharacter($report, $character, 0);
+
+        $absence = PlannedAbsence::factory()->withoutUser()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-08',
+            'end_date' => '2025-01-08',
+        ]);
+        $absence->delete();
+
+        $matrix = $this->makeMatrix()->matrixForWholeGuild();
+        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+
+        $this->assertNull($row['planned_absences'][0]);
     }
 }

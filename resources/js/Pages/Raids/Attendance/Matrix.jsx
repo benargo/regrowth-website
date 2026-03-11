@@ -6,6 +6,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
+import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 import GuildRankLabel from "@/Components/GuildRankLabel";
 
@@ -26,7 +27,6 @@ function SearchInput({ value, onChange, placeholder = "Search by name...", dusk 
             {value && (
                 <button
                     onClick={() => onChange("")}
-                    dusk="clear-character-name-search"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
                 >
                     <Icon icon="times" style="solid" />
@@ -148,7 +148,7 @@ function MatrixSkeleton() {
     const fakeCols = Array.from({ length: 10 });
 
     return (
-        <div dusk="matrix-skeleton" className="animate-pulse overflow-x-auto">
+        <div className="animate-pulse overflow-x-auto">
             <table className="w-full min-w-max border-collapse">
                 <thead className="border-b border-amber-600/30">
                     <tr>
@@ -187,30 +187,48 @@ function MatrixSkeleton() {
     );
 }
 
-function AttendanceCell({ value, names }) {
-    let icon = null;
-
-    if (value === 1) {
-        icon = <Icon dusk="presence-present" icon="check" style="solid" className="text-green-500" />;
-    } else if (value === 2) {
-        icon = <Icon dusk="presence-late" icon="couch" style="regular" className="text-amber-500" />;
-    } else if (value === 0) {
-        icon = <Icon dusk="presence-absent" icon="circle" style="regular" className="text-red-500" />;
-    }
-
-    if (icon && names?.length > 0) {
+function AttendanceCell({ value, names, plannedAbsence }) {
+    if (value === 0 && plannedAbsence) {
+        const icon = <Icon icon="umbrella-beach" style="solid" className="text-sky-400" />;
         return (
-            <Tooltip text={names.join(", ")} position="bottom">
+            <Tooltip
+                body={
+                    plannedAbsence.reason ? <FormattedMarkdown>{plannedAbsence.reason}</FormattedMarkdown> : undefined
+                }
+                text={plannedAbsence.reason ? undefined : "Planned Absence"}
+                position="bottom"
+            >
                 {icon}
             </Tooltip>
         );
     }
 
+    let icon = null;
+
+    if (value === 1) {
+        icon = <Icon icon="check" style="solid" className="text-green-500" />;
+        if (icon && names?.length > 0) {
+            return (
+                <Tooltip text={names.join(", ")} position="bottom">
+                    {icon}
+                </Tooltip>
+            );
+        }
+    } else if (value === 2) {
+        icon = <Icon icon="couch" style="regular" className="text-amber-500" />;
+    } else if (value === 0) {
+        icon = <Icon icon="circle" style="regular" className="text-red-500" />;
+    }
+
     return icon;
 }
 
-function MatrixTable({ raids, rows, ranks }) {
+function MatrixTable({ raids, rows, ranks, plannedAbsences }) {
     const rankMap = Object.fromEntries(ranks.map((r) => [r.id, r]));
+    const absenceMap = useMemo(
+        () => Object.fromEntries((plannedAbsences ?? []).map((a) => [a.id, a])),
+        [plannedAbsences],
+    );
     if (rows.length === 0) {
         return (
             <div className="py-16 text-center text-gray-400">
@@ -221,7 +239,7 @@ function MatrixTable({ raids, rows, ranks }) {
     }
 
     return (
-        <div dusk="matrix-table" className="overflow-x-auto overflow-y-hidden">
+        <div className="overflow-x-auto overflow-y-hidden">
             <table className="min-w-max table-auto border-collapse">
                 <thead className="border-b border-amber-600">
                     <tr>
@@ -250,10 +268,7 @@ function MatrixTable({ raids, rows, ranks }) {
                 <tbody className="divide-y divide-brown-700">
                     {rows.map((row) => (
                         <tr key={row.name} className="transition-colors hover:bg-brown-800/50">
-                            <td
-                                dusk="character-name"
-                                className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10"
-                            >
+                            <td className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
                                 <div className="flex flex-col gap-1 lg:flex-row lg:gap-2">
                                     <p className="flex flex-grow-0 flex-row items-center font-semibold">
                                         {row.playable_class && (
@@ -276,7 +291,13 @@ function MatrixTable({ raids, rows, ranks }) {
                             </td>
                             {row.attendance.map((value, idx) => (
                                 <td key={idx} className="px-3 py-2 text-center">
-                                    <AttendanceCell value={value} names={row.attendance_names?.[idx]} />
+                                    <AttendanceCell
+                                        value={value}
+                                        names={row.attendance_names?.[idx]}
+                                        plannedAbsence={
+                                            row.planned_absences?.[idx] ? absenceMap[row.planned_absences[idx]] : null
+                                        }
+                                    />
                                 </td>
                             ))}
                         </tr>
@@ -295,7 +316,10 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
     const [selectedRankIds, setSelectedRankIds] = useState(() =>
-        decodeFilter(filters.rank_ids, ranks.filter((r) => r.count_attendance).map((r) => r.id)),
+        decodeFilter(
+            filters.rank_ids,
+            ranks.filter((r) => r.count_attendance).map((r) => r.id),
+        ),
     );
 
     const availableClasses = useMemo(() => {
@@ -316,10 +340,16 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
 
     // ── Server-side filter state (trigger partial reload) ────────────────────
     const [selectedZoneIds, setSelectedZoneIds] = useState(() =>
-        decodeFilter(filters.zone_ids, zones.map((z) => z.id)),
+        decodeFilter(
+            filters.zone_ids,
+            zones.map((z) => z.id),
+        ),
     );
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
-        decodeFilter(filters.guild_tag_ids, guildTags.map((g) => g.id)),
+        decodeFilter(
+            filters.guild_tag_ids,
+            guildTags.map((g) => g.id),
+        ),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
     const [beforeDate, setBeforeDate] = useState(filters.before_date ?? "");
@@ -393,14 +423,12 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 value={characterName}
                                 onChange={setCharacterName}
                                 placeholder="Search by name…"
-                                dusk="filter-character-name"
                             />
                             <FilterDropdown
                                 label="Ranks"
                                 options={ranks}
                                 selected={selectedRankIds}
                                 onChange={setSelectedRankIds}
-                                dusk="filter-rank"
                             />
                             <FilterDropdown
                                 label="Classes"
@@ -409,7 +437,6 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 onChange={(ids) =>
                                     setSelectedClassIds(ids.length === availableClasses.length ? null : ids)
                                 }
-                                dusk="filter-class"
                             />
                         </div>
 
@@ -420,14 +447,12 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 options={zones}
                                 selected={selectedZoneIds}
                                 onChange={setSelectedZoneIds}
-                                dusk="filter-zone"
                             />
                             <FilterDropdown
                                 label="Guild Tags"
                                 options={guildTags}
                                 selected={selectedGuildTagIds}
                                 onChange={setSelectedGuildTagIds}
-                                dusk="filter-guild-tag"
                             />
                             <DateFilterButton
                                 label="Before"
@@ -445,7 +470,6 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 label="Combine linked characters"
                                 value={includeLinkedCharacters}
                                 onChange={setIncludeLinkedCharacters}
-                                dusk="filter-include-linked-characters"
                             />
                         </div>
                     </div>
@@ -461,6 +485,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                             raids={matrix?.raids ?? []}
                             rows={filteredRows}
                             ranks={ranks}
+                            plannedAbsences={matrix?.planned_absences}
                         />
                     )}
                 </div>
