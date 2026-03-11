@@ -2,12 +2,13 @@
 
 namespace App\Events;
 
+use App\Contracts\Events\PlannedAbsenceModified;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PlannedAbsenceSaved
+class PlannedAbsenceUpdated implements PlannedAbsenceModified
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

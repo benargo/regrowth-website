@@ -13,6 +13,7 @@ use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -47,15 +48,24 @@ class PlannedAbsenceController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Raids/PlannedAbsences/Form', [
-            'characters' => CharacterResource::collection(
+        $characters = Cache::tags(['characters'])->remember('characters.mains', now()->addDay(), function () {
+            return CharacterResource::collection(
                 Character::query()
                     ->where('is_main', true)
                     ->orderBy('name')
                     ->get()
-            ),
+            );
+        });
+
+        $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
+            ? $this->resolveCharacterFromUserNickname($request->user())
+            : null;
+
+        return Inertia::render('Raids/PlannedAbsences/Form', [
+            'characters' => $characters,
+            'resolvedCharacter' => $resolvedCharacter ? new CharacterResource($resolvedCharacter) : null,
             'action' => route('raids.absences.store'),
         ]);
     }
@@ -117,18 +127,27 @@ class PlannedAbsenceController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(PlannedAbsence $plannedAbsence): Response
+    public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
-        $plannedAbsence->load(['character', 'createdBy']);
-
-        return Inertia::render('Raids/PlannedAbsences/Form', [
-            'characters' => CharacterResource::collection(
+        $characters = Cache::tags(['characters'])->remember('characters.mains', now()->addDay(), function () {
+            return CharacterResource::collection(
                 Character::query()
                     ->where('is_main', true)
                     ->orderBy('name')
                     ->get()
-            ),
+            );
+        });
+
+        $plannedAbsence->load(['character', 'createdBy']);
+
+        $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
+            ? $this->resolveCharacterFromUserNickname($request->user())
+            : null;
+
+        return Inertia::render('Raids/PlannedAbsences/Form', [
+            'characters' => $characters,
             'plannedAbsence' => new PlannedAbsenceResource($plannedAbsence),
+            'resolvedCharacter' => $resolvedCharacter ? new CharacterResource($resolvedCharacter) : null,
             'action' => route('raids.absences.update', $plannedAbsence),
         ]);
     }
@@ -193,6 +212,29 @@ class PlannedAbsenceController extends Controller
         $decomposed = Normalizer::normalize($name, Normalizer::FORM_KD);
 
         return mb_strtolower(preg_replace('/\p{Mn}/u', '', $decomposed));
+    }
+
+    /**
+     * Attempt to resolve a main Character from the first word of the user's Discord nickname.
+     *
+     * Returns null when the nickname is absent, or when zero or multiple characters match
+     * (to avoid ambiguity, the user must pick manually in those cases).
+     */
+    private function resolveCharacterFromUserNickname(User $user): ?Character
+    {
+        if ($user->nickname === null) {
+            return null;
+        }
+
+        $firstWord = explode(' ', trim($user->nickname))[0];
+        $normalized = $this->normalizeCharacterName($firstWord);
+
+        $matches = Character::query()
+            ->where('is_main', true)
+            ->get()
+            ->filter(fn (Character $c) => $this->normalizeCharacterName($c->name) === $normalized);
+
+        return $matches->count() === 1 ? $matches->first() : null;
     }
 
     /**

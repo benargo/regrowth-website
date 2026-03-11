@@ -51,4 +51,11 @@ class PlannedAbsenceFactory extends Factory
             'end_date' => null,
         ]);
     }
+
+    public function withDiscordMessageId(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'discord_message_id' => fake()->numerify('##################'),
+        ]);
+    }
 }

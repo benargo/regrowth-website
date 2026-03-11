@@ -38,7 +38,7 @@ Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => ['auth'
 | Impersonation routes
 |--------------------------------------------------------------------------
 */
-Route::group(['prefix' => 'view-as', 'middleware' => ['auth', 'can:impersonate-roles']], function () {
+Route::group(['prefix' => 'view-as', 'middleware' => ['auth']], function () {
     Route::get('/self', [ViewAsRoleController::class, 'stopViewingAs'])->name('auth.return-to-self');
-    Route::get('/{role}', [ViewAsRoleController::class, 'viewAsRole'])->name('auth.view-as');
+    Route::get('/{role}', [ViewAsRoleController::class, 'viewAsRole'])->can('impersonate-roles')->name('auth.view-as');
 });

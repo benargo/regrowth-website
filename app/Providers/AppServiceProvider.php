@@ -3,10 +3,10 @@
 namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
-use App\Models\TBC\DailyQuestNotification;
 use App\Models\GuildRank;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\TBC\DailyQuestNotification;
 use App\Models\TBC\Phase;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;

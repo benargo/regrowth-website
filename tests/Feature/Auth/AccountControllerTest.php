@@ -131,6 +131,7 @@ class AccountControllerTest extends TestCase
                 ->has('start_date')
                 ->has('end_date')
                 ->has('reason')
+                ->has('discord_message_id')
                 ->has('created_at')
             )
         );

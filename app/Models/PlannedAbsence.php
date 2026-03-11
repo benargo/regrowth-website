@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
+use App\Events\PlannedAbsenceCreated;
 use App\Events\PlannedAbsenceDeleted;
-use App\Events\PlannedAbsenceSaved;
+use App\Events\PlannedAbsenceUpdated;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -35,6 +36,7 @@ class PlannedAbsence extends Model
         'start_date',
         'end_date',
         'reason',
+        'discord_message_id',
         'created_by',
     ];
 
@@ -44,7 +46,8 @@ class PlannedAbsence extends Model
      * @var array<string, string>
      */
     protected $dispatchesEvents = [
-        'saved' => PlannedAbsenceSaved::class,
+        'created' => PlannedAbsenceCreated::class,
+        'updated' => PlannedAbsenceUpdated::class,
         'deleted' => PlannedAbsenceDeleted::class,
     ];
 

@@ -1,16 +1,18 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { router, usePage } from "@inertiajs/react";
+import usePermission from "@/Hooks/Permissions";
 import axios from "axios";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import DateFilterButton from "@/Components/DateFilterButton";
+import DiscordUserSearch from "@/Components/DiscordUserSearch";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import InputError from "@/Components/InputError";
 import Icon from "@/Components/FontAwesome/Icon";
 
 const ALLOWED_FORMATS = ["bold", "italic", "underline", "bulletList", "numberedList"];
 
-function CharacterSearch({ characters, value, onChange, error }) {
+function CharacterSearch({ characters, value, onChange, error, disabled = false }) {
     const [search, setSearch] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
@@ -60,20 +62,17 @@ function CharacterSearch({ characters, value, onChange, error }) {
     return (
         <div ref={containerRef} className="relative">
             <div className="relative">
-                <Icon
-                    icon="search"
-                    style="solid"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
+                <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
                     type="text"
                     value={selectedCharacter ? selectedCharacter.name : search}
-                    onChange={handleInputChange}
-                    onFocus={handleFocus}
+                    onChange={disabled ? undefined : handleInputChange}
+                    onFocus={disabled ? undefined : handleFocus}
                     placeholder="Search by character name..."
-                    className="w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    disabled={disabled}
+                    className={`w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500 ${disabled ? "cursor-not-allowed opacity-75" : ""}`}
                 />
-                {(search || selectedCharacter) && (
+                {!disabled && (search || selectedCharacter) && (
                     <button
                         type="button"
                         onClick={handleClear}
@@ -84,7 +83,7 @@ function CharacterSearch({ characters, value, onChange, error }) {
                 )}
             </div>
 
-            {isOpen && filtered.length > 0 && (
+            {!disabled && isOpen && filtered.length > 0 && (
                 <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-amber-600 bg-brown-800 shadow-lg">
                     {filtered.map((character) => (
                         <li key={character.id}>
@@ -106,11 +105,29 @@ function CharacterSearch({ characters, value, onChange, error }) {
 }
 
 export default function Create() {
-    const { characters, plannedAbsence: rawPlannedAbsence = null, action } = usePage().props;
+    const { auth, characters, plannedAbsence: rawPlannedAbsence = null, resolvedCharacter: rawResolvedCharacter = null, action } = usePage().props;
     const plannedAbsence = rawPlannedAbsence?.data ?? null;
+    const resolvedCharacter = rawResolvedCharacter?.data ?? null;
     const isEditing = plannedAbsence !== null;
+    const canAssignOtherUser = usePermission("create-planned-absences-for-others");
 
-    const [characterId, setCharacterId] = useState(plannedAbsence?.character?.id ?? null);
+    const [characterId, setCharacterId] = useState(plannedAbsence?.character?.id ?? resolvedCharacter?.id ?? null);
+    const isCharacterLocked = !canAssignOtherUser && resolvedCharacter !== null;
+    const [userId, setUserId] = useState(plannedAbsence?.user?.id ?? null);
+
+    function handleUserSelect(member) {
+        setUserId(member?.id ?? null);
+
+        if (!member?.nickname || characterId) {
+            return;
+        }
+
+        const matched = characters.data.find((c) => c.name.toLowerCase() === member.nickname.toLowerCase());
+
+        if (matched) {
+            setCharacterId(matched.id);
+        }
+    }
     const [startDate, setStartDate] = useState(plannedAbsence?.start_date ?? "");
     const [endDate, setEndDate] = useState(plannedAbsence?.end_date ?? "");
     const [reason, setReason] = useState(plannedAbsence?.reason ?? "");
@@ -128,10 +145,13 @@ export default function Create() {
         setMultipleCharacters(null);
         setProcessing(true);
 
+        const effectiveUserId = canAssignOtherUser ? userId || undefined : auth.user.id;
+
         if (isEditing) {
             axios
                 .patch(action, {
                     character: characterId,
+                    user: effectiveUserId,
                     start_date: startDate,
                     end_date: endDate || null,
                     reason,
@@ -190,6 +210,7 @@ export default function Create() {
                 action,
                 {
                     character: characterId,
+                    user: effectiveUserId,
                     start_date: startDate,
                     end_date: endDate || null,
                     reason,
@@ -233,7 +254,9 @@ export default function Create() {
 
                         {multipleCharacters && (
                             <div className="rounded border border-amber-600 bg-brown-800/50 px-4 py-3">
-                                <p className="mb-3 text-sm text-amber-300">Multiple characters matched. Please select one:</p>
+                                <p className="mb-3 text-sm text-amber-300">
+                                    Multiple characters matched. Please select one:
+                                </p>
                                 <ul className="flex flex-col gap-1">
                                     {multipleCharacters.map((c) => (
                                         <li key={c.id}>
@@ -250,10 +273,15 @@ export default function Create() {
                             </div>
                         )}
 
+                        {canAssignOtherUser && (
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-300">Discord User</label>
+                                <DiscordUserSearch value={userId} onSelect={handleUserSelect} error={errors.user} />
+                            </div>
+                        )}
+
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                Character
-                            </label>
+                            <label className="mb-1.5 block text-sm font-medium text-gray-300">Character</label>
                             <CharacterSearch
                                 characters={characters.data}
                                 value={characterId}
@@ -264,15 +292,14 @@ export default function Create() {
                                     }
                                 }}
                                 error={errors.character}
+                                disabled={isCharacterLocked}
                             />
                         </div>
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                Start date
-                            </label>
+                            <label className="mb-1.5 block text-sm font-medium text-gray-300">Start date</label>
                             <DateFilterButton
-                                label="Start date"
+                                label="Start"
                                 value={startDate}
                                 onChange={(val) => {
                                     setStartDate(val);
@@ -288,7 +315,7 @@ export default function Create() {
                                 End date <span className="text-gray-500">(optional)</span>
                             </label>
                             <DateFilterButton
-                                label="End date"
+                                label="End"
                                 value={endDate}
                                 onChange={(val) => {
                                     setEndDate(val);
@@ -301,9 +328,7 @@ export default function Create() {
                         </div>
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                Reason
-                            </label>
+                            <label className="mb-1.5 block text-sm font-medium text-gray-300">Reason</label>
                             <MarkdownEditor
                                 value={reason}
                                 onChange={(val) => {
@@ -327,10 +352,7 @@ export default function Create() {
                                 <Icon icon="calendar-plus" style="solid" />
                                 {processing ? "Saving..." : isEditing ? "Save Changes" : "Log Absence"}
                             </button>
-                            <a
-                                href={route("raids.absences.index")}
-                                className="text-sm text-gray-400 hover:text-white"
-                            >
+                            <a href={route("raids.absences.index")} className="text-sm text-gray-400 hover:text-white">
                                 Cancel
                             </a>
                         </div>

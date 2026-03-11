@@ -4,6 +4,7 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import PlannedAbsenceRow from "@/Components/PlannedAbsenceRow";
+import usePermission from "@/Hooks/Permissions";
 
 function PlannedAbsencesSkeleton() {
     return (
@@ -41,14 +42,16 @@ export default function Index() {
 
             <div className="py-8 text-white">
                 <div className="container mx-auto px-4">
-                    <div className="flex flex-row justify-end mb-4">
-                        <Link
-                            href={route("raids.absences.create")}
-                            className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 md:mt-0"
-                        >
-                            <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
-                            Add Absence
-                        </Link>
+                    <div className="mb-4 flex flex-row justify-end">
+                        {usePermission("create-planned-absences-for-others") && (
+                            <Link
+                                href={route("raids.absences.create")}
+                                className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 md:mt-0"
+                            >
+                                <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
+                                Add Absence
+                            </Link>
+                        )}
                     </div>
                     {!grouped ? (
                         <PlannedAbsencesSkeleton />
@@ -64,7 +67,12 @@ export default function Index() {
                                     <h2 className="mb-3 text-lg font-semibold text-amber-400">{characterName}</h2>
                                     <div className="flex flex-col gap-2">
                                         {absences.map((absence) => (
-                                            <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy canEdit />
+                                            <PlannedAbsenceRow
+                                                key={absence.id}
+                                                absence={absence}
+                                                showCreatedBy
+                                                canEdit
+                                            />
                                         ))}
                                     </div>
                                 </div>

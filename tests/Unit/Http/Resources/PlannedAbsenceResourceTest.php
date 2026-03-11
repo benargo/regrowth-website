@@ -30,6 +30,7 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('start_date', $array);
         $this->assertArrayHasKey('end_date', $array);
         $this->assertArrayHasKey('reason', $array);
+        $this->assertArrayHasKey('discord_message_id', $array);
         $this->assertArrayHasKey('created_by', $array);
     }
 
@@ -131,6 +132,26 @@ class PlannedAbsenceResourceTest extends TestCase
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
         $this->assertNull($array['end_date']);
+    }
+
+    #[Test]
+    public function it_returns_null_discord_message_id_when_not_set(): void
+    {
+        $absence = PlannedAbsence::factory()->create();
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertNull($array['discord_message_id']);
+    }
+
+    #[Test]
+    public function it_returns_discord_message_id_when_set(): void
+    {
+        $absence = PlannedAbsence::factory()->withDiscordMessageId()->create();
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertSame($absence->discord_message_id, $array['discord_message_id']);
     }
 
     #[Test]

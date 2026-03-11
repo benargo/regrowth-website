@@ -2,8 +2,9 @@
 
 namespace Tests\Feature\Listeners;
 
+use App\Events\PlannedAbsenceCreated;
 use App\Events\PlannedAbsenceDeleted;
-use App\Events\PlannedAbsenceSaved;
+use App\Events\PlannedAbsenceUpdated;
 use App\Listeners\FlushPlannedAbsencesCache;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -17,14 +18,26 @@ class FlushPlannedAbsencesCacheTest extends TestCase
         Cache::tags(['planned_absences'])->flush();
     }
 
-    public function test_planned_absence_saved_event_flushes_cache(): void
+    public function test_planned_absence_created_event_flushes_cache(): void
     {
         Cache::tags(['planned_absences'])->put('test_key', 'test_value', now()->addMinutes(5));
 
         $this->assertTrue(Cache::tags(['planned_absences'])->has('test_key'));
 
         $listener = new FlushPlannedAbsencesCache;
-        $listener->handle(new PlannedAbsenceSaved);
+        $listener->handle(new PlannedAbsenceCreated);
+
+        $this->assertFalse(Cache::tags(['planned_absences'])->has('test_key'));
+    }
+
+    public function test_planned_absence_updated_event_flushes_cache(): void
+    {
+        Cache::tags(['planned_absences'])->put('test_key', 'test_value', now()->addMinutes(5));
+
+        $this->assertTrue(Cache::tags(['planned_absences'])->has('test_key'));
+
+        $listener = new FlushPlannedAbsencesCache;
+        $listener->handle(new PlannedAbsenceUpdated);
 
         $this->assertFalse(Cache::tags(['planned_absences'])->has('test_key'));
     }
@@ -47,7 +60,7 @@ class FlushPlannedAbsencesCacheTest extends TestCase
         Cache::tags(['planned_absences'])->put('key_two', 'value_two', now()->addMinutes(5));
 
         $listener = new FlushPlannedAbsencesCache;
-        $listener->handle(new PlannedAbsenceSaved);
+        $listener->handle(new PlannedAbsenceCreated);
 
         $this->assertFalse(Cache::tags(['planned_absences'])->has('key_one'));
         $this->assertFalse(Cache::tags(['planned_absences'])->has('key_two'));
@@ -58,7 +71,7 @@ class FlushPlannedAbsencesCacheTest extends TestCase
         Cache::tags(['other_tag'])->put('unrelated_key', 'unrelated_value', now()->addMinutes(5));
 
         $listener = new FlushPlannedAbsencesCache;
-        $listener->handle(new PlannedAbsenceSaved);
+        $listener->handle(new PlannedAbsenceCreated);
 
         $this->assertTrue(Cache::tags(['other_tag'])->has('unrelated_key'));
     }

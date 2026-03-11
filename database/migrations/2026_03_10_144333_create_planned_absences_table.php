@@ -19,6 +19,7 @@ return new class extends Migration
             $table->datetime('start_date');
             $table->datetime('end_date')->nullable();
             $table->text('reason');
+            $table->string('discord_message_id')->nullable(); // Nullable initially
             $table->string('created_by');
             $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
             $table->timestamps();

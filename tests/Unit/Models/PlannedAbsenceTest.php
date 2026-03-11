@@ -2,8 +2,9 @@
 
 namespace Tests\Unit\Models;
 
+use App\Events\PlannedAbsenceCreated;
 use App\Events\PlannedAbsenceDeleted;
-use App\Events\PlannedAbsenceSaved;
+use App\Events\PlannedAbsenceUpdated;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
 use App\Models\User;
@@ -62,6 +63,7 @@ class PlannedAbsenceTest extends ModelTestCase
             'start_date',
             'end_date',
             'reason',
+            'discord_message_id',
             'created_by',
         ]);
     }
@@ -209,6 +211,22 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
+    public function discord_message_id_is_nullable_by_default(): void
+    {
+        $absence = $this->create();
+
+        $this->assertNull($absence->discord_message_id);
+    }
+
+    #[Test]
+    public function factory_with_discord_message_id_state_sets_discord_message_id(): void
+    {
+        $absence = $this->factory()->withDiscordMessageId()->create();
+
+        $this->assertNotNull($absence->discord_message_id);
+    }
+
+    #[Test]
     public function it_can_be_soft_deleted(): void
     {
         $absence = $this->create();
@@ -231,24 +249,24 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_dispatches_planned_absence_saved_event_on_create(): void
+    public function it_dispatches_planned_absence_created_event_on_create(): void
     {
         Event::fake();
 
         $this->create();
 
-        Event::assertDispatched(PlannedAbsenceSaved::class);
+        Event::assertDispatched(PlannedAbsenceCreated::class);
     }
 
     #[Test]
-    public function it_dispatches_planned_absence_saved_event_on_update(): void
+    public function it_dispatches_planned_absence_updated_event_on_update(): void
     {
         $absence = $this->create();
         Event::fake();
 
         $absence->update(['reason' => 'Updated reason']);
 
-        Event::assertDispatched(PlannedAbsenceSaved::class);
+        Event::assertDispatched(PlannedAbsenceUpdated::class);
     }
 
     #[Test]

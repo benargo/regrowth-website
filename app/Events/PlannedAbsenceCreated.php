@@ -8,7 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PlannedAbsenceDeleted implements PlannedAbsenceModified
+class PlannedAbsenceCreated implements PlannedAbsenceModified
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

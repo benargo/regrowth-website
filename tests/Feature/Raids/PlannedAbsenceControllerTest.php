@@ -37,12 +37,13 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $viewPermission = Permission::firstOrCreate(['name' => 'view-planned-absences', 'guard_name' => 'web']);
         $createPermission = Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']);
+        $createForOthersPermission = Permission::firstOrCreate(['name' => 'create-planned-absences-for-others', 'guard_name' => 'web']);
         $updatePermission = Permission::firstOrCreate(['name' => 'update-planned-absences', 'guard_name' => 'web']);
-
         $deletePermission = Permission::firstOrCreate(['name' => 'delete-planned-absences', 'guard_name' => 'web']);
 
         $officerRole->givePermissionTo($viewPermission);
         $officerRole->givePermissionTo($createPermission);
+        $officerRole->givePermissionTo($createForOthersPermission);
         $officerRole->givePermissionTo($updatePermission);
         $officerRole->givePermissionTo($deletePermission);
         $memberRole->givePermissionTo($viewPermission);
@@ -117,6 +118,7 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->has('start_date')
                     ->has('end_date')
                     ->has('reason')
+                    ->has('discord_message_id')
                     ->has('created_by')
                     ->has('created_at')
                 )
@@ -222,6 +224,85 @@ class PlannedAbsenceControllerTest extends TestCase
         );
     }
 
+    // ==================== create: Resolved Character ====================
+
+    #[Test]
+    public function create_passes_null_resolved_character_when_user_has_create_for_others_permission(): void
+    {
+        $user = User::factory()->officer()->create(['nickname' => 'Aragorn']);
+        Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
+
+        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter', null)
+        );
+    }
+
+    #[Test]
+    public function create_resolves_character_from_user_nickname(): void
+    {
+        $role = DiscordRole::firstOrCreate(
+            ['id' => '829022020301094923'],
+            ['name' => 'Raider', 'position' => 2, 'is_visible' => true]
+        );
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
+
+        $user = User::factory()->create(['nickname' => 'Aragorn']);
+        $user->discordRoles()->sync([$role->id]);
+
+        $character = Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
+
+        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter.data.id', $character->id)
+            ->where('resolvedCharacter.data.name', 'Aragorn')
+        );
+    }
+
+    #[Test]
+    public function create_passes_null_resolved_character_when_no_character_matches_nickname(): void
+    {
+        $role = DiscordRole::firstOrCreate(
+            ['id' => '829022020301094923'],
+            ['name' => 'Raider', 'position' => 2, 'is_visible' => true]
+        );
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
+
+        $user = User::factory()->create(['nickname' => 'Gandalf']);
+        $user->discordRoles()->sync([$role->id]);
+
+        Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
+
+        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter', null)
+        );
+    }
+
+    #[Test]
+    public function create_resolves_character_from_first_word_of_nickname(): void
+    {
+        $role = DiscordRole::firstOrCreate(
+            ['id' => '829022020301094923'],
+            ['name' => 'Raider', 'position' => 2, 'is_visible' => true]
+        );
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
+
+        $user = User::factory()->create(['nickname' => 'Marktführer (Testsieger)']);
+        $user->discordRoles()->sync([$role->id]);
+
+        $character = Character::factory()->create(['name' => 'Marktführer', 'is_main' => true]);
+
+        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter.data.id', $character->id)
+        );
+    }
+
     // ==================== edit: Access Control ====================
 
     #[Test]
@@ -302,6 +383,7 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->where('start_date', '2026-06-01')
                 ->where('end_date', '2026-06-07')
                 ->where('reason', 'On holiday.')
+                ->has('discord_message_id')
                 ->has('created_by')
                 ->has('created_at')
             )
@@ -335,6 +417,72 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('action', route('raids.absences.update', $absence))
+        );
+    }
+
+    // ==================== edit: Resolved Character ====================
+
+    #[Test]
+    public function edit_passes_null_resolved_character_when_user_has_create_for_others_permission(): void
+    {
+        $user = User::factory()->officer()->create(['nickname' => 'Aragorn']);
+        Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter', null)
+        );
+    }
+
+    #[Test]
+    public function edit_resolves_character_from_user_nickname(): void
+    {
+        $owner = User::factory()->member()->create(['nickname' => 'Aragorn']);
+        $character = Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
+        $absence = PlannedAbsence::factory()->create([
+            'character_id' => $character->id,
+            'created_by' => $owner->id,
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter.data.id', $character->id)
+            ->where('resolvedCharacter.data.name', 'Aragorn')
+        );
+    }
+
+    #[Test]
+    public function edit_passes_null_resolved_character_when_no_character_matches_nickname(): void
+    {
+        $owner = User::factory()->member()->create(['nickname' => 'Gandalf']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $owner->id]);
+
+        Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
+
+        $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter', null)
+        );
+    }
+
+    #[Test]
+    public function edit_resolves_character_from_first_word_of_nickname(): void
+    {
+        $owner = User::factory()->member()->create(['nickname' => 'Marktführer (Testsieger)']);
+        $character = Character::factory()->create(['name' => 'Marktführer', 'is_main' => true]);
+        $absence = PlannedAbsence::factory()->create([
+            'character_id' => $character->id,
+            'created_by' => $owner->id,
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter.data.id', $character->id)
         );
     }
 

@@ -32,6 +32,14 @@ class PlannedAbsencePolicy
     }
 
     /**
+     * Determine whether the user can create models for others.
+     */
+    public function createForOthers(User $user): bool
+    {
+        return $user->hasPermissionViaDiscordRoles('create-planned-absences-for-others');
+    }
+
+    /**
      * Determine whether the user can update the model.
      */
     public function update(User $user, PlannedAbsence $plannedAbsence): bool

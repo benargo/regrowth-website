@@ -2,8 +2,7 @@
 
 namespace App\Listeners;
 
-use App\Events\PlannedAbsenceDeleted;
-use App\Events\PlannedAbsenceSaved;
+use App\Contracts\Events\PlannedAbsenceModified;
 use Illuminate\Support\Facades\Cache;
 
 class FlushPlannedAbsencesCache
@@ -19,7 +18,7 @@ class FlushPlannedAbsencesCache
     /**
      * Handle the event.
      */
-    public function handle(PlannedAbsenceDeleted|PlannedAbsenceSaved $event): void
+    public function handle(PlannedAbsenceModified $event): void
     {
         Cache::tags(['planned_absences'])->flush();
     }
