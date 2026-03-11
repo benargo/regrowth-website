@@ -31,10 +31,15 @@ class UpdatePlannedAbsenceRequest extends FormRequest
         $plannedAbsence = $this->route('plannedAbsence');
         $effectiveStartDate = $this->input('start_date') ?? $plannedAbsence?->start_date?->format('Y-m-d');
 
+        $startDateRules = ['sometimes', 'date'];
+        if (! $this->user()?->can('createBackdated', PlannedAbsence::class)) {
+            $startDateRules[] = 'after_or_equal:today';
+        }
+
         return [
             'character' => ['sometimes', 'integer', 'min:1', Rule::exists('characters', 'id')],
             'user' => ['sometimes', 'nullable', 'string'],
-            'start_date' => ['sometimes', 'date'],
+            'start_date' => $startDateRules,
             'end_date' => ['sometimes', 'nullable', 'date', ...($effectiveStartDate ? ['after:'.$effectiveStartDate] : [])],
             'reason' => ['sometimes', 'string'],
         ];
@@ -52,6 +57,7 @@ class UpdatePlannedAbsenceRequest extends FormRequest
             'character.min' => 'The character ID must be at least 1.',
             'character.exists' => 'The specified character does not exist.',
             'start_date.date' => 'The start date must be a valid date.',
+            'start_date.after_or_equal' => 'The start date must not be in the past.',
             'end_date.date' => 'The end date must be a valid date.',
             'end_date.after' => 'The end date must be after the start date.',
             'reason.string' => 'The reason must be a string.',

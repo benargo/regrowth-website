@@ -55,6 +55,32 @@ class StorePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('date', $rules['start_date']);
     }
 
+    public function test_rules_start_date_includes_after_or_equal_today_when_user_cannot_backdate(): void
+    {
+        $user = \Mockery::mock();
+        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(false);
+
+        $request = $this->makeRequest();
+        $request->setUserResolver(fn () => $user);
+
+        $rules = $request->rules();
+
+        $this->assertContains('after_or_equal:today', $rules['start_date']);
+    }
+
+    public function test_rules_start_date_excludes_after_or_equal_today_when_user_can_backdate(): void
+    {
+        $user = \Mockery::mock();
+        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(true);
+
+        $request = $this->makeRequest();
+        $request->setUserResolver(fn () => $user);
+
+        $rules = $request->rules();
+
+        $this->assertNotContains('after_or_equal:today', $rules['start_date']);
+    }
+
     public function test_rules_end_date_is_nullable_date_after_start_date(): void
     {
         $rules = $this->makeRequest()->rules();

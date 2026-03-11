@@ -23,12 +23,17 @@ class StorePlannedAbsenceRequest extends FormRequest
      */
     public function rules(): array
     {
+        $startDateRules = ['required', 'date'];
+        if (! $this->user()?->can('createBackdated', PlannedAbsence::class)) {
+            $startDateRules[] = 'after_or_equal:today';
+        }
+
         return [
             'character' => is_numeric($this->input('character'))
                 ? ['required', 'integer', 'min:1', Rule::exists('characters', 'id')]
                 : ['required', 'string', 'max:11', 'regex:/^[^\d\s]+$/u'],
             'user' => ['sometimes', 'nullable', 'string'],
-            'start_date' => ['required', 'date'],
+            'start_date' => $startDateRules,
             'end_date' => ['nullable', 'date', 'after:start_date'],
             'reason' => ['required', 'string'],
         ];
@@ -50,6 +55,7 @@ class StorePlannedAbsenceRequest extends FormRequest
             'character.regex' => 'Character name must not contain spaces or numbers.',
             'start_date.required' => 'A start date is required.',
             'start_date.date' => 'The start date must be a valid date.',
+            'start_date.after_or_equal' => 'The start date must not be in the past.',
             'end_date.date' => 'The end date must be a valid date.',
             'end_date.after' => 'The end date must be after the start date.',
             'reason.required' => 'A reason is required.',

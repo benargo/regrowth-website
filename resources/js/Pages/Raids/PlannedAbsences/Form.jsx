@@ -1,8 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { router, usePage } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import usePermission from "@/Hooks/Permissions";
 import axios from "axios";
 import Master from "@/Layouts/Master";
+import Alert from "@/Components/Alert";
 import SharedHeader from "@/Components/SharedHeader";
 import DateFilterButton from "@/Components/DateFilterButton";
 import DiscordUserSearch from "@/Components/DiscordUserSearch";
@@ -105,11 +106,18 @@ function CharacterSearch({ characters, value, onChange, error, disabled = false 
 }
 
 export default function Create() {
-    const { auth, characters, plannedAbsence: rawPlannedAbsence = null, resolvedCharacter: rawResolvedCharacter = null, action } = usePage().props;
+    const {
+        auth,
+        characters,
+        plannedAbsence: rawPlannedAbsence = null,
+        resolvedCharacter: rawResolvedCharacter = null,
+        action,
+    } = usePage().props;
     const plannedAbsence = rawPlannedAbsence?.data ?? null;
     const resolvedCharacter = rawResolvedCharacter?.data ?? null;
     const isEditing = plannedAbsence !== null;
-    const canAssignOtherUser = usePermission("create-planned-absences-for-others");
+    const canAssignOtherUser = usePermission("manage-planned-absences");
+    const canBackdate = usePermission("manage-planned-absences");
 
     const [characterId, setCharacterId] = useState(plannedAbsence?.character?.id ?? resolvedCharacter?.id ?? null);
     const isCharacterLocked = !canAssignOtherUser && resolvedCharacter !== null;
@@ -241,8 +249,21 @@ export default function Create() {
             <div className="py-8 text-white">
                 <div className="container mx-auto max-w-lg px-4">
                     <form onSubmit={submit} className="flex flex-col gap-6">
+                        {!canBackdate && (
+                            <Alert type="info">
+                                Please{" "}
+                                <Link
+                                    href="https://discord.com/channels/829020506907869214/1011331714376794233"
+                                    className="underline"
+                                >
+                                    create a ticket on Discord
+                                </Link>{" "}
+                                if you need to record an absence that started in the past.
+                            </Alert>
+                        )}
+
                         {serverError && (
-                            <div className="rounded border border-red-600 bg-red-900/30 px-4 py-3 text-sm text-red-300">
+                            <div className="text-md rounded border border-red-600 bg-red-900/30 px-4 py-3 text-red-300">
                                 <p>{serverError.message}</p>
                                 {serverError.suggestion && (
                                     <p className="mt-1 text-red-400">
@@ -254,7 +275,7 @@ export default function Create() {
 
                         {multipleCharacters && (
                             <div className="rounded border border-amber-600 bg-brown-800/50 px-4 py-3">
-                                <p className="mb-3 text-sm text-amber-300">
+                                <p className="text-md mb-3 text-amber-300">
                                     Multiple characters matched. Please select one:
                                 </p>
                                 <ul className="flex flex-col gap-1">
@@ -275,13 +296,13 @@ export default function Create() {
 
                         {canAssignOtherUser && (
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-300">Discord User</label>
+                                <label className="text-md mb-1.5 block font-medium text-gray-300">Discord User</label>
                                 <DiscordUserSearch value={userId} onSelect={handleUserSelect} error={errors.user} />
                             </div>
                         )}
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">Character</label>
+                            <label className="text-md mb-1.5 block font-medium text-gray-300">Character</label>
                             <CharacterSearch
                                 characters={characters.data}
                                 value={characterId}
@@ -297,7 +318,7 @@ export default function Create() {
                         </div>
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">Start date</label>
+                            <label className="text-md mb-1.5 block font-medium text-gray-300">Start date</label>
                             <DateFilterButton
                                 label="Start"
                                 value={startDate}
@@ -305,13 +326,14 @@ export default function Create() {
                                     setStartDate(val);
                                     setErrors((prev) => ({ ...prev, start_date: null }));
                                 }}
+                                min={canBackdate ? undefined : new Date().toISOString().split("T")[0]}
                                 max="2099-12-31"
                             />
                             <InputError message={errors.start_date} className="mt-2" />
                         </div>
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">
+                            <label className="text-md mb-1.5 block font-medium text-gray-300">
                                 End date <span className="text-gray-500">(optional)</span>
                             </label>
                             <DateFilterButton
@@ -328,7 +350,7 @@ export default function Create() {
                         </div>
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">Reason</label>
+                            <label className="text-md mb-1.5 block font-medium text-gray-300">Reason</label>
                             <MarkdownEditor
                                 value={reason}
                                 onChange={(val) => {

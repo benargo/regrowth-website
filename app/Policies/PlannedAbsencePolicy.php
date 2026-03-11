@@ -36,7 +36,15 @@ class PlannedAbsencePolicy
      */
     public function createForOthers(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('create-planned-absences-for-others');
+        return $user->hasPermissionViaDiscordRoles('manage-planned-absences');
+    }
+
+    /**
+     * Determine whether the user can create backdated planned absences.
+     */
+    public function createBackdated(User $user): bool
+    {
+        return $user->hasPermissionViaDiscordRoles('manage-planned-absences');
     }
 
     /**

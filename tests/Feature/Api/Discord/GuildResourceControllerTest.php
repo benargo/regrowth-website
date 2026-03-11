@@ -78,7 +78,7 @@ class GuildResourceControllerTest extends TestCase
     #[Test]
     public function search_members_returns_results_for_user_with_create_planned_absences_for_others_permission(): void
     {
-        $user = User::factory()->withPermissions('create-planned-absences-for-others')->create();
+        $user = User::factory()->withPermissions('manage-planned-absences')->create();
 
         $this->mock(DiscordGuildService::class)
             ->shouldReceive('searchGuildMembers')

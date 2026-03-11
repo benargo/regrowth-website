@@ -57,6 +57,44 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertNotContains('required', $rules['start_date']);
     }
 
+    public function test_rules_start_date_includes_after_or_equal_today_when_user_cannot_backdate(): void
+    {
+        $absence = \Mockery::mock(PlannedAbsence::class);
+        $absence->shouldReceive('getAttribute')->with('start_date')->andReturn(null);
+
+        $user = \Mockery::mock();
+        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(false);
+
+        $request = $this->makeRequest();
+        $request->setUserResolver(fn () => $user);
+        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
+        $request->setRouteResolver(fn () => $route);
+
+        $rules = $request->rules();
+
+        $this->assertContains('after_or_equal:today', $rules['start_date']);
+    }
+
+    public function test_rules_start_date_excludes_after_or_equal_today_when_user_can_backdate(): void
+    {
+        $absence = \Mockery::mock(PlannedAbsence::class);
+        $absence->shouldReceive('getAttribute')->with('start_date')->andReturn(null);
+
+        $user = \Mockery::mock();
+        $user->shouldReceive('can')->with('createBackdated', PlannedAbsence::class)->andReturn(true);
+
+        $request = $this->makeRequest();
+        $request->setUserResolver(fn () => $user);
+        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
+        $request->setRouteResolver(fn () => $route);
+
+        $rules = $request->rules();
+
+        $this->assertNotContains('after_or_equal:today', $rules['start_date']);
+    }
+
     public function test_rules_end_date_is_sometimes_nullable_date(): void
     {
         $rules = $this->makeRequest()->rules();

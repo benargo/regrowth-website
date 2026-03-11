@@ -37,7 +37,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $viewPermission = Permission::firstOrCreate(['name' => 'view-planned-absences', 'guard_name' => 'web']);
         $createPermission = Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']);
-        $createForOthersPermission = Permission::firstOrCreate(['name' => 'create-planned-absences-for-others', 'guard_name' => 'web']);
+        $createForOthersPermission = Permission::firstOrCreate(['name' => 'manage-planned-absences', 'guard_name' => 'web']);
         $updatePermission = Permission::firstOrCreate(['name' => 'update-planned-absences', 'guard_name' => 'web']);
         $deletePermission = Permission::firstOrCreate(['name' => 'delete-planned-absences', 'guard_name' => 'web']);
 
