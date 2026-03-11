@@ -6,6 +6,7 @@ use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlannedAbsence;
 use App\Models\WarcraftLogs\Report;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\Exceptions\InvalidClassException;
@@ -18,6 +19,7 @@ use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response as ClientResponse;
@@ -123,13 +125,7 @@ class CharacterTest extends ModelTestCase
         $this->assertNotNull($character->updated_at);
     }
 
-    #[Test]
-    public function it_can_be_created_as_main(): void
-    {
-        $character = $this->factory()->main()->create();
-
-        $this->assertTrue($character->is_main);
-    }
+    // is_loot_councillor
 
     #[Test]
     public function it_can_be_created_as_loot_councillor(): void
@@ -147,56 +143,17 @@ class CharacterTest extends ModelTestCase
         $this->assertFalse($character->is_loot_councillor);
     }
 
-    // #[Test]
-    // public function it_can_be_created_with_reached_level_cap(): void
-    // {
-    //     $character = $this->factory()->reachedLevelCap()->create();
-    //
-    //     $this->assertNotNull($character->reached_level_cap_at);
-    // }
+    // is_main
 
     #[Test]
-    public function reached_level_cap_at_is_null_by_default(): void
+    public function it_can_be_created_as_main(): void
     {
-        $character = $this->create();
+        $character = $this->factory()->main()->create();
 
-        $this->assertNull($character->reached_level_cap_at);
+        $this->assertTrue($character->is_main);
     }
 
-    #[Test]
-    public function it_can_be_created_with_rank(): void
-    {
-        $character = $this->factory()->withRank()->create();
-
-        $this->assertNotNull($character->rank_id);
-        $this->assertInstanceOf(GuildRank::class, $character->rank);
-    }
-
-    #[Test]
-    public function rank_returns_belongs_to_relationship(): void
-    {
-        $character = new Character;
-
-        $this->assertInstanceOf(BelongsTo::class, $character->rank());
-    }
-
-    #[Test]
-    public function rank_returns_associated_guild_rank(): void
-    {
-        $rank = GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
-        $character = $this->create(['rank_id' => $rank->id]);
-
-        $this->assertInstanceOf(GuildRank::class, $character->rank);
-        $this->assertSame($rank->id, $character->rank->id);
-    }
-
-    #[Test]
-    public function rank_returns_null_when_no_rank_assigned(): void
-    {
-        $character = $this->create(['rank_id' => null]);
-
-        $this->assertNull($character->rank);
-    }
+    // linked_characters
 
     #[Test]
     public function linked_characters_returns_belongs_to_many_relationship(): void
@@ -225,6 +182,30 @@ class CharacterTest extends ModelTestCase
 
         $this->assertCount(0, $character->linkedCharacters);
     }
+
+    #[Test]
+    public function deleting_character_cascades_to_character_links(): void
+    {
+        Event::fake([CharacterDeleted::class]);
+
+        $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
+        $altCharacter = $this->create(['name' => 'AltChar']);
+
+        $altCharacter->linkedCharacters()->attach($mainCharacter->id);
+
+        $this->assertDatabaseHas('character_links', [
+            'character_id' => $mainCharacter->id,
+            'linked_character_id' => $altCharacter->id,
+        ]);
+
+        $altCharacter->delete();
+
+        $this->assertDatabaseMissing('character_links', [
+            'linked_character_id' => $altCharacter->id,
+        ]);
+    }
+
+    // main_character
 
     #[Test]
     public function main_character_returns_linked_character_with_is_main_true(): void
@@ -258,41 +239,303 @@ class CharacterTest extends ModelTestCase
         $this->assertNull($character->mainCharacter);
     }
 
+    // planned_absences
+
     #[Test]
-    public function deleting_character_cascades_to_character_links(): void
+    public function planned_absences_returns_has_many_relationship(): void
     {
-        Event::fake([CharacterDeleted::class]);
+        $character = new Character;
 
-        $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
-        $altCharacter = $this->create(['name' => 'AltChar']);
-
-        $altCharacter->linkedCharacters()->attach($mainCharacter->id);
-
-        $this->assertDatabaseHas('character_links', [
-            'character_id' => $mainCharacter->id,
-            'linked_character_id' => $altCharacter->id,
-        ]);
-
-        $altCharacter->delete();
-
-        $this->assertDatabaseMissing('character_links', [
-            'linked_character_id' => $altCharacter->id,
-        ]);
+        $this->assertInstanceOf(HasMany::class, $character->plannedAbsences());
     }
 
     #[Test]
-    public function rank_is_set_to_null_when_guild_rank_is_deleted(): void
+    public function it_can_have_planned_absences(): void
     {
-        $rank = GuildRank::factory()->create(['position' => 0, 'name' => 'Officer']);
-        $character = $this->create(['rank_id' => $rank->id]);
+        $character = $this->create();
+        PlannedAbsence::factory()->count(2)->create(['character_id' => $character->id]);
 
-        $this->assertSame($rank->id, $character->rank_id);
-
-        $rank->delete();
-
-        $character->refresh();
-        $this->assertNull($character->rank_id);
+        $this->assertCount(2, $character->plannedAbsences);
+        $this->assertContainsOnlyInstancesOf(PlannedAbsence::class, $character->plannedAbsences);
     }
+
+    #[Test]
+    public function planned_absences_returns_empty_collection_when_none_exist(): void
+    {
+        $character = $this->create();
+
+        $this->assertCount(0, $character->plannedAbsences);
+    }
+
+    // playable_class
+
+    #[Test]
+    public function playable_class_returns_unknown_when_playable_class_id_is_null(): void
+    {
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+        });
+
+        $character = $this->create(['playable_class_id' => null]);
+
+        $playableClass = $character->playable_class;
+
+        $this->assertNull($playableClass['id']);
+        $this->assertSame('Unknown Class', $playableClass['name']);
+    }
+
+    #[Test]
+    public function playable_class_returns_class_data_when_playable_class_id_is_set(): void
+    {
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->with(1)->andReturn(['id' => 1, 'name' => 'Warrior']);
+            $mock->shouldReceive('iconUrl')->with(1)->andReturn('https://example.com/warrior.jpg');
+        });
+
+        $character = $this->create(['playable_class_id' => 1]);
+
+        $playableClass = $character->playable_class;
+
+        $this->assertSame(1, $playableClass['id']);
+        $this->assertSame('Warrior', $playableClass['name']);
+        $this->assertSame('https://example.com/warrior.jpg', $playableClass['icon_url']);
+    }
+
+    #[Test]
+    public function playable_class_returns_unknown_class_on_request_exception(): void
+    {
+        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable class for id'));
+
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+        });
+
+        $character = $this->create(['playable_class_id' => 1]);
+
+        $playableClass = $character->playable_class;
+
+        $this->assertNull($playableClass['id']);
+        $this->assertSame('Unknown Class', $playableClass['name']);
+    }
+
+    #[Test]
+    public function playable_class_returns_unknown_class_on_connection_exception(): void
+    {
+        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable class for id'));
+
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+        });
+
+        $character = $this->create(['playable_class_id' => 1]);
+
+        $playableClass = $character->playable_class;
+
+        $this->assertNull($playableClass['id']);
+        $this->assertSame('Unknown Class', $playableClass['name']);
+    }
+
+    #[Test]
+    public function playable_class_setter_sets_playable_class_id_when_valid(): void
+    {
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->with(3)->andReturn(['id' => 3, 'name' => 'Hunter']);
+        });
+
+        $character = $this->create(['playable_class_id' => null]);
+        $character->playable_class = 3;
+
+        $this->assertSame(3, $character->playable_class_id);
+    }
+
+    #[Test]
+    public function playable_class_setter_sets_to_null_without_service_call(): void
+    {
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->never();
+        });
+
+        $character = $this->create(['playable_class_id' => 1]);
+        $character->playable_class = null;
+
+        $this->assertNull($character->playable_class_id);
+    }
+
+    #[Test]
+    public function playable_class_setter_throws_invalid_class_exception(): void
+    {
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->with(999)->andThrow(new InvalidClassException('Playable class 999 not found.', 404));
+        });
+
+        $this->expectException(InvalidClassException::class);
+
+        $character = $this->create(['playable_class_id' => null]);
+        $character->playable_class = 999;
+    }
+
+    #[Test]
+    public function playable_class_setter_does_not_change_id_on_request_exception(): void
+    {
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
+        });
+
+        $character = $this->create(['playable_class_id' => 1]);
+        $character->playable_class = 5;
+
+        $this->assertSame(1, $character->playable_class_id);
+    }
+
+    #[Test]
+    public function playable_class_setter_does_not_change_id_on_connection_exception(): void
+    {
+        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->andThrow(new ConnectionException('Could not resolve host'));
+        });
+
+        $character = $this->create(['playable_class_id' => 2]);
+        $character->playable_class = 5;
+
+        $this->assertSame(2, $character->playable_class_id);
+    }
+
+    // playable_race
+
+    #[Test]
+    public function playable_race_returns_unknown_when_playable_race_id_is_null(): void
+    {
+        $character = $this->create(['playable_race_id' => null]);
+
+        $playableRace = $character->playable_race;
+
+        $this->assertNull($playableRace['id']);
+        $this->assertSame('Unknown Race', $playableRace['name']);
+    }
+
+    #[Test]
+    public function playable_race_returns_race_data_when_playable_race_id_is_set(): void
+    {
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->with(2)->andReturn(['id' => 2, 'name' => 'Orc']);
+        });
+
+        $character = $this->create(['playable_race_id' => 2]);
+
+        $playableRace = $character->playable_race;
+
+        $this->assertSame(2, $playableRace['id']);
+        $this->assertSame('Orc', $playableRace['name']);
+    }
+
+    #[Test]
+    public function playable_race_returns_unknown_race_on_request_exception(): void
+    {
+        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable race for id'));
+
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
+        });
+
+        $character = $this->create(['playable_race_id' => 2]);
+
+        $playableRace = $character->playable_race;
+
+        $this->assertNull($playableRace['id']);
+        $this->assertSame('Unknown Race', $playableRace['name']);
+    }
+
+    #[Test]
+    public function playable_race_returns_unknown_race_on_connection_exception(): void
+    {
+        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable race for id'));
+
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
+        });
+
+        $character = $this->create(['playable_race_id' => 2]);
+
+        $playableRace = $character->playable_race;
+
+        $this->assertNull($playableRace['id']);
+        $this->assertSame('Unknown Race', $playableRace['name']);
+    }
+
+    #[Test]
+    public function playable_race_setter_sets_playable_race_id_when_valid(): void
+    {
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->with(4)->andReturn(['id' => 4, 'name' => 'Tauren']);
+        });
+
+        $character = $this->create(['playable_race_id' => null]);
+        $character->playable_race = 4;
+
+        $this->assertSame(4, $character->playable_race_id);
+    }
+
+    #[Test]
+    public function playable_race_setter_sets_to_null_without_service_call(): void
+    {
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->never();
+        });
+
+        $character = $this->create(['playable_race_id' => 2]);
+        $character->playable_race = null;
+
+        $this->assertNull($character->playable_race_id);
+    }
+
+    #[Test]
+    public function playable_race_setter_throws_invalid_race_exception(): void
+    {
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->with(999)->andThrow(new InvalidRaceException('Playable race 999 not found.', 404));
+        });
+
+        $this->expectException(InvalidRaceException::class);
+
+        $character = $this->create(['playable_race_id' => null]);
+        $character->playable_race = 999;
+    }
+
+    #[Test]
+    public function playable_race_setter_does_not_change_id_on_request_exception(): void
+    {
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
+        });
+
+        $character = $this->create(['playable_race_id' => 2]);
+        $character->playable_race = 5;
+
+        $this->assertSame(2, $character->playable_race_id);
+    }
+
+    #[Test]
+    public function playable_race_setter_does_not_change_id_on_connection_exception(): void
+    {
+        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('find')->once()->andThrow(new ConnectionException('Could not resolve host'));
+        });
+
+        $character = $this->create(['playable_race_id' => 3]);
+        $character->playable_race = 5;
+
+        $this->assertSame(3, $character->playable_race_id);
+    }
+
+    // prunable
 
     #[Test]
     public function prunable_returns_builder_instance(): void
@@ -450,6 +693,77 @@ class CharacterTest extends ModelTestCase
         $this->assertCount(0, $character->prunable()->get());
     }
 
+    // rank
+
+    #[Test]
+    public function it_can_be_created_with_rank(): void
+    {
+        $character = $this->factory()->withRank()->create();
+
+        $this->assertNotNull($character->rank_id);
+        $this->assertInstanceOf(GuildRank::class, $character->rank);
+    }
+
+    #[Test]
+    public function rank_returns_belongs_to_relationship(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsTo::class, $character->rank());
+    }
+
+    #[Test]
+    public function rank_returns_associated_guild_rank(): void
+    {
+        $rank = GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
+        $character = $this->create(['rank_id' => $rank->id]);
+
+        $this->assertInstanceOf(GuildRank::class, $character->rank);
+        $this->assertSame($rank->id, $character->rank->id);
+    }
+
+    #[Test]
+    public function rank_returns_null_when_no_rank_assigned(): void
+    {
+        $character = $this->create(['rank_id' => null]);
+
+        $this->assertNull($character->rank);
+    }
+
+    #[Test]
+    public function rank_is_set_to_null_when_guild_rank_is_deleted(): void
+    {
+        $rank = GuildRank::factory()->create(['position' => 0, 'name' => 'Officer']);
+        $character = $this->create(['rank_id' => $rank->id]);
+
+        $this->assertSame($rank->id, $character->rank_id);
+
+        $rank->delete();
+
+        $character->refresh();
+        $this->assertNull($character->rank_id);
+    }
+
+    // reached_level_cap_at
+
+    // #[Test]
+    // public function it_can_be_created_with_reached_level_cap(): void
+    // {
+    //     $character = $this->factory()->reachedLevelCap()->create();
+    //
+    //     $this->assertNotNull($character->reached_level_cap_at);
+    // }
+
+    #[Test]
+    public function reached_level_cap_at_is_null_by_default(): void
+    {
+        $character = $this->create();
+
+        $this->assertNull($character->reached_level_cap_at);
+    }
+
+    // warcraft_logs_reports
+
     #[Test]
     public function warcraft_logs_reports_returns_belongs_to_many_relationship(): void
     {
@@ -476,270 +790,6 @@ class CharacterTest extends ModelTestCase
         $character = $this->create();
 
         $this->assertCount(0, $character->warcraftLogsReports);
-    }
-
-    #[Test]
-    public function playable_class_returns_unknown_when_playable_class_id_is_null(): void
-    {
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
-        });
-
-        $character = $this->create(['playable_class_id' => null]);
-
-        $playableClass = $character->playable_class;
-
-        $this->assertNull($playableClass['id']);
-        $this->assertSame('Unknown Class', $playableClass['name']);
-    }
-
-    #[Test]
-    public function playable_class_returns_class_data_when_playable_class_id_is_set(): void
-    {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->with(1)->andReturn(['id' => 1, 'name' => 'Warrior']);
-            $mock->shouldReceive('iconUrl')->with(1)->andReturn('https://example.com/warrior.jpg');
-        });
-
-        $character = $this->create(['playable_class_id' => 1]);
-
-        $playableClass = $character->playable_class;
-
-        $this->assertSame(1, $playableClass['id']);
-        $this->assertSame('Warrior', $playableClass['name']);
-        $this->assertSame('https://example.com/warrior.jpg', $playableClass['icon_url']);
-    }
-
-    #[Test]
-    public function playable_class_returns_unknown_class_on_request_exception(): void
-    {
-        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable class for id'));
-
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
-        });
-
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
-        });
-
-        $character = $this->create(['playable_class_id' => 1]);
-
-        $playableClass = $character->playable_class;
-
-        $this->assertNull($playableClass['id']);
-        $this->assertSame('Unknown Class', $playableClass['name']);
-    }
-
-    #[Test]
-    public function playable_class_returns_unknown_class_on_connection_exception(): void
-    {
-        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable class for id'));
-
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
-        });
-
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
-        });
-
-        $character = $this->create(['playable_class_id' => 1]);
-
-        $playableClass = $character->playable_class;
-
-        $this->assertNull($playableClass['id']);
-        $this->assertSame('Unknown Class', $playableClass['name']);
-    }
-
-    #[Test]
-    public function playable_class_setter_sets_playable_class_id_when_valid(): void
-    {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(3)->andReturn(['id' => 3, 'name' => 'Hunter']);
-        });
-
-        $character = $this->create(['playable_class_id' => null]);
-        $character->playable_class = 3;
-
-        $this->assertSame(3, $character->playable_class_id);
-    }
-
-    #[Test]
-    public function playable_class_setter_sets_to_null_without_service_call(): void
-    {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->never();
-        });
-
-        $character = $this->create(['playable_class_id' => 1]);
-        $character->playable_class = null;
-
-        $this->assertNull($character->playable_class_id);
-    }
-
-    #[Test]
-    public function playable_class_setter_throws_invalid_class_exception(): void
-    {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(999)->andThrow(new InvalidClassException('Playable class 999 not found.', 404));
-        });
-
-        $this->expectException(InvalidClassException::class);
-
-        $character = $this->create(['playable_class_id' => null]);
-        $character->playable_class = 999;
-    }
-
-    #[Test]
-    public function playable_class_setter_does_not_change_id_on_request_exception(): void
-    {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
-        });
-
-        $character = $this->create(['playable_class_id' => 1]);
-        $character->playable_class = 5;
-
-        $this->assertSame(1, $character->playable_class_id);
-    }
-
-    #[Test]
-    public function playable_class_setter_does_not_change_id_on_connection_exception(): void
-    {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new ConnectionException('Could not resolve host'));
-        });
-
-        $character = $this->create(['playable_class_id' => 2]);
-        $character->playable_class = 5;
-
-        $this->assertSame(2, $character->playable_class_id);
-    }
-
-    #[Test]
-    public function playable_race_returns_unknown_when_playable_race_id_is_null(): void
-    {
-        $character = $this->create(['playable_race_id' => null]);
-
-        $playableRace = $character->playable_race;
-
-        $this->assertNull($playableRace['id']);
-        $this->assertSame('Unknown Race', $playableRace['name']);
-    }
-
-    #[Test]
-    public function playable_race_returns_race_data_when_playable_race_id_is_set(): void
-    {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->with(2)->andReturn(['id' => 2, 'name' => 'Orc']);
-        });
-
-        $character = $this->create(['playable_race_id' => 2]);
-
-        $playableRace = $character->playable_race;
-
-        $this->assertSame(2, $playableRace['id']);
-        $this->assertSame('Orc', $playableRace['name']);
-    }
-
-    #[Test]
-    public function playable_race_returns_unknown_race_on_request_exception(): void
-    {
-        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable race for id'));
-
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
-        });
-
-        $character = $this->create(['playable_race_id' => 2]);
-
-        $playableRace = $character->playable_race;
-
-        $this->assertNull($playableRace['id']);
-        $this->assertSame('Unknown Race', $playableRace['name']);
-    }
-
-    #[Test]
-    public function playable_race_returns_unknown_race_on_connection_exception(): void
-    {
-        Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable race for id'));
-
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
-        });
-
-        $character = $this->create(['playable_race_id' => 2]);
-
-        $playableRace = $character->playable_race;
-
-        $this->assertNull($playableRace['id']);
-        $this->assertSame('Unknown Race', $playableRace['name']);
-    }
-
-    #[Test]
-    public function playable_race_setter_sets_playable_race_id_when_valid(): void
-    {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(4)->andReturn(['id' => 4, 'name' => 'Tauren']);
-        });
-
-        $character = $this->create(['playable_race_id' => null]);
-        $character->playable_race = 4;
-
-        $this->assertSame(4, $character->playable_race_id);
-    }
-
-    #[Test]
-    public function playable_race_setter_sets_to_null_without_service_call(): void
-    {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->never();
-        });
-
-        $character = $this->create(['playable_race_id' => 2]);
-        $character->playable_race = null;
-
-        $this->assertNull($character->playable_race_id);
-    }
-
-    #[Test]
-    public function playable_race_setter_throws_invalid_race_exception(): void
-    {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(999)->andThrow(new InvalidRaceException('Playable race 999 not found.', 404));
-        });
-
-        $this->expectException(InvalidRaceException::class);
-
-        $character = $this->create(['playable_race_id' => null]);
-        $character->playable_race = 999;
-    }
-
-    #[Test]
-    public function playable_race_setter_does_not_change_id_on_request_exception(): void
-    {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
-        });
-
-        $character = $this->create(['playable_race_id' => 2]);
-        $character->playable_race = 5;
-
-        $this->assertSame(2, $character->playable_race_id);
-    }
-
-    #[Test]
-    public function playable_race_setter_does_not_change_id_on_connection_exception(): void
-    {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new ConnectionException('Could not resolve host'));
-        });
-
-        $character = $this->create(['playable_race_id' => 3]);
-        $character->playable_race = 5;
-
-        $this->assertSame(3, $character->playable_race_id);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\WarcraftLogs;
 
+use App\Http\Resources\CharacterResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

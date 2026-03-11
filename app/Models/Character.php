@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
@@ -206,6 +207,14 @@ class Character extends Model
                 return ['playable_race_id' => $id];
             }
         );
+    }
+
+    /**
+     * Get the planned absences for the character.
+     */
+    public function plannedAbsences(): HasMany
+    {
+        return $this->hasMany(PlannedAbsence::class);
     }
 
     /**

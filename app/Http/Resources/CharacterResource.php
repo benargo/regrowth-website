@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Resources\WarcraftLogs;
+namespace App\Http\Resources;
 
-use App\Http\Resources\GuildRankResource;
 use App\Models\Character;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -29,6 +28,7 @@ class CharacterResource extends JsonResource
             'is_main' => $this->is_main,
             'is_loot_councillor' => $this->is_loot_councillor,
             'reached_level_cap_at' => $this->reached_level_cap_at,
+            'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
             'playable_class' => $this->playableClass,
             'playable_race' => $this->playableRace,
             'pivot' => $this->whenPivotLoaded('pivot_characters_wcl_reports', fn () => [

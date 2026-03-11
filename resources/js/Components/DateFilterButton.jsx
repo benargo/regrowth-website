@@ -32,6 +32,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
     return (
         <>
             <button
+                type="button"
                 onClick={open}
                 className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-brown-700 ${value ? "border-amber-500 bg-brown-800 text-white" : "border-amber-600 bg-brown-800 text-gray-400"}`}
             >

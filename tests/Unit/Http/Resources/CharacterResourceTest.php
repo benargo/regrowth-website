@@ -1,11 +1,13 @@
 <?php
 
-namespace Tests\Unit\Http\Resources\WarcraftLogs;
+namespace Tests\Unit\Http\Resources;
 
+use App\Http\Resources\CharacterResource;
 use App\Http\Resources\GuildRankResource;
-use App\Http\Resources\WarcraftLogs\CharacterResource;
+use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlannedAbsence;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -29,6 +31,7 @@ class CharacterResourceTest extends TestCase
         $this->assertArrayHasKey('is_main', $array);
         $this->assertArrayHasKey('is_loot_councillor', $array);
         $this->assertArrayHasKey('reached_level_cap_at', $array);
+        $this->assertArrayHasKey('planned_absences', $array);
         $this->assertArrayHasKey('playable_class', $array);
         $this->assertArrayHasKey('playable_race', $array);
         $this->assertArrayHasKey('pivot', $array);
@@ -47,6 +50,29 @@ class CharacterResourceTest extends TestCase
         $this->assertTrue($array['is_main']);
         $this->assertFalse($array['is_loot_councillor']);
         $this->assertNull($array['reached_level_cap_at']);
+    }
+
+    #[Test]
+    public function it_omits_planned_absences_when_not_loaded(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['planned_absences']);
+    }
+
+    #[Test]
+    public function it_includes_planned_absences_as_resource_collection_when_loaded(): void
+    {
+        $character = Character::factory()->create();
+        PlannedAbsence::factory()->count(2)->create(['character_id' => $character->id]);
+
+        $array = (new CharacterResource($character->load('plannedAbsences')))->toArray(new Request);
+
+        $this->assertInstanceOf(\Illuminate\Http\Resources\Json\AnonymousResourceCollection::class, $array['planned_absences']);
+        $this->assertCount(2, $array['planned_absences']);
+        $this->assertContainsOnlyInstancesOf(PlannedAbsenceResource::class, $array['planned_absences']);
     }
 
     #[Test]

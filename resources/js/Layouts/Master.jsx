@@ -165,10 +165,10 @@ export default function Master({ title, children }) {
                                     </Dropdown.Trigger>
 
                                     <Dropdown.Content>
-                                        {/* <Dropdown.Link href={route('profile.edit')}>
-                                            <Icon icon="user-cog" style="regular" className="h-6 mr-2" />
+                                        <Dropdown.Link href={route("account.index")}>
+                                            <Icon icon="user-cog" style="regular" className="mr-2 h-6" />
                                             Account Settings
-                                        </Dropdown.Link> */}
+                                        </Dropdown.Link>
                                         {impersonating && (
                                             <Dropdown.Link href={route("auth.return-to-self")}>
                                                 <Icon icon="undo" style="regular" className="mr-2 h-6" />
@@ -293,13 +293,13 @@ export default function Master({ title, children }) {
                                         )}
                                     </div>
                                 </div>
-                                {/* <Link
-                                    href={route('profile.edit')}
-                                    className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-amber-700 rounded-md"
+                                <Link
+                                    href={route("account.index")}
+                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
                                 >
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
-                                </Link> */}
+                                </Link>
                                 {impersonating && (
                                     <Link
                                         href={route("auth.return-to-self")}

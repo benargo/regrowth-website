@@ -14,6 +14,7 @@ use App\Http\Controllers\LootCouncil\CommentReactionController;
 use App\Http\Controllers\LootCouncil\ItemController;
 use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
+use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\Raid\AttendanceController;
 use App\Http\Controllers\Raid\AttendanceMatrixController;
 use App\Http\Controllers\Raid\ReportController;
@@ -53,6 +54,14 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], fu
  * Raid planning and attendance
  */
 Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], function () {
+    // Planned absences routes
+    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->can('viewAny', 'App\Models\PlannedAbsence')->name('absences.index');
+    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->can('create', 'App\Models\PlannedAbsence')->name('absences.create');
+    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->can('create', 'App\Models\PlannedAbsence')->name('absences.store');
+    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->can('update', 'plannedAbsence')->name('absences.edit');
+    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->can('update', 'plannedAbsence')->name('absences.update');
+    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->can('delete', 'plannedAbsence')->name('absences.destroy');
+
     // Attendance routes
     Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance')->name('attendance.index');
     Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance')->name('attendance.matrix');

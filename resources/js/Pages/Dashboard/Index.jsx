@@ -48,7 +48,7 @@ export default function Index({ discordRoles }) {
                     </div>
                     {/* Raiding */}
                     <h2 className="mt-12 text-2xl font-semibold">Raiding</h2>
-                    <p className="text-md text-gray-400">Manage raid team compositions and attendance tracking.</p>
+                    <p className="text-md text-gray-400">Manage raid team compositions, planned absences, and attendance tracking.</p>
                     <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                         {/* <DashboardCard href={route('dashboard.raids.view')} icon="users-class">
                             <h3 className="text-md">Manage raid teams</h3>
@@ -58,9 +58,13 @@ export default function Index({ discordRoles }) {
                             <h3 className="text-md">Raid reports</h3>
                             <p className="mb-1 text-sm">View and manage raid reports.</p>
                         </DashboardCard>
+                        <DashboardCard href={route("raids.absences.index")} icon="umbrella-beach">
+                            <h3 className="text-md">Planned absences</h3>
+                            <p className="mb-1 text-sm">Log and review planned absences.</p>
+                        </DashboardCard>
                         <DashboardCard href={route("raids.attendance.index")} icon="clipboard-list-check">
                             <h3 className="text-md">Attendance tracker</h3>
-                            <p className="mb-1 text-sm">Log and review raid attendance records.</p>
+                            <p className="mb-1 text-sm">Review raid attendance records.</p>
                         </DashboardCard>
                     </div>
                     {/* Daily Quests */}
