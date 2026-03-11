@@ -17,7 +17,7 @@ class PlannedAbsenceResource extends JsonResource
         return [
             'id' => $this->id,
             'character' => $this->whenLoaded('character', fn () => new CharacterResource($this->character)),
-            'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),
+            'user' => $this->whenLoaded('user', fn () => $this->user ? new UserResource($this->user) : null),
             'start_date' => $this->start_date->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
             'reason' => $this->reason,

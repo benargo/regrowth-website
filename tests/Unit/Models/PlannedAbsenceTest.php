@@ -161,6 +161,23 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
+    public function user_id_is_nullable(): void
+    {
+        $absence = $this->create(['user_id' => null]);
+
+        $this->assertNull($absence->user_id);
+        $this->assertNull($absence->user);
+    }
+
+    #[Test]
+    public function factory_without_user_state_sets_user_id_to_null(): void
+    {
+        $absence = $this->factory()->withoutUser()->create();
+
+        $this->assertNull($absence->user_id);
+    }
+
+    #[Test]
     public function factory_creates_valid_model(): void
     {
         $absence = $this->create();

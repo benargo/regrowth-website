@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('planned_absences', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignId('character_id')->constrained('characters')->cascadeOnDelete();
-            $table->string('user_id');
+            $table->string('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->datetime('start_date');
             $table->datetime('end_date')->nullable();

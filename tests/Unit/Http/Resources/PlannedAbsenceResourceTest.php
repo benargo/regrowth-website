@@ -91,6 +91,17 @@ class PlannedAbsenceResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_null_user_when_loaded_but_user_id_is_null(): void
+    {
+        $absence = PlannedAbsence::factory()->withoutUser()->create();
+        $absence->load('user');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertNull($array['user']);
+    }
+
+    #[Test]
     public function it_omits_created_by_when_not_loaded(): void
     {
         $absence = PlannedAbsence::factory()->create();

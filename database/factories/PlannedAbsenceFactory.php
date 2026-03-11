@@ -38,6 +38,13 @@ class PlannedAbsenceFactory extends Factory
         ]);
     }
 
+    public function withoutUser(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id' => null,
+        ]);
+    }
+
     public function withoutEndDate(): static
     {
         return $this->state(fn (array $attributes) => [
