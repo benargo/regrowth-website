@@ -10,8 +10,10 @@ use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
-use Illuminate\Http\JsonResponse;
+use App\Models\User;
+use App\Services\Discord\DiscordGuildService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,6 +21,10 @@ use Normalizer;
 
 class PlannedAbsenceController extends Controller
 {
+    public function __construct(
+        protected DiscordGuildService $discordGuildService
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -60,7 +66,7 @@ class PlannedAbsenceController extends Controller
      * @throws MultipleCharactersFoundException
      * @throws CharacterNotMainException
      */
-    public function store(StorePlannedAbsenceRequest $request): JsonResponse
+    public function store(StorePlannedAbsenceRequest $request): RedirectResponse
     {
         $input = $request->input('character');
 
@@ -81,26 +87,31 @@ class PlannedAbsenceController extends Controller
         }
 
         if ($character === null) {
-            return response()->json(['message' => 'Character not found.'], 400);
+            return back()->withErrors(['character' => 'Character not found.']);
         }
 
         if (! $character->is_main) {
             throw new CharacterNotMainException($character);
         }
 
-        $absence = PlannedAbsence::create([
+        if ($request->has('user')) {
+            $user = $this->resolveUser($request->input('user'));
+        }
+
+        PlannedAbsence::create([
             'character_id' => $character->id,
+            'user_id' => $user->id ?? null,
             'start_date' => $request->input('start_date'),
-            'end_date' => $request->input('end_date'),
+            'end_date' => $request->input('end_date', null),
             'reason' => $request->input('reason'),
             'created_by' => $request->user()->id,
         ]);
 
-        $absence->load(['character', 'createdBy']);
+        if ($request->user()->can('viewAny', PlannedAbsence::class)) {
+            return to_route('raids.absences.index')->with('success', 'Planned absence created successfully.');
+        }
 
-        return (new PlannedAbsenceResource($absence))
-            ->response()
-            ->setStatusCode(201);
+        return to_route('account.index')->with('success', 'Planned absence created successfully.');
     }
 
     /**
@@ -138,24 +149,29 @@ class PlannedAbsenceController extends Controller
                 throw new CharacterNotMainException($character);
             }
 
-            $updates['character_id'] = $character->id;
+            $updates = Arr::add($updates, 'character_id', $character->id);
+        }
+
+        if ($request->has('user')) {
+            $user = $this->resolveUser($request->input('user'));
+            $updates = Arr::add($updates, 'user_id', $user->id);
         }
 
         if ($request->has('start_date')) {
-            $updates['start_date'] = $request->input('start_date');
+            $updates = Arr::add($updates, 'start_date', $request->input('start_date'));
         }
 
         if ($request->has('end_date')) {
-            $updates['end_date'] = $request->input('end_date');
+            $updates = Arr::add($updates, 'end_date', $request->input('end_date', null));
         }
 
         if ($request->has('reason')) {
-            $updates['reason'] = $request->input('reason');
+            $updates = Arr::add($updates, 'reason', $request->input('reason'));
         }
 
         $plannedAbsence->update($updates);
 
-        return back();
+        return back()->with('success', 'Planned absence updated successfully.');
     }
 
     /**
@@ -165,7 +181,7 @@ class PlannedAbsenceController extends Controller
     {
         $plannedAbsence->delete();
 
-        return back();
+        return back()->with('success', 'Planned absence deleted successfully.');
     }
 
     /**
@@ -177,5 +193,43 @@ class PlannedAbsenceController extends Controller
         $decomposed = Normalizer::normalize($name, Normalizer::FORM_KD);
 
         return mb_strtolower(preg_replace('/\p{Mn}/u', '', $decomposed));
+    }
+
+    /**
+     * Resolve a user based on the provided identifier.
+     *
+     * The user may already exist in the database, but if not we should check the Discord API
+     * to find a matching user and create a new user record.
+     *
+     * @throws \App\Services\Discord\Exceptions\UserNotInGuildException
+     * @throws \Exception
+     */
+    private function resolveUser(string $userIdentifier): User
+    {
+        $user = User::find($userIdentifier);
+
+        if ($user) {
+            return $user;
+        }
+
+        // If the user doesn't exist in our database, attempt to fetch them from the Discord API
+        $guildMemberData = $this->discordGuildService->getGuildMember($userIdentifier);
+
+        // If we successfully fetch the guild member data, create a new user record in our database
+        $user = User::create([
+            'id' => $userIdentifier,
+            'username' => Arr::get($guildMemberData, 'user.username', null),
+            'discriminator' => Arr::get($guildMemberData, 'user.discriminator', '0'),
+            'nickname' => Arr::get($guildMemberData, 'nick', null),
+            'avatar' => Arr::get($guildMemberData, 'user.avatar', null),
+            'guild_avatar' => Arr::get($guildMemberData, 'avatar', null),
+            'banner' => Arr::get($guildMemberData, 'banner', null),
+        ]);
+
+        $incomingRoleIds = Arr::get($guildMemberData, 'roles', []);
+        $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
+        $user->discordRoles()->sync($recognizedRoleIds);
+
+        return $user;
     }
 }

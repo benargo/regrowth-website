@@ -106,9 +106,8 @@ function CharacterSearch({ characters, value, onChange, error }) {
 }
 
 export default function Create() {
-    const { characters, auth, plannedAbsence: rawPlannedAbsence = null, action } = usePage().props;
+    const { characters, plannedAbsence: rawPlannedAbsence = null, action } = usePage().props;
     const plannedAbsence = rawPlannedAbsence?.data ?? null;
-    const canViewAbsences = auth?.permissions?.plannedAbsences?.viewAny ?? false;
     const isEditing = plannedAbsence !== null;
 
     const [characterId, setCharacterId] = useState(plannedAbsence?.character?.id ?? null);
@@ -129,39 +128,50 @@ export default function Create() {
         setMultipleCharacters(null);
         setProcessing(true);
 
-        const request = isEditing
-            ? axios.patch(action, {
-                character: characterId,
-                start_date: startDate,
-                end_date: endDate || null,
-                reason,
-            })
-            : axios.post(action, {
-                character: characterId,
-                start_date: startDate,
-                end_date: endDate || null,
-                reason,
-            });
+        if (isEditing) {
+            axios
+                .patch(action, {
+                    character: characterId,
+                    start_date: startDate,
+                    end_date: endDate || null,
+                    reason,
+                })
+                .then(() => {
+                    router.visit(route("raids.absences.index"));
+                })
+                .catch((err) => {
+                    const status = err.response?.status;
+                    const data = err.response?.data;
 
-        request
-            .then(() => {
-                router.visit(
-                    isEditing || canViewAbsences
-                        ? route("raids.absences.index")
-                        : route("account.index"),
-                );
-            })
-            .catch((err) => {
-                const status = err.response?.status;
-                const data = err.response?.data;
+                    if (status === 422) {
+                        const fieldErrors = {};
+                        Object.entries(data.errors ?? {}).forEach(([field, messages]) => {
+                            fieldErrors[field] = Array.isArray(messages) ? messages[0] : messages;
+                        });
+                        setErrors(fieldErrors);
+                    } else if (status === 400) {
+                        setServerError({
+                            message: data.message,
+                            suggestion: data.suggestion ?? null,
+                        });
+                    } else if (status === 300) {
+                        setMultipleCharacters(data.characters ?? []);
+                        setServerError({ message: data.message });
+                    } else {
+                        setServerError({ message: "An unexpected error occurred. Please try again." });
+                    }
+                })
+                .finally(() => {
+                    setProcessing(false);
+                });
+        } else {
+            const stopInvalidListener = router.on("invalid", (event) => {
+                event.preventDefault();
+                stopInvalidListener();
 
-                if (status === 422) {
-                    const fieldErrors = {};
-                    Object.entries(data.errors ?? {}).forEach(([field, messages]) => {
-                        fieldErrors[field] = Array.isArray(messages) ? messages[0] : messages;
-                    });
-                    setErrors(fieldErrors);
-                } else if (status === 400) {
+                const { status, data } = event.detail.response;
+
+                if (status === 400) {
                     setServerError({
                         message: data.message,
                         suggestion: data.suggestion ?? null,
@@ -172,10 +182,27 @@ export default function Create() {
                 } else {
                     setServerError({ message: "An unexpected error occurred. Please try again." });
                 }
-            })
-            .finally(() => {
+
                 setProcessing(false);
             });
+
+            router.post(
+                action,
+                {
+                    character: characterId,
+                    start_date: startDate,
+                    end_date: endDate || null,
+                    reason,
+                },
+                {
+                    onError: (errors) => setErrors(errors),
+                    onFinish: () => {
+                        stopInvalidListener();
+                        setProcessing(false);
+                    },
+                },
+            );
+        }
     }
 
     function selectDisambiguatedCharacter(character) {

@@ -371,20 +371,18 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => $character->id,
             'start_date' => '2026-04-01',
             'end_date' => '2026-04-07',
             'reason' => 'Going on holiday.',
         ]);
 
-        $response->assertCreated();
-        $response->assertJsonStructure(['data' => ['id', 'character', 'start_date', 'end_date', 'reason', 'created_by']]);
-        $response->assertJsonPath('data.character.id', $character->id);
-        $response->assertJsonPath('data.start_date', '2026-04-01');
-        $response->assertJsonPath('data.end_date', '2026-04-07');
+        $response->assertRedirectToRoute('raids.absences.index');
         $this->assertDatabaseHas('planned_absences', [
             'character_id' => $character->id,
+            'start_date' => '2026-04-01 00:00:00',
+            'end_date' => '2026-04-07 00:00:00',
             'created_by' => $user->id,
         ]);
     }
@@ -395,14 +393,14 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create(['name' => 'Aragorn']);
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => 'Aragorn',
             'start_date' => '2026-04-01',
             'reason' => 'Scouting the Misty Mountains.',
         ]);
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.character.id', $character->id);
+        $response->assertRedirectToRoute('raids.absences.index');
+        $this->assertDatabaseHas('planned_absences', ['character_id' => $character->id]);
     }
 
     #[Test]
@@ -411,14 +409,14 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create(['name' => 'Déo']);
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => 'Deo',
             'start_date' => '2026-04-01',
             'reason' => 'Away for a week.',
         ]);
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.character.id', $character->id);
+        $response->assertRedirectToRoute('raids.absences.index');
+        $this->assertDatabaseHas('planned_absences', ['character_id' => $character->id]);
     }
 
     #[Test]
@@ -427,14 +425,41 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => $character->id,
             'start_date' => '2026-04-01',
             'reason' => 'Indefinite absence.',
         ]);
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.end_date', null);
+        $response->assertRedirectToRoute('raids.absences.index');
+        $this->assertDatabaseHas('planned_absences', [
+            'character_id' => $character->id,
+            'end_date' => null,
+        ]);
+    }
+
+    #[Test]
+    public function store_redirects_to_account_when_user_cannot_view_absences(): void
+    {
+        $role = DiscordRole::firstOrCreate(
+            ['id' => '829022020301094923'],
+            ['name' => 'Raider', 'position' => 2, 'is_visible' => true]
+        );
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
+
+        $user = User::factory()->create();
+        $user->discordRoles()->sync([$role->id]);
+
+        $character = Character::factory()->main()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+            'character' => $character->id,
+            'start_date' => '2026-04-01',
+            'reason' => 'Away for a week.',
+        ]);
+
+        $response->assertRedirectToRoute('account.index');
+        $this->assertDatabaseHas('planned_absences', ['character_id' => $character->id]);
     }
 
     // ==================== store: Special Responses ====================

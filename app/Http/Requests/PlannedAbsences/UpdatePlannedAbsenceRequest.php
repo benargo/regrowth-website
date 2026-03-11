@@ -33,6 +33,7 @@ class UpdatePlannedAbsenceRequest extends FormRequest
 
         return [
             'character' => ['sometimes', 'integer', 'min:1', Rule::exists('characters', 'id')],
+            'user' => ['sometimes', 'nullable', 'string'],
             'start_date' => ['sometimes', 'date'],
             'end_date' => ['sometimes', 'nullable', 'date', ...($effectiveStartDate ? ['after:'.$effectiveStartDate] : [])],
             'reason' => ['sometimes', 'string'],

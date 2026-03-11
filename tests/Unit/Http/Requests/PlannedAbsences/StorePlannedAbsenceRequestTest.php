@@ -65,6 +65,17 @@ class StorePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('after:start_date', $rules['end_date']);
     }
 
+    public function test_rules_user_is_optional_nullable_string(): void
+    {
+        $rules = $this->makeRequest()->rules();
+
+        $this->assertArrayHasKey('user', $rules);
+        $this->assertContains('sometimes', $rules['user']);
+        $this->assertContains('nullable', $rules['user']);
+        $this->assertContains('string', $rules['user']);
+        $this->assertNotContains('required', $rules['user']);
+    }
+
     public function test_rules_requires_reason_as_string(): void
     {
         $rules = $this->makeRequest()->rules();

@@ -27,6 +27,7 @@ class StorePlannedAbsenceRequest extends FormRequest
             'character' => is_numeric($this->input('character'))
                 ? ['required', 'integer', 'min:1', Rule::exists('characters', 'id')]
                 : ['required', 'string', 'max:11', 'regex:/^[^\d\s]+$/u'],
+            'user' => ['sometimes', 'nullable', 'string'],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after:start_date'],
             'reason' => ['required', 'string'],

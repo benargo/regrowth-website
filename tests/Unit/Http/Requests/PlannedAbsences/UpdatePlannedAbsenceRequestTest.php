@@ -36,6 +36,17 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertNotContains('required', $rules['character']);
     }
 
+    public function test_rules_user_is_sometimes_optional_nullable_string(): void
+    {
+        $rules = $this->makeRequest()->rules();
+
+        $this->assertArrayHasKey('user', $rules);
+        $this->assertContains('sometimes', $rules['user']);
+        $this->assertContains('nullable', $rules['user']);
+        $this->assertContains('string', $rules['user']);
+        $this->assertNotContains('required', $rules['user']);
+    }
+
     public function test_rules_start_date_is_sometimes_not_required(): void
     {
         $rules = $this->makeRequest()->rules();
