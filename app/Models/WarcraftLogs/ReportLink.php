@@ -2,6 +2,8 @@
 
 namespace App\Models\WarcraftLogs;
 
+use App\Events\ReportLinkDeleted;
+use App\Events\ReportLinkSaved;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -21,6 +23,16 @@ class ReportLink extends Pivot
      * @var array<int, string>
      */
     protected $touches = ['report1', 'report2'];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'saved' => ReportLinkSaved::class,
+        'deleted' => ReportLinkDeleted::class,
+    ];
 
     /**
      * Get the user who created this link.
