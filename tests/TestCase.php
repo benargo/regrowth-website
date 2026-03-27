@@ -2,7 +2,8 @@
 
 namespace Tests;
 
-use App\Listeners\PrepareRegrowthAddonData;
+use App\Listeners\DispatchCharacterUpdates;
+use App\Listeners\ScheduleAddonExportBuild;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -14,6 +15,7 @@ abstract class TestCase extends BaseTestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $this->mock(PrepareRegrowthAddonData::class)->shouldReceive('handle');
+        $this->mock(ScheduleAddonExportBuild::class)->shouldReceive('handle');
+        $this->mock(DispatchCharacterUpdates::class)->shouldReceive('handle');
     }
 }

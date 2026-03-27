@@ -2,11 +2,10 @@
 
 namespace App\Events;
 
-use App\Contracts\Events\PreparesRegrowthAddonData;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class GrmUploadProcessed implements PreparesRegrowthAddonData
+class GrmUploadProcessed
 {
     use Dispatchable, SerializesModels;
 

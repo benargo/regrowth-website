@@ -17,7 +17,9 @@ use App\Policies\DatasetPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\ReportPolicy;
 use Database\Seeders\PermissionSeeder;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -60,5 +62,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('impersonate-roles', fn (User $user) => $user->hasPermissionViaDiscordRoles('impersonate-roles'));
         Gate::define('view-attendance', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-officer-dashboard'));
+
+        /**
+         * Rate limiting
+         */
+        RateLimiter::for('build-addon-export', function (object $job) {
+            return Limit::perMinutes(10, 1)->by(get_class($job)); // Allow 1 job per 10 minutes for each type of export job
+        });
     }
 }

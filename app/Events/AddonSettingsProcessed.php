@@ -2,11 +2,11 @@
 
 namespace App\Events;
 
-use App\Contracts\Events\PreparesRegrowthAddonData;
+use App\Contracts\Events\SchedulesAddonExportBuild;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class AddonSettingsProcessed implements PreparesRegrowthAddonData
+class AddonSettingsProcessed implements SchedulesAddonExportBuild
 {
     use Dispatchable, SerializesModels;
 

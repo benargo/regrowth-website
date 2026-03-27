@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\BuildAddonExportFile;
 use Illuminate\Support\Facades\Schedule;
 
 /**
@@ -27,9 +28,9 @@ Schedule::command('app:reset-daily-quests')
 /**
  * Export the Regrowth Addon data daily at 3:15 AM server time.
  *
- * This is a resource-intensive batch, so we run it after the 3am job to avoid overloading the server.
+ * This is a resource-intensive job, so we run it after the 3am job to avoid overloading the server.
  */
-Schedule::command('app:prep-addon-data')->dailyAt('03:15')->name('prepare-regrowth-addon-data')->withoutOverlapping();
+Schedule::job(new BuildAddonExportFile)->dailyAt('03:15')->name('build-addon-export-file');
 
 /**
  * This should be the last job to run each day.
