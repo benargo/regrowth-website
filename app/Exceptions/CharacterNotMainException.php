@@ -13,6 +13,14 @@ class CharacterNotMainException extends Exception
         parent::__construct('The specified character is not a main character.');
     }
 
+    /**
+     * Prevent Laravel from logging this expected business-logic exception.
+     */
+    public function report(): false
+    {
+        return false;
+    }
+
     public function render(): JsonResponse
     {
         return response()->json([
