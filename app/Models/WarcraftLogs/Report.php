@@ -2,6 +2,7 @@
 
 namespace App\Models\WarcraftLogs;
 
+use App\Events\ReportCreated;
 use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Services\WarcraftLogs\Data\Zone;
@@ -67,6 +68,15 @@ class Report extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'zone_id' => 'integer',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, class-string>
+     */
+    protected $dispatchesEvents = [
+        'created' => ReportCreated::class,
     ];
 
     /**

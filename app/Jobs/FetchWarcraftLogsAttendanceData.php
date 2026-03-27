@@ -2,24 +2,28 @@
 
 namespace App\Jobs;
 
-use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\WarcraftLogs\Report;
 use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\Data\GuildAttendance;
-use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class FetchWarcraftLogsAttendanceData implements ShouldQueue
 {
     use Batchable, Queueable;
+
+    /**
+     * The number of seconds the job can run before timing out.
+     *
+     * @var int
+     */
+    public $timeout = 600; // 10 minutes
 
     /**
      * Get the middleware the job should pass through.
@@ -30,64 +34,45 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
     }
 
     /**
-     * Create a new job instance.
-     */
-    public function __construct(
-        protected Collection $guildTags,
-        protected ?Carbon $since = null,
-        protected ?Carbon $before = null,
-    ) {}
-
-    /**
      * Execute the job.
-     *
-     * @throws \Exception if no guild tags or ranks are configured for attendance tracking.
      */
     public function handle(Attendance $attendanceService): void
     {
-        Log::info('Starting to fetch and sync attendance data for '.($this->since ? 'reports since '.$this->since->toIso8601String() : 'all reports').'.');
+        $reports = Report::all()->keyBy('code');
 
-        // Validate that we have guild tags to process
-        if ($this->guildTags->isEmpty()) {
-            throw new EmptyCollectionException('No guild tags configured for attendance tracking.');
-        }
-
-        $tagIds = $this->guildTags->pluck('id');
-        $taggedCodes = Report::whereIn('guild_tag_id', $tagIds)->pluck('code', 'code');
-
-        $attendance = $attendanceService->lazy()
-            ->filter(fn (GuildAttendance $record) => $taggedCodes->has($record->code));
-
-        if ($this->since !== null) {
-            $attendance = $attendance->filter(
-                fn (GuildAttendance $record) => $record->startTime->gte($this->since)
-            );
-        }
-
-        if ($this->before !== null) {
-            $attendance = $attendance->filter(
-                fn (GuildAttendance $record) => $record->startTime->lte($this->before)
-            );
-        }
+        $attendanceRecords = $attendanceService->lazy()->whereIn('code', $reports->keys());
 
         $characters = Character::with('rank')
             ->whereHas('rank', fn (Builder $q) => $q->where('count_attendance', true))
             ->get()
             ->keyBy('name');
 
-        foreach ($attendance as $guildAttendance) {
-            $report = Report::find($guildAttendance->code);
+        $attendanceRecords->each(function (GuildAttendance $guildAttendance) use ($reports, $characters) {
+            $report = $reports->get($guildAttendance->code);
 
             if ($report === null) {
-                continue;
+                Log::info('Skipping report code '.$guildAttendance->code.' as it does not exist in the database.');
+
+                return;
+            }
+
+            // Filter the players to only those that are in our character list and should be counted for attendance.
+            $filteredAttendanceRecord = $guildAttendance->filterPlayers($characters->keys()->toArray());
+
+            if (empty($filteredAttendanceRecord->players)) {
+                Log::warning('No valid players found for report code '.$guildAttendance->code.'. Skipping attendance sync for this report.');
+
+                return;
             }
 
             $syncData = [];
 
-            foreach ($guildAttendance->players as $player) {
+            foreach ($filteredAttendanceRecord->players as $player) {
                 $character = $characters->get($player->name);
 
                 if ($character === null) {
+                    Log::warning('Character '.$player->name.' not found in database. Skipping attendance record for this player in report code '.$guildAttendance->code.'.');
+
                     continue;
                 }
 
@@ -105,10 +90,12 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
                     ['presence']
                 );
                 $report->touch();
-            }
-        }
 
-        Log::info('Completed fetching and syncing attendance data for '.($this->since ? 'reports since '.$this->since->toIso8601String() : 'all reports').'. Processed '.$attendance->count().' attendance records.');
+                Log::info('Synced attendance data for report code '.$guildAttendance->code.' with '.count($syncData).' records.');
+            }
+        });
+
+        Log::info('Completed fetching and syncing attendance data.');
     }
 
     /**

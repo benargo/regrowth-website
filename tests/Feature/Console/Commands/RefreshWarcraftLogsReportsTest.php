@@ -2,8 +2,6 @@
 
 namespace Tests\Feature\Console\Commands;
 
-use App\Jobs\FetchGuildRoster;
-use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
@@ -23,7 +21,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
     // ==========================================
 
     #[Test]
-    public function it_dispatches_a_batch_with_all_required_job_types(): void
+    public function it_dispatches_a_batch_with_a_fetch_reports_job_per_guild_tag(): void
     {
         Bus::fake();
 
@@ -34,9 +32,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
             ->assertSuccessful();
 
         Bus::assertBatched(function (PendingBatch $batch) use ($tag1, $tag2) {
-            return $batch->jobs->contains(fn ($job) => $job instanceof FetchGuildRoster)
-                && $batch->jobs->contains(fn ($job) => $job instanceof FetchWarcraftLogsAttendanceData)
-                && $batch->jobs->contains(fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag && $job->guildTag->is($tag1) && $job->since === null)
+            return $batch->jobs->contains(fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag && $job->guildTag->is($tag1) && $job->since === null)
                 && $batch->jobs->contains(fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag && $job->guildTag->is($tag2) && $job->since === null);
         });
     }
@@ -59,20 +55,6 @@ class RefreshWarcraftLogsReportsTest extends TestCase
 
             return $fetchReportJobs->count() === 1
                 && $fetchReportJobs->first()->guildTag->is($attendanceTag);
-        });
-    }
-
-    #[Test]
-    public function it_always_includes_fetch_guild_roster_and_attendance_data_jobs(): void
-    {
-        Bus::fake();
-
-        $this->artisan('app:refresh-warcraft-logs-reports')
-            ->assertSuccessful();
-
-        Bus::assertBatched(function (PendingBatch $batch) {
-            return $batch->jobs->contains(fn ($job) => $job instanceof FetchGuildRoster)
-                && $batch->jobs->contains(fn ($job) => $job instanceof FetchWarcraftLogsAttendanceData);
         });
     }
 
@@ -245,7 +227,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports')
             ->assertSuccessful();
 
-        // 3 FetchWarcraftLogsReportsByGuildTag + 1 FetchGuildRoster + 1 FetchWarcraftLogsAttendanceData
-        Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 5);
+        // 3 FetchWarcraftLogsReportsByGuildTag jobs (one per guild tag)
+        Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 3);
     }
 }

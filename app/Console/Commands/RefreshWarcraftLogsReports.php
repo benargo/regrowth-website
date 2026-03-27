@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\FetchGuildRoster;
 use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
 use App\Models\WarcraftLogs\GuildTag;
@@ -11,6 +10,7 @@ use Illuminate\Bus\Batch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class RefreshWarcraftLogsReports extends Command
 {
@@ -31,7 +31,7 @@ class RefreshWarcraftLogsReports extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
         $since = null;
 
@@ -48,18 +48,12 @@ class RefreshWarcraftLogsReports extends Command
 
         $jobs = $guildTags->map(fn ($guildTag) => new FetchWarcraftLogsReportsByGuildTag($guildTag, $since));
 
-        $jobs->prepend(new FetchGuildRoster);
-
-        $jobs->push(new FetchWarcraftLogsAttendanceData($guildTags, $since));
-
-        Bus::batch($jobs->toArray())->before(function (Batch $batch) {
-            Log::info('Starting batch to refresh Warcraft Logs reports.');
-        })->progress(function (Batch $batch) {
-            Log::info('Batch progress: '.$batch->progress().'% ('.$batch->processedJobs().'/'.$batch->totalJobs.')');
-        })->catch(function (Batch $batch, \Throwable $e) {
-            Log::error('Batch failed with error: '.$e->getMessage());
-        })->then(function (Batch $batch) {
+        Bus::batch($jobs->toArray())->then(function (Batch $batch) {
             Log::info('Batch completed successfully. Refreshed reports.');
+            Log::info('Starting to fetch attendance data.');
+            dispatch(new FetchWarcraftLogsAttendanceData);
+        })->catch(function (Throwable $e) {
+            Log::error('Batch failed with error: '.$e->getMessage());
         })->dispatch();
     }
 }
