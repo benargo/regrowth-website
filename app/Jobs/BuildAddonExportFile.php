@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -74,7 +75,7 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build a list of loot priorities with their icons.
      */
-    protected function buildPriorities(): \Illuminate\Support\Collection
+    protected function buildPriorities(): Collection
     {
         return Priority::has('items')->get()->map(function (Priority $priority) {
             return [
@@ -88,7 +89,7 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build a list of items with their priorities and cleaned notes.
      */
-    protected function buildItems(): \Illuminate\Support\Collection
+    protected function buildItems(): Collection
     {
         return Item::has('priorities')->select('id', 'notes')->get()->map(function (Item $item) {
             return [
@@ -104,7 +105,7 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build player attendance statistics.
      */
-    protected function buildPlayerAttendance(AttendanceCalculator $calculator): \Illuminate\Support\Collection
+    protected function buildPlayerAttendance(AttendanceCalculator $calculator): Collection
     {
         return $calculator->wholeGuild()->map(fn (CharacterAttendanceStats $character) => [
             'id' => $character->id,
@@ -121,7 +122,7 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build a list of loot councillors with their IDs, names, and ranks.
      */
-    protected function buildCouncillors(): \Illuminate\Support\Collection
+    protected function buildCouncillors(): Collection
     {
         return Character::where('is_loot_councillor', true)
             ->with('rank')

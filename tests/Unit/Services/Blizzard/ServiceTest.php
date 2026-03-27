@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Blizzard;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\Region;
 use App\Services\Blizzard\Service;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -147,7 +148,7 @@ class ServiceTest extends TestCase
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
 
-        $this->expectException(\Illuminate\Http\Client\RequestException::class);
+        $this->expectException(RequestException::class);
 
         $reflection = new \ReflectionClass($service);
         $method = $reflection->getMethod('getJson');

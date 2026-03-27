@@ -9,6 +9,7 @@ use App\Notifications\LevelCapAchieved;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\Blizzard\GuildService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Mockery;
@@ -197,7 +198,7 @@ class CheckLevelCapAchievementsTest extends TestCase
         $middleware = $job->middleware();
 
         $hasWithoutOverlapping = collect($middleware)->contains(
-            fn ($m) => $m instanceof \Illuminate\Queue\Middleware\WithoutOverlapping
+            fn ($m) => $m instanceof WithoutOverlapping
         );
 
         $this->assertTrue($hasWithoutOverlapping);

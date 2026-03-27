@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Character;
 use App\Models\GuildRank;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Character>
+ * @extends Factory<Character>
  */
 class CharacterFactory extends Factory
 {

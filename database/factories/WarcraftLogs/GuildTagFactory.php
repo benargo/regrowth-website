@@ -5,16 +5,17 @@ namespace Database\Factories\WarcraftLogs;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\WarcraftLogs\GuildTag>
+ * @extends Factory<GuildTag>
  */
 class GuildTagFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<Model>
      */
     protected $model = GuildTag::class;
 

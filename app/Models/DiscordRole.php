@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Traits\HasPermissions;
+use Database\Factories\DiscordRoleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class DiscordRole extends Model
 {
-    /** @use HasFactory<\Database\Factories\DiscordRoleFactory> */
+    /** @use HasFactory<DiscordRoleFactory> */
     use HasFactory, HasPermissions;
 
     /**

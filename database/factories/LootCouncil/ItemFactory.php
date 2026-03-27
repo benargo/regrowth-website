@@ -6,16 +6,17 @@ use App\Models\LootCouncil\Item;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LootCouncil\Item>
+ * @extends Factory<Item>
  */
 class ItemFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<Model>
      */
     protected $model = Item::class;
 

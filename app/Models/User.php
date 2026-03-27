@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +15,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
@@ -213,14 +215,14 @@ class User extends Authenticatable
     /**
      * Get all permissions the user has access to via their highest Discord role.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, Permission>
+     * @return Collection<int, Permission>
      */
-    public function permissions(): \Illuminate\Database\Eloquent\Collection
+    public function permissions(): Collection
     {
         $this->loadMissing('discordRoles.permissions');
 
         return $this->highestRole()?->permissions
-            ?? new \Illuminate\Database\Eloquent\Collection;
+            ?? new Collection;
     }
 
     /**

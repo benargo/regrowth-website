@@ -105,4 +105,18 @@ return [
 
     'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache-'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | By default, only scalar values are stored in the cache. If you need to
+    | store object instances in the cache, you may provide an explicit list
+    | of classes that are allowed to be unserialized from the cache. Set to
+    | false to disallow all object unserialization (recommended).
+    |
+    */
+
+    'serializable_classes' => false,
+
 ];

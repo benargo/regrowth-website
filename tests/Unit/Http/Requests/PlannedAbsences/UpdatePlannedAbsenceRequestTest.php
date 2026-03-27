@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Requests\PlannedAbsences;
 
 use App\Http\Requests\PlannedAbsences\UpdatePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
+use Illuminate\Routing\Route;
 use Illuminate\Validation\Rules\Exists;
 use Tests\TestCase;
 
@@ -67,7 +68,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
         $request->setRouteResolver(fn () => $route);
 
@@ -86,7 +87,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
         $request->setRouteResolver(fn () => $route);
 
@@ -134,7 +135,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
         $request->setRouteResolver(fn () => $route);
 
@@ -150,7 +151,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
         $request->setRouteResolver(fn () => $route);
 
@@ -167,7 +168,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
         $request = $this->makeRequest(['character' => '5']);
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
         $request->setRouteResolver(fn () => $route);
 
@@ -184,7 +185,7 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
         $request = $this->makeRequest(['character' => '5']);
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
         $request->setRouteResolver(fn () => $route);
 

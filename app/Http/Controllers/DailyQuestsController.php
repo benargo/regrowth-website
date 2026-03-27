@@ -47,9 +47,11 @@ class DailyQuestsController extends Controller
             'pvp' => $mediaService->getIconUrl(self::PVP_QUEST_ICON),
         ];
 
-        $quests = Cache::remember('daily_quests.all', now()->addMonth(), function () {
-            return DailyQuest::all();
-        })->groupBy('type');
+        $quests = DailyQuest::hydrate(
+            Cache::remember('daily_quests.all', now()->addMonth(), function () {
+                return DailyQuest::all()->map->getAttributes()->toArray();
+            })
+        )->groupBy('type');
 
         return Inertia::render('DailyQuests/Form', [
             'cookingQuests' => $quests->get('Cooking', collect())->toArray(),
@@ -161,56 +163,56 @@ class DailyQuestsController extends Controller
 
         $ttl = (int) now()->diffInSeconds($nextReset);
 
-        $notification = Cache::remember('daily_quest_notification.today', $ttl, function () {
-            return DailyQuestNotification::with([
+        return Cache::remember('daily_quest_notification.today', $ttl, function () use ($mediaService) {
+            $notification = DailyQuestNotification::with([
                 'fishingQuest',
                 'cookingQuest',
                 'dungeonQuest',
                 'heroicQuest',
                 'pvpQuest',
             ])->where('date', DailyQuestNotification::currentDailyQuestDate())->first();
-        });
 
-        if (! $notification) {
-            return null;
-        }
-
-        $questOrder = [
-            ['key' => 'fishingQuest', 'label' => 'Fishing'],
-            ['key' => 'cookingQuest', 'label' => 'Cooking'],
-            ['key' => 'dungeonQuest', 'label' => 'Dungeon'],
-            ['key' => 'heroicQuest', 'label' => 'Heroic'],
-            ['key' => 'pvpQuest', 'label' => 'PvP'],
-        ];
-
-        $itemService = app(ItemService::class);
-
-        $quests = [];
-
-        foreach ($questOrder as $entry) {
-            $quest = $notification->{$entry['key']};
-
-            if (! $quest) {
-                continue;
+            if (! $notification) {
+                return null;
             }
 
-            $label = $entry['label'];
-            if (in_array($entry['key'], ['dungeonQuest', 'heroicQuest']) && $quest->instance) {
-                $label .= " ({$quest->mode})";
-            }
-
-            $quests[] = [
-                'label' => $label,
-                'name' => $quest->name,
-                'icon' => $mediaService->getIconUrl($this->getIconForQuestType($entry['key'])),
-                'type' => $quest->type,
-                'instance' => $quest->instance?->value,
-                'mode' => $quest->mode,
-                'rewards' => $this->buildRewardsData($quest->rewards ?? [], $itemService, $mediaService),
+            $questOrder = [
+                ['key' => 'fishingQuest', 'label' => 'Fishing'],
+                ['key' => 'cookingQuest', 'label' => 'Cooking'],
+                ['key' => 'dungeonQuest', 'label' => 'Dungeon'],
+                ['key' => 'heroicQuest', 'label' => 'Heroic'],
+                ['key' => 'pvpQuest', 'label' => 'PvP'],
             ];
-        }
 
-        return $quests;
+            $itemService = app(ItemService::class);
+
+            $quests = [];
+
+            foreach ($questOrder as $entry) {
+                $quest = $notification->{$entry['key']};
+
+                if (! $quest) {
+                    continue;
+                }
+
+                $label = $entry['label'];
+                if (in_array($entry['key'], ['dungeonQuest', 'heroicQuest']) && $quest->instance) {
+                    $label .= " ({$quest->mode})";
+                }
+
+                $quests[] = [
+                    'label' => $label,
+                    'name' => $quest->name,
+                    'icon' => $mediaService->getIconUrl($this->getIconForQuestType($entry['key'])),
+                    'type' => $quest->type,
+                    'instance' => $quest->instance?->value,
+                    'mode' => $quest->mode,
+                    'rewards' => $this->buildRewardsData($quest->rewards ?? [], $itemService, $mediaService),
+                ];
+            }
+
+            return $quests;
+        });
     }
 
     /**

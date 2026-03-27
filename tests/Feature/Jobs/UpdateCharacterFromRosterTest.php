@@ -9,6 +9,7 @@ use App\Models\GuildRank;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\Skip;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
@@ -246,7 +247,7 @@ class UpdateCharacterFromRosterTest extends TestCase
         $middleware = $job->middleware();
 
         $hasWithoutOverlapping = collect($middleware)->contains(
-            fn ($m) => $m instanceof \Illuminate\Queue\Middleware\WithoutOverlapping
+            fn ($m) => $m instanceof WithoutOverlapping
         );
 
         $this->assertTrue($hasWithoutOverlapping);

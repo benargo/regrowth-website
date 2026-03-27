@@ -34,6 +34,4 @@ class SearchGuildMembersRequestTest extends TestCase
         $this->assertContains('max:1000', $rules['limit']);
         $this->assertNotContains('required', $rules['limit']);
     }
-
-
 }

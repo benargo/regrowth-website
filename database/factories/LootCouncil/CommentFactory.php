@@ -6,16 +6,17 @@ use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LootCouncil\Comment>
+ * @extends Factory<Comment>
  */
 class CommentFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<Model>
      */
     protected $model = Comment::class;
 

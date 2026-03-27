@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\DiscordRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\DiscordRole>
+ * @extends Factory<DiscordRole>
  */
 class DiscordRoleFactory extends Factory
 {

@@ -11,6 +11,7 @@ use App\Models\PlannedAbsence;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -70,7 +71,7 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character->load('plannedAbsences')))->toArray(new Request);
 
-        $this->assertInstanceOf(\Illuminate\Http\Resources\Json\AnonymousResourceCollection::class, $array['planned_absences']);
+        $this->assertInstanceOf(AnonymousResourceCollection::class, $array['planned_absences']);
         $this->assertCount(2, $array['planned_absences']);
         $this->assertContainsOnlyInstancesOf(PlannedAbsenceResource::class, $array['planned_absences']);
     }

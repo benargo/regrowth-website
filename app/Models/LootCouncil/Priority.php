@@ -2,13 +2,14 @@
 
 namespace App\Models\LootCouncil;
 
+use Database\Factories\LootCouncil\PriorityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Priority extends Model
 {
-    /** @use HasFactory<\Database\Factories\LootCouncil\PriorityFactory> */
+    /** @use HasFactory<PriorityFactory> */
     use HasFactory;
 
     /**

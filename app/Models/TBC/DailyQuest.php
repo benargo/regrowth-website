@@ -3,12 +3,13 @@
 namespace App\Models\TBC;
 
 use App\Enums\Instance;
+use Database\Factories\TBC\DailyQuestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DailyQuest extends Model
 {
-    /** @use HasFactory<\Database\Factories\TBC\DailyQuestFactory> */
+    /** @use HasFactory<DailyQuestFactory> */
     use HasFactory;
 
     protected $table = 'tbc_daily_quests';

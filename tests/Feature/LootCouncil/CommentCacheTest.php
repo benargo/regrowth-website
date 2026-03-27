@@ -12,7 +12,6 @@ use App\Models\TBC\Raid;
 use App\Models\User;
 use App\Services\Blizzard\ItemService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Mockery;
 use Mockery\MockInterface;
@@ -76,112 +75,15 @@ class CommentCacheTest extends TestCase
     }
 
     // ==========================================
-    // Cache population tests
+    // Comment visibility tests
     // ==========================================
 
-    public function test_viewing_item_caches_comments(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->member()->create();
-        $commentAuthor = User::factory()->raider()->create();
-        Comment::factory()->count(3)->create([
-            'item_id' => $item->id,
-            'user_id' => $commentAuthor->id,
-        ]);
-
-        Cache::tags(['lootcouncil'])->flush();
-
-        $this->assertFalse(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-    }
-
-    public function test_viewing_item_edit_page_caches_comments(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->officer()->create();
-        $commentAuthor = User::factory()->raider()->create();
-        Comment::factory()->count(3)->create([
-            'item_id' => $item->id,
-            'user_id' => $commentAuthor->id,
-        ]);
-
-        Cache::tags(['lootcouncil'])->flush();
-
-        $this->assertFalse(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-
-        $this->actingAs($user)->get("/loot/items/{$item->id}/test-item-{$item->id}/edit");
-
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-    }
-
-    public function test_cached_comments_are_returned_on_subsequent_requests(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->member()->create();
-        $commentAuthor = User::factory()->raider()->create();
-        Comment::factory()->create([
-            'item_id' => $item->id,
-            'user_id' => $commentAuthor->id,
-            'body' => 'Original cached comment',
-        ]);
-
-        // First request populates the cache
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-
-        // Directly modify the database without going through the controller
-        // This simulates what happens when cache is stale
-        Comment::where('item_id', $item->id)->update(['body' => 'Modified comment']);
-
-        // Second request should return cached data (still showing original)
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-
-        $response->assertOk();
-        $response->assertSee('Original cached comment');
-    }
-
-    // ==========================================
-    // Cache invalidation on create
-    // ==========================================
-
-    public function test_creating_comment_invalidates_cache(): void
+    public function test_new_comment_appears_after_creation(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
 
-        // Populate the cache
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-
-        // Create a comment
-        $this->actingAs($user)->post(route('loot.items.comments.store', $item), [
-            'body' => 'New comment that should invalidate cache',
-        ]);
-
-        $this->assertFalse(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-    }
-
-    public function test_new_comment_appears_after_cache_invalidation(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->raider()->create();
-
-        // First request populates cache with no comments
+        // First request shows no comments
         $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         // Create a new comment
@@ -196,38 +98,7 @@ class CommentCacheTest extends TestCase
         $response->assertSee('Brand new comment');
     }
 
-    // ==========================================
-    // Cache invalidation on update
-    // ==========================================
-
-    public function test_updating_comment_invalidates_cache(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->raider()->create();
-        $comment = Comment::factory()->create([
-            'item_id' => $item->id,
-            'user_id' => $user->id,
-            'body' => 'Original comment',
-        ]);
-
-        // Populate the cache
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-
-        // Update the comment
-        $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
-            'body' => 'Updated comment',
-        ]);
-
-        $this->assertFalse(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-    }
-
-    public function test_updated_comment_appears_after_cache_invalidation(): void
+    public function test_updated_comment_appears_after_update(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -237,7 +108,7 @@ class CommentCacheTest extends TestCase
             'body' => 'Original comment body',
         ]);
 
-        // First request populates the cache
+        // First request populates the page
         $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
         // Update the comment
@@ -252,35 +123,7 @@ class CommentCacheTest extends TestCase
         $response->assertSee('Updated comment body');
     }
 
-    // ==========================================
-    // Cache invalidation on delete
-    // ==========================================
-
-    public function test_deleting_comment_invalidates_cache(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->raider()->create();
-        $comment = Comment::factory()->create([
-            'item_id' => $item->id,
-            'user_id' => $user->id,
-        ]);
-
-        // Populate the cache
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-
-        // Delete the comment
-        $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
-
-        $this->assertFalse(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-    }
-
-    public function test_deleted_comment_disappears_after_cache_invalidation(): void
+    public function test_deleted_comment_disappears_after_deletion(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -290,7 +133,7 @@ class CommentCacheTest extends TestCase
             'body' => 'Comment to be deleted',
         ]);
 
-        // First request populates the cache
+        // First request shows the comment
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
         $response->assertSee('Comment to be deleted');
 
@@ -302,70 +145,5 @@ class CommentCacheTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('Comment to be deleted');
-    }
-
-    // ==========================================
-    // Pagination cache tests
-    // ==========================================
-
-    public function test_different_pages_are_cached_separately(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->member()->create();
-        $commentAuthor = User::factory()->raider()->create();
-
-        // Create enough comments for multiple pages
-        Comment::factory()->count(15)->create([
-            'item_id' => $item->id,
-            'user_id' => $commentAuthor->id,
-        ]);
-
-        // Visit page 1
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-
-        // Visit page 2
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id, 'page' => 2]));
-
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_2")
-        );
-    }
-
-    public function test_cache_invalidation_clears_all_pages(): void
-    {
-        $item = $this->createItem();
-        $user = User::factory()->raider()->create();
-
-        // Create enough comments for multiple pages
-        Comment::factory()->count(15)->create([
-            'item_id' => $item->id,
-            'user_id' => $user->id,
-        ]);
-
-        // Visit multiple pages to cache them
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id, 'page' => 2]));
-
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-        $this->assertTrue(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_2")
-        );
-
-        // Create a new comment (should invalidate all pages)
-        $this->actingAs($user)->post(route('loot.items.comments.store', $item), [
-            'body' => 'New comment',
-        ]);
-
-        $this->assertFalse(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_1")
-        );
-        $this->assertFalse(
-            Cache::tags(['lootcouncil'])->has("item_{$item->id}_comments_page_2")
-        );
     }
 }

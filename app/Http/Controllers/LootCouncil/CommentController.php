@@ -12,6 +12,7 @@ use App\Notifications\DiscordNotifiable;
 use App\Notifications\NewLootCouncilComment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -20,7 +21,7 @@ class CommentController extends Controller
     /**
      * Display a listing of comments for a specific loot item.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index()
     {

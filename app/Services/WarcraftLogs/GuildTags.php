@@ -4,6 +4,7 @@ namespace App\Services\WarcraftLogs;
 
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 class GuildTags extends BaseService
 {
@@ -41,7 +42,7 @@ class GuildTags extends BaseService
         return $this->tags;
     }
 
-    public function toCollection(): \Illuminate\Support\Collection
+    public function toCollection(): Collection
     {
         return collect($this->tags);
     }

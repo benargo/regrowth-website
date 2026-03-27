@@ -2,13 +2,14 @@
 
 namespace App\Models\TBC;
 
+use Database\Factories\TBC\BossFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Boss extends Model
 {
-    /** @use HasFactory<\Database\Factories\TBC\BossFactory> */
+    /** @use HasFactory<BossFactory> */
     use HasFactory;
 
     /**

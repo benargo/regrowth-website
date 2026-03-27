@@ -20,7 +20,9 @@ class BiasToolController extends Controller
      */
     public function index(Request $request)
     {
-        $phases = Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all());
+        $phases = Phase::hydrate(
+            Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all()->toArray())
+        );
 
         $currentPhase = $phases->where('start_date', '<=', now())->sortByDesc('start_date')->first();
 
@@ -30,10 +32,14 @@ class BiasToolController extends Controller
     public function phase(Phase $phase, Request $request)
     {
         // Reload phases to ensure we have the latest data for the current phase (in case it was just switched)
-        $phases = Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all());
+        $phases = Phase::hydrate(
+            Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all()->toArray())
+        );
 
         // Preload raids and bosses for the current phase to minimize latency when switching between them
-        $raids = Cache::remember('raids.tbc.index', now()->addYear(), fn () => Raid::all());
+        $raids = Raid::hydrate(
+            Cache::remember('raids.tbc.index', now()->addYear(), fn () => Raid::all()->toArray())
+        );
         $groupedRaids = $raids->groupBy('phase_id');
 
         // Determine which raid to load items for
@@ -108,14 +114,14 @@ class BiasToolController extends Controller
     /**
      * Get items for a specific boss.
      */
-    protected function getItemsForBoss(?int $bossId): BossItemsResource
+    protected function getItemsForBoss(?int $bossId): array
     {
         if (! $bossId) {
-            return new BossItemsResource([
+            return (new BossItemsResource([
                 'bossId' => null,
-                'items' => [],
+                'items' => collect(),
                 'comments_count' => 0,
-            ]);
+            ]))->response(request())->getData(true);
         }
 
         if ($bossId < 0) {
@@ -125,51 +131,55 @@ class BiasToolController extends Controller
             return $this->getTrashItemsForRaid($raidId);
         }
 
-        $items = Cache::tags(['lootcouncil'])->remember(
+        return Cache::tags(['lootcouncil'])->remember(
             "loot_items.boss_{$bossId}.index",
             now()->addWeek(),
-            fn () => Item::query()
-                ->where('boss_id', $bossId)
-                ->with([
-                    'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
-                ])
-                ->withCount('comments')
-                ->get()
-        );
+            function () use ($bossId) {
+                $items = Item::query()
+                    ->where('boss_id', $bossId)
+                    ->with([
+                        'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+                    ])
+                    ->withCount('comments')
+                    ->get();
 
-        return new BossItemsResource([
-            'bossId' => $bossId,
-            'items' => $items,
-            'commentsCount' => $items->sum('comments_count'),
-        ]);
+                return (new BossItemsResource([
+                    'bossId' => $bossId,
+                    'items' => $items,
+                    'commentsCount' => $items->sum('comments_count'),
+                ]))->response(request())->getData(true);
+            }
+        );
     }
 
     /**
      * Get trash items for a specific raid.
      */
-    protected function getTrashItemsForRaid(?int $raidId = null): BossItemsResource
+    protected function getTrashItemsForRaid(?int $raidId = null): array
     {
         if (! $raidId) {
             $raidId = 1;
         }
 
-        $items = Cache::tags(['lootcouncil'])->remember(
+        return Cache::tags(['lootcouncil'])->remember(
             "loot_items.trash_raid_{$raidId}.index",
             now()->addWeek(),
-            fn () => Item::query()
-                ->where('raid_id', $raidId)
-                ->whereNull('boss_id')
-                ->with([
-                    'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
-                ])
-                ->withCount('comments')
-                ->get()
-        );
+            function () use ($raidId) {
+                $items = Item::query()
+                    ->where('raid_id', $raidId)
+                    ->whereNull('boss_id')
+                    ->with([
+                        'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+                    ])
+                    ->withCount('comments')
+                    ->get();
 
-        return new BossItemsResource([
-            'bossId' => -1 * $raidId,
-            'items' => $items,
-            'commentsCount' => $items->sum('comments_count'),
-        ]);
+                return (new BossItemsResource([
+                    'bossId' => -1 * $raidId,
+                    'items' => $items,
+                    'commentsCount' => $items->sum('comments_count'),
+                ]))->response(request())->getData(true);
+            }
+        );
     }
 }

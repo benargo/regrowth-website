@@ -5,10 +5,11 @@ namespace Database\Factories\TBC;
 use App\Models\TBC\DailyQuest;
 use App\Models\TBC\DailyQuestNotification;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\TBC\DailyQuestNotification>
+ * @extends Factory<DailyQuestNotification>
  */
 class DailyQuestNotificationFactory extends Factory
 {
@@ -39,7 +40,7 @@ class DailyQuestNotificationFactory extends Factory
         ]);
     }
 
-    public function forDate(\Carbon\Carbon $date): static
+    public function forDate(Carbon $date): static
     {
         return $this->state(fn (array $attributes) => [
             'date' => $date,

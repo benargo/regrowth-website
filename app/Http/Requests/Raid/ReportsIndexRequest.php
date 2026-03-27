@@ -5,6 +5,7 @@ namespace App\Http\Requests\Raid;
 use App\Models\WarcraftLogs\Report;
 use App\Traits\ParsesFilterParam;
 use Carbon\Carbon;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Cache;
 
@@ -23,7 +24,7 @@ class ReportsIndexRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

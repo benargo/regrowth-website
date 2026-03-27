@@ -7,6 +7,7 @@ use App\Events\DailyQuestNotificationDeleting;
 use App\Events\DailyQuestNotificationUpdated;
 use App\Models\User;
 use Carbon\Carbon;
+use Database\Factories\TBC\DailyQuestNotificationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Support\Collection;
 
 class DailyQuestNotification extends Model
 {
-    /** @use HasFactory<\Database\Factories\TBC\DailyQuestNotificationFactory> */
+    /** @use HasFactory<DailyQuestNotificationFactory> */
     use HasFactory, SoftDeletes;
 
     protected $table = 'tbc_daily_quest_notifications';

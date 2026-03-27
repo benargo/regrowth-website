@@ -3,11 +3,12 @@
 namespace Database\Factories;
 
 use App\Models\Character;
+use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\PlannedAbsence>
+ * @extends Factory<PlannedAbsence>
  */
 class PlannedAbsenceFactory extends Factory
 {

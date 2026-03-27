@@ -5,6 +5,7 @@ namespace App\Models\LootCouncil;
 use App\Events\CommentReactionCreated;
 use App\Events\CommentReactionDeleted;
 use App\Models\User;
+use Database\Factories\LootCouncil\CommentReactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class CommentReaction extends Model
 {
-    /** @use HasFactory<\Database\Factories\LootCouncil\CommentReactionFactory> */
+    /** @use HasFactory<CommentReactionFactory> */
     use HasFactory;
 
     protected $table = 'lootcouncil_comments_reactions';

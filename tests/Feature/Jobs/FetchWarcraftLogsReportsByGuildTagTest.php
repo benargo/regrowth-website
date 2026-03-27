@@ -5,6 +5,7 @@ namespace Tests\Feature\Jobs;
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Report;
 use App\Services\WarcraftLogs\Data\Report as ReportData;
 use App\Services\WarcraftLogs\Reports;
 use Carbon\Carbon;
@@ -272,14 +273,14 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         // Backdate the reports after the first run to isolate the touch from the second run
-        \App\Models\WarcraftLogs\Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
+        Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
 
         $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
         // No new links inserted on second run, so timestamps must remain unchanged
-        $this->assertEquals($originalTime->toDateTimeString(), \App\Models\WarcraftLogs\Report::find('AAA111')->updated_at->toDateTimeString());
-        $this->assertEquals($originalTime->toDateTimeString(), \App\Models\WarcraftLogs\Report::find('BBB222')->updated_at->toDateTimeString());
+        $this->assertEquals($originalTime->toDateTimeString(), Report::find('AAA111')->updated_at->toDateTimeString());
+        $this->assertEquals($originalTime->toDateTimeString(), Report::find('BBB222')->updated_at->toDateTimeString());
     }
 
     public function test_it_touches_report_updated_at_when_stale_auto_links_are_deleted(): void
@@ -302,14 +303,14 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
 
         // Backdate reports so we can observe the touch
         $originalTime = now()->subHour();
-        \App\Models\WarcraftLogs\Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
+        Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
 
         $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
         // Both reports referenced in the deleted link must be touched
-        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('AAA111')->updated_at);
-        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('BBB222')->updated_at);
+        $this->assertGreaterThan($originalTime, Report::find('AAA111')->updated_at);
+        $this->assertGreaterThan($originalTime, Report::find('BBB222')->updated_at);
     }
 
     public function test_it_touches_report_updated_at_when_new_auto_links_are_inserted(): void
@@ -327,15 +328,15 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
 
         // Backdate to isolate the initial persist from our assertion
         $originalTime = now()->subHour();
-        \App\Models\WarcraftLogs\Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
+        Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
         DB::table('pivot_wcl_reports_links')->truncate();
 
         // Run again — links should now be inserted and reports touched
         $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1Data, $report2Data]));
 
-        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('AAA111')->updated_at);
-        $this->assertGreaterThan($originalTime, \App\Models\WarcraftLogs\Report::find('BBB222')->updated_at);
+        $this->assertGreaterThan($originalTime, Report::find('AAA111')->updated_at);
+        $this->assertGreaterThan($originalTime, Report::find('BBB222')->updated_at);
     }
 
     public function test_it_does_not_duplicate_existing_valid_auto_links(): void

@@ -67,7 +67,7 @@ class ViewAsRoleController extends Controller
     protected function getTestUser(string $role): User
     {
         $discordRole = DiscordRole::find($role)
-            ?? throw new \InvalidArgumentException('Invalid role specified.');
+            ?? throw new InvalidArgumentException('Invalid role specified.');
 
         $testUsers = [
             'Raider' => ['id' => self::TEST_RAIDER_ID, 'discriminator' => '0000', 'nickname' => 'Test Raider'],
@@ -76,7 +76,7 @@ class ViewAsRoleController extends Controller
         ];
 
         $config = $testUsers[$discordRole->name]
-            ?? throw new \InvalidArgumentException('Invalid role specified.');
+            ?? throw new InvalidArgumentException('Invalid role specified.');
 
         $user = User::firstOrCreate(
             ['id' => $config['id']],

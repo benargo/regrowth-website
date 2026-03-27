@@ -34,17 +34,10 @@ class ItemController extends Controller
             'boss',
         ]);
 
-        $page = $request->integer('page', 1);
-
-        $comments = Cache::tags(['lootcouncil'])
-            ->remember(
-                "item_{$item->id}_comments_page_{$page}",
-                now()->addDay(),
-                fn () => $item->comments()
-                    ->with('user')
-                    ->latest()
-                    ->paginate(10)
-            );
+        $comments = $item->comments()
+            ->with('user')
+            ->latest()
+            ->paginate(10);
 
         return Inertia::render('LootBiasTool/ItemShow', [
             'item' => new ItemResource($item),
@@ -69,19 +62,14 @@ class ItemController extends Controller
             'boss',
         ]);
 
-        $page = $request->integer('page', 1);
+        $comments = $item->comments()
+            ->with('user')
+            ->latest()
+            ->paginate(10);
 
-        $comments = Cache::tags(['lootcouncil'])
-            ->remember(
-                "item_{$item->id}_comments_page_{$page}",
-                now()->addDay(),
-                fn () => $item->comments()
-                    ->with('user')
-                    ->latest()
-                    ->paginate(10)
-            );
-
-        $allPriorities = Cache::tags(['lootcouncil'])->remember('priorities.all', now()->addYear(), fn () => Priority::all());
+        $allPriorities = Priority::hydrate(
+            Cache::tags(['lootcouncil'])->remember('priorities.all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray())
+        );
 
         return Inertia::render('LootBiasTool/ItemEdit', [
             'item' => new ItemResource($item),

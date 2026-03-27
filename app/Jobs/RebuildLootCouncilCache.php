@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Http\Resources\LootCouncil\BossItemsResource;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
@@ -58,7 +59,7 @@ class RebuildLootCouncilCache implements ShouldQueue
 
     public function rebuildPrioritiesCache(): void
     {
-        Cache::tags(['lootcouncil'])->remember('priorities.all', now()->addYear(), fn () => Priority::all());
+        Cache::tags(['lootcouncil'])->remember('priorities.all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray());
 
         Log::info('LootCouncil priorities cache rebuilt.');
     }
@@ -117,13 +118,21 @@ class RebuildLootCouncilCache implements ShouldQueue
             Cache::tags(['lootcouncil'])->remember(
                 "loot_items.boss_{$bossId}.index",
                 now()->addDays(7),
-                fn () => Item::query()
-                    ->where('boss_id', $bossId)
-                    ->with([
-                        'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
-                    ])
-                    ->withCount('comments')
-                    ->get()
+                function () use ($bossId) {
+                    $items = Item::query()
+                        ->where('boss_id', $bossId)
+                        ->with([
+                            'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+                        ])
+                        ->withCount('comments')
+                        ->get();
+
+                    return (new BossItemsResource([
+                        'bossId' => $bossId,
+                        'items' => $items,
+                        'commentsCount' => $items->sum('comments_count'),
+                    ]))->response(request())->getData(true);
+                }
             );
         }
     }
@@ -143,14 +152,22 @@ class RebuildLootCouncilCache implements ShouldQueue
             Cache::tags(['lootcouncil'])->remember(
                 "loot_items.trash_raid_{$raidId}.index",
                 now()->addWeek(),
-                fn () => Item::query()
-                    ->where('raid_id', $raidId)
-                    ->whereNull('boss_id')
-                    ->with([
-                        'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
-                    ])
-                    ->withCount('comments')
-                    ->get()
+                function () use ($raidId) {
+                    $items = Item::query()
+                        ->where('raid_id', $raidId)
+                        ->whereNull('boss_id')
+                        ->with([
+                            'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+                        ])
+                        ->withCount('comments')
+                        ->get();
+
+                    return (new BossItemsResource([
+                        'bossId' => -1 * $raidId,
+                        'items' => $items,
+                        'commentsCount' => $items->sum('comments_count'),
+                    ]))->response(request())->getData(true);
+                }
             );
         }
     }

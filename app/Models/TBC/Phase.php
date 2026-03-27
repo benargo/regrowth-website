@@ -5,6 +5,7 @@ namespace App\Models\TBC;
 use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
 use App\Models\WarcraftLogs\GuildTag;
+use Database\Factories\TBC\PhaseFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Phase extends Model implements DatasetModel
 {
-    /** @use HasFactory<\Database\Factories\TBC\PhaseFactory> */
+    /** @use HasFactory<PhaseFactory> */
     use HasFactory;
 
     /**

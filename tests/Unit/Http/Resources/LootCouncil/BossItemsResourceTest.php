@@ -9,6 +9,7 @@ use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
 use App\Services\Blizzard\ItemService;
 use App\Services\Blizzard\MediaService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Mockery;
@@ -64,7 +65,7 @@ class BossItemsResourceTest extends TestCase
      * @param  array<int>  $itemIds
      * @param  array<string>  $relations
      */
-    protected function prepareItems(array $itemIds, array $relations = ['priorities']): \Illuminate\Database\Eloquent\Collection
+    protected function prepareItems(array $itemIds, array $relations = ['priorities']): Collection
     {
         return Item::query()
             ->whereIn('id', $itemIds)

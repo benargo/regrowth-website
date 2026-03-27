@@ -9,7 +9,6 @@ use App\Http\Requests\Dashboard\UpdateGuildRankPositionsRequest;
 use App\Http\Requests\Dashboard\UpdateGuildRankRequest;
 use App\Models\GuildRank;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -22,13 +21,11 @@ class GuildRankController extends Controller
      */
     public function list()
     {
-        $guildRanks = Cache::remember('guild_ranks.index', now()->addDay(), function () {
-            return GuildRank::all();
-        });
-
-        if ($guildRanks instanceof Collection) {
-            $guildRanks = $guildRanks->sortBy('position');
-        }
+        $guildRanks = GuildRank::hydrate(
+            Cache::remember('guild_ranks.index', now()->addDay(), function () {
+                return GuildRank::all()->toArray();
+            })
+        )->sortBy('position');
 
         return Inertia::render('Dashboard/ManageRanks', [
             'guildRanks' => $guildRanks,

@@ -33,30 +33,34 @@ class PermissionController extends Controller
     public function showGroup(string $group): Response
     {
         // Cache the list of permission groups for 5 minutes to reduce database queries.
-        $permissionGroups = Cache::tags(['permissions'])->remember('permissions:groups', now()->addMinutes(5), function () use ($group) {
-            $groups = Permission::whereNotNull('group')->distinct('group')->pluck('group');
-
-            // Transform the groups into a format suitable for the frontend, marking the active group.
-            return $groups->transform(function ($item) use ($group) {
-                return [
-                    'name' => Str::headline($item),
-                    'slug' => $item,
-                    'active' => $item === $group,
-                ];
-            });
-        });
+        $permissionGroups = collect(
+            Cache::tags(['permissions'])->remember('permissions:groups', now()->addMinutes(5), function () {
+                return Permission::whereNotNull('group')->distinct('group')->pluck('group')
+                    ->map(fn ($item) => [
+                        'name' => Str::headline($item),
+                        'slug' => $item,
+                    ])->toArray();
+            })
+        );
 
         // If the requested group is not in the list of groups, throw a 404 error.
         if ($permissionGroups->pluck('slug')->doesntContain($group)) {
             abort(404, 'Permission group not found.');
         }
 
+        // Mark the active group for the frontend.
+        $permissionGroups = $permissionGroups->map(fn ($item) => [
+            ...$item,
+            'active' => $item['slug'] === $group,
+        ]);
+
         // Cache the list of visible Discord roles for 5 minutes to reduce database queries.
         $discordRoles = Cache::tags(['discord', 'permissions'])->remember('discord_roles:permissions', now()->addMinutes(5), function () {
             return DiscordRole::where('is_visible', true)
                 ->with('permissions')
                 ->orderByDesc('position')
-                ->get();
+                ->get()
+                ->toArray();
         });
 
         // Do not cache these as they are managed through the dashboard and may change frequently.

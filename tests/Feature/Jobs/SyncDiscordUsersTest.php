@@ -169,7 +169,7 @@ class SyncDiscordUsersTest extends TestCase
             $mock->shouldNotReceive('getGuildMember');
         });
 
-        $job = new SyncDiscordUsers();
+        $job = new SyncDiscordUsers;
         $job->batchId = $batch->id;
         dispatch_sync($job);
     }

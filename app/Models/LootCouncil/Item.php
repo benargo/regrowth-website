@@ -5,6 +5,7 @@ namespace App\Models\LootCouncil;
 use App\Events\ItemSaved;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Raid;
+use Database\Factories\LootCouncil\ItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Item extends Model
 {
-    /** @use HasFactory<\Database\Factories\LootCouncil\ItemFactory> */
+    /** @use HasFactory<ItemFactory> */
     use HasFactory;
 
     /**

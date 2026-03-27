@@ -4,6 +4,7 @@ namespace App\Http\Requests\Comments;
 
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -22,7 +23,7 @@ class DestroyCommentReactionRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

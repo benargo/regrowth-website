@@ -5,6 +5,7 @@ namespace Tests\Support;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -85,7 +86,7 @@ abstract class ModelTestCase extends TestCase
      */
     protected function assertUniqueConstraint(\Closure $persistSecondRecord): void
     {
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
         $persistSecondRecord();
     }
 

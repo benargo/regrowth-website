@@ -6,6 +6,7 @@ use App\Events\CommentCreated;
 use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
 use App\Models\User;
+use Database\Factories\LootCouncil\CommentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Comment extends Model
 {
-    /** @use HasFactory<\Database\Factories\LootCouncil\CommentFactory> */
+    /** @use HasFactory<CommentFactory> */
     use HasFactory;
 
     use SoftDeletes;

@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Requests\Raid;
 
 use App\Http\Requests\Raid\StoreReportLinksRequest;
 use App\Models\WarcraftLogs\Report;
+use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 class StoreReportLinksRequestTest extends TestCase
@@ -12,7 +13,7 @@ class StoreReportLinksRequestTest extends TestCase
     {
         $request = StoreReportLinksRequest::create('/', 'POST', $data);
 
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('report', null)->andReturn($report);
         $request->setRouteResolver(fn () => $route);
 

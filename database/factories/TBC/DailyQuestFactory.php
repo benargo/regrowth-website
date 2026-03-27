@@ -6,7 +6,7 @@ use App\Models\TBC\DailyQuest;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\TBC\DailyQuest>
+ * @extends Factory<DailyQuest>
  */
 class DailyQuestFactory extends Factory
 {

@@ -6,16 +6,17 @@ use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LootCouncil\ItemPriority>
+ * @extends Factory<ItemPriority>
  */
 class ItemPriorityFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<Model>
      */
     protected $model = ItemPriority::class;
 

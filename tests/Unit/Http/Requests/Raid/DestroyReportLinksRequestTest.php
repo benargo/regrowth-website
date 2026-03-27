@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Requests\Raid;
 
 use App\Http\Requests\Raid\DestroyReportLinksRequest;
 use App\Models\WarcraftLogs\Report;
+use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 class DestroyReportLinksRequestTest extends TestCase
@@ -12,7 +13,7 @@ class DestroyReportLinksRequestTest extends TestCase
     {
         $request = DestroyReportLinksRequest::create('/', 'PATCH');
 
-        $route = \Mockery::mock(\Illuminate\Routing\Route::class);
+        $route = \Mockery::mock(Route::class);
         $route->shouldReceive('parameter')->with('report', null)->andReturn($report);
         $request->setRouteResolver(fn () => $route);
 

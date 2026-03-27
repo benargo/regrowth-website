@@ -13,6 +13,7 @@ use App\Models\DiscordRole;
 use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -40,7 +41,7 @@ class PlannedAbsenceController extends Controller
                             ->with(['character', 'createdBy'])
                             ->orderBy('start_date')
                             ->get()
-                    );
+                    )->response(request())->getData(true);
                 });
             }),
         ]);
@@ -57,7 +58,7 @@ class PlannedAbsenceController extends Controller
                     ->where('is_main', true)
                     ->orderBy('name')
                     ->get()
-            );
+            )->response(request())->getData(true);
         });
 
         $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
@@ -136,7 +137,7 @@ class PlannedAbsenceController extends Controller
                     ->where('is_main', true)
                     ->orderBy('name')
                     ->get()
-            );
+            )->response(request())->getData(true);
         });
 
         $plannedAbsence->load(['character', 'createdBy']);
@@ -244,7 +245,7 @@ class PlannedAbsenceController extends Controller
      * The user may already exist in the database, but if not we should check the Discord API
      * to find a matching user and create a new user record.
      *
-     * @throws \App\Services\Discord\Exceptions\UserNotInGuildException
+     * @throws UserNotInGuildException
      * @throws \Exception
      */
     private function resolveUser(string $userIdentifier): User

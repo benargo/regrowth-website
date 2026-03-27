@@ -8,6 +8,7 @@ use App\Models\TBC\Raid;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -96,7 +97,7 @@ class PhaseTest extends ModelTestCase
             'start_date' => '2024-06-15 10:00:00',
         ]);
 
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $phase->start_date);
+        $this->assertInstanceOf(Carbon::class, $phase->start_date);
         $this->assertSame('2024-06-15 10:00:00', $phase->start_date->format('Y-m-d H:i:s'));
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Models\TBC;
 
+use Database\Factories\TBC\RaidFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Raid extends Model
 {
-    /** @use HasFactory<\Database\Factories\TBC\RaidFactory> */
+    /** @use HasFactory<RaidFactory> */
     use HasFactory;
 
     /**

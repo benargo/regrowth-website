@@ -4,13 +4,14 @@ namespace App\Models\LootCouncil;
 
 use App\Events\ItemPriorityDeleted;
 use App\Events\ItemPrioritySaved;
+use Database\Factories\LootCouncil\ItemPriorityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class ItemPriority extends Pivot
 {
-    /** @use HasFactory<\Database\Factories\LootCouncil\ItemPriorityFactory> */
+    /** @use HasFactory<ItemPriorityFactory> */
     use HasFactory;
 
     /**

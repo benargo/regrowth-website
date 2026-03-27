@@ -12,7 +12,9 @@ use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
 use App\Services\Blizzard\ItemService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Mockery;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -309,7 +311,7 @@ class CommentReactionTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
 
         CommentReaction::create([
             'comment_id' => $comment->id,
@@ -332,7 +334,7 @@ class CommentReactionTest extends TestCase
             'user_id' => $reactingUser->id,
         ]);
 
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(UniqueConstraintViolationException::class);
 
         CommentReaction::factory()->create([
             'comment_id' => $comment->id,

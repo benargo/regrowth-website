@@ -1,10 +1,17 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\AttendanceCalculatorServiceProvider;
+use App\Providers\BlizzardServiceProvider;
+use App\Providers\DiscordServiceProvider;
+use App\Providers\HorizonServiceProvider;
+use App\Providers\WarcraftLogsServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\BlizzardServiceProvider::class,
-    App\Providers\DiscordServiceProvider::class,
-    App\Providers\HorizonServiceProvider::class,
-    App\Providers\AttendanceCalculatorServiceProvider::class,
-    App\Providers\WarcraftLogsServiceProvider::class,
+    AppServiceProvider::class,
+    BlizzardServiceProvider::class,
+    DiscordServiceProvider::class,
+    HorizonServiceProvider::class,
+    AttendanceCalculatorServiceProvider::class,
+    WarcraftLogsServiceProvider::class,
 ];

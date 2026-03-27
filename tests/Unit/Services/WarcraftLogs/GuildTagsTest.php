@@ -7,6 +7,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
@@ -204,7 +205,7 @@ class GuildTagsTest extends TestCase
 
         $collection = $guildTags->toCollection();
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $collection);
+        $this->assertInstanceOf(Collection::class, $collection);
     }
 
     public function test_to_collection_contains_all_tags(): void
