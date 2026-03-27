@@ -1,6 +1,6 @@
 import Master from "@/Layouts/Master";
 
-export default function Home({ members }) {
+export default function Home() {
     return (
         <Master title="Home">
             <div className="text-base">
@@ -12,8 +12,8 @@ export default function Home({ members }) {
                             <source src="/videos/bcc_masthead_1.mp4" type="video/mp4" />
                         </video>
                     </div>
-                    <div className="items-center justify-center bg-black/20 py-20 md:absolute md:inset-0 flex flex-col md:py-0">
-                        <div className="flex flex-row items-center my-10">
+                    <div className="flex flex-col items-center justify-center bg-black/20 py-20 md:absolute md:inset-0 md:py-0">
+                        <div className="my-10 flex flex-row items-center">
                             <div className="md:mr-10">
                                 <img
                                     src="/images/guild_emblem.webp"
