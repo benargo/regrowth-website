@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\LazyCollection;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AttendanceTest extends TestCase
@@ -114,7 +115,8 @@ class AttendanceTest extends TestCase
 
     // ==================== Fluent Builder Tests ====================
 
-    public function test_player_names_returns_self_for_chaining(): void
+    #[Test]
+    public function player_names_returns_self_for_chaining(): void
     {
         $service = $this->makeService();
         $result = $service->playerNames(['Thrall', 'Jaina']);
@@ -122,7 +124,8 @@ class AttendanceTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_zone_id_returns_self_for_chaining(): void
+    #[Test]
+    public function zone_id_returns_self_for_chaining(): void
     {
         $service = $this->makeService();
         $result = $service->zoneID(1);
@@ -130,7 +133,8 @@ class AttendanceTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_set_attendance_returns_self_for_chaining(): void
+    #[Test]
+    public function set_attendance_returns_self_for_chaining(): void
     {
         $service = $this->makeService();
         $result = $service->setAttendance([]);
@@ -138,7 +142,8 @@ class AttendanceTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_fluent_methods_can_be_chained(): void
+    #[Test]
+    public function fluent_methods_can_be_chained(): void
     {
         $service = $this->makeService();
 
@@ -151,7 +156,8 @@ class AttendanceTest extends TestCase
 
     // ==================== setAttendance and get() Tests ====================
 
-    public function test_get_returns_collection_of_guild_attendance(): void
+    #[Test]
+    public function get_returns_collection_of_guild_attendance(): void
     {
         $attendance = [
             $this->createGuildAttendance('abc123', 1736971200000, ['Thrall']),
@@ -166,7 +172,8 @@ class AttendanceTest extends TestCase
         $this->assertContainsOnlyInstancesOf(GuildAttendance::class, $result);
     }
 
-    public function test_get_returns_empty_collection_when_empty_attendance_set(): void
+    #[Test]
+    public function get_returns_empty_collection_when_empty_attendance_set(): void
     {
         $service = $this->makeService();
         $result = $service->setAttendance([])->get();
@@ -175,7 +182,8 @@ class AttendanceTest extends TestCase
         $this->assertCount(0, $result);
     }
 
-    public function test_get_sorts_attendance_by_start_time_ascending(): void
+    #[Test]
+    public function get_sorts_attendance_by_start_time_ascending(): void
     {
         $older = $this->createGuildAttendance('older', 1736366400000, ['Thrall']); // Jan 8
         $newer = $this->createGuildAttendance('newer', 1736971200000, ['Jaina']); // Jan 15
@@ -188,7 +196,8 @@ class AttendanceTest extends TestCase
         $this->assertEquals('newer', $result[1]->code);
     }
 
-    public function test_get_fetches_from_api_when_no_attendance_set(): void
+    #[Test]
+    public function get_fetches_from_api_when_no_attendance_set(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -203,7 +212,8 @@ class AttendanceTest extends TestCase
         $this->assertCount(2, $result);
     }
 
-    public function test_get_includes_benched_players(): void
+    #[Test]
+    public function get_includes_benched_players(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -223,7 +233,8 @@ class AttendanceTest extends TestCase
         $this->assertEquals(2, $benchedPlayer->presence);
     }
 
-    public function test_get_does_not_pass_guild_tag_id_to_api(): void
+    #[Test]
+    public function get_does_not_pass_guild_tag_id_to_api(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -241,7 +252,8 @@ class AttendanceTest extends TestCase
         });
     }
 
-    public function test_get_sorts_api_results_by_start_time_ascending(): void
+    #[Test]
+    public function get_sorts_api_results_by_start_time_ascending(): void
     {
         // Sample data has abc123 (Jan 15) then def456 (Jan 8) — reversed order
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
@@ -259,7 +271,8 @@ class AttendanceTest extends TestCase
 
     // ==================== lazy() Tests ====================
 
-    public function test_lazy_returns_lazy_collection(): void
+    #[Test]
+    public function lazy_returns_lazy_collection(): void
     {
         $service = $this->makeService();
         $result = $service->setAttendance([])->lazy();
@@ -267,7 +280,8 @@ class AttendanceTest extends TestCase
         $this->assertInstanceOf(LazyCollection::class, $result);
     }
 
-    public function test_lazy_yields_attendance_records(): void
+    #[Test]
+    public function lazy_yields_attendance_records(): void
     {
         $attendance = [
             $this->createGuildAttendance('abc123', 1736971200000, ['Thrall']),
@@ -281,7 +295,8 @@ class AttendanceTest extends TestCase
         $this->assertContainsOnlyInstancesOf(GuildAttendance::class, $result);
     }
 
-    public function test_lazy_fetches_from_api_when_no_attendance_set(): void
+    #[Test]
+    public function lazy_fetches_from_api_when_no_attendance_set(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -295,7 +310,8 @@ class AttendanceTest extends TestCase
         $this->assertCount(2, $result);
     }
 
-    public function test_lazy_includes_benched_players(): void
+    #[Test]
+    public function lazy_includes_benched_players(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -316,7 +332,8 @@ class AttendanceTest extends TestCase
 
     // ==================== getPlayerFirstAttendanceDate() Tests ====================
 
-    public function test_get_player_first_attendance_date_returns_carbon_for_existing_player(): void
+    #[Test]
+    public function get_player_first_attendance_date_returns_carbon_for_existing_player(): void
     {
         $attendance = [
             $this->createGuildAttendance('abc123', 1736971200000, ['Jaina']), // Jan 15
@@ -331,7 +348,8 @@ class AttendanceTest extends TestCase
         $this->assertEquals(1736971200000, $result->valueOf());
     }
 
-    public function test_get_player_first_attendance_date_returns_null_for_nonexistent_player(): void
+    #[Test]
+    public function get_player_first_attendance_date_returns_null_for_nonexistent_player(): void
     {
         $attendance = [
             $this->createGuildAttendance('abc123', 1736971200000, ['Thrall']),
@@ -343,7 +361,8 @@ class AttendanceTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function test_get_player_first_attendance_date_returns_null_when_no_attendance(): void
+    #[Test]
+    public function get_player_first_attendance_date_returns_null_when_no_attendance(): void
     {
         $service = $this->makeService();
         $result = $service->setAttendance([])->getPlayerFirstAttendanceDate('Thrall');
@@ -351,7 +370,8 @@ class AttendanceTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function test_get_player_first_attendance_date_is_case_sensitive(): void
+    #[Test]
+    public function get_player_first_attendance_date_is_case_sensitive(): void
     {
         $attendance = [
             $this->createGuildAttendance('abc123', 1736971200000, ['Thrall']),
@@ -365,7 +385,8 @@ class AttendanceTest extends TestCase
 
     // ==================== API Method Tests - getAttendance() ====================
 
-    public function test_get_attendance_returns_pagination_object(): void
+    #[Test]
+    public function get_attendance_returns_pagination_object(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -380,7 +401,8 @@ class AttendanceTest extends TestCase
         $this->assertCount(2, $result->data);
     }
 
-    public function test_get_attendance_accepts_pagination_parameters(): void
+    #[Test]
+    public function get_attendance_accepts_pagination_parameters(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -398,7 +420,8 @@ class AttendanceTest extends TestCase
         });
     }
 
-    public function test_get_attendance_passes_zone_id(): void
+    #[Test]
+    public function get_attendance_passes_zone_id(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -416,7 +439,8 @@ class AttendanceTest extends TestCase
         });
     }
 
-    public function test_get_attendance_filters_by_player_names(): void
+    #[Test]
+    public function get_attendance_filters_by_player_names(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -435,7 +459,8 @@ class AttendanceTest extends TestCase
 
     // ==================== API Method Tests - getGuildAttendance() ====================
 
-    public function test_get_guild_attendance_returns_pagination_for_specific_guild(): void
+    #[Test]
+    public function get_guild_attendance_returns_pagination_for_specific_guild(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -449,7 +474,8 @@ class AttendanceTest extends TestCase
         $this->assertInstanceOf(GuildAttendancePagination::class, $result);
     }
 
-    public function test_get_guild_attendance_throws_exception_when_guild_not_found(): void
+    #[Test]
+    public function get_guild_attendance_throws_exception_when_guild_not_found(): void
     {
         Http::preventStrayRequests();
 
@@ -482,7 +508,8 @@ class AttendanceTest extends TestCase
         $service->getGuildAttendance(99999);
     }
 
-    public function test_get_guild_attendance_does_not_pass_guild_tag_id(): void
+    #[Test]
+    public function get_guild_attendance_does_not_pass_guild_tag_id(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -502,7 +529,8 @@ class AttendanceTest extends TestCase
 
     // ==================== API Method Tests - getAttendanceLazy() ====================
 
-    public function test_get_attendance_lazy_returns_lazy_collection(): void
+    #[Test]
+    public function get_attendance_lazy_returns_lazy_collection(): void
     {
         $service = $this->makeService();
         $result = $service->getAttendanceLazy();
@@ -510,7 +538,8 @@ class AttendanceTest extends TestCase
         $this->assertInstanceOf(LazyCollection::class, $result);
     }
 
-    public function test_get_attendance_lazy_iterates_all_records(): void
+    #[Test]
+    public function get_attendance_lazy_iterates_all_records(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -524,7 +553,8 @@ class AttendanceTest extends TestCase
         $this->assertCount(2, $records);
     }
 
-    public function test_get_attendance_lazy_filters_by_player_names(): void
+    #[Test]
+    public function get_attendance_lazy_filters_by_player_names(): void
     {
         $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
 
@@ -542,7 +572,8 @@ class AttendanceTest extends TestCase
 
     // ==================== API Method Tests - getGuildAttendanceLazy() ====================
 
-    public function test_get_guild_attendance_lazy_returns_lazy_collection(): void
+    #[Test]
+    public function get_guild_attendance_lazy_returns_lazy_collection(): void
     {
         $service = $this->makeService();
         $result = $service->getGuildAttendanceLazy(774848);
@@ -550,7 +581,8 @@ class AttendanceTest extends TestCase
         $this->assertInstanceOf(LazyCollection::class, $result);
     }
 
-    public function test_get_guild_attendance_lazy_fetches_multiple_pages(): void
+    #[Test]
+    public function get_guild_attendance_lazy_fetches_multiple_pages(): void
     {
         Http::preventStrayRequests();
 

@@ -6,6 +6,7 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class PermissionControllerTest extends DashboardTestCase
@@ -23,14 +24,16 @@ class PermissionControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_index_requires_authentication(): void
+    #[Test]
+    public function index_requires_authentication(): void
     {
         $response = $this->get(route('dashboard.permissions.index'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_index_forbids_guest_users(): void
+    #[Test]
+    public function index_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -39,7 +42,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_member_users(): void
+    #[Test]
+    public function index_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -48,7 +52,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_raider_users(): void
+    #[Test]
+    public function index_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -57,21 +62,24 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_index_allows_officer_users(): void
+    #[Test]
+    public function index_allows_officer_users(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.index'));
 
         $response->assertRedirect(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
     }
 
-    public function test_show_group_requires_authentication(): void
+    #[Test]
+    public function show_group_requires_authentication(): void
     {
         $response = $this->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_show_group_forbids_non_officer_users(): void
+    #[Test]
+    public function show_group_forbids_non_officer_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -80,14 +88,16 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_show_group_allows_officer_users(): void
+    #[Test]
+    public function show_group_allows_officer_users(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertOk();
     }
 
-    public function test_show_group_returns_discord_roles_groups_and_permissions(): void
+    #[Test]
+    public function show_group_returns_discord_roles_groups_and_permissions(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
 
@@ -100,14 +110,16 @@ class PermissionControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_show_group_returns_404_for_unknown_group(): void
+    #[Test]
+    public function show_group_returns_404_for_unknown_group(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'nonexistent-group']));
 
         $response->assertNotFound();
     }
 
-    public function test_toggle_requires_authentication(): void
+    #[Test]
+    public function toggle_requires_authentication(): void
     {
         $role = DiscordRole::factory()->create();
         $permission = Permission::findByName('comment-on-loot-items');
@@ -123,7 +135,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_toggle_forbids_non_officer_users(): void
+    #[Test]
+    public function toggle_forbids_non_officer_users(): void
     {
         $user = User::factory()->member()->create();
         $role = DiscordRole::factory()->create();
@@ -140,7 +153,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_toggle_can_enable_a_permission(): void
+    #[Test]
+    public function toggle_can_enable_a_permission(): void
     {
         $role = DiscordRole::factory()->create();
         $permission = Permission::findByName('comment-on-loot-items');
@@ -160,7 +174,8 @@ class PermissionControllerTest extends DashboardTestCase
         $this->assertTrue($role->hasPermissionTo('comment-on-loot-items'));
     }
 
-    public function test_toggle_can_disable_a_permission(): void
+    #[Test]
+    public function toggle_can_disable_a_permission(): void
     {
         $role = DiscordRole::factory()->create();
         $role->givePermissionTo('comment-on-loot-items');
@@ -181,7 +196,8 @@ class PermissionControllerTest extends DashboardTestCase
         $this->assertFalse($role->hasPermissionTo('comment-on-loot-items'));
     }
 
-    public function test_toggle_validates_discord_role_id_is_required(): void
+    #[Test]
+    public function toggle_validates_discord_role_id_is_required(): void
     {
         $permission = Permission::findByName('comment-on-loot-items');
 
@@ -195,7 +211,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['discord_role_id']);
     }
 
-    public function test_toggle_validates_discord_role_id_must_exist(): void
+    #[Test]
+    public function toggle_validates_discord_role_id_must_exist(): void
     {
         $permission = Permission::findByName('comment-on-loot-items');
 
@@ -210,7 +227,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['discord_role_id']);
     }
 
-    public function test_toggle_returns_404_for_nonexistent_permission(): void
+    #[Test]
+    public function toggle_returns_404_for_nonexistent_permission(): void
     {
         $role = DiscordRole::factory()->create();
 
@@ -225,7 +243,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertNotFound();
     }
 
-    public function test_toggle_validates_enabled_is_required(): void
+    #[Test]
+    public function toggle_validates_enabled_is_required(): void
     {
         $role = DiscordRole::factory()->create();
         $permission = Permission::findByName('comment-on-loot-items');
@@ -240,7 +259,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['enabled']);
     }
 
-    public function test_toggle_forbids_non_admin_from_modifying_their_highest_role(): void
+    #[Test]
+    public function toggle_forbids_non_admin_from_modifying_their_highest_role(): void
     {
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
@@ -265,7 +285,8 @@ class PermissionControllerTest extends DashboardTestCase
         ]);
     }
 
-    public function test_toggle_allows_admin_to_modify_their_highest_role(): void
+    #[Test]
+    public function toggle_allows_admin_to_modify_their_highest_role(): void
     {
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
@@ -289,7 +310,8 @@ class PermissionControllerTest extends DashboardTestCase
         $this->assertTrue($officerRole->hasPermissionTo('comment-on-loot-items'));
     }
 
-    public function test_toggle_does_not_affect_other_roles(): void
+    #[Test]
+    public function toggle_does_not_affect_other_roles(): void
     {
         $role1 = DiscordRole::factory()->create();
         $role2 = DiscordRole::factory()->create();

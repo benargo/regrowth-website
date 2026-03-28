@@ -4,11 +4,13 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class PhaseViewTest extends DashboardTestCase
 {
-    public function test_manage_phases_page_loads_with_phase_that_has_start_date(): void
+    #[Test]
+    public function manage_phases_page_loads_with_phase_that_has_start_date(): void
     {
         Phase::factory()->started()->create();
 
@@ -22,7 +24,8 @@ class PhaseViewTest extends DashboardTestCase
         );
     }
 
-    public function test_manage_phases_page_loads_with_phase_that_has_null_start_date(): void
+    #[Test]
+    public function manage_phases_page_loads_with_phase_that_has_null_start_date(): void
     {
         Phase::factory()->unscheduled()->create();
 
@@ -36,7 +39,8 @@ class PhaseViewTest extends DashboardTestCase
         );
     }
 
-    public function test_manage_phases_page_loads_after_start_date_is_edited(): void
+    #[Test]
+    public function manage_phases_page_loads_after_start_date_is_edited(): void
     {
         $phase = Phase::factory()->started()->create();
 
@@ -54,7 +58,8 @@ class PhaseViewTest extends DashboardTestCase
         );
     }
 
-    public function test_manage_phases_page_loads_after_start_date_is_set_to_null(): void
+    #[Test]
+    public function manage_phases_page_loads_after_start_date_is_set_to_null(): void
     {
         $phase = Phase::factory()->started()->create();
 
@@ -72,7 +77,8 @@ class PhaseViewTest extends DashboardTestCase
         );
     }
 
-    public function test_manage_phases_page_loads_after_tags_are_added_to_phase(): void
+    #[Test]
+    public function manage_phases_page_loads_after_tags_are_added_to_phase(): void
     {
         $phase = Phase::factory()->create();
         $tag1 = GuildTag::factory()->create();
@@ -92,7 +98,8 @@ class PhaseViewTest extends DashboardTestCase
         );
     }
 
-    public function test_manage_phases_page_loads_after_tags_are_removed_from_phase(): void
+    #[Test]
+    public function manage_phases_page_loads_after_tags_are_removed_from_phase(): void
     {
         $phase = Phase::factory()->create();
         GuildTag::factory()->withPhase($phase)->create();
@@ -112,7 +119,8 @@ class PhaseViewTest extends DashboardTestCase
         );
     }
 
-    public function test_manage_phases_page_loads_after_tag_attendance_is_enabled(): void
+    #[Test]
+    public function manage_phases_page_loads_after_tag_attendance_is_enabled(): void
     {
         $phase = Phase::factory()->create();
         $tag = GuildTag::factory()->doesNotCountAttendance()->withPhase($phase)->create();
@@ -132,7 +140,8 @@ class PhaseViewTest extends DashboardTestCase
         );
     }
 
-    public function test_manage_phases_page_loads_after_tag_attendance_is_disabled(): void
+    #[Test]
+    public function manage_phases_page_loads_after_tag_attendance_is_disabled(): void
     {
         $phase = Phase::factory()->create();
         $tag = GuildTag::factory()->countsAttendance()->withPhase($phase)->create();

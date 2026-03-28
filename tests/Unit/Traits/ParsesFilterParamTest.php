@@ -3,6 +3,7 @@
 namespace Tests\Unit\Traits;
 
 use App\Traits\ParsesFilterParam;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ParsesFilterParamClass
@@ -29,49 +30,56 @@ class ParsesFilterParamClass
 
 class ParsesFilterParamTest extends TestCase
 {
-    public function test_returns_null_when_key_is_absent(): void
+    #[Test]
+    public function returns_null_when_key_is_absent(): void
     {
         $class = new ParsesFilterParamClass(false, null);
 
         $this->assertNull($class->parse('ids'));
     }
 
-    public function test_returns_empty_array_when_value_is_none(): void
+    #[Test]
+    public function returns_empty_array_when_value_is_none(): void
     {
         $class = new ParsesFilterParamClass(true, 'none');
 
         $this->assertSame([], $class->parse('ids'));
     }
 
-    public function test_returns_null_when_value_is_all(): void
+    #[Test]
+    public function returns_null_when_value_is_all(): void
     {
         $class = new ParsesFilterParamClass(true, 'all');
 
         $this->assertNull($class->parse('ids'));
     }
 
-    public function test_returns_null_when_value_is_null(): void
+    #[Test]
+    public function returns_null_when_value_is_null(): void
     {
         $class = new ParsesFilterParamClass(true, null);
 
         $this->assertNull($class->parse('ids'));
     }
 
-    public function test_returns_array_of_integers_for_comma_separated_string(): void
+    #[Test]
+    public function returns_array_of_integers_for_comma_separated_string(): void
     {
         $class = new ParsesFilterParamClass(true, '1,2,3');
 
         $this->assertSame([1, 2, 3], $class->parse('ids'));
     }
 
-    public function test_returns_single_element_array_for_single_value(): void
+    #[Test]
+    public function returns_single_element_array_for_single_value(): void
     {
         $class = new ParsesFilterParamClass(true, '5');
 
         $this->assertSame([5], $class->parse('ids'));
     }
 
-    public function test_casts_string_numbers_to_integers(): void
+    #[Test]
+    public function casts_string_numbers_to_integers(): void
     {
         $class = new ParsesFilterParamClass(true, '10,20,30');
 

@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\LazyCollection;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class FetchWarcraftLogsAttendanceDataTest extends TestCase
@@ -24,7 +25,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     // Happy Path
     // ==========================================
 
-    public function test_it_creates_pivot_entries_for_characters_with_count_attendance_ranks(): void
+    #[Test]
+    public function it_creates_pivot_entries_for_characters_with_count_attendance_ranks(): void
     {
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -49,7 +51,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         ]);
     }
 
-    public function test_it_stores_the_correct_presence_value(): void
+    #[Test]
+    public function it_stores_the_correct_presence_value(): void
     {
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
@@ -78,7 +81,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     // Rank Filtering
     // ==========================================
 
-    public function test_it_skips_characters_whose_ranks_do_not_count_attendance(): void
+    #[Test]
+    public function it_skips_characters_whose_ranks_do_not_count_attendance(): void
     {
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
         $character = Character::factory()->create(['name' => 'Sylvanas', 'rank_id' => $rank->id]);
@@ -102,7 +106,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         ]);
     }
 
-    public function test_it_skips_characters_with_no_rank(): void
+    #[Test]
+    public function it_skips_characters_with_no_rank(): void
     {
         $character = Character::factory()->create(['name' => 'Illidan', 'rank_id' => null]);
         $report = Report::factory()->create(['code' => 'norank1']);
@@ -128,7 +133,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     // Missing Records
     // ==========================================
 
-    public function test_it_skips_players_not_found_in_the_database(): void
+    #[Test]
+    public function it_skips_players_not_found_in_the_database(): void
     {
         $report = Report::factory()->create(['code' => 'unk001']);
 
@@ -147,7 +153,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $this->assertDatabaseCount('pivot_characters_wcl_reports', 0);
     }
 
-    public function test_it_skips_attendance_records_for_reports_not_in_the_database(): void
+    #[Test]
+    public function it_skips_attendance_records_for_reports_not_in_the_database(): void
     {
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Arthas', 'rank_id' => $rank->id]);
@@ -172,7 +179,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     // Touching
     // ==========================================
 
-    public function test_it_touches_the_report_updated_at_when_attendance_is_synced(): void
+    #[Test]
+    public function it_touches_the_report_updated_at_when_attendance_is_synced(): void
     {
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -195,7 +203,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $this->assertGreaterThan($originalTime, $report->fresh()->updated_at);
     }
 
-    public function test_it_does_not_touch_the_report_when_no_attendance_data_is_synced(): void
+    #[Test]
+    public function it_does_not_touch_the_report_when_no_attendance_data_is_synced(): void
     {
         $originalTime = now()->subHour();
         $report = Report::factory()->create(['code' => 'notouch1', 'updated_at' => $originalTime]);
@@ -219,7 +228,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
     // Edge Cases
     // ==========================================
 
-    public function test_it_handles_duplicate_character_entries_without_throwing(): void
+    #[Test]
+    public function it_handles_duplicate_character_entries_without_throwing(): void
     {
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Rexxar', 'rank_id' => $rank->id]);
@@ -247,7 +257,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         ]);
     }
 
-    public function test_it_only_processes_attendance_for_reports_in_the_database(): void
+    #[Test]
+    public function it_only_processes_attendance_for_reports_in_the_database(): void
     {
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
         $character = Character::factory()->create(['name' => 'Varian', 'rank_id' => $rank->id]);
@@ -275,7 +286,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $this->assertDatabaseMissing('pivot_characters_wcl_reports', ['wcl_report_code' => 'notindb1']);
     }
 
-    public function test_it_skips_execution_when_batch_is_cancelled(): void
+    #[Test]
+    public function it_skips_execution_when_batch_is_cancelled(): void
     {
         $batch = Bus::batch([])->dispatch();
         $batch->cancel();

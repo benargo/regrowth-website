@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\LazyCollection;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReportsTest extends TestCase
@@ -90,7 +91,8 @@ class ReportsTest extends TestCase
         ];
     }
 
-    public function test_get_fetches_reports_for_single_guild_tag(): void
+    #[Test]
+    public function get_fetches_reports_for_single_guild_tag(): void
     {
         Http::preventStrayRequests();
 
@@ -131,7 +133,8 @@ class ReportsTest extends TestCase
         });
     }
 
-    public function test_get_fetches_reports_for_multiple_guild_tags(): void
+    #[Test]
+    public function get_fetches_reports_for_multiple_guild_tags(): void
     {
         Http::preventStrayRequests();
 
@@ -164,7 +167,8 @@ class ReportsTest extends TestCase
         $this->assertContains('GHI789', $codes);
     }
 
-    public function test_get_deduplicates_reports_across_tags(): void
+    #[Test]
+    public function get_deduplicates_reports_across_tags(): void
     {
         Http::preventStrayRequests();
 
@@ -191,7 +195,8 @@ class ReportsTest extends TestCase
         $this->assertEquals('SHARED1', $results->first()->code);
     }
 
-    public function test_get_with_start_and_end_time_filters(): void
+    #[Test]
+    public function get_with_start_and_end_time_filters(): void
     {
         Http::preventStrayRequests();
 
@@ -231,7 +236,8 @@ class ReportsTest extends TestCase
         });
     }
 
-    public function test_get_paginates_through_all_pages(): void
+    #[Test]
+    public function get_paginates_through_all_pages(): void
     {
         Http::preventStrayRequests();
 
@@ -260,7 +266,8 @@ class ReportsTest extends TestCase
         $this->assertContains('PAGE2A', $codes);
     }
 
-    public function test_get_falls_back_to_guild_id_when_no_tags(): void
+    #[Test]
+    public function get_falls_back_to_guild_id_when_no_tags(): void
     {
         Http::preventStrayRequests();
 
@@ -293,7 +300,8 @@ class ReportsTest extends TestCase
         });
     }
 
-    public function test_results_cached_for_five_minutes(): void
+    #[Test]
+    public function results_cached_for_five_minutes(): void
     {
         $this->fakeAuthToken();
         $this->fakeNotRateLimited();
@@ -315,7 +323,8 @@ class ReportsTest extends TestCase
         $service->get();
     }
 
-    public function test_by_guild_tags_accepts_collection_of_guild_tag_models(): void
+    #[Test]
+    public function by_guild_tags_accepts_collection_of_guild_tag_models(): void
     {
         Http::preventStrayRequests();
 
@@ -346,7 +355,8 @@ class ReportsTest extends TestCase
 
     // ==================== lazy() Tests ====================
 
-    public function test_lazy_returns_lazy_collection(): void
+    #[Test]
+    public function lazy_returns_lazy_collection(): void
     {
         Http::preventStrayRequests();
 
@@ -369,7 +379,8 @@ class ReportsTest extends TestCase
         $this->assertInstanceOf(LazyCollection::class, $result);
     }
 
-    public function test_lazy_yields_report_records(): void
+    #[Test]
+    public function lazy_yields_report_records(): void
     {
         Http::preventStrayRequests();
 
@@ -396,7 +407,8 @@ class ReportsTest extends TestCase
         $this->assertContainsOnlyInstancesOf(Report::class, $records);
     }
 
-    public function test_lazy_with_guild_tags_fetches_from_api(): void
+    #[Test]
+    public function lazy_with_guild_tags_fetches_from_api(): void
     {
         Http::preventStrayRequests();
 
@@ -424,7 +436,8 @@ class ReportsTest extends TestCase
         $this->assertEquals('ABC123', $records[0]->code);
     }
 
-    public function test_lazy_with_multiple_tags_deduplicates(): void
+    #[Test]
+    public function lazy_with_multiple_tags_deduplicates(): void
     {
         Http::preventStrayRequests();
 
@@ -451,7 +464,8 @@ class ReportsTest extends TestCase
         $this->assertEquals('SHARED1', $records[0]->code);
     }
 
-    public function test_lazy_paginates_through_all_pages(): void
+    #[Test]
+    public function lazy_paginates_through_all_pages(): void
     {
         Http::preventStrayRequests();
 
@@ -480,7 +494,8 @@ class ReportsTest extends TestCase
         $this->assertContains('PAGE2A', $codes);
     }
 
-    public function test_lazy_falls_back_to_guild_id_when_no_tags(): void
+    #[Test]
+    public function lazy_falls_back_to_guild_id_when_no_tags(): void
     {
         Http::preventStrayRequests();
 
@@ -515,7 +530,8 @@ class ReportsTest extends TestCase
 
     // ==================== Report Data Object Tests ====================
 
-    public function test_report_data_object_parses_guild_tag_correctly(): void
+    #[Test]
+    public function report_data_object_parses_guild_tag_correctly(): void
     {
         $guildTag = GuildTag::factory()->create(['name' => 'Main Roster']);
 
@@ -534,7 +550,8 @@ class ReportsTest extends TestCase
         $this->assertSame('Main Roster', $report->guildTag->name);
     }
 
-    public function test_report_data_object_guild_tag_is_null_when_absent(): void
+    #[Test]
+    public function report_data_object_guild_tag_is_null_when_absent(): void
     {
         $data = [
             'code' => 'ABC123',
@@ -548,7 +565,8 @@ class ReportsTest extends TestCase
         $this->assertNull($report->guildTag);
     }
 
-    public function test_report_data_object_parses_correctly_with_zone(): void
+    #[Test]
+    public function report_data_object_parses_correctly_with_zone(): void
     {
         $data = [
             'code' => 'Tcdkf1AZQyFPRKBa',
@@ -574,7 +592,8 @@ class ReportsTest extends TestCase
         $this->assertEquals('Karazhan', $report->zone->name);
     }
 
-    public function test_report_data_object_parses_correctly_without_zone(): void
+    #[Test]
+    public function report_data_object_parses_correctly_without_zone(): void
     {
         $data = [
             'code' => 'ABC123',
@@ -589,7 +608,8 @@ class ReportsTest extends TestCase
         $this->assertNull($report->zone);
     }
 
-    public function test_report_data_object_to_array(): void
+    #[Test]
+    public function report_data_object_to_array(): void
     {
         $data = [
             'code' => 'ABC123',

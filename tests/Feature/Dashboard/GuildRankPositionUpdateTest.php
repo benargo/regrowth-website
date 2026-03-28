@@ -5,11 +5,13 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class GuildRankPositionUpdateTest extends DashboardTestCase
 {
-    public function test_update_positions_requires_authentication(): void
+    #[Test]
+    public function update_positions_requires_authentication(): void
     {
         $ranks = GuildRank::factory()->count(3)->create();
 
@@ -20,7 +22,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_update_positions_forbids_guest_users(): void
+    #[Test]
+    public function update_positions_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $ranks = GuildRank::factory()->count(3)->create();
@@ -32,7 +35,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_positions_forbids_member_users(): void
+    #[Test]
+    public function update_positions_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $ranks = GuildRank::factory()->count(3)->create();
@@ -44,7 +48,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_positions_forbids_raider_users(): void
+    #[Test]
+    public function update_positions_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $ranks = GuildRank::factory()->count(3)->create();
@@ -56,7 +61,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_positions_allows_officer_users(): void
+    #[Test]
+    public function update_positions_allows_officer_users(): void
     {
         $ranks = GuildRank::factory()->count(3)->create();
 
@@ -67,7 +73,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_update_positions_validates_ranks_required(): void
+    #[Test]
+    public function update_positions_validates_ranks_required(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), []);
@@ -75,7 +82,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks']);
     }
 
-    public function test_update_positions_validates_ranks_must_be_array(): void
+    #[Test]
+    public function update_positions_validates_ranks_must_be_array(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
@@ -85,7 +93,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks']);
     }
 
-    public function test_update_positions_validates_rank_id_required(): void
+    #[Test]
+    public function update_positions_validates_rank_id_required(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
@@ -97,7 +106,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.id']);
     }
 
-    public function test_update_positions_validates_rank_id_exists(): void
+    #[Test]
+    public function update_positions_validates_rank_id_exists(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
@@ -109,7 +119,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.id']);
     }
 
-    public function test_update_positions_validates_position_required(): void
+    #[Test]
+    public function update_positions_validates_position_required(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -122,7 +133,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.position']);
     }
 
-    public function test_update_positions_validates_position_must_be_integer(): void
+    #[Test]
+    public function update_positions_validates_position_must_be_integer(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -135,7 +147,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.position']);
     }
 
-    public function test_update_positions_validates_position_must_be_non_negative(): void
+    #[Test]
+    public function update_positions_validates_position_must_be_non_negative(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -148,7 +161,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.position']);
     }
 
-    public function test_update_positions_saves_positions_to_database(): void
+    #[Test]
+    public function update_positions_saves_positions_to_database(): void
     {
         $rank1 = GuildRank::factory()->create(['position' => 0]);
         $rank2 = GuildRank::factory()->create(['position' => 1]);
@@ -167,7 +181,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $this->assertEquals(1, $rank3->fresh()->position);
     }
 
-    public function test_update_positions_can_swap_two_ranks(): void
+    #[Test]
+    public function update_positions_can_swap_two_ranks(): void
     {
         $rank1 = GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
         $rank2 = GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
@@ -183,7 +198,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $this->assertEquals(0, $rank2->fresh()->position);
     }
 
-    public function test_update_positions_can_update_single_rank(): void
+    #[Test]
+    public function update_positions_can_update_single_rank(): void
     {
         $rank = GuildRank::factory()->create(['position' => 5]);
 
@@ -196,7 +212,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $this->assertEquals(0, $rank->fresh()->position);
     }
 
-    public function test_update_positions_clears_guild_ranks_cache(): void
+    #[Test]
+    public function update_positions_clears_guild_ranks_cache(): void
     {
         $rank = GuildRank::factory()->create();
 

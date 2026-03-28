@@ -9,6 +9,7 @@ use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CommentControllerTest extends TestCase
@@ -28,7 +29,8 @@ class CommentControllerTest extends TestCase
     // Authentication tests
     // ==========================================
 
-    public function test_resolve_requires_valid_bearer_token(): void
+    #[Test]
+    public function resolve_requires_valid_bearer_token(): void
     {
         $comment = Comment::factory()->create();
 
@@ -37,7 +39,8 @@ class CommentControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_resolve_rejects_invalid_bearer_token(): void
+    #[Test]
+    public function resolve_rejects_invalid_bearer_token(): void
     {
         $comment = Comment::factory()->create();
 
@@ -51,7 +54,8 @@ class CommentControllerTest extends TestCase
     // Resolve tests
     // ==========================================
 
-    public function test_resolve_creates_new_resolved_comment_and_soft_deletes_original(): void
+    #[Test]
+    public function resolve_creates_new_resolved_comment_and_soft_deletes_original(): void
     {
         config(['services.discord.token' => 'test-bot-token']);
 
@@ -84,7 +88,8 @@ class CommentControllerTest extends TestCase
         ]);
     }
 
-    public function test_resolve_preserves_original_created_at(): void
+    #[Test]
+    public function resolve_preserves_original_created_at(): void
     {
         config(['services.discord.token' => 'test-bot-token']);
 
@@ -111,7 +116,8 @@ class CommentControllerTest extends TestCase
         );
     }
 
-    public function test_resolve_sets_deleted_by_to_null(): void
+    #[Test]
+    public function resolve_sets_deleted_by_to_null(): void
     {
         config(['services.discord.token' => 'test-bot-token']);
 
@@ -126,7 +132,8 @@ class CommentControllerTest extends TestCase
         ]);
     }
 
-    public function test_resolve_returns_new_comment_in_response(): void
+    #[Test]
+    public function resolve_returns_new_comment_in_response(): void
     {
         config(['services.discord.token' => 'test-bot-token']);
 

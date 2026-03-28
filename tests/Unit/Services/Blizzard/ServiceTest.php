@@ -8,6 +8,7 @@ use App\Services\Blizzard\Service;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ConcreteService extends Service
@@ -43,7 +44,8 @@ class ServiceTest extends TestCase
         ]);
     }
 
-    public function test_constructor_accepts_client(): void
+    #[Test]
+    public function constructor_accepts_client(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
@@ -51,7 +53,8 @@ class ServiceTest extends TestCase
         $this->assertSame($client, $service->getClient());
     }
 
-    public function test_get_makes_request_with_base_path(): void
+    #[Test]
+    public function get_makes_request_with_base_path(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -80,7 +83,8 @@ class ServiceTest extends TestCase
         });
     }
 
-    public function test_get_includes_query_parameters(): void
+    #[Test]
+    public function get_includes_query_parameters(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -111,7 +115,8 @@ class ServiceTest extends TestCase
         });
     }
 
-    public function test_get_json_returns_array(): void
+    #[Test]
+    public function get_json_returns_array(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -134,7 +139,8 @@ class ServiceTest extends TestCase
         $this->assertEquals('Thunderfury', $result['name']);
     }
 
-    public function test_get_json_throws_on_error_response(): void
+    #[Test]
+    public function get_json_throws_on_error_response(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -155,7 +161,8 @@ class ServiceTest extends TestCase
         $method->invoke($service, '/item/99999');
     }
 
-    public function test_build_path_combines_base_path_and_endpoint(): void
+    #[Test]
+    public function build_path_combines_base_path_and_endpoint(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
@@ -167,7 +174,8 @@ class ServiceTest extends TestCase
         $this->assertEquals('/data/wow/item/19019', $method->invoke($service, 'item/19019'));
     }
 
-    public function test_build_path_handles_empty_base_path(): void
+    #[Test]
+    public function build_path_handles_empty_base_path(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new EmptyBasePathService($client);
@@ -179,7 +187,8 @@ class ServiceTest extends TestCase
         $this->assertEquals('item/19019', $method->invoke($service, 'item/19019'));
     }
 
-    public function test_with_namespace_updates_client_namespace(): void
+    #[Test]
+    public function with_namespace_updates_client_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
@@ -190,7 +199,8 @@ class ServiceTest extends TestCase
         $this->assertEquals('dynamic-classic1x-eu', $client->getNamespace());
     }
 
-    public function test_with_namespace_is_fluent(): void
+    #[Test]
+    public function with_namespace_is_fluent(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -219,7 +229,8 @@ class ServiceTest extends TestCase
         });
     }
 
-    public function test_get_client_returns_client_instance(): void
+    #[Test]
+    public function get_client_returns_client_instance(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
@@ -228,7 +239,8 @@ class ServiceTest extends TestCase
         $this->assertSame($client, $service->getClient());
     }
 
-    public function test_service_uses_client_region_and_locale(): void
+    #[Test]
+    public function service_uses_client_region_and_locale(): void
     {
         Http::fake([
             'us.battle.net/oauth/token' => Http::response([
@@ -260,7 +272,8 @@ class ServiceTest extends TestCase
         });
     }
 
-    public function test_fresh_sets_ignore_cache_and_is_fluent(): void
+    #[Test]
+    public function fresh_sets_ignore_cache_and_is_fluent(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
@@ -274,7 +287,8 @@ class ServiceTest extends TestCase
         $this->assertTrue($property->getValue($service));
     }
 
-    public function test_cacheable_caches_result_when_ignore_cache_is_false(): void
+    #[Test]
+    public function cacheable_caches_result_when_ignore_cache_is_false(): void
     {
         Cache::flush();
 
@@ -299,7 +313,8 @@ class ServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_cacheable_bypasses_cache_when_fresh_is_called(): void
+    #[Test]
+    public function cacheable_bypasses_cache_when_fresh_is_called(): void
     {
         Cache::flush();
 
@@ -326,7 +341,8 @@ class ServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_get_resets_ignore_cache_after_request(): void
+    #[Test]
+    public function get_resets_ignore_cache_after_request(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -352,7 +368,8 @@ class ServiceTest extends TestCase
         $this->assertFalse($property->getValue($service));
     }
 
-    public function test_cacheable_uses_cache_remember_with_ttl(): void
+    #[Test]
+    public function cacheable_uses_cache_remember_with_ttl(): void
     {
         Cache::flush();
         Cache::shouldReceive('remember')
@@ -371,7 +388,8 @@ class ServiceTest extends TestCase
         $this->assertEquals(['cached' => true], $result);
     }
 
-    public function test_cacheable_accepts_null_ttl(): void
+    #[Test]
+    public function cacheable_accepts_null_ttl(): void
     {
         Cache::flush();
         Cache::shouldReceive('remember')
@@ -390,7 +408,8 @@ class ServiceTest extends TestCase
         $this->assertEquals(['data' => 'forever'], $result);
     }
 
-    public function test_get_namespace_returns_client_namespace(): void
+    #[Test]
+    public function get_namespace_returns_client_namespace(): void
     {
         $client = new Client('client_id', 'client_secret', namespace: 'test-namespace-eu');
         $service = new ConcreteService($client);
@@ -401,7 +420,8 @@ class ServiceTest extends TestCase
         $this->assertEquals('test-namespace-eu', $method->invoke($service));
     }
 
-    public function test_select_sets_selected_fields_and_is_fluent(): void
+    #[Test]
+    public function select_sets_selected_fields_and_is_fluent(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
@@ -415,7 +435,8 @@ class ServiceTest extends TestCase
         $this->assertEquals(['id', 'name', 'quality'], $property->getValue($service));
     }
 
-    public function test_select_overwrites_previous_selection(): void
+    #[Test]
+    public function select_overwrites_previous_selection(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new ConcreteService($client);
@@ -428,7 +449,8 @@ class ServiceTest extends TestCase
         $this->assertEquals(['quality', 'level'], $property->getValue($service));
     }
 
-    public function test_get_json_filters_response_with_selected_fields(): void
+    #[Test]
+    public function get_json_filters_response_with_selected_fields(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -464,7 +486,8 @@ class ServiceTest extends TestCase
         $this->assertEquals('Thunderfury', $result['name']);
     }
 
-    public function test_get_json_resets_selected_fields_after_use(): void
+    #[Test]
+    public function get_json_resets_selected_fields_after_use(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -493,7 +516,8 @@ class ServiceTest extends TestCase
         $this->assertEquals([], $property->getValue($service));
     }
 
-    public function test_get_json_returns_full_response_without_select(): void
+    #[Test]
+    public function get_json_returns_full_response_without_select(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -520,7 +544,8 @@ class ServiceTest extends TestCase
         $this->assertArrayHasKey('quality', $result);
     }
 
-    public function test_select_can_be_chained_with_fresh(): void
+    #[Test]
+    public function select_can_be_chained_with_fresh(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -551,7 +576,8 @@ class ServiceTest extends TestCase
         $this->assertArrayNotHasKey('quality', $response);
     }
 
-    public function test_get_json_supports_dot_notation_for_nested_fields(): void
+    #[Test]
+    public function get_json_supports_dot_notation_for_nested_fields(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -588,7 +614,8 @@ class ServiceTest extends TestCase
         $this->assertArrayNotHasKey('quality', $result);
     }
 
-    public function test_get_json_supports_deeply_nested_dot_notation(): void
+    #[Test]
+    public function get_json_supports_deeply_nested_dot_notation(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -624,7 +651,8 @@ class ServiceTest extends TestCase
         $this->assertArrayNotHasKey('id', $result);
     }
 
-    public function test_get_json_combines_top_level_and_nested_selections(): void
+    #[Test]
+    public function get_json_combines_top_level_and_nested_selections(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -659,7 +687,8 @@ class ServiceTest extends TestCase
         $this->assertArrayNotHasKey('key', $result['media']);
     }
 
-    public function test_get_json_ignores_non_existent_nested_fields(): void
+    #[Test]
+    public function get_json_ignores_non_existent_nested_fields(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([

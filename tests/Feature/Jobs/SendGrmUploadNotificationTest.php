@@ -9,6 +9,7 @@ use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SendGrmUploadNotificationTest extends TestCase
@@ -24,7 +25,8 @@ class SendGrmUploadNotificationTest extends TestCase
         ]);
     }
 
-    public function test_it_sends_grm_upload_completed_notification_when_no_errors(): void
+    #[Test]
+    public function it_sends_grm_upload_completed_notification_when_no_errors(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 5,
@@ -42,7 +44,8 @@ class SendGrmUploadNotificationTest extends TestCase
         );
     }
 
-    public function test_it_sends_grm_upload_failed_notification_when_errors_exist(): void
+    #[Test]
+    public function it_sends_grm_upload_failed_notification_when_errors_exist(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 3,
@@ -60,7 +63,8 @@ class SendGrmUploadNotificationTest extends TestCase
         );
     }
 
-    public function test_it_sends_failed_notification_even_when_processed_count_is_zero(): void
+    #[Test]
+    public function it_sends_failed_notification_even_when_processed_count_is_zero(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 0,
@@ -78,7 +82,8 @@ class SendGrmUploadNotificationTest extends TestCase
         );
     }
 
-    public function test_it_sends_completed_notification_with_skipped_and_warning_counts(): void
+    #[Test]
+    public function it_sends_completed_notification_with_skipped_and_warning_counts(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 10,
@@ -96,7 +101,8 @@ class SendGrmUploadNotificationTest extends TestCase
         );
     }
 
-    public function test_it_does_not_send_completed_notification_when_errors_exist(): void
+    #[Test]
+    public function it_does_not_send_completed_notification_when_errors_exist(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 5,
@@ -114,7 +120,8 @@ class SendGrmUploadNotificationTest extends TestCase
         );
     }
 
-    public function test_it_does_not_send_failed_notification_when_no_errors(): void
+    #[Test]
+    public function it_does_not_send_failed_notification_when_no_errors(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 5,
@@ -132,7 +139,8 @@ class SendGrmUploadNotificationTest extends TestCase
         );
     }
 
-    public function test_it_updates_cache_to_completed_when_no_errors(): void
+    #[Test]
+    public function it_updates_cache_to_completed_when_no_errors(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 5,
@@ -150,7 +158,8 @@ class SendGrmUploadNotificationTest extends TestCase
         $this->assertEquals(5, $progress['processedCount']);
     }
 
-    public function test_it_updates_cache_to_failed_when_errors_exist(): void
+    #[Test]
+    public function it_updates_cache_to_failed_when_errors_exist(): void
     {
         $job = new SendGrmUploadNotification(
             processedCount: 3,

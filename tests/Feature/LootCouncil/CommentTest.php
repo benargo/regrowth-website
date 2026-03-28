@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CommentTest extends TestCase
@@ -87,7 +88,8 @@ class CommentTest extends TestCase
     // Authorization tests for creating comments
     // ==========================================
 
-    public function test_guest_users_cannot_create_comments(): void
+    #[Test]
+    public function guest_users_cannot_create_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->guest()->create();
@@ -100,7 +102,8 @@ class CommentTest extends TestCase
         $this->assertDatabaseMissing('lootcouncil_comments', ['body' => 'Test comment']);
     }
 
-    public function test_member_users_cannot_create_comments(): void
+    #[Test]
+    public function member_users_cannot_create_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->member()->create();
@@ -113,7 +116,8 @@ class CommentTest extends TestCase
         $this->assertDatabaseMissing('lootcouncil_comments', ['body' => 'Test comment']);
     }
 
-    public function test_raider_users_can_create_comments(): void
+    #[Test]
+    public function raider_users_can_create_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -130,7 +134,8 @@ class CommentTest extends TestCase
         ]);
     }
 
-    public function test_officer_users_can_create_comments(): void
+    #[Test]
+    public function officer_users_can_create_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->officer()->create();
@@ -151,7 +156,8 @@ class CommentTest extends TestCase
     // Validation tests
     // ==========================================
 
-    public function test_comment_creation_fails_with_empty_body(): void
+    #[Test]
+    public function comment_creation_fails_with_empty_body(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -164,7 +170,8 @@ class CommentTest extends TestCase
         $this->assertDatabaseCount('lootcouncil_comments', 0);
     }
 
-    public function test_comment_creation_fails_with_body_too_short(): void
+    #[Test]
+    public function comment_creation_fails_with_body_too_short(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -177,7 +184,8 @@ class CommentTest extends TestCase
         $this->assertDatabaseCount('lootcouncil_comments', 0);
     }
 
-    public function test_comment_creation_fails_with_body_too_long(): void
+    #[Test]
+    public function comment_creation_fails_with_body_too_long(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -194,7 +202,8 @@ class CommentTest extends TestCase
     // Delete authorization tests
     // ==========================================
 
-    public function test_raiders_can_delete_their_own_comments(): void
+    #[Test]
+    public function raiders_can_delete_their_own_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -209,7 +218,8 @@ class CommentTest extends TestCase
         $this->assertSoftDeleted('lootcouncil_comments', ['id' => $comment->id]);
     }
 
-    public function test_raiders_cannot_delete_other_users_comments(): void
+    #[Test]
+    public function raiders_cannot_delete_other_users_comments(): void
     {
         $item = $this->createItem();
         $raider = User::factory()->raider()->create();
@@ -225,7 +235,8 @@ class CommentTest extends TestCase
         $this->assertNotSoftDeleted('lootcouncil_comments', ['id' => $comment->id]);
     }
 
-    public function test_officers_can_delete_any_comment(): void
+    #[Test]
+    public function officers_can_delete_any_comment(): void
     {
         $item = $this->createItem();
         $officer = User::factory()->officer()->create();
@@ -241,7 +252,8 @@ class CommentTest extends TestCase
         $this->assertSoftDeleted('lootcouncil_comments', ['id' => $comment->id]);
     }
 
-    public function test_deleted_comment_tracks_deleted_by_user(): void
+    #[Test]
+    public function deleted_comment_tracks_deleted_by_user(): void
     {
         $item = $this->createItem();
         $officer = User::factory()->officer()->create();
@@ -263,7 +275,8 @@ class CommentTest extends TestCase
     // Edit authorization tests
     // ==========================================
 
-    public function test_raiders_can_edit_their_own_comments(): void
+    #[Test]
+    public function raiders_can_edit_their_own_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -280,7 +293,8 @@ class CommentTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_raiders_cannot_edit_other_users_comments(): void
+    #[Test]
+    public function raiders_cannot_edit_other_users_comments(): void
     {
         $item = $this->createItem();
         $raider = User::factory()->raider()->create();
@@ -298,7 +312,8 @@ class CommentTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_edit_creates_new_comment_and_soft_deletes_old(): void
+    #[Test]
+    public function edit_creates_new_comment_and_soft_deletes_old(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -327,7 +342,8 @@ class CommentTest extends TestCase
         ]);
     }
 
-    public function test_edited_comment_preserves_original_timestamp(): void
+    #[Test]
+    public function edited_comment_preserves_original_timestamp(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -351,7 +367,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_edit_tracks_deleted_by_for_original_comment(): void
+    #[Test]
+    public function edit_tracks_deleted_by_for_original_comment(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -376,7 +393,8 @@ class CommentTest extends TestCase
     // Resolved status tests
     // ==========================================
 
-    public function test_new_comments_default_to_unresolved(): void
+    #[Test]
+    public function new_comments_default_to_unresolved(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -391,7 +409,8 @@ class CommentTest extends TestCase
         ]);
     }
 
-    public function test_raiders_cannot_edit_resolved_comments(): void
+    #[Test]
+    public function raiders_cannot_edit_resolved_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -412,7 +431,8 @@ class CommentTest extends TestCase
         ]);
     }
 
-    public function test_officers_can_edit_resolved_comments(): void
+    #[Test]
+    public function officers_can_edit_resolved_comments(): void
     {
         $item = $this->createItem();
         $raider = User::factory()->raider()->create();
@@ -433,7 +453,8 @@ class CommentTest extends TestCase
         ]);
     }
 
-    public function test_officers_can_mark_comment_as_resolved(): void
+    #[Test]
+    public function officers_can_mark_comment_as_resolved(): void
     {
         $item = $this->createItem();
         $raider = User::factory()->raider()->create();
@@ -453,7 +474,8 @@ class CommentTest extends TestCase
         $this->assertTrue($newComment->is_resolved);
     }
 
-    public function test_officers_can_mark_comment_as_unresolved(): void
+    #[Test]
+    public function officers_can_mark_comment_as_unresolved(): void
     {
         $item = $this->createItem();
         $raider = User::factory()->raider()->create();
@@ -472,7 +494,8 @@ class CommentTest extends TestCase
         $this->assertFalse($newComment->is_resolved);
     }
 
-    public function test_raiders_cannot_mark_their_own_comment_as_resolved(): void
+    #[Test]
+    public function raiders_cannot_mark_their_own_comment_as_resolved(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -500,7 +523,8 @@ class CommentTest extends TestCase
         $this->assertTrue($newComment->is_resolved);
     }
 
-    public function test_edit_preserves_resolved_status_when_not_provided(): void
+    #[Test]
+    public function edit_preserves_resolved_status_when_not_provided(): void
     {
         $item = $this->createItem();
         $officer = User::factory()->officer()->create();
@@ -522,7 +546,8 @@ class CommentTest extends TestCase
     // Show page tests
     // ==========================================
 
-    public function test_item_show_page_includes_comments(): void
+    #[Test]
+    public function item_show_page_includes_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->member()->create();
@@ -541,7 +566,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_item_show_page_includes_can_create_comment_for_raiders(): void
+    #[Test]
+    public function item_show_page_includes_can_create_comment_for_raiders(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -554,7 +580,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_item_show_page_includes_can_create_comment_false_for_members(): void
+    #[Test]
+    public function item_show_page_includes_can_create_comment_false_for_members(): void
     {
         $item = $this->createItem();
         $user = User::factory()->member()->create();
@@ -567,7 +594,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comments_are_paginated(): void
+    #[Test]
+    public function comments_are_paginated(): void
     {
         $item = $this->createItem();
         $user = User::factory()->member()->create();
@@ -587,7 +615,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comments_are_ordered_by_latest(): void
+    #[Test]
+    public function comments_are_ordered_by_latest(): void
     {
         $item = $this->createItem();
         $user = User::factory()->member()->create();
@@ -616,7 +645,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comment_resource_includes_authorization_flags(): void
+    #[Test]
+    public function comment_resource_includes_authorization_flags(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -634,7 +664,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comment_resource_includes_is_resolved(): void
+    #[Test]
+    public function comment_resource_includes_is_resolved(): void
     {
         $item = $this->createItem();
         $user = User::factory()->member()->create();
@@ -660,7 +691,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comment_resource_includes_can_resolve_for_officers(): void
+    #[Test]
+    public function comment_resource_includes_can_resolve_for_officers(): void
     {
         $item = $this->createItem();
         $officer = User::factory()->officer()->create();
@@ -678,7 +710,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comment_resource_includes_can_resolve_false_for_raiders(): void
+    #[Test]
+    public function comment_resource_includes_can_resolve_false_for_raiders(): void
     {
         $item = $this->createItem();
         $raider = User::factory()->raider()->create();
@@ -700,7 +733,8 @@ class CommentTest extends TestCase
     // Index page authorization tests
     // ==========================================
 
-    public function test_guest_users_cannot_access_comments_index(): void
+    #[Test]
+    public function guest_users_cannot_access_comments_index(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -709,7 +743,8 @@ class CommentTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_member_users_cannot_access_comments_index(): void
+    #[Test]
+    public function member_users_cannot_access_comments_index(): void
     {
         $user = User::factory()->member()->create();
 
@@ -718,7 +753,8 @@ class CommentTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_raider_users_cannot_access_comments_index(): void
+    #[Test]
+    public function raider_users_cannot_access_comments_index(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -727,7 +763,8 @@ class CommentTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_loot_councillors_can_access_comments_index(): void
+    #[Test]
+    public function loot_councillors_can_access_comments_index(): void
     {
         $user = User::factory()->member()->lootCouncillor()->create();
 
@@ -736,7 +773,8 @@ class CommentTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_officers_can_access_comments_index(): void
+    #[Test]
+    public function officers_can_access_comments_index(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -749,7 +787,8 @@ class CommentTest extends TestCase
     // Index page tests
     // ==========================================
 
-    public function test_comments_index_is_paginated(): void
+    #[Test]
+    public function comments_index_is_paginated(): void
     {
         $item1 = $this->createItem();
         $item2 = $this->createItem();
@@ -777,7 +816,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comments_index_includes_item_data(): void
+    #[Test]
+    public function comments_index_includes_item_data(): void
     {
         $item1 = $this->createItem();
         $item2 = $this->createItem();
@@ -805,7 +845,8 @@ class CommentTest extends TestCase
         );
     }
 
-    public function test_comments_index_orders_by_latest(): void
+    #[Test]
+    public function comments_index_orders_by_latest(): void
     {
         $item = $this->createItem();
         $user = User::factory()->officer()->create();

@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Requests\Raid;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AttendanceMatrixRequestTest extends TestCase
@@ -30,28 +31,32 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== zoneIds ====================
 
-    public function test_zone_ids_returns_null_when_absent(): void
+    #[Test]
+    public function zone_ids_returns_null_when_absent(): void
     {
         $request = $this->makeRequest();
 
         $this->assertNull($request->zoneIds());
     }
 
-    public function test_zone_ids_returns_null_for_all(): void
+    #[Test]
+    public function zone_ids_returns_null_for_all(): void
     {
         $request = $this->makeRequest(['zone_ids' => 'all']);
 
         $this->assertNull($request->zoneIds());
     }
 
-    public function test_zone_ids_returns_empty_array_for_none(): void
+    #[Test]
+    public function zone_ids_returns_empty_array_for_none(): void
     {
         $request = $this->makeRequest(['zone_ids' => 'none']);
 
         $this->assertSame([], $request->zoneIds());
     }
 
-    public function test_zone_ids_returns_array_of_integers(): void
+    #[Test]
+    public function zone_ids_returns_array_of_integers(): void
     {
         $request = $this->makeRequest(['zone_ids' => '1,2,3']);
 
@@ -60,21 +65,24 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== guildTagIds ====================
 
-    public function test_guild_tag_ids_returns_null_when_absent(): void
+    #[Test]
+    public function guild_tag_ids_returns_null_when_absent(): void
     {
         $request = $this->makeRequest();
 
         $this->assertNull($request->guildTagIds());
     }
 
-    public function test_guild_tag_ids_returns_empty_array_for_none(): void
+    #[Test]
+    public function guild_tag_ids_returns_empty_array_for_none(): void
     {
         $request = $this->makeRequest(['guild_tag_ids' => 'none']);
 
         $this->assertSame([], $request->guildTagIds());
     }
 
-    public function test_guild_tag_ids_returns_array_of_integers(): void
+    #[Test]
+    public function guild_tag_ids_returns_array_of_integers(): void
     {
         $request = $this->makeRequest(['guild_tag_ids' => '4,5']);
 
@@ -83,21 +91,24 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== rankIds ====================
 
-    public function test_rank_ids_returns_null_when_absent(): void
+    #[Test]
+    public function rank_ids_returns_null_when_absent(): void
     {
         $request = $this->makeRequest();
 
         $this->assertNull($request->rankIds());
     }
 
-    public function test_rank_ids_returns_empty_array_for_none(): void
+    #[Test]
+    public function rank_ids_returns_empty_array_for_none(): void
     {
         $request = $this->makeRequest(['rank_ids' => 'none']);
 
         $this->assertSame([], $request->rankIds());
     }
 
-    public function test_rank_ids_returns_array_of_integers(): void
+    #[Test]
+    public function rank_ids_returns_array_of_integers(): void
     {
         $request = $this->makeRequest(['rank_ids' => '10,20']);
 
@@ -106,21 +117,24 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== combineLinkedCharacters ====================
 
-    public function test_combine_linked_characters_defaults_to_true_when_absent(): void
+    #[Test]
+    public function combine_linked_characters_defaults_to_true_when_absent(): void
     {
         $request = $this->makeRequest();
 
         $this->assertTrue($request->combineLinkedCharacters());
     }
 
-    public function test_combine_linked_characters_returns_true_when_set(): void
+    #[Test]
+    public function combine_linked_characters_returns_true_when_set(): void
     {
         $request = $this->makeRequest(['combine_linked_characters' => '1']);
 
         $this->assertTrue($request->combineLinkedCharacters());
     }
 
-    public function test_combine_linked_characters_returns_false_when_set_to_false(): void
+    #[Test]
+    public function combine_linked_characters_returns_false_when_set_to_false(): void
     {
         $request = $this->makeRequest(['combine_linked_characters' => '0']);
 
@@ -129,7 +143,8 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== rules: structure ====================
 
-    public function test_rules_includes_all_expected_keys(): void
+    #[Test]
+    public function rules_includes_all_expected_keys(): void
     {
         $this->mockNoMinDate();
 
@@ -145,7 +160,8 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== rules: date ordering ====================
 
-    public function test_rules_adds_before_or_equal_constraint_to_since_date_when_before_date_is_filled(): void
+    #[Test]
+    public function rules_adds_before_or_equal_constraint_to_since_date_when_before_date_is_filled(): void
     {
         $this->mockNoMinDate();
 
@@ -154,7 +170,8 @@ class AttendanceMatrixRequestTest extends TestCase
         $this->assertContains('before_or_equal:before_date', $rules['since_date']);
     }
 
-    public function test_rules_does_not_add_before_or_equal_constraint_to_since_date_when_before_date_is_absent(): void
+    #[Test]
+    public function rules_does_not_add_before_or_equal_constraint_to_since_date_when_before_date_is_absent(): void
     {
         $this->mockNoMinDate();
 
@@ -163,7 +180,8 @@ class AttendanceMatrixRequestTest extends TestCase
         $this->assertNotContains('before_or_equal:before_date', $rules['since_date']);
     }
 
-    public function test_rules_adds_after_or_equal_constraint_to_before_date_when_since_date_is_filled(): void
+    #[Test]
+    public function rules_adds_after_or_equal_constraint_to_before_date_when_since_date_is_filled(): void
     {
         $this->mockNoMinDate();
 
@@ -172,7 +190,8 @@ class AttendanceMatrixRequestTest extends TestCase
         $this->assertContains('after_or_equal:since_date', $rules['before_date']);
     }
 
-    public function test_rules_does_not_add_after_or_equal_constraint_to_before_date_when_since_date_is_absent(): void
+    #[Test]
+    public function rules_does_not_add_after_or_equal_constraint_to_before_date_when_since_date_is_absent(): void
     {
         $this->mockNoMinDate();
 
@@ -183,7 +202,8 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== rules: min date ====================
 
-    public function test_rules_adds_after_or_equal_min_date_to_both_date_fields_when_reports_exist(): void
+    #[Test]
+    public function rules_adds_after_or_equal_min_date_to_both_date_fields_when_reports_exist(): void
     {
         $rawStartTime = '2025-06-15 12:00:00';
         $this->mockMinDate($rawStartTime);
@@ -199,7 +219,8 @@ class AttendanceMatrixRequestTest extends TestCase
         $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['before_date']);
     }
 
-    public function test_rules_does_not_add_after_or_equal_min_date_when_no_reports_exist(): void
+    #[Test]
+    public function rules_does_not_add_after_or_equal_min_date_when_no_reports_exist(): void
     {
         $this->mockNoMinDate();
 
@@ -214,7 +235,8 @@ class AttendanceMatrixRequestTest extends TestCase
 
     // ==================== rules: before_or_equal today ====================
 
-    public function test_rules_includes_before_or_equal_today_for_both_date_fields(): void
+    #[Test]
+    public function rules_includes_before_or_equal_today_for_both_date_fields(): void
     {
         $this->mockNoMinDate();
 

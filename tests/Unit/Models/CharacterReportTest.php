@@ -6,12 +6,15 @@ use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
+use Tests\TestCase;
 
 class CharacterReportTest extends TestCase
 {
+    use RefreshDatabase;
+
     #[Test]
     public function it_uses_the_correct_table(): void
     {
@@ -36,6 +39,8 @@ class CharacterReportTest extends TestCase
         $this->assertContains('report', $pivot->getTouchedRelations());
     }
 
+    // ==================== report ====================
+
     #[Test]
     public function report_method_returns_belongs_to(): void
     {
@@ -56,6 +61,24 @@ class CharacterReportTest extends TestCase
     }
 
     #[Test]
+    public function report_relation_returns_the_associated_report(): void
+    {
+        $character = Character::factory()->create();
+        $report = Report::factory()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        $pivot = CharacterReport::where('character_id', $character->id)
+            ->where('wcl_report_code', $report->code)
+            ->first();
+
+        $this->assertInstanceOf(Report::class, $pivot->report);
+        $this->assertTrue($pivot->report->is($report));
+    }
+
+    // ==================== character ====================
+
+    #[Test]
     public function character_method_returns_belongs_to(): void
     {
         $returnType = (new ReflectionMethod(CharacterReport::class, 'character'))->getReturnType();
@@ -72,5 +95,21 @@ class CharacterReportTest extends TestCase
 
         // Verify the Character model is imported in the pivot class
         $this->assertTrue(class_exists(Character::class));
+    }
+
+    #[Test]
+    public function character_relation_returns_the_associated_character(): void
+    {
+        $character = Character::factory()->create();
+        $report = Report::factory()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        $pivot = CharacterReport::where('character_id', $character->id)
+            ->where('wcl_report_code', $report->code)
+            ->first();
+
+        $this->assertInstanceOf(Character::class, $pivot->character);
+        $this->assertTrue($pivot->character->is($character));
     }
 }

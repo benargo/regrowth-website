@@ -7,6 +7,7 @@ use App\Models\DiscordRole;
 use App\Services\Discord\DiscordRoleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SyncDiscordRolesTest extends TestCase
@@ -28,7 +29,8 @@ class SyncDiscordRolesTest extends TestCase
         ];
     }
 
-    public function test_it_creates_new_roles_from_discord(): void
+    #[Test]
+    public function it_creates_new_roles_from_discord(): void
     {
         $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
@@ -42,7 +44,8 @@ class SyncDiscordRolesTest extends TestCase
         $this->assertDatabaseHas('discord_roles', ['id' => '333333333333333333', 'name' => 'Member', 'position' => 30]);
     }
 
-    public function test_it_updates_existing_roles(): void
+    #[Test]
+    public function it_updates_existing_roles(): void
     {
         DiscordRole::factory()->create([
             'id' => '111111111111111111',
@@ -63,7 +66,8 @@ class SyncDiscordRolesTest extends TestCase
         ]);
     }
 
-    public function test_it_deletes_roles_no_longer_in_discord(): void
+    #[Test]
+    public function it_deletes_roles_no_longer_in_discord(): void
     {
         $orphanedRole = DiscordRole::factory()->create([
             'id' => '999999999999999999',
@@ -80,7 +84,8 @@ class SyncDiscordRolesTest extends TestCase
         $this->assertDatabaseMissing('discord_roles', ['id' => '999999999999999999']);
     }
 
-    public function test_it_excludes_the_everyone_role(): void
+    #[Test]
+    public function it_excludes_the_everyone_role(): void
     {
         $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
@@ -91,7 +96,8 @@ class SyncDiscordRolesTest extends TestCase
         $this->assertDatabaseMissing('discord_roles', ['id' => '000000000000000000']);
     }
 
-    public function test_it_preserves_is_visible_on_existing_roles(): void
+    #[Test]
+    public function it_preserves_is_visible_on_existing_roles(): void
     {
         DiscordRole::factory()->visible()->create([
             'id' => '111111111111111111',

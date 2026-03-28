@@ -13,13 +13,15 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CacheRebuildTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_listener_flushes_cache_when_event_fires(): void
+    #[Test]
+    public function listener_flushes_cache_when_event_fires(): void
     {
         Queue::fake([RebuildLootCouncilCache::class]);
 
@@ -31,7 +33,8 @@ class CacheRebuildTest extends TestCase
         $this->assertFalse(Cache::tags(['lootcouncil'])->has('test_key'));
     }
 
-    public function test_listener_dispatches_rebuild_job_when_event_fires(): void
+    #[Test]
+    public function listener_dispatches_rebuild_job_when_event_fires(): void
     {
         Queue::fake([RebuildLootCouncilCache::class]);
 
@@ -40,7 +43,8 @@ class CacheRebuildTest extends TestCase
         Queue::assertPushed(RebuildLootCouncilCache::class);
     }
 
-    public function test_rebuild_job_populates_priorities_cache(): void
+    #[Test]
+    public function rebuild_job_populates_priorities_cache(): void
     {
         Priority::factory()->count(3)->create();
 
@@ -56,7 +60,8 @@ class CacheRebuildTest extends TestCase
         $this->assertCount(3, $cached);
     }
 
-    public function test_rebuild_job_populates_bosses_cache(): void
+    #[Test]
+    public function rebuild_job_populates_bosses_cache(): void
     {
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
@@ -72,7 +77,8 @@ class CacheRebuildTest extends TestCase
         $this->assertTrue(Cache::tags(['lootcouncil'])->has('bosses.tbc.with_comments'));
     }
 
-    public function test_rebuild_job_populates_boss_items_cache(): void
+    #[Test]
+    public function rebuild_job_populates_boss_items_cache(): void
     {
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
@@ -90,7 +96,8 @@ class CacheRebuildTest extends TestCase
         $this->assertTrue(Cache::tags(['lootcouncil'])->has($cacheKey));
     }
 
-    public function test_rebuild_job_populates_trash_items_cache(): void
+    #[Test]
+    public function rebuild_job_populates_trash_items_cache(): void
     {
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
@@ -107,7 +114,8 @@ class CacheRebuildTest extends TestCase
         $this->assertTrue(Cache::tags(['lootcouncil'])->has($cacheKey));
     }
 
-    public function test_bosses_cache_includes_comment_counts(): void
+    #[Test]
+    public function bosses_cache_includes_comment_counts(): void
     {
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);

@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\WarcraftLogs;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ClientAuthenticationTest extends TestCase
@@ -30,7 +31,8 @@ class ClientAuthenticationTest extends TestCase
     /**
      * Tests the retrieval of a token by authentication.
      */
-    public function test_token_by_authentication(): void
+    #[Test]
+    public function token_by_authentication(): void
     {
         $authenticationHandler = new AuthenticationHandler(
             'test_client_id',
@@ -50,7 +52,8 @@ class ClientAuthenticationTest extends TestCase
     /**
      * Tests the retrieval of a token from the cache.
      */
-    public function test_token_from_cache(): void
+    #[Test]
+    public function token_from_cache(): void
     {
         $authenticationHandler = new AuthenticationHandler(
             'test_client_id',
@@ -67,7 +70,8 @@ class ClientAuthenticationTest extends TestCase
     /**
      * Tests that the AuthenticationHandler can be resolved from the container.
      */
-    public function test_authentication_handler_can_be_resolved(): void
+    #[Test]
+    public function authentication_handler_can_be_resolved(): void
     {
         $authHandler = $this->app->make(AuthenticationHandler::class);
 
@@ -77,7 +81,8 @@ class ClientAuthenticationTest extends TestCase
     /**
      * Tests that the container-resolved AuthenticationHandler can return a token.
      */
-    public function test_resolved_authentication_handler_can_return_token(): void
+    #[Test]
+    public function resolved_authentication_handler_can_return_token(): void
     {
         Cache::expects('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))

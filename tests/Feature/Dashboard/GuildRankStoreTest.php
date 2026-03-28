@@ -5,11 +5,13 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class GuildRankStoreTest extends DashboardTestCase
 {
-    public function test_store_requires_authentication(): void
+    #[Test]
+    public function store_requires_authentication(): void
     {
         $response = $this->post(route('dashboard.ranks.store'), [
             'name' => 'New Rank',
@@ -18,7 +20,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_store_forbids_guest_users(): void
+    #[Test]
+    public function store_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -29,7 +32,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_store_forbids_member_users(): void
+    #[Test]
+    public function store_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -40,7 +44,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_store_forbids_raider_users(): void
+    #[Test]
+    public function store_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -51,7 +56,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_store_allows_officer_users(): void
+    #[Test]
+    public function store_allows_officer_users(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
@@ -61,7 +67,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_store_validates_name_required(): void
+    #[Test]
+    public function store_validates_name_required(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), []);
@@ -69,7 +76,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
-    public function test_store_validates_name_must_be_string(): void
+    #[Test]
+    public function store_validates_name_must_be_string(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
@@ -79,7 +87,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
-    public function test_store_validates_name_max_length(): void
+    #[Test]
+    public function store_validates_name_max_length(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
@@ -89,7 +98,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
-    public function test_store_creates_rank_in_database(): void
+    #[Test]
+    public function store_creates_rank_in_database(): void
     {
 
         $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
@@ -101,7 +111,8 @@ class GuildRankStoreTest extends DashboardTestCase
         ]);
     }
 
-    public function test_store_assigns_next_available_position(): void
+    #[Test]
+    public function store_assigns_next_available_position(): void
     {
         GuildRank::factory()->create(['position' => 0]);
         GuildRank::factory()->create(['position' => 1]);
@@ -117,7 +128,8 @@ class GuildRankStoreTest extends DashboardTestCase
         ]);
     }
 
-    public function test_store_assigns_position_zero_when_no_ranks_exist(): void
+    #[Test]
+    public function store_assigns_position_zero_when_no_ranks_exist(): void
     {
 
         $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
@@ -130,7 +142,8 @@ class GuildRankStoreTest extends DashboardTestCase
         ]);
     }
 
-    public function test_store_clears_guild_ranks_cache(): void
+    #[Test]
+    public function store_clears_guild_ranks_cache(): void
     {
 
         Cache::put('guild_ranks.index', 'cached-data');

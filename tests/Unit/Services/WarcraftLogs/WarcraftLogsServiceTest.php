@@ -11,6 +11,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -73,7 +74,8 @@ class WarcraftLogsServiceTest extends TestCase
             ->andReturn(false);
     }
 
-    public function test_query_sends_graphql_request_with_authorization(): void
+    #[Test]
+    public function query_sends_graphql_request_with_authorization(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -106,7 +108,8 @@ class WarcraftLogsServiceTest extends TestCase
         });
     }
 
-    public function test_query_includes_variables_when_provided(): void
+    #[Test]
+    public function query_includes_variables_when_provided(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -136,7 +139,8 @@ class WarcraftLogsServiceTest extends TestCase
         });
     }
 
-    public function test_query_returns_data_portion(): void
+    #[Test]
+    public function query_returns_data_portion(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -163,7 +167,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(['guild' => ['id' => 774848, 'name' => 'Test Guild']], $data);
     }
 
-    public function test_query_throws_on_graphql_errors(): void
+    #[Test]
+    public function query_throws_on_graphql_errors(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -195,7 +200,8 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
-    public function test_graphql_exception_contains_all_errors(): void
+    #[Test]
+    public function graphql_exception_contains_all_errors(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -231,7 +237,8 @@ class WarcraftLogsServiceTest extends TestCase
         }
     }
 
-    public function test_graphql_exception_has_error_matching_method(): void
+    #[Test]
+    public function graphql_exception_has_error_matching_method(): void
     {
         $exception = new GraphQLException([
             ['message' => 'Rate limit exceeded'],
@@ -242,7 +249,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertFalse($exception->hasErrorMatching('/not found/i'));
     }
 
-    public function test_query_caches_responses(): void
+    #[Test]
+    public function query_caches_responses(): void
     {
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
@@ -263,7 +271,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
 
-    public function test_fresh_bypasses_cache(): void
+    #[Test]
+    public function fresh_bypasses_cache(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -298,7 +307,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
 
-    public function test_fresh_false_uses_cache_only(): void
+    #[Test]
+    public function fresh_false_uses_cache_only(): void
     {
         $this->fakeNotRateLimited();
 
@@ -320,7 +330,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
 
-    public function test_fresh_false_throws_when_cache_missing(): void
+    #[Test]
+    public function fresh_false_throws_when_cache_missing(): void
     {
         $this->fakeNotRateLimited();
 
@@ -337,7 +348,8 @@ class WarcraftLogsServiceTest extends TestCase
         $service->fresh(false)->publicQuery('query { guild { id } }');
     }
 
-    public function test_ignore_cache_skips_cache_entirely(): void
+    #[Test]
+    public function ignore_cache_skips_cache_entirely(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -362,7 +374,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
 
-    public function test_query_cache_key_is_unique_per_query_and_variables(): void
+    #[Test]
+    public function query_cache_key_is_unique_per_query_and_variables(): void
     {
         $service = $this->getService();
 
@@ -377,14 +390,16 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertStringStartsWith('warcraftlogs.', $key1);
     }
 
-    public function test_get_guild_id_returns_configured_value(): void
+    #[Test]
+    public function get_guild_id_returns_configured_value(): void
     {
         $service = $this->getService(['guild_id' => 123456]);
 
         $this->assertEquals(123456, $service->publicGetGuildId());
     }
 
-    public function test_uses_default_guild_id_when_not_configured(): void
+    #[Test]
+    public function uses_default_guild_id_when_not_configured(): void
     {
         $auth = new AuthenticationHandler('test_client_id', 'test_client_secret');
 
@@ -397,7 +412,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(0, $service->publicGetGuildId());
     }
 
-    public function test_429_response_throws_rate_limited_exception(): void
+    #[Test]
+    public function a_429_response_throws_rate_limited_exception(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -436,7 +452,8 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
-    public function test_subsequent_requests_throw_rate_limited_without_http_call(): void
+    #[Test]
+    public function subsequent_requests_throw_rate_limited_without_http_call(): void
     {
         Http::preventStrayRequests();
 
@@ -453,7 +470,8 @@ class WarcraftLogsServiceTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_non_429_http_errors_are_rethrown(): void
+    #[Test]
+    public function non_429_http_errors_are_rethrown(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -484,7 +502,8 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
-    public function test_custom_ttl_passed_to_query(): void
+    #[Test]
+    public function custom_ttl_passed_to_query(): void
     {
         Cache::shouldReceive('get')
             ->with('warcraftlogs.client_token', \Mockery::type('callable'))
@@ -506,7 +525,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
 
-    public function test_rate_limit_headers_are_cached_after_successful_query(): void
+    #[Test]
+    public function rate_limit_headers_are_cached_after_successful_query(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -538,7 +558,8 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
-    public function test_low_rate_limit_remaining_logs_warning(): void
+    #[Test]
+    public function low_rate_limit_remaining_logs_warning(): void
     {
         Http::preventStrayRequests();
         Http::fake([
@@ -577,7 +598,8 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
-    public function test_healthy_rate_limit_remaining_does_not_log_warning(): void
+    #[Test]
+    public function healthy_rate_limit_remaining_does_not_log_warning(): void
     {
         Http::preventStrayRequests();
         Http::fake([

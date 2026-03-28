@@ -9,21 +9,25 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Event;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class FetchGuildRosterTest extends TestCase
 {
-    public function test_it_implements_should_queue(): void
+    #[Test]
+    public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new FetchGuildRoster);
     }
 
-    public function test_it_uses_batchable(): void
+    #[Test]
+    public function it_uses_batchable(): void
     {
         $this->assertContains(Batchable::class, class_uses_recursive(FetchGuildRoster::class));
     }
 
-    public function test_it_calls_roster_on_guild_service(): void
+    #[Test]
+    public function it_calls_roster_on_guild_service(): void
     {
         $guildService = Mockery::mock(GuildService::class);
         $guildService->shouldReceive('roster')->once()->andReturn(['members' => []]);
@@ -32,7 +36,8 @@ class FetchGuildRosterTest extends TestCase
         $job->handle($guildService);
     }
 
-    public function test_it_dispatches_guild_roster_fetched_event(): void
+    #[Test]
+    public function it_dispatches_guild_roster_fetched_event(): void
     {
         Event::fake([GuildRosterFetched::class]);
 

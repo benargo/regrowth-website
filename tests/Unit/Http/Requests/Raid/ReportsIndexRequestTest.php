@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Requests\Raid;
 use App\Http\Requests\Raid\ReportsIndexRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReportsIndexRequestTest extends TestCase
@@ -30,28 +31,32 @@ class ReportsIndexRequestTest extends TestCase
 
     // ==================== zoneIds ====================
 
-    public function test_zone_ids_returns_null_when_absent(): void
+    #[Test]
+    public function zone_ids_returns_null_when_absent(): void
     {
         $request = $this->makeRequest();
 
         $this->assertNull($request->zoneIds());
     }
 
-    public function test_zone_ids_returns_null_for_all(): void
+    #[Test]
+    public function zone_ids_returns_null_for_all(): void
     {
         $request = $this->makeRequest(['zone_ids' => 'all']);
 
         $this->assertNull($request->zoneIds());
     }
 
-    public function test_zone_ids_returns_empty_array_for_none(): void
+    #[Test]
+    public function zone_ids_returns_empty_array_for_none(): void
     {
         $request = $this->makeRequest(['zone_ids' => 'none']);
 
         $this->assertSame([], $request->zoneIds());
     }
 
-    public function test_zone_ids_returns_array_of_integers(): void
+    #[Test]
+    public function zone_ids_returns_array_of_integers(): void
     {
         $request = $this->makeRequest(['zone_ids' => '1,2,3']);
 
@@ -60,21 +65,24 @@ class ReportsIndexRequestTest extends TestCase
 
     // ==================== guildTagIds ====================
 
-    public function test_guild_tag_ids_returns_null_when_absent(): void
+    #[Test]
+    public function guild_tag_ids_returns_null_when_absent(): void
     {
         $request = $this->makeRequest();
 
         $this->assertNull($request->guildTagIds());
     }
 
-    public function test_guild_tag_ids_returns_empty_array_for_none(): void
+    #[Test]
+    public function guild_tag_ids_returns_empty_array_for_none(): void
     {
         $request = $this->makeRequest(['guild_tag_ids' => 'none']);
 
         $this->assertSame([], $request->guildTagIds());
     }
 
-    public function test_guild_tag_ids_returns_array_of_integers(): void
+    #[Test]
+    public function guild_tag_ids_returns_array_of_integers(): void
     {
         $request = $this->makeRequest(['guild_tag_ids' => '4,5']);
 
@@ -83,28 +91,32 @@ class ReportsIndexRequestTest extends TestCase
 
     // ==================== days ====================
 
-    public function test_days_returns_null_when_absent(): void
+    #[Test]
+    public function days_returns_null_when_absent(): void
     {
         $request = $this->makeRequest();
 
         $this->assertNull($request->days());
     }
 
-    public function test_days_returns_null_for_all(): void
+    #[Test]
+    public function days_returns_null_for_all(): void
     {
         $request = $this->makeRequest(['days' => 'all']);
 
         $this->assertNull($request->days());
     }
 
-    public function test_days_returns_empty_array_for_none(): void
+    #[Test]
+    public function days_returns_empty_array_for_none(): void
     {
         $request = $this->makeRequest(['days' => 'none']);
 
         $this->assertSame([], $request->days());
     }
 
-    public function test_days_returns_array_of_integers(): void
+    #[Test]
+    public function days_returns_array_of_integers(): void
     {
         $request = $this->makeRequest(['days' => '0,1,5']);
 
@@ -113,7 +125,8 @@ class ReportsIndexRequestTest extends TestCase
 
     // ==================== rules: structure ====================
 
-    public function test_rules_includes_all_expected_keys(): void
+    #[Test]
+    public function rules_includes_all_expected_keys(): void
     {
         $this->mockNoMinDate();
 
@@ -128,7 +141,8 @@ class ReportsIndexRequestTest extends TestCase
 
     // ==================== rules: date ordering ====================
 
-    public function test_rules_adds_before_or_equal_constraint_to_since_date_when_before_date_is_filled(): void
+    #[Test]
+    public function rules_adds_before_or_equal_constraint_to_since_date_when_before_date_is_filled(): void
     {
         $this->mockNoMinDate();
 
@@ -137,7 +151,8 @@ class ReportsIndexRequestTest extends TestCase
         $this->assertContains('before_or_equal:before_date', $rules['since_date']);
     }
 
-    public function test_rules_does_not_add_before_or_equal_constraint_to_since_date_when_before_date_is_absent(): void
+    #[Test]
+    public function rules_does_not_add_before_or_equal_constraint_to_since_date_when_before_date_is_absent(): void
     {
         $this->mockNoMinDate();
 
@@ -146,7 +161,8 @@ class ReportsIndexRequestTest extends TestCase
         $this->assertNotContains('before_or_equal:before_date', $rules['since_date']);
     }
 
-    public function test_rules_adds_after_or_equal_constraint_to_before_date_when_since_date_is_filled(): void
+    #[Test]
+    public function rules_adds_after_or_equal_constraint_to_before_date_when_since_date_is_filled(): void
     {
         $this->mockNoMinDate();
 
@@ -155,7 +171,8 @@ class ReportsIndexRequestTest extends TestCase
         $this->assertContains('after_or_equal:since_date', $rules['before_date']);
     }
 
-    public function test_rules_does_not_add_after_or_equal_constraint_to_before_date_when_since_date_is_absent(): void
+    #[Test]
+    public function rules_does_not_add_after_or_equal_constraint_to_before_date_when_since_date_is_absent(): void
     {
         $this->mockNoMinDate();
 
@@ -166,7 +183,8 @@ class ReportsIndexRequestTest extends TestCase
 
     // ==================== rules: min date ====================
 
-    public function test_rules_adds_after_or_equal_min_date_to_both_date_fields_when_reports_exist(): void
+    #[Test]
+    public function rules_adds_after_or_equal_min_date_to_both_date_fields_when_reports_exist(): void
     {
         $rawStartTime = '2025-06-15 12:00:00';
         $this->mockMinDate($rawStartTime);
@@ -182,7 +200,8 @@ class ReportsIndexRequestTest extends TestCase
         $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['before_date']);
     }
 
-    public function test_rules_does_not_add_after_or_equal_min_date_when_no_reports_exist(): void
+    #[Test]
+    public function rules_does_not_add_after_or_equal_min_date_when_no_reports_exist(): void
     {
         $this->mockNoMinDate();
 
@@ -197,7 +216,8 @@ class ReportsIndexRequestTest extends TestCase
 
     // ==================== rules: before_or_equal today ====================
 
-    public function test_rules_includes_before_or_equal_today_for_both_date_fields(): void
+    #[Test]
+    public function rules_includes_before_or_equal_today_for_both_date_fields(): void
     {
         $this->mockNoMinDate();
 

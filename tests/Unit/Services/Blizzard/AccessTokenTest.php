@@ -5,11 +5,13 @@ namespace Tests\Unit\Services\Blizzard;
 use App\Exceptions\ExpiredTokenException;
 use App\Services\Blizzard\AccessToken;
 use Illuminate\Support\Carbon;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class AccessTokenTest extends TestCase
 {
-    public function test_constructor_sets_properties(): void
+    #[Test]
+    public function constructor_sets_properties(): void
     {
         $createdAt = Carbon::parse('2024-01-01 12:00:00');
         $token = new AccessToken(
@@ -25,7 +27,8 @@ class AccessTokenTest extends TestCase
         $this->assertTrue($createdAt->equalTo($token->createdAt));
     }
 
-    public function test_expires_at_is_calculated_correctly(): void
+    #[Test]
+    public function expires_at_is_calculated_correctly(): void
     {
         $createdAt = Carbon::parse('2024-01-01 12:00:00');
         $token = new AccessToken(
@@ -39,7 +42,8 @@ class AccessTokenTest extends TestCase
         $this->assertTrue($expectedExpiry->equalTo($token->expiresAt));
     }
 
-    public function test_from_response_creates_token(): void
+    #[Test]
+    public function from_response_creates_token(): void
     {
         $response = [
             'access_token' => 'response_token',
@@ -54,7 +58,8 @@ class AccessTokenTest extends TestCase
         $this->assertEquals(7200, $token->expiresIn);
     }
 
-    public function test_is_expired_returns_false_for_valid_token(): void
+    #[Test]
+    public function is_expired_returns_false_for_valid_token(): void
     {
         $token = new AccessToken(
             token: 'test_token',
@@ -66,7 +71,8 @@ class AccessTokenTest extends TestCase
         $this->assertFalse($token->isExpired());
     }
 
-    public function test_is_expired_returns_true_for_expired_token(): void
+    #[Test]
+    public function is_expired_returns_true_for_expired_token(): void
     {
         $token = new AccessToken(
             token: 'test_token',
@@ -78,7 +84,8 @@ class AccessTokenTest extends TestCase
         $this->assertTrue($token->isExpired());
     }
 
-    public function test_get_token_returns_token_when_valid(): void
+    #[Test]
+    public function get_token_returns_token_when_valid(): void
     {
         $token = new AccessToken(
             token: 'valid_token',
@@ -90,7 +97,8 @@ class AccessTokenTest extends TestCase
         $this->assertEquals('valid_token', $token->getToken());
     }
 
-    public function test_get_token_throws_exception_when_expired(): void
+    #[Test]
+    public function get_token_throws_exception_when_expired(): void
     {
         $token = new AccessToken(
             token: 'expired_token',

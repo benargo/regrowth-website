@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ProcessGrmUploadTest extends TestCase
@@ -31,7 +32,8 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_creates_character_from_csv_row(): void
+    #[Test]
+    public function it_creates_character_from_csv_row(): void
     {
         $this->mockCharacterService(['TestChar' => 12345]);
 
@@ -52,7 +54,8 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_associates_character_with_rank(): void
+    #[Test]
+    public function it_associates_character_with_rank(): void
     {
         $this->mockCharacterService(['TestChar' => 12345]);
         $rank = GuildRank::factory()->create(['name' => 'Officer']);
@@ -71,7 +74,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertEquals($rank->id, $character->rank_id);
     }
 
-    public function test_it_sets_is_main_false_for_alt_characters(): void
+    #[Test]
+    public function it_sets_is_main_false_for_alt_characters(): void
     {
         $this->mockCharacterService(['AltChar' => 67890]);
         $job = new ProcessGrmUpload([
@@ -90,7 +94,8 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_creates_character_links_for_main_with_alts(): void
+    #[Test]
+    public function it_creates_character_links_for_main_with_alts(): void
     {
         $this->mockCharacterService([
             'MainChar' => 11111,
@@ -118,7 +123,8 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_strips_realm_suffix_from_alt_names(): void
+    #[Test]
+    public function it_strips_realm_suffix_from_alt_names(): void
     {
         $this->mockCharacterService([
             'MainChar' => 11111,
@@ -140,7 +146,8 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_strips_realm_suffix_with_spaces(): void
+    #[Test]
+    public function it_strips_realm_suffix_with_spaces(): void
     {
         $this->mockCharacterService([
             'MainChar' => 11111,
@@ -162,7 +169,8 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_uses_opposite_delimiter_for_alt_list(): void
+    #[Test]
+    public function it_uses_opposite_delimiter_for_alt_list(): void
     {
         $this->mockCharacterService([
             'MainChar' => 11111,
@@ -184,7 +192,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseCount('character_links', 2);
     }
 
-    public function test_it_continues_processing_on_individual_row_error(): void
+    #[Test]
+    public function it_continues_processing_on_individual_row_error(): void
     {
         $this->mock(CharacterService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getStatus')
@@ -210,7 +219,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseMissing('characters', ['name' => 'FailChar']);
     }
 
-    public function test_it_sends_immediate_discord_notification_when_no_characters_are_processed(): void
+    #[Test]
+    public function it_sends_immediate_discord_notification_when_no_characters_are_processed(): void
     {
         $this->mock(CharacterService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getStatus')
@@ -233,7 +243,8 @@ class ProcessGrmUploadTest extends TestCase
         );
     }
 
-    public function test_it_sends_immediate_completed_notification_when_all_characters_are_skipped(): void
+    #[Test]
+    public function it_sends_immediate_completed_notification_when_all_characters_are_skipped(): void
     {
         Event::fake([GrmUploadProcessed::class]);
 
@@ -256,7 +267,8 @@ class ProcessGrmUploadTest extends TestCase
         );
     }
 
-    public function test_it_does_not_send_immediate_notification_when_characters_are_processed(): void
+    #[Test]
+    public function it_does_not_send_immediate_notification_when_characters_are_processed(): void
     {
         $this->mockCharacterService(['TestChar' => 12345]);
 
@@ -273,7 +285,8 @@ class ProcessGrmUploadTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    public function test_it_does_not_create_duplicate_character_links(): void
+    #[Test]
+    public function it_does_not_create_duplicate_character_links(): void
     {
         $this->mockCharacterService([
             'MainChar' => 11111,
@@ -299,7 +312,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseCount('character_links', 1);
     }
 
-    public function test_it_updates_existing_character_data(): void
+    #[Test]
+    public function it_updates_existing_character_data(): void
     {
         $this->mockCharacterService(['TestChar' => 12345]);
 
@@ -323,7 +337,8 @@ class ProcessGrmUploadTest extends TestCase
         ]);
     }
 
-    public function test_it_dispatches_grm_upload_processed_event_once_after_successful_batch(): void
+    #[Test]
+    public function it_dispatches_grm_upload_processed_event_once_after_successful_batch(): void
     {
         Event::fake([GrmUploadProcessed::class]);
 
@@ -346,7 +361,8 @@ class ProcessGrmUploadTest extends TestCase
         Event::assertDispatchedTimes(GrmUploadProcessed::class, 1);
     }
 
-    public function test_grm_upload_processed_event_carries_correct_metrics(): void
+    #[Test]
+    public function grm_upload_processed_event_carries_correct_metrics(): void
     {
         Event::fake([GrmUploadProcessed::class]);
 
@@ -380,7 +396,8 @@ class ProcessGrmUploadTest extends TestCase
         });
     }
 
-    public function test_it_does_not_dispatch_grm_upload_processed_event_when_no_characters_are_processed(): void
+    #[Test]
+    public function it_does_not_dispatch_grm_upload_processed_event_when_no_characters_are_processed(): void
     {
         Event::fake([GrmUploadProcessed::class]);
 
@@ -402,7 +419,8 @@ class ProcessGrmUploadTest extends TestCase
         Event::assertNotDispatched(GrmUploadProcessed::class);
     }
 
-    public function test_it_skips_empty_character_names(): void
+    #[Test]
+    public function it_skips_empty_character_names(): void
     {
         $this->mockCharacterService([]);
         $job = new ProcessGrmUpload([

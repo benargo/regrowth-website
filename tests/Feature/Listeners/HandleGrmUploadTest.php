@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HandleGrmUploadTest extends TestCase
@@ -23,7 +24,8 @@ class HandleGrmUploadTest extends TestCase
     // Listener Contract Tests
     // ==========================================
 
-    public function test_it_implements_should_queue(): void
+    #[Test]
+    public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new HandleGrmUpload);
     }
@@ -32,7 +34,8 @@ class HandleGrmUploadTest extends TestCase
     // Happy Path
     // ==========================================
 
-    public function test_it_dispatches_send_grm_upload_notification(): void
+    #[Test]
+    public function it_dispatches_send_grm_upload_notification(): void
     {
         Bus::fake();
 
@@ -42,7 +45,8 @@ class HandleGrmUploadTest extends TestCase
         Bus::assertDispatched(SendGrmUploadNotification::class);
     }
 
-    public function test_it_passes_all_event_data_to_the_notification_job(): void
+    #[Test]
+    public function it_passes_all_event_data_to_the_notification_job(): void
     {
         Bus::fake();
 
@@ -58,7 +62,8 @@ class HandleGrmUploadTest extends TestCase
         });
     }
 
-    public function test_it_dispatches_exactly_one_notification_job(): void
+    #[Test]
+    public function it_dispatches_exactly_one_notification_job(): void
     {
         Bus::fake();
 
@@ -72,7 +77,8 @@ class HandleGrmUploadTest extends TestCase
     // failed() Handler Tests
     // ==========================================
 
-    public function test_failed_updates_cache_with_failed_status(): void
+    #[Test]
+    public function failed_updates_cache_with_failed_status(): void
     {
         Notification::fake();
 
@@ -95,7 +101,8 @@ class HandleGrmUploadTest extends TestCase
         $this->assertEquals(0, $progress['errorCount']);
     }
 
-    public function test_failed_sends_grm_upload_failed_discord_notification(): void
+    #[Test]
+    public function failed_sends_grm_upload_failed_discord_notification(): void
     {
         Notification::fake();
 

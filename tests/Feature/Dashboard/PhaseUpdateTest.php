@@ -7,6 +7,7 @@ use App\Models\TBC\Phase;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class PhaseUpdateTest extends DashboardTestCase
@@ -18,7 +19,8 @@ class PhaseUpdateTest extends DashboardTestCase
         Event::fake(AddonSettingsProcessed::class);
     }
 
-    public function test_update_phase_requires_authentication(): void
+    #[Test]
+    public function update_phase_requires_authentication(): void
     {
         $phase = Phase::factory()->create();
 
@@ -29,7 +31,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_update_phase_forbids_guest_users(): void
+    #[Test]
+    public function update_phase_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $phase = Phase::factory()->create();
@@ -41,7 +44,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_phase_forbids_member_users(): void
+    #[Test]
+    public function update_phase_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->create();
@@ -53,7 +57,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_phase_forbids_raider_users(): void
+    #[Test]
+    public function update_phase_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $phase = Phase::factory()->create();
@@ -65,7 +70,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_phase_allows_officer_users(): void
+    #[Test]
+    public function update_phase_allows_officer_users(): void
     {
         $phase = Phase::factory()->create();
 
@@ -76,7 +82,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_update_phase_saves_start_date_to_database(): void
+    #[Test]
+    public function update_phase_saves_start_date_to_database(): void
     {
         $phase = Phase::factory()->create();
 
@@ -89,7 +96,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $this->assertEquals('2025-06-15 12:00:00', $phase->start_date->utc()->format('Y-m-d H:i:s'));
     }
 
-    public function test_update_phase_allows_null_to_clear_start_date(): void
+    #[Test]
+    public function update_phase_allows_null_to_clear_start_date(): void
     {
         $phase = Phase::factory()->started()->create();
 
@@ -102,7 +110,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $this->assertNull($phase->start_date);
     }
 
-    public function test_update_phase_allows_empty_string_to_clear_start_date(): void
+    #[Test]
+    public function update_phase_allows_empty_string_to_clear_start_date(): void
     {
         $phase = Phase::factory()->started()->create();
 
@@ -115,7 +124,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $this->assertNull($phase->start_date);
     }
 
-    public function test_update_phase_validates_date_format(): void
+    #[Test]
+    public function update_phase_validates_date_format(): void
     {
         $phase = Phase::factory()->create();
 
@@ -126,7 +136,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['start_date']);
     }
 
-    public function test_update_phase_converts_paris_winter_timezone_to_utc(): void
+    #[Test]
+    public function update_phase_converts_paris_winter_timezone_to_utc(): void
     {
         $phase = Phase::factory()->create();
 
@@ -139,7 +150,8 @@ class PhaseUpdateTest extends DashboardTestCase
         $this->assertEquals('2025-01-15 14:00:00', $phase->start_date->utc()->format('Y-m-d H:i:s'));
     }
 
-    public function test_update_phase_clears_phases_cache(): void
+    #[Test]
+    public function update_phase_clears_phases_cache(): void
     {
         $phase = Phase::factory()->create();
 

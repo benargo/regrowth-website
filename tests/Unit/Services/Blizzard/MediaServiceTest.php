@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MediaServiceTest extends TestCase
@@ -33,7 +34,8 @@ class MediaServiceTest extends TestCase
         ]);
     }
 
-    public function test_constructor_sets_static_namespace(): void
+    #[Test]
+    public function constructor_sets_static_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
         new MediaService($client);
@@ -41,7 +43,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals('static-eu', $client->getNamespace());
     }
 
-    public function test_find_returns_media_data(): void
+    #[Test]
+    public function find_returns_media_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -66,7 +69,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals('icon', $media['assets'][0]['key']);
     }
 
-    public function test_find_caches_result(): void
+    #[Test]
+    public function find_caches_result(): void
     {
         $callCount = 0;
 
@@ -93,7 +97,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_find_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function find_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -112,7 +117,8 @@ class MediaServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.media.item.static-eu.19019'));
     }
 
-    public function test_find_throws_exception_for_invalid_media(): void
+    #[Test]
+    public function find_throws_exception_for_invalid_media(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -131,7 +137,8 @@ class MediaServiceTest extends TestCase
         $service->find('item', 99999999);
     }
 
-    public function test_find_throws_exception_for_invalid_tag(): void
+    #[Test]
+    public function find_throws_exception_for_invalid_tag(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new MediaService($client);
@@ -142,7 +149,8 @@ class MediaServiceTest extends TestCase
         $service->find('invalid', 19019);
     }
 
-    public function test_find_accepts_item_tag(): void
+    #[Test]
+    public function find_accepts_item_tag(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -169,7 +177,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_find_accepts_spell_tag(): void
+    #[Test]
+    public function find_accepts_spell_tag(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -196,7 +205,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_find_accepts_playable_class_tag(): void
+    #[Test]
+    public function find_accepts_playable_class_tag(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -223,7 +233,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_find_fresh_bypasses_cache(): void
+    #[Test]
+    public function find_fresh_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -249,7 +260,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_find_fresh_throws_exception_for_invalid_tag(): void
+    #[Test]
+    public function find_fresh_throws_exception_for_invalid_tag(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new MediaService($client);
@@ -260,7 +272,8 @@ class MediaServiceTest extends TestCase
         $service->fresh()->find('invalid', 19019);
     }
 
-    public function test_search_requires_tags_parameter(): void
+    #[Test]
+    public function search_requires_tags_parameter(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new MediaService($client);
@@ -271,7 +284,8 @@ class MediaServiceTest extends TestCase
         $service->search(['name' => 'test']);
     }
 
-    public function test_search_returns_results(): void
+    #[Test]
+    public function search_returns_results(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -301,7 +315,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals(1, $results['page']);
     }
 
-    public function test_search_throws_for_invalid_tags(): void
+    #[Test]
+    public function search_throws_for_invalid_tags(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new MediaService($client);
@@ -312,7 +327,8 @@ class MediaServiceTest extends TestCase
         $service->search(['tags' => ['item', 'invalid']]);
     }
 
-    public function test_search_maps_tags_parameter(): void
+    #[Test]
+    public function search_maps_tags_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -340,7 +356,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_search_maps_item_id_parameter(): void
+    #[Test]
+    public function search_maps_item_id_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -368,7 +385,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_search_maps_name_parameter(): void
+    #[Test]
+    public function search_maps_name_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -396,7 +414,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_search_maps_orderby_parameter(): void
+    #[Test]
+    public function search_maps_orderby_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -424,7 +443,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_search_maps_page_parameter(): void
+    #[Test]
+    public function search_maps_page_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -452,7 +472,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_search_maps_page_size_parameter(): void
+    #[Test]
+    public function search_maps_page_size_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -480,7 +501,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_search_caps_page_size_at_maximum(): void
+    #[Test]
+    public function search_caps_page_size_at_maximum(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -508,7 +530,8 @@ class MediaServiceTest extends TestCase
         });
     }
 
-    public function test_search_caches_results(): void
+    #[Test]
+    public function search_caches_results(): void
     {
         $callCount = 0;
 
@@ -534,7 +557,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_search_cache_key_varies_by_parameters(): void
+    #[Test]
+    public function search_cache_key_varies_by_parameters(): void
     {
         $callCount = 0;
 
@@ -560,7 +584,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_with_namespace_affects_cache_keys(): void
+    #[Test]
+    public function with_namespace_affects_cache_keys(): void
     {
         $callCount = 0;
 
@@ -588,7 +613,8 @@ class MediaServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.media.item.static-classic-eu.19019'));
     }
 
-    public function test_validate_tags_accepts_valid_array(): void
+    #[Test]
+    public function validate_tags_accepts_valid_array(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -607,7 +633,8 @@ class MediaServiceTest extends TestCase
         $this->assertIsArray($results);
     }
 
-    public function test_validate_tags_throws_for_multiple_invalid_tags(): void
+    #[Test]
+    public function validate_tags_throws_for_multiple_invalid_tags(): void
     {
         $client = new Client('client_id', 'client_secret');
         $service = new MediaService($client);
@@ -618,7 +645,8 @@ class MediaServiceTest extends TestCase
         $service->search(['tags' => ['foo', 'bar']]);
     }
 
-    public function test_download_assets_stores_file_on_disk(): void
+    #[Test]
+    public function download_assets_stores_file_on_disk(): void
     {
         Storage::fake('public');
 
@@ -643,7 +671,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals('fake-image-content', Storage::disk('public')->get($paths[135349]));
     }
 
-    public function test_download_assets_skips_existing_file(): void
+    #[Test]
+    public function download_assets_skips_existing_file(): void
     {
         Storage::fake('public');
         Storage::disk('public')->put('blizzard/media/135349.jpg', 'existing-content');
@@ -674,7 +703,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals('existing-content', Storage::disk('public')->get($paths[135349]));
     }
 
-    public function test_download_assets_returns_null_on_http_failure(): void
+    #[Test]
+    public function download_assets_returns_null_on_http_failure(): void
     {
         Storage::fake('public');
 
@@ -697,7 +727,8 @@ class MediaServiceTest extends TestCase
         Storage::disk('public')->assertMissing('blizzard/media/135349.jpg');
     }
 
-    public function test_download_assets_skips_invalid_assets(): void
+    #[Test]
+    public function download_assets_skips_invalid_assets(): void
     {
         Storage::fake('public');
 
@@ -709,7 +740,8 @@ class MediaServiceTest extends TestCase
         $this->assertEmpty($paths);
     }
 
-    public function test_download_assets_processes_multiple_assets(): void
+    #[Test]
+    public function download_assets_processes_multiple_assets(): void
     {
         Storage::fake('public');
 
@@ -742,7 +774,8 @@ class MediaServiceTest extends TestCase
         Storage::disk('public')->assertExists('blizzard/media/135350.jpg');
     }
 
-    public function test_get_asset_urls_returns_public_urls(): void
+    #[Test]
+    public function get_asset_urls_returns_public_urls(): void
     {
         Storage::fake('public');
 
@@ -765,7 +798,8 @@ class MediaServiceTest extends TestCase
         $this->assertStringContainsString('blizzard/media/135349.jpg', $urls[135349]);
     }
 
-    public function test_get_asset_urls_returns_null_on_failure(): void
+    #[Test]
+    public function get_asset_urls_returns_null_on_failure(): void
     {
         Storage::fake('public');
 
@@ -787,7 +821,8 @@ class MediaServiceTest extends TestCase
         $this->assertNull($urls[135349]);
     }
 
-    public function test_get_asset_urls_handles_multiple_assets(): void
+    #[Test]
+    public function get_asset_urls_handles_multiple_assets(): void
     {
         Storage::fake('public');
 
@@ -818,7 +853,8 @@ class MediaServiceTest extends TestCase
         $this->assertStringContainsString('blizzard/media/135350.jpg', $urls[135350]);
     }
 
-    public function test_assets_exist_returns_true_when_file_exists(): void
+    #[Test]
+    public function assets_exist_returns_true_when_file_exists(): void
     {
         Storage::fake('public');
         Storage::disk('public')->put('blizzard/media/135349.jpg', 'content');
@@ -837,7 +873,8 @@ class MediaServiceTest extends TestCase
         $this->assertTrue($exists[135349]);
     }
 
-    public function test_assets_exist_returns_false_when_file_missing(): void
+    #[Test]
+    public function assets_exist_returns_false_when_file_missing(): void
     {
         Storage::fake('public');
 
@@ -855,7 +892,8 @@ class MediaServiceTest extends TestCase
         $this->assertFalse($exists[135349]);
     }
 
-    public function test_assets_exist_handles_multiple_assets(): void
+    #[Test]
+    public function assets_exist_handles_multiple_assets(): void
     {
         Storage::fake('public');
         Storage::disk('public')->put('blizzard/media/135349.jpg', 'content');
@@ -882,7 +920,8 @@ class MediaServiceTest extends TestCase
         $this->assertFalse($exists[135350]);
     }
 
-    public function test_extract_extension_handles_various_urls(): void
+    #[Test]
+    public function extract_extension_handles_various_urls(): void
     {
         Storage::fake('public');
 
@@ -904,7 +943,8 @@ class MediaServiceTest extends TestCase
         $this->assertEquals('blizzard/media/111111.png', $paths[111111]);
     }
 
-    public function test_download_uses_configured_filesystem(): void
+    #[Test]
+    public function download_uses_configured_filesystem(): void
     {
         Storage::fake('custom_disk');
 

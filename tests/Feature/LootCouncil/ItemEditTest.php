@@ -16,6 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ItemEditTest extends TestCase
@@ -92,7 +93,8 @@ class ItemEditTest extends TestCase
         return "/loot/items/{$item->id}/{$slug}/edit";
     }
 
-    public function test_edit_item_requires_authentication(): void
+    #[Test]
+    public function edit_item_requires_authentication(): void
     {
         $item = $this->createTestItem();
 
@@ -101,7 +103,8 @@ class ItemEditTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_edit_item_forbids_guest_users(): void
+    #[Test]
+    public function edit_item_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
@@ -111,7 +114,8 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_edit_item_forbids_member_users(): void
+    #[Test]
+    public function edit_item_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -121,7 +125,8 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_edit_item_forbids_raider_users(): void
+    #[Test]
+    public function edit_item_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
@@ -131,7 +136,8 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_edit_item_allows_officer_users(): void
+    #[Test]
+    public function edit_item_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -141,7 +147,8 @@ class ItemEditTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_edit_item_redirects_from_incorrect_slug_to_correct_slug(): void
+    #[Test]
+    public function edit_item_redirects_from_incorrect_slug_to_correct_slug(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -153,7 +160,8 @@ class ItemEditTest extends TestCase
         $response->assertStatus(303);
     }
 
-    public function test_edit_item_renders_with_correct_slug(): void
+    #[Test]
+    public function edit_item_renders_with_correct_slug(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -167,7 +175,8 @@ class ItemEditTest extends TestCase
         );
     }
 
-    public function test_edit_item_returns_item_and_all_priorities(): void
+    #[Test]
+    public function edit_item_returns_item_and_all_priorities(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -189,7 +198,8 @@ class ItemEditTest extends TestCase
         );
     }
 
-    public function test_update_priorities_requires_authentication(): void
+    #[Test]
+    public function update_priorities_requires_authentication(): void
     {
         $item = $this->createTestItem();
 
@@ -200,7 +210,8 @@ class ItemEditTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_update_priorities_forbids_non_officers(): void
+    #[Test]
+    public function update_priorities_forbids_non_officers(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -212,7 +223,8 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_update_priorities_allows_officers(): void
+    #[Test]
+    public function update_priorities_allows_officers(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -227,7 +239,8 @@ class ItemEditTest extends TestCase
         $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
     }
 
-    public function test_update_priorities_syncs_correctly(): void
+    #[Test]
+    public function update_priorities_syncs_correctly(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -253,7 +266,8 @@ class ItemEditTest extends TestCase
         $this->assertFalse($item->priorities->contains('id', $priority1->id));
     }
 
-    public function test_update_priorities_validates_priority_ids(): void
+    #[Test]
+    public function update_priorities_validates_priority_ids(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -267,7 +281,8 @@ class ItemEditTest extends TestCase
         $response->assertSessionHasErrors(['priorities.0.priority_id']);
     }
 
-    public function test_update_priorities_validates_weights(): void
+    #[Test]
+    public function update_priorities_validates_weights(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -282,7 +297,8 @@ class ItemEditTest extends TestCase
         $response->assertSessionHasErrors(['priorities.0.weight']);
     }
 
-    public function test_update_priorities_handles_empty_array(): void
+    #[Test]
+    public function update_priorities_handles_empty_array(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -299,7 +315,8 @@ class ItemEditTest extends TestCase
         $this->assertCount(0, $item->priorities);
     }
 
-    public function test_update_priorities_handles_same_weight_priorities(): void
+    #[Test]
+    public function update_priorities_handles_same_weight_priorities(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -322,7 +339,8 @@ class ItemEditTest extends TestCase
         $this->assertEquals([0, 0], $weights);
     }
 
-    public function test_update_notes_requires_authentication(): void
+    #[Test]
+    public function update_notes_requires_authentication(): void
     {
         $item = $this->createTestItem();
 
@@ -333,7 +351,8 @@ class ItemEditTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_update_notes_forbids_guest_users(): void
+    #[Test]
+    public function update_notes_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
@@ -345,7 +364,8 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_update_notes_forbids_member_users(): void
+    #[Test]
+    public function update_notes_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -357,7 +377,8 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_update_notes_forbids_raider_users(): void
+    #[Test]
+    public function update_notes_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
@@ -369,7 +390,8 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_update_notes_allows_officer_users(): void
+    #[Test]
+    public function update_notes_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -385,7 +407,8 @@ class ItemEditTest extends TestCase
         ]);
     }
 
-    public function test_update_notes_saves_notes_to_database(): void
+    #[Test]
+    public function update_notes_saves_notes_to_database(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -398,7 +421,8 @@ class ItemEditTest extends TestCase
         $this->assertEquals('These are detailed officer notes about the item.', $item->notes);
     }
 
-    public function test_update_notes_allows_null_to_clear_notes(): void
+    #[Test]
+    public function update_notes_allows_null_to_clear_notes(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -413,7 +437,8 @@ class ItemEditTest extends TestCase
         $this->assertNull($item->notes);
     }
 
-    public function test_update_notes_allows_empty_string_to_clear_notes(): void
+    #[Test]
+    public function update_notes_allows_empty_string_to_clear_notes(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -428,7 +453,8 @@ class ItemEditTest extends TestCase
         $this->assertEquals('', $item->notes);
     }
 
-    public function test_update_notes_validates_max_length(): void
+    #[Test]
+    public function update_notes_validates_max_length(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -440,7 +466,8 @@ class ItemEditTest extends TestCase
         $response->assertSessionHasErrors(['notes']);
     }
 
-    public function test_update_notes_allows_max_length(): void
+    #[Test]
+    public function update_notes_allows_max_length(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -455,7 +482,8 @@ class ItemEditTest extends TestCase
         $this->assertEquals(5000, strlen($item->notes));
     }
 
-    public function test_update_notes_validates_notes_is_string(): void
+    #[Test]
+    public function update_notes_validates_notes_is_string(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -467,7 +495,8 @@ class ItemEditTest extends TestCase
         $response->assertSessionHasErrors(['notes']);
     }
 
-    public function test_update_notes_overwrites_existing_notes(): void
+    #[Test]
+    public function update_notes_overwrites_existing_notes(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();

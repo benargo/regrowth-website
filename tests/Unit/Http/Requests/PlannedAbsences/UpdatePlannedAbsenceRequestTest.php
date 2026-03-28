@@ -6,6 +6,7 @@ use App\Http\Requests\PlannedAbsences\UpdatePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
 use Illuminate\Routing\Route;
 use Illuminate\Validation\Rules\Exists;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class UpdatePlannedAbsenceRequestTest extends TestCase
@@ -17,7 +18,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
     // ==================== rules ====================
 
-    public function test_rules_character_uses_integer_and_exists_rules(): void
+    #[Test]
+    public function rules_character_uses_integer_and_exists_rules(): void
     {
         $rules = $this->makeRequest(['character' => '5'])->rules();
 
@@ -28,7 +30,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertTrue(collect($rules['character'])->contains(fn ($r) => $r instanceof Exists));
     }
 
-    public function test_rules_character_is_sometimes_not_required(): void
+    #[Test]
+    public function rules_character_is_sometimes_not_required(): void
     {
         $rules = $this->makeRequest()->rules();
 
@@ -37,7 +40,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertNotContains('required', $rules['character']);
     }
 
-    public function test_rules_user_is_sometimes_optional_nullable_string(): void
+    #[Test]
+    public function rules_user_is_sometimes_optional_nullable_string(): void
     {
         $rules = $this->makeRequest()->rules();
 
@@ -48,7 +52,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertNotContains('required', $rules['user']);
     }
 
-    public function test_rules_start_date_is_sometimes_not_required(): void
+    #[Test]
+    public function rules_start_date_is_sometimes_not_required(): void
     {
         $rules = $this->makeRequest()->rules();
 
@@ -58,7 +63,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertNotContains('required', $rules['start_date']);
     }
 
-    public function test_rules_start_date_includes_after_or_equal_today_when_user_cannot_backdate(): void
+    #[Test]
+    public function rules_start_date_includes_after_or_equal_today_when_user_cannot_backdate(): void
     {
         $absence = \Mockery::mock(PlannedAbsence::class);
         $absence->shouldReceive('getAttribute')->with('start_date')->andReturn(null);
@@ -77,7 +83,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('after_or_equal:today', $rules['start_date']);
     }
 
-    public function test_rules_start_date_excludes_after_or_equal_today_when_user_can_backdate(): void
+    #[Test]
+    public function rules_start_date_excludes_after_or_equal_today_when_user_can_backdate(): void
     {
         $absence = \Mockery::mock(PlannedAbsence::class);
         $absence->shouldReceive('getAttribute')->with('start_date')->andReturn(null);
@@ -96,7 +103,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertNotContains('after_or_equal:today', $rules['start_date']);
     }
 
-    public function test_rules_end_date_is_sometimes_nullable_date(): void
+    #[Test]
+    public function rules_end_date_is_sometimes_nullable_date(): void
     {
         $rules = $this->makeRequest()->rules();
 
@@ -106,7 +114,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('date', $rules['end_date']);
     }
 
-    public function test_rules_end_date_includes_after_clause_when_start_date_is_provided(): void
+    #[Test]
+    public function rules_end_date_includes_after_clause_when_start_date_is_provided(): void
     {
         $rules = $this->makeRequest(['start_date' => '2026-04-01'])->rules();
 
@@ -114,7 +123,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('after:2026-04-01', $rules['end_date']);
     }
 
-    public function test_rules_reason_is_sometimes_string(): void
+    #[Test]
+    public function rules_reason_is_sometimes_string(): void
     {
         $rules = $this->makeRequest()->rules();
 
@@ -126,7 +136,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
 
     // ==================== authorize ====================
 
-    public function test_authorize_returns_false_when_user_cannot_update_planned_absence(): void
+    #[Test]
+    public function authorize_returns_false_when_user_cannot_update_planned_absence(): void
     {
         $absence = \Mockery::mock(PlannedAbsence::class);
 
@@ -142,7 +153,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertFalse($request->authorize());
     }
 
-    public function test_authorize_returns_true_when_user_can_update_and_no_character_is_passed(): void
+    #[Test]
+    public function authorize_returns_true_when_user_can_update_and_no_character_is_passed(): void
     {
         $absence = \Mockery::mock(PlannedAbsence::class);
 
@@ -158,7 +170,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertTrue($request->authorize());
     }
 
-    public function test_authorize_returns_false_when_character_is_passed_and_user_lacks_update_permission(): void
+    #[Test]
+    public function authorize_returns_false_when_character_is_passed_and_user_lacks_update_permission(): void
     {
         $absence = \Mockery::mock(PlannedAbsence::class);
 
@@ -175,7 +188,8 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
         $this->assertFalse($request->authorize());
     }
 
-    public function test_authorize_returns_true_when_character_is_passed_and_user_has_update_permission(): void
+    #[Test]
+    public function authorize_returns_true_when_character_is_passed_and_user_has_update_permission(): void
     {
         $absence = \Mockery::mock(PlannedAbsence::class);
 

@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -36,14 +37,16 @@ class ReportControllerTest extends TestCase
 
     // ==================== Access Control ====================
 
-    public function test_index_requires_authentication(): void
+    #[Test]
+    public function index_requires_authentication(): void
     {
         $response = $this->get(route('raids.reports.index'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_index_forbids_guest_users(): void
+    #[Test]
+    public function index_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -52,7 +55,8 @@ class ReportControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_member_users(): void
+    #[Test]
+    public function index_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -61,7 +65,8 @@ class ReportControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_raider_users(): void
+    #[Test]
+    public function index_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -70,7 +75,8 @@ class ReportControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_loot_councillor_users(): void
+    #[Test]
+    public function index_forbids_loot_councillor_users(): void
     {
         $user = User::factory()->lootCouncillor()->create();
 
@@ -79,7 +85,8 @@ class ReportControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_allows_officer_users(): void
+    #[Test]
+    public function index_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -90,7 +97,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Deferred Prop ====================
 
-    public function test_reports_prop_is_deferred_and_not_in_initial_response(): void
+    #[Test]
+    public function reports_prop_is_deferred_and_not_in_initial_response(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -102,7 +110,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_reports_deferred_prop_returns_paginated_data(): void
+    #[Test]
+    public function reports_deferred_prop_returns_paginated_data(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
@@ -123,7 +132,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_reports_deferred_prop_returns_empty_when_no_data(): void
+    #[Test]
+    public function reports_deferred_prop_returns_empty_when_no_data(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -138,7 +148,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Filter Props ====================
 
-    public function test_index_includes_filter_option_props(): void
+    #[Test]
+    public function index_includes_filter_option_props(): void
     {
         GuildTag::factory()->withoutPhase()->create();
 
@@ -162,7 +173,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Report Shape ====================
 
-    public function test_reports_data_contains_expected_fields(): void
+    #[Test]
+    public function reports_data_contains_expected_fields(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create([
@@ -192,7 +204,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Ordering ====================
 
-    public function test_reports_are_ordered_by_start_time_descending(): void
+    #[Test]
+    public function reports_are_ordered_by_start_time_descending(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
@@ -212,7 +225,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Filter Behavior ====================
 
-    public function test_zone_filter_limits_results_to_matching_zone(): void
+    #[Test]
+    public function zone_filter_limits_results_to_matching_zone(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['title' => 'Zone A Raid', 'zone_id' => 1, 'zone_name' => 'Zone A', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
@@ -230,7 +244,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_guild_tag_filter_limits_results_to_matching_tag(): void
+    #[Test]
+    public function guild_tag_filter_limits_results_to_matching_tag(): void
     {
         $tag1 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         $tag2 = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
@@ -249,7 +264,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_day_filter_limits_results_to_matching_day_of_week(): void
+    #[Test]
+    public function day_filter_limits_results_to_matching_day_of_week(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         // 2025-01-06 is a Monday (Carbon day 1)
@@ -270,7 +286,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_since_date_filter_excludes_older_reports(): void
+    #[Test]
+    public function since_date_filter_excludes_older_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
@@ -288,7 +305,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_before_date_filter_excludes_newer_reports(): void
+    #[Test]
+    public function before_date_filter_excludes_newer_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
@@ -306,7 +324,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_zone_ids_none_returns_no_reports(): void
+    #[Test]
+    public function zone_ids_none_returns_no_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->count(3)->withGuildTag($tag)->create();
@@ -322,7 +341,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_guild_tag_ids_none_returns_no_reports(): void
+    #[Test]
+    public function guild_tag_ids_none_returns_no_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->count(3)->withGuildTag($tag)->create();
@@ -338,7 +358,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_days_none_returns_no_reports(): void
+    #[Test]
+    public function days_none_returns_no_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->count(3)->withGuildTag($tag)->create();
@@ -354,7 +375,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_zone_ids_all_returns_all_reports(): void
+    #[Test]
+    public function zone_ids_all_returns_all_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->count(3)->withGuildTag($tag)->create();
@@ -370,7 +392,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_no_filters_returns_all_reports(): void
+    #[Test]
+    public function no_filters_returns_all_reports(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->count(3)->withGuildTag($tag)->create();
@@ -388,7 +411,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Validation ====================
 
-    public function test_index_accepts_omitted_optional_fields(): void
+    #[Test]
+    public function index_accepts_omitted_optional_fields(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -397,7 +421,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['zone_ids', 'guild_tag_ids', 'days', 'since_date', 'before_date']);
     }
 
-    public function test_index_rejects_zone_ids_with_invalid_format(): void
+    #[Test]
+    public function index_rejects_zone_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -406,7 +431,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['zone_ids']);
     }
 
-    public function test_index_rejects_guild_tag_ids_with_invalid_format(): void
+    #[Test]
+    public function index_rejects_guild_tag_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -415,7 +441,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
 
-    public function test_index_rejects_days_with_invalid_format(): void
+    #[Test]
+    public function index_rejects_days_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -424,7 +451,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['days']);
     }
 
-    public function test_index_rejects_days_outside_valid_range(): void
+    #[Test]
+    public function index_rejects_days_outside_valid_range(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -433,7 +461,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['days']);
     }
 
-    public function test_index_accepts_valid_days_range(): void
+    #[Test]
+    public function index_accepts_valid_days_range(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -442,7 +471,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['days']);
     }
 
-    public function test_index_rejects_invalid_since_date(): void
+    #[Test]
+    public function index_rejects_invalid_since_date(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -451,7 +481,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['since_date']);
     }
 
-    public function test_index_rejects_since_date_in_the_future(): void
+    #[Test]
+    public function index_rejects_since_date_in_the_future(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -461,7 +492,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['since_date']);
     }
 
-    public function test_index_rejects_invalid_before_date(): void
+    #[Test]
+    public function index_rejects_invalid_before_date(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -470,7 +502,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['before_date']);
     }
 
-    public function test_index_rejects_before_date_in_the_future(): void
+    #[Test]
+    public function index_rejects_before_date_in_the_future(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -482,7 +515,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Earliest Date Prop ====================
 
-    public function test_earliest_date_is_null_when_no_reports_exist(): void
+    #[Test]
+    public function earliest_date_is_null_when_no_reports_exist(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -493,7 +527,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_earliest_date_is_day_before_earliest_report(): void
+    #[Test]
+    public function earliest_date_is_day_before_earliest_report(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'UTC')]);
@@ -510,7 +545,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Show: Access Control ====================
 
-    public function test_show_requires_authentication(): void
+    #[Test]
+    public function show_requires_authentication(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
 
@@ -519,7 +555,8 @@ class ReportControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_show_forbids_users_without_view_reports_permission(): void
+    #[Test]
+    public function show_forbids_users_without_view_reports_permission(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->member()->create();
@@ -529,7 +566,8 @@ class ReportControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_show_allows_officers(): void
+    #[Test]
+    public function show_allows_officers(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -541,7 +579,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Show: Page Props ====================
 
-    public function test_show_renders_correct_inertia_component(): void
+    #[Test]
+    public function show_renders_correct_inertia_component(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -553,7 +592,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_show_includes_expected_report_fields(): void
+    #[Test]
+    public function show_includes_expected_report_fields(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
         $report = Report::factory()->withGuildTag($tag)->withZone(1000, 'Karazhan')->create([
@@ -581,7 +621,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_show_includes_characters_with_pivot(): void
+    #[Test]
+    public function show_includes_characters_with_pivot(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $character = Character::factory()->create(['name' => 'Thrall']);
@@ -598,7 +639,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_show_includes_linked_reports(): void
+    #[Test]
+    public function show_includes_linked_reports(): void
     {
         $report1 = Report::factory()->withoutGuildTag()->create(['title' => 'Main Report']);
         $report2 = Report::factory()->withoutGuildTag()->create(['title' => 'Linked Report']);
@@ -614,7 +656,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_show_returns_404_for_nonexistent_report(): void
+    #[Test]
+    public function show_returns_404_for_nonexistent_report(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -625,7 +668,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Show: canManageLinks ====================
 
-    public function test_show_can_manage_links_is_true_for_users_with_manage_reports(): void
+    #[Test]
+    public function show_can_manage_links_is_true_for_users_with_manage_reports(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true]);
@@ -639,7 +683,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_show_can_manage_links_is_false_for_users_without_manage_reports(): void
+    #[Test]
+    public function show_can_manage_links_is_false_for_users_without_manage_reports(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -653,7 +698,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Show: nearbyReports optional prop ====================
 
-    public function test_show_nearby_reports_is_absent_on_initial_load(): void
+    #[Test]
+    public function show_nearby_reports_is_absent_on_initial_load(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -665,7 +711,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_show_nearby_reports_is_returned_on_partial_reload(): void
+    #[Test]
+    public function show_nearby_reports_is_returned_on_partial_reload(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-06-01 20:00', 'UTC')]);
@@ -685,7 +732,8 @@ class ReportControllerTest extends TestCase
             );
     }
 
-    public function test_show_nearby_reports_page_one_centres_on_current_report(): void
+    #[Test]
+    public function show_nearby_reports_page_one_centres_on_current_report(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
 
@@ -711,7 +759,8 @@ class ReportControllerTest extends TestCase
             );
     }
 
-    public function test_show_nearby_reports_handles_current_report_being_newest(): void
+    #[Test]
+    public function show_nearby_reports_handles_current_report_being_newest(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
 
@@ -737,7 +786,8 @@ class ReportControllerTest extends TestCase
             );
     }
 
-    public function test_show_nearby_reports_handles_current_report_being_oldest(): void
+    #[Test]
+    public function show_nearby_reports_handles_current_report_being_oldest(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
 
@@ -772,7 +822,8 @@ class ReportControllerTest extends TestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
-    public function test_store_links_requires_authentication(): void
+    #[Test]
+    public function store_links_requires_authentication(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
 
@@ -781,7 +832,8 @@ class ReportControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_store_links_returns_forbidden_without_manage_reports(): void
+    #[Test]
+    public function store_links_returns_forbidden_without_manage_reports(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
@@ -794,7 +846,8 @@ class ReportControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_store_links_rejects_empty_codes(): void
+    #[Test]
+    public function store_links_rejects_empty_codes(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -807,7 +860,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['codes']);
     }
 
-    public function test_store_links_rejects_missing_codes(): void
+    #[Test]
+    public function store_links_rejects_missing_codes(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -818,7 +872,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['codes']);
     }
 
-    public function test_store_links_rejects_nonexistent_report_code(): void
+    #[Test]
+    public function store_links_rejects_nonexistent_report_code(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -831,7 +886,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['codes.0']);
     }
 
-    public function test_store_links_rejects_current_report_in_codes(): void
+    #[Test]
+    public function store_links_rejects_current_report_in_codes(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -844,7 +900,8 @@ class ReportControllerTest extends TestCase
         $response->assertSessionHasErrors(['codes.0']);
     }
 
-    public function test_store_links_creates_bidirectional_link_between_current_and_selected(): void
+    #[Test]
+    public function store_links_creates_bidirectional_link_between_current_and_selected(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -868,7 +925,8 @@ class ReportControllerTest extends TestCase
         ]);
     }
 
-    public function test_store_links_creates_all_combinations_when_multiple_reports_selected(): void
+    #[Test]
+    public function store_links_creates_all_combinations_when_multiple_reports_selected(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -893,7 +951,8 @@ class ReportControllerTest extends TestCase
         }
     }
 
-    public function test_store_links_is_idempotent_for_already_linked_reports(): void
+    #[Test]
+    public function store_links_is_idempotent_for_already_linked_reports(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -909,7 +968,8 @@ class ReportControllerTest extends TestCase
         $this->assertDatabaseCount('pivot_wcl_reports_links', 2); // forward + reverse, no duplicates
     }
 
-    public function test_store_links_flushes_warcraftlogs_cache(): void
+    #[Test]
+    public function store_links_flushes_warcraftlogs_cache(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -925,7 +985,8 @@ class ReportControllerTest extends TestCase
         $this->assertNull(Cache::tags('warcraftlogs')->get('some_key'));
     }
 
-    public function test_store_links_redirects_back_on_success(): void
+    #[Test]
+    public function store_links_redirects_back_on_success(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -941,7 +1002,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== destroyLinks ====================
 
-    public function test_destroy_links_requires_authentication(): void
+    #[Test]
+    public function destroy_links_requires_authentication(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
 
@@ -950,7 +1012,8 @@ class ReportControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_destroy_links_returns_forbidden_without_manage_reports(): void
+    #[Test]
+    public function destroy_links_returns_forbidden_without_manage_reports(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -960,7 +1023,8 @@ class ReportControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_destroy_links_deletes_all_manual_links_bidirectionally(): void
+    #[Test]
+    public function destroy_links_deletes_all_manual_links_bidirectionally(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -984,7 +1048,8 @@ class ReportControllerTest extends TestCase
         $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $reportC->code, 'report_2' => $report->code]);
     }
 
-    public function test_destroy_links_does_not_delete_auto_linked_reports(): void
+    #[Test]
+    public function destroy_links_does_not_delete_auto_linked_reports(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -1000,7 +1065,8 @@ class ReportControllerTest extends TestCase
         $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => $autoLinked->code, 'report_2' => $report->code]);
     }
 
-    public function test_destroy_links_is_a_no_op_when_no_manual_links_exist(): void
+    #[Test]
+    public function destroy_links_is_a_no_op_when_no_manual_links_exist(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -1012,7 +1078,8 @@ class ReportControllerTest extends TestCase
         $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
     }
 
-    public function test_destroy_links_flushes_warcraftlogs_cache(): void
+    #[Test]
+    public function destroy_links_flushes_warcraftlogs_cache(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -1027,7 +1094,8 @@ class ReportControllerTest extends TestCase
         $this->assertNull(Cache::tags('warcraftlogs')->get('some_key'));
     }
 
-    public function test_destroy_links_redirects_back_on_success(): void
+    #[Test]
+    public function destroy_links_redirects_back_on_success(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -1040,7 +1108,8 @@ class ReportControllerTest extends TestCase
 
     // ==================== Show: impactedReports optional prop ====================
 
-    public function test_show_impacted_reports_is_absent_on_initial_load(): void
+    #[Test]
+    public function show_impacted_reports_is_absent_on_initial_load(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -1052,7 +1121,8 @@ class ReportControllerTest extends TestCase
         );
     }
 
-    public function test_show_impacted_reports_returns_manually_linked_reports_on_reload(): void
+    #[Test]
+    public function show_impacted_reports_returns_manually_linked_reports_on_reload(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
@@ -1070,7 +1140,8 @@ class ReportControllerTest extends TestCase
             );
     }
 
-    public function test_show_impacted_reports_excludes_auto_linked_reports_on_reload(): void
+    #[Test]
+    public function show_impacted_reports_excludes_auto_linked_reports_on_reload(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $autoLinked = Report::factory()->withoutGuildTag()->create();

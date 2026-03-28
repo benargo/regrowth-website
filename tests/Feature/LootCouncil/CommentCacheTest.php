@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CommentCacheTest extends TestCase
@@ -78,7 +79,8 @@ class CommentCacheTest extends TestCase
     // Comment visibility tests
     // ==========================================
 
-    public function test_new_comment_appears_after_creation(): void
+    #[Test]
+    public function new_comment_appears_after_creation(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -98,7 +100,8 @@ class CommentCacheTest extends TestCase
         $response->assertSee('Brand new comment');
     }
 
-    public function test_updated_comment_appears_after_update(): void
+    #[Test]
+    public function updated_comment_appears_after_update(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -123,7 +126,8 @@ class CommentCacheTest extends TestCase
         $response->assertSee('Updated comment body');
     }
 
-    public function test_deleted_comment_disappears_after_deletion(): void
+    #[Test]
+    public function deleted_comment_disappears_after_deletion(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();

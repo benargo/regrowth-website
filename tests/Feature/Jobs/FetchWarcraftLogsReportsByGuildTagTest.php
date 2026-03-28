@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
@@ -23,7 +24,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
     // Happy Path
     // ==========================================
 
-    public function test_it_persists_reports_for_the_given_guild_tag(): void
+    #[Test]
+    public function it_persists_reports_for_the_given_guild_tag(): void
     {
         $guildTag = GuildTag::factory()->create();
 
@@ -53,7 +55,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
     // Time Filters
     // ==========================================
 
-    public function test_it_applies_the_since_time_filter(): void
+    #[Test]
+    public function it_applies_the_since_time_filter(): void
     {
         $guildTag = GuildTag::factory()->create();
         $since = Carbon::parse('2025-01-01');
@@ -68,7 +71,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $job->handle($reportsService);
     }
 
-    public function test_it_applies_the_before_time_filter(): void
+    #[Test]
+    public function it_applies_the_before_time_filter(): void
     {
         $guildTag = GuildTag::factory()->create();
         $before = Carbon::parse('2025-06-01');
@@ -83,7 +87,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $job->handle($reportsService);
     }
 
-    public function test_it_applies_both_time_filters(): void
+    #[Test]
+    public function it_applies_both_time_filters(): void
     {
         $guildTag = GuildTag::factory()->create();
         $since = Carbon::parse('2025-01-01');
@@ -103,7 +108,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
     // Batch Cancellation
     // ==========================================
 
-    public function test_it_skips_execution_when_batch_is_cancelled(): void
+    #[Test]
+    public function it_skips_execution_when_batch_is_cancelled(): void
     {
         $guildTag = GuildTag::factory()->create();
 
@@ -135,7 +141,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         return $reportsService;
     }
 
-    public function test_it_links_reports_that_fall_on_the_same_raid_day(): void
+    #[Test]
+    public function it_links_reports_that_fall_on_the_same_raid_day(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -151,7 +158,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'BBB222', 'report_2' => 'AAA111', 'created_by' => null]);
     }
 
-    public function test_it_does_not_link_reports_on_different_raid_days(): void
+    #[Test]
+    public function it_does_not_link_reports_on_different_raid_days(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -166,7 +174,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
     }
 
-    public function test_it_respects_the_0500_cutoff_when_linking(): void
+    #[Test]
+    public function it_respects_the_0500_cutoff_when_linking(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -183,7 +192,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => 'BBB222', 'report_2' => 'AAA111']);
     }
 
-    public function test_it_does_not_link_report_after_0500_to_previous_day(): void
+    #[Test]
+    public function it_does_not_link_report_after_0500_to_previous_day(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -199,7 +209,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
     }
 
-    public function test_it_removes_stale_auto_links_when_reports_are_no_longer_on_the_same_raid_day(): void
+    #[Test]
+    public function it_removes_stale_auto_links_when_reports_are_no_longer_on_the_same_raid_day(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -227,7 +238,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
     }
 
-    public function test_it_does_not_override_manual_links_created_by_officers(): void
+    #[Test]
+    public function it_does_not_override_manual_links_created_by_officers(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -259,7 +271,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
     // Touching
     // ==========================================
 
-    public function test_it_touches_report_updated_at_when_auto_links_are_inserted(): void
+    #[Test]
+    public function it_touches_report_updated_at_when_auto_links_are_inserted(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -283,7 +296,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertEquals($originalTime->toDateTimeString(), Report::find('BBB222')->updated_at->toDateTimeString());
     }
 
-    public function test_it_touches_report_updated_at_when_stale_auto_links_are_deleted(): void
+    #[Test]
+    public function it_touches_report_updated_at_when_stale_auto_links_are_deleted(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -313,7 +327,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertGreaterThan($originalTime, Report::find('BBB222')->updated_at);
     }
 
-    public function test_it_touches_report_updated_at_when_new_auto_links_are_inserted(): void
+    #[Test]
+    public function it_touches_report_updated_at_when_new_auto_links_are_inserted(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 
@@ -339,7 +354,8 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertGreaterThan($originalTime, Report::find('BBB222')->updated_at);
     }
 
-    public function test_it_does_not_duplicate_existing_valid_auto_links(): void
+    #[Test]
+    public function it_does_not_duplicate_existing_valid_auto_links(): void
     {
         config(['app.timezone' => 'Europe/Paris']);
 

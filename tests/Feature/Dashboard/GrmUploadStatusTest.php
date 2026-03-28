@@ -5,18 +5,21 @@ namespace Tests\Feature\Dashboard;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class GrmUploadStatusTest extends DashboardTestCase
 {
-    public function test_status_endpoint_requires_authentication(): void
+    #[Test]
+    public function status_endpoint_requires_authentication(): void
     {
         $response = $this->getJson(route('dashboard.grm-upload.status'));
 
         $response->assertUnauthorized();
     }
 
-    public function test_status_endpoint_forbidden_for_non_officers(): void
+    #[Test]
+    public function status_endpoint_forbidden_for_non_officers(): void
     {
         $user = User::factory()->member()->create();
 
@@ -25,7 +28,8 @@ class GrmUploadStatusTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_status_endpoint_returns_unknown_when_no_cache(): void
+    #[Test]
+    public function status_endpoint_returns_unknown_when_no_cache(): void
     {
         Cache::forget(ProcessGrmUpload::PROGRESS_CACHE_KEY);
 
@@ -34,7 +38,8 @@ class GrmUploadStatusTest extends DashboardTestCase
         $response->assertOk()->assertJson(['status' => 'unknown']);
     }
 
-    public function test_status_endpoint_returns_current_progress(): void
+    #[Test]
+    public function status_endpoint_returns_current_progress(): void
     {
 
         Cache::put(ProcessGrmUpload::PROGRESS_CACHE_KEY, [
@@ -60,7 +65,8 @@ class GrmUploadStatusTest extends DashboardTestCase
             ]);
     }
 
-    public function test_status_endpoint_returns_completed_state(): void
+    #[Test]
+    public function status_endpoint_returns_completed_state(): void
     {
 
         Cache::put(ProcessGrmUpload::PROGRESS_CACHE_KEY, [
@@ -85,7 +91,8 @@ class GrmUploadStatusTest extends DashboardTestCase
             ]);
     }
 
-    public function test_status_endpoint_returns_failed_state(): void
+    #[Test]
+    public function status_endpoint_returns_failed_state(): void
     {
 
         Cache::put(ProcessGrmUpload::PROGRESS_CACHE_KEY, [

@@ -5,11 +5,13 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class GuildRankUpdateTest extends DashboardTestCase
 {
-    public function test_update_requires_authentication(): void
+    #[Test]
+    public function update_requires_authentication(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -20,7 +22,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_update_forbids_guest_users(): void
+    #[Test]
+    public function update_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $rank = GuildRank::factory()->create();
@@ -32,7 +35,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_forbids_member_users(): void
+    #[Test]
+    public function update_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $rank = GuildRank::factory()->create();
@@ -44,7 +48,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_forbids_raider_users(): void
+    #[Test]
+    public function update_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $rank = GuildRank::factory()->create();
@@ -56,7 +61,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_allows_officer_users(): void
+    #[Test]
+    public function update_allows_officer_users(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -67,7 +73,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_update_validates_name_required(): void
+    #[Test]
+    public function update_validates_name_required(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -76,7 +83,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
-    public function test_update_validates_name_must_be_string(): void
+    #[Test]
+    public function update_validates_name_must_be_string(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -87,7 +95,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
-    public function test_update_validates_name_max_length(): void
+    #[Test]
+    public function update_validates_name_max_length(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -98,7 +107,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
-    public function test_update_saves_name_to_database(): void
+    #[Test]
+    public function update_saves_name_to_database(): void
     {
         $rank = GuildRank::factory()->create(['name' => 'Old Name']);
 
@@ -109,7 +119,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $this->assertEquals('New Name', $rank->fresh()->name);
     }
 
-    public function test_update_returns_404_for_nonexistent_rank(): void
+    #[Test]
+    public function update_returns_404_for_nonexistent_rank(): void
     {
 
         $response = $this->actingAs($this->officer)->put(route('dashboard.ranks.update', 99999), [
@@ -119,7 +130,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertNotFound();
     }
 
-    public function test_update_clears_guild_ranks_cache(): void
+    #[Test]
+    public function update_clears_guild_ranks_cache(): void
     {
         $rank = GuildRank::factory()->create();
 

@@ -14,6 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class AddonControllerTest extends DashboardTestCase
@@ -63,14 +64,16 @@ class AddonControllerTest extends DashboardTestCase
     // Authentication & Authorization Tests
     // ==========================================
 
-    public function test_export_requires_authentication(): void
+    #[Test]
+    public function export_requires_authentication(): void
     {
         $response = $this->get(route('dashboard.addon.export'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_export_forbids_guest_users(): void
+    #[Test]
+    public function export_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -79,7 +82,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_forbids_member_users(): void
+    #[Test]
+    public function export_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -88,7 +92,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_forbids_raider_users(): void
+    #[Test]
+    public function export_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -97,7 +102,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_allows_officer_users(): void
+    #[Test]
+    public function export_allows_officer_users(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -107,14 +113,16 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertOk();
     }
 
-    public function test_export_json_requires_authentication(): void
+    #[Test]
+    public function export_json_requires_authentication(): void
     {
         $response = $this->get(route('dashboard.addon.export.json'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_export_json_forbids_guest_users(): void
+    #[Test]
+    public function export_json_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -123,7 +131,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_json_forbids_member_users(): void
+    #[Test]
+    public function export_json_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -132,7 +141,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_json_forbids_raider_users(): void
+    #[Test]
+    public function export_json_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -141,7 +151,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_json_allows_officer_users(): void
+    #[Test]
+    public function export_json_allows_officer_users(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -151,14 +162,16 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertOk();
     }
 
-    public function test_export_schema_requires_authentication(): void
+    #[Test]
+    public function export_schema_requires_authentication(): void
     {
         $response = $this->get(route('dashboard.addon.export.schema'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_export_schema_forbids_guest_users(): void
+    #[Test]
+    public function export_schema_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -167,7 +180,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_schema_forbids_member_users(): void
+    #[Test]
+    public function export_schema_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -176,7 +190,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_schema_forbids_raider_users(): void
+    #[Test]
+    public function export_schema_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -185,7 +200,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_export_schema_allows_officer_users(): void
+    #[Test]
+    public function export_schema_allows_officer_users(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -196,7 +212,8 @@ class AddonControllerTest extends DashboardTestCase
     // Export Endpoint Tests
     // ==========================================
 
-    public function test_export_renders_inertia_page_with_base64_data(): void
+    #[Test]
+    public function export_renders_inertia_page_with_base64_data(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -212,7 +229,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_returns_valid_base64_encoded_data(): void
+    #[Test]
+    public function export_returns_valid_base64_encoded_data(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -229,7 +247,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_injects_authenticated_user_into_stored_data(): void
+    #[Test]
+    public function export_injects_authenticated_user_into_stored_data(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -250,7 +269,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_preserves_stored_data_alongside_injected_user(): void
+    #[Test]
+    public function export_preserves_stored_data_alongside_injected_user(): void
     {
         Storage::fake('local');
         $this->seedExportFile([
@@ -276,7 +296,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_returns_empty_when_no_export_file_exists(): void
+    #[Test]
+    public function export_returns_empty_when_no_export_file_exists(): void
     {
         Storage::fake('local');
 
@@ -294,7 +315,8 @@ class AddonControllerTest extends DashboardTestCase
     // Export JSON Endpoint Tests
     // ==========================================
 
-    public function test_export_json_renders_inertia_page_with_json_data(): void
+    #[Test]
+    public function export_json_renders_inertia_page_with_json_data(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -310,7 +332,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_json_returns_valid_json_string(): void
+    #[Test]
+    public function export_json_returns_valid_json_string(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -326,7 +349,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_json_returns_pretty_printed_json(): void
+    #[Test]
+    public function export_json_returns_pretty_printed_json(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -342,7 +366,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_json_includes_complete_data_structure(): void
+    #[Test]
+    public function export_json_includes_complete_data_structure(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -365,7 +390,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_json_returns_empty_when_no_export_file_exists(): void
+    #[Test]
+    public function export_json_returns_empty_when_no_export_file_exists(): void
     {
         Storage::fake('local');
 
@@ -383,7 +409,8 @@ class AddonControllerTest extends DashboardTestCase
     // Export Schema Endpoint Tests
     // ==========================================
 
-    public function test_export_schema_renders_inertia_page_with_schema(): void
+    #[Test]
+    public function export_schema_renders_inertia_page_with_schema(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -393,7 +420,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_includes_json_schema_metadata(): void
+    #[Test]
+    public function export_schema_includes_json_schema_metadata(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -409,7 +437,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_defines_system_properties(): void
+    #[Test]
+    public function export_schema_defines_system_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -420,7 +449,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_defines_priorities_properties(): void
+    #[Test]
+    public function export_schema_defines_priorities_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -430,7 +460,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_defines_items_properties(): void
+    #[Test]
+    public function export_schema_defines_items_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -440,7 +471,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_defines_players_properties(): void
+    #[Test]
+    public function export_schema_defines_players_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -450,7 +482,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_defines_player_attendance_properties(): void
+    #[Test]
+    public function export_schema_defines_player_attendance_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -464,7 +497,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_defines_councillors_properties(): void
+    #[Test]
+    public function export_schema_defines_councillors_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -477,7 +511,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_schema_id_contains_version_1_2_0(): void
+    #[Test]
+    public function export_schema_id_contains_version_1_2_0(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
@@ -490,7 +525,8 @@ class AddonControllerTest extends DashboardTestCase
     // GRM Freshness Tests
     // ==========================================
 
-    public function test_export_returns_grm_freshness_as_deferred_prop(): void
+    #[Test]
+    public function export_returns_grm_freshness_as_deferred_prop(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -512,7 +548,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_export_json_returns_grm_freshness_as_deferred_prop(): void
+    #[Test]
+    public function export_json_returns_grm_freshness_as_deferred_prop(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -534,7 +571,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_returns_epoch_timestamp_when_no_file_exists(): void
+    #[Test]
+    public function grm_freshness_returns_epoch_timestamp_when_no_file_exists(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -553,7 +591,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_is_not_stale_when_no_file_exists_and_no_raiders(): void
+    #[Test]
+    public function grm_freshness_is_not_stale_when_no_file_exists_and_no_raiders(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -572,7 +611,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_is_stale_when_no_file_exists_but_guild_has_raiders(): void
+    #[Test]
+    public function grm_freshness_is_stale_when_no_file_exists_but_guild_has_raiders(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -602,7 +642,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_is_not_stale_when_raider_counts_match(): void
+    #[Test]
+    public function grm_freshness_is_not_stale_when_raider_counts_match(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -637,7 +678,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_is_not_stale_when_raider_count_difference_is_less_than_three(): void
+    #[Test]
+    public function grm_freshness_is_not_stale_when_raider_count_difference_is_less_than_three(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -674,7 +716,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_is_stale_when_raider_count_difference_is_three_or_more(): void
+    #[Test]
+    public function grm_freshness_is_stale_when_raider_count_difference_is_three_or_more(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -710,7 +753,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_counts_multiple_raider_rank_variants(): void
+    #[Test]
+    public function grm_freshness_counts_multiple_raider_rank_variants(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -749,7 +793,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_returns_file_last_modified_time(): void
+    #[Test]
+    public function grm_freshness_returns_file_last_modified_time(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -775,7 +820,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_ignores_non_raider_ranks_in_guild_roster(): void
+    #[Test]
+    public function grm_freshness_ignores_non_raider_ranks_in_guild_roster(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -809,7 +855,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_grm_freshness_handles_semicolon_delimited_csv(): void
+    #[Test]
+    public function grm_freshness_handles_semicolon_delimited_csv(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -847,14 +894,16 @@ class AddonControllerTest extends DashboardTestCase
     // Settings Endpoint Tests
     // ==========================================
 
-    public function test_settings_requires_authentication(): void
+    #[Test]
+    public function settings_requires_authentication(): void
     {
         $response = $this->get(route('dashboard.addon.settings'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_settings_forbids_guest_users(): void
+    #[Test]
+    public function settings_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -863,7 +912,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_settings_forbids_member_users(): void
+    #[Test]
+    public function settings_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -872,7 +922,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_settings_forbids_raider_users(): void
+    #[Test]
+    public function settings_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -881,14 +932,16 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_settings_allows_officer_users(): void
+    #[Test]
+    public function settings_allows_officer_users(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
         $response->assertOk();
     }
 
-    public function test_settings_renders_inertia_page(): void
+    #[Test]
+    public function settings_renders_inertia_page(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
 
@@ -897,7 +950,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_settings_includes_councillors_in_settings(): void
+    #[Test]
+    public function settings_includes_councillors_in_settings(): void
     {
         $councillor = Character::factory()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
 
@@ -909,7 +963,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_settings_includes_guild_ranks_in_settings(): void
+    #[Test]
+    public function settings_includes_guild_ranks_in_settings(): void
     {
         // Clear any existing ranks and create our test rank
         GuildRank::query()->delete();
@@ -924,7 +979,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_settings_includes_guild_tags_in_settings(): void
+    #[Test]
+    public function settings_includes_guild_tags_in_settings(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->create(['name' => 'TestTag']);
 
@@ -943,7 +999,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_settings_includes_characters_as_deferred_prop(): void
+    #[Test]
+    public function settings_includes_characters_as_deferred_prop(): void
     {
         Character::factory()->create(['name' => 'DeferredCharacter']);
 
@@ -958,7 +1015,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_settings_councillors_are_ordered_by_name(): void
+    #[Test]
+    public function settings_councillors_are_ordered_by_name(): void
     {
         Character::factory()->lootCouncillor()->create(['name' => 'Zoe']);
         Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
@@ -975,7 +1033,8 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    public function test_settings_ranks_are_ordered_by_position(): void
+    #[Test]
+    public function settings_ranks_are_ordered_by_position(): void
     {
         // Clear any existing ranks and create our test ranks
         GuildRank::query()->delete();
@@ -998,14 +1057,16 @@ class AddonControllerTest extends DashboardTestCase
     // Add Councillor Endpoint Tests
     // ==========================================
 
-    public function test_add_councillor_requires_authentication(): void
+    #[Test]
+    public function add_councillor_requires_authentication(): void
     {
         $response = $this->post(route('dashboard.addon.settings.councillors.add'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_add_councillor_forbids_guest_users(): void
+    #[Test]
+    public function add_councillor_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
@@ -1017,7 +1078,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_add_councillor_forbids_member_users(): void
+    #[Test]
+    public function add_councillor_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
@@ -1029,7 +1091,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_add_councillor_forbids_raider_users(): void
+    #[Test]
+    public function add_councillor_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
@@ -1041,7 +1104,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_add_councillor_allows_officer_users(): void
+    #[Test]
+    public function add_councillor_allows_officer_users(): void
     {
         $character = Character::factory()->create(['name' => 'TestChar']);
 
@@ -1052,14 +1116,16 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_add_councillor_requires_character_name(): void
+    #[Test]
+    public function add_councillor_requires_character_name(): void
     {
         $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), []);
 
         $response->assertSessionHasErrors(['character_name']);
     }
 
-    public function test_add_councillor_requires_character_name_to_be_string(): void
+    #[Test]
+    public function add_councillor_requires_character_name_to_be_string(): void
     {
         $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => 12345,
@@ -1068,7 +1134,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['character_name']);
     }
 
-    public function test_add_councillor_requires_character_to_exist(): void
+    #[Test]
+    public function add_councillor_requires_character_to_exist(): void
     {
         $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
             'character_name' => 'NonExistentCharacter',
@@ -1077,7 +1144,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['character_name']);
     }
 
-    public function test_add_councillor_sets_character_as_loot_councillor(): void
+    #[Test]
+    public function add_councillor_sets_character_as_loot_councillor(): void
     {
         $character = Character::factory()->create(['name' => 'NewCouncillor', 'is_loot_councillor' => false]);
 
@@ -1091,7 +1159,8 @@ class AddonControllerTest extends DashboardTestCase
         $this->assertTrue($character->fresh()->is_loot_councillor);
     }
 
-    public function test_add_councillor_redirects_back(): void
+    #[Test]
+    public function add_councillor_redirects_back(): void
     {
         $character = Character::factory()->create(['name' => 'TestChar']);
 
@@ -1104,7 +1173,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertRedirect(route('dashboard.addon.settings'));
     }
 
-    public function test_add_councillor_is_idempotent(): void
+    #[Test]
+    public function add_councillor_is_idempotent(): void
     {
         $character = Character::factory()->lootCouncillor()->create(['name' => 'AlreadyCouncillor']);
 
@@ -1122,7 +1192,8 @@ class AddonControllerTest extends DashboardTestCase
     // Remove Councillor Endpoint Tests
     // ==========================================
 
-    public function test_remove_councillor_requires_authentication(): void
+    #[Test]
+    public function remove_councillor_requires_authentication(): void
     {
         $character = Character::factory()->lootCouncillor()->create();
 
@@ -1131,7 +1202,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_remove_councillor_forbids_guest_users(): void
+    #[Test]
+    public function remove_councillor_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $character = Character::factory()->lootCouncillor()->create();
@@ -1141,7 +1213,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_remove_councillor_forbids_member_users(): void
+    #[Test]
+    public function remove_councillor_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $character = Character::factory()->lootCouncillor()->create();
@@ -1151,7 +1224,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_remove_councillor_forbids_raider_users(): void
+    #[Test]
+    public function remove_councillor_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $character = Character::factory()->lootCouncillor()->create();
@@ -1161,7 +1235,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_remove_councillor_allows_officer_users(): void
+    #[Test]
+    public function remove_councillor_allows_officer_users(): void
     {
         $character = Character::factory()->lootCouncillor()->create();
 
@@ -1170,7 +1245,8 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_remove_councillor_unsets_character_as_loot_councillor(): void
+    #[Test]
+    public function remove_councillor_unsets_character_as_loot_councillor(): void
     {
         $character = Character::factory()->lootCouncillor()->create(['name' => 'RemoveMe']);
 
@@ -1182,7 +1258,8 @@ class AddonControllerTest extends DashboardTestCase
         $this->assertFalse($character->fresh()->is_loot_councillor);
     }
 
-    public function test_remove_councillor_redirects_back(): void
+    #[Test]
+    public function remove_councillor_redirects_back(): void
     {
         $character = Character::factory()->lootCouncillor()->create();
 
@@ -1193,14 +1270,16 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertRedirect(route('dashboard.addon.settings'));
     }
 
-    public function test_remove_councillor_returns_404_for_nonexistent_character(): void
+    #[Test]
+    public function remove_councillor_returns_404_for_nonexistent_character(): void
     {
         $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', 99999));
 
         $response->assertNotFound();
     }
 
-    public function test_remove_councillor_is_idempotent(): void
+    #[Test]
+    public function remove_councillor_is_idempotent(): void
     {
         $character = Character::factory()->create(['name' => 'NotCouncillor', 'is_loot_councillor' => false]);
 

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PlayableRaceServiceTest extends TestCase
@@ -49,7 +50,8 @@ class PlayableRaceServiceTest extends TestCase
         return $mock;
     }
 
-    public function test_constructor_sets_static_classic_eu_namespace(): void
+    #[Test]
+    public function constructor_sets_static_classic_eu_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
         new PlayableRaceService($client);
@@ -57,7 +59,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertEquals('static-classicann-eu', $client->getNamespace());
     }
 
-    public function test_index_returns_playable_race_data(): void
+    #[Test]
+    public function index_returns_playable_race_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -83,7 +86,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertCount(2, $result['playable_races']);
     }
 
-    public function test_index_makes_correct_api_call(): void
+    #[Test]
+    public function index_makes_correct_api_call(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -108,7 +112,8 @@ class PlayableRaceServiceTest extends TestCase
         });
     }
 
-    public function test_index_caches_result(): void
+    #[Test]
+    public function index_caches_result(): void
     {
         $callCount = 0;
 
@@ -135,7 +140,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_index_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function index_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -154,7 +160,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.playable-race.index.static-classicann-eu'));
     }
 
-    public function test_index_throws_exception_on_api_error(): void
+    #[Test]
+    public function index_throws_exception_on_api_error(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -173,7 +180,8 @@ class PlayableRaceServiceTest extends TestCase
         $service->index();
     }
 
-    public function test_index_fresh_bypasses_cache(): void
+    #[Test]
+    public function index_fresh_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -199,7 +207,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_find_returns_playable_race_data(): void
+    #[Test]
+    public function find_returns_playable_race_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -226,7 +235,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertEquals('Orc', $result['name']);
     }
 
-    public function test_find_makes_correct_api_call(): void
+    #[Test]
+    public function find_makes_correct_api_call(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -251,7 +261,8 @@ class PlayableRaceServiceTest extends TestCase
         });
     }
 
-    public function test_find_caches_result(): void
+    #[Test]
+    public function find_caches_result(): void
     {
         $callCount = 0;
 
@@ -278,7 +289,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_find_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function find_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -297,7 +309,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.playable-race.2.static-classicann-eu'));
     }
 
-    public function test_find_throws_exception_on_api_error(): void
+    #[Test]
+    public function find_throws_exception_on_api_error(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -316,7 +329,8 @@ class PlayableRaceServiceTest extends TestCase
         $service->find(999);
     }
 
-    public function test_find_throws_invalid_race_exception_on_blizzard_404(): void
+    #[Test]
+    public function find_throws_invalid_race_exception_on_blizzard_404(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -340,7 +354,8 @@ class PlayableRaceServiceTest extends TestCase
         $service->find(999);
     }
 
-    public function test_find_fresh_bypasses_cache(): void
+    #[Test]
+    public function find_fresh_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -366,7 +381,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_find_caches_different_ids_separately(): void
+    #[Test]
+    public function find_caches_different_ids_separately(): void
     {
         $callCount = 0;
 
@@ -394,7 +410,8 @@ class PlayableRaceServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.playable-race.2.static-classicann-eu'));
     }
 
-    public function test_with_namespace_affects_cache_keys(): void
+    #[Test]
+    public function with_namespace_affects_cache_keys(): void
     {
         $callCount = 0;
 

@@ -15,6 +15,7 @@ use App\Services\AttendanceCalculator\CharacterAttendanceStats;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AttendanceCalculatorTest extends TestCase
@@ -64,7 +65,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Empty Input Tests ====================
 
-    public function test_calculate_returns_empty_collection_when_no_counting_ranks_exist(): void
+    #[Test]
+    public function calculate_returns_empty_collection_when_no_counting_ranks_exist(): void
     {
         GuildRank::factory()->doesNotCountAttendance()->create();
 
@@ -74,7 +76,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertTrue($result->isEmpty());
     }
 
-    public function test_calculate_returns_empty_collection_when_no_qualifying_reports_exist(): void
+    #[Test]
+    public function calculate_returns_empty_collection_when_no_qualifying_reports_exist(): void
     {
         $rank = $this->makeRank();
         Character::factory()->create(['rank_id' => $rank->id]);
@@ -87,7 +90,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Presence Filtering Tests ====================
 
-    public function test_calculate_does_not_count_presence_zero_as_attendance(): void
+    #[Test]
+    public function calculate_does_not_count_presence_zero_as_attendance(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -105,7 +109,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(50.0, $thrall->percentage);
     }
 
-    public function test_calculate_does_not_count_presence_outside_1_and_2(): void
+    #[Test]
+    public function calculate_does_not_count_presence_outside_1_and_2(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -123,7 +128,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(50.0, $thrall->percentage);
     }
 
-    public function test_calculate_counts_both_presence_1_and_2_as_attended(): void
+    #[Test]
+    public function calculate_counts_both_presence_1_and_2_as_attended(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -143,7 +149,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(66.67, $thrall->percentage);
     }
 
-    public function test_calculate_player_with_only_invalid_presence_has_zero_percent(): void
+    #[Test]
+    public function calculate_player_with_only_invalid_presence_has_zero_percent(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -163,7 +170,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Result Sorting Tests ====================
 
-    public function test_calculate_results_are_sorted_alphabetically_by_name(): void
+    #[Test]
+    public function calculate_results_are_sorted_alphabetically_by_name(): void
     {
         $rank = $this->makeRank();
         $tag = $this->makeTag();
@@ -183,7 +191,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Absent Player Tests ====================
 
-    public function test_calculate_player_absent_after_first_appearance(): void
+    #[Test]
+    public function calculate_player_absent_after_first_appearance(): void
     {
         $rank = $this->makeRank();
         $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
@@ -206,7 +215,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(33.33, $jainaStats->percentage);
     }
 
-    public function test_calculate_single_player_single_report(): void
+    #[Test]
+    public function calculate_single_player_single_report(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -223,7 +233,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: First Attendance Date Tests ====================
 
-    public function test_calculate_returns_correct_first_attendance_date(): void
+    #[Test]
+    public function calculate_returns_correct_first_attendance_date(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -243,7 +254,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertTrue($thrall->firstAttendance->eq($jan08));
     }
 
-    public function test_calculate_tracks_first_attendance_per_player(): void
+    #[Test]
+    public function calculate_tracks_first_attendance_per_player(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -276,7 +288,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Character ID Tests ====================
 
-    public function test_calculate_includes_character_id_in_stats(): void
+    #[Test]
+    public function calculate_includes_character_id_in_stats(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -291,7 +304,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Multiple Players Tests ====================
 
-    public function test_calculate_handles_multiple_players(): void
+    #[Test]
+    public function calculate_handles_multiple_players(): void
     {
         $rank = $this->makeRank();
         $tag = $this->makeTag();
@@ -312,7 +326,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Returns CharacterAttendanceStats Tests ====================
 
-    public function test_calculate_returns_character_attendance_stats_objects(): void
+    #[Test]
+    public function calculate_returns_character_attendance_stats_objects(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -327,7 +342,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Rank Filtering Tests ====================
 
-    public function test_calculate_excludes_characters_from_non_counting_ranks(): void
+    #[Test]
+    public function calculate_excludes_characters_from_non_counting_ranks(): void
     {
         $countingRank = $this->makeRank(true);
         $nonCountingRank = $this->makeRank(false);
@@ -345,7 +361,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertNotContains('NonCountingPlayer', $names);
     }
 
-    public function test_calculate_excludes_reports_from_non_counting_guild_tags(): void
+    #[Test]
+    public function calculate_excludes_reports_from_non_counting_guild_tags(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -365,7 +382,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== wholeGuild: Linked Report Merging Tests ====================
 
-    public function test_calculate_merges_linked_raids_into_single_record(): void
+    #[Test]
+    public function calculate_merges_linked_raids_into_single_record(): void
     {
         $rank = $this->makeRank();
         $fizzywigs = Character::factory()->create(['name' => 'Fizzywigs', 'rank_id' => $rank->id]);
@@ -394,7 +412,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
     }
 
-    public function test_calculate_unlinked_reports_remain_separate(): void
+    #[Test]
+    public function calculate_unlinked_reports_remain_separate(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -412,7 +431,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(2, $stats->firstWhere('name', 'Thrall')->reportsAttended);
     }
 
-    public function test_calculate_merge_keeps_best_presence_value(): void
+    #[Test]
+    public function calculate_merge_keeps_best_presence_value(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -432,7 +452,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $stats->firstWhere('name', 'Thrall')->percentage);
     }
 
-    public function test_calculate_merge_prefers_present_over_benched(): void
+    #[Test]
+    public function calculate_merge_prefers_present_over_benched(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -453,7 +474,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $stats->firstWhere('name', 'Thrall')->percentage);
     }
 
-    public function test_calculate_merge_three_linked_raids(): void
+    #[Test]
+    public function calculate_merge_three_linked_raids(): void
     {
         $rank = $this->makeRank();
         $alice = Character::factory()->create(['name' => 'Alice', 'rank_id' => $rank->id]);
@@ -482,14 +504,16 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== forRanks: Tests ====================
 
-    public function test_for_ranks_throws_for_empty_collection(): void
+    #[Test]
+    public function for_ranks_throws_for_empty_collection(): void
     {
         $this->expectException(EmptyCollectionException::class);
 
         $this->makeCalculator()->forRanks(collect());
     }
 
-    public function test_for_ranks_returns_stats_for_characters_in_specified_ranks(): void
+    #[Test]
+    public function for_ranks_returns_stats_for_characters_in_specified_ranks(): void
     {
         $rank1 = $this->makeRank();
         $rank2 = $this->makeRank();
@@ -508,7 +532,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertNotContains('Jaina', $names);
     }
 
-    public function test_for_ranks_returns_empty_when_no_qualifying_reports_for_those_ranks(): void
+    #[Test]
+    public function for_ranks_returns_empty_when_no_qualifying_reports_for_those_ranks(): void
     {
         $rank = $this->makeRank();
         Character::factory()->create(['rank_id' => $rank->id]);
@@ -519,7 +544,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertTrue($stats->isEmpty());
     }
 
-    public function test_for_ranks_returns_character_attendance_stats_objects(): void
+    #[Test]
+    public function for_ranks_returns_character_attendance_stats_objects(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
@@ -534,7 +560,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== forCharacter: Tests ====================
 
-    public function test_for_character_returns_empty_when_no_counting_reports_exist(): void
+    #[Test]
+    public function for_character_returns_empty_when_no_counting_reports_exist(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
@@ -544,7 +571,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertTrue($stats->isEmpty());
     }
 
-    public function test_for_character_returns_only_the_specified_character(): void
+    #[Test]
+    public function for_character_returns_only_the_specified_character(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -560,7 +588,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals('Thrall', $stats->first()->name);
     }
 
-    public function test_for_character_returns_empty_when_character_is_in_non_counting_rank(): void
+    #[Test]
+    public function for_character_returns_empty_when_character_is_in_non_counting_rank(): void
     {
         $nonCountingRank = $this->makeRank(false);
         $character = Character::factory()->create(['rank_id' => $nonCountingRank->id]);
@@ -573,7 +602,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertTrue($stats->isEmpty());
     }
 
-    public function test_for_character_calculates_lifetime_stats_from_first_attendance(): void
+    #[Test]
+    public function for_character_calculates_lifetime_stats_from_first_attendance(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -593,7 +623,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== forReport: Tests ====================
 
-    public function test_for_report_returns_empty_when_guild_tag_does_not_count_attendance(): void
+    #[Test]
+    public function for_report_returns_empty_when_guild_tag_does_not_count_attendance(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
@@ -606,7 +637,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertTrue($stats->isEmpty());
     }
 
-    public function test_for_report_returns_stats_for_characters_in_the_report(): void
+    #[Test]
+    public function for_report_returns_stats_for_characters_in_the_report(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -623,7 +655,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertNotNull($stats->firstWhere('name', 'Jaina'));
     }
 
-    public function test_for_report_excludes_characters_in_non_counting_ranks(): void
+    #[Test]
+    public function for_report_excludes_characters_in_non_counting_ranks(): void
     {
         $countingRank = $this->makeRank(true);
         $nonCountingRank = $this->makeRank(false);
@@ -641,7 +674,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertNotContains('NonCountingPlayer', $names);
     }
 
-    public function test_for_report_counts_only_the_single_report(): void
+    #[Test]
+    public function for_report_counts_only_the_single_report(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -661,7 +695,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== mergeLinkedReports: Unit Tests ====================
 
-    public function test_merge_linked_reports_returns_single_report_as_is(): void
+    #[Test]
+    public function merge_linked_reports_returns_single_report_as_is(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -677,7 +712,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertArrayHasKey('Thrall', $records->first()['players']);
     }
 
-    public function test_merge_linked_reports_merges_linked_pair_into_one_record(): void
+    #[Test]
+    public function merge_linked_reports_merges_linked_pair_into_one_record(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -699,7 +735,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertArrayHasKey('Jaina', $records->first()['players']);
     }
 
-    public function test_merge_linked_reports_keeps_best_presence_when_merging(): void
+    #[Test]
+    public function merge_linked_reports_keeps_best_presence_when_merging(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -720,7 +757,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $records->first()['players']['Thrall']['presence']);
     }
 
-    public function test_merge_linked_reports_leaves_unlinked_reports_as_separate_records(): void
+    #[Test]
+    public function merge_linked_reports_leaves_unlinked_reports_as_separate_records(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -738,7 +776,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertCount(2, $records);
     }
 
-    public function test_merge_linked_reports_handles_three_reports_in_same_group(): void
+    #[Test]
+    public function merge_linked_reports_handles_three_reports_in_same_group(): void
     {
         $rank = $this->makeRank();
         $alice = Character::factory()->create(['name' => 'Alice', 'rank_id' => $rank->id]);
@@ -768,7 +807,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixForWholeGuild: Return Type Tests ====================
 
-    public function test_matrix_for_whole_guild_returns_attendance_matrix_instance(): void
+    #[Test]
+    public function matrix_for_whole_guild_returns_attendance_matrix_instance(): void
     {
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
 
@@ -777,7 +817,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixForWholeGuild: Empty Input Tests ====================
 
-    public function test_matrix_returns_empty_when_no_counting_ranks_exist(): void
+    #[Test]
+    public function matrix_returns_empty_when_no_counting_ranks_exist(): void
     {
         GuildRank::factory()->doesNotCountAttendance()->create();
 
@@ -787,7 +828,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEmpty($matrix->rows);
     }
 
-    public function test_matrix_returns_empty_when_no_qualifying_reports_exist(): void
+    #[Test]
+    public function matrix_returns_empty_when_no_qualifying_reports_exist(): void
     {
         $rank = $this->makeRank();
         Character::factory()->create(['rank_id' => $rank->id]);
@@ -801,7 +843,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixForWholeGuild: Column Tests ====================
 
-    public function test_matrix_columns_are_in_reverse_chronological_order(): void
+    #[Test]
+    public function matrix_columns_are_in_reverse_chronological_order(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -819,7 +862,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals('01/01', $matrix->raids[1]['date']);
     }
 
-    public function test_matrix_raid_date_is_formatted_as_dd_mm(): void
+    #[Test]
+    public function matrix_raid_date_is_formatted_as_dd_mm(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
@@ -832,7 +876,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals('05/03', $matrix->raids[0]['date']);
     }
 
-    public function test_matrix_raid_column_includes_day_of_week(): void
+    #[Test]
+    public function matrix_raid_column_includes_day_of_week(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
@@ -848,7 +893,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixForWholeGuild: Row Tests ====================
 
-    public function test_matrix_rows_are_sorted_alphabetically_by_name(): void
+    #[Test]
+    public function matrix_rows_are_sorted_alphabetically_by_name(): void
     {
         $rank = $this->makeRank();
         $tag = $this->makeTag();
@@ -866,7 +912,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals('Zara', $matrix->rows[2]['name']);
     }
 
-    public function test_matrix_row_percentage_is_calculated_correctly(): void
+    #[Test]
+    public function matrix_row_percentage_is_calculated_correctly(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -886,7 +933,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixForWholeGuild: Cell Value Tests ====================
 
-    public function test_matrix_cells_before_first_attendance_are_null(): void
+    #[Test]
+    public function matrix_cells_before_first_attendance_are_null(): void
     {
         $rank = $this->makeRank();
         $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
@@ -910,7 +958,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertNull($jainaRow['attendance'][1]);
     }
 
-    public function test_matrix_absent_cell_after_first_attendance_is_zero(): void
+    #[Test]
+    public function matrix_absent_cell_after_first_attendance_is_zero(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -929,7 +978,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $row['attendance'][1]);
     }
 
-    public function test_matrix_presence_1_cell_is_one(): void
+    #[Test]
+    public function matrix_presence_1_cell_is_one(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -943,7 +993,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $row['attendance'][0]);
     }
 
-    public function test_matrix_presence_2_cell_is_two(): void
+    #[Test]
+    public function matrix_presence_2_cell_is_two(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -957,7 +1008,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(2, $row['attendance'][0]);
     }
 
-    public function test_matrix_linked_raids_are_merged_into_one_column(): void
+    #[Test]
+    public function matrix_linked_raids_are_merged_into_one_column(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -980,7 +1032,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $jainaRow['attendance'][0]);
     }
 
-    public function test_matrix_to_array_returns_correct_structure(): void
+    #[Test]
+    public function matrix_to_array_returns_correct_structure(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1004,7 +1057,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixWithFilters: Row Field Tests ====================
 
-    public function test_matrix_rows_include_id_and_rank_id(): void
+    #[Test]
+    public function matrix_rows_include_id_and_rank_id(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1023,7 +1077,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixWithFilters: Guild Tag Filter Tests ====================
 
-    public function test_matrix_with_filters_guild_tag_filter_includes_only_selected_tag(): void
+    #[Test]
+    public function matrix_with_filters_guild_tag_filter_includes_only_selected_tag(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1047,7 +1102,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixWithFilters: Zone Filter Tests ====================
 
-    public function test_matrix_with_filters_zone_filter_includes_only_reports_for_that_zone(): void
+    #[Test]
+    public function matrix_with_filters_zone_filter_includes_only_reports_for_that_zone(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1070,7 +1126,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixWithFilters: Date Filter Tests ====================
 
-    public function test_matrix_with_filters_since_date_excludes_older_reports(): void
+    #[Test]
+    public function matrix_with_filters_since_date_excludes_older_reports(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1094,7 +1151,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertContains('Jaina', $names);
     }
 
-    public function test_matrix_with_filters_before_date_excludes_newer_reports(): void
+    #[Test]
+    public function matrix_with_filters_before_date_excludes_newer_reports(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1136,7 +1194,8 @@ class AttendanceCalculatorTest extends TestCase
         ]);
     }
 
-    public function test_include_linked_characters_shows_only_is_main_rows(): void
+    #[Test]
+    public function include_linked_characters_shows_only_is_main_rows(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1159,7 +1218,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertCount(1, $matrix->rows);
     }
 
-    public function test_include_linked_characters_false_shows_all_rows(): void
+    #[Test]
+    public function include_linked_characters_false_shows_all_rows(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1182,7 +1242,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertCount(2, $matrix->rows);
     }
 
-    public function test_include_linked_characters_merges_alt_attendance_into_main(): void
+    #[Test]
+    public function include_linked_characters_merges_alt_attendance_into_main(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1206,7 +1267,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $row['percentage']);
     }
 
-    public function test_include_linked_characters_aggregates_percentage_across_alts(): void
+    #[Test]
+    public function include_linked_characters_aggregates_percentage_across_alts(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1229,7 +1291,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $row['percentage']);
     }
 
-    public function test_include_linked_characters_presence_1_beats_presence_2(): void
+    #[Test]
+    public function include_linked_characters_presence_1_beats_presence_2(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1251,7 +1314,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(1, $row['attendance'][0]);
     }
 
-    public function test_include_linked_characters_attendance_names_populated_for_attending_characters(): void
+    #[Test]
+    public function include_linked_characters_attendance_names_populated_for_attending_characters(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1275,7 +1339,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertContains('Shaman', $row['attendance_names'][0]);
     }
 
-    public function test_include_linked_characters_absent_raid_has_empty_attendance_names(): void
+    #[Test]
+    public function include_linked_characters_absent_raid_has_empty_attendance_names(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1299,7 +1364,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEmpty($row['attendance_names'][1]);    // oldest: nobody attended
     }
 
-    public function test_include_linked_characters_creates_synthetic_row_for_main_not_in_matrix(): void
+    #[Test]
+    public function include_linked_characters_creates_synthetic_row_for_main_not_in_matrix(): void
     {
         $rank = $this->makeRank();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1325,7 +1391,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $row['percentage']);
     }
 
-    public function test_include_linked_characters_excludes_standalone_non_main_characters(): void
+    #[Test]
+    public function include_linked_characters_excludes_standalone_non_main_characters(): void
     {
         $rank = $this->makeRank();
         // is_main = false, no link
@@ -1344,7 +1411,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== matrixWithFilters: Rank Filter + Linked Characters ====================
 
-    public function test_rank_filter_with_linked_characters_shows_only_mains_of_selected_ranks_but_merges_alt_attendance(): void
+    #[Test]
+    public function rank_filter_with_linked_characters_shows_only_mains_of_selected_ranks_but_merges_alt_attendance(): void
     {
         $rank1 = $this->makeRank();
         $rank2 = $this->makeRank();
@@ -1376,7 +1444,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $row['percentage']);
     }
 
-    public function test_rank_filter_with_linked_characters_excludes_mains_of_unselected_ranks(): void
+    #[Test]
+    public function rank_filter_with_linked_characters_excludes_mains_of_unselected_ranks(): void
     {
         $rank1 = $this->makeRank();
         $rank2 = $this->makeRank();
@@ -1401,7 +1470,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== Planned Absence Tests ====================
 
-    public function test_planned_absence_excludes_report_from_total_and_attended(): void
+    #[Test]
+    public function planned_absence_excludes_report_from_total_and_attended(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1428,7 +1498,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $thrall->percentage);
     }
 
-    public function test_planned_absence_does_not_affect_other_characters(): void
+    #[Test]
+    public function planned_absence_does_not_affect_other_characters(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1464,7 +1535,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(50.0, $jainaStats->percentage);
     }
 
-    public function test_planned_absence_with_no_end_date_covers_all_subsequent_raids(): void
+    #[Test]
+    public function planned_absence_with_no_end_date_covers_all_subsequent_raids(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1491,7 +1563,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $thrall->percentage);
     }
 
-    public function test_planned_absence_only_excludes_reports_within_date_range(): void
+    #[Test]
+    public function planned_absence_only_excludes_reports_within_date_range(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1518,7 +1591,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $thrall->percentage);
     }
 
-    public function test_multiple_planned_absences_for_same_character(): void
+    #[Test]
+    public function multiple_planned_absences_for_same_character(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1553,7 +1627,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $thrall->percentage);
     }
 
-    public function test_soft_deleted_planned_absence_is_not_applied(): void
+    #[Test]
+    public function soft_deleted_planned_absence_is_not_applied(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1581,7 +1656,8 @@ class AttendanceCalculatorTest extends TestCase
 
     // ==================== Matrix Planned Absence Display Tests ====================
 
-    public function test_matrix_planned_absence_marks_cell_with_flag(): void
+    #[Test]
+    public function matrix_planned_absence_marks_cell_with_flag(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1609,7 +1685,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $row['percentage']);
     }
 
-    public function test_matrix_planned_absence_does_not_affect_other_characters(): void
+    #[Test]
+    public function matrix_planned_absence_does_not_affect_other_characters(): void
     {
         $rank = $this->makeRank();
         $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1639,7 +1716,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(0.0, $jainaRow['percentage']);
     }
 
-    public function test_matrix_planned_absence_outside_range_is_not_marked(): void
+    #[Test]
+    public function matrix_planned_absence_outside_range_is_not_marked(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -1670,7 +1748,8 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertEquals(100.0, $row['percentage']);
     }
 
-    public function test_matrix_soft_deleted_absence_is_not_marked(): void
+    #[Test]
+    public function matrix_soft_deleted_absence_is_not_marked(): void
     {
         $rank = $this->makeRank();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);

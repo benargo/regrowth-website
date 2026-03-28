@@ -7,6 +7,7 @@ use App\Models\Permission;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -30,14 +31,16 @@ class PermissionSeederTest extends TestCase
 
     // ==================== Schema Validation ====================
 
-    public function test_every_permission_entry_has_a_name_key(): void
+    #[Test]
+    public function every_permission_entry_has_a_name_key(): void
     {
         foreach ($this->permissions as $index => $permission) {
             $this->assertArrayHasKey('name', $permission, "Permission at index {$index} is missing the 'name' key.");
         }
     }
 
-    public function test_every_permission_name_is_a_non_empty_string(): void
+    #[Test]
+    public function every_permission_name_is_a_non_empty_string(): void
     {
         foreach ($this->permissions as $index => $permission) {
             $this->assertIsString($permission['name'], "Permission at index {$index} has a non-string 'name'.");
@@ -45,14 +48,16 @@ class PermissionSeederTest extends TestCase
         }
     }
 
-    public function test_every_permission_entry_has_a_guard_name_key(): void
+    #[Test]
+    public function every_permission_entry_has_a_guard_name_key(): void
     {
         foreach ($this->permissions as $index => $permission) {
             $this->assertArrayHasKey('guard_name', $permission, "Permission at index {$index} is missing the 'guard_name' key.");
         }
     }
 
-    public function test_every_permission_guard_name_is_a_non_empty_string(): void
+    #[Test]
+    public function every_permission_guard_name_is_a_non_empty_string(): void
     {
         foreach ($this->permissions as $index => $permission) {
             $this->assertIsString($permission['guard_name'], "Permission at index {$index} has a non-string 'guard_name'.");
@@ -60,7 +65,8 @@ class PermissionSeederTest extends TestCase
         }
     }
 
-    public function test_every_permission_group_when_present_is_in_slug_format(): void
+    #[Test]
+    public function every_permission_group_when_present_is_in_slug_format(): void
     {
         foreach ($this->permissions as $index => $permission) {
             if (! isset($permission['group'])) {
@@ -77,7 +83,8 @@ class PermissionSeederTest extends TestCase
         }
     }
 
-    public function test_permission_names_are_unique(): void
+    #[Test]
+    public function permission_names_are_unique(): void
     {
         $names = array_column($this->permissions, 'name');
         $uniqueNames = array_unique($names);
@@ -85,7 +92,8 @@ class PermissionSeederTest extends TestCase
         $this->assertCount(count($names), $uniqueNames, 'Duplicate permission names found in the $permissions array.');
     }
 
-    public function test_permission_entries_contain_no_unexpected_keys(): void
+    #[Test]
+    public function permission_entries_contain_no_unexpected_keys(): void
     {
         $allowedKeys = ['name', 'guard_name', 'group'];
 
@@ -101,7 +109,8 @@ class PermissionSeederTest extends TestCase
 
     // ==================== Seeder Behaviour ====================
 
-    public function test_seeder_creates_all_defined_permissions(): void
+    #[Test]
+    public function seeder_creates_all_defined_permissions(): void
     {
         $this->seed(PermissionSeeder::class);
 
@@ -113,7 +122,8 @@ class PermissionSeederTest extends TestCase
         }
     }
 
-    public function test_seeder_is_idempotent_and_can_be_run_multiple_times(): void
+    #[Test]
+    public function seeder_is_idempotent_and_can_be_run_multiple_times(): void
     {
         $this->seed(PermissionSeeder::class);
         $this->seed(PermissionSeeder::class);
@@ -121,7 +131,8 @@ class PermissionSeederTest extends TestCase
         $this->assertDatabaseCount('permissions', count($this->permissions));
     }
 
-    public function test_seeder_updates_group_on_existing_permissions(): void
+    #[Test]
+    public function seeder_updates_group_on_existing_permissions(): void
     {
         $first = $this->permissions[0];
         Permission::firstOrCreate(
@@ -137,7 +148,8 @@ class PermissionSeederTest extends TestCase
         ]);
     }
 
-    public function test_seeder_deletes_stale_permissions_no_longer_in_the_list(): void
+    #[Test]
+    public function seeder_deletes_stale_permissions_no_longer_in_the_list(): void
     {
         Permission::firstOrCreate(['name' => 'stale-permission', 'guard_name' => 'web']);
 
@@ -146,7 +158,8 @@ class PermissionSeederTest extends TestCase
         $this->assertDatabaseMissing('permissions', ['name' => 'stale-permission']);
     }
 
-    public function test_seeder_does_not_delete_stale_permissions_on_other_guards(): void
+    #[Test]
+    public function seeder_does_not_delete_stale_permissions_on_other_guards(): void
     {
         Permission::firstOrCreate(['name' => 'stale-permission', 'guard_name' => 'api']);
 
@@ -155,7 +168,8 @@ class PermissionSeederTest extends TestCase
         $this->assertDatabaseHas('permissions', ['name' => 'stale-permission', 'guard_name' => 'api']);
     }
 
-    public function test_seeder_assigns_all_permissions_to_the_officer_role(): void
+    #[Test]
+    public function seeder_assigns_all_permissions_to_the_officer_role(): void
     {
         $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
@@ -174,7 +188,8 @@ class PermissionSeederTest extends TestCase
         }
     }
 
-    public function test_seeder_does_not_assign_permissions_when_officer_role_does_not_exist(): void
+    #[Test]
+    public function seeder_does_not_assign_permissions_when_officer_role_does_not_exist(): void
     {
         $this->seed(PermissionSeeder::class);
 

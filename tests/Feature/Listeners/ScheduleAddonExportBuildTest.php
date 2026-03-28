@@ -9,6 +9,7 @@ use App\Listeners\ScheduleAddonExportBuild;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ScheduleAddonExportBuildTest extends TestCase
@@ -19,7 +20,8 @@ class ScheduleAddonExportBuildTest extends TestCase
     // Listener Contract Tests
     // ==========================================
 
-    public function test_it_implements_should_queue(): void
+    #[Test]
+    public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new ScheduleAddonExportBuild);
     }
@@ -28,7 +30,8 @@ class ScheduleAddonExportBuildTest extends TestCase
     // Dispatch Tests
     // ==========================================
 
-    public function test_it_dispatches_job_on_addon_settings_processed_event(): void
+    #[Test]
+    public function it_dispatches_job_on_addon_settings_processed_event(): void
     {
         Bus::fake();
 
@@ -38,7 +41,8 @@ class ScheduleAddonExportBuildTest extends TestCase
         Bus::assertDispatched(BuildAddonExportFile::class);
     }
 
-    public function test_it_dispatches_job_on_character_updated_event(): void
+    #[Test]
+    public function it_dispatches_job_on_character_updated_event(): void
     {
         Bus::fake();
 
@@ -52,7 +56,8 @@ class ScheduleAddonExportBuildTest extends TestCase
     // failed() Handler Tests
     // ==========================================
 
-    public function test_failed_only_logs_for_any_event(): void
+    #[Test]
+    public function failed_only_logs_for_any_event(): void
     {
         $event = new AddonSettingsProcessed;
         $exception = new \RuntimeException('Something went wrong');
@@ -62,5 +67,17 @@ class ScheduleAddonExportBuildTest extends TestCase
         $listener->failed($event, $exception);
 
         $this->assertTrue(true); // No exception thrown
+    }
+
+    // ==========================================
+    // Tags
+    // ==========================================
+
+    #[Test]
+    public function it_has_correct_tags(): void
+    {
+        $listener = new ScheduleAddonExportBuild;
+
+        $this->assertSame(['regrowth-addon-export'], $listener->tags());
     }
 }

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -34,7 +35,8 @@ class RaidsPagesTest extends TestCase
         }
     }
 
-    public function test_attendance_dashboard_loads(): void
+    #[Test]
+    public function attendance_dashboard_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -44,7 +46,8 @@ class RaidsPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_attendance_matrix_loads(): void
+    #[Test]
+    public function attendance_matrix_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -54,7 +57,8 @@ class RaidsPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_report_show_loads(): void
+    #[Test]
+    public function report_show_loads(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
@@ -65,7 +69,8 @@ class RaidsPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_planned_absences_index_loads(): void
+    #[Test]
+    public function planned_absences_index_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -75,14 +80,16 @@ class RaidsPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_planned_absences_index_redirects_unauthenticated_users(): void
+    #[Test]
+    public function planned_absences_index_redirects_unauthenticated_users(): void
     {
         $response = $this->get(route('raids.absences.index'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_planned_absences_index_returns_403_for_users_without_permission(): void
+    #[Test]
+    public function planned_absences_index_returns_403_for_users_without_permission(): void
     {
         $user = User::factory()->member()->create();
 
@@ -91,7 +98,8 @@ class RaidsPagesTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_planned_absences_create_loads(): void
+    #[Test]
+    public function planned_absences_create_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -101,14 +109,16 @@ class RaidsPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_planned_absences_create_redirects_unauthenticated_users(): void
+    #[Test]
+    public function planned_absences_create_redirects_unauthenticated_users(): void
     {
         $response = $this->get(route('raids.absences.create'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_planned_absences_create_returns_403_for_users_without_permission(): void
+    #[Test]
+    public function planned_absences_create_returns_403_for_users_without_permission(): void
     {
         $user = User::factory()->member()->create();
 
@@ -117,7 +127,8 @@ class RaidsPagesTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_planned_absences_edit_loads(): void
+    #[Test]
+    public function planned_absences_edit_loads(): void
     {
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
@@ -128,7 +139,8 @@ class RaidsPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_planned_absences_edit_redirects_unauthenticated_users(): void
+    #[Test]
+    public function planned_absences_edit_redirects_unauthenticated_users(): void
     {
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
@@ -137,7 +149,8 @@ class RaidsPagesTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_planned_absences_edit_returns_403_for_users_without_permission(): void
+    #[Test]
+    public function planned_absences_edit_returns_403_for_users_without_permission(): void
     {
         $member = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();

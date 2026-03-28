@@ -14,6 +14,7 @@ use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class LootCouncilPagesTest extends TestCase
@@ -74,7 +75,8 @@ class LootCouncilPagesTest extends TestCase
         return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 
-    public function test_loot_index_loads(): void
+    #[Test]
+    public function loot_index_loads(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -85,7 +87,8 @@ class LootCouncilPagesTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_loot_phase_page_loads(): void
+    #[Test]
+    public function loot_phase_page_loads(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -97,7 +100,8 @@ class LootCouncilPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_loot_comments_page_loads(): void
+    #[Test]
+    public function loot_comments_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -107,7 +111,8 @@ class LootCouncilPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_loot_item_show_page_loads(): void
+    #[Test]
+    public function loot_item_show_page_loads(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -121,7 +126,8 @@ class LootCouncilPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_loot_item_edit_page_loads(): void
+    #[Test]
+    public function loot_item_edit_page_loads(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();

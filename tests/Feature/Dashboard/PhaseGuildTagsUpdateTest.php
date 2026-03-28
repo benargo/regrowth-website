@@ -6,11 +6,13 @@ use App\Models\TBC\Phase;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class PhaseGuildTagsUpdateTest extends DashboardTestCase
 {
-    public function test_update_guild_tags_requires_authentication(): void
+    #[Test]
+    public function update_guild_tags_requires_authentication(): void
     {
         $phase = Phase::factory()->create();
 
@@ -21,7 +23,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_update_guild_tags_forbids_guest_users(): void
+    #[Test]
+    public function update_guild_tags_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $phase = Phase::factory()->create();
@@ -33,7 +36,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_guild_tags_forbids_member_users(): void
+    #[Test]
+    public function update_guild_tags_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->create();
@@ -45,7 +49,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_guild_tags_forbids_raider_users(): void
+    #[Test]
+    public function update_guild_tags_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $phase = Phase::factory()->create();
@@ -57,7 +62,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_update_guild_tags_allows_officer_users(): void
+    #[Test]
+    public function update_guild_tags_allows_officer_users(): void
     {
         $phase = Phase::factory()->create();
 
@@ -68,7 +74,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_update_guild_tags_associates_tags_with_phase(): void
+    #[Test]
+    public function update_guild_tags_associates_tags_with_phase(): void
     {
         $phase = Phase::factory()->create();
         $tag1 = GuildTag::factory()->create();
@@ -85,7 +92,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $this->assertEquals($phase->id, $tag2->tbc_phase_id);
     }
 
-    public function test_update_guild_tags_removes_previous_associations(): void
+    #[Test]
+    public function update_guild_tags_removes_previous_associations(): void
     {
         $phase = Phase::factory()->create();
         $existingTag = GuildTag::factory()->withPhase($phase)->create();
@@ -102,7 +110,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $this->assertEquals($phase->id, $newTag->tbc_phase_id);
     }
 
-    public function test_update_guild_tags_can_clear_all_associations(): void
+    #[Test]
+    public function update_guild_tags_can_clear_all_associations(): void
     {
         $phase = Phase::factory()->create();
         $tag1 = GuildTag::factory()->withPhase($phase)->create();
@@ -119,7 +128,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $this->assertNull($tag2->tbc_phase_id);
     }
 
-    public function test_update_guild_tags_validates_guild_tag_ids_is_required(): void
+    #[Test]
+    public function update_guild_tags_validates_guild_tag_ids_is_required(): void
     {
         $phase = Phase::factory()->create();
 
@@ -128,7 +138,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
 
-    public function test_update_guild_tags_validates_guild_tag_ids_must_be_array(): void
+    #[Test]
+    public function update_guild_tags_validates_guild_tag_ids_must_be_array(): void
     {
         $phase = Phase::factory()->create();
 
@@ -139,7 +150,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
 
-    public function test_update_guild_tags_validates_guild_tag_ids_must_exist(): void
+    #[Test]
+    public function update_guild_tags_validates_guild_tag_ids_must_exist(): void
     {
         $phase = Phase::factory()->create();
 
@@ -150,7 +162,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['guild_tag_ids.0']);
     }
 
-    public function test_update_guild_tags_does_not_affect_tags_from_other_phases(): void
+    #[Test]
+    public function update_guild_tags_does_not_affect_tags_from_other_phases(): void
     {
         $phase1 = Phase::factory()->create();
         $phase2 = Phase::factory()->create();
@@ -168,7 +181,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $this->assertEquals($phase2->id, $tagForPhase2->tbc_phase_id);
     }
 
-    public function test_update_guild_tags_clears_phases_cache(): void
+    #[Test]
+    public function update_guild_tags_clears_phases_cache(): void
     {
         $phase = Phase::factory()->create();
 

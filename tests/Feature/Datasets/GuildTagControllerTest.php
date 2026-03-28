@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class GuildTagControllerTest extends TestCase
@@ -23,7 +24,8 @@ class GuildTagControllerTest extends TestCase
             ->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
     }
 
-    public function test_toggle_count_attendance_requires_authentication(): void
+    #[Test]
+    public function toggle_count_attendance_requires_authentication(): void
     {
         $tag = GuildTag::factory()->create();
 
@@ -34,7 +36,8 @@ class GuildTagControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_toggle_count_attendance_forbids_guest_users(): void
+    #[Test]
+    public function toggle_count_attendance_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $tag = GuildTag::factory()->create();
@@ -46,7 +49,8 @@ class GuildTagControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_toggle_count_attendance_forbids_member_users(): void
+    #[Test]
+    public function toggle_count_attendance_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $tag = GuildTag::factory()->create();
@@ -58,7 +62,8 @@ class GuildTagControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_toggle_count_attendance_forbids_raider_users(): void
+    #[Test]
+    public function toggle_count_attendance_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $tag = GuildTag::factory()->create();
@@ -70,7 +75,8 @@ class GuildTagControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_toggle_count_attendance_allows_officer_users(): void
+    #[Test]
+    public function toggle_count_attendance_allows_officer_users(): void
     {
         Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();
@@ -83,7 +89,8 @@ class GuildTagControllerTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_toggle_count_attendance_can_enable_attendance(): void
+    #[Test]
+    public function toggle_count_attendance_can_enable_attendance(): void
     {
         Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();
@@ -100,7 +107,8 @@ class GuildTagControllerTest extends TestCase
         $this->assertTrue($tag->count_attendance);
     }
 
-    public function test_toggle_count_attendance_can_disable_attendance(): void
+    #[Test]
+    public function toggle_count_attendance_can_disable_attendance(): void
     {
         Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();
@@ -117,7 +125,8 @@ class GuildTagControllerTest extends TestCase
         $this->assertFalse($tag->count_attendance);
     }
 
-    public function test_toggle_count_attendance_validates_count_attendance_is_required(): void
+    #[Test]
+    public function toggle_count_attendance_validates_count_attendance_is_required(): void
     {
         $user = User::factory()->officer()->create();
         $tag = GuildTag::factory()->create();
@@ -127,7 +136,8 @@ class GuildTagControllerTest extends TestCase
         $response->assertSessionHasErrors(['count_attendance']);
     }
 
-    public function test_toggle_count_attendance_validates_count_attendance_must_be_boolean(): void
+    #[Test]
+    public function toggle_count_attendance_validates_count_attendance_must_be_boolean(): void
     {
         $user = User::factory()->officer()->create();
         $tag = GuildTag::factory()->create();
@@ -139,7 +149,8 @@ class GuildTagControllerTest extends TestCase
         $response->assertSessionHasErrors(['count_attendance']);
     }
 
-    public function test_toggle_count_attendance_does_not_affect_other_tags(): void
+    #[Test]
+    public function toggle_count_attendance_does_not_affect_other_tags(): void
     {
         Event::fake(AddonSettingsProcessed::class);
         $user = User::factory()->officer()->create();

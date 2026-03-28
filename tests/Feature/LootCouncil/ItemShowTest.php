@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ItemShowTest extends TestCase
@@ -76,7 +77,8 @@ class ItemShowTest extends TestCase
         return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 
-    public function test_show_item_requires_authentication(): void
+    #[Test]
+    public function show_item_requires_authentication(): void
     {
         $item = $this->createTestItem();
 
@@ -85,7 +87,8 @@ class ItemShowTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_show_item_forbids_guest_users(): void
+    #[Test]
+    public function show_item_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
@@ -95,7 +98,8 @@ class ItemShowTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_show_item_allows_member_users(): void
+    #[Test]
+    public function show_item_allows_member_users(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -105,7 +109,8 @@ class ItemShowTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_show_item_allows_raider_users(): void
+    #[Test]
+    public function show_item_allows_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
@@ -115,7 +120,8 @@ class ItemShowTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_show_item_allows_officer_users(): void
+    #[Test]
+    public function show_item_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -125,7 +131,8 @@ class ItemShowTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_show_item_redirects_from_null_slug_to_correct_slug(): void
+    #[Test]
+    public function show_item_redirects_from_null_slug_to_correct_slug(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -136,7 +143,8 @@ class ItemShowTest extends TestCase
         $response->assertStatus(303);
     }
 
-    public function test_show_item_redirects_from_incorrect_slug_to_correct_slug(): void
+    #[Test]
+    public function show_item_redirects_from_incorrect_slug_to_correct_slug(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -147,7 +155,8 @@ class ItemShowTest extends TestCase
         $response->assertStatus(303);
     }
 
-    public function test_show_item_renders_with_correct_slug(): void
+    #[Test]
+    public function show_item_renders_with_correct_slug(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -161,7 +170,8 @@ class ItemShowTest extends TestCase
         );
     }
 
-    public function test_show_item_uses_fallback_slug_when_api_returns_no_name(): void
+    #[Test]
+    public function show_item_uses_fallback_slug_when_api_returns_no_name(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -181,7 +191,8 @@ class ItemShowTest extends TestCase
         $response->assertStatus(303);
     }
 
-    public function test_show_item_renders_with_fallback_slug_when_api_returns_no_name(): void
+    #[Test]
+    public function show_item_renders_with_fallback_slug_when_api_returns_no_name(): void
     {
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();

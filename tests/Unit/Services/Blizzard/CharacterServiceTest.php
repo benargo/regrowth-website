@@ -7,6 +7,7 @@ use App\Services\Blizzard\Client;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CharacterServiceTest extends TestCase
@@ -31,7 +32,8 @@ class CharacterServiceTest extends TestCase
         ]);
     }
 
-    public function test_get_profile_returns_character_data(): void
+    #[Test]
+    public function get_profile_returns_character_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -58,7 +60,8 @@ class CharacterServiceTest extends TestCase
         $this->assertEquals(60, $profile['level']);
     }
 
-    public function test_get_profile_caches_result(): void
+    #[Test]
+    public function get_profile_caches_result(): void
     {
         $callCount = 0;
 
@@ -85,7 +88,8 @@ class CharacterServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_get_profile_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function get_profile_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -104,7 +108,8 @@ class CharacterServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.character.profile.thunderstrike.testchar.profile-classicann-eu'));
     }
 
-    public function test_get_profile_uses_default_realm_when_not_provided(): void
+    #[Test]
+    public function get_profile_uses_default_realm_when_not_provided(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -129,7 +134,8 @@ class CharacterServiceTest extends TestCase
         });
     }
 
-    public function test_get_profile_uses_provided_realm(): void
+    #[Test]
+    public function get_profile_uses_provided_realm(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -154,7 +160,8 @@ class CharacterServiceTest extends TestCase
         });
     }
 
-    public function test_get_profile_converts_name_to_lowercase(): void
+    #[Test]
+    public function get_profile_converts_name_to_lowercase(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -179,7 +186,8 @@ class CharacterServiceTest extends TestCase
         });
     }
 
-    public function test_get_profile_throws_exception_for_invalid_character(): void
+    #[Test]
+    public function get_profile_throws_exception_for_invalid_character(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -198,7 +206,8 @@ class CharacterServiceTest extends TestCase
         $service->getProfile('NonExistentChar', 'thunderstrike');
     }
 
-    public function test_fresh_get_profile_bypasses_cache(): void
+    #[Test]
+    public function fresh_get_profile_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -224,7 +233,8 @@ class CharacterServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_get_profile_status_returns_status_data(): void
+    #[Test]
+    public function get_profile_status_returns_status_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -248,7 +258,8 @@ class CharacterServiceTest extends TestCase
         $this->assertTrue($status['is_valid']);
     }
 
-    public function test_get_profile_status_caches_result(): void
+    #[Test]
+    public function get_profile_status_caches_result(): void
     {
         $callCount = 0;
 
@@ -274,7 +285,8 @@ class CharacterServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_get_profile_status_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function get_profile_status_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -293,7 +305,8 @@ class CharacterServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.character.status.thunderstrike.testchar.profile-classicann-eu'));
     }
 
-    public function test_get_profile_status_builds_correct_endpoint(): void
+    #[Test]
+    public function get_profile_status_builds_correct_endpoint(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -318,7 +331,8 @@ class CharacterServiceTest extends TestCase
         });
     }
 
-    public function test_with_namespace_affects_cache_keys(): void
+    #[Test]
+    public function with_namespace_affects_cache_keys(): void
     {
         $callCount = 0;
 

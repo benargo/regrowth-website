@@ -8,6 +8,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ClientTest extends TestCase
@@ -25,7 +26,8 @@ class ClientTest extends TestCase
         ]);
     }
 
-    public function test_constructor_sets_region_and_locale_from_config(): void
+    #[Test]
+    public function constructor_sets_region_and_locale_from_config(): void
     {
         $client = new Client('client_id', 'client_secret', namespace: 'static-classic-eu');
 
@@ -34,7 +36,8 @@ class ClientTest extends TestCase
         $this->assertEquals('static-classic-eu', $client->getNamespace());
     }
 
-    public function test_constructor_accepts_explicit_region_and_locale(): void
+    #[Test]
+    public function constructor_accepts_explicit_region_and_locale(): void
     {
         $client = new Client(
             clientId: 'client_id',
@@ -49,7 +52,8 @@ class ClientTest extends TestCase
         $this->assertEquals('dynamic-classic1x-us', $client->getNamespace());
     }
 
-    public function test_constructor_throws_exception_for_invalid_locale(): void
+    #[Test]
+    public function constructor_throws_exception_for_invalid_locale(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Locale "invalid_locale" is not supported for region "eu"');
@@ -62,7 +66,8 @@ class ClientTest extends TestCase
         );
     }
 
-    public function test_from_config_creates_client(): void
+    #[Test]
+    public function from_config_creates_client(): void
     {
         $client = Client::fromConfig();
 
@@ -70,7 +75,8 @@ class ClientTest extends TestCase
         $this->assertEquals('en_GB', $client->getLocale());
     }
 
-    public function test_set_region_updates_region(): void
+    #[Test]
+    public function set_region_updates_region(): void
     {
         $client = new Client('client_id', 'client_secret');
 
@@ -80,7 +86,8 @@ class ClientTest extends TestCase
         $this->assertEquals(Region::US, $client->getRegion());
     }
 
-    public function test_set_region_resets_locale_if_incompatible(): void
+    #[Test]
+    public function set_region_resets_locale_if_incompatible(): void
     {
         $client = new Client(
             clientId: 'client_id',
@@ -94,7 +101,8 @@ class ClientTest extends TestCase
         $this->assertEquals('en_US', $client->getLocale());
     }
 
-    public function test_set_locale_updates_locale(): void
+    #[Test]
+    public function set_locale_updates_locale(): void
     {
         $client = new Client('client_id', 'client_secret');
 
@@ -104,7 +112,8 @@ class ClientTest extends TestCase
         $this->assertEquals('fr_FR', $client->getLocale());
     }
 
-    public function test_set_locale_throws_exception_for_invalid_locale(): void
+    #[Test]
+    public function set_locale_throws_exception_for_invalid_locale(): void
     {
         $client = new Client('client_id', 'client_secret');
 
@@ -114,7 +123,8 @@ class ClientTest extends TestCase
         $client->setLocale('ko_KR');
     }
 
-    public function test_with_namespace_updates_namespace(): void
+    #[Test]
+    public function with_namespace_updates_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
 
@@ -124,7 +134,8 @@ class ClientTest extends TestCase
         $this->assertEquals('dynamic-classic1x-eu', $client->getNamespace());
     }
 
-    public function test_http_returns_pending_request(): void
+    #[Test]
+    public function http_returns_pending_request(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -140,7 +151,8 @@ class ClientTest extends TestCase
         $this->assertInstanceOf(PendingRequest::class, $request);
     }
 
-    public function test_get_access_token_requests_new_token(): void
+    #[Test]
+    public function get_access_token_requests_new_token(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -162,7 +174,8 @@ class ClientTest extends TestCase
         });
     }
 
-    public function test_get_access_token_caches_token_per_region(): void
+    #[Test]
+    public function get_access_token_caches_token_per_region(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -203,7 +216,8 @@ class ClientTest extends TestCase
         $this->assertEquals('eu_token', $cachedEuToken);
     }
 
-    public function test_get_access_token_refreshes_when_cache_is_cleared(): void
+    #[Test]
+    public function get_access_token_refreshes_when_cache_is_cleared(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::sequence()
@@ -233,7 +247,8 @@ class ClientTest extends TestCase
         $this->assertEquals('second_token', $newToken);
     }
 
-    public function test_get_access_token_stores_token_in_cache(): void
+    #[Test]
+    public function get_access_token_stores_token_in_cache(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -249,7 +264,8 @@ class ClientTest extends TestCase
         $this->assertEquals('cached_token', Cache::get('blizzard_access_token_eu'));
     }
 
-    public function test_http_includes_namespace_header_when_set(): void
+    #[Test]
+    public function http_includes_namespace_header_when_set(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -272,7 +288,8 @@ class ClientTest extends TestCase
         });
     }
 
-    public function test_http_does_not_include_namespace_header_when_null(): void
+    #[Test]
+    public function http_does_not_include_namespace_header_when_null(): void
     {
         config(['services.blizzard.namespace' => null]);
 
@@ -297,7 +314,8 @@ class ClientTest extends TestCase
         });
     }
 
-    public function test_with_namespace_allows_fluent_override(): void
+    #[Test]
+    public function with_namespace_allows_fluent_override(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([

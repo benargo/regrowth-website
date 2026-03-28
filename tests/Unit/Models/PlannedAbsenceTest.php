@@ -248,6 +248,24 @@ class PlannedAbsenceTest extends ModelTestCase
         $this->assertNull($absence->deleted_at);
     }
 
+    // ==================== serializeDate ====================
+
+    #[Test]
+    public function serialize_date_formats_dates_as_y_m_d(): void
+    {
+        $absence = $this->create([
+            'start_date' => '2026-03-15 14:30:00',
+            'end_date' => '2026-03-20 09:00:00',
+        ]);
+
+        $array = $absence->toArray();
+
+        $this->assertSame('2026-03-15', $array['start_date']);
+        $this->assertSame('2026-03-20', $array['end_date']);
+    }
+
+    // ==================== events ====================
+
     #[Test]
     public function it_dispatches_planned_absence_created_event_on_create(): void
     {

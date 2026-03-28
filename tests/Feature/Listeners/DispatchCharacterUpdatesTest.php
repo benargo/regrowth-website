@@ -8,6 +8,7 @@ use App\Listeners\DispatchCharacterUpdates;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class DispatchCharacterUpdatesTest extends TestCase
@@ -19,7 +20,8 @@ class DispatchCharacterUpdatesTest extends TestCase
         Cache::flush();
     }
 
-    public function test_dispatches_batch_with_job_for_each_member_when_not_throttled(): void
+    #[Test]
+    public function dispatches_batch_with_job_for_each_member_when_not_throttled(): void
     {
         Bus::fake();
 
@@ -38,7 +40,8 @@ class DispatchCharacterUpdatesTest extends TestCase
         });
     }
 
-    public function test_does_not_dispatch_jobs_when_within_six_hour_throttle(): void
+    #[Test]
+    public function does_not_dispatch_jobs_when_within_six_hour_throttle(): void
     {
         Bus::fake();
 
@@ -56,7 +59,8 @@ class DispatchCharacterUpdatesTest extends TestCase
         Bus::assertNothingBatched();
     }
 
-    public function test_dispatches_jobs_after_throttle_expires(): void
+    #[Test]
+    public function dispatches_jobs_after_throttle_expires(): void
     {
         Bus::fake();
 
@@ -80,7 +84,8 @@ class DispatchCharacterUpdatesTest extends TestCase
         Bus::assertBatchCount(2);
     }
 
-    public function test_second_call_within_throttle_window_is_skipped(): void
+    #[Test]
+    public function second_call_within_throttle_window_is_skipped(): void
     {
         Bus::fake();
 
@@ -98,7 +103,8 @@ class DispatchCharacterUpdatesTest extends TestCase
         Bus::assertBatchCount(1);
     }
 
-    public function test_dispatches_no_jobs_when_members_array_is_empty(): void
+    #[Test]
+    public function dispatches_no_jobs_when_members_array_is_empty(): void
     {
         Bus::fake();
 
@@ -108,7 +114,8 @@ class DispatchCharacterUpdatesTest extends TestCase
         Bus::assertNothingBatched();
     }
 
-    public function test_dispatches_no_jobs_when_members_key_is_missing(): void
+    #[Test]
+    public function dispatches_no_jobs_when_members_key_is_missing(): void
     {
         Bus::fake();
 
@@ -118,7 +125,8 @@ class DispatchCharacterUpdatesTest extends TestCase
         Bus::assertNothingBatched();
     }
 
-    public function test_each_dispatched_job_receives_correct_member_data(): void
+    #[Test]
+    public function each_dispatched_job_receives_correct_member_data(): void
     {
         Bus::fake();
 

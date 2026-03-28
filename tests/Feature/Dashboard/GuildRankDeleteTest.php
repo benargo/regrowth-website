@@ -5,11 +5,13 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class GuildRankDeleteTest extends DashboardTestCase
 {
-    public function test_delete_requires_authentication(): void
+    #[Test]
+    public function delete_requires_authentication(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -18,7 +20,8 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_delete_forbids_guest_users(): void
+    #[Test]
+    public function delete_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $rank = GuildRank::factory()->create();
@@ -28,7 +31,8 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_delete_forbids_member_users(): void
+    #[Test]
+    public function delete_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $rank = GuildRank::factory()->create();
@@ -38,7 +42,8 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_delete_forbids_raider_users(): void
+    #[Test]
+    public function delete_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $rank = GuildRank::factory()->create();
@@ -48,7 +53,8 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_delete_allows_officer_users(): void
+    #[Test]
+    public function delete_allows_officer_users(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -57,7 +63,8 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_delete_removes_rank_from_database(): void
+    #[Test]
+    public function delete_removes_rank_from_database(): void
     {
         $rank = GuildRank::factory()->create();
         $rankId = $rank->id;
@@ -67,7 +74,8 @@ class GuildRankDeleteTest extends DashboardTestCase
         $this->assertDatabaseMissing('guild_ranks', ['id' => $rankId]);
     }
 
-    public function test_delete_returns_404_for_nonexistent_rank(): void
+    #[Test]
+    public function delete_returns_404_for_nonexistent_rank(): void
     {
 
         $response = $this->actingAs($this->officer)->delete(route('dashboard.ranks.destroy', 99999));
@@ -75,7 +83,8 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertNotFound();
     }
 
-    public function test_delete_clears_guild_ranks_cache(): void
+    #[Test]
+    public function delete_clears_guild_ranks_cache(): void
     {
         $rank = GuildRank::factory()->create();
 

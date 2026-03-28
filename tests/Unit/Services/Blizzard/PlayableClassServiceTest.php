@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PlayableClassServiceTest extends TestCase
@@ -49,7 +50,8 @@ class PlayableClassServiceTest extends TestCase
         return $mock;
     }
 
-    public function test_constructor_sets_static_classic_eu_namespace(): void
+    #[Test]
+    public function constructor_sets_static_classic_eu_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
         new PlayableClassService($client);
@@ -57,7 +59,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals('static-classicann-eu', $client->getNamespace());
     }
 
-    public function test_index_returns_playable_class_data(): void
+    #[Test]
+    public function index_returns_playable_class_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -83,7 +86,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertCount(2, $result['playable_classes']);
     }
 
-    public function test_index_makes_correct_api_call(): void
+    #[Test]
+    public function index_makes_correct_api_call(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -108,7 +112,8 @@ class PlayableClassServiceTest extends TestCase
         });
     }
 
-    public function test_index_caches_result(): void
+    #[Test]
+    public function index_caches_result(): void
     {
         $callCount = 0;
 
@@ -135,7 +140,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_index_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function index_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -154,7 +160,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.playable-class.index.static-classicann-eu'));
     }
 
-    public function test_index_throws_exception_on_api_error(): void
+    #[Test]
+    public function index_throws_exception_on_api_error(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -173,7 +180,8 @@ class PlayableClassServiceTest extends TestCase
         $service->index();
     }
 
-    public function test_index_fresh_bypasses_cache(): void
+    #[Test]
+    public function index_fresh_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -199,7 +207,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_find_returns_playable_class_data(): void
+    #[Test]
+    public function find_returns_playable_class_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -226,7 +235,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals('Warrior', $result['name']);
     }
 
-    public function test_find_makes_correct_api_call(): void
+    #[Test]
+    public function find_makes_correct_api_call(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -251,7 +261,8 @@ class PlayableClassServiceTest extends TestCase
         });
     }
 
-    public function test_find_caches_result(): void
+    #[Test]
+    public function find_caches_result(): void
     {
         $callCount = 0;
 
@@ -278,7 +289,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_find_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function find_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -297,7 +309,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.playable-class.1.static-classicann-eu'));
     }
 
-    public function test_find_throws_exception_on_api_error(): void
+    #[Test]
+    public function find_throws_exception_on_api_error(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -316,7 +329,8 @@ class PlayableClassServiceTest extends TestCase
         $service->find(999);
     }
 
-    public function test_find_throws_invalid_class_exception_on_blizzard_404(): void
+    #[Test]
+    public function find_throws_invalid_class_exception_on_blizzard_404(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -340,7 +354,8 @@ class PlayableClassServiceTest extends TestCase
         $service->find(999);
     }
 
-    public function test_find_fresh_bypasses_cache(): void
+    #[Test]
+    public function find_fresh_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -366,7 +381,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_find_caches_different_ids_separately(): void
+    #[Test]
+    public function find_caches_different_ids_separately(): void
     {
         $callCount = 0;
 
@@ -394,7 +410,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.playable-class.2.static-classicann-eu'));
     }
 
-    public function test_media_returns_icon_data(): void
+    #[Test]
+    public function media_returns_icon_data(): void
     {
         $expectedMedia = [
             'assets' => [
@@ -421,7 +438,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertArrayHasKey('assets', $media);
     }
 
-    public function test_media_delegates_to_media_service(): void
+    #[Test]
+    public function media_delegates_to_media_service(): void
     {
         $this->instance(
             MediaService::class,
@@ -439,7 +457,8 @@ class PlayableClassServiceTest extends TestCase
         $service->media(1);
     }
 
-    public function test_icon_url_returns_url_for_valid_class(): void
+    #[Test]
+    public function icon_url_returns_url_for_valid_class(): void
     {
         $media = [
             'assets' => [
@@ -469,7 +488,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertEquals('https://example.com/blizzard/media/123.jpg', $result);
     }
 
-    public function test_icon_url_returns_null_when_assets_are_empty(): void
+    #[Test]
+    public function icon_url_returns_null_when_assets_are_empty(): void
     {
         $media = ['assets' => []];
 
@@ -493,7 +513,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertNull($service->iconUrl(1));
     }
 
-    public function test_icon_url_returns_null_when_assets_key_is_missing(): void
+    #[Test]
+    public function icon_url_returns_null_when_assets_key_is_missing(): void
     {
         $this->instance(
             MediaService::class,
@@ -515,7 +536,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertNull($service->iconUrl(1));
     }
 
-    public function test_icon_url_returns_null_when_asset_download_fails(): void
+    #[Test]
+    public function icon_url_returns_null_when_asset_download_fails(): void
     {
         $media = [
             'assets' => [
@@ -543,7 +565,8 @@ class PlayableClassServiceTest extends TestCase
         $this->assertNull($service->iconUrl(1));
     }
 
-    public function test_with_namespace_affects_cache_keys(): void
+    #[Test]
+    public function with_namespace_affects_cache_keys(): void
     {
         $callCount = 0;
 

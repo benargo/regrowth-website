@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BiasToolPhaseTest extends TestCase
@@ -59,7 +60,8 @@ class BiasToolPhaseTest extends TestCase
         return "/loot/phases/phase-{$phase->id}";
     }
 
-    public function test_loot_phase_requires_authentication(): void
+    #[Test]
+    public function loot_phase_requires_authentication(): void
     {
         $phase = Phase::factory()->started()->create();
 
@@ -68,7 +70,8 @@ class BiasToolPhaseTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_loot_phase_forbids_guest_users(): void
+    #[Test]
+    public function loot_phase_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $phase = Phase::factory()->started()->create();
@@ -78,7 +81,8 @@ class BiasToolPhaseTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_loot_phase_forbids_users_with_no_roles(): void
+    #[Test]
+    public function loot_phase_forbids_users_with_no_roles(): void
     {
         $user = User::factory()->noRoles()->create();
         $phase = Phase::factory()->started()->create();
@@ -88,7 +92,8 @@ class BiasToolPhaseTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_loot_phase_allows_member_users(): void
+    #[Test]
+    public function loot_phase_allows_member_users(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -99,7 +104,8 @@ class BiasToolPhaseTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_loot_phase_returns_raids_and_bosses(): void
+    #[Test]
+    public function loot_phase_returns_raids_and_bosses(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -121,7 +127,8 @@ class BiasToolPhaseTest extends TestCase
         );
     }
 
-    public function test_loot_phase_selects_correct_phase(): void
+    #[Test]
+    public function loot_phase_selects_correct_phase(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -135,7 +142,8 @@ class BiasToolPhaseTest extends TestCase
         );
     }
 
-    public function test_loot_phase_has_optional_boss_items_prop(): void
+    #[Test]
+    public function loot_phase_has_optional_boss_items_prop(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -152,7 +160,8 @@ class BiasToolPhaseTest extends TestCase
         );
     }
 
-    public function test_boss_items_are_loaded_via_partial_reload(): void
+    #[Test]
+    public function boss_items_are_loaded_via_partial_reload(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -193,7 +202,8 @@ class BiasToolPhaseTest extends TestCase
         $partialResponse->assertJsonPath('props.boss_items.data.bossId', $boss->id);
     }
 
-    public function test_partial_reload_returns_items_for_specified_raid(): void
+    #[Test]
+    public function partial_reload_returns_items_for_specified_raid(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -215,7 +225,8 @@ class BiasToolPhaseTest extends TestCase
         );
     }
 
-    public function test_bosses_are_ordered_by_encounter_order(): void
+    #[Test]
+    public function bosses_are_ordered_by_encounter_order(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -239,7 +250,8 @@ class BiasToolPhaseTest extends TestCase
         );
     }
 
-    public function test_partial_reload_returns_bosses_for_new_raid(): void
+    #[Test]
+    public function partial_reload_returns_bosses_for_new_raid(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();

@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class GuildTagsTest extends TestCase
@@ -85,7 +86,8 @@ class GuildTagsTest extends TestCase
         return new GuildTags($config, $auth);
     }
 
-    public function test_constructor_fetches_guild_tags_data(): void
+    #[Test]
+    public function constructor_fetches_guild_tags_data(): void
     {
         $this->makeGuildTags();
 
@@ -96,7 +98,8 @@ class GuildTagsTest extends TestCase
         });
     }
 
-    public function test_constructor_uses_configured_guild_id(): void
+    #[Test]
+    public function constructor_uses_configured_guild_id(): void
     {
         $this->makeGuildTags(['guild_id' => 774848]);
 
@@ -107,7 +110,8 @@ class GuildTagsTest extends TestCase
         });
     }
 
-    public function test_constructor_creates_guild_tag_models(): void
+    #[Test]
+    public function constructor_creates_guild_tag_models(): void
     {
         $this->makeGuildTags();
 
@@ -116,7 +120,8 @@ class GuildTagsTest extends TestCase
         $this->assertDatabaseHas('wcl_guild_tags', ['id' => 3, 'name' => 'Trial']);
     }
 
-    public function test_constructor_updates_existing_guild_tag_models(): void
+    #[Test]
+    public function constructor_updates_existing_guild_tag_models(): void
     {
         GuildTag::factory()->create(['id' => 1, 'name' => 'Old Name']);
 
@@ -126,14 +131,16 @@ class GuildTagsTest extends TestCase
         $this->assertDatabaseMissing('wcl_guild_tags', ['id' => 1, 'name' => 'Old Name']);
     }
 
-    public function test_constructor_handles_empty_tags_response(): void
+    #[Test]
+    public function constructor_handles_empty_tags_response(): void
     {
         $guildTags = $this->makeGuildTags(tagsData: []);
 
         $this->assertEmpty($guildTags->toArray());
     }
 
-    public function test_constructor_caches_graphql_response(): void
+    #[Test]
+    public function constructor_caches_graphql_response(): void
     {
         $this->fakeSuccessfulTagsResponse($this->sampleTagsData());
 
@@ -155,7 +162,8 @@ class GuildTagsTest extends TestCase
         new GuildTags($config, $auth);
     }
 
-    public function test_find_returns_guild_tag_by_id(): void
+    #[Test]
+    public function find_returns_guild_tag_by_id(): void
     {
         $guildTags = $this->makeGuildTags();
 
@@ -166,7 +174,8 @@ class GuildTagsTest extends TestCase
         $this->assertEquals('Main Raider', $tag->name);
     }
 
-    public function test_find_returns_null_for_non_existent_id(): void
+    #[Test]
+    public function find_returns_null_for_non_existent_id(): void
     {
         $guildTags = $this->makeGuildTags();
 
@@ -175,7 +184,8 @@ class GuildTagsTest extends TestCase
         $this->assertNull($tag);
     }
 
-    public function test_to_array_returns_all_tags(): void
+    #[Test]
+    public function to_array_returns_all_tags(): void
     {
         $guildTags = $this->makeGuildTags();
 
@@ -188,7 +198,8 @@ class GuildTagsTest extends TestCase
         $this->assertArrayHasKey(3, $array);
     }
 
-    public function test_to_array_values_are_guild_tag_models(): void
+    #[Test]
+    public function to_array_values_are_guild_tag_models(): void
     {
         $guildTags = $this->makeGuildTags();
 
@@ -199,7 +210,8 @@ class GuildTagsTest extends TestCase
         }
     }
 
-    public function test_to_collection_returns_collection_instance(): void
+    #[Test]
+    public function to_collection_returns_collection_instance(): void
     {
         $guildTags = $this->makeGuildTags();
 
@@ -208,7 +220,8 @@ class GuildTagsTest extends TestCase
         $this->assertInstanceOf(Collection::class, $collection);
     }
 
-    public function test_to_collection_contains_all_tags(): void
+    #[Test]
+    public function to_collection_contains_all_tags(): void
     {
         $guildTags = $this->makeGuildTags();
 
@@ -220,7 +233,8 @@ class GuildTagsTest extends TestCase
         $this->assertTrue($collection->has(3));
     }
 
-    public function test_to_collection_values_are_guild_tag_models(): void
+    #[Test]
+    public function to_collection_values_are_guild_tag_models(): void
     {
         $guildTags = $this->makeGuildTags();
 
@@ -231,7 +245,8 @@ class GuildTagsTest extends TestCase
         });
     }
 
-    public function test_normalize_guild_tag_ids_returns_empty_array_for_null(): void
+    #[Test]
+    public function normalize_guild_tag_ids_returns_empty_array_for_null(): void
     {
         $result = GuildTags::normalizeGuildTagIDs(null);
 
@@ -239,7 +254,8 @@ class GuildTagsTest extends TestCase
         $this->assertEmpty($result);
     }
 
-    public function test_normalize_guild_tag_ids_returns_array_with_single_int(): void
+    #[Test]
+    public function normalize_guild_tag_ids_returns_array_with_single_int(): void
     {
         $result = GuildTags::normalizeGuildTagIDs(42);
 
@@ -248,7 +264,8 @@ class GuildTagsTest extends TestCase
         $this->assertEquals([42], $result);
     }
 
-    public function test_normalize_guild_tag_ids_returns_same_array_when_given_array(): void
+    #[Test]
+    public function normalize_guild_tag_ids_returns_same_array_when_given_array(): void
     {
         $input = [1, 2, 3];
 
@@ -258,7 +275,8 @@ class GuildTagsTest extends TestCase
         $this->assertEquals($input, $result);
     }
 
-    public function test_normalize_guild_tag_ids_returns_empty_array_when_given_empty_array(): void
+    #[Test]
+    public function normalize_guild_tag_ids_returns_empty_array_when_given_empty_array(): void
     {
         $result = GuildTags::normalizeGuildTagIDs([]);
 
@@ -266,7 +284,8 @@ class GuildTagsTest extends TestCase
         $this->assertEmpty($result);
     }
 
-    public function test_guild_tags_service_can_be_resolved_from_container(): void
+    #[Test]
+    public function guild_tags_service_can_be_resolved_from_container(): void
     {
         $this->fakeSuccessfulTagsResponse($this->sampleTagsData());
 

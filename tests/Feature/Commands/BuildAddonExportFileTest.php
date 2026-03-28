@@ -5,13 +5,15 @@ namespace Tests\Feature\Commands;
 use App\Jobs\BuildAddonExportFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BuildAddonExportFileTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_dispatches_the_export_job(): void
+    #[Test]
+    public function it_dispatches_the_export_job(): void
     {
         Bus::fake();
 

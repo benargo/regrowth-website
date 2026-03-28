@@ -17,6 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CommentReactionTest extends TestCase
@@ -79,7 +80,8 @@ class CommentReactionTest extends TestCase
     // Store reaction authorization tests
     // ==========================================
 
-    public function test_authenticated_users_can_react_to_comments_from_other_users(): void
+    #[Test]
+    public function authenticated_users_can_react_to_comments_from_other_users(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -98,7 +100,8 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
-    public function test_users_cannot_react_to_their_own_comments(): void
+    #[Test]
+    public function users_cannot_react_to_their_own_comments(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -116,7 +119,8 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
-    public function test_unauthenticated_users_cannot_react_to_comments(): void
+    #[Test]
+    public function unauthenticated_users_cannot_react_to_comments(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -131,7 +135,8 @@ class CommentReactionTest extends TestCase
         $this->assertDatabaseCount('lootcouncil_comments_reactions', 0);
     }
 
-    public function test_guest_users_cannot_react_to_comments(): void
+    #[Test]
+    public function guest_users_cannot_react_to_comments(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -150,7 +155,8 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
-    public function test_member_users_can_react_to_comments(): void
+    #[Test]
+    public function member_users_can_react_to_comments(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -169,7 +175,8 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
-    public function test_officer_users_can_react_to_comments(): void
+    #[Test]
+    public function officer_users_can_react_to_comments(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -192,7 +199,8 @@ class CommentReactionTest extends TestCase
     // Destroy reaction authorization tests
     // ==========================================
 
-    public function test_users_can_delete_their_own_reactions(): void
+    #[Test]
+    public function users_can_delete_their_own_reactions(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -216,7 +224,8 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
-    public function test_unauthenticated_users_cannot_delete_reactions(): void
+    #[Test]
+    public function unauthenticated_users_cannot_delete_reactions(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -242,7 +251,8 @@ class CommentReactionTest extends TestCase
     // Destroy reaction validation tests
     // ==========================================
 
-    public function test_destroy_fails_if_reaction_does_not_belong_to_comment(): void
+    #[Test]
+    public function destroy_fails_if_reaction_does_not_belong_to_comment(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -272,7 +282,8 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
-    public function test_destroy_succeeds_when_reaction_belongs_to_comment(): void
+    #[Test]
+    public function destroy_succeeds_when_reaction_belongs_to_comment(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
@@ -302,7 +313,8 @@ class CommentReactionTest extends TestCase
     // Model validation tests
     // ==========================================
 
-    public function test_model_prevents_user_from_reacting_to_own_comment_directly(): void
+    #[Test]
+    public function model_prevents_user_from_reacting_to_own_comment_directly(): void
     {
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
@@ -319,7 +331,8 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
-    public function test_user_cannot_react_to_same_comment_twice(): void
+    #[Test]
+    public function user_cannot_react_to_same_comment_twice(): void
     {
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();

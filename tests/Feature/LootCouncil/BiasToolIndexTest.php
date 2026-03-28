@@ -8,6 +8,7 @@ use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BiasToolIndexTest extends TestCase
@@ -24,14 +25,16 @@ class BiasToolIndexTest extends TestCase
         DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
     }
 
-    public function test_loot_index_requires_authentication(): void
+    #[Test]
+    public function loot_index_requires_authentication(): void
     {
         $response = $this->get('/loot');
 
         $response->assertRedirect('/login');
     }
 
-    public function test_loot_index_forbids_guest_users(): void
+    #[Test]
+    public function loot_index_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -40,7 +43,8 @@ class BiasToolIndexTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_loot_index_forbids_users_with_no_roles(): void
+    #[Test]
+    public function loot_index_forbids_users_with_no_roles(): void
     {
         $user = User::factory()->noRoles()->create();
 
@@ -49,7 +53,8 @@ class BiasToolIndexTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_loot_index_redirects_to_current_phase(): void
+    #[Test]
+    public function loot_index_redirects_to_current_phase(): void
     {
         $user = User::factory()->member()->create();
 
@@ -64,7 +69,8 @@ class BiasToolIndexTest extends TestCase
         $response->assertRedirect(route('loot.phase', ['phase' => $currentPhase->id]));
     }
 
-    public function test_loot_index_follows_redirect_to_phase_page(): void
+    #[Test]
+    public function loot_index_follows_redirect_to_phase_page(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();

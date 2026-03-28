@@ -9,6 +9,7 @@ use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
 use App\Services\WarcraftLogs\Guild;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class GuildTest extends TestCase
@@ -90,7 +91,8 @@ class GuildTest extends TestCase
         return new Guild($config, $auth);
     }
 
-    public function test_constructor_fetches_guild_data(): void
+    #[Test]
+    public function constructor_fetches_guild_data(): void
     {
         $this->makeGuild();
 
@@ -101,7 +103,8 @@ class GuildTest extends TestCase
         });
     }
 
-    public function test_constructor_uses_configured_guild_id(): void
+    #[Test]
+    public function constructor_uses_configured_guild_id(): void
     {
         $this->makeGuild(['guild_id' => 774848]);
 
@@ -112,7 +115,8 @@ class GuildTest extends TestCase
         });
     }
 
-    public function test_constructor_throws_exception_when_guild_not_found(): void
+    #[Test]
+    public function constructor_throws_exception_when_guild_not_found(): void
     {
         Http::preventStrayRequests();
 
@@ -145,7 +149,8 @@ class GuildTest extends TestCase
         new Guild($config, $auth);
     }
 
-    public function test_constructor_caches_graphql_response(): void
+    #[Test]
+    public function constructor_caches_graphql_response(): void
     {
         $this->fakeSuccessfulGuildResponse($this->sampleGuildData());
 
@@ -164,21 +169,24 @@ class GuildTest extends TestCase
         new Guild($config, $auth);
     }
 
-    public function test_id_property_returns_guild_id(): void
+    #[Test]
+    public function id_property_returns_guild_id(): void
     {
         $guild = $this->makeGuild();
 
         $this->assertEquals(774848, $guild->id);
     }
 
-    public function test_name_property_returns_guild_name(): void
+    #[Test]
+    public function name_property_returns_guild_name(): void
     {
         $guild = $this->makeGuild();
 
         $this->assertEquals('Regrowth', $guild->name);
     }
 
-    public function test_server_property_returns_server_object(): void
+    #[Test]
+    public function server_property_returns_server_object(): void
     {
         $guild = $this->makeGuild();
 
@@ -188,7 +196,8 @@ class GuildTest extends TestCase
         $this->assertEquals('EU', $guild->server->region->name);
     }
 
-    public function test_faction_property_returns_faction_object(): void
+    #[Test]
+    public function faction_property_returns_faction_object(): void
     {
         $guild = $this->makeGuild();
 
@@ -197,7 +206,8 @@ class GuildTest extends TestCase
         $this->assertEquals('Alliance', $guild->faction->name);
     }
 
-    public function test_accessing_invalid_property_throws_exception(): void
+    #[Test]
+    public function accessing_invalid_property_throws_exception(): void
     {
         $guild = $this->makeGuild();
 
@@ -207,7 +217,8 @@ class GuildTest extends TestCase
         $guild->invalid;
     }
 
-    public function test_guild_service_can_be_resolved_from_container(): void
+    #[Test]
+    public function guild_service_can_be_resolved_from_container(): void
     {
         $this->fakeSuccessfulGuildResponse($this->sampleGuildData());
 
@@ -220,7 +231,8 @@ class GuildTest extends TestCase
         $this->assertInstanceOf(Guild::class, $service);
     }
 
-    public function test_to_array_returns_array_with_all_properties(): void
+    #[Test]
+    public function to_array_returns_array_with_all_properties(): void
     {
         $guild = $this->makeGuild();
 
@@ -233,7 +245,8 @@ class GuildTest extends TestCase
         $this->assertArrayHasKey('faction', $array);
     }
 
-    public function test_to_array_returns_correct_values(): void
+    #[Test]
+    public function to_array_returns_correct_values(): void
     {
         $guild = $this->makeGuild();
 
@@ -243,7 +256,8 @@ class GuildTest extends TestCase
         $this->assertEquals('Regrowth', $array['name']);
     }
 
-    public function test_to_array_includes_nested_server_data(): void
+    #[Test]
+    public function to_array_includes_nested_server_data(): void
     {
         $guild = $this->makeGuild();
 
@@ -257,7 +271,8 @@ class GuildTest extends TestCase
         $this->assertEquals('EU', $array['server']['region']['name']);
     }
 
-    public function test_to_array_includes_nested_faction_data(): void
+    #[Test]
+    public function to_array_includes_nested_faction_data(): void
     {
         $guild = $this->makeGuild();
 

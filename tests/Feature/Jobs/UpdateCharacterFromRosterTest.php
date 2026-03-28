@@ -12,6 +12,7 @@ use Illuminate\Queue\Middleware\Skip;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class UpdateCharacterFromRosterTest extends TestCase
@@ -25,7 +26,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         Event::fake([AddonSettingsProcessed::class]);
     }
 
-    public function test_it_creates_a_new_character(): void
+    #[Test]
+    public function it_creates_a_new_character(): void
     {
         $guildRank = GuildRank::factory()->create(['position' => 3]);
 
@@ -47,7 +49,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         ]);
     }
 
-    public function test_it_updates_an_existing_character(): void
+    #[Test]
+    public function it_updates_an_existing_character(): void
     {
         $guildRank = GuildRank::factory()->create(['position' => 2]);
         $character = Character::factory()->create([
@@ -73,7 +76,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         ]);
     }
 
-    public function test_it_associates_character_with_correct_guild_rank(): void
+    #[Test]
+    public function it_associates_character_with_correct_guild_rank(): void
     {
         $officerRank = GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
         $raiderRank = GuildRank::factory()->create(['position' => 3, 'name' => 'Raider']);
@@ -93,7 +97,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertEquals($raiderRank->id, $character->rank_id);
     }
 
-    public function test_it_updates_character_rank_when_changed(): void
+    #[Test]
+    public function it_updates_character_rank_when_changed(): void
     {
         $oldRank = GuildRank::factory()->create(['position' => 5]);
         $newRank = GuildRank::factory()->create(['position' => 2]);
@@ -118,7 +123,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertEquals($newRank->id, $character->rank_id);
     }
 
-    public function test_middleware_skips_when_character_level_below_60(): void
+    #[Test]
+    public function middleware_skips_when_character_level_below_60(): void
     {
         $characterData = [
             'character' => [
@@ -139,7 +145,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertTrue($characterData['character']['level'] < 60);
     }
 
-    public function test_middleware_does_not_skip_when_character_level_is_60(): void
+    #[Test]
+    public function middleware_does_not_skip_when_character_level_is_60(): void
     {
         $characterData = [
             'character' => [
@@ -156,7 +163,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertFalse($characterData['character']['level'] < 60);
     }
 
-    public function test_middleware_does_not_skip_when_character_level_above_60(): void
+    #[Test]
+    public function middleware_does_not_skip_when_character_level_above_60(): void
     {
         $characterData = [
             'character' => [
@@ -173,7 +181,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertFalse($characterData['character']['level'] < 60);
     }
 
-    public function test_it_throws_model_not_found_exception_when_rank_does_not_exist(): void
+    #[Test]
+    public function it_throws_model_not_found_exception_when_rank_does_not_exist(): void
     {
         $this->expectException(ModelNotFoundException::class);
 
@@ -189,7 +198,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $job->handle();
     }
 
-    public function test_failed_logs_model_not_found_exception(): void
+    #[Test]
+    public function failed_logs_model_not_found_exception(): void
     {
         Log::shouldReceive('error')
             ->once()
@@ -211,7 +221,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $job->failed($exception);
     }
 
-    public function test_failed_logs_generic_exception(): void
+    #[Test]
+    public function failed_logs_generic_exception(): void
     {
         Log::shouldReceive('error')
             ->once()
@@ -233,7 +244,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $job->failed($exception);
     }
 
-    public function test_middleware_includes_without_overlapping(): void
+    #[Test]
+    public function middleware_includes_without_overlapping(): void
     {
         $job = new UpdateCharacterFromRoster([
             'character' => [
@@ -253,7 +265,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertTrue($hasWithoutOverlapping);
     }
 
-    public function test_it_sets_playable_class_id_from_character_data(): void
+    #[Test]
+    public function it_sets_playable_class_id_from_character_data(): void
     {
         GuildRank::factory()->create(['position' => 1]);
 
@@ -275,7 +288,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         ]);
     }
 
-    public function test_it_sets_playable_race_id_from_character_data(): void
+    #[Test]
+    public function it_sets_playable_race_id_from_character_data(): void
     {
         GuildRank::factory()->create(['position' => 1]);
 
@@ -297,7 +311,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         ]);
     }
 
-    public function test_it_sets_playable_class_id_to_null_when_missing(): void
+    #[Test]
+    public function it_sets_playable_class_id_to_null_when_missing(): void
     {
         GuildRank::factory()->create(['position' => 1]);
 
@@ -318,7 +333,8 @@ class UpdateCharacterFromRosterTest extends TestCase
         ]);
     }
 
-    public function test_it_sets_playable_race_id_to_null_when_missing(): void
+    #[Test]
+    public function it_sets_playable_race_id_to_null_when_missing(): void
     {
         GuildRank::factory()->create(['position' => 1]);
 

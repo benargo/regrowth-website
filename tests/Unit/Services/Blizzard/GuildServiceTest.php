@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class GuildServiceTest extends TestCase
@@ -41,7 +42,8 @@ class GuildServiceTest extends TestCase
         ]);
     }
 
-    public function test_constructor_sets_profile_classicann_namespace(): void
+    #[Test]
+    public function constructor_sets_profile_classicann_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
         new GuildService($client);
@@ -49,7 +51,8 @@ class GuildServiceTest extends TestCase
         $this->assertEquals('profile-classicann-eu', $client->getNamespace());
     }
 
-    public function test_roster_returns_raw_api_response(): void
+    #[Test]
+    public function roster_returns_raw_api_response(): void
     {
         $expectedResponse = [
             'members' => [
@@ -101,7 +104,8 @@ class GuildServiceTest extends TestCase
         $this->assertEquals('TestChar', $roster['members'][0]['character']['name']);
     }
 
-    public function test_roster_uses_default_realm_and_name_slugs(): void
+    #[Test]
+    public function roster_uses_default_realm_and_name_slugs(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -126,7 +130,8 @@ class GuildServiceTest extends TestCase
         });
     }
 
-    public function test_roster_accepts_custom_realm_slug(): void
+    #[Test]
+    public function roster_accepts_custom_realm_slug(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -151,7 +156,8 @@ class GuildServiceTest extends TestCase
         });
     }
 
-    public function test_roster_accepts_custom_name_slug(): void
+    #[Test]
+    public function roster_accepts_custom_name_slug(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -176,7 +182,8 @@ class GuildServiceTest extends TestCase
         });
     }
 
-    public function test_roster_accepts_custom_realm_and_name_slugs(): void
+    #[Test]
+    public function roster_accepts_custom_realm_and_name_slugs(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -201,7 +208,8 @@ class GuildServiceTest extends TestCase
         });
     }
 
-    public function test_roster_caches_result(): void
+    #[Test]
+    public function roster_caches_result(): void
     {
         $callCount = 0;
 
@@ -228,7 +236,8 @@ class GuildServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_roster_uses_correct_cache_key(): void
+    #[Test]
+    public function roster_uses_correct_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -247,7 +256,8 @@ class GuildServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.guild.roster.thunderstrike.regrowth.profile-classicann-eu'));
     }
 
-    public function test_roster_cache_key_varies_by_realm_slug(): void
+    #[Test]
+    public function roster_cache_key_varies_by_realm_slug(): void
     {
         $callCount = 0;
 
@@ -275,7 +285,8 @@ class GuildServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.guild.roster.other-realm.regrowth.profile-classicann-eu'));
     }
 
-    public function test_roster_cache_key_varies_by_name_slug(): void
+    #[Test]
+    public function roster_cache_key_varies_by_name_slug(): void
     {
         $callCount = 0;
 
@@ -303,7 +314,8 @@ class GuildServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.guild.roster.thunderstrike.other-guild.profile-classicann-eu'));
     }
 
-    public function test_roster_returns_empty_members_array_when_no_members(): void
+    #[Test]
+    public function roster_returns_empty_members_array_when_no_members(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -324,7 +336,8 @@ class GuildServiceTest extends TestCase
         $this->assertEmpty($roster['members']);
     }
 
-    public function test_roster_returns_response_without_members_key(): void
+    #[Test]
+    public function roster_returns_response_without_members_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -345,7 +358,8 @@ class GuildServiceTest extends TestCase
         $this->assertArrayHasKey('guild', $roster);
     }
 
-    public function test_roster_throws_exception_for_invalid_guild(): void
+    #[Test]
+    public function roster_throws_exception_for_invalid_guild(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -364,7 +378,8 @@ class GuildServiceTest extends TestCase
         $service->roster('nonexistent-realm', 'nonexistent-guild');
     }
 
-    public function test_members_returns_collection_of_guild_member_objects(): void
+    #[Test]
+    public function members_returns_collection_of_guild_member_objects(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -414,7 +429,8 @@ class GuildServiceTest extends TestCase
         $this->assertEquals('TestChar', $members->first()->character['name']);
     }
 
-    public function test_members_maps_to_guild_member_objects(): void
+    #[Test]
+    public function members_maps_to_guild_member_objects(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -453,7 +469,8 @@ class GuildServiceTest extends TestCase
         $this->assertEquals(60, $member->character['level']);
     }
 
-    public function test_members_returns_empty_collection_when_no_members(): void
+    #[Test]
+    public function members_returns_empty_collection_when_no_members(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -473,7 +490,8 @@ class GuildServiceTest extends TestCase
         $this->assertCount(0, $members);
     }
 
-    public function test_members_handles_missing_members_key(): void
+    #[Test]
+    public function members_handles_missing_members_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -493,7 +511,8 @@ class GuildServiceTest extends TestCase
         $this->assertCount(0, $members);
     }
 
-    public function test_members_accepts_custom_realm_and_name_slugs(): void
+    #[Test]
+    public function members_accepts_custom_realm_and_name_slugs(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -518,7 +537,8 @@ class GuildServiceTest extends TestCase
         });
     }
 
-    public function test_roster_dispatches_guild_roster_fetched_event_when_api_is_called(): void
+    #[Test]
+    public function roster_dispatches_guild_roster_fetched_event_when_api_is_called(): void
     {
         Event::fake([GuildRosterFetched::class]);
 
@@ -539,7 +559,8 @@ class GuildServiceTest extends TestCase
         Event::assertDispatched(GuildRosterFetched::class);
     }
 
-    public function test_roster_does_not_dispatch_event_on_cache_hit(): void
+    #[Test]
+    public function roster_does_not_dispatch_event_on_cache_hit(): void
     {
         Event::fake([GuildRosterFetched::class]);
 
@@ -561,7 +582,8 @@ class GuildServiceTest extends TestCase
         Event::assertDispatchedTimes(GuildRosterFetched::class, 1);
     }
 
-    public function test_roster_event_carries_roster_data(): void
+    #[Test]
+    public function roster_event_carries_roster_data(): void
     {
         Event::fake([GuildRosterFetched::class]);
 

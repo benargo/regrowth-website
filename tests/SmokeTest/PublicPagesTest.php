@@ -8,13 +8,15 @@ use App\Services\Blizzard\PlayableRaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PublicPagesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_home_page_loads(): void
+    #[Test]
+    public function home_page_loads(): void
     {
         $this->instance(
             GuildService::class,
@@ -29,7 +31,8 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_roster_page_loads(): void
+    #[Test]
+    public function roster_page_loads(): void
     {
         $this->instance(
             PlayableClassService::class,
@@ -51,7 +54,8 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_comps_page_redirects(): void
+    #[Test]
+    public function comps_page_redirects(): void
     {
         $response = $this->get('/comps');
 
@@ -59,7 +63,8 @@ class PublicPagesTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_battlenet_usage_page_loads(): void
+    #[Test]
+    public function battlenet_usage_page_loads(): void
     {
         $response = $this->get('/info/battlenet-usage');
 
@@ -67,7 +72,8 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_privacy_policy_page_loads(): void
+    #[Test]
+    public function privacy_policy_page_loads(): void
     {
         $response = $this->get('/info/privacy');
 
@@ -75,7 +81,8 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_daily_quests_page_loads(): void
+    #[Test]
+    public function daily_quests_page_loads(): void
     {
         $response = $this->get('/daily-quests');
 

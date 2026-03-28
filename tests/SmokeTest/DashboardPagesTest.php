@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -62,7 +63,8 @@ class DashboardPagesTest extends TestCase
         Storage::disk('local')->put('addon/export.json', json_encode($data));
     }
 
-    public function test_dashboard_index_loads(): void
+    #[Test]
+    public function dashboard_index_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -72,7 +74,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_addon_export_page_loads(): void
+    #[Test]
+    public function addon_export_page_loads(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -84,7 +87,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_addon_export_json_page_loads(): void
+    #[Test]
+    public function addon_export_json_page_loads(): void
     {
         Storage::fake('local');
         $this->seedExportFile();
@@ -96,7 +100,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_addon_export_schema_page_loads(): void
+    #[Test]
+    public function addon_export_schema_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -106,7 +111,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_addon_settings_page_loads(): void
+    #[Test]
+    public function addon_settings_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -116,7 +122,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_manage_ranks_page_loads(): void
+    #[Test]
+    public function manage_ranks_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -126,7 +133,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_manage_phases_page_loads(): void
+    #[Test]
+    public function manage_phases_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -136,7 +144,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_grm_upload_page_loads(): void
+    #[Test]
+    public function grm_upload_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -146,7 +155,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_daily_quests_form_page_loads(): void
+    #[Test]
+    public function daily_quests_form_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -156,7 +166,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_daily_quests_audit_page_loads(): void
+    #[Test]
+    public function daily_quests_audit_page_loads(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -166,7 +177,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
-    public function test_daily_quests_audit_page_requires_officer(): void
+    #[Test]
+    public function daily_quests_audit_page_requires_officer(): void
     {
         $user = User::factory()->member()->create();
 
@@ -175,7 +187,8 @@ class DashboardPagesTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_permissions_index_redirects(): void
+    #[Test]
+    public function permissions_index_redirects(): void
     {
         Permission::factory()->inGroup('test-group')->create();
         $user = User::factory()->officer()->create();
@@ -185,7 +198,8 @@ class DashboardPagesTest extends TestCase
         $response->assertRedirect(route('dashboard.permissions.group.show', ['group' => 'test-group']));
     }
 
-    public function test_permissions_show_group_page_loads(): void
+    #[Test]
+    public function permissions_show_group_page_loads(): void
     {
         Permission::factory()->inGroup('test-group')->create();
         $user = User::factory()->officer()->create();

@@ -8,6 +8,7 @@ use App\Services\Blizzard\GuildService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class GuildServiceCharacterUpdateTest extends TestCase
@@ -34,7 +35,8 @@ class GuildServiceCharacterUpdateTest extends TestCase
         ]);
     }
 
-    public function test_roster_dispatches_guild_roster_fetched_event(): void
+    #[Test]
+    public function roster_dispatches_guild_roster_fetched_event(): void
     {
         Event::fake([GuildRosterFetched::class]);
 
@@ -70,7 +72,8 @@ class GuildServiceCharacterUpdateTest extends TestCase
         Event::assertDispatched(GuildRosterFetched::class);
     }
 
-    public function test_event_carries_full_roster_including_multiple_members(): void
+    #[Test]
+    public function event_carries_full_roster_including_multiple_members(): void
     {
         Event::fake([GuildRosterFetched::class]);
 
@@ -122,7 +125,8 @@ class GuildServiceCharacterUpdateTest extends TestCase
         });
     }
 
-    public function test_event_not_dispatched_on_cache_hit(): void
+    #[Test]
+    public function event_not_dispatched_on_cache_hit(): void
     {
         Event::fake([GuildRosterFetched::class]);
 

@@ -5,11 +5,13 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class GuildRankToggleAttendanceTest extends DashboardTestCase
 {
-    public function test_toggle_count_attendance_requires_authentication(): void
+    #[Test]
+    public function toggle_count_attendance_requires_authentication(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -20,7 +22,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_toggle_count_attendance_forbids_guest_users(): void
+    #[Test]
+    public function toggle_count_attendance_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $rank = GuildRank::factory()->create();
@@ -32,7 +35,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_toggle_count_attendance_forbids_member_users(): void
+    #[Test]
+    public function toggle_count_attendance_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
         $rank = GuildRank::factory()->create();
@@ -44,7 +48,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_toggle_count_attendance_forbids_raider_users(): void
+    #[Test]
+    public function toggle_count_attendance_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
         $rank = GuildRank::factory()->create();
@@ -56,7 +61,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_toggle_count_attendance_allows_officer_users(): void
+    #[Test]
+    public function toggle_count_attendance_allows_officer_users(): void
     {
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 
@@ -67,7 +73,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_toggle_count_attendance_can_enable_attendance(): void
+    #[Test]
+    public function toggle_count_attendance_can_enable_attendance(): void
     {
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 
@@ -82,7 +89,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $this->assertTrue($rank->count_attendance);
     }
 
-    public function test_toggle_count_attendance_can_disable_attendance(): void
+    #[Test]
+    public function toggle_count_attendance_can_disable_attendance(): void
     {
         $rank = GuildRank::factory()->create(['count_attendance' => true]);
 
@@ -97,7 +105,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $this->assertFalse($rank->count_attendance);
     }
 
-    public function test_toggle_count_attendance_validates_count_attendance_is_required(): void
+    #[Test]
+    public function toggle_count_attendance_validates_count_attendance_is_required(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -106,7 +115,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertSessionHasErrors(['count_attendance']);
     }
 
-    public function test_toggle_count_attendance_validates_count_attendance_must_be_boolean(): void
+    #[Test]
+    public function toggle_count_attendance_validates_count_attendance_must_be_boolean(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -117,7 +127,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertSessionHasErrors(['count_attendance']);
     }
 
-    public function test_toggle_count_attendance_does_not_affect_other_ranks(): void
+    #[Test]
+    public function toggle_count_attendance_does_not_affect_other_ranks(): void
     {
         $rank1 = GuildRank::factory()->doesNotCountAttendance()->create();
         $rank2 = GuildRank::factory()->create(['count_attendance' => true]);
@@ -133,7 +144,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $this->assertTrue($rank2->count_attendance);
     }
 
-    public function test_toggle_count_attendance_clears_guild_ranks_cache(): void
+    #[Test]
+    public function toggle_count_attendance_clears_guild_ranks_cache(): void
     {
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 

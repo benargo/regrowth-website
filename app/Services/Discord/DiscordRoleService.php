@@ -3,6 +3,7 @@
 namespace App\Services\Discord;
 
 use App\Services\Discord\Exceptions\RoleNotFoundException;
+use RuntimeException;
 
 class DiscordRoleService extends DiscordService
 {
@@ -17,7 +18,7 @@ class DiscordRoleService extends DiscordService
     /**
      * Get all roles in the Discord guild.
      *
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public function getAllRoles(): array
     {
@@ -34,7 +35,7 @@ class DiscordRoleService extends DiscordService
      * Get role data for a Discord role ID.
      *
      * @throws \RoleNotFoundException
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public function getRole(string $roleId): array
     {
@@ -46,6 +47,10 @@ class DiscordRoleService extends DiscordService
 
         $role = $response->json();
 
-        throw new RoleNotFoundException("Role {$roleId} not found in guild {$this->guildId}");
+        if (empty($role)) {
+            throw new RoleNotFoundException("Role {$roleId} not found in guild {$this->guildId}");
+        }
+
+        return $role;
     }
 }

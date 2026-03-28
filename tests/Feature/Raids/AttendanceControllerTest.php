@@ -6,6 +6,7 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -29,14 +30,16 @@ class AttendanceControllerTest extends TestCase
 
     // ==================== index: Access Control ====================
 
-    public function test_index_requires_authentication(): void
+    #[Test]
+    public function index_requires_authentication(): void
     {
         $response = $this->get(route('raids.attendance.index'));
 
         $response->assertRedirect('/login');
     }
 
-    public function test_index_forbids_guest_users(): void
+    #[Test]
+    public function index_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -45,7 +48,8 @@ class AttendanceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_member_users(): void
+    #[Test]
+    public function index_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -54,7 +58,8 @@ class AttendanceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_raider_users(): void
+    #[Test]
+    public function index_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -63,7 +68,8 @@ class AttendanceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_forbids_loot_councillor_users(): void
+    #[Test]
+    public function index_forbids_loot_councillor_users(): void
     {
         $user = User::factory()->lootCouncillor()->create();
 
@@ -72,7 +78,8 @@ class AttendanceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_index_allows_officer_users(): void
+    #[Test]
+    public function index_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
 

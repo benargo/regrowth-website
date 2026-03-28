@@ -6,11 +6,13 @@ use App\Jobs\ProcessGrmUpload;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
 class GrmUploadValidationTest extends DashboardTestCase
 {
-    public function test_upload_requires_authentication(): void
+    #[Test]
+    public function upload_requires_authentication(): void
     {
         $response = $this->post(route('dashboard.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
@@ -19,7 +21,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_upload_forbids_guest_users(): void
+    #[Test]
+    public function upload_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -30,7 +33,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_upload_forbids_member_users(): void
+    #[Test]
+    public function upload_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -41,7 +45,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_upload_forbids_raider_users(): void
+    #[Test]
+    public function upload_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -52,7 +57,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
-    public function test_upload_allows_officer_users(): void
+    #[Test]
+    public function upload_allows_officer_users(): void
     {
         Queue::fake();
 
@@ -63,7 +69,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
-    public function test_upload_dispatches_processing_job(): void
+    #[Test]
+    public function upload_dispatches_processing_job(): void
     {
         Queue::fake();
 
@@ -74,7 +81,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         Queue::assertPushed(ProcessGrmUpload::class);
     }
 
-    public function test_upload_validates_grm_data_required(): void
+    #[Test]
+    public function upload_validates_grm_data_required(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), []);
@@ -82,7 +90,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionHasErrors(['grm_data']);
     }
 
-    public function test_upload_validates_csv_has_header_and_data_rows(): void
+    #[Test]
+    public function upload_validates_csv_has_header_and_data_rows(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
@@ -92,7 +101,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionHasErrors(['grm_data']);
     }
 
-    public function test_upload_validates_required_headers_present(): void
+    #[Test]
+    public function upload_validates_required_headers_present(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
@@ -102,7 +112,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionHasErrors(['grm_data']);
     }
 
-    public function test_upload_accepts_comma_delimited_csv(): void
+    #[Test]
+    public function upload_accepts_comma_delimited_csv(): void
     {
         Queue::fake();
 
@@ -113,7 +124,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionDoesntHaveErrors(['grm_data']);
     }
 
-    public function test_upload_accepts_semicolon_delimited_csv(): void
+    #[Test]
+    public function upload_accepts_semicolon_delimited_csv(): void
     {
         Queue::fake();
 
@@ -124,7 +136,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionDoesntHaveErrors(['grm_data']);
     }
 
-    public function test_upload_rejects_csv_without_valid_delimiter(): void
+    #[Test]
+    public function upload_rejects_csv_without_valid_delimiter(): void
     {
 
         $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
@@ -134,7 +147,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionHasErrors(['grm_data']);
     }
 
-    public function test_upload_initializes_progress_cache(): void
+    #[Test]
+    public function upload_initializes_progress_cache(): void
     {
         Queue::fake();
 
@@ -146,7 +160,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $this->assertEquals('queued', Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY)['status']);
     }
 
-    public function test_upload_passes_correct_data_to_job(): void
+    #[Test]
+    public function upload_passes_correct_data_to_job(): void
     {
         Queue::fake();
 
@@ -164,7 +179,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         });
     }
 
-    public function test_upload_detects_semicolon_delimiter_when_more_common(): void
+    #[Test]
+    public function upload_detects_semicolon_delimiter_when_more_common(): void
     {
         Queue::fake();
 

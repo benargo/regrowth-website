@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ItemServiceTest extends TestCase
@@ -48,7 +49,8 @@ class ItemServiceTest extends TestCase
         return $mock;
     }
 
-    public function test_find_returns_item_data(): void
+    #[Test]
+    public function find_returns_item_data(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -73,7 +75,8 @@ class ItemServiceTest extends TestCase
         $this->assertEquals('Thunderfury, Blessed Blade of the Windseeker', $item['name']);
     }
 
-    public function test_find_caches_result(): void
+    #[Test]
+    public function find_caches_result(): void
     {
         $callCount = 0;
 
@@ -100,7 +103,8 @@ class ItemServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_find_uses_namespace_in_cache_key(): void
+    #[Test]
+    public function find_uses_namespace_in_cache_key(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -119,7 +123,8 @@ class ItemServiceTest extends TestCase
         $this->assertTrue(Cache::has('blizzard.item.static-classicann-eu.19019'));
     }
 
-    public function test_find_throws_exception_for_invalid_item(): void
+    #[Test]
+    public function find_throws_exception_for_invalid_item(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -138,7 +143,8 @@ class ItemServiceTest extends TestCase
         $service->find(99999999);
     }
 
-    public function test_fresh_find_bypasses_cache(): void
+    #[Test]
+    public function fresh_find_bypasses_cache(): void
     {
         $callCount = 0;
 
@@ -164,7 +170,8 @@ class ItemServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_media_returns_icon_data(): void
+    #[Test]
+    public function media_returns_icon_data(): void
     {
         $expectedMedia = [
             'assets' => [
@@ -191,7 +198,8 @@ class ItemServiceTest extends TestCase
         $this->assertArrayHasKey('assets', $media);
     }
 
-    public function test_media_delegates_to_media_service(): void
+    #[Test]
+    public function media_delegates_to_media_service(): void
     {
         $this->instance(
             MediaService::class,
@@ -209,7 +217,8 @@ class ItemServiceTest extends TestCase
         $service->media(19019);
     }
 
-    public function test_search_returns_results_with_pagination(): void
+    #[Test]
+    public function search_returns_results_with_pagination(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -240,7 +249,8 @@ class ItemServiceTest extends TestCase
         $this->assertEquals(5, $results['pageCount']);
     }
 
-    public function test_search_maps_name_parameter(): void
+    #[Test]
+    public function search_maps_name_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -268,7 +278,8 @@ class ItemServiceTest extends TestCase
         });
     }
 
-    public function test_search_maps_page_parameter(): void
+    #[Test]
+    public function search_maps_page_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -296,7 +307,8 @@ class ItemServiceTest extends TestCase
         });
     }
 
-    public function test_search_maps_page_size_parameter(): void
+    #[Test]
+    public function search_maps_page_size_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -324,7 +336,8 @@ class ItemServiceTest extends TestCase
         });
     }
 
-    public function test_search_caps_page_size_at_maximum(): void
+    #[Test]
+    public function search_caps_page_size_at_maximum(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -352,7 +365,8 @@ class ItemServiceTest extends TestCase
         });
     }
 
-    public function test_search_accepts_orderby_parameter(): void
+    #[Test]
+    public function search_accepts_orderby_parameter(): void
     {
         Http::fake([
             'eu.battle.net/oauth/token' => Http::response([
@@ -380,7 +394,8 @@ class ItemServiceTest extends TestCase
         });
     }
 
-    public function test_search_caches_results(): void
+    #[Test]
+    public function search_caches_results(): void
     {
         $callCount = 0;
 
@@ -406,7 +421,8 @@ class ItemServiceTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_search_cache_key_varies_by_parameters(): void
+    #[Test]
+    public function search_cache_key_varies_by_parameters(): void
     {
         $callCount = 0;
 
@@ -432,7 +448,8 @@ class ItemServiceTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_with_namespace_affects_cache_keys(): void
+    #[Test]
+    public function with_namespace_affects_cache_keys(): void
     {
         $callCount = 0;
 

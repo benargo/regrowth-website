@@ -10,13 +10,15 @@ use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SyncDiscordUsersTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_syncs_roles_for_guild_members(): void
+    #[Test]
+    public function it_syncs_roles_for_guild_members(): void
     {
         $role = DiscordRole::factory()->create([
             'id' => '111111111111111111',
@@ -47,7 +49,8 @@ class SyncDiscordUsersTest extends TestCase
         $this->assertTrue($user->discordRoles->contains($role));
     }
 
-    public function test_it_updates_user_profile_data(): void
+    #[Test]
+    public function it_updates_user_profile_data(): void
     {
         User::factory()->create([
             'id' => '100000000000000000',
@@ -76,7 +79,8 @@ class SyncDiscordUsersTest extends TestCase
         $this->assertSame('new_banner', $user->banner);
     }
 
-    public function test_it_deletes_users_not_in_guild(): void
+    #[Test]
+    public function it_deletes_users_not_in_guild(): void
     {
         User::factory()->create(['id' => '100000000000000000']);
 
@@ -92,7 +96,8 @@ class SyncDiscordUsersTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => '100000000000000000']);
     }
 
-    public function test_it_skips_users_on_api_error_without_deleting(): void
+    #[Test]
+    public function it_skips_users_on_api_error_without_deleting(): void
     {
         User::factory()->create(['id' => '100000000000000000']);
 
@@ -108,7 +113,8 @@ class SyncDiscordUsersTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => '100000000000000000']);
     }
 
-    public function test_it_handles_mixed_user_scenarios(): void
+    #[Test]
+    public function it_handles_mixed_user_scenarios(): void
     {
         $role = DiscordRole::factory()->create([
             'id' => '111111111111111111',
@@ -160,7 +166,8 @@ class SyncDiscordUsersTest extends TestCase
     // Batch Cancellation
     // ==========================================
 
-    public function test_it_skips_execution_when_batch_is_cancelled(): void
+    #[Test]
+    public function it_skips_execution_when_batch_is_cancelled(): void
     {
         $batch = Bus::batch([])->dispatch();
         $batch->cancel();
@@ -174,7 +181,8 @@ class SyncDiscordUsersTest extends TestCase
         dispatch_sync($job);
     }
 
-    public function test_it_only_syncs_recognized_role_ids(): void
+    #[Test]
+    public function it_only_syncs_recognized_role_ids(): void
     {
         DiscordRole::factory()->create([
             'id' => '111111111111111111',

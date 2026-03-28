@@ -5,6 +5,7 @@ namespace Tests\Unit\Traits;
 use App\Exceptions\CacheException;
 use App\Traits\Cacheable;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CacheableClass
@@ -26,7 +27,8 @@ class CacheableTest extends TestCase
         Cache::flush();
     }
 
-    public function test_cacheable_caches_result(): void
+    #[Test]
+    public function cacheable_caches_result(): void
     {
         $service = new CacheableClass;
 
@@ -45,7 +47,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_cacheable_uses_default_ttl_when_null(): void
+    #[Test]
+    public function cacheable_uses_default_ttl_when_null(): void
     {
         Cache::shouldReceive('remember')
             ->once()
@@ -59,7 +62,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(['cached' => true], $result);
     }
 
-    public function test_cacheable_uses_provided_ttl(): void
+    #[Test]
+    public function cacheable_uses_provided_ttl(): void
     {
         Cache::shouldReceive('remember')
             ->once()
@@ -73,7 +77,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(['cached' => true], $result);
     }
 
-    public function test_fresh_with_true_forgets_cache_and_refreshes(): void
+    #[Test]
+    public function fresh_with_true_forgets_cache_and_refreshes(): void
     {
         $service = new CacheableClass;
 
@@ -100,7 +105,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_fresh_resets_after_single_use(): void
+    #[Test]
+    public function fresh_resets_after_single_use(): void
     {
         $service = new CacheableClass;
 
@@ -120,7 +126,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_fresh_with_false_only_returns_cached_data(): void
+    #[Test]
+    public function fresh_with_false_only_returns_cached_data(): void
     {
         $service = new CacheableClass;
 
@@ -134,7 +141,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(['data' => 'cached'], $result);
     }
 
-    public function test_fresh_with_false_throws_exception_when_cache_not_found(): void
+    #[Test]
+    public function fresh_with_false_throws_exception_when_cache_not_found(): void
     {
         $service = new CacheableClass;
 
@@ -146,7 +154,8 @@ class CacheableTest extends TestCase
         $service->fresh(false)->getCachedValue('missing_key', 60, $callback);
     }
 
-    public function test_fresh_with_false_resets_after_single_use(): void
+    #[Test]
+    public function fresh_with_false_resets_after_single_use(): void
     {
         $service = new CacheableClass;
 
@@ -167,7 +176,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_ignore_cache_bypasses_cache_entirely(): void
+    #[Test]
+    public function ignore_cache_bypasses_cache_entirely(): void
     {
         $service = new CacheableClass;
 
@@ -194,7 +204,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(2, $callCount);
     }
 
-    public function test_fresh_is_fluent(): void
+    #[Test]
+    public function fresh_is_fluent(): void
     {
         $service = new CacheableClass;
 
@@ -203,7 +214,8 @@ class CacheableTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_fresh_with_null_is_fluent(): void
+    #[Test]
+    public function fresh_with_null_is_fluent(): void
     {
         $service = new CacheableClass;
 
@@ -212,7 +224,8 @@ class CacheableTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_fresh_with_false_is_fluent(): void
+    #[Test]
+    public function fresh_with_false_is_fluent(): void
     {
         $service = new CacheableClass;
 
@@ -221,7 +234,8 @@ class CacheableTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_ignore_cache_is_fluent(): void
+    #[Test]
+    public function ignore_cache_is_fluent(): void
     {
         $service = new CacheableClass;
 
@@ -230,7 +244,8 @@ class CacheableTest extends TestCase
         $this->assertSame($service, $result);
     }
 
-    public function test_fresh_with_null_uses_default_caching_behavior(): void
+    #[Test]
+    public function fresh_with_null_uses_default_caching_behavior(): void
     {
         $service = new CacheableClass;
 
@@ -248,7 +263,8 @@ class CacheableTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function test_ignore_cache_does_not_store_in_cache(): void
+    #[Test]
+    public function ignore_cache_does_not_store_in_cache(): void
     {
         $service = new CacheableClass;
 
@@ -259,7 +275,8 @@ class CacheableTest extends TestCase
         $this->assertFalse(Cache::has('no_store_key'));
     }
 
-    public function test_ignore_cache_resets_after_single_use(): void
+    #[Test]
+    public function ignore_cache_resets_after_single_use(): void
     {
         $service = new CacheableClass;
 
