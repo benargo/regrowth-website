@@ -11,9 +11,9 @@ export default function Master({ title, children }) {
     const user = auth?.user;
     const impersonating = auth?.impersonating;
 
-    const canViewLootBiasTool = usePermission('view-loot-bias-tool');
-    const canViewAllComments = usePermission('view-all-comments');
-    const canViewOfficerDashboard = usePermission('view-officer-dashboard');
+    const canViewLootBiasTool = usePermission("view-loot-bias-tool");
+    const canViewAllComments = usePermission("view-all-comments");
+    const canViewOfficerDashboard = usePermission("view-officer-dashboard");
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [flashError, setFlashError] = useState(flash?.error);
@@ -122,24 +122,13 @@ export default function Master({ title, children }) {
                                     </Dropdown.Content>
                                 </Dropdown>
                             )}
-                            <Link
-                                href="https://thatsmybis.com/24119/regrowth/"
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
-                                <img
-                                    src="/images/logo_thatsmybis.webp"
-                                    alt="That's My Bis logo"
-                                    className="mr-2 inline-block h-5"
-                                />
-                                That&rsquo;s My Bis
-                            </Link>
-                            <Link
+                            <a
                                 href="https://discord.gg/regrowth"
                                 className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
                             >
                                 <Icon icon="discord" style="brands" className="mr-2 h-6" />
                                 Discord
-                            </Link>
+                            </a>
                         </div>
 
                         <div className="flex items-center">
@@ -257,24 +246,13 @@ export default function Master({ title, children }) {
                                 </div>
                             </>
                         )}
-                        <Link
-                            href="https://thatsmybis.com/24119/regrowth/"
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
-                            <img
-                                src="/images/logo_thatsmybis.webp"
-                                alt="That's My Bis logo"
-                                className="mr-2 inline-block h-5"
-                            />
-                            That&rsquo;s My Bis
-                        </Link>
-                        <Link
+                        <a
                             href="https://discord.gg/regrowth"
                             className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
                         >
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             Discord
-                        </Link>
+                        </a>
                     </div>
 
                     <div className="border-t border-amber-700 pb-3 pt-4">
@@ -400,7 +378,7 @@ export default function Master({ title, children }) {
                                     </svg>
                                     Warcraft Logs
                                 </Link>
-                                <Link
+                                <a
                                     href="https://discord.gg/regrowth"
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -408,7 +386,7 @@ export default function Master({ title, children }) {
                                 >
                                     <Icon icon="discord" style="brands" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">Discord</span>
-                                </Link>
+                                </a>
                                 <Link
                                     href={route("privacypolicy")}
                                     className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
@@ -424,7 +402,7 @@ export default function Master({ title, children }) {
                                     <span className="text-nowrap">Battle.net API Usage</span>
                                 </Link>
 
-                                <Link
+                                <a
                                     href="https://benargo.com"
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -433,7 +411,7 @@ export default function Master({ title, children }) {
                                 >
                                     <Icon icon="safari" style="brands" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">A Fizzywigs Production</span>
-                                </Link>
+                                </a>
                             </nav>
                         </div>
                         {/* Disclaimer */}
