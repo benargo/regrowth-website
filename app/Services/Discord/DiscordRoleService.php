@@ -34,7 +34,7 @@ class DiscordRoleService extends DiscordService
     /**
      * Get role data for a Discord role ID.
      *
-     * @throws \RoleNotFoundException
+     * @throws RoleNotFoundException
      * @throws RuntimeException
      */
     public function getRole(string $roleId): array
