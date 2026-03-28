@@ -121,7 +121,7 @@ class BiasToolController extends Controller
                 'bossId' => null,
                 'items' => collect(),
                 'comments_count' => 0,
-            ]))->response(request())->getData(true);
+            ]))->toArray(new Request());
         }
 
         if ($bossId < 0) {
@@ -147,7 +147,7 @@ class BiasToolController extends Controller
                     'bossId' => $bossId,
                     'items' => $items,
                     'commentsCount' => $items->sum('comments_count'),
-                ]))->response(request())->getData(true);
+                ]))->toArray(new Request());
             }
         );
     }
@@ -178,7 +178,7 @@ class BiasToolController extends Controller
                     'bossId' => -1 * $raidId,
                     'items' => $items,
                     'commentsCount' => $items->sum('comments_count'),
-                ]))->response(request())->getData(true);
+                ]))->toArray(new Request());
             }
         );
     }

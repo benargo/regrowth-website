@@ -9,6 +9,7 @@ use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Http\Request;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -131,7 +132,7 @@ class RebuildLootCouncilCache implements ShouldQueue
                         'bossId' => $bossId,
                         'items' => $items,
                         'commentsCount' => $items->sum('comments_count'),
-                    ]))->response(request())->getData(true);
+                    ]))->toArray(new Request());
                 }
             );
         }
@@ -166,7 +167,7 @@ class RebuildLootCouncilCache implements ShouldQueue
                         'bossId' => -1 * $raidId,
                         'items' => $items,
                         'commentsCount' => $items->sum('comments_count'),
-                    ]))->response(request())->getData(true);
+                    ]))->toArray(new Request());
                 }
             );
         }
