@@ -4,6 +4,7 @@ namespace Tests\Feature\LootCouncil;
 
 use App\Events\ItemPrioritySaved;
 use App\Jobs\RebuildLootCouncilCache;
+use App\Listeners\FlushLootCouncilCache;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
@@ -19,6 +20,14 @@ use Tests\TestCase;
 class CacheRebuildTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app()->forgetInstance(FlushLootCouncilCache::class);
+        app()->bind(FlushLootCouncilCache::class, fn () => new FlushLootCouncilCache);
+    }
 
     #[Test]
     public function listener_flushes_cache_when_event_fires(): void

@@ -10,11 +10,8 @@ use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
-use App\Services\Blizzard\ItemService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Mockery;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -27,7 +24,6 @@ class CommentCacheTest extends TestCase
         parent::setUp();
 
         Notification::fake();
-        $this->mockItemService();
 
         $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
@@ -43,27 +39,6 @@ class CommentCacheTest extends TestCase
         $officerRole->givePermissionTo($viewLootBiasTool);
         $officerRole->givePermissionTo($commentOnLootItems);
         $officerRole->givePermissionTo($editItems);
-    }
-
-    protected function mockItemService(): void
-    {
-        $this->instance(
-            ItemService::class,
-            Mockery::mock(ItemService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('find')
-                    ->andReturnUsing(fn (int $id) => [
-                        'id' => $id,
-                        'name' => "Test Item {$id}",
-                    ]);
-
-                $mock->shouldReceive('media')
-                    ->andReturn([
-                        'assets' => [
-                            ['key' => 'icon', 'value' => 'https://example.com/icon.jpg'],
-                        ],
-                    ]);
-            })
-        );
     }
 
     protected function createItem(): Item
