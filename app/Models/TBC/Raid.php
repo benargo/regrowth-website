@@ -2,11 +2,14 @@
 
 namespace App\Models\TBC;
 
+use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use Database\Factories\TBC\RaidFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Raid extends Model
 {
@@ -57,5 +60,35 @@ class Raid extends Model
     public function bosses(): HasMany
     {
         return $this->hasMany(Boss::class);
+    }
+
+    /**
+     * Get the items that drop from this raid.
+     *
+     * @return HasMany<Item, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class, 'raid_id');
+    }
+
+    /**
+     * Get the trash items that drop from this raid (items without a boss).
+     *
+     * @return HasMany<Item, $this>
+     */
+    public function trashItems(): HasMany
+    {
+        return $this->items()->whereNull('boss_id');
+    }
+
+    /**
+     * Get the comments for the items that drop from this raid (including trash drops).
+     *
+     * @return HasManyThrough<Comment, Item>
+     */
+    public function comments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Comment::class, Item::class, 'raid_id', 'item_id');
     }
 }
