@@ -32,7 +32,10 @@ class BlizzardServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ItemService::class, function (Application $app) {
-            return new ItemService($app->make(Client::class));
+            return new ItemService(
+                $app->make(Client::class),
+                $app->make(MediaService::class),
+            );
         });
 
         $this->app->singleton(MediaService::class, function (Application $app) {

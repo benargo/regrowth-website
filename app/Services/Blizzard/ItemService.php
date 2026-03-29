@@ -2,14 +2,13 @@
 
 namespace App\Services\Blizzard;
 
-use Illuminate\Support\Facades\Cache;
-
 class ItemService extends Service
 {
     protected string $basePath = '/data/wow';
 
     public function __construct(
         protected Client $client,
+        protected MediaService $media,
     ) {
         parent::__construct($client->withNamespace('static-classicann-eu'));
     }
@@ -35,7 +34,7 @@ class ItemService extends Service
      */
     public function media(int $itemId): array
     {
-        return app(MediaService::class)->find('item', $itemId);
+        return $this->media->find('item', $itemId);
     }
 
     /**

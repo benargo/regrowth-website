@@ -49,6 +49,14 @@ class ItemServiceTest extends TestCase
         return $mock;
     }
 
+    /**
+     * Create an ItemService with a default no-op MediaService mock.
+     */
+    protected function makeItemService(Client $client, ?MediaService $mediaService = null): ItemService
+    {
+        return new ItemService($client, $mediaService ?? $this->createMockMediaService());
+    }
+
     #[Test]
     public function find_returns_item_data(): void
     {
@@ -66,7 +74,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $item = $service->find(19019);
 
@@ -94,7 +102,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->find(19019);
         $service->find(19019);
@@ -116,7 +124,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->find(19019);
 
@@ -136,7 +144,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $this->expectException(RequestException::class);
 
@@ -162,7 +170,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->find(19019);
         $service->fresh()->find(19019);
@@ -179,18 +187,15 @@ class ItemServiceTest extends TestCase
             ],
         ];
 
-        $this->instance(
-            MediaService::class,
-            $this->createMockMediaService(function (MockInterface $mock) use ($expectedMedia) {
-                $mock->shouldReceive('find')
-                    ->once()
-                    ->with('item', 19019)
-                    ->andReturn($expectedMedia);
-            })
-        );
+        $mediaService = $this->createMockMediaService(function (MockInterface $mock) use ($expectedMedia) {
+            $mock->shouldReceive('find')
+                ->once()
+                ->with('item', 19019)
+                ->andReturn($expectedMedia);
+        });
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client, $mediaService);
 
         $media = $service->media(19019);
 
@@ -201,18 +206,15 @@ class ItemServiceTest extends TestCase
     #[Test]
     public function media_delegates_to_media_service(): void
     {
-        $this->instance(
-            MediaService::class,
-            $this->createMockMediaService(function (MockInterface $mock) {
-                $mock->shouldReceive('find')
-                    ->once()
-                    ->with('item', 19019)
-                    ->andReturn(['assets' => []]);
-            })
-        );
+        $mediaService = $this->createMockMediaService(function (MockInterface $mock) {
+            $mock->shouldReceive('find')
+                ->once()
+                ->with('item', 19019)
+                ->andReturn(['assets' => []]);
+        });
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client, $mediaService);
 
         $service->media(19019);
     }
@@ -238,7 +240,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $results = $service->search(['name' => 'Thunderfury']);
 
@@ -262,7 +264,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->search(['name' => 'Thunderfury']);
 
@@ -291,7 +293,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->search(['page' => 3]);
 
@@ -320,7 +322,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->search(['pageSize' => 50]);
 
@@ -349,7 +351,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->search(['pageSize' => 5000]);
 
@@ -378,7 +380,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->search(['orderby' => 'name']);
 
@@ -413,7 +415,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->search(['name' => 'Thunderfury']);
         $service->search(['name' => 'Thunderfury']);
@@ -440,7 +442,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->search(['name' => 'Thunderfury']);
         $service->search(['name' => 'Ashkandi']);
@@ -467,7 +469,7 @@ class ItemServiceTest extends TestCase
         ]);
 
         $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new ItemService($client);
+        $service = $this->makeItemService($client);
 
         $service->find(19019);
         $service->withNamespace('static-classic1x-eu')->find(19019);
