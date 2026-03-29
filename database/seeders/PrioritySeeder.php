@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders\LootCouncil;
+namespace Database\Seeders;
 
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Seeder;
