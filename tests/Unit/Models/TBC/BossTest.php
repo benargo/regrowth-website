@@ -2,9 +2,13 @@
 
 namespace Tests\Unit\Models\TBC;
 
+use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -86,5 +90,43 @@ class BossTest extends ModelTestCase
 
         $this->assertRelation($boss, 'raid', BelongsTo::class);
         $this->assertTrue($boss->raid->is($raid));
+    }
+
+    #[Test]
+    public function it_has_many_items(): void
+    {
+        $boss = $this->factory()->withItems(2)->create();
+
+        $this->assertRelation($boss, 'items', HasMany::class);
+        $this->assertCount(2, $boss->items);
+        $this->assertInstanceOf(Item::class, $boss->items->first());
+    }
+
+    #[Test]
+    public function it_has_many_comments_through_items(): void
+    {
+        $boss = $this->factory()->withComments(2)->create();
+
+        $this->assertRelation($boss, 'comments', HasManyThrough::class);
+        $this->assertCount(2, $boss->comments);
+        $this->assertInstanceOf(Comment::class, $boss->comments->first());
+    }
+
+    #[Test]
+    public function factory_with_items_state_creates_items(): void
+    {
+        $boss = $this->factory()->withItems(3)->create();
+
+        $this->assertCount(3, $boss->items);
+        $this->assertTrue($boss->items->every(fn (Item $item) => $item->boss_id === $boss->id));
+    }
+
+    #[Test]
+    public function factory_with_comments_state_creates_comments_through_items(): void
+    {
+        $boss = $this->factory()->withComments(2)->create();
+
+        $this->assertCount(1, $boss->items);
+        $this->assertCount(2, $boss->comments);
     }
 }

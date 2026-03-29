@@ -2,10 +2,14 @@
 
 namespace App\Models\TBC;
 
+use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use Database\Factories\TBC\BossFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Boss extends Model
 {
@@ -45,5 +49,25 @@ class Boss extends Model
     public function raid(): BelongsTo
     {
         return $this->belongsTo(Raid::class);
+    }
+
+    /**
+     * Get the items that drop from this boss.
+     *
+     * @return HasMany<Item>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class, 'boss_id');
+    }
+
+    /**
+     * Get the comments for the items that drop from this boss.
+     *
+     * @return HasManyThrough<Comment>
+     */
+    public function comments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Comment::class, Item::class, 'boss_id', 'item_id');
     }
 }
