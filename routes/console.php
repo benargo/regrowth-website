@@ -15,15 +15,15 @@ Schedule::command('app:refresh-guild-roster')->everySixHours()->name('refresh-gu
 
 /**
  * Refresh Warcraft Logs reports every evening to keep the data up to date.
+ *
+ * The twiceDailyAt arguments indicate this job will run at 16:30 and 23:30 every day.
  */
-Schedule::command('app:refresh-warcraft-logs-reports --latest')->twiceDailyAt('16:45', '23:15')->name('refresh-warcraft-logs-reports');
+Schedule::command('app:refresh-warcraft-logs-reports --latest')->twiceDailyAt(16, 23, 30)->name('refresh-warcraft-logs-reports');
 
 /**
  * Reset daily quests at 3:00 AM server time.
  */
-Schedule::command('app:reset-daily-quests')
-    ->dailyAt('03:00')
-    ->name('reset-daily-quests');
+Schedule::command('app:reset-daily-quests')->dailyAt('03:00')->name('reset-daily-quests');
 
 /**
  * Export the Regrowth Addon data daily at 3:15 AM server time.
