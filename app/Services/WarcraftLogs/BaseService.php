@@ -5,15 +5,16 @@ namespace App\Services\WarcraftLogs;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\Exceptions\RateLimitedException;
 use App\Services\WarcraftLogs\Traits\RateLimited;
-use App\Traits\Cacheable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 abstract class BaseService
 {
-    use Cacheable;
     use RateLimited;
+
+    private int $cacheTtl = 3600;
 
     protected const BASE_CACHE_KEY = 'warcraftlogs';
 
@@ -64,9 +65,9 @@ abstract class BaseService
     {
         $this->ensureNotRateLimited();
 
-        return $this->cacheable(
+        return Cache::remember(
             $this->queryCacheKey($query, $variables),
-            $ttl ?? $this->cacheTtl, // Cache for 1 hour by default
+            $ttl ?? $this->cacheTtl,
             function () use ($query, $variables, $timeout) {
                 $payload = ['query' => $query];
 

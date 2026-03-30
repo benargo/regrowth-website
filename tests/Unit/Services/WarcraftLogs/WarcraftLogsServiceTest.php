@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services\WarcraftLogs;
 
-use App\Exceptions\CacheException;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\BaseService;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
@@ -267,109 +266,6 @@ class WarcraftLogsServiceTest extends TestCase
             ->andReturn(['guild' => ['id' => 774848]]);
 
         $data = $service->publicQuery('query { guild { id } }');
-
-        $this->assertEquals(['guild' => ['id' => 774848]], $data);
-    }
-
-    #[Test]
-    public function fresh_bypasses_cache(): void
-    {
-        Http::preventStrayRequests();
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guild' => ['id' => 774848]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        $this->fakeNotRateLimited();
-
-        $service = $this->getService();
-        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
-
-        // fresh(true) should forget the cache key and then remember new value
-        Cache::shouldReceive('forget')
-            ->once()
-            ->with($expectedKey);
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->with($expectedKey, 3600, \Mockery::type('callable'))
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
-        $data = $service->fresh()->publicQuery('query { guild { id } }');
-
-        $this->assertEquals(['guild' => ['id' => 774848]], $data);
-    }
-
-    #[Test]
-    public function fresh_false_uses_cache_only(): void
-    {
-        $this->fakeNotRateLimited();
-
-        $service = $this->getService();
-        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
-
-        Cache::shouldReceive('has')
-            ->once()
-            ->with($expectedKey)
-            ->andReturn(true);
-
-        Cache::shouldReceive('get')
-            ->once()
-            ->with($expectedKey)
-            ->andReturn(['guild' => ['id' => 774848]]);
-
-        $data = $service->fresh(false)->publicQuery('query { guild { id } }');
-
-        $this->assertEquals(['guild' => ['id' => 774848]], $data);
-    }
-
-    #[Test]
-    public function fresh_false_throws_when_cache_missing(): void
-    {
-        $this->fakeNotRateLimited();
-
-        $service = $this->getService();
-        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
-
-        Cache::shouldReceive('has')
-            ->once()
-            ->with($expectedKey)
-            ->andReturn(false);
-
-        $this->expectException(CacheException::class);
-
-        $service->fresh(false)->publicQuery('query { guild { id } }');
-    }
-
-    #[Test]
-    public function ignore_cache_skips_cache_entirely(): void
-    {
-        Http::preventStrayRequests();
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guild' => ['id' => 774848]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        $this->fakeNotRateLimited();
-
-        // ignoreCache() should not interact with Cache::remember at all
-        Cache::shouldNotReceive('remember');
-        Cache::shouldNotReceive('forget');
-
-        $service = $this->getService();
-        $data = $service->ignoreCache()->publicQuery('query { guild { id } }');
 
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
