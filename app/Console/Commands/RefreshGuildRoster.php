@@ -26,6 +26,13 @@ class RefreshGuildRoster extends Command
      */
     public function handle(GuildService $guildService): void
     {
-        $guildService->fresh()->roster();
+        if ($guildService->hasRosterCache()) {
+            $this->error('The guild roster was fetched recently. Please wait for the cache to expire.');
+
+            return;
+        }
+
+        $guildService->roster();
+        $this->info('Guild roster refreshed.');
     }
 }
