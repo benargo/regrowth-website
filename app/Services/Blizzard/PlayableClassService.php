@@ -5,6 +5,7 @@ namespace App\Services\Blizzard;
 use App\Services\Blizzard\Exceptions\InvalidClassException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 
 class PlayableClassService extends Service
 {
@@ -33,7 +34,7 @@ class PlayableClassService extends Service
      */
     public function index(): array
     {
-        return $this->cacheable(
+        return Cache::remember(
             $this->indexCacheKey(),
             $this->cacheTtl,
             fn () => $this->getJson('/playable-class/index')
@@ -51,7 +52,7 @@ class PlayableClassService extends Service
     public function find(int $playableClassId): array
     {
         try {
-            return $this->cacheable(
+            return Cache::remember(
                 $this->findCacheKey($playableClassId),
                 $this->cacheTtl,
                 fn () => $this->getJson("/playable-class/{$playableClassId}")

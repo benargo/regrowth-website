@@ -4,7 +4,6 @@ namespace App\Services\Blizzard;
 
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
 
 abstract class Service
 {
@@ -30,11 +29,6 @@ abstract class Service
      */
     protected const SEARCH_CACHE_TTL = 3600; // 1 hour
 
-    /**
-     * Whether to ignore cache for the next request.
-     */
-    protected bool $ignoreCache = false;
-
     public function __construct(
         protected Client $client,
     ) {}
@@ -46,13 +40,6 @@ abstract class Service
      */
     protected function get(string $path, array $query = []): Response
     {
-        /**
-         * Reset ignoreCache after use
-         */
-        if ($this->ignoreCache) {
-            $this->ignoreCache = false;
-        }
-
         return $this->client->http()->get($this->buildPath($path), $query);
     }
 
@@ -121,30 +108,6 @@ abstract class Service
         $this->selectedFields = $fields;
 
         return $this;
-    }
-
-    /**
-     * Disable caching for the next request.
-     */
-    public function fresh(): static
-    {
-        $this->ignoreCache = true;
-
-        return $this;
-    }
-
-    /**
-     * Cache the result of a callback, unless caching is disabled.
-     *
-     * @param  int|null  $ttl  Time to live in seconds, or null for default
-     */
-    protected function cacheable(string $cacheKey, ?int $ttl, callable $callback): mixed
-    {
-        if ($this->ignoreCache) {
-            return $callback();
-        }
-
-        return Cache::remember($cacheKey, $ttl, $callback);
     }
 
     /**

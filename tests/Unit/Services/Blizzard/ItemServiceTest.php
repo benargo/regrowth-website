@@ -152,33 +152,6 @@ class ItemServiceTest extends TestCase
     }
 
     #[Test]
-    public function fresh_find_bypasses_cache(): void
-    {
-        $callCount = 0;
-
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
-
-                return Http::response(['id' => 19019, 'name' => 'Thunderfury']);
-            },
-        ]);
-
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = $this->makeItemService($client);
-
-        $service->find(19019);
-        $service->fresh()->find(19019);
-
-        $this->assertEquals(2, $callCount);
-    }
-
-    #[Test]
     public function media_returns_icon_data(): void
     {
         $expectedMedia = [

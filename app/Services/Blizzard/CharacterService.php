@@ -2,6 +2,7 @@
 
 namespace App\Services\Blizzard;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class CharacterService extends Service
@@ -32,7 +33,7 @@ class CharacterService extends Service
 
         $endpoint = sprintf('/%s/%s', Str::slug($realm), Str::lower($name));
 
-        return $this->cacheable(
+        return Cache::remember(
             $this->characterProfileCacheKey($realm, $name),
             $this->cacheTtl,
             fn () => $this->getJson($endpoint)
@@ -63,7 +64,7 @@ class CharacterService extends Service
 
         $endpoint = sprintf('/%s/%s/status', Str::slug($realm), Str::lower($name));
 
-        return $this->cacheable(
+        return Cache::remember(
             $this->characterStatusCacheKey($realm, $name),
             $this->cacheTtl,
             fn () => $this->getJson($endpoint)

@@ -181,33 +181,6 @@ class PlayableRaceServiceTest extends TestCase
     }
 
     #[Test]
-    public function index_fresh_bypasses_cache(): void
-    {
-        $callCount = 0;
-
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
-
-                return Http::response(['playable_races' => []]);
-            },
-        ]);
-
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableRaceService($client);
-
-        $service->index();
-        $service->fresh()->index();
-
-        $this->assertEquals(2, $callCount);
-    }
-
-    #[Test]
     public function find_returns_playable_race_data(): void
     {
         Http::fake([
@@ -352,33 +325,6 @@ class PlayableRaceServiceTest extends TestCase
         $this->expectExceptionCode(404);
 
         $service->find(999);
-    }
-
-    #[Test]
-    public function find_fresh_bypasses_cache(): void
-    {
-        $callCount = 0;
-
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
-
-                return Http::response(['id' => 2, 'name' => 'Orc']);
-            },
-        ]);
-
-        $client = new Client('client_id', 'client_secret', namespace: 'static-classicann-eu');
-        $service = new PlayableRaceService($client);
-
-        $service->find(2);
-        $service->fresh()->find(2);
-
-        $this->assertEquals(2, $callCount);
     }
 
     #[Test]

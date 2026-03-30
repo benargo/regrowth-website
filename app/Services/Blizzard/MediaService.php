@@ -45,7 +45,7 @@ class MediaService extends Service
     {
         $this->validateTags($tag);
 
-        return $this->cacheable(
+        return Cache::remember(
             $this->mediaCacheKey($tag, $mediaId),
             $this->cacheTtl,
             fn () => $this->getJson("/media/{$tag}/{$mediaId}")
@@ -68,7 +68,7 @@ class MediaService extends Service
 
         $query = $this->buildSearchQuery($params);
 
-        return $this->cacheable(
+        return Cache::remember(
             $this->searchCacheKey($query),
             self::SEARCH_CACHE_TTL,
             fn () => $this->getJson('/search/media', $query)

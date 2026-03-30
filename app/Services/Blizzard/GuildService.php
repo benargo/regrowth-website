@@ -5,6 +5,7 @@ namespace App\Services\Blizzard;
 use App\Events\GuildRosterFetched;
 use App\Services\Blizzard\Data\GuildMember;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class GuildService extends Service
 {
@@ -33,7 +34,7 @@ class GuildService extends Service
         $realmSlug = $realmSlug ?? $this->realmSlug;
         $nameSlug = $nameSlug ?? $this->nameSlug;
 
-        return $this->cacheable(
+        return Cache::remember(
             $this->guildRosterCacheKey($realmSlug, $nameSlug),
             $this->cacheTtl,
             function () use ($realmSlug, $nameSlug) {
@@ -57,6 +58,17 @@ class GuildService extends Service
 
         return collect($rosterData['members'] ?? [])
             ->map(fn (array $memberData) => GuildMember::fromArray($memberData));
+    }
+
+    /**
+     * Check if the guild roster is currently cached.
+     */
+    public function hasRosterCache(?string $realmSlug = null, ?string $nameSlug = null): bool
+    {
+        return Cache::has($this->guildRosterCacheKey(
+            $realmSlug ?? $this->realmSlug,
+            $nameSlug ?? $this->nameSlug
+        ));
     }
 
     /**

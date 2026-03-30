@@ -4,6 +4,7 @@ namespace App\Services\Blizzard;
 
 use App\Services\Blizzard\Exceptions\InvalidRaceException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 
 class PlayableRaceService extends Service
 {
@@ -32,7 +33,7 @@ class PlayableRaceService extends Service
      */
     public function index(): array
     {
-        return $this->cacheable(
+        return Cache::remember(
             $this->indexCacheKey(),
             $this->cacheTtl,
             fn () => $this->getJson('/playable-race/index')
@@ -50,7 +51,7 @@ class PlayableRaceService extends Service
     public function find(int $playableRaceId): array
     {
         try {
-            return $this->cacheable(
+            return Cache::remember(
                 $this->findCacheKey($playableRaceId),
                 $this->cacheTtl,
                 fn () => $this->getJson("/playable-race/{$playableRaceId}")

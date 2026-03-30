@@ -2,6 +2,8 @@
 
 namespace App\Services\Blizzard;
 
+use Illuminate\Support\Facades\Cache;
+
 class ItemService extends Service
 {
     protected string $basePath = '/data/wow';
@@ -20,7 +22,7 @@ class ItemService extends Service
      */
     public function find(int $itemId): array
     {
-        return $this->cacheable(
+        return Cache::remember(
             $this->itemCacheKey($itemId),
             2628000, // 1 month
             fn () => $this->getJson("/item/{$itemId}")
@@ -47,7 +49,7 @@ class ItemService extends Service
     {
         $query = $this->buildSearchQuery($params);
 
-        return $this->cacheable(
+        return Cache::remember(
             $this->searchCacheKey($query),
             3600, // 1 hour
             fn () => $this->getJson('/search/item', $query)

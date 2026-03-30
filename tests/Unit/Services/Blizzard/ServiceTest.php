@@ -6,7 +6,6 @@ use App\Services\Blizzard\Client;
 use App\Services\Blizzard\Region;
 use App\Services\Blizzard\Service;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -273,142 +272,6 @@ class ServiceTest extends TestCase
     }
 
     #[Test]
-    public function fresh_sets_ignore_cache_and_is_fluent(): void
-    {
-        $client = new Client('client_id', 'client_secret');
-        $service = new ConcreteService($client);
-
-        $result = $service->fresh();
-
-        $this->assertSame($service, $result);
-
-        $reflection = new \ReflectionClass($service);
-        $property = $reflection->getProperty('ignoreCache');
-        $this->assertTrue($property->getValue($service));
-    }
-
-    #[Test]
-    public function cacheable_caches_result_when_ignore_cache_is_false(): void
-    {
-        Cache::flush();
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new ConcreteService($client);
-
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('cacheable');
-
-        $callCount = 0;
-        $callback = function () use (&$callCount) {
-            $callCount++;
-
-            return ['data' => 'test'];
-        };
-
-        $result1 = $method->invoke($service, 'test_cache_key', 60, $callback);
-        $result2 = $method->invoke($service, 'test_cache_key', 60, $callback);
-
-        $this->assertEquals(['data' => 'test'], $result1);
-        $this->assertEquals(['data' => 'test'], $result2);
-        $this->assertEquals(1, $callCount);
-    }
-
-    #[Test]
-    public function cacheable_bypasses_cache_when_fresh_is_called(): void
-    {
-        Cache::flush();
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new ConcreteService($client);
-
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('cacheable');
-
-        $callCount = 0;
-        $callback = function () use (&$callCount) {
-            $callCount++;
-
-            return ['data' => 'fresh'];
-        };
-
-        $method->invoke($service, 'fresh_cache_key', 60, $callback);
-        $this->assertEquals(1, $callCount);
-
-        $service->fresh();
-        $result = $method->invoke($service, 'fresh_cache_key', 60, $callback);
-
-        $this->assertEquals(['data' => 'fresh'], $result);
-        $this->assertEquals(2, $callCount);
-    }
-
-    #[Test]
-    public function get_resets_ignore_cache_after_request(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['id' => 19019]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new ConcreteService($client);
-
-        $service->fresh();
-
-        $reflection = new \ReflectionClass($service);
-        $property = $reflection->getProperty('ignoreCache');
-        $this->assertTrue($property->getValue($service));
-
-        $method = $reflection->getMethod('get');
-        $method->invoke($service, '/item/19019');
-
-        $this->assertFalse($property->getValue($service));
-    }
-
-    #[Test]
-    public function cacheable_uses_cache_remember_with_ttl(): void
-    {
-        Cache::flush();
-        Cache::shouldReceive('remember')
-            ->once()
-            ->with('custom_ttl_key', 120, \Mockery::type('callable'))
-            ->andReturn(['cached' => true]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new ConcreteService($client);
-
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('cacheable');
-
-        $result = $method->invoke($service, 'custom_ttl_key', 120, fn () => ['cached' => true]);
-
-        $this->assertEquals(['cached' => true], $result);
-    }
-
-    #[Test]
-    public function cacheable_accepts_null_ttl(): void
-    {
-        Cache::flush();
-        Cache::shouldReceive('remember')
-            ->once()
-            ->with('null_ttl_key', null, \Mockery::type('callable'))
-            ->andReturn(['data' => 'forever']);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new ConcreteService($client);
-
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('cacheable');
-
-        $result = $method->invoke($service, 'null_ttl_key', null, fn () => ['data' => 'forever']);
-
-        $this->assertEquals(['data' => 'forever'], $result);
-    }
-
-    #[Test]
     public function get_namespace_returns_client_namespace(): void
     {
         $client = new Client('client_id', 'client_secret', namespace: 'test-namespace-eu');
@@ -542,38 +405,6 @@ class ServiceTest extends TestCase
         $this->assertArrayHasKey('id', $result);
         $this->assertArrayHasKey('name', $result);
         $this->assertArrayHasKey('quality', $result);
-    }
-
-    #[Test]
-    public function select_can_be_chained_with_fresh(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response([
-                'id' => 19019,
-                'name' => 'Thunderfury',
-                'quality' => 'Legendary',
-            ]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new ConcreteService($client);
-
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('getJson');
-
-        $result = $service->fresh()->select('id', 'name');
-        $this->assertSame($service, $result);
-
-        $response = $method->invoke($service, '/item/19019');
-
-        $this->assertArrayHasKey('id', $response);
-        $this->assertArrayHasKey('name', $response);
-        $this->assertArrayNotHasKey('quality', $response);
     }
 
     #[Test]
