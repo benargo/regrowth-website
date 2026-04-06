@@ -14,7 +14,7 @@ class PlayableClassTest extends TestCase
     public function unknown_returns_null_id_and_unknown_class_name(): void
     {
         $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+            $mock->shouldReceive('get')->andReturn(null);
         });
 
         $result = PlayableClass::unknown();
@@ -27,7 +27,7 @@ class PlayableClassTest extends TestCase
     public function unknown_icon_url_uses_media_service(): void
     {
         $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')
+            $mock->shouldReceive('get')
                 ->once()
                 ->with('inv_misc_questionmark')
                 ->andReturn('https://example.com/question.jpg');
@@ -42,7 +42,7 @@ class PlayableClassTest extends TestCase
     public function to_array_returns_expected_keys(): void
     {
         $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+            $mock->shouldReceive('get')->andReturn(null);
         });
 
         $result = PlayableClass::unknown()->toArray();

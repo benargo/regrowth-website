@@ -5,7 +5,7 @@ namespace Tests\SmokeTest;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
-use App\Services\Blizzard\GuildService as BlizzardGuildService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,12 +39,33 @@ class DashboardPagesTest extends TestCase
             ->byDefault();
         $this->app->instance(GuildTags::class, $guildTags);
 
-        // Mock BlizzardGuildService to prevent Blizzard API calls
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')
-            ->andReturn(collect())
+        // Mock BlizzardService to prevent Blizzard API calls
+        $blizzardService = Mockery::mock(BlizzardService::class);
+        $blizzardService->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => []])
             ->byDefault();
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        $blizzardService->shouldReceive('getPlayableClasses')
+            ->andReturn(['classes' => []])
+            ->byDefault();
+        $blizzardService->shouldReceive('getPlayableRaces')
+            ->andReturn(['races' => []])
+            ->byDefault();
+        $blizzardService->shouldReceive('findPlayableClass')
+            ->andReturn([])
+            ->byDefault();
+        $blizzardService->shouldReceive('getPlayableClassMedia')
+            ->andReturn([])
+            ->byDefault();
+        $blizzardService->shouldReceive('findPlayableRace')
+            ->andReturn([])
+            ->byDefault();
+        $blizzardService->shouldReceive('findItem')
+            ->andReturn([])
+            ->byDefault();
+        $blizzardService->shouldReceive('findMedia')
+            ->andReturn([])
+            ->byDefault();
+        $this->app->instance(BlizzardService::class, $blizzardService);
     }
 
     /**

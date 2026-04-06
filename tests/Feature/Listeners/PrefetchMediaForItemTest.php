@@ -135,7 +135,7 @@ class PrefetchMediaForItemTest extends TestCase
         $event = new ItemSaved($item);
 
         $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('downloadAssets')
+        $mediaService->shouldReceive('download')
             ->once()
             ->with($icon->assets);
 

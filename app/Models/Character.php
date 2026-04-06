@@ -5,13 +5,12 @@ namespace App\Models;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\WarcraftLogs\Report;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Data\PlayableClass;
 use App\Services\Blizzard\Data\PlayableRace;
 use App\Services\Blizzard\Exceptions\InvalidClassException;
 use App\Services\Blizzard\Exceptions\InvalidRaceException;
-use App\Services\Blizzard\GuildService;
-use App\Services\Blizzard\PlayableClassService;
-use App\Services\Blizzard\PlayableRaceService;
+use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -137,13 +136,22 @@ class Character extends Model
                 }
 
                 try {
-                    $service = app(PlayableClassService::class);
-                    $data = $service->find($this->playable_class_id);
+                    $blizzard = app(BlizzardService::class);
+                    $data = $blizzard->findPlayableClass($this->playable_class_id);
+                    $media = $blizzard->getPlayableClassMedia($this->playable_class_id);
+                    $assets = Arr::get($media, 'assets', []);
+                    $iconUrl = null;
+
+                    if (! empty($assets)) {
+                        $urls = app(MediaService::class)->get($assets);
+                        $fileDataId = Arr::get($media, 'assets.0.file_data_id');
+                        $iconUrl = $fileDataId !== null ? Arr::get($urls, $fileDataId) : null;
+                    }
 
                     return new PlayableClass(
                         id: $this->playable_class_id,
                         name: Arr::get($data, 'name'),
-                        icon_url: $service->iconUrl($this->playable_class_id),
+                        icon_url: $iconUrl,
                     )->toArray();
                 } catch (RequestException|ConnectionException $e) {
                     Log::warning('Failed to fetch playable class for id '.$this->playable_class_id.': '.$e->getMessage());
@@ -157,7 +165,7 @@ class Character extends Model
                 }
 
                 try {
-                    app(PlayableClassService::class)->find($id);
+                    app(BlizzardService::class)->findPlayableClass($id);
                 } catch (InvalidClassException $e) {
                     throw $e;
                 } catch (RequestException|ConnectionException $e) {
@@ -178,8 +186,7 @@ class Character extends Model
                 }
 
                 try {
-                    $service = app(PlayableRaceService::class);
-                    $data = $service->find($this->playable_race_id);
+                    $data = app(BlizzardService::class)->findPlayableRace($this->playable_race_id);
 
                     return new PlayableRace(
                         id: $this->playable_race_id,
@@ -197,7 +204,7 @@ class Character extends Model
                 }
 
                 try {
-                    app(PlayableRaceService::class)->find($id);
+                    app(BlizzardService::class)->findPlayableRace($id);
                 } catch (InvalidRaceException $e) {
                     throw $e;
                 } catch (RequestException|ConnectionException $e) {
@@ -232,8 +239,9 @@ class Character extends Model
      */
     public function prunable(): Builder
     {
-        $guildService = app(GuildService::class);
-        $memberIds = $guildService->members()->pluck('character.id')->toArray();
+        $memberIds = collect(Arr::get(app(BlizzardService::class)->getGuildRoster(), 'members', []))
+            ->pluck('character.id')
+            ->toArray();
 
         return static::whereNotIn('id', $memberIds)->where('updated_at', '<=', now()->subDays(14));
     }

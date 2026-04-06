@@ -9,7 +9,7 @@ use App\Models\GuildRank;
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
-use App\Services\Blizzard\CharacterService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Exceptions\CharacterNotFoundException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -68,7 +68,7 @@ class ProcessGrmUpload implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(CharacterService $characterService): void
+    public function handle(BlizzardService $blizzard): void
     {
         Cache::put(self::PROGRESS_CACHE_KEY, [
             'status' => 'processing',
@@ -95,7 +95,7 @@ class ProcessGrmUpload implements ShouldQueue
         Character::withoutEvents(function () use (
             $rows,
             $altDelimiter,
-            $characterService,
+            $blizzard,
             &$processedCount,
             &$errorCount,
             &$errors,
@@ -104,7 +104,7 @@ class ProcessGrmUpload implements ShouldQueue
         ) {
             foreach ($rows as $row) {
                 try {
-                    $this->processRow($row, $altDelimiter, $characterService);
+                    $this->processRow($row, $altDelimiter, $blizzard);
                     $processedCount++;
                 } catch (CharacterTooLowLevelException $e) {
                     $skippedCount++;
@@ -199,7 +199,7 @@ class ProcessGrmUpload implements ShouldQueue
      *
      * @param  array<string, string>  $row
      */
-    protected function processRow(array $row, string $altDelimiter, CharacterService $characterService): void
+    protected function processRow(array $row, string $altDelimiter, BlizzardService $blizzard): void
     {
         $name = trim($row['Name']);
         $rankName = trim($row['Rank']);
@@ -217,7 +217,7 @@ class ProcessGrmUpload implements ShouldQueue
 
         // Get character ID from Blizzard API
         try {
-            $status = $characterService->getStatus($name);
+            $status = $blizzard->getCharacterStatus($name);
             $characterId = $status['id'];
         } catch (RequestException $e) {
             Log::error('GRM Upload: Could not fetch character data from Blizzard API.', [
@@ -245,7 +245,7 @@ class ProcessGrmUpload implements ShouldQueue
 
         // Process alts if this is a main character
         if ($character->is_main && ! empty($playerAlts)) {
-            $this->processAlts($character, $playerAlts, $altDelimiter, $characterService);
+            $this->processAlts($character, $playerAlts, $altDelimiter, $blizzard);
         }
     }
 
@@ -256,7 +256,7 @@ class ProcessGrmUpload implements ShouldQueue
         Character $mainCharacter,
         string $playerAlts,
         string $altDelimiter,
-        CharacterService $characterService
+        BlizzardService $blizzard
     ): void {
         $altNames = explode($altDelimiter, $playerAlts);
 
@@ -275,7 +275,7 @@ class ProcessGrmUpload implements ShouldQueue
             }
 
             try {
-                $altStatus = $characterService->getProfile($altName);
+                $altStatus = $blizzard->getCharacterProfile($altName);
                 $altId = $altStatus['id'];
                 $altLevel = (int) $altStatus['level'];
 

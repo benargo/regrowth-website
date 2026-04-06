@@ -3,9 +3,8 @@
 namespace Tests\Unit\Services\Blizzard\Data;
 
 use App\Models\GuildRank;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Data\GuildMember;
-use App\Services\Blizzard\PlayableClassService;
-use App\Services\Blizzard\PlayableRaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -118,8 +117,8 @@ class GuildMemberTest extends TestCase
     #[Test]
     public function it_loads_playable_class_relation(): void
     {
-        $this->mock(PlayableClassService::class, function ($mock) {
-            $mock->shouldReceive('find')
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findPlayableClass')
                 ->with(7)
                 ->once()
                 ->andReturn(['id' => 7, 'name' => 'Shaman']);
@@ -134,8 +133,8 @@ class GuildMemberTest extends TestCase
     #[Test]
     public function it_loads_playable_race_relation(): void
     {
-        $this->mock(PlayableRaceService::class, function ($mock) {
-            $mock->shouldReceive('find')
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findPlayableRace')
                 ->with(2)
                 ->once()
                 ->andReturn(['id' => 2, 'name' => 'Orc']);
@@ -166,8 +165,8 @@ class GuildMemberTest extends TestCase
     #[Test]
     public function with_returns_self_for_chaining(): void
     {
-        $this->mock(PlayableClassService::class, function ($mock) {
-            $mock->shouldReceive('find')->andReturn(['id' => 7, 'name' => 'Shaman']);
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findPlayableClass')->andReturn(['id' => 7, 'name' => 'Shaman']);
         });
 
         $member = GuildMember::fromArray($this->sampleMemberData(99));

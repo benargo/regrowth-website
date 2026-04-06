@@ -504,7 +504,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => $character->id,
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Going on holiday.',
         ]);
 
@@ -519,18 +519,21 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create();
 
+        $startDate = now()->addDay();
+        $endDate = now()->addDays(7);
+
         $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => $character->id,
-            'start_date' => '2026-04-01',
-            'end_date' => '2026-04-07',
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
             'reason' => 'Going on holiday.',
         ]);
 
         $response->assertRedirectToRoute('raids.absences.index');
         $this->assertDatabaseHas('planned_absences', [
             'character_id' => $character->id,
-            'start_date' => '2026-04-01 00:00:00',
-            'end_date' => '2026-04-07 00:00:00',
+            'start_date' => $startDate->format('Y-m-d').' 00:00:00',
+            'end_date' => $endDate->format('Y-m-d').' 00:00:00',
             'created_by' => $user->id,
         ]);
     }
@@ -543,7 +546,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => 'Aragorn',
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Scouting the Misty Mountains.',
         ]);
 
@@ -559,7 +562,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => 'Deo',
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -575,7 +578,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => $character->id,
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Indefinite absence.',
         ]);
 
@@ -602,7 +605,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('raids.absences.store'), [
             'character' => $character->id,
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -621,7 +624,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => 'Deo',
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -643,7 +646,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => 'Altchar',
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -660,7 +663,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => $character->id,
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -676,7 +679,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -707,7 +710,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => $character->id,
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
         ]);
 
         $response->assertUnprocessable();
@@ -722,8 +725,8 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => $character->id,
-            'start_date' => '2026-04-07',
-            'end_date' => '2026-04-01',
+            'start_date' => now()->addDays(7)->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -738,7 +741,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => 'TwelveCharsX',
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -753,7 +756,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => 'Two Words',
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -768,7 +771,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
             'character' => 'Char1',
-            'start_date' => '2026-04-01',
+            'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
@@ -821,16 +824,18 @@ class PlannedAbsenceControllerTest extends TestCase
     public function update_updates_start_date(): void
     {
         $user = User::factory()->officer()->create();
-        $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => '2026-04-01']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => now()->addDay()]);
+
+        $newStartDate = now()->addDays(7);
 
         $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
-            'start_date' => '2026-05-01',
+            'start_date' => $newStartDate->format('Y-m-d'),
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('planned_absences', [
             'id' => $absence->id,
-            'start_date' => '2026-05-01 00:00:00',
+            'start_date' => $newStartDate->format('Y-m-d').' 00:00:00',
         ]);
     }
 
@@ -839,18 +844,20 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create([
-            'start_date' => '2026-04-01',
-            'end_date' => '2026-04-07',
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(7),
         ]);
 
+        $newEndDate = now()->addDays(14);
+
         $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
-            'end_date' => '2026-04-14',
+            'end_date' => $newEndDate->format('Y-m-d'),
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('planned_absences', [
             'id' => $absence->id,
-            'end_date' => '2026-04-14 00:00:00',
+            'end_date' => $newEndDate->format('Y-m-d').' 00:00:00',
         ]);
     }
 
@@ -898,8 +905,8 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create([
-            'start_date' => '2026-04-01',
-            'end_date' => '2026-04-07',
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(7),
         ]);
 
         $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
@@ -956,10 +963,10 @@ class PlannedAbsenceControllerTest extends TestCase
     public function update_validates_end_date_must_be_after_start_date(): void
     {
         $user = User::factory()->officer()->create();
-        $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => '2026-04-07']);
+        $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => now()->addDays(7)]);
 
         $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
-            'end_date' => '2026-04-01',
+            'end_date' => now()->addDay()->format('Y-m-d'),
         ]);
 
         $response->assertUnprocessable();

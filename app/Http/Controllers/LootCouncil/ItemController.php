@@ -8,7 +8,7 @@ use App\Http\Resources\LootCouncil\ItemResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -20,9 +20,9 @@ class ItemController extends Controller
     /**
      * Display a specific loot item.
      */
-    public function view(ItemService $itemService, Request $request, Item $item, ?string $name = null)
+    public function view(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null)
     {
-        $slug = Str::slug(Arr::get($itemService->find($item->id), 'name') ?? "item-{$item->id}");
+        $slug = Str::slug(Arr::get($blizzard->findItem($item->id), 'name') ?? "item-{$item->id}");
 
         if ($name !== $slug) {
             return redirect()->route('loot.items.show', ['item' => $item->id, 'name' => $slug], 303);
@@ -48,9 +48,9 @@ class ItemController extends Controller
     /**
      * Show the form for editing a specific loot item.
      */
-    public function edit(ItemService $itemService, Request $request, Item $item, ?string $name = null)
+    public function edit(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null)
     {
-        $slug = Str::slug(Arr::get($itemService->find($item->id), 'name') ?? "item-{$item->id}");
+        $slug = Str::slug(Arr::get($blizzard->findItem($item->id), 'name') ?? "item-{$item->id}");
 
         if ($name !== $slug) {
             return redirect()->route('loot.items.edit', ['item' => $item->id, 'name' => $slug], 303);
@@ -78,9 +78,9 @@ class ItemController extends Controller
         ]);
     }
 
-    public function redirectToEdit(ItemService $itemService, Item $item)
+    public function redirectToEdit(BlizzardService $blizzard, Item $item)
     {
-        $slug = Str::slug(Arr::get($itemService->find($item->id), 'name') ?? "item-{$item->id}");
+        $slug = Str::slug(Arr::get($blizzard->findItem($item->id), 'name') ?? "item-{$item->id}");
 
         return redirect()->route('loot.items.edit', ['item' => $item->id, 'name' => $slug], 303);
     }

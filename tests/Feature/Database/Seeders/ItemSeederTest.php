@@ -3,14 +3,14 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Models\LootCouncil\Item;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use Database\Seeders\ItemSeeder;
 use Database\Seeders\TBC\BossSeeder;
 use Database\Seeders\TBC\PhaseSeeder;
 use Database\Seeders\TBC\RaidSeeder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
-use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -59,26 +59,37 @@ class ItemSeederTest extends TestCase
     }
 
     /**
-     * Override the global TestCase ItemService mock with a correctly-shaped one.
-     * The global mock's media() response is missing the top-level 'id' key required
-     * by ItemMediaCast::fromArray(), so we must replace it here.
+     * Mock BlizzardService with correctly-shaped findItem/getItemMedia responses.
      */
-    private function mockItemService(?callable $callback = null): void
+    private function mockBlizzardService(?callable $callback = null): void
     {
-        $this->instance(
-            ItemService::class,
-            Mockery::mock(ItemService::class, function (MockInterface $mock) use ($callback) {
-                $mock->shouldReceive('find')
-                    ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($callback) {
+            $mock->shouldReceive('findItem')
+                ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
 
-                $mock->shouldReceive('media')
-                    ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
+            $mock->shouldReceive('getItemMedia')
+                ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
 
-                if ($callback) {
-                    $callback($mock);
-                }
-            })
-        );
+            if ($callback) {
+                $callback($mock);
+            }
+        });
+    }
+
+    /**
+     * Seed with only the items needed for testing, to avoid processing all 684 items.
+     */
+    private function seedWithLimitedItems(): void
+    {
+        $seeder = app(ItemSeeder::class);
+
+        $reflection = new \ReflectionProperty(ItemSeeder::class, 'items');
+        $allItems = $reflection->getValue($seeder);
+
+        // Keep only the first 5 items (includes 28453 and 28454 used in assertions)
+        $reflection->setValue($seeder, array_slice($allItems, 0, 5));
+
+        Model::unguarded(fn () => $seeder->run());
     }
 
     // ==================== Seeder Behaviour ====================
@@ -86,9 +97,9 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_creates_items_with_name_and_icon_from_api(): void
     {
-        $this->mockItemService();
+        $this->mockBlizzardService();
 
-        $this->seed(ItemSeeder::class);
+        $this->seedWithLimitedItems();
 
         $item = Item::find(28453);
 
@@ -104,22 +115,20 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_is_idempotent_and_running_twice_does_not_create_duplicates(): void
     {
-        $this->mockItemService();
+        $this->mockBlizzardService();
 
-        $this->seed(ItemSeeder::class);
+        $this->seedWithLimitedItems();
+        $countAfterFirst = Item::count();
 
-        $itemCount = (new \ReflectionProperty(ItemSeeder::class, 'items'))
-            ->getValue(app(ItemSeeder::class));
+        $this->seedWithLimitedItems();
 
-        $this->seed(ItemSeeder::class);
-
-        $this->assertDatabaseCount('lootcouncil_items', count($itemCount));
+        $this->assertDatabaseCount('lootcouncil_items', $countAfterFirst);
     }
 
     #[Test]
     public function seeder_updates_name_and_icon_on_existing_items(): void
     {
-        $this->mockItemService();
+        $this->mockBlizzardService();
 
         Item::forceCreate([
             'id' => 28453,
@@ -130,7 +139,7 @@ class ItemSeederTest extends TestCase
             'icon' => null,
         ]);
 
-        $this->seed(ItemSeeder::class);
+        $this->seedWithLimitedItems();
 
         $this->assertDatabaseHas('lootcouncil_items', [
             'id' => 28453,
@@ -141,18 +150,15 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_leaves_name_null_when_api_returns_no_name(): void
     {
-        $this->instance(
-            ItemService::class,
-            Mockery::mock(ItemService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('find')
-                    ->andReturnUsing(fn (int $id) => ['id' => $id]);
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findItem')
+                ->andReturnUsing(fn (int $id) => ['id' => $id]);
 
-                $mock->shouldReceive('media')
-                    ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
-            })
-        );
+            $mock->shouldReceive('getItemMedia')
+                ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
+        });
 
-        $this->seed(ItemSeeder::class);
+        $this->seedWithLimitedItems();
 
         $this->assertDatabaseHas('lootcouncil_items', [
             'id' => 28453,
@@ -163,18 +169,15 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_still_creates_items_when_media_api_returns_empty_array(): void
     {
-        $this->instance(
-            ItemService::class,
-            Mockery::mock(ItemService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('find')
-                    ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findItem')
+                ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
 
-                $mock->shouldReceive('media')
-                    ->andReturn([]);
-            })
-        );
+            $mock->shouldReceive('getItemMedia')
+                ->andReturn([]);
+        });
 
-        $this->seed(ItemSeeder::class);
+        $this->seedWithLimitedItems();
 
         $item = Item::find(28453);
 
@@ -186,9 +189,9 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_sets_correct_raid_and_boss_ids_from_static_data(): void
     {
-        $this->mockItemService();
+        $this->mockBlizzardService();
 
-        $this->seed(ItemSeeder::class);
+        $this->seedWithLimitedItems();
 
         $this->assertDatabaseHas('lootcouncil_items', [
             'id' => 28453,
@@ -200,22 +203,19 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_skips_item_and_continues_when_api_throws_http_exception(): void
     {
-        $this->instance(
-            ItemService::class,
-            Mockery::mock(ItemService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('find')
-                    ->with(28453)
-                    ->andThrow(new ConnectionException('Connection refused'));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findItem')
+                ->with(28453)
+                ->andThrow(new ConnectionException('Connection refused'));
 
-                $mock->shouldReceive('find')
-                    ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
+            $mock->shouldReceive('findItem')
+                ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
 
-                $mock->shouldReceive('media')
-                    ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
-            })
-        );
+            $mock->shouldReceive('getItemMedia')
+                ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
+        });
 
-        $this->seed(ItemSeeder::class);
+        $this->seedWithLimitedItems();
 
         // The failed item is still created (updateOrCreate ran before the API call) but has no name/icon
         $this->assertDatabaseHas('lootcouncil_items', ['id' => 28453, 'name' => null]);

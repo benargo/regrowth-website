@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\LootCouncil\Item;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -11,7 +11,7 @@ use Illuminate\Http\Client\RequestException;
 class ItemSeeder extends Seeder
 {
     public function __construct(
-        private readonly ItemService $itemService,
+        private readonly BlizzardService $blizzard,
     ) {}
 
     /**
@@ -719,8 +719,8 @@ class ItemSeeder extends Seeder
             );
 
             try {
-                $itemData = $this->itemService->find($item['id']);
-                $mediaData = $this->itemService->media($item['id']);
+                $itemData = $this->blizzard->findItem($item['id']);
+                $mediaData = $this->blizzard->getItemMedia($item['id']);
 
                 $model->update([
                     'name' => $itemData['name'] ?? null,

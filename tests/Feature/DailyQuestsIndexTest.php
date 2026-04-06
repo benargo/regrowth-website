@@ -3,14 +3,31 @@
 namespace Tests\Feature;
 
 use App\Models\TBC\DailyQuestNotification;
+use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class DailyQuestsIndexTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findItem')->andReturn(['name' => 'Test Item', 'quality' => ['name' => 'Common']]);
+            $mock->shouldReceive('findMedia')->andReturn(['assets' => []]);
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('get')->andReturn('/fake-icon.jpg');
+        });
+    }
 
     #[Test]
     public function index_returns_successful_response(): void

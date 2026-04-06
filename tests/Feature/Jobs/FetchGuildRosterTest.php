@@ -2,12 +2,10 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Events\GuildRosterFetched;
 use App\Jobs\FetchGuildRoster;
-use App\Services\Blizzard\GuildService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Event;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -27,38 +25,12 @@ class FetchGuildRosterTest extends TestCase
     }
 
     #[Test]
-    public function it_calls_roster_on_guild_service(): void
+    public function it_calls_get_guild_roster_on_blizzard_service(): void
     {
-        $guildService = Mockery::mock(GuildService::class);
-        $guildService->shouldReceive('roster')->once()->andReturn(['members' => []]);
+        $blizzard = Mockery::mock(BlizzardService::class);
+        $blizzard->shouldReceive('getGuildRoster')->once()->andReturn(['members' => []]);
 
         $job = new FetchGuildRoster;
-        $job->handle($guildService);
-    }
-
-    #[Test]
-    public function it_dispatches_guild_roster_fetched_event(): void
-    {
-        Event::fake([GuildRosterFetched::class]);
-
-        $roster = [
-            'members' => [
-                ['character' => ['id' => 1, 'name' => 'TestChar', 'level' => 80], 'rank' => 2],
-            ],
-        ];
-
-        $guildService = Mockery::mock(GuildService::class);
-        $guildService->shouldReceive('roster')->once()->andReturnUsing(function () use ($roster) {
-            GuildRosterFetched::dispatch($roster);
-
-            return $roster;
-        });
-
-        $job = new FetchGuildRoster;
-        $job->handle($guildService);
-
-        Event::assertDispatched(GuildRosterFetched::class, function (GuildRosterFetched $event) use ($roster) {
-            return $event->roster === $roster;
-        });
+        $job->handle($blizzard);
     }
 }

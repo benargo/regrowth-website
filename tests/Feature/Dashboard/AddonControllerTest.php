@@ -6,11 +6,9 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\Blizzard\Data\GuildMember;
-use App\Services\Blizzard\GuildService as BlizzardGuildService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
@@ -32,14 +30,12 @@ class AddonControllerTest extends DashboardTestCase
 
         $this->app->instance(GuildTags::class, $guildTags);
 
-        // Mock BlizzardGuildService to return empty members by default
+        // Mock BlizzardService to return empty roster by default
         // This prevents real API calls during tests that don't specifically test GRM freshness
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')
-            ->andReturn(new Collection)
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => []])
             ->byDefault();
-
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
     }
 
     /**
@@ -531,9 +527,9 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => []]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -554,9 +550,9 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => []]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
@@ -577,9 +573,9 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => []]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -597,9 +593,9 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => []]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -620,16 +616,16 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardGuildService to return 5 raiders
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect([
-            new GuildMember(character: ['id' => 1, 'name' => 'Player1'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 2, 'name' => 'Player2'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 3, 'name' => 'Player3'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 4, 'name' => 'Player4'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 5, 'name' => 'Player5'], rank: $raiderRank),
-        ]));
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        // Mock BlizzardService to return 5 raiders
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => [
+                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 4, 'name' => 'Player4'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 5, 'name' => 'Player5'], 'rank' => $raiderRank->position],
+            ]]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -658,14 +654,14 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardGuildService to return 3 raiders (same as CSV)
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect([
-            new GuildMember(character: ['id' => 1, 'name' => 'Player1'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 2, 'name' => 'Player2'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 3, 'name' => 'Player3'], rank: $raiderRank),
-        ]));
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        // Mock BlizzardService to return 3 raiders (same as CSV)
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => [
+                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
+            ]]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -696,14 +692,14 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardGuildService to return 3 raiders (difference of 2)
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect([
-            new GuildMember(character: ['id' => 1, 'name' => 'Player1'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 2, 'name' => 'Player2'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 3, 'name' => 'Player3'], rank: $raiderRank),
-        ]));
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        // Mock BlizzardService to return 3 raiders (difference of 2)
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => [
+                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
+            ]]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -731,16 +727,16 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardGuildService to return 5 raiders (difference of 3)
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect([
-            new GuildMember(character: ['id' => 1, 'name' => 'Player1'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 2, 'name' => 'Player2'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 3, 'name' => 'Player3'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 4, 'name' => 'Player4'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 5, 'name' => 'Player5'], rank: $raiderRank),
-        ]));
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        // Mock BlizzardService to return 5 raiders (difference of 3)
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => [
+                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 4, 'name' => 'Player4'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 5, 'name' => 'Player5'], 'rank' => $raiderRank->position],
+            ]]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -773,14 +769,14 @@ class AddonControllerTest extends DashboardTestCase
         $trialRaiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Trial Raider']);
         GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
 
-        // Mock BlizzardGuildService to return 3 raiders across different ranks
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect([
-            new GuildMember(character: ['id' => 1, 'name' => 'Player1'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 2, 'name' => 'Player2'], rank: $coreRaiderRank),
-            new GuildMember(character: ['id' => 3, 'name' => 'Player3'], rank: $trialRaiderRank),
-        ]));
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        // Mock BlizzardService to return 3 raiders across different ranks
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => [
+                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $coreRaiderRank->position],
+                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $trialRaiderRank->position],
+            ]]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -803,9 +799,9 @@ class AddonControllerTest extends DashboardTestCase
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nPlayer1,Member,80,1,Main,\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect());
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => []]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -836,13 +832,13 @@ class AddonControllerTest extends DashboardTestCase
         $officerRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
         $memberRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Member']);
 
-        // Mock BlizzardGuildService to return non-raiders
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect([
-            new GuildMember(character: ['id' => 1, 'name' => 'Player1'], rank: $officerRank),
-            new GuildMember(character: ['id' => 2, 'name' => 'Player2'], rank: $memberRank),
-        ]));
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        // Mock BlizzardService to return non-raiders
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => [
+                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $officerRank->position],
+                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $memberRank->position],
+            ]]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -870,13 +866,13 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardGuildService to return 2 raiders
-        $blizzardGuildService = Mockery::mock(BlizzardGuildService::class);
-        $blizzardGuildService->shouldReceive('members')->andReturn(collect([
-            new GuildMember(character: ['id' => 1, 'name' => 'Player1'], rank: $raiderRank),
-            new GuildMember(character: ['id' => 2, 'name' => 'Player2'], rank: $raiderRank),
-        ]));
-        $this->app->instance(BlizzardGuildService::class, $blizzardGuildService);
+        // Mock BlizzardService to return 2 raiders
+        $this->mock(BlizzardService::class)
+            ->shouldReceive('getGuildRoster')
+            ->andReturn(['members' => [
+                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
+                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
+            ]]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 

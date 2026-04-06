@@ -7,7 +7,7 @@ use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,21 +33,22 @@ class BossItemsResourceTest extends TestCase
             'name' => 'Test Item',
         ];
 
-        $itemService = Mockery::mock(ItemService::class);
-        $itemService->shouldReceive('find')
+        $blizzardService = Mockery::mock(BlizzardService::class);
+        $blizzardService->shouldReceive('findItem')
             ->andReturn(array_merge($defaultItemData, $itemData));
-
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')
+        $blizzardService->shouldReceive('findMedia')
+            ->with('item', Mockery::any())
             ->andReturn([
                 'assets' => [
                     ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 12345],
                 ],
             ]);
-        $mediaService->shouldReceive('getAssetUrls')
+
+        $mediaService = Mockery::mock(MediaService::class);
+        $mediaService->shouldReceive('get')
             ->andReturn([12345 => $iconUrl ?? 'https://example.com/stored-icon.jpg']);
 
-        $this->app->instance(ItemService::class, $itemService);
+        $this->app->instance(BlizzardService::class, $blizzardService);
         $this->app->instance(MediaService::class, $mediaService);
     }
 
@@ -199,14 +200,11 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_fallback_name_when_blizzard_api_fails(): void
     {
-        $itemService = Mockery::mock(ItemService::class);
-        $itemService->shouldReceive('find')->andThrow(new \Exception('API Error'));
+        $blizzardService = Mockery::mock(BlizzardService::class);
+        $blizzardService->shouldReceive('findItem')->andThrow(new \Exception('API Error'));
+        $blizzardService->shouldReceive('findMedia')->andThrow(new \Exception('API Error'));
 
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')->andThrow(new \Exception('API Error'));
-
-        $this->app->instance(ItemService::class, $itemService);
-        $this->app->instance(MediaService::class, $mediaService);
+        $this->app->instance(BlizzardService::class, $blizzardService);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
@@ -236,14 +234,11 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_null_icon_when_media_api_fails(): void
     {
-        $itemService = Mockery::mock(ItemService::class);
-        $itemService->shouldReceive('find')->andReturn(['name' => 'Test Item']);
+        $blizzardService = Mockery::mock(BlizzardService::class);
+        $blizzardService->shouldReceive('findItem')->andReturn(['name' => 'Test Item']);
+        $blizzardService->shouldReceive('findMedia')->andThrow(new \Exception('API Error'));
 
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')->andThrow(new \Exception('API Error'));
-
-        $this->app->instance(ItemService::class, $itemService);
-        $this->app->instance(MediaService::class, $mediaService);
+        $this->app->instance(BlizzardService::class, $blizzardService);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
@@ -258,14 +253,13 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_null_icon_when_assets_are_empty(): void
     {
-        $itemService = Mockery::mock(ItemService::class);
-        $itemService->shouldReceive('find')->andReturn(['name' => 'Test Item']);
+        $blizzardService = Mockery::mock(BlizzardService::class);
+        $blizzardService->shouldReceive('findItem')->andReturn(['name' => 'Test Item']);
+        $blizzardService->shouldReceive('findMedia')
+            ->with('item', Mockery::any())
+            ->andReturn(['assets' => []]);
 
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')->andReturn(['assets' => []]);
-
-        $this->app->instance(ItemService::class, $itemService);
-        $this->app->instance(MediaService::class, $mediaService);
+        $this->app->instance(BlizzardService::class, $blizzardService);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
@@ -350,14 +344,11 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_wowhead_url_without_name_when_api_fails(): void
     {
-        $itemService = Mockery::mock(ItemService::class);
-        $itemService->shouldReceive('find')->andThrow(new \Exception('API Error'));
+        $blizzardService = Mockery::mock(BlizzardService::class);
+        $blizzardService->shouldReceive('findItem')->andThrow(new \Exception('API Error'));
+        $blizzardService->shouldReceive('findMedia')->andThrow(new \Exception('API Error'));
 
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')->andThrow(new \Exception('API Error'));
-
-        $this->app->instance(ItemService::class, $itemService);
-        $this->app->instance(MediaService::class, $mediaService);
+        $this->app->instance(BlizzardService::class, $blizzardService);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create(['id' => 19019]);

@@ -3,24 +3,25 @@
 namespace App\Http\Resources\LootCouncil;
 
 use App\Models\LootCouncil\Item;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class BossItemsResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $itemService = app(ItemService::class);
-        $mediaService = app(MediaService::class);
+        $blizzard = app(BlizzardService::class);
+        $media = app(MediaService::class);
 
         return [
             'bossId' => $this->resource['bossId'],
-            'items' => $this->resource['items']->map(function (Item $item) use ($itemService, $mediaService) {
-                $blizzardData = $this->getBlizzardData($itemService, $item);
-                $iconUrl = $this->getIconUrl($mediaService, $item);
+            'items' => $this->resource['items']->map(function (Item $item) use ($blizzard, $media) {
+                $blizzardData = $this->getBlizzardData($blizzard, $item);
+                $iconUrl = $this->getIconUrl($blizzard, $media, $item);
 
                 return [
                     'id' => $item->id,
@@ -59,10 +60,10 @@ class BossItemsResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    protected function getBlizzardData(ItemService $itemService, Item $item): array
+    protected function getBlizzardData(BlizzardService $blizzard, Item $item): array
     {
         try {
-            return $itemService->find($item->id);
+            return $blizzard->findItem($item->id);
         } catch (\Exception) {
             return [];
         }
@@ -71,17 +72,17 @@ class BossItemsResource extends JsonResource
     /**
      * Get icon URL from Blizzard media API.
      */
-    protected function getIconUrl(MediaService $mediaService, Item $item): ?string
+    protected function getIconUrl(BlizzardService $blizzard, MediaService $media, Item $item): ?string
     {
         try {
-            $media = $mediaService->find('item', $item->id);
-            $assets = $media['assets'] ?? [];
+            $mediaData = $blizzard->findMedia('item', $item->id);
+            $assets = Arr::get($mediaData, 'assets', []);
 
             if (empty($assets)) {
                 return null;
             }
 
-            $urls = $mediaService->getAssetUrls($assets);
+            $urls = $media->get($assets);
 
             return array_values($urls)[0] ?? null;
         } catch (\Exception) {

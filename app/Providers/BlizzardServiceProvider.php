@@ -2,14 +2,13 @@
 
 namespace App\Providers;
 
-use App\Services\Blizzard\CharacterService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Client;
-use App\Services\Blizzard\GuildService;
-use App\Services\Blizzard\ItemService;
 use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\PlayableClassService;
+use App\Services\Blizzard\Region;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
+use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
 
 class BlizzardServiceProvider extends ServiceProvider
@@ -19,34 +18,30 @@ class BlizzardServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(Client::class, function (Application $app) {
-            return Client::fromConfig();
-        });
+        $config = config('services.blizzard');
 
-        $this->app->singleton(CharacterService::class, function (Application $app) {
-            return new CharacterService($app->make(Client::class));
-        });
-
-        $this->app->singleton(GuildService::class, function (Application $app) {
-            return new GuildService($app->make(Client::class));
-        });
-
-        $this->app->singleton(ItemService::class, function (Application $app) {
-            return new ItemService(
-                $app->make(Client::class),
-                $app->make(MediaService::class),
+        $this->app->bind(Client::class, function (Application $app) use ($config) {
+            return new Client(
+                clientId: Arr::get($config, 'client_id'),
+                clientSecret: Arr::get($config, 'client_secret'),
+                region: Region::from(Arr::get($config, 'region', 'eu')),
+                locale: Arr::get($config, 'locale'),
             );
         });
 
-        $this->app->singleton(MediaService::class, function (Application $app) {
+        $this->app->singleton(BlizzardService::class, function (Application $app) use ($config) {
+            return new BlizzardService(
+                $app->make(Client::class),
+                $config,
+            );
+        });
+
+        $this->app->singleton(MediaService::class, function (Application $app) use ($config) {
             return new MediaService(
-                $app->make(Client::class),
+                Arr::get($config, 'region'),
                 $app->make(FilesystemManager::class),
+                Arr::get($config, 'filesystem', 'public'),
             );
-        });
-
-        $this->app->singleton(PlayableClassService::class, function (Application $app) {
-            return new PlayableClassService($app->make(Client::class));
         });
     }
 
@@ -66,11 +61,9 @@ class BlizzardServiceProvider extends ServiceProvider
     public function provides(): array
     {
         return [
+            BlizzardService::class,
             Client::class,
-            GuildService::class,
-            ItemService::class,
             MediaService::class,
-            PlayableClassService::class,
         ];
     }
 }

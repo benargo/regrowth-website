@@ -5,10 +5,11 @@ namespace Tests\Unit\Http\Resources\LootCouncil;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -20,23 +21,29 @@ class PriorityResourceTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockMediaService();
+        $this->mockServices();
     }
 
-    protected function mockMediaService(?string $iconUrl = null): void
+    protected function mockServices(?string $iconUrl = null): void
     {
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')->andReturn([
-            'assets' => [
-                ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 12345],
-            ],
-        ]);
-        $mediaService->shouldReceive('getAssetUrls')
-            ->andReturn([12345 => $iconUrl ?? 'https://example.com/stored-icon.jpg']);
-        $mediaService->shouldReceive('getIconUrlByName')
-            ->andReturnUsing(fn ($name) => $iconUrl ?? "https://example.com/icons/{$name}.jpg");
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findMedia')->andReturn([
+                'assets' => [
+                    ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 12345],
+                ],
+            ]);
+        });
 
-        $this->app->instance(MediaService::class, $mediaService);
+        $this->mock(MediaService::class, function (MockInterface $mock) use ($iconUrl) {
+            $mock->shouldReceive('get')
+                ->andReturnUsing(function ($media) use ($iconUrl) {
+                    if (is_string($media)) {
+                        return $iconUrl ?? "https://example.com/icons/{$media}.jpg";
+                    }
+
+                    return [12345 => $iconUrl ?? 'https://example.com/stored-icon.jpg'];
+                });
+        });
     }
 
     #[Test]
@@ -97,7 +104,7 @@ class PriorityResourceTest extends TestCase
     #[Test]
     public function it_returns_media_url_from_media_type_and_id(): void
     {
-        $this->mockMediaService('https://example.com/spell-icon.jpg');
+        $this->mockServices('https://example.com/spell-icon.jpg');
 
         $priority = Priority::factory()->create([
             'media' => [
@@ -115,7 +122,7 @@ class PriorityResourceTest extends TestCase
     #[Test]
     public function it_returns_media_url_from_media_name(): void
     {
-        $this->mockMediaService('https://example.com/icons/spell_holy_holybolt.jpg');
+        $this->mockServices('https://example.com/icons/spell_holy_holybolt.jpg');
 
         $priority = Priority::factory()->create([
             'media' => [
@@ -143,11 +150,13 @@ class PriorityResourceTest extends TestCase
     #[Test]
     public function it_returns_null_media_when_api_fails(): void
     {
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')->andThrow(new \Exception('API Error'));
-        $mediaService->shouldReceive('getIconUrlByName')->andThrow(new \Exception('API Error'));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findMedia')->andThrow(new \Exception('API Error'));
+        });
 
-        $this->app->instance(MediaService::class, $mediaService);
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('get')->andThrow(new \Exception('API Error'));
+        });
 
         $priority = Priority::factory()->create([
             'media' => [

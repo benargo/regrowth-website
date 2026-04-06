@@ -9,18 +9,20 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Data\GuildMember;
-use App\Services\Blizzard\GuildService as BlizzardGuildService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class AddonController extends Controller
 {
     public function __construct(
+        protected BlizzardService $blizzard,
         protected GuildTags $guildTags,
     ) {}
 
@@ -104,7 +106,9 @@ class AddonController extends Controller
         }
 
         // Check if the roster data is significantly different from the roster data at the time of the last GRM upload
-        $members = app(BlizzardGuildService::class)->members();
+        $roster = $this->blizzard->getGuildRoster();
+        $members = collect(Arr::get($roster, 'members', []))
+            ->map(fn (array $memberData) => GuildMember::fromArray($memberData));
 
         // Count the number of raiders in the official guild roster.
         $raiderRankIds = GuildRank::whereLike('name', '%Raider%')->pluck('id');

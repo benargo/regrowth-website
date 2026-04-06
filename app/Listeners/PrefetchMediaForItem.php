@@ -14,7 +14,7 @@ class PrefetchMediaForItem implements ShouldQueue
      * Create the event listener.
      */
     public function __construct(
-        protected MediaService $mediaService,
+        protected MediaService $media,
     ) {}
 
     /**
@@ -37,6 +37,6 @@ class PrefetchMediaForItem implements ShouldQueue
      */
     public function handle(ItemSaved $event): void
     {
-        $this->mediaService->downloadAssets($event->item->icon->assets);
+        $this->media->download($event->item->icon->assets);
     }
 }

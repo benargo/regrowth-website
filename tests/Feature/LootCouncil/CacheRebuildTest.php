@@ -11,9 +11,12 @@ use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
+use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -27,6 +30,15 @@ class CacheRebuildTest extends TestCase
 
         app()->forgetInstance(FlushLootCouncilCache::class);
         app()->bind(FlushLootCouncilCache::class, fn () => new FlushLootCouncilCache);
+
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findItem')->andReturn(['name' => 'Test Item']);
+            $mock->shouldReceive('findMedia')->andReturn(['assets' => []]);
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('get')->andReturn(null);
+        });
     }
 
     #[Test]

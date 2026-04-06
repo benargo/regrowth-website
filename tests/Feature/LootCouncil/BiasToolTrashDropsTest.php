@@ -10,7 +10,8 @@ use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
@@ -35,20 +36,28 @@ class BiasToolTrashDropsTest extends TestCase
     protected function mockItemService(): void
     {
         $this->instance(
-            ItemService::class,
-            Mockery::mock(ItemService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('find')
+            BlizzardService::class,
+            Mockery::mock(BlizzardService::class, function (MockInterface $mock) {
+                $mock->shouldReceive('findItem')
                     ->andReturnUsing(fn (int $id) => [
                         'id' => $id,
                         'name' => "Test Item {$id}",
                     ]);
 
-                $mock->shouldReceive('media')
+                $mock->shouldReceive('findMedia')
                     ->andReturn([
                         'assets' => [
-                            ['key' => 'icon', 'value' => 'https://example.com/icon.jpg'],
+                            ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 123],
                         ],
                     ]);
+            })
+        );
+
+        $this->instance(
+            MediaService::class,
+            Mockery::mock(MediaService::class, function (MockInterface $mock) {
+                $mock->shouldReceive('get')
+                    ->andReturn([123 => 'https://example.com/icon.jpg']);
             })
         );
     }

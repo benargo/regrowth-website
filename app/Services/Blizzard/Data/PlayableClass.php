@@ -20,7 +20,7 @@ readonly class PlayableClass
         return new self(
             id: null,
             name: 'Unknown Class',
-            icon_url: app(MediaService::class)->getIconUrlByName('inv_misc_questionmark'),
+            icon_url: app(MediaService::class)->get('inv_misc_questionmark'),
         );
     }
 

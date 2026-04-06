@@ -17,8 +17,22 @@ return [
     'blizzard' => [
         'client_id' => env('BLIZZARD_CLIENT_ID'),
         'client_secret' => env('BLIZZARD_CLIENT_SECRET'),
+        'guild' => [
+            'name' => 'Regrowth',
+            'slug' => 'regrowth',
+        ],
+        'realm' => [
+            'name' => 'Thunderstrike',
+            'slug' => 'thunderstrike',
+        ],
         'region' => 'eu',
         'locale' => 'en_GB',
+        'namespaces' => [
+            'dynamic' => 'dynamic-classicann-eu',
+            'media' => 'static-eu',
+            'profile' => 'profile-classicann-eu',
+            'static' => 'static-classicann-eu',
+        ],
         'filesystem' => env('BLIZZARD_FILESYSTEM', 'public'),
     ],
 

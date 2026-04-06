@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources\LootCouncil;
 
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Arr;
 
 class PriorityResource extends JsonResource
 {
@@ -15,8 +17,9 @@ class PriorityResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $mediaService = app(MediaService::class);
-        $iconUrl = $this->getIconUrl($mediaService);
+        $blizzard = app(BlizzardService::class);
+        $media = app(MediaService::class);
+        $iconUrl = $this->getIconUrl($blizzard, $media);
 
         return [
             'id' => $this->id,
@@ -30,24 +33,24 @@ class PriorityResource extends JsonResource
     /**
      * Get icon URL from Blizzard media API or by icon name.
      */
-    protected function getIconUrl(MediaService $mediaService): ?string
+    protected function getIconUrl(BlizzardService $blizzard, MediaService $media): ?string
     {
         try {
             // If media_name is set, fetch icon by name directly
             if (isset($this->media['media_name'])) {
-                return $mediaService->getIconUrlByName($this->media['media_name']);
+                return $media->get($this->media['media_name']);
             }
 
             // Otherwise use the API with media_type and media_id
             if (isset($this->media['media_type'], $this->media['media_id'])) {
-                $media = $mediaService->find($this->media['media_type'], $this->media['media_id']);
-                $assets = $media['assets'] ?? [];
+                $mediaData = $blizzard->findMedia($this->media['media_type'], $this->media['media_id']);
+                $assets = Arr::get($mediaData, 'assets', []);
 
                 if (empty($assets)) {
                     return null;
                 }
 
-                $urls = $mediaService->getAssetUrls($assets);
+                $urls = $media->get($assets);
 
                 return array_values($urls)[0] ?? null;
             }

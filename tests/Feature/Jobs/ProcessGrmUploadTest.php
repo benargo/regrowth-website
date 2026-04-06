@@ -9,7 +9,7 @@ use App\Models\GuildRank;
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
-use App\Services\Blizzard\CharacterService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -45,7 +45,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
@@ -68,7 +68,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $character = Character::find(12345);
         $this->assertEquals($rank->id, $character->rank_id);
@@ -86,7 +86,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 67890,
@@ -110,7 +110,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseHas('character_links', [
             'character_id' => 11111,
@@ -138,7 +138,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 22222,
@@ -161,7 +161,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseHas('characters', [
             'id' => 22222,
@@ -187,7 +187,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseCount('character_links', 2);
     }
@@ -195,12 +195,12 @@ class ProcessGrmUploadTest extends TestCase
     #[Test]
     public function it_continues_processing_on_individual_row_error(): void
     {
-        $this->mock(CharacterService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getStatus')
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getCharacterStatus')
                 ->with('FailChar')
                 ->andThrow(new \RuntimeException('Character not found'));
 
-            $mock->shouldReceive('getStatus')
+            $mock->shouldReceive('getCharacterStatus')
                 ->with('SuccessChar')
                 ->andReturn(['id' => 99999]);
         });
@@ -213,7 +213,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseHas('characters', ['id' => 99999]);
         $this->assertDatabaseMissing('characters', ['name' => 'FailChar']);
@@ -222,8 +222,8 @@ class ProcessGrmUploadTest extends TestCase
     #[Test]
     public function it_sends_immediate_discord_notification_when_no_characters_are_processed(): void
     {
-        $this->mock(CharacterService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getStatus')
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getCharacterStatus')
                 ->andThrow(new \RuntimeException('Character not found'));
         });
 
@@ -235,7 +235,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         Notification::assertSentTo(
             new DiscordNotifiable('officer'),
@@ -258,7 +258,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         Event::assertNotDispatched(GrmUploadProcessed::class);
         Notification::assertSentTo(
@@ -280,7 +280,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         Notification::assertNothingSent();
     }
@@ -306,7 +306,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         // Should still only have one link
         $this->assertDatabaseCount('character_links', 1);
@@ -328,7 +328,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         // Should be updated to main
         $this->assertDatabaseHas('characters', [
@@ -356,7 +356,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         Event::assertDispatchedTimes(GrmUploadProcessed::class, 1);
     }
@@ -366,12 +366,12 @@ class ProcessGrmUploadTest extends TestCase
     {
         Event::fake([GrmUploadProcessed::class]);
 
-        $this->mock(CharacterService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getStatus')
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getCharacterStatus')
                 ->with('GoodChar')
                 ->andReturn(['id' => 11111]);
 
-            $mock->shouldReceive('getStatus')
+            $mock->shouldReceive('getCharacterStatus')
                 ->with('FailChar')
                 ->andThrow(new \RuntimeException('API error'));
         });
@@ -385,7 +385,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         Event::assertDispatched(GrmUploadProcessed::class, function (GrmUploadProcessed $event) {
             return $event->processedCount === 1
@@ -401,8 +401,8 @@ class ProcessGrmUploadTest extends TestCase
     {
         Event::fake([GrmUploadProcessed::class]);
 
-        $this->mock(CharacterService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getStatus')
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getCharacterStatus')
                 ->andThrow(new \RuntimeException('Character not found'));
         });
 
@@ -414,7 +414,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         Event::assertNotDispatched(GrmUploadProcessed::class);
     }
@@ -432,24 +432,24 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(CharacterService::class));
+        $job->handle(app(BlizzardService::class));
 
         $this->assertDatabaseCount('characters', 0);
     }
 
     /**
-     * Mock the CharacterService to return specific IDs for character names.
+     * Mock the BlizzardService to return specific IDs for character names.
      *
      * @param  array<string, int>  $characterMap
      */
     protected function mockCharacterService(array $characterMap): void
     {
-        $this->mock(CharacterService::class, function (MockInterface $mock) use ($characterMap) {
+        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($characterMap) {
             foreach ($characterMap as $name => $id) {
-                $mock->shouldReceive('getStatus')
+                $mock->shouldReceive('getCharacterStatus')
                     ->with($name)
                     ->andReturn(['id' => $id]);
-                $mock->shouldReceive('getProfile')
+                $mock->shouldReceive('getCharacterProfile')
                     ->with($name)
                     ->andReturn(['id' => $id, 'name' => $name, 'level' => 60]);
             }

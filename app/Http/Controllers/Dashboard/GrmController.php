@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\UploadGrmDataRequest;
 use App\Jobs\ProcessGrmUpload;
-use App\Services\Blizzard\GuildService;
+use App\Services\Blizzard\BlizzardService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -17,8 +18,9 @@ class GrmController extends Controller
 {
     protected Filesystem $storage;
 
-    public function __construct()
-    {
+    public function __construct(
+        protected BlizzardService $blizzard,
+    ) {
         $this->storage = Storage::disk('local');
 
         // Make the directory, if it doesn't exist
@@ -29,7 +31,7 @@ class GrmController extends Controller
     /**
      * Show the GRM data upload form.
      */
-    public function showUploadForm(GuildService $guildService)
+    public function showUploadForm()
     {
         if ($this->storage->exists('grm/uploads/latest.csv')) {
             $lastModified = Carbon::createFromTimestamp(
@@ -41,7 +43,7 @@ class GrmController extends Controller
 
         return Inertia::render('Dashboard/GRM', [
             'lastUploadTimestamp' => $lastModified,
-            'memberCount' => Inertia::defer(fn () => $guildService->members()->count()),
+            'memberCount' => Inertia::defer(fn () => count(Arr::get($this->blizzard->getGuildRoster(), 'members', []))),
         ]);
     }
 

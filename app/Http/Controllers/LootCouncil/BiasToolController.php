@@ -4,9 +4,7 @@ namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LootCouncil\BossItemsResource;
-use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use Illuminate\Http\Request;
@@ -31,7 +29,7 @@ class BiasToolController extends Controller
 
     public function phase(Phase $phase, Request $request)
     {
-        // Reload phases to ensure we have the latest data for the current phase (in case it was just switched)
+        // Preload phases to ensure we have the latest data for the current phase (in case it was just switched)
         $phases = Phase::hydrate(
             Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all()->toArray())
         );
@@ -44,14 +42,13 @@ class BiasToolController extends Controller
 
         // Determine which raid to load items for
         $defaultRaidId = $groupedRaids[$phase->id][0]->id ?? null;
-        $selectedRaidId = $request->input('raid_id', $defaultRaidId);
-        $selectedPhaseId = $raids->find($selectedRaidId)->phase_id ?? $phase->id;
+        $selectedRaid = $raids->find($request->input('raid_id', $defaultRaidId));
 
         return Inertia::render('LootBiasTool/Phase', [
-            'current_phase' => $selectedPhaseId,
+            'current_phase' => $phase->id,
             'raids' => $groupedRaids,
-            'selected_raid_id' => (int) $selectedRaidId,
-            'bosses' => Inertia::defer(fn () => $this->getBossesForRaid($selectedRaidId)),
+            'selected_raid_id' => (int) $selectedRaid->id,
+            'bosses' => Inertia::defer(fn () => $this->getBossesForRaid($selectedRaid)),
             // Only load boss items when explicitly requested via partial reload
             'boss_items' => Inertia::optional(fn () => $this->getItemsForBoss(
                 $request->integer('boss_id')
@@ -59,50 +56,24 @@ class BiasToolController extends Controller
         ]);
     }
 
-    protected function getBossesForRaid(int $raidId): array
+    protected function getBossesForRaid(Raid $raid): array
     {
         return Cache::tags(['lootcouncil'])->remember(
-            "bosses.tbc.raid_{$raidId}.index",
+            "bosses.tbc.raid_{$raid->id}.index",
             now()->addMonth(),
-            function () use ($raidId) {
-                $bosses = Boss::where('raid_id', $raidId)
+            function () use ($raid) {
+                $bosses = $raid->bosses()
                     ->orderBy('encounter_order')
+                    ->withCount('comments')
                     ->get();
 
-                // Get comment counts per boss via a single query
-                $commentsCount = Comment::query()
-                    ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_comments.item_id')
-                    ->whereNotNull('lootcouncil_items.boss_id')
-                    ->selectRaw('lootcouncil_items.boss_id, count(*) as comments_count')
-                    ->groupBy('lootcouncil_items.boss_id')
-                    ->pluck('comments_count', 'boss_id');
-
-                // Add comment counts to each boss
-                $bosses->each(fn ($boss) => $boss->comments_count = $commentsCount->get($boss->id, 0));
-
-                // Add virtual "Trash drops" boss for raids that have items without a boss
-                $hasTrashDrops = Item::query()
-                    ->where([
-                        ['raid_id', $raidId],
-                        ['boss_id', null],
-                    ])
-                    ->count();
-
-                if ($hasTrashDrops > 0) {
-                    // Get comment counts per boss via a single query
-                    $commentsCount = Comment::query()
-                        ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_comments.item_id')
-                        ->whereNull('lootcouncil_items.boss_id')
-                        ->selectRaw('lootcouncil_items.boss_id, count(*) as comments_count')
-                        ->groupBy('lootcouncil_items.boss_id')
-                        ->pluck('comments_count', 'boss_id');
-
+                if ($raid->trashItems()->exists()) {
                     $bosses->push([
-                        'id' => -1 * $raidId,
-                        'raid_id' => $raidId,
+                        'id' => -1 * $raid->id,
+                        'raid_id' => $raid->id,
                         'name' => 'Trash drops',
                         'encounter_order' => 999,
-                        'comments_count' => $commentsCount->get(null, 0),
+                        'comments_count' => $raid->comments()->whereNull('lootcouncil_items.boss_id')->count(),
                     ]);
                 }
 

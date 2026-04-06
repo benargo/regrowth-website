@@ -8,13 +8,10 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\WarcraftLogs\Report;
-use App\Services\Blizzard\Data\GuildMember;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Exceptions\InvalidClassException;
 use App\Services\Blizzard\Exceptions\InvalidRaceException;
-use App\Services\Blizzard\GuildService;
 use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\PlayableClassService;
-use App\Services\Blizzard\PlayableRaceService;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -273,7 +270,7 @@ class CharacterTest extends ModelTestCase
     public function playable_class_returns_unknown_when_playable_class_id_is_null(): void
     {
         $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+            $mock->shouldReceive('get')->andReturn(null);
         });
 
         $character = $this->create(['playable_class_id' => null]);
@@ -287,9 +284,15 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_class_returns_class_data_when_playable_class_id_is_set(): void
     {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->with(1)->andReturn(['id' => 1, 'name' => 'Warrior']);
-            $mock->shouldReceive('iconUrl')->with(1)->andReturn('https://example.com/warrior.jpg');
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->with(1)->andReturn(['id' => 1, 'name' => 'Warrior']);
+            $mock->shouldReceive('getPlayableClassMedia')->with(1)->andReturn([
+                'assets' => [['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/icons/warrior.jpg', 'file_data_id' => 123]],
+            ]);
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('get')->andReturn([123 => 'https://example.com/warrior.jpg']);
         });
 
         $character = $this->create(['playable_class_id' => 1]);
@@ -306,12 +309,12 @@ class CharacterTest extends ModelTestCase
     {
         Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable class for id'));
 
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
         });
 
         $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+            $mock->shouldReceive('get')->andReturn(null);
         });
 
         $character = $this->create(['playable_class_id' => 1]);
@@ -327,12 +330,12 @@ class CharacterTest extends ModelTestCase
     {
         Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable class for id'));
 
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
         });
 
         $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getIconUrlByName')->andReturn(null);
+            $mock->shouldReceive('get')->andReturn(null);
         });
 
         $character = $this->create(['playable_class_id' => 1]);
@@ -346,8 +349,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_class_setter_sets_playable_class_id_when_valid(): void
     {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(3)->andReturn(['id' => 3, 'name' => 'Hunter']);
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->once()->with(3)->andReturn(['id' => 3, 'name' => 'Hunter']);
         });
 
         $character = $this->create(['playable_class_id' => null]);
@@ -359,8 +362,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_class_setter_sets_to_null_without_service_call(): void
     {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->never();
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->never();
         });
 
         $character = $this->create(['playable_class_id' => 1]);
@@ -372,8 +375,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_class_setter_throws_invalid_class_exception(): void
     {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(999)->andThrow(new InvalidClassException('Playable class 999 not found.', 404));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->once()->with(999)->andThrow(new InvalidClassException('Playable class 999 not found.', 404));
         });
 
         $this->expectException(InvalidClassException::class);
@@ -385,8 +388,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_class_setter_does_not_change_id_on_request_exception(): void
     {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
         });
 
         $character = $this->create(['playable_class_id' => 1]);
@@ -398,8 +401,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_class_setter_does_not_change_id_on_connection_exception(): void
     {
-        $this->mock(PlayableClassService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new ConnectionException('Could not resolve host'));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')->once()->andThrow(new ConnectionException('Could not resolve host'));
         });
 
         $character = $this->create(['playable_class_id' => 2]);
@@ -424,8 +427,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_race_returns_race_data_when_playable_race_id_is_set(): void
     {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->with(2)->andReturn(['id' => 2, 'name' => 'Orc']);
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->with(2)->andReturn(['id' => 2, 'name' => 'Orc']);
         });
 
         $character = $this->create(['playable_race_id' => 2]);
@@ -441,8 +444,8 @@ class CharacterTest extends ModelTestCase
     {
         Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable race for id'));
 
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(404))));
         });
 
         $character = $this->create(['playable_race_id' => 2]);
@@ -458,8 +461,8 @@ class CharacterTest extends ModelTestCase
     {
         Log::shouldReceive('warning')->once()->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch playable race for id'));
 
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->andThrow(new ConnectionException('cURL error 6: Could not resolve host'));
         });
 
         $character = $this->create(['playable_race_id' => 2]);
@@ -473,8 +476,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_race_setter_sets_playable_race_id_when_valid(): void
     {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(4)->andReturn(['id' => 4, 'name' => 'Tauren']);
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->once()->with(4)->andReturn(['id' => 4, 'name' => 'Tauren']);
         });
 
         $character = $this->create(['playable_race_id' => null]);
@@ -486,8 +489,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_race_setter_sets_to_null_without_service_call(): void
     {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->never();
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->never();
         });
 
         $character = $this->create(['playable_race_id' => 2]);
@@ -499,8 +502,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_race_setter_throws_invalid_race_exception(): void
     {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->with(999)->andThrow(new InvalidRaceException('Playable race 999 not found.', 404));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->once()->with(999)->andThrow(new InvalidRaceException('Playable race 999 not found.', 404));
         });
 
         $this->expectException(InvalidRaceException::class);
@@ -512,8 +515,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_race_setter_does_not_change_id_on_request_exception(): void
     {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->once()->andThrow(new RequestException(new ClientResponse(new GuzzleResponse(503))));
         });
 
         $character = $this->create(['playable_race_id' => 2]);
@@ -525,8 +528,8 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function playable_race_setter_does_not_change_id_on_connection_exception(): void
     {
-        $this->mock(PlayableRaceService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('find')->once()->andThrow(new ConnectionException('Could not resolve host'));
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')->once()->andThrow(new ConnectionException('Could not resolve host'));
         });
 
         $character = $this->create(['playable_race_id' => 3]);
@@ -540,7 +543,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_returns_builder_instance(): void
     {
-        $this->mockGuildServiceWithMembers([]);
+        $this->mockGuildRoster([]);
 
         $character = new Character;
 
@@ -550,7 +553,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_includes_characters_not_in_guild_and_older_than_14_days(): void
     {
-        $this->mockGuildServiceWithMembers([]);
+        $this->mockGuildRoster([]);
 
         $prunableCharacter = $this->create([
             'name' => 'OldNonMember',
@@ -571,7 +574,7 @@ class CharacterTest extends ModelTestCase
             'updated_at' => now()->subDays(30),
         ]);
 
-        $this->mockGuildServiceWithMembers([
+        $this->mockGuildRoster([
             ['character' => ['id' => $guildMember->id, 'name' => 'GuildMember'], 'rank' => 0],
         ]);
 
@@ -584,7 +587,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_excludes_characters_updated_within_14_days(): void
     {
-        $this->mockGuildServiceWithMembers([]);
+        $this->mockGuildRoster([]);
 
         $recentCharacter = $this->create([
             'name' => 'RecentNonMember',
@@ -600,7 +603,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_excludes_characters_updated_exactly_14_days_ago(): void
     {
-        $this->mockGuildServiceWithMembers([]);
+        $this->mockGuildRoster([]);
 
         $boundaryCharacter = $this->create([
             'name' => 'BoundaryCharacter',
@@ -636,7 +639,7 @@ class CharacterTest extends ModelTestCase
             'updated_at' => now()->subDays(7),
         ]);
 
-        $this->mockGuildServiceWithMembers([
+        $this->mockGuildRoster([
             ['character' => ['id' => $guildMemberOld->id, 'name' => 'GuildMemberOld'], 'rank' => 0],
             ['character' => ['id' => $guildMemberRecent->id, 'name' => 'GuildMemberRecent'], 'rank' => 5],
         ]);
@@ -663,7 +666,7 @@ class CharacterTest extends ModelTestCase
             'updated_at' => now()->subDays(60),
         ]);
 
-        $this->mockGuildServiceWithMembers([
+        $this->mockGuildRoster([
             ['character' => ['id' => $character1->id, 'name' => 'Member1'], 'rank' => 0],
             ['character' => ['id' => $character2->id, 'name' => 'Member2'], 'rank' => 1],
         ]);
@@ -676,7 +679,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function prunable_returns_empty_when_all_characters_are_recent(): void
     {
-        $this->mockGuildServiceWithMembers([]);
+        $this->mockGuildRoster([]);
 
         $this->create([
             'name' => 'Recent1',
@@ -793,16 +796,14 @@ class CharacterTest extends ModelTestCase
     }
 
     /**
-     * Mock the GuildService to return specific members.
+     * Mock the BlizzardService to return a guild roster with specific members.
      *
      * @param  array<int, array{character: array{id: int, name: string}, rank: int}>  $memberData
      */
-    protected function mockGuildServiceWithMembers(array $memberData): void
+    protected function mockGuildRoster(array $memberData): void
     {
-        $members = collect($memberData)->map(fn (array $data) => new GuildMember($data['character'], $data['rank']));
-
-        $this->mock(GuildService::class, function (MockInterface $mock) use ($members) {
-            $mock->shouldReceive('members')->andReturn($members);
+        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($memberData) {
+            $mock->shouldReceive('getGuildRoster')->andReturn(['members' => $memberData]);
         });
     }
 }

@@ -3,8 +3,7 @@
 namespace App\Services\Blizzard\Data;
 
 use App\Models\GuildRank;
-use App\Services\Blizzard\PlayableClassService;
-use App\Services\Blizzard\PlayableRaceService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -79,8 +78,8 @@ class GuildMember
     protected function loadRelation(string $relation): mixed
     {
         return match ($relation) {
-            'character.playable_class' => app(PlayableClassService::class)->find(Arr::get($this->character, 'playable_class.id')),
-            'character.playable_race' => app(PlayableRaceService::class)->find(Arr::get($this->character, 'playable_race.id')),
+            'character.playable_class' => app(BlizzardService::class)->findPlayableClass(Arr::get($this->character, 'playable_class.id')),
+            'character.playable_race' => app(BlizzardService::class)->findPlayableRace(Arr::get($this->character, 'playable_race.id')),
             'rank' => $this->rank = GuildRank::firstWhere('position', $this->rank),
         };
     }
