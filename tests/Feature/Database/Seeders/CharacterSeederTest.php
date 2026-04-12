@@ -23,7 +23,7 @@ class CharacterSeederTest extends TestCase
     private function makeProfileResponse(int $classId = 7, int $raceId = 2): array
     {
         return [
-            'playable_class' => ['id' => $classId],
+            'character_class' => ['id' => $classId],
             'race' => ['id' => $raceId],
         ];
     }
