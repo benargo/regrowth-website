@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\GuildRank;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\Data\GuildMember;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -101,15 +100,11 @@ class AddonController extends Controller
 
         // Check if the roster data is significantly different from the roster data at the time of the last GRM upload
         $roster = $this->blizzard->getGuildRoster();
-        $members = collect(Arr::get($roster, 'members', []))
-            ->map(fn (array $memberData) => GuildMember::fromArray($memberData));
+        $raiderRankPositions = GuildRank::whereLike('name', '%Raider%')->pluck('position');
 
-        // Count the number of raiders in the official guild roster.
-        $raiderRankIds = GuildRank::whereLike('name', '%Raider%')->pluck('id');
-        $raiderCount = $members->filter(
-            fn (GuildMember $member) => $member->rank instanceof GuildRank
-                && $raiderRankIds->contains($member->rank->id)
-        )->count();
+        $raiderCount = collect(Arr::get($roster, 'members', []))
+            ->filter(fn (array $member) => $raiderRankPositions->contains(Arr::get($member, 'rank')))
+            ->count();
 
         // Count the number of raiders in the GRM upload file.
         $grmRaidersCount = 0;
