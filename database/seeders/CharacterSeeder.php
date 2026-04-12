@@ -27,8 +27,6 @@ class CharacterSeeder extends Seeder
             $characters = Character::whereNull('playable_class')->orWhereNull('playable_race')->get();
 
             $characters->each(function (Character $character) {
-                Log::info("Fetching profile for character {$character->name} to seed playable_class and playable_race.");
-
                 try {
                     $profile = $this->blizzard->getCharacterProfile(Str::lower($character->name), config('services.blizzard.realm.slug'));
 
