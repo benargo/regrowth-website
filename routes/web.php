@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
+use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
@@ -85,9 +86,9 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
     Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
-    Route::get('/addon/settings', [AddonController::class, 'settings'])->name('addon.settings');
-    Route::post('/addon/settings/councillors', [AddonController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
-    Route::delete('/addon/settings/councillors/{character}', [AddonController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
+    Route::get('/addon/settings', [AddonSettingsController::class, 'index'])->name('addon.settings');
+    Route::post('/addon/settings/councillors', [AddonSettingsController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
+    Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
 
     /**
      * Guild ranks management

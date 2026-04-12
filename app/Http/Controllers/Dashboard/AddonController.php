@@ -3,17 +3,11 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Dashboard\AddCouncillorRequest;
-use App\Http\Requests\Dashboard\RemoveCouncillorRequest;
-use App\Models\Character;
 use App\Models\GuildRank;
-use App\Models\TBC\Phase;
-use App\Models\WarcraftLogs\GuildTag;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Data\GuildMember;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
@@ -254,59 +248,5 @@ class AddonController extends Controller
                 ],
             ],
         ];
-    }
-
-    // ==========================================
-    // Settings management
-    // ==========================================
-
-    public function settings(Request $request)
-    {
-        $councillors = Character::where('is_loot_councillor', true)
-            ->orderBy('name')
-            ->get();
-
-        $tags = $this->guildTags
-            ->toCollection()
-            ->map(function (GuildTag $tag) {
-                $phase = null;
-                if ($tag->phase instanceof Phase) {
-                    $phase = $tag->phase->number;
-                }
-
-                return [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                    'count_attendance' => $tag->count_attendance,
-                    'phaseNumber' => $phase,
-                ];
-            })
-            ->values()
-            ->toArray();
-
-        return Inertia::render('Dashboard/Addon/Settings', [
-            'settings' => [
-                'councillors' => $councillors,
-                'ranks' => GuildRank::orderBy('position')->get(),
-                'tags' => $tags,
-            ],
-            'characters' => Inertia::defer(fn () => Character::with('rank')->orderBy('name')->get()),
-        ]);
-    }
-
-    public function addCouncillor(AddCouncillorRequest $request): RedirectResponse
-    {
-        $character = Character::where('name', $request->validated('character_name'))->firstOrFail();
-
-        $character->update(['is_loot_councillor' => true]);
-
-        return back();
-    }
-
-    public function removeCouncillor(RemoveCouncillorRequest $request, Character $character): RedirectResponse
-    {
-        $character->update(['is_loot_councillor' => false]);
-
-        return back();
     }
 }
