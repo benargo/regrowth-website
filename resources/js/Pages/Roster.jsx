@@ -156,7 +156,6 @@ function RosterRow({ member }) {
     const { character, rank } = member;
     const playableClass = character.playable_class;
     const playableRace = character.playable_race;
-    const classIcon = playableClass?.media?.assets?.[0]?.value;
 
     return (
         <tr className="transition-colors hover:bg-brown-800/50">
@@ -165,7 +164,7 @@ function RosterRow({ member }) {
             <td className="px-4 py-3 text-gray-300">{playableRace?.name || "Unknown"}</td>
             <td className="px-4 py-3">
                 <span className="inline-flex items-center gap-2">
-                    {classIcon && <img src={classIcon} alt="" className="h-5 w-5 rounded" />}
+                    <img src={playableClass?.media} alt="" className="h-5 w-5 rounded" />
                     <span className="text-gray-300">{playableClass?.name || "Unknown"}</span>
                 </span>
             </td>
@@ -178,12 +177,11 @@ function MemberCard({ member }) {
     const { character, rank } = member;
     const playableClass = character.playable_class;
     const playableRace = character.playable_race;
-    const classIcon = playableClass?.media?.assets?.[0]?.value;
 
     return (
         <div className="rounded-lg border border-brown-700 bg-brown-800/50 p-4">
             <div className="mb-3 flex items-center gap-3">
-                {classIcon && <img src={classIcon} alt="" className="h-10 w-10 rounded" />}
+                <img src={playableClass?.media} alt="" className="h-10 w-10 rounded" />
                 <div>
                     <h3 className="font-bold text-white">{character.name}</h3>
                     <p className="text-sm text-gray-400">

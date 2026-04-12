@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Services\Blizzard\BlizzardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,6 +17,12 @@ class GuildRosterControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Cache::shouldReceive('tags')
+            ->with(['blizzard', 'mapped-response'])
+            ->andReturnSelf();
+        Cache::shouldReceive('remember')
+            ->andReturnUsing(fn (string $key, $ttl, callable $callback) => $callback());
 
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getPlayableClasses')->andReturn([
