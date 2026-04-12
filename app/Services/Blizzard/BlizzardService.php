@@ -92,7 +92,7 @@ class BlizzardService
         $realm = $realm ?? $this->config('realm.slug');
         $name = Str::lower($name);
 
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getCharacterProfile', $realm, $name),
             21600, // 6 hours
             fn () => $this->getJson($this->profileNamespace, "/profile/wow/character/{$realm}/{$name}")
@@ -109,7 +109,7 @@ class BlizzardService
         $realm = $realm ?? $this->config('realm.slug');
         $name = Str::lower($name);
 
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getCharacterStatus', $realm, $name),
             21600, // 6 hours
             fn () => $this->getJson($this->profileNamespace, "/profile/wow/character/{$realm}/{$name}/status")
@@ -128,7 +128,7 @@ class BlizzardService
         $realmSlug = $realmSlug ?? $this->config('realm.slug');
         $nameSlug = $nameSlug ?? $this->config('guild.slug');
 
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getGuildRoster', $realmSlug, $nameSlug),
             900, // 15 minutes
             function () use ($realmSlug, $nameSlug) {
@@ -150,7 +150,7 @@ class BlizzardService
      */
     public function getPlayableRaces(): array
     {
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getPlayableRaces'),
             2592000, // 30 days
             fn () => $this->getJson($this->staticNamespace, '/data/wow/playable-race/index')
@@ -168,7 +168,7 @@ class BlizzardService
     public function findPlayableRace(int $playableRaceId): array
     {
         try {
-            return Cache::tags(['blizzard'])->remember(
+            return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
                 $this->cacheKey('findPlayableRace', $playableRaceId),
                 2592000, // 30 days
                 fn () => $this->getJson($this->staticNamespace, "/data/wow/playable-race/{$playableRaceId}")
@@ -191,7 +191,7 @@ class BlizzardService
      */
     public function getPlayableClasses(): array
     {
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getPlayableClasses'),
             2592000, // 30 days
             fn () => $this->getJson($this->staticNamespace, '/data/wow/playable-class/index')
@@ -209,7 +209,7 @@ class BlizzardService
     public function findPlayableClass(int $playableClassId): array
     {
         try {
-            return Cache::tags(['blizzard'])->remember(
+            return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
                 $this->cacheKey('findPlayableClass', $playableClassId),
                 2592000, // 30 days
                 fn () => $this->getJson($this->staticNamespace, "/data/wow/playable-class/{$playableClassId}")
@@ -230,7 +230,7 @@ class BlizzardService
      */
     public function getPlayableClassMedia(int $playableClassId): array
     {
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getPlayableClassMedia', $playableClassId),
             604800, // 7 days
             fn () => $this->getJson($this->mediaNamespace, "/data/wow/media/playable-class/{$playableClassId}")
@@ -248,7 +248,7 @@ class BlizzardService
      */
     public function findItem(int $itemId): array
     {
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('findItem', $itemId),
             2628000, // 1 month
             fn () => $this->getJson($this->staticNamespace, "/data/wow/item/{$itemId}")
@@ -262,7 +262,7 @@ class BlizzardService
      */
     public function getItemMedia(int $itemId): array
     {
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getItemMedia', $itemId),
             604800, // 7 days
             fn () => $this->getJson($this->mediaNamespace, "/data/wow/media/item/{$itemId}")
@@ -279,7 +279,7 @@ class BlizzardService
     {
         $query = $this->buildItemSearchQuery($params);
 
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('searchItems', $query),
             3600, // 1 hour
             fn () => $this->getJson($this->staticNamespace, '/data/wow/search/item', $query)
@@ -333,7 +333,7 @@ class BlizzardService
     {
         $this->validateMediaTags($tag);
 
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('findMedia', $tag, $mediaId),
             604800, // 7 days
             fn () => $this->getJson($this->mediaNamespace, "/data/wow/media/{$tag}/{$mediaId}")
@@ -358,7 +358,7 @@ class BlizzardService
 
         $query = $this->buildMediaSearchQuery($params);
 
-        return Cache::tags(['blizzard'])->remember(
+        return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('searchMedia', $query),
             3600, // 1 hour
             fn () => $this->getJson($this->mediaNamespace, '/data/wow/search/media', $query)

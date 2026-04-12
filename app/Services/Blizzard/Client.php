@@ -88,12 +88,12 @@ class Client
     {
         $cacheKey = "blizzard_access_token_{$this->region->value}";
 
-        $token = Cache::tags(['blizzard'])->get($cacheKey);
+        $token = Cache::tags(['blizzard', 'api-auth'])->get($cacheKey);
 
         if ($token === null) {
             $accessToken = $this->requestAccessToken();
 
-            Cache::tags(['blizzard'])->put($cacheKey, $accessToken->token, $accessToken->expiresIn);
+            Cache::tags(['blizzard', 'api-auth'])->put($cacheKey, $accessToken->token, $accessToken->expiresIn);
 
             return $accessToken->token;
         }

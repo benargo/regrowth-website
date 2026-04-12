@@ -41,12 +41,12 @@ class RefreshGuildRosterTest extends TestCase
             $mock->shouldNotReceive('getGuildRoster');
         });
 
-        Cache::tags(['blizzard'])->put($cacheKey, ['members' => []], 900);
+        Cache::tags(['blizzard', 'blizzard-api-response'])->put($cacheKey, ['members' => []], 900);
 
         $this->artisan('app:refresh-guild-roster')
             ->expectsOutput('The guild roster was fetched recently. Please wait for the cache to expire.')
             ->assertSuccessful();
 
-        Cache::tags(['blizzard'])->forget($cacheKey);
+        Cache::tags(['blizzard', 'blizzard-api-response'])->forget($cacheKey);
     }
 }

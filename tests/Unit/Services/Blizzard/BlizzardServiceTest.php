@@ -218,7 +218,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->getCharacterProfile('Testchar', 'thunderstrike');
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('getCharacterProfile', 'thunderstrike', 'testchar')));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('getCharacterProfile', 'thunderstrike', 'testchar')));
     }
 
     #[Test]
@@ -359,7 +359,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->getCharacterStatus('Testchar', 'thunderstrike');
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('getCharacterStatus', 'thunderstrike', 'testchar')));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('getCharacterStatus', 'thunderstrike', 'testchar')));
     }
 
     #[Test]
@@ -475,7 +475,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->getGuildRoster();
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('getGuildRoster', 'thunderstrike', 'regrowth')));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('getGuildRoster', 'thunderstrike', 'regrowth')));
     }
 
     // ==================== Playable Races ====================
@@ -551,7 +551,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->getPlayableRaces();
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('getPlayableRaces')));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('getPlayableRaces')));
     }
 
     #[Test]
@@ -638,7 +638,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->findPlayableRace(2);
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('findPlayableRace', 2)));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('findPlayableRace', 2)));
     }
 
     #[Test]
@@ -746,7 +746,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->findItem(19019);
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('findItem', 19019)));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('findItem', 19019)));
     }
 
     #[Test]
@@ -908,7 +908,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->getItemMedia(19019);
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('getItemMedia', 19019)));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('getItemMedia', 19019)));
     }
 
     #[Test]
@@ -1196,7 +1196,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->getPlayableClasses();
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('getPlayableClasses')));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('getPlayableClasses')));
     }
 
     #[Test]
@@ -1301,7 +1301,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->findPlayableClass(1);
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('findPlayableClass', 1)));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('findPlayableClass', 1)));
     }
 
     #[Test]
@@ -1444,7 +1444,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->getPlayableClassMedia(1);
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('getPlayableClassMedia', 1)));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('getPlayableClassMedia', 1)));
     }
 
     // ==================== Media ====================
@@ -1500,7 +1500,7 @@ class BlizzardServiceTest extends TestCase
         $service = $this->makeService();
         $service->findMedia('item', 19019);
 
-        $this->assertTrue(Cache::tags(['blizzard'])->has($service->cacheKey('findMedia', 'item', 19019)));
+        $this->assertTrue(Cache::tags(['blizzard', 'blizzard-api-response'])->has($service->cacheKey('findMedia', 'item', 19019)));
     }
 
     #[Test]

@@ -27,7 +27,7 @@ class RefreshGuildRoster extends Command
      */
     public function handle(BlizzardService $blizzard): void
     {
-        if (Cache::tags(['blizzard'])->has($blizzard->cacheKey('getGuildRoster'))) {
+        if (Cache::tags(['blizzard', 'blizzard-api-response'])->has($blizzard->cacheKey('getGuildRoster'))) {
             $this->error('The guild roster was fetched recently. Please wait for the cache to expire.');
 
             return;
