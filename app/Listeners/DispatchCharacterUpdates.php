@@ -15,7 +15,7 @@ class DispatchCharacterUpdates implements ShouldQueue
     /**
      * Cache key used to track when roster updates were last dispatched.
      */
-    protected string $cacheKey = 'character_updates_listener.last_dispatched';
+    protected string $cacheKey = 'character_updates_listener:last_dispatched';
 
     /**
      * Throttle: do not dispatch more frequently than every 6 hours.

@@ -88,7 +88,7 @@ class AttendanceMatrixRequest extends FormRequest
     private function resolveMinDate(): ?string
     {
         $earliestRaw = Cache::tags('warcraftlogs')->remember(
-            'attendance_matrix_earliest_date',
+            'attendance:matrix:earliest_date',
             now()->addDay(),
             fn () => Report::min('start_time'),
         );

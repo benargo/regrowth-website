@@ -86,7 +86,7 @@ class Client
 
     public function getAccessToken(): string
     {
-        $cacheKey = "blizzard_access_token_{$this->region->value}";
+        $cacheKey = "blizzard:access_token:{$this->region->value}";
 
         $token = Cache::tags(['blizzard', 'api-auth'])->get($cacheKey);
 

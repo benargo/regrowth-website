@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Log;
 
 trait RateLimited
 {
-    protected const RATE_LIMIT_CACHE_KEY = 'warcraftlogs.rate_limited';
+    protected const RATE_LIMIT_CACHE_KEY = 'warcraftlogs:rate_limited';
 
     protected const RATE_LIMIT_COOLDOWN = 3600; // 1 hour
 
-    protected const RATE_LIMIT_INFO_CACHE_KEY = 'warcraftlogs.rate_limit';
+    protected const RATE_LIMIT_INFO_CACHE_KEY = 'warcraftlogs:rate_limit';
 
     /**
      * Check if the API is currently rate limited and throw if so.

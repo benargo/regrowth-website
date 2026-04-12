@@ -68,7 +68,7 @@ class ItemController extends Controller
             ->paginate(10);
 
         $allPriorities = Priority::hydrate(
-            Cache::tags(['lootcouncil'])->remember('priorities.all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray())
+            Cache::tags(['lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray())
         );
 
         return Inertia::render('LootBiasTool/ItemEdit', [

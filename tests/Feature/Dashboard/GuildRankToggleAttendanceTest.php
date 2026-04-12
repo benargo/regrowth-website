@@ -149,13 +149,13 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 
-        Cache::put('guild_ranks.index', 'cached-data');
-        $this->assertTrue(Cache::has('guild_ranks.index'));
+        Cache::put('guild_ranks:index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks:index'));
 
         $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
-        $this->assertFalse(Cache::has('guild_ranks.index'));
+        $this->assertFalse(Cache::has('guild_ranks:index'));
     }
 }

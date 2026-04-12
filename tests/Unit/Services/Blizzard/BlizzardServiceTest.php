@@ -116,7 +116,7 @@ class BlizzardServiceTest extends TestCase
         $key2 = $service->cacheKey('findItem', 12345);
 
         $this->assertSame($key1, $key2);
-        $this->assertStringStartsWith('blizzard.findItem.', $key1);
+        $this->assertStringStartsWith('blizzard:findItem:', $key1);
     }
 
     #[Test]
@@ -150,7 +150,7 @@ class BlizzardServiceTest extends TestCase
         $key2 = $service->cacheKey('getGuildRoster');
 
         $this->assertSame($key1, $key2);
-        $this->assertStringStartsWith('blizzard.getGuildRoster.', $key1);
+        $this->assertStringStartsWith('blizzard:getGuildRoster:', $key1);
     }
 
     #[Test]

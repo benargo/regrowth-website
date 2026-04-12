@@ -35,14 +35,14 @@ class ReportsTest extends TestCase
     protected function fakeAuthToken(): void
     {
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
     }
 
     protected function fakeNotRateLimited(): void
     {
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(false);
     }
 
@@ -57,7 +57,7 @@ class ReportsTest extends TestCase
     protected function fakeRateLimitHeaders(): void
     {
         Cache::shouldReceive('put')
-            ->with('warcraftlogs.rate_limit', \Mockery::type('array'), 3600);
+            ->with('warcraftlogs:rate_limit', \Mockery::type('array'), 3600);
     }
 
     protected function makeReportData(string $code, string $title, float $startTime, float $endTime, ?array $zone = null): array

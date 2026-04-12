@@ -62,14 +62,14 @@ class WarcraftLogsServiceTest extends TestCase
 
         // Mock the auth token cache to return our test token
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
     }
 
     protected function fakeNotRateLimited(): void
     {
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(false);
     }
 
@@ -84,7 +84,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -118,7 +118,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -149,7 +149,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -180,7 +180,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -214,7 +214,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -252,7 +252,7 @@ class WarcraftLogsServiceTest extends TestCase
     public function query_caches_responses(): void
     {
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -283,7 +283,7 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertNotEquals($key1, $key2);
         $this->assertNotEquals($key1, $key3);
         $this->assertNotEquals($key3, $key4);
-        $this->assertStringStartsWith('warcraftlogs.', $key1);
+        $this->assertStringStartsWith('warcraftlogs:', $key1);
     }
 
     #[Test]
@@ -320,11 +320,11 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(false);
 
         Cache::shouldReceive('remember')
@@ -335,7 +335,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limited', true, 3600);
+            ->with('warcraftlogs:rate_limited', true, 3600);
 
         Log::shouldReceive('warning')
             ->once()
@@ -354,7 +354,7 @@ class WarcraftLogsServiceTest extends TestCase
         Http::preventStrayRequests();
 
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(true);
 
         $service = $this->getService();
@@ -378,11 +378,11 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(false);
 
         Cache::shouldReceive('remember')
@@ -402,7 +402,7 @@ class WarcraftLogsServiceTest extends TestCase
     public function custom_ttl_passed_to_query(): void
     {
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -435,7 +435,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -448,7 +448,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 793], 3600);
+            ->with('warcraftlogs:rate_limit', ['limit' => 800, 'remaining' => 793], 3600);
 
         $service = $this->getService();
         $service->publicQuery('query { guild { id } }');
@@ -468,7 +468,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -481,7 +481,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 50], 3600);
+            ->with('warcraftlogs:rate_limit', ['limit' => 800, 'remaining' => 50], 3600);
 
         Log::shouldReceive('warning')
             ->once()
@@ -508,7 +508,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -521,7 +521,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 500], 3600);
+            ->with('warcraftlogs:rate_limit', ['limit' => 800, 'remaining' => 500], 3600);
 
         Log::spy();
 

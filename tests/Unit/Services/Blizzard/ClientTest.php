@@ -232,7 +232,7 @@ class ClientTest extends TestCase
         $this->assertEquals('first_token', $firstToken);
 
         // Clear the cache to simulate expiry
-        Cache::tags(['blizzard', 'api-auth'])->forget('blizzard_access_token_eu');
+        Cache::tags(['blizzard', 'api-auth'])->forget('blizzard:access_token:eu');
 
         // Should request a new token because the cache was cleared
         $newToken = $client->getAccessToken();
@@ -253,7 +253,7 @@ class ClientTest extends TestCase
         $client = new Client('client_id', 'client_secret');
         $client->getAccessToken();
 
-        $this->assertEquals('cached_token', Cache::tags(['blizzard', 'api-auth'])->get('blizzard_access_token_eu'));
+        $this->assertEquals('cached_token', Cache::tags(['blizzard', 'api-auth'])->get('blizzard:access_token:eu'));
     }
 
     #[Test]

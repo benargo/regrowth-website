@@ -38,7 +38,7 @@ class ReportController extends Controller
         $guildTags = GuildTag::orderBy('name')->get();
 
         $earliestDate = Cache::tags('warcraftlogs')->remember(
-            'reports_earliest_date',
+            'reports:earliest_date',
             now()->addDays(7),
             fn () => Report::min('start_time'),
         );

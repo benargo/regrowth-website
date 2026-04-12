@@ -105,6 +105,6 @@ abstract class BaseService
      */
     protected function queryCacheKey(string $query, array $variables): string
     {
-        return static::BASE_CACHE_KEY.'.'.md5($query.json_encode($variables));
+        return static::BASE_CACHE_KEY.':'.md5($query.json_encode($variables));
     }
 }

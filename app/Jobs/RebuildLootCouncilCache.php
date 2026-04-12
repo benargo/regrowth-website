@@ -59,18 +59,18 @@ class RebuildLootCouncilCache implements ShouldQueue
 
     public function rebuildPrioritiesCache(): void
     {
-        Cache::tags(['lootcouncil'])->remember('priorities.all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray());
+        Cache::tags(['lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray());
 
         Log::info('LootCouncil priorities cache rebuilt.');
     }
 
     /**
-     * Rebuild the bosses.tbc.with_comments cache.
+     * Rebuild the bosses:tbc:with_comments cache.
      */
     protected function rebuildBossesCache(): void
     {
         Cache::tags(['lootcouncil'])->remember(
-            'bosses.tbc.with_comments',
+            'bosses:tbc:with_comments',
             now()->addWeek(),
             function () {
                 $bosses = Boss::query()
@@ -116,7 +116,7 @@ class RebuildLootCouncilCache implements ShouldQueue
 
         foreach ($bossIds as $bossId) {
             Cache::tags(['lootcouncil'])->remember(
-                "loot_items.boss_{$bossId}.index",
+                "loot_items:boss_{$bossId}:index",
                 now()->addDays(7),
                 function () use ($bossId) {
                     $items = Item::query()
@@ -150,7 +150,7 @@ class RebuildLootCouncilCache implements ShouldQueue
 
         foreach ($raidIds as $raidId) {
             Cache::tags(['lootcouncil'])->remember(
-                "loot_items.trash_raid_{$raidId}.index",
+                "loot_items:trash_raid_{$raidId}:index",
                 now()->addWeek(),
                 function () use ($raidId) {
                     $items = Item::query()

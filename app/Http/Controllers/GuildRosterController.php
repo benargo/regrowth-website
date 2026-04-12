@@ -22,7 +22,7 @@ class GuildRosterController extends Controller
         protected BlizzardService $blizzard,
         protected MediaService $media,
     ) {
-        $this->classes = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable-classes.index', now()->addDays(30), function () {
+        $this->classes = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable_classes:index', now()->addDays(30), function () {
             return collect(Arr::get($this->blizzard->getPlayableClasses(), 'classes'))->map(function (array $playableClass) {
                 $media = $this->blizzard->getPlayableClassMedia(Arr::get($playableClass, 'id'));
                 $assets = array_values($this->media->get(Arr::get($media, 'assets')));
@@ -31,7 +31,7 @@ class GuildRosterController extends Controller
             })->all();
         }));
 
-        $this->races = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable-races.alliance-races', now()->addDays(30), function () {
+        $this->races = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable_races:alliance_races', now()->addDays(30), function () {
             return collect(Arr::get($this->blizzard->getPlayableRaces(), 'races', []))
                 ->filter(fn (array $race) => in_array($race['id'], AllianceRaces::ids()))
                 ->values()
@@ -54,7 +54,7 @@ class GuildRosterController extends Controller
 
     protected function buildMemberCollection()
     {
-        return Cache::tags(['blizzard', 'mapped-response'])->remember('guild-roster', now()->addHours(6), function () {
+        return Cache::tags(['blizzard', 'mapped-response'])->remember('guild_roster', now()->addHours(6), function () {
             $roster = $this->blizzard->getGuildRoster();
 
             return Arr::map(Arr::get($roster, 'members'), function (array $member, string $key) {

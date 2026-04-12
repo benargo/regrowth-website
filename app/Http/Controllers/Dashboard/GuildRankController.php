@@ -22,7 +22,7 @@ class GuildRankController extends Controller
     public function list()
     {
         $guildRanks = GuildRank::hydrate(
-            Cache::remember('guild_ranks.index', now()->addDay(), function () {
+            Cache::remember('guild_ranks:index', now()->addDay(), function () {
                 return GuildRank::all()->toArray();
             })
         )->sortBy('position');
@@ -117,6 +117,6 @@ class GuildRankController extends Controller
      */
     private function clearCache(): void
     {
-        Cache::forget('guild_ranks.index');
+        Cache::forget('guild_ranks:index');
     }
 }

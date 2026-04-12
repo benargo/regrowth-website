@@ -49,7 +49,7 @@ class DailyQuestsController extends Controller
         ];
 
         $quests = DailyQuest::hydrate(
-            Cache::remember('daily_quests.all', now()->addMonth(), function () {
+            Cache::remember('daily_quests:all', now()->addMonth(), function () {
                 return DailyQuest::all()->map->getAttributes()->toArray();
             })
         )->groupBy('type');
@@ -164,7 +164,7 @@ class DailyQuestsController extends Controller
 
         $ttl = (int) now()->diffInSeconds($nextReset);
 
-        return Cache::remember('daily_quest_notification.today', $ttl, function () use ($blizzard, $media) {
+        return Cache::remember('daily_quest_notification:today', $ttl, function () use ($blizzard, $media) {
             $notification = DailyQuestNotification::with([
                 'fishingQuest',
                 'cookingQuest',

@@ -69,7 +69,7 @@ class BlizzardService
      */
     public function cacheKey(string $method, mixed ...$params): string
     {
-        return sprintf('blizzard.%s.%s', $method, md5(serialize($params)));
+        return sprintf('blizzard:%s:%s', $method, md5(serialize($params)));
     }
 
     /**

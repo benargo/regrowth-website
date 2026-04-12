@@ -61,7 +61,7 @@ class ClientAuthenticationTest extends TestCase
         );
 
         Cache::expects('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('cached_access_token');
 
         $this->assertEquals('cached_access_token', $authenticationHandler->clientToken());
@@ -85,7 +85,7 @@ class ClientAuthenticationTest extends TestCase
     public function resolved_authentication_handler_can_return_token(): void
     {
         Cache::expects('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('cached_access_token');
 
         $authHandler = $this->app->make(AuthenticationHandler::class);

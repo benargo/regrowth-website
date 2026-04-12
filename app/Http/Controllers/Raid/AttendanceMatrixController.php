@@ -44,7 +44,7 @@ class AttendanceMatrixController extends Controller
         $filters = $this->resolveFilters($request);
 
         $earliestDate = Cache::tags('warcraftlogs')->remember(
-            'attendance_matrix_earliest_date',
+            'attendance:matrix:earliest_date',
             now()->addDays(7),
             fn () => Report::min('start_time'),
         );

@@ -70,14 +70,14 @@ class CacheRebuildTest extends TestCase
         Priority::factory()->count(3)->create();
 
         Cache::tags(['lootcouncil'])->flush();
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has('priorities.all'));
+        $this->assertFalse(Cache::tags(['lootcouncil'])->has('priorities:all'));
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has('priorities.all'));
+        $this->assertTrue(Cache::tags(['lootcouncil'])->has('priorities:all'));
 
-        $cached = Cache::tags(['lootcouncil'])->get('priorities.all');
+        $cached = Cache::tags(['lootcouncil'])->get('priorities:all');
         $this->assertCount(3, $cached);
     }
 
@@ -90,12 +90,12 @@ class CacheRebuildTest extends TestCase
 
         // Ensure cache is empty
         Cache::tags(['lootcouncil'])->flush();
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has('bosses.tbc.with_comments'));
+        $this->assertFalse(Cache::tags(['lootcouncil'])->has('bosses:tbc:with_comments'));
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has('bosses.tbc.with_comments'));
+        $this->assertTrue(Cache::tags(['lootcouncil'])->has('bosses:tbc:with_comments'));
     }
 
     #[Test]
@@ -108,7 +108,7 @@ class CacheRebuildTest extends TestCase
 
         // Ensure cache is empty
         Cache::tags(['lootcouncil'])->flush();
-        $cacheKey = "loot_items.boss_{$boss->id}.index";
+        $cacheKey = "loot_items:boss_{$boss->id}:index";
         $this->assertFalse(Cache::tags(['lootcouncil'])->has($cacheKey));
 
         $job = new RebuildLootCouncilCache;
@@ -126,7 +126,7 @@ class CacheRebuildTest extends TestCase
 
         // Ensure cache is empty
         Cache::tags(['lootcouncil'])->flush();
-        $cacheKey = "loot_items.trash_raid_{$raid->id}.index";
+        $cacheKey = "loot_items:trash_raid_{$raid->id}:index";
         $this->assertFalse(Cache::tags(['lootcouncil'])->has($cacheKey));
 
         $job = new RebuildLootCouncilCache;
@@ -150,7 +150,7 @@ class CacheRebuildTest extends TestCase
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $cachedBosses = Cache::tags(['lootcouncil'])->get('bosses.tbc.with_comments');
+        $cachedBosses = Cache::tags(['lootcouncil'])->get('bosses:tbc:with_comments');
 
         $this->assertNotNull($cachedBosses);
         $this->assertArrayHasKey($raid->id, $cachedBosses);

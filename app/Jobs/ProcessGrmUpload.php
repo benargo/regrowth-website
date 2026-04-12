@@ -58,7 +58,7 @@ class ProcessGrmUpload implements ShouldQueue
     /**
      * The cache key used to track upload progress.
      */
-    public const PROGRESS_CACHE_KEY = 'grm-upload:progress';
+    public const PROGRESS_CACHE_KEY = 'grm_upload:progress';
 
     /**
      * The number of hours the progress cache entry lives.

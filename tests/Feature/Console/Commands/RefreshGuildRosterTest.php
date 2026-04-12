@@ -16,7 +16,7 @@ class RefreshGuildRosterTest extends TestCase
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
             $mock->shouldReceive('cacheKey')
                 ->with('getGuildRoster')
-                ->andReturn('blizzard.getGuildRoster.test');
+                ->andReturn('blizzard:getGuildRoster:test');
 
             $mock->shouldReceive('getGuildRoster')
                 ->once()
@@ -31,7 +31,7 @@ class RefreshGuildRosterTest extends TestCase
     #[Test]
     public function it_shows_error_when_roster_is_still_cached(): void
     {
-        $cacheKey = 'blizzard.getGuildRoster.test';
+        $cacheKey = 'blizzard:getGuildRoster:test';
 
         $this->mock(BlizzardService::class, function (MockInterface $mock) use ($cacheKey) {
             $mock->shouldReceive('cacheKey')

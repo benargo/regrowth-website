@@ -60,7 +60,7 @@ class CommentResource extends JsonResource
     protected function getReactions(Request $request): array
     {
         return Cache::tags(['lootcouncil'])->remember(
-            'comment_'.$this->id.'.reactions.all',
+            'comment_'.$this->id.':reactions:all',
             now()->addMinutes(10),
             fn () => $this->reactions->map(fn ($reaction) => [
                 'id' => $reaction->id,

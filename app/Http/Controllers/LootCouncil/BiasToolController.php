@@ -19,7 +19,7 @@ class BiasToolController extends Controller
     public function index(Request $request)
     {
         $phases = Phase::hydrate(
-            Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all()->toArray())
+            Cache::remember('phases:tbc:index', now()->addYear(), fn () => Phase::all()->toArray())
         );
 
         $currentPhase = $phases->where('start_date', '<=', now())->sortByDesc('start_date')->first();
@@ -31,12 +31,12 @@ class BiasToolController extends Controller
     {
         // Preload phases to ensure we have the latest data for the current phase (in case it was just switched)
         $phases = Phase::hydrate(
-            Cache::remember('phases.tbc.index', now()->addYear(), fn () => Phase::all()->toArray())
+            Cache::remember('phases:tbc:index', now()->addYear(), fn () => Phase::all()->toArray())
         );
 
         // Preload raids and bosses for the current phase to minimize latency when switching between them
         $raids = Raid::hydrate(
-            Cache::remember('raids.tbc.index', now()->addYear(), fn () => Raid::all()->toArray())
+            Cache::remember('raids:tbc:index', now()->addYear(), fn () => Raid::all()->toArray())
         );
         $groupedRaids = $raids->groupBy('phase_id');
 
@@ -59,7 +59,7 @@ class BiasToolController extends Controller
     protected function getBossesForRaid(Raid $raid): array
     {
         return Cache::tags(['lootcouncil'])->remember(
-            "bosses.tbc.raid_{$raid->id}.index",
+            "bosses:tbc:raid_{$raid->id}:index",
             now()->addMonth(),
             function () use ($raid) {
                 $bosses = $raid->bosses()
@@ -103,7 +103,7 @@ class BiasToolController extends Controller
         }
 
         return Cache::tags(['lootcouncil'])->remember(
-            "loot_items.boss_{$bossId}.index",
+            "loot_items:boss_{$bossId}:index",
             now()->addWeek(),
             function () use ($bossId) {
                 $items = Item::query()
@@ -133,7 +133,7 @@ class BiasToolController extends Controller
         }
 
         return Cache::tags(['lootcouncil'])->remember(
-            "loot_items.trash_raid_{$raidId}.index",
+            "loot_items:trash_raid_{$raidId}:index",
             now()->addWeek(),
             function () use ($raidId) {
                 $items = Item::query()

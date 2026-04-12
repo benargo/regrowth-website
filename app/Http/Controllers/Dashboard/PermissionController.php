@@ -55,7 +55,7 @@ class PermissionController extends Controller
         ]);
 
         // Cache the list of visible Discord roles for 5 minutes to reduce database queries.
-        $discordRoles = Cache::tags(['discord', 'permissions'])->remember('discord_roles:permissions', now()->addMinutes(5), function () {
+        $discordRoles = Cache::tags(['discord', 'permissions'])->remember('discord:roles:permissions', now()->addMinutes(5), function () {
             return DiscordRole::where('is_visible', true)
                 ->with('permissions')
                 ->orderByDesc('position')
@@ -95,7 +95,7 @@ class PermissionController extends Controller
             $role->revokePermissionTo($permission);
         }
 
-        Cache::tags(['discord', 'permissions'])->forget('discord_roles:permissions');
+        Cache::tags(['discord', 'permissions'])->forget('discord:roles:permissions');
 
         return back();
     }

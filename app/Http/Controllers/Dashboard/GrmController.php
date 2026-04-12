@@ -53,7 +53,7 @@ class GrmController extends Controller
     public function getUploadStatus(): JsonResponse
     {
         return response()->json(
-            Cache::get('grm-upload:progress', ['status' => 'unknown'])
+            Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY, ['status' => 'unknown'])
         );
     }
 
@@ -68,7 +68,7 @@ class GrmController extends Controller
 
         // Initialise progress cache before dispatching so the status endpoint
         // returns a meaningful state immediately after the redirect.
-        Cache::put('grm-upload:progress', [
+        Cache::put(ProcessGrmUpload::PROGRESS_CACHE_KEY, [
             'status' => 'queued',
             'step' => 0,
             'total' => 3,

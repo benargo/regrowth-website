@@ -156,13 +156,13 @@ class PhaseUpdateTest extends DashboardTestCase
         $phase = Phase::factory()->create();
 
         // Pre-populate with valid cached data so the middleware doesn't fail
-        Cache::put('phases.tbc.index', Phase::all()->toArray());
-        $this->assertTrue(Cache::has('phases.tbc.index'));
+        Cache::put('phases:tbc:index', Phase::all()->toArray());
+        $this->assertTrue(Cache::has('phases:tbc:index'));
 
         $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
             'start_date' => '2025-06-15T14:00',
         ]);
 
-        $this->assertFalse(Cache::has('phases.tbc.index'));
+        $this->assertFalse(Cache::has('phases:tbc:index'));
     }
 }
