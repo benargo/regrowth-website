@@ -2,15 +2,12 @@
 
 namespace App\Models;
 
+use App\Casts\AsPlayableClass;
+use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\WarcraftLogs\Report;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\Data\PlayableClass;
-use App\Services\Blizzard\Data\PlayableRace;
-use App\Services\Blizzard\Exceptions\InvalidClassException;
-use App\Services\Blizzard\Exceptions\InvalidRaceException;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,10 +16,7 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 
 class Character extends Model
 {
@@ -45,16 +39,6 @@ class Character extends Model
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'playable_class_id',
-        'playable_race_id',
-    ];
-
-    /**
      * The attributes that should be cast.
      *
      * @var array
@@ -63,8 +47,8 @@ class Character extends Model
         'is_main' => 'boolean',
         'is_loot_councillor' => 'boolean',
         'reached_level_cap_at' => 'datetime',
-        'playable_class_id' => 'integer',
-        'playable_race_id' => 'integer',
+        'playable_class' => AsPlayableClass::class,
+        'playable_race' => AsPlayableRace::class,
     ];
 
     /**
@@ -88,8 +72,8 @@ class Character extends Model
         'is_main',
         'is_loot_councillor',
         'reached_level_cap_at',
-        'playable_class_id',
-        'playable_race_id',
+        'playable_class',
+        'playable_race',
     ];
 
     /**
@@ -125,95 +109,6 @@ class Character extends Model
     public function linkedCharacters(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
-    }
-
-    public function playableClass(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if ($this->playable_class_id === null) {
-                    return PlayableClass::unknown()->toArray();
-                }
-
-                try {
-                    $blizzard = app(BlizzardService::class);
-                    $data = $blizzard->findPlayableClass($this->playable_class_id);
-                    $media = $blizzard->getPlayableClassMedia($this->playable_class_id);
-                    $assets = Arr::get($media, 'assets', []);
-                    $iconUrl = null;
-
-                    if (! empty($assets)) {
-                        $urls = app(MediaService::class)->get($assets);
-                        $fileDataId = Arr::get($media, 'assets.0.file_data_id');
-                        $iconUrl = $fileDataId !== null ? Arr::get($urls, $fileDataId) : null;
-                    }
-
-                    return new PlayableClass(
-                        id: $this->playable_class_id,
-                        name: Arr::get($data, 'name'),
-                        icon_url: $iconUrl,
-                    )->toArray();
-                } catch (RequestException|ConnectionException $e) {
-                    Log::warning('Failed to fetch playable class for id '.$this->playable_class_id.': '.$e->getMessage());
-
-                    return PlayableClass::unknown()->toArray();
-                }
-            },
-            set: function (?int $id) {
-                if ($id === null) {
-                    return ['playable_class_id' => null];
-                }
-
-                try {
-                    app(BlizzardService::class)->findPlayableClass($id);
-                } catch (InvalidClassException $e) {
-                    throw $e;
-                } catch (RequestException|ConnectionException $e) {
-                    return ['playable_class_id' => $this->attributes['playable_class_id'] ?? null];
-                }
-
-                return ['playable_class_id' => $id];
-            }
-        );
-    }
-
-    public function playableRace(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if ($this->playable_race_id === null) {
-                    return PlayableRace::unknown()->toArray();
-                }
-
-                try {
-                    $data = app(BlizzardService::class)->findPlayableRace($this->playable_race_id);
-
-                    return new PlayableRace(
-                        id: $this->playable_race_id,
-                        name: Arr::get($data, 'name'),
-                    )->toArray();
-                } catch (RequestException|ConnectionException $e) {
-                    Log::warning('Failed to fetch playable race for id '.$this->playable_race_id.': '.$e->getMessage());
-
-                    return PlayableRace::unknown()->toArray();
-                }
-            },
-            set: function (?int $id) {
-                if ($id === null) {
-                    return ['playable_race_id' => null];
-                }
-
-                try {
-                    app(BlizzardService::class)->findPlayableRace($id);
-                } catch (InvalidRaceException $e) {
-                    throw $e;
-                } catch (RequestException|ConnectionException $e) {
-                    return ['playable_race_id' => $this->attributes['playable_race_id'] ?? null];
-                }
-
-                return ['playable_race_id' => $id];
-            }
-        );
     }
 
     /**

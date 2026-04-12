@@ -232,7 +232,7 @@ class BlizzardService
     {
         return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getPlayableClassMedia', $playableClassId),
-            604800, // 7 days
+            2592000, // 30 days
             fn () => $this->getJson($this->mediaNamespace, "/data/wow/media/playable-class/{$playableClassId}")
         );
     }

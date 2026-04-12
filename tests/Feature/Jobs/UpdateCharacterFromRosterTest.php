@@ -6,12 +6,15 @@ use App\Events\AddonSettingsProcessed;
 use App\Jobs\UpdateCharacterFromRoster;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\Skip;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -266,9 +269,41 @@ class UpdateCharacterFromRosterTest extends TestCase
     }
 
     #[Test]
-    public function it_sets_playable_class_id_from_character_data(): void
+    public function it_persists_playable_class_from_character_data(): void
     {
         GuildRank::factory()->create(['position' => 1]);
+
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableClass')
+                ->with(2)
+                ->andReturn([
+                    'id' => 2,
+                    'name' => 'Paladin',
+                    'gender_name' => ['male' => 'Paladin', 'female' => 'Paladin'],
+                    'power_type' => [],
+                    'media' => [],
+                    'pvp_talent_slots' => [],
+                    'playable_races' => [],
+                ]);
+
+            $mock->shouldReceive('getPlayableClassMedia')
+                ->with(2)
+                ->andReturn([
+                    'id' => 2,
+                    'assets' => [
+                        [
+                            'key' => 'icon',
+                            'value' => 'https://render.worldofwarcraft.com/eu/icons/56/class_2.jpg',
+                            'file_data_id' => 1002,
+                        ],
+                    ],
+                ]);
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('get')
+                ->andReturn([1002 => 'https://cdn.local/paladin.jpg']);
+        });
 
         $job = new UpdateCharacterFromRoster([
             'character' => [
@@ -284,14 +319,33 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_class_id' => 2,
+            'playable_class' => json_encode([
+                'id' => 2,
+                'name' => 'Paladin',
+                'icon_url' => 'https://cdn.local/paladin.jpg',
+            ]),
         ]);
     }
 
     #[Test]
-    public function it_sets_playable_race_id_from_character_data(): void
+    public function it_persists_playable_race_from_character_data(): void
     {
         GuildRank::factory()->create(['position' => 1]);
+
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findPlayableRace')
+                ->with(3)
+                ->andReturn([
+                    'id' => 3,
+                    'name' => 'Dwarf',
+                    'gender_name' => ['male' => 'Dwarf', 'female' => 'Dwarf'],
+                    'faction' => ['type' => 'ALLIANCE', 'name' => 'Alliance'],
+                    'is_selectable' => true,
+                    'is_allied_race' => false,
+                    'playable_classes' => [],
+                    'racial_spells' => [],
+                ]);
+        });
 
         $job = new UpdateCharacterFromRoster([
             'character' => [
@@ -307,14 +361,22 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_race_id' => 3,
+            'playable_race' => json_encode([
+                'id' => 3,
+                'name' => 'Dwarf',
+            ]),
         ]);
     }
 
     #[Test]
-    public function it_sets_playable_class_id_to_null_when_missing(): void
+    public function it_leaves_playable_class_null_when_missing_from_character_data(): void
     {
         GuildRank::factory()->create(['position' => 1]);
+
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldNotReceive('findPlayableClass');
+            $mock->shouldNotReceive('getPlayableClassMedia');
+        });
 
         $job = new UpdateCharacterFromRoster([
             'character' => [
@@ -329,14 +391,18 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_class_id' => null,
+            'playable_class' => null,
         ]);
     }
 
     #[Test]
-    public function it_sets_playable_race_id_to_null_when_missing(): void
+    public function it_leaves_playable_race_null_when_missing_from_character_data(): void
     {
         GuildRank::factory()->create(['position' => 1]);
+
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldNotReceive('findPlayableRace');
+        });
 
         $job = new UpdateCharacterFromRoster([
             'character' => [
@@ -351,7 +417,7 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_race_id' => null,
+            'playable_race' => null,
         ]);
     }
 }
