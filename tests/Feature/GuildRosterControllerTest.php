@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\Blizzard\BlizzardService;
+use Database\Seeders\GuildRankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -17,6 +18,8 @@ class GuildRosterControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->seed(GuildRankSeeder::class);
 
         Cache::shouldReceive('tags')
             ->with(['blizzard', 'mapped-response'])
@@ -147,6 +150,9 @@ class GuildRosterControllerTest extends TestCase
                 ->has('members', 1)
                 ->has('members.0.character.playable_class')
                 ->has('members.0.character.playable_race')
+                ->has('members.0.rank.id')
+                ->has('members.0.rank.position')
+                ->has('members.0.rank.name')
             )
         );
     }
