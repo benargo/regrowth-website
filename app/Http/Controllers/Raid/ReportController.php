@@ -37,12 +37,6 @@ class ReportController extends Controller
 
         $guildTags = GuildTag::orderBy('name')->get();
 
-        $earliestDate = Cache::tags('warcraftlogs')->remember(
-            'reports:earliest_date',
-            now()->addDays(7),
-            fn () => Report::min('start_time'),
-        );
-
         $zoneIds = $request->zoneIds();
         $guildTagIds = $request->guildTagIds();
         $days = $request->days();
@@ -65,9 +59,7 @@ class ReportController extends Controller
                 'since_date' => $request->input('since_date'),
                 'before_date' => $request->input('before_date'),
             ],
-            'earliestDate' => $earliestDate
-                ? Carbon::parse($earliestDate, 'UTC')->timezone($timezone)->subDay()->toDateString()
-                : null,
+            'earliestDate' => $request->resolveMinDate(),
             'reports' => Inertia::defer(function () use ($zoneIds, $guildTagIds, $days, $sinceDate, $beforeDate) {
                 return ReportResource::collection(
                     Report::query()

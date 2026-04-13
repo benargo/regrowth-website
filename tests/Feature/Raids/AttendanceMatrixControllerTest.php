@@ -28,8 +28,7 @@ class AttendanceMatrixControllerTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
-        Cache::tags('warcraftlogs')->flush();
-        Cache::tags(['attendance', 'attendance:matrix'])->flush();
+        Cache::tags(['attendance', 'attendance:matrix', 'warcraftlogs'])->flush();
 
         $permission = Permission::firstOrCreate(['name' => 'view-attendance', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
