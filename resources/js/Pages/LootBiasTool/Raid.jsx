@@ -5,7 +5,6 @@ import Collapsible from "@/Components/Collapsible";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 
-
 function BossItemsSkeleton() {
     return (
         <div className="animate-pulse space-y-2">
@@ -26,18 +25,10 @@ function BossesSkeleton() {
     );
 }
 
-function BossesList({
-    bosses,
-    selectedRaid,
-    loadedBoss,
-    onBossExpand,
-    getItemsForBoss,
-}) {
-    const currentBosses = bosses[selectedRaid] ?? [];
-
+function BossesList({ bosses, selectedRaid, loadedBoss, onBossExpand, getItemsForBoss }) {
     return (
         <div className="flex flex-col gap-2">
-            {currentBosses.map((boss) => {
+            {bosses.map((boss) => {
                 const isTrash = boss.id < 0;
                 return (
                     <Collapsible
@@ -215,7 +206,7 @@ function BossItems({ items, grouped = true }) {
     );
 }
 
-function MegaMenu({ phases, raids, selectedPhase, selectedRaid, onPhaseSelect, onPhaseChange, onRaidChange }) {
+function MegaMenu({ phases, selectedPhase, selectedRaid, onPhaseSelect, onPhaseChange, onRaidChange }) {
     const [phaseOpen, setPhaseOpen] = useState(false);
     const [raidOpen, setRaidOpen] = useState(false);
     const lastPhaseTapRef = useRef({ id: null, time: 0 });
@@ -225,9 +216,9 @@ function MegaMenu({ phases, raids, selectedPhase, selectedRaid, onPhaseSelect, o
         return () => clearTimeout(singleTapTimeoutRef.current);
     }, []);
 
-    const currentRaids = raids[selectedPhase] ?? [];
     const currentPhase = phases.find((p) => p.id === selectedPhase);
-    const currentRaid = currentRaids.find((r) => r.id === selectedRaid);
+    const currentRaids = Object.values(currentPhase?.raids ?? {});
+    const currentRaid = currentPhase?.raids[selectedRaid];
 
     const handlePhaseTap = (phaseId) => {
         const now = Date.now();
@@ -341,11 +332,34 @@ function MegaMenu({ phases, raids, selectedPhase, selectedRaid, onPhaseSelect, o
     );
 }
 
-export default function Index({ phases, current_phase, raids, bosses, selected_raid_id, boss_items }) {
-    const [selectedPhase, setSelectedPhase] = useState(current_phase);
+export default function Index({ phases, selected_phase_id, bosses, selected_raid_id, boss_items }) {
+    const [selectedPhase, setSelectedPhase] = useState(selected_phase_id);
     const [selectedRaid, setSelectedRaid] = useState(selected_raid_id);
+    const [lastVisitedRaids, setLastVisitedRaids] = useState(() => {
+        const result = {};
+        try {
+            phases.forEach((phase) => {
+                const stored = sessionStorage.getItem(`loot_last_visited_raid_${phase.id}`);
+                if (stored !== null) {
+                    result[phase.id] = JSON.parse(stored);
+                }
+            });
+        } catch {}
+        result[selected_phase_id] = selected_raid_id;
+        return result;
+    });
+
+    useEffect(() => {
+        try {
+            sessionStorage.setItem(`loot_last_visited_raid_${selected_phase_id}`, JSON.stringify(selected_raid_id));
+        } catch {}
+        setLastVisitedRaids((prev) => ({ ...prev, [selected_phase_id]: selected_raid_id }));
+    }, [selected_phase_id, selected_raid_id]);
     const [loadedItems, setLoadedItems] = useState({});
     const [loadedBoss, setloadedBoss] = useState(null);
+
+    const currentPhase = phases.find((p) => p.id === selectedPhase);
+    const raids = Object.values(currentPhase?.raids ?? {});
 
     // Refs to access current values inside callbacks and effects without stale closures
     const loadedItemsRef = useRef(loadedItems);
@@ -399,42 +413,52 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
     }, [loadedBoss]);
 
     const handlePhaseChange = (phaseId) => {
+        const phaseRaids = phases.find((p) => p.id === phaseId)?.raids ?? {};
+        const lastRaidId = lastVisitedRaids[phaseId];
+        const targetRaid = lastRaidId && phaseRaids[lastRaidId] ? phaseRaids[lastRaidId] : Object.values(phaseRaids)[0];
+
+        if (!targetRaid) {
+            return;
+        }
+
         setSelectedPhase(phaseId);
-        const firstRaidInPhase = raids[phaseId]?.[0]?.id ?? null;
-        setSelectedRaid(firstRaidInPhase);
+        setSelectedRaid(targetRaid.id);
         setLoadedItems({});
         setloadedBoss(null);
         loadQueueRef.current = [];
 
-        if (firstRaidInPhase) {
-            router.visit(route("loot.phase", { phase: phaseId, raid_id: firstRaidInPhase }), {
-                only: ["selected_raid_id", "bosses"],
-                preserveState: true,
-                preserveScroll: true,
-            });
-        }
+        router.visit(route("loot.raids.show", { raid: targetRaid.id, name: targetRaid.slug }));
     };
 
     const handlePhaseSelect = (phaseId) => {
+        const phaseRaids = phases.find((p) => p.id === phaseId)?.raids ?? {};
+        const lastRaidId = lastVisitedRaids[phaseId];
+        const targetRaid = lastRaidId && phaseRaids[lastRaidId] ? phaseRaids[lastRaidId] : Object.values(phaseRaids)[0];
+
         setSelectedPhase(phaseId);
-        const firstRaidInPhase = raids[phaseId]?.[0]?.id ?? null;
-        setSelectedRaid(firstRaidInPhase);
+        setSelectedRaid(targetRaid?.id ?? null);
         setLoadedItems({});
         setloadedBoss(null);
         loadQueueRef.current = [];
     };
 
     const handleRaidChange = (raidId) => {
+        const raid = currentPhase?.raids[raidId];
+
+        if (!raid) {
+            return;
+        }
+
         setSelectedRaid(raidId);
+        try {
+            sessionStorage.setItem(`loot_last_visited_raid_${selectedPhase}`, JSON.stringify(raidId));
+        } catch {}
+        setLastVisitedRaids((prev) => ({ ...prev, [selectedPhase]: raidId }));
         setLoadedItems({});
         setloadedBoss(null);
         loadQueueRef.current = [];
 
-        router.visit(route("loot.phase", { phase: selectedPhase, raid_id: raidId }), {
-            only: ["selected_raid_id", "bosses"],
-            preserveState: true,
-            preserveScroll: true,
-        });
+        router.visit(route("loot.raids.show", { raid: raidId, name: raid.slug }));
     };
 
     const handleBossExpand = (bossId) => {
@@ -452,9 +476,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
         doLoadBossRef.current(bossId);
     };
 
-    const currentRaids = raids[selectedPhase] ?? [];
-    const currentPhase = phases.find((p) => p.id === selectedPhase);
-
     const getItemsForBoss = (bossId) => {
         return loadedItems[bossId] ?? [];
     };
@@ -467,7 +488,6 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
                 {/* Mobile navigation */}
                 <MegaMenu
                     phases={phases}
-                    raids={raids}
                     selectedPhase={selectedPhase}
                     selectedRaid={selectedRaid}
                     onPhaseSelect={handlePhaseSelect}
@@ -493,7 +513,7 @@ export default function Index({ phases, current_phase, raids, bosses, selected_r
                     ))}
                 </div>
                 <div className="mb-8 hidden flex-wrap gap-2 md:flex">
-                    {currentRaids.map((raid) => (
+                    {raids?.map((raid) => (
                         <button
                             key={raid.id}
                             onClick={() => handleRaidChange(raid.id)}

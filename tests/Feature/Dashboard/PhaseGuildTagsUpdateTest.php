@@ -187,13 +187,13 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $phase = Phase::factory()->create();
 
         // Pre-populate with valid cached data so the middleware doesn't fail
-        Cache::put('phases:tbc:index', Phase::all()->toArray());
-        $this->assertTrue(Cache::has('phases:tbc:index'));
+        Cache::put('phases:index', Phase::all()->toArray());
+        $this->assertTrue(Cache::has('phases:index'));
 
         $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
-        $this->assertFalse(Cache::has('phases:tbc:index'));
+        $this->assertFalse(Cache::has('phases:index'));
     }
 }

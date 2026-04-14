@@ -4,6 +4,7 @@ namespace App\Models\TBC;
 
 use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
+use App\Helpers\Database\Eloquent\Traits\HasManyKeyBy;
 use App\Models\WarcraftLogs\GuildTag;
 use Database\Factories\TBC\PhaseFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 class Phase extends Model implements DatasetModel
 {
     /** @use HasFactory<PhaseFactory> */
-    use HasFactory;
+    use HasFactory, HasManyKeyBy;
 
     /**
      * The table associated with the model.
@@ -80,7 +81,7 @@ class Phase extends Model implements DatasetModel
      */
     public function raids(): HasMany
     {
-        return $this->hasMany(Raid::class);
+        return $this->hasManyKeyBy('id', Raid::class);
     }
 
     /**

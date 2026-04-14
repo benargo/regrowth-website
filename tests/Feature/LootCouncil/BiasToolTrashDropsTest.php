@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\MockInterface;
@@ -62,9 +63,11 @@ class BiasToolTrashDropsTest extends TestCase
         );
     }
 
-    protected function phaseUrl(Phase $phase): string
+    protected function raidUrl(Raid $raid, ?string $name = null): string
     {
-        return "/loot/phases/phase-{$phase->id}";
+        $name ??= Str::slug($raid->name);
+
+        return "/loot/raids/{$raid->id}/{$name}";
     }
 
     #[Test]
@@ -78,15 +81,15 @@ class BiasToolTrashDropsTest extends TestCase
         // Create an item with no boss_id (trash drop)
         Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
 
-        $response = $this->actingAs($user)->get($this->phaseUrl($phase));
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('bosses')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has("bosses.{$raid->id}", 2) // Real boss + Trash drops
-                ->where("bosses.{$raid->id}.1.name", 'Trash drops')
-                ->where("bosses.{$raid->id}.1.id", -1 * $raid->id)
+                ->has('bosses', 2) // Real boss + Trash drops
+                ->where('bosses.1.name', 'Trash drops')
+                ->where('bosses.1.id', -1 * $raid->id)
             )
         );
     }
@@ -102,13 +105,13 @@ class BiasToolTrashDropsTest extends TestCase
         // Only items with a boss
         Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
 
-        $response = $this->actingAs($user)->get($this->phaseUrl($phase));
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('bosses')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has("bosses.{$raid->id}", 1) // Only the real boss
+                ->has('bosses', 1) // Only the real boss
             )
         );
     }
@@ -122,14 +125,14 @@ class BiasToolTrashDropsTest extends TestCase
         Boss::factory()->create(['raid_id' => $raid->id]);
 
         // Initial request to get page version
-        $response = $this->actingAs($user)->get($this->phaseUrl($phase));
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
         $pageData = $response->viewData('page');
 
         // Partial reload without boss_id (defaults to null/0)
-        $partialResponse = $this->actingAs($user)->get($this->phaseUrl($phase), [
+        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid), [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
-            'X-Inertia-Partial-Component' => 'LootBiasTool/Phase',
+            'X-Inertia-Partial-Component' => 'LootBiasTool/Raid',
             'X-Inertia-Partial-Data' => 'boss_items',
         ]);
 
@@ -149,15 +152,15 @@ class BiasToolTrashDropsTest extends TestCase
         Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
 
         // Initial request to get page version
-        $response = $this->actingAs($user)->get($this->phaseUrl($phase));
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
         $pageData = $response->viewData('page');
 
         // Partial reload with negative boss_id (trash drops)
         $negativeBossId = -1 * $raid->id;
-        $partialResponse = $this->actingAs($user)->get($this->phaseUrl($phase)."?boss_id={$negativeBossId}", [
+        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid)."?boss_id={$negativeBossId}", [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
-            'X-Inertia-Partial-Component' => 'LootBiasTool/Phase',
+            'X-Inertia-Partial-Component' => 'LootBiasTool/Raid',
             'X-Inertia-Partial-Data' => 'boss_items',
         ]);
 
@@ -176,13 +179,13 @@ class BiasToolTrashDropsTest extends TestCase
         $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
         Comment::factory()->count(3)->create(['item_id' => $item->id]);
 
-        $response = $this->actingAs($user)->get($this->phaseUrl($phase));
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('bosses')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where("bosses.{$raid->id}.0.comments_count", 3)
+                ->where('bosses.0.comments_count', 3)
             )
         );
     }

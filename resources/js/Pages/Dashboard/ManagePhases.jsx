@@ -231,9 +231,9 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                                     {/* Raids */}
                                     <div className="text-md my-4 md:mr-8">
                                         <h3 className="text-lg font-bold">Raids in this phase</h3>
-                                        {phase.raids.length > 0 ? (
+                                        {Object.values(phase.raids).length > 0 ? (
                                             <ul>
-                                                {phase.raids.map((raid) => (
+                                                {Object.values(phase.raids).map((raid) => (
                                                     <li key={raid.id} className="flex">
                                                         {raid.name}
                                                     </li>

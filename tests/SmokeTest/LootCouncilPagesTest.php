@@ -9,6 +9,7 @@ use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
+use Illuminate\Support\Str;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -90,13 +91,25 @@ class LootCouncilPagesTest extends TestCase
     }
 
     #[Test]
-    public function loot_phase_page_loads(): void
+    public function loot_phase_page_redirects(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
         Raid::factory()->create(['phase_id' => $phase->id]);
 
         $response = $this->actingAs($user)->get(route('loot.phase', ['phase' => $phase->id]));
+
+        $response->assertRedirect();
+    }
+
+    #[Test]
+    public function loot_raid_page_loads(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+
+        $response = $this->actingAs($user)->get(route('loot.raids.show', ['raid' => $raid->id, 'name' => Str::slug($raid->name)]));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

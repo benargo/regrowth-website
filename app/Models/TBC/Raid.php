@@ -5,12 +5,16 @@ namespace App\Models\TBC;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use Database\Factories\TBC\RaidFactory;
+use Illuminate\Database\Eloquent\Attributes\Appends;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Str;
 
+#[Appends(['slug'])]
 class Raid extends Model
 {
     /** @use HasFactory<RaidFactory> */
@@ -41,6 +45,18 @@ class Raid extends Model
      * @var array<string>
      */
     protected $hidden = ['created_at', 'updated_at'];
+
+    /**
+     * Get the slug attribute for the raid, which is a URL-friendly version of the raid name.
+     *
+     * This is not stored in the database, but is generated on the fly when accessed. It is used for creating SEO-friendly URLs for raids.
+     */
+    public function slug(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => Str::slug($this->name),
+        );
+    }
 
     /**
      * Get the phase that this raid belongs to.

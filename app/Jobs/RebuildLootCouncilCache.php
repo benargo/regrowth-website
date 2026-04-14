@@ -65,12 +65,12 @@ class RebuildLootCouncilCache implements ShouldQueue
     }
 
     /**
-     * Rebuild the bosses:tbc:with_comments cache.
+     * Rebuild the bosses:with_comments cache.
      */
     protected function rebuildBossesCache(): void
     {
         Cache::tags(['lootcouncil'])->remember(
-            'bosses:tbc:with_comments',
+            'bosses:with_comments',
             now()->addWeek(),
             function () {
                 $bosses = Boss::query()

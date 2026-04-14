@@ -20,7 +20,7 @@ class PermissionController extends Controller
      */
     public function index(Request $request): RedirectResponse
     {
-        $firstPermissionGroup = Cache::tags(['permissions'])->remember('permissions:first_group', now()->addMinutes(5), function () {
+        $firstPermissionGroup = Cache::tags(['db', 'permissions'])->remember('permissions:first_group', now()->addMinutes(5), function () {
             return Permission::whereNotNull('group')->orderBy('group')->value('group');
         });
 
@@ -34,7 +34,7 @@ class PermissionController extends Controller
     {
         // Cache the list of permission groups for 5 minutes to reduce database queries.
         $permissionGroups = collect(
-            Cache::tags(['permissions'])->remember('permissions:groups', now()->addMinutes(5), function () {
+            Cache::tags(['db', 'permissions'])->remember('permissions:groups', now()->addMinutes(5), function () {
                 return Permission::whereNotNull('group')->distinct('group')->pluck('group')
                     ->map(fn ($item) => [
                         'name' => Str::headline($item),
@@ -55,7 +55,7 @@ class PermissionController extends Controller
         ]);
 
         // Cache the list of visible Discord roles for 5 minutes to reduce database queries.
-        $discordRoles = Cache::tags(['discord', 'permissions'])->remember('discord:roles:permissions', now()->addMinutes(5), function () {
+        $discordRoles = Cache::tags(['db', 'discord', 'permissions'])->remember('discord:roles:with_permissions', now()->addMinutes(5), function () {
             return DiscordRole::where('is_visible', true)
                 ->with('permissions')
                 ->orderByDesc('position')
@@ -95,7 +95,7 @@ class PermissionController extends Controller
             $role->revokePermissionTo($permission);
         }
 
-        Cache::tags(['discord', 'permissions'])->forget('discord:roles:permissions');
+        Cache::forget('discord:roles:with_permissions');
 
         return back();
     }

@@ -111,6 +111,31 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_generates_a_slug_from_the_name(): void
+    {
+        $raid = $this->create(['name' => 'Serpentshrine Cavern']);
+
+        $this->assertSame('serpentshrine-cavern', $raid->slug);
+    }
+
+    #[Test]
+    public function it_generates_a_slug_with_special_characters_removed(): void
+    {
+        $raid = $this->create(['name' => "Magtheridon's Lair"]);
+
+        $this->assertSame('magtheridons-lair', $raid->slug);
+    }
+
+    #[Test]
+    public function slug_is_not_persisted_to_the_database(): void
+    {
+        $raid = $this->create(['name' => 'Karazhan']);
+
+        $this->assertArrayNotHasKey('slug', $raid->getAttributes());
+        $this->assertSame('karazhan', $raid->slug);
+    }
+
+    #[Test]
     public function it_belongs_to_a_phase(): void
     {
         $phase = Phase::factory()->create();

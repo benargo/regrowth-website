@@ -15,6 +15,7 @@ use App\Http\Controllers\LootCouncil\CommentReactionController;
 use App\Http\Controllers\LootCouncil\ItemController;
 use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
+use App\Http\Controllers\LootCouncil\RaidController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\Raid\AttendanceController;
 use App\Http\Controllers\Raid\AttendanceMatrixController;
@@ -36,6 +37,7 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
 Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], function () {
     Route::get('/', [BiasToolController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('index');
     Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('phase');
+    Route::get('/raids/{raid}/{name?}', [RaidController::class, 'show'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('raids.show');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->can('create', 'App\Models\LootCouncil\Comment')->name('items.comments.store');
     Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('items.notes.store');
     Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('items.priorities.update');

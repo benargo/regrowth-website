@@ -90,12 +90,12 @@ class CacheRebuildTest extends TestCase
 
         // Ensure cache is empty
         Cache::tags(['lootcouncil'])->flush();
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has('bosses:tbc:with_comments'));
+        $this->assertFalse(Cache::tags(['lootcouncil'])->has('bosses:with_comments'));
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has('bosses:tbc:with_comments'));
+        $this->assertTrue(Cache::tags(['lootcouncil'])->has('bosses:with_comments'));
     }
 
     #[Test]
@@ -150,7 +150,7 @@ class CacheRebuildTest extends TestCase
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $cachedBosses = Cache::tags(['lootcouncil'])->get('bosses:tbc:with_comments');
+        $cachedBosses = Cache::tags(['lootcouncil'])->get('bosses:with_comments');
 
         $this->assertNotNull($cachedBosses);
         $this->assertArrayHasKey($raid->id, $cachedBosses);

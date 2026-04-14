@@ -17,6 +17,7 @@ class RaidResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
             'difficulty' => $this->difficulty,
             'max_players' => $this->max_players,
             'phase' => $this->whenLoaded('phase'),
