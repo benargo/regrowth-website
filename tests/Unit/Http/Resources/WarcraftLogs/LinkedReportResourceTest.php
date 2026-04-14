@@ -4,8 +4,8 @@ namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
 use App\Http\Resources\UserResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
+use App\Models\Raids\Report;
 use App\Models\User;
-use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -23,6 +23,7 @@ class LinkedReportResourceTest extends TestCase
 
         $array = (new LinkedReportResource($report))->toArray(new Request);
 
+        $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('code', $array);
         $this->assertArrayHasKey('title', $array);
         $this->assertArrayHasKey('start_time', $array);
@@ -38,6 +39,7 @@ class LinkedReportResourceTest extends TestCase
 
         $array = (new LinkedReportResource($report))->toArray(new Request);
 
+        $this->assertSame($report->id, $array['id']);
         $this->assertSame($report->code, $array['code']);
         $this->assertSame($report->title, $array['title']);
         $this->assertEquals($report->start_time, $array['start_time']);

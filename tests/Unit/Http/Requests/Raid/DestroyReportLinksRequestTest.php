@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Requests\Raid;
 
 use App\Http\Requests\Raid\DestroyReportLinksRequest;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Routing\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

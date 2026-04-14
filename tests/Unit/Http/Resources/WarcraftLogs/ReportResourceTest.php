@@ -4,8 +4,8 @@ namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
 use App\Http\Resources\WarcraftLogs\ReportResource;
 use App\Models\Character;
+use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,6 +24,7 @@ class ReportResourceTest extends TestCase
 
         $array = (new ReportResource($report))->toArray(new Request);
 
+        $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('code', $array);
         $this->assertArrayHasKey('title', $array);
         $this->assertArrayHasKey('start_time', $array);
@@ -41,6 +42,7 @@ class ReportResourceTest extends TestCase
 
         $array = (new ReportResource($report))->toArray(new Request);
 
+        $this->assertSame($report->id, $array['id']);
         $this->assertSame($report->code, $array['code']);
         $this->assertSame($report->title, $array['title']);
         $this->assertEquals($report->start_time, $array['start_time']);

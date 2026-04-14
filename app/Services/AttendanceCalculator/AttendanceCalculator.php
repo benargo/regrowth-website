@@ -6,7 +6,7 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 

@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 

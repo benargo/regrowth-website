@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Models\WarcraftLogs;
 
+use App\Models\Raids\Report;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;

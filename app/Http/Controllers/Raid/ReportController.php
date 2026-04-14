@@ -8,8 +8,8 @@ use App\Http\Requests\Raid\ReportsIndexRequest;
 use App\Http\Requests\Raid\StoreReportLinksRequest;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Http\Resources\WarcraftLogs\ReportResource;
+use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -131,19 +131,19 @@ class ReportController extends Controller
      */
     public function destroyLinks(DestroyReportLinksRequest $request, Report $report): RedirectResponse
     {
-        $linkedCodes = $report->linkedReports()
+        $linkedIds = $report->linkedReports()
             ->wherePivotNotNull('created_by')
-            ->pluck('code')
+            ->pluck('id')
             ->all();
 
-        if (! empty($linkedCodes)) {
+        if (! empty($linkedIds)) {
             // Delete forward direction: report → linked
-            $report->linkedReports()->detach($linkedCodes);
+            $report->linkedReports()->detach($linkedIds);
 
             // Delete reverse direction: linked → report
-            DB::table('pivot_wcl_reports_links')
-                ->whereIn('report_1', $linkedCodes)
-                ->where('report_2', $report->code)
+            DB::table('raid_report_links')
+                ->whereIn('report_1', $linkedIds)
+                ->where('report_2', $report->id)
                 ->delete();
         }
 
@@ -165,15 +165,15 @@ class ReportController extends Controller
         foreach ($allReports as $r1) {
             $r1->load('linkedReports');
 
-            $existingCodes = $r1->linkedReports->pluck('code')->all();
+            $existingIds = $r1->linkedReports->pluck('id')->all();
 
-            $newCodes = $allReports
-                ->where('code', '!=', $r1->code)
-                ->pluck('code')
-                ->diff($existingCodes);
+            $newIds = $allReports
+                ->where('id', '!=', $r1->id)
+                ->pluck('id')
+                ->diff($existingIds);
 
-            $pivotData = $newCodes
-                ->mapWithKeys(fn ($code) => [$code => ['created_by' => $request->user()->getKey()]])
+            $pivotData = $newIds
+                ->mapWithKeys(fn ($id) => [$id => ['created_by' => $request->user()->getKey()]])
                 ->all();
 
             if (! empty($pivotData)) {

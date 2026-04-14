@@ -4,7 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\Character;
 use App\Models\CharacterReport;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,7 +20,7 @@ class CharacterReportTest extends TestCase
     {
         $pivot = new CharacterReport;
 
-        $this->assertSame('pivot_characters_wcl_reports', $pivot->getTable());
+        $this->assertSame('pivot_characters_raid_reports', $pivot->getTable());
     }
 
     #[Test]
@@ -69,7 +69,7 @@ class CharacterReportTest extends TestCase
         $report->characters()->attach($character->id, ['presence' => 1]);
 
         $pivot = CharacterReport::where('character_id', $character->id)
-            ->where('wcl_report_code', $report->code)
+            ->where('raid_report_id', $report->id)
             ->first();
 
         $this->assertInstanceOf(Report::class, $pivot->report);
@@ -106,7 +106,7 @@ class CharacterReportTest extends TestCase
         $report->characters()->attach($character->id, ['presence' => 1]);
 
         $pivot = CharacterReport::where('character_id', $character->id)
-            ->where('wcl_report_code', $report->code)
+            ->where('raid_report_id', $report->id)
             ->first();
 
         $this->assertInstanceOf(Character::class, $pivot->character);

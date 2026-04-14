@@ -6,8 +6,8 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
+use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
 use App\Services\AttendanceCalculator\AttendanceMatrix;
 use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
@@ -1188,9 +1188,9 @@ class AttendanceCalculatorTest extends TestCase
 
     protected function linkReports(Report $report1, Report $report2): void
     {
-        \DB::table('pivot_wcl_reports_links')->insert([
-            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        \DB::table('raid_report_links')->insert([
+            ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 

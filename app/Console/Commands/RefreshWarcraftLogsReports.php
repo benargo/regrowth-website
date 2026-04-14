@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
+use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
 use Illuminate\Bus\Batch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;

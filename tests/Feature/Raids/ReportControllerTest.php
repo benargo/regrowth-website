@@ -5,9 +5,9 @@ namespace Tests\Feature\Raids;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -189,6 +189,7 @@ class ReportControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data.0.id')
                 ->has('reports.data.0.code')
                 ->has('reports.data.0.title')
                 ->has('reports.data.0.start_time')
@@ -606,6 +607,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
+            ->has('report.data.id')
             ->has('report.data.code')
             ->has('report.data.title')
             ->has('report.data.start_time')
@@ -644,7 +646,7 @@ class ReportControllerTest extends TestCase
     {
         $report1 = Report::factory()->withoutGuildTag()->create(['title' => 'Main Report']);
         $report2 = Report::factory()->withoutGuildTag()->create(['title' => 'Linked Report']);
-        $report1->linkedReports()->attach($report2->code, ['created_by' => null]);
+        $report1->linkedReports()->attach($report2->id, ['created_by' => null]);
 
         $user = User::factory()->officer()->create();
 
@@ -913,15 +915,15 @@ class ReportControllerTest extends TestCase
         ]);
 
         // Forward direction: report → other
-        $this->assertDatabaseHas('pivot_wcl_reports_links', [
-            'report_1' => $report->code,
-            'report_2' => $other->code,
+        $this->assertDatabaseHas('raid_report_links', [
+            'report_1' => $report->id,
+            'report_2' => $other->id,
         ]);
 
         // Reverse direction: other → report
-        $this->assertDatabaseHas('pivot_wcl_reports_links', [
-            'report_1' => $other->code,
-            'report_2' => $report->code,
+        $this->assertDatabaseHas('raid_report_links', [
+            'report_1' => $other->id,
+            'report_2' => $report->id,
         ]);
     }
 
@@ -940,14 +942,14 @@ class ReportControllerTest extends TestCase
 
         // All 6 directed pairs should exist
         foreach ([
-            [$report->code, $reportA->code],
-            [$reportA->code, $report->code],
-            [$report->code, $reportB->code],
-            [$reportB->code, $report->code],
-            [$reportA->code, $reportB->code],
-            [$reportB->code, $reportA->code],
+            [$report->id, $reportA->id],
+            [$reportA->id, $report->id],
+            [$report->id, $reportB->id],
+            [$reportB->id, $report->id],
+            [$reportA->id, $reportB->id],
+            [$reportB->id, $reportA->id],
         ] as [$r1, $r2]) {
-            $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => $r1, 'report_2' => $r2]);
+            $this->assertDatabaseHas('raid_report_links', ['report_1' => $r1, 'report_2' => $r2]);
         }
     }
 
@@ -957,7 +959,7 @@ class ReportControllerTest extends TestCase
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
-        $report->linkedReports()->attach($other->code, ['created_by' => null]);
+        $report->linkedReports()->attach($other->id, ['created_by' => null]);
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
@@ -965,7 +967,7 @@ class ReportControllerTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseCount('pivot_wcl_reports_links', 2); // forward + reverse, no duplicates
+        $this->assertDatabaseCount('raid_report_links', 2); // forward + reverse, no duplicates
     }
 
     #[Test]
@@ -1033,19 +1035,19 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Create manual bidirectional links: report ↔ B, report ↔ C, B ↔ C
-        $report->linkedReports()->attach($reportB->code, ['created_by' => $user->id]);
-        $reportB->linkedReports()->attach($report->code, ['created_by' => $user->id]);
-        $report->linkedReports()->attach($reportC->code, ['created_by' => $user->id]);
-        $reportC->linkedReports()->attach($report->code, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($reportB->id, ['created_by' => $user->id]);
+        $reportB->linkedReports()->attach($report->id, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($reportC->id, ['created_by' => $user->id]);
+        $reportC->linkedReports()->attach($report->id, ['created_by' => $user->id]);
 
         $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
 
         // Forward links from report should be gone
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $report->code, 'report_2' => $reportB->code]);
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $report->code, 'report_2' => $reportC->code]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportC->id]);
         // Reverse links back to report should be gone
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $reportB->code, 'report_2' => $report->code]);
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $reportC->code, 'report_2' => $report->code]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $reportC->id, 'report_2' => $report->id]);
     }
 
     #[Test]
@@ -1056,13 +1058,13 @@ class ReportControllerTest extends TestCase
         $autoLinked = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($autoLinked->code, ['created_by' => null]);
-        $autoLinked->linkedReports()->attach($report->code, ['created_by' => null]);
+        $report->linkedReports()->attach($autoLinked->id, ['created_by' => null]);
+        $autoLinked->linkedReports()->attach($report->id, ['created_by' => null]);
 
         $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
 
-        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => $report->code, 'report_2' => $autoLinked->code]);
-        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => $autoLinked->code, 'report_2' => $report->code]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $report->id, 'report_2' => $autoLinked->id]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $autoLinked->id, 'report_2' => $report->id]);
     }
 
     #[Test]
@@ -1075,7 +1077,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
 
         $response->assertRedirect();
-        $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
+        $this->assertDatabaseCount('raid_report_links', 0);
     }
 
     #[Test]
@@ -1086,7 +1088,7 @@ class ReportControllerTest extends TestCase
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($other->code, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($other->id, ['created_by' => $user->id]);
         Cache::tags('warcraftlogs')->put('some_key', 'some_value', 3600);
 
         $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
@@ -1128,7 +1130,7 @@ class ReportControllerTest extends TestCase
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($other->code, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($other->id, ['created_by' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('raids.reports.show', $report))
@@ -1148,8 +1150,8 @@ class ReportControllerTest extends TestCase
         $manualLinked = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($autoLinked->code, ['created_by' => null]);
-        $report->linkedReports()->attach($manualLinked->code, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($autoLinked->id, ['created_by' => null]);
+        $report->linkedReports()->attach($manualLinked->id, ['created_by' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('raids.reports.show', $report))

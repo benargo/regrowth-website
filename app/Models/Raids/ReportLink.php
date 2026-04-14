@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\WarcraftLogs;
+namespace App\Models\Raids;
 
 use App\Events\ReportLinkDeleted;
 use App\Events\ReportLinkSaved;
@@ -15,7 +15,7 @@ class ReportLink extends Pivot
      *
      * @var string
      */
-    protected $table = 'pivot_wcl_reports_links';
+    protected $table = 'raid_report_links';
 
     /**
      * All of the relationships to be touched.
@@ -27,7 +27,7 @@ class ReportLink extends Pivot
     /**
      * The event map for the model.
      *
-     * @var array<string, string>
+     * @var array<string, class-string>
      */
     protected $dispatchesEvents = [
         'saved' => ReportLinkSaved::class,
@@ -47,7 +47,7 @@ class ReportLink extends Pivot
      */
     public function report1(): BelongsTo
     {
-        return $this->belongsTo(Report::class, 'report_1', 'code');
+        return $this->belongsTo(Report::class, 'report_1');
     }
 
     /**
@@ -55,6 +55,6 @@ class ReportLink extends Pivot
      */
     public function report2(): BelongsTo
     {
-        return $this->belongsTo(Report::class, 'report_2', 'code');
+        return $this->belongsTo(Report::class, 'report_2');
     }
 }

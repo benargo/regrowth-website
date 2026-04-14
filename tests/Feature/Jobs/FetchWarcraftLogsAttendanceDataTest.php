@@ -5,7 +5,7 @@ namespace Tests\Feature\Jobs;
 use App\Jobs\FetchWarcraftLogsAttendanceData;
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\Data\GuildAttendance;
 use App\Services\WarcraftLogs\Data\PlayerAttendance;
@@ -44,9 +44,9 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job = new FetchWarcraftLogsAttendanceData;
         $job->handle($attendanceService);
 
-        $this->assertDatabaseHas('pivot_characters_wcl_reports', [
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
             'character_id' => $character->id,
-            'wcl_report_code' => 'abc123',
+            'raid_report_id' => $report->id,
             'presence' => 1,
         ]);
     }
@@ -70,9 +70,9 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job = new FetchWarcraftLogsAttendanceData;
         $job->handle($attendanceService);
 
-        $this->assertDatabaseHas('pivot_characters_wcl_reports', [
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
             'character_id' => $character->id,
-            'wcl_report_code' => 'bench001',
+            'raid_report_id' => $report->id,
             'presence' => 2,
         ]);
     }
@@ -100,9 +100,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job = new FetchWarcraftLogsAttendanceData;
         $job->handle($attendanceService);
 
-        $this->assertDatabaseMissing('pivot_characters_wcl_reports', [
+        $this->assertDatabaseMissing('pivot_characters_raid_reports', [
             'character_id' => $character->id,
-            'wcl_report_code' => 'skp001',
         ]);
     }
 
@@ -124,7 +123,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job = new FetchWarcraftLogsAttendanceData;
         $job->handle($attendanceService);
 
-        $this->assertDatabaseMissing('pivot_characters_wcl_reports', [
+        $this->assertDatabaseMissing('pivot_characters_raid_reports', [
             'character_id' => $character->id,
         ]);
     }
@@ -150,7 +149,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job = new FetchWarcraftLogsAttendanceData;
         $job->handle($attendanceService);
 
-        $this->assertDatabaseCount('pivot_characters_wcl_reports', 0);
+        $this->assertDatabaseCount('pivot_characters_raid_reports', 0);
     }
 
     #[Test]
@@ -172,7 +171,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job = new FetchWarcraftLogsAttendanceData;
         $job->handle($attendanceService);
 
-        $this->assertDatabaseCount('pivot_characters_wcl_reports', 0);
+        $this->assertDatabaseCount('pivot_characters_raid_reports', 0);
     }
 
     // ==========================================
@@ -249,10 +248,10 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job->handle($attendanceService);
         $job->handle($attendanceService);
 
-        $this->assertDatabaseCount('pivot_characters_wcl_reports', 1);
-        $this->assertDatabaseHas('pivot_characters_wcl_reports', [
+        $this->assertDatabaseCount('pivot_characters_raid_reports', 1);
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
             'character_id' => $character->id,
-            'wcl_report_code' => 'dup001',
+            'raid_report_id' => $report->id,
             'presence' => 1,
         ]);
     }
@@ -282,8 +281,8 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $job = new FetchWarcraftLogsAttendanceData;
         $job->handle($attendanceService);
 
-        $this->assertDatabaseHas('pivot_characters_wcl_reports', ['wcl_report_code' => 'exists1']);
-        $this->assertDatabaseMissing('pivot_characters_wcl_reports', ['wcl_report_code' => 'notindb1']);
+        $this->assertDatabaseHas('pivot_characters_raid_reports', ['raid_report_id' => $report->id]);
+        $this->assertDatabaseCount('pivot_characters_raid_reports', 1);
     }
 
     #[Test]

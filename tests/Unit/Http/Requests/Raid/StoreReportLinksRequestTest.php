@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Requests\Raid;
 
 use App\Http\Requests\Raid\StoreReportLinksRequest;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Routing\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -48,7 +48,7 @@ class StoreReportLinksRequestTest extends TestCase
         $this->assertArrayHasKey('codes.*', $rules);
         $this->assertContains('required', $rules['codes.*']);
         $this->assertContains('string', $rules['codes.*']);
-        $this->assertContains('exists:wcl_reports,code', $rules['codes.*']);
+        $this->assertContains('exists:raid_reports,code', $rules['codes.*']);
     }
 
     #[Test]

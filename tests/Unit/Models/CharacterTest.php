@@ -9,7 +9,7 @@ use App\Events\CharacterUpdated;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\ValueObjects\PlayableClass;
@@ -671,7 +671,7 @@ class CharacterTest extends ModelTestCase
         $character = $this->create();
         $report = Report::factory()->create();
 
-        $character->warcraftLogsReports()->attach($report->code);
+        $character->warcraftLogsReports()->attach($report->id);
 
         $this->assertCount(1, $character->warcraftLogsReports);
         $this->assertSame($report->code, $character->warcraftLogsReports->first()->code);

@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Models\Raids\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report as ReportModel;
 use App\Services\WarcraftLogs\Data\Report;
 use App\Services\WarcraftLogs\Reports;
 use Carbon\Carbon;
@@ -95,14 +95,14 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
     protected function syncReportLinks(): void
     {
         $allReports = ReportModel::where('guild_tag_id', $this->guildTag->id)
-            ->select('code', 'start_time')
+            ->select('id', 'start_time')
             ->get();
 
         if ($allReports->isEmpty()) {
             return;
         }
 
-        $allCodes = $allReports->pluck('code')->all();
+        $allIds = $allReports->pluck('id')->all();
 
         /** @var Collection<string, Collection<int, ReportModel>> $groups */
         $groups = $allReports->groupBy(
@@ -121,19 +121,19 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
                 continue;
             }
 
-            $codes = $group->pluck('code')->all();
-            foreach ($codes as $code1) {
-                foreach ($codes as $code2) {
-                    if ($code1 !== $code2) {
-                        $desiredPairs["$code1|$code2"] = [$code1, $code2];
+            $ids = $group->pluck('id')->all();
+            foreach ($ids as $id1) {
+                foreach ($ids as $id2) {
+                    if ($id1 !== $id2) {
+                        $desiredPairs["$id1|$id2"] = [$id1, $id2];
                     }
                 }
             }
         }
 
         // Fetch all existing links where report_1 belongs to this guild tag's reports.
-        $existingLinks = DB::table('pivot_wcl_reports_links')
-            ->whereIn('report_1', $allCodes)
+        $existingLinks = DB::table('raid_report_links')
+            ->whereIn('report_1', $allIds)
             ->get();
 
         $existingAutoPairs = $existingLinks
@@ -145,16 +145,16 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
 
         // Delete stale auto-links no longer in the desired set.
         $staleKeys = $existingAutoPairs->keys()->filter(fn ($key) => ! isset($desiredPairs[$key]));
-        $affectedCodes = collect();
+        $affectedIds = collect();
 
         foreach ($staleKeys as $key) {
-            [$code1, $code2] = $existingAutoPairs[$key];
-            DB::table('pivot_wcl_reports_links')
-                ->where('report_1', $code1)
-                ->where('report_2', $code2)
+            [$id1, $id2] = $existingAutoPairs[$key];
+            DB::table('raid_report_links')
+                ->where('report_1', $id1)
+                ->where('report_2', $id2)
                 ->whereNull('created_by')
                 ->delete();
-            $affectedCodes->push($code1, $code2);
+            $affectedIds->push($id1, $id2);
         }
 
         // Insert new auto-links that don't exist at all yet.
@@ -171,14 +171,14 @@ class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
             ->all();
 
         if (! empty($toInsert)) {
-            DB::table('pivot_wcl_reports_links')->insert($toInsert);
+            DB::table('raid_report_links')->insert($toInsert);
             foreach ($toInsert as $row) {
-                $affectedCodes->push($row['report_1'], $row['report_2']);
+                $affectedIds->push($row['report_1'], $row['report_2']);
             }
         }
 
-        if ($affectedCodes->isNotEmpty()) {
-            ReportModel::whereIn('code', $affectedCodes->unique()->values()->all())->touch();
+        if ($affectedIds->isNotEmpty()) {
+            ReportModel::whereIn('id', $affectedIds->unique()->values()->all())->touch();
         }
     }
 

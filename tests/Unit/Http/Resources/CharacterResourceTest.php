@@ -8,7 +8,7 @@ use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
+use App\Models\Raids\Report;
 use App\Models\User;
-use App\Models\WarcraftLogs\Report;
 
 class ReportPolicy
 {

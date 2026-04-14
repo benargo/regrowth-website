@@ -180,7 +180,7 @@ function ReportsTable({ reports }) {
                         const formattedDate = formatDate(report.start_time);
 
                         return (
-                            <tr key={report.code} className="transition-colors hover:bg-brown-800/50">
+                            <tr key={report.id} className="transition-colors hover:bg-brown-800/50">
                                 <td className="whitespace-nowrap px-4 py-3">
                                     <p className="text-xs text-gray-500">{dayOfWeek}</p>
                                     <p className="text-sm text-gray-300">
@@ -191,7 +191,7 @@ function ReportsTable({ reports }) {
                                 </td>
                                 <td className="px-4 py-3 text-sm">
                                     <Link
-                                        href={route('raids.reports.show', report.code)}
+                                        href={route('raids.reports.show', report.id)}
                                         target="_blank"
                                         className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                     >

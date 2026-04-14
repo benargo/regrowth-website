@@ -6,7 +6,7 @@ use App\Casts\AsPlayableClass;
 use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use App\Services\Blizzard\BlizzardService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -124,7 +124,7 @@ class Character extends Model
      */
     public function warcraftLogsReports(): BelongsToMany
     {
-        return $this->belongsToMany(Report::class, 'pivot_characters_wcl_reports', 'character_id', 'wcl_report_code')
+        return $this->belongsToMany(Report::class, 'pivot_characters_raid_reports', 'character_id', 'raid_report_id')
             ->using(CharacterReport::class)
             ->withPivot('presence');
     }

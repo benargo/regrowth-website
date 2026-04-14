@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Character;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\Data\GuildAttendance;
 use Illuminate\Bus\Batchable;
@@ -78,15 +78,15 @@ class FetchWarcraftLogsAttendanceData implements ShouldQueue
 
                 $syncData[] = [
                     'character_id' => $character->id,
-                    'wcl_report_code' => $report->code,
+                    'raid_report_id' => $report->id,
                     'presence' => $player->presence,
                 ];
             }
 
             if (! empty($syncData)) {
-                DB::table('pivot_characters_wcl_reports')->upsert(
+                DB::table('pivot_characters_raid_reports')->upsert(
                     $syncData,
-                    ['character_id', 'wcl_report_code'],
+                    ['character_id', 'raid_report_id'],
                     ['presence']
                 );
                 $report->touch();

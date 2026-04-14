@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Models\WarcraftLogs;
+namespace App\Models\Raids;
 
 use App\Events\ReportCreated;
 use App\Models\Character;
 use App\Models\CharacterReport;
+use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Data\Zone;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,20 +17,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Report extends Model
 {
     use HasFactory;
+    use HasUuids;
 
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'wcl_reports';
-
-    /**
-     * The primary key for the model.
-     *
-     * @var string
-     */
-    protected $primaryKey = 'code';
+    protected $table = 'raid_reports';
 
     /**
      * Indicates if the model's ID is auto-incrementing.
@@ -62,13 +58,16 @@ class Report extends Model
     /**
      * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
-        'zone_id' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
+            'zone_id' => 'integer',
+        ];
+    }
 
     /**
      * The event map for the model.
@@ -96,7 +95,7 @@ class Report extends Model
      */
     public function characters(): BelongsToMany
     {
-        return $this->belongsToMany(Character::class, 'pivot_characters_wcl_reports', 'wcl_report_code', 'character_id')
+        return $this->belongsToMany(Character::class, 'pivot_characters_raid_reports', 'raid_report_id', 'character_id')
             ->using(CharacterReport::class)
             ->withPivot('presence');
     }
@@ -104,7 +103,7 @@ class Report extends Model
     /**
      * Get the guild tag associated with this report.
      *
-     * @return BelongsTo<GuildTag>
+     * @return BelongsTo<GuildTag, $this>
      */
     public function guildTag(): BelongsTo
     {
@@ -118,7 +117,7 @@ class Report extends Model
     {
         return $this->belongsToMany(
             Report::class,
-            'pivot_wcl_reports_links',
+            'raid_report_links',
             'report_1',
             'report_2'
         )->using(ReportLink::class)->withPivot('created_by')->withTimestamps();

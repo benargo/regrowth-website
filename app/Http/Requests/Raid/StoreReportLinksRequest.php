@@ -26,7 +26,7 @@ class StoreReportLinksRequest extends FormRequest
 
         return [
             'codes' => ['required', 'array', 'min:1'],
-            'codes.*' => ['required', 'string', 'exists:wcl_reports,code', "not_in:{$currentCode}"],
+            'codes.*' => ['required', 'string', 'exists:raid_reports,code', "not_in:{$currentCode}"],
         ];
     }
 }

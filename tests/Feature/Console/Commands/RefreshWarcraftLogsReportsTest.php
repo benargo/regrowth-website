@@ -3,8 +3,8 @@
 namespace Tests\Feature\Console\Commands;
 
 use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
+use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
 use Carbon\Carbon;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;

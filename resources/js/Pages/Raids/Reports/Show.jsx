@@ -206,7 +206,7 @@ function LinkReportsModal({ isOpen, onClose, currentReport, nearbyReports, onSub
                 ) : (
                     <ul className="divide-y divide-brown-700">
                         {nearbyReports.data.map((report) => {
-                            const isCurrent = report.code === currentReport.code;
+                            const isCurrent = report.id === currentReport.id;
                             const isLinked = alreadyLinkedCodes.has(report.code);
                             const isChecked = isCurrent || isLinked || selected.has(report.code);
                             const isDisabled = isCurrent || isLinked;
@@ -214,7 +214,7 @@ function LinkReportsModal({ isOpen, onClose, currentReport, nearbyReports, onSub
 
                             return (
                                 <li
-                                    key={report.code}
+                                    key={report.id}
                                     onClick={() => toggleCode(report.code)}
                                     className={`flex cursor-pointer items-center gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "hover:bg-brown-800/50"}`}
                                 >
@@ -357,7 +357,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
                         {impactedReports.data.map((report) => {
                             const formattedDate = formatDate(report.start_time);
                             return (
-                                <li key={report.code} className="px-4 py-3">
+                                <li key={report.id} className="px-4 py-3">
                                     <span className="text-sm font-medium text-white">{report.title}</span>
                                     <p className="mt-0.5 text-xs text-gray-500">
                                         <span className="md:hidden">{formattedDate.short}</span>
@@ -402,10 +402,10 @@ function LinkedReportsSection({ linkedReports, canManageLinks, onAddLink, onDele
                     {linkedReports.map((linked) => {
                         const formattedDate = formatDate(linked.start_time);
                         return (
-                            <div key={linked.code} className="flex items-center justify-between px-4 py-3">
+                            <div key={linked.id} className="flex items-center justify-between px-4 py-3">
                                 <div>
                                     <Link
-                                        href={route("raids.reports.show", { report: linked.code })}
+                                        href={route("raids.reports.show", { report: linked.id })}
                                         className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                     >
                                         {linked.title}
@@ -493,7 +493,7 @@ export default function Show({ report, nearbyReports, impactedReports, canManage
     const handleConfirmDelete = () => {
         setIsDeletingLink(true);
         router.patch(
-            route("raids.reports.destroy-links", { report: data.code }),
+            route("raids.reports.destroy-links", { report: data.id }),
             {},
             {
                 onSuccess: () => setIsDeleteModalOpen(false),
@@ -505,7 +505,7 @@ export default function Show({ report, nearbyReports, impactedReports, canManage
     const handleSubmit = (codes) => {
         setIsSubmitting(true);
         router.post(
-            route("raids.reports.store-links", { report: data.code }),
+            route("raids.reports.store-links", { report: data.id }),
             { codes },
             {
                 onSuccess: () => {
