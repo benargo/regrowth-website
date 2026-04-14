@@ -150,25 +150,21 @@ class RaidController extends Controller
             $raidId = 1;
         }
 
-        return Cache::tags(['lootcouncil'])->remember(
-            "loot_items:trash_raid_{$raidId}:index",
-            now()->addWeek(),
-            function () use ($raidId) {
-                $items = Item::query()
-                    ->where('raid_id', $raidId)
-                    ->whereNull('boss_id')
-                    ->with([
-                        'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
-                    ])
-                    ->withCount('comments')
-                    ->get();
+        return Cache::tags(['db', 'lootcouncil'])->remember("raid:#{$raidId}:trash_items", now()->addWeek(), function () use ($raidId) {
+            $items = Item::query()
+                ->where('raid_id', $raidId)
+                ->whereNull('boss_id')
+                ->with([
+                    'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
+                ])
+                ->withCount('comments')
+                ->get();
 
-                return (new BossItemsResource([
-                    'bossId' => -1 * $raidId,
-                    'items' => $items,
-                    'commentsCount' => $items->sum('comments_count'),
-                ]))->response(request())->getData(true);
-            }
-        );
+            return (new BossItemsResource([
+                'bossId' => -1 * $raidId,
+                'items' => $items,
+                'commentsCount' => $items->sum('comments_count'),
+            ]))->response(request())->getData(true);
+        });
     }
 }
