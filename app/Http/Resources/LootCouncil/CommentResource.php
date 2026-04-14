@@ -59,14 +59,12 @@ class CommentResource extends JsonResource
      */
     protected function getReactions(Request $request): array
     {
-        return Cache::tags(['lootcouncil'])->remember(
-            'comment_'.$this->id.':reactions:all',
-            now()->addMinutes(10),
-            fn () => $this->reactions->map(fn ($reaction) => [
+        return Cache::tags(['db', 'lootcouncil'])->remember("comment:#{$this->id}:reactions", now()->addMinutes(10), function () use ($request) {
+            return $this->reactions->map(fn ($reaction) => [
                 'id' => $reaction->id,
                 'user' => (new UserResource($reaction->user))->toArray($request),
                 'created_at' => $reaction->created_at,
-            ])->toArray()
-        );
+            ])->toArray();
+        });
     }
 }

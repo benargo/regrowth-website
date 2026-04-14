@@ -67,7 +67,7 @@ class CommentResourceTest extends TestCase
         $cacheStore->shouldReceive('flush')->andReturn(true);
 
         Cache::shouldReceive('tags')
-            ->with(['lootcouncil'])
+            ->with(['db', 'lootcouncil'])
             ->andReturn($cacheStore);
     }
 

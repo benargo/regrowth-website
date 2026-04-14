@@ -46,12 +46,12 @@ class CacheRebuildTest extends TestCase
     {
         Queue::fake([RebuildLootCouncilCache::class]);
 
-        Cache::tags(['lootcouncil'])->put('test_key', 'test_value', now()->addHour());
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has('test_key'));
+        Cache::tags(['db', 'lootcouncil'])->put('test_key', 'test_value', now()->addHour());
+        $this->assertTrue(Cache::tags(['db', 'lootcouncil'])->has('test_key'));
 
         ItemPrioritySaved::dispatch();
 
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has('test_key'));
+        $this->assertFalse(Cache::tags(['db', 'lootcouncil'])->has('test_key'));
     }
 
     #[Test]
@@ -69,15 +69,15 @@ class CacheRebuildTest extends TestCase
     {
         Priority::factory()->count(3)->create();
 
-        Cache::tags(['lootcouncil'])->flush();
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has('priorities:all'));
+        Cache::tags(['db', 'lootcouncil'])->flush();
+        $this->assertFalse(Cache::tags(['db', 'lootcouncil'])->has('priorities:all'));
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has('priorities:all'));
+        $this->assertTrue(Cache::tags(['db', 'lootcouncil'])->has('priorities:all'));
 
-        $cached = Cache::tags(['lootcouncil'])->get('priorities:all');
+        $cached = Cache::tags(['db', 'lootcouncil'])->get('priorities:all');
         $this->assertCount(3, $cached);
     }
 
@@ -89,13 +89,13 @@ class CacheRebuildTest extends TestCase
         Boss::factory()->count(3)->create(['raid_id' => $raid->id]);
 
         // Ensure cache is empty
-        Cache::tags(['lootcouncil'])->flush();
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has('bosses:with_comments'));
+        Cache::tags(['db', 'lootcouncil'])->flush();
+        $this->assertFalse(Cache::tags(['db', 'lootcouncil'])->has('bosses:with_comments'));
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has('bosses:with_comments'));
+        $this->assertTrue(Cache::tags(['db', 'lootcouncil'])->has('bosses:with_comments'));
     }
 
     #[Test]
@@ -107,14 +107,14 @@ class CacheRebuildTest extends TestCase
         Item::factory()->count(2)->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
 
         // Ensure cache is empty
-        Cache::tags(['lootcouncil'])->flush();
-        $cacheKey = "loot_items:boss_{$boss->id}:index";
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has($cacheKey));
+        Cache::tags(['db', 'lootcouncil'])->flush();
+        $cacheKey = "boss:#{$boss->id}:items";
+        $this->assertFalse(Cache::tags(['db', 'lootcouncil'])->has($cacheKey));
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has($cacheKey));
+        $this->assertTrue(Cache::tags(['db', 'lootcouncil'])->has($cacheKey));
     }
 
     #[Test]
@@ -125,14 +125,14 @@ class CacheRebuildTest extends TestCase
         Item::factory()->count(2)->create(['raid_id' => $raid->id, 'boss_id' => null]);
 
         // Ensure cache is empty
-        Cache::tags(['lootcouncil'])->flush();
-        $cacheKey = "loot_items:trash_raid_{$raid->id}:index";
-        $this->assertFalse(Cache::tags(['lootcouncil'])->has($cacheKey));
+        Cache::tags(['db', 'lootcouncil'])->flush();
+        $cacheKey = "raid:#{$raid->id}:trash_items";
+        $this->assertFalse(Cache::tags(['db', 'lootcouncil'])->has($cacheKey));
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $this->assertTrue(Cache::tags(['lootcouncil'])->has($cacheKey));
+        $this->assertTrue(Cache::tags(['db', 'lootcouncil'])->has($cacheKey));
     }
 
     #[Test]
@@ -145,12 +145,12 @@ class CacheRebuildTest extends TestCase
         $user = User::factory()->create();
         $item->comments()->create(['user_id' => $user->id, 'body' => 'Test comment']);
 
-        Cache::tags(['lootcouncil'])->flush();
+        Cache::tags(['db', 'lootcouncil'])->flush();
 
         $job = new RebuildLootCouncilCache;
         $job->handle();
 
-        $cachedBosses = Cache::tags(['lootcouncil'])->get('bosses:with_comments');
+        $cachedBosses = Cache::tags(['db', 'lootcouncil'])->get('bosses:with_comments');
 
         $this->assertNotNull($cachedBosses);
         $this->assertArrayHasKey($raid->id, $cachedBosses);
