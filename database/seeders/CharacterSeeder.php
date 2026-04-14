@@ -37,7 +37,7 @@ class CharacterSeeder extends Seeder
                         'playable_race' => PlayableRace::fromApiResponse(
                             $this->blizzard->findPlayableRace(Arr::get($profile, 'race.id'))
                         ),
-                    ]);
+                    ], ['touch' => false]);
                 } catch (\Exception $e) {
                     Log::warning("Failed to fetch profile for character {$character->name}. Skipping.", ['error' => $e->getMessage()]);
 

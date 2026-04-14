@@ -187,6 +187,26 @@ class CharacterSeederTest extends TestCase
     }
 
     #[Test]
+    public function seeder_does_not_recurse_infinitely_when_characters_are_mutually_linked(): void
+    {
+        $this->mockBlizzardAndMediaServices();
+
+        $characterA = Character::factory()->create(['name' => 'Thrall']);
+        $characterB = Character::factory()->create(['name' => 'Garrosh']);
+
+        // Create a bidirectional link — this is what causes the recursive touch loop.
+        \DB::table('character_links')->insert([
+            ['character_id' => $characterA->id, 'linked_character_id' => $characterB->id, 'created_at' => now(), 'updated_at' => now()],
+            ['character_id' => $characterB->id, 'linked_character_id' => $characterA->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->runSeeder();
+
+        $this->assertSame(7, $characterA->fresh()->playable_class['id']);
+        $this->assertSame(7, $characterB->fresh()->playable_class['id']);
+    }
+
+    #[Test]
     public function seeder_persists_resolved_icon_url_from_media_service(): void
     {
         $this->mockBlizzardAndMediaServices();
