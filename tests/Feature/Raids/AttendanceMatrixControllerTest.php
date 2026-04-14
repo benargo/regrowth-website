@@ -9,8 +9,7 @@ use App\Models\Permission;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
-use App\Services\Blizzard\GuildService;
-use App\Services\Blizzard\PlayableClassService;
+use App\Services\Blizzard\BlizzardService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -29,8 +28,7 @@ class AttendanceMatrixControllerTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
-        Cache::tags('warcraftlogs')->flush();
-        Cache::tags(['attendance', 'attendance:matrix'])->flush();
+        Cache::tags(['attendance', 'attendance:matrix', 'warcraftlogs'])->flush();
 
         $permission = Permission::firstOrCreate(['name' => 'view-attendance', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
@@ -40,12 +38,10 @@ class AttendanceMatrixControllerTest extends TestCase
         $officerRole->givePermissionTo($permission);
 
         // Mock external Blizzard API services used by the matrix controller action.
-        $this->mock(PlayableClassService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('find')->andReturn([]);
-            $mock->shouldReceive('iconUrl')->andReturn(null);
-        });
-        $this->mock(GuildService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('roster')->andReturn(['members' => []]);
+        $this->mock(BlizzardService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('findPlayableClass')->andReturn([]);
+            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
+            $mock->shouldReceive('getGuildRoster')->andReturn(['members' => []]);
         });
     }
 

@@ -29,8 +29,8 @@ class CharacterResource extends JsonResource
             'is_loot_councillor' => $this->is_loot_councillor,
             'reached_level_cap_at' => $this->reached_level_cap_at,
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
-            'playable_class' => $this->playableClass,
-            'playable_race' => $this->playableRace,
+            'playable_class' => $this->playable_class,
+            'playable_race' => $this->playable_race,
             'pivot' => $this->whenPivotLoaded('pivot_characters_wcl_reports', fn () => [
                 'presence' => $this->pivot->presence,
             ]),

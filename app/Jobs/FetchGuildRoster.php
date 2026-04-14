@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\Blizzard\GuildService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -22,9 +22,9 @@ class FetchGuildRoster implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(GuildService $guildService): void
+    public function handle(BlizzardService $blizzard): void
     {
-        $guildService->roster();
+        $blizzard->getGuildRoster();
     }
 
     /**

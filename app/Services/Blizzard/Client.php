@@ -28,19 +28,6 @@ class Client
         $this->validateLocale($this->locale);
     }
 
-    /**
-     * Create a client instance from application config.
-     */
-    public static function fromConfig(): self
-    {
-        return new self(
-            clientId: config('services.blizzard.client_id'),
-            clientSecret: config('services.blizzard.client_secret'),
-            region: Region::from(config('services.blizzard.region', 'eu')),
-            locale: config('services.blizzard.locale'),
-        );
-    }
-
     public function getRegion(): Region
     {
         return $this->region;
@@ -77,9 +64,10 @@ class Client
 
     public function withNamespace(string $namespace): self
     {
-        $this->namespace = $namespace;
+        $clone = clone $this;
+        $clone->namespace = $namespace;
 
-        return $this;
+        return $clone;
     }
 
     public function http(): PendingRequest
@@ -98,14 +86,14 @@ class Client
 
     public function getAccessToken(): string
     {
-        $cacheKey = "blizzard_access_token_{$this->region->value}";
+        $cacheKey = "blizzard:access_token:{$this->region->value}";
 
-        $token = Cache::get($cacheKey);
+        $token = Cache::tags(['blizzard', 'api-auth'])->get($cacheKey);
 
         if ($token === null) {
             $accessToken = $this->requestAccessToken();
 
-            Cache::put($cacheKey, $accessToken->token, $accessToken->expiresIn);
+            Cache::tags(['blizzard', 'api-auth'])->put($cacheKey, $accessToken->token, $accessToken->expiresIn);
 
             return $accessToken->token;
         }

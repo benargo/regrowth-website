@@ -21,7 +21,7 @@ class AuthenticationHandler
 
     public function clientToken(): string
     {
-        return Cache::get('warcraftlogs.client_token', function () {
+        return Cache::get('warcraftlogs:client_token', function () {
             $response = Http::withBasicAuth($this->clientId, $this->clientSecret)->post(self::TOKEN_URL, [
                 'grant_type' => 'client_credentials',
             ]);
@@ -30,7 +30,7 @@ class AuthenticationHandler
                 throw new \Exception('Failed to retrieve access token from Warcraft Logs API.');
             }
 
-            Cache::put('warcraftlogs.client_token', $response->json()['access_token'], $response->json()['expires_in']);
+            Cache::put('warcraftlogs:client_token', $response->json()['access_token'], $response->json()['expires_in']);
 
             return $response->json()['access_token'];
         });

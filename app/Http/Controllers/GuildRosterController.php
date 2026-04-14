@@ -4,42 +4,49 @@ namespace App\Http\Controllers;
 
 use App\Enums\AllianceRaces;
 use App\Models\GuildRank;
-use App\Services\Blizzard\Data\GuildMember;
-use App\Services\Blizzard\GuildService;
-use App\Services\Blizzard\PlayableClassService;
-use App\Services\Blizzard\PlayableRaceService;
+use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\MediaService;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class GuildRosterController extends Controller
 {
-    protected PlayableClassService $classService;
+    private $classes;
 
-    protected PlayableRaceService $raceService;
+    private $races;
 
-    public function index(
-        PlayableClassService $classService,
-        PlayableRaceService $raceService
+    private $ranks;
+
+    public function __construct(
+        protected BlizzardService $blizzard,
+        protected MediaService $media,
     ) {
-        $this->classService = $classService;
-        $this->raceService = $raceService;
+        $this->classes = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable_classes:index', now()->addDays(30), function () {
+            return collect(Arr::get($this->blizzard->getPlayableClasses(), 'classes'))->map(function (array $playableClass) {
+                $media = $this->blizzard->getPlayableClassMedia(Arr::get($playableClass, 'id'));
+                $assets = array_values($this->media->get(Arr::get($media, 'assets')));
 
-        $classes = collect(Arr::get($this->classService->index(), 'classes'))
-            ->sortBy('name')
-            ->values()
-            ->toArray();
+                return array_merge($playableClass, ['media' => $assets[0] ?? null]);
+            })->all();
+        }));
 
-        $races = collect(Arr::get($this->raceService->index(), 'races'))
-            ->filter(function ($race) {
-                return in_array($race['id'], AllianceRaces::ids());
-            })
-            ->values()
-            ->toArray();
+        $this->races = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable_races:alliance_races', now()->addDays(30), function () {
+            return collect(Arr::get($this->blizzard->getPlayableRaces(), 'races', []))
+                ->filter(fn (array $race) => in_array($race['id'], AllianceRaces::ids()))
+                ->values()
+                ->all();
+        }));
 
+        $this->ranks = GuildRank::select('id', 'position', 'name')->orderBy('position')->get();
+    }
+
+    public function index()
+    {
         return Inertia::render('Roster', [
-            'classes' => $classes,
-            'races' => $races,
-            'ranks' => GuildRank::orderBy('position')->get(),
+            'classes' => $this->classes->toArray(),
+            'races' => $this->races->toArray(),
+            'ranks' => $this->ranks,
             'level_cap' => 70,
             'members' => Inertia::defer(fn () => $this->buildMemberCollection()),
         ]);
@@ -47,20 +54,16 @@ class GuildRosterController extends Controller
 
     protected function buildMemberCollection()
     {
-        $guildService = app(GuildService::class);
+        return Cache::tags(['blizzard', 'mapped-response'])->remember('guild_roster', now()->addHours(6), function () {
+            $roster = $this->blizzard->getGuildRoster();
 
-        $roster = $guildService->roster();
+            return Arr::map(Arr::get($roster, 'members'), function (array $member, string $key) {
+                data_set($member, 'character.playable_class', $this->classes->firstWhere('id', Arr::get($member, 'character.playable_class.id')));
+                data_set($member, 'character.playable_race', $this->races->firstWhere('id', Arr::get($member, 'character.playable_race.id')));
+                data_set($member, 'rank', $this->ranks->firstWhere('position', Arr::get($member, 'rank'))?->toArray());
 
-        $members = collect($roster['members'])->map(function ($memberData) {
-            $member = GuildMember::fromArray($memberData);
-
-            data_set($member, 'character.playable_class', $this->classService->find(Arr::get($memberData, 'character.playable_class.id')));
-            data_set($member, 'character.playable_class.media', $this->classService->media(Arr::get($memberData, 'character.playable_class.id')));
-            data_set($member, 'character.playable_race', $this->raceService->find(Arr::get($memberData, 'character.playable_race.id')));
-
-            return $member;
+                return $member;
+            });
         });
-
-        return $members->toArray();
     }
 }

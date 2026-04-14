@@ -25,7 +25,7 @@ class ReportControllerTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
-        Cache::tags('warcraftlogs')->flush();
+        Cache::tags(['warcraftlogs'])->flush();
 
         $permission = Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(

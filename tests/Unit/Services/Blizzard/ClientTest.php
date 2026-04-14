@@ -67,15 +67,6 @@ class ClientTest extends TestCase
     }
 
     #[Test]
-    public function from_config_creates_client(): void
-    {
-        $client = Client::fromConfig();
-
-        $this->assertEquals(Region::EU, $client->getRegion());
-        $this->assertEquals('en_GB', $client->getLocale());
-    }
-
-    #[Test]
     public function set_region_updates_region(): void
     {
         $client = new Client('client_id', 'client_secret');
@@ -124,14 +115,15 @@ class ClientTest extends TestCase
     }
 
     #[Test]
-    public function with_namespace_updates_namespace(): void
+    public function with_namespace_returns_clone_with_namespace(): void
     {
         $client = new Client('client_id', 'client_secret');
 
         $result = $client->withNamespace('dynamic-classic1x-eu');
 
-        $this->assertSame($client, $result);
-        $this->assertEquals('dynamic-classic1x-eu', $client->getNamespace());
+        $this->assertNotSame($client, $result);
+        $this->assertNull($client->getNamespace());
+        $this->assertEquals('dynamic-classic1x-eu', $result->getNamespace());
     }
 
     #[Test]
@@ -240,7 +232,7 @@ class ClientTest extends TestCase
         $this->assertEquals('first_token', $firstToken);
 
         // Clear the cache to simulate expiry
-        Cache::forget('blizzard_access_token_eu');
+        Cache::tags(['blizzard', 'api-auth'])->forget('blizzard:access_token:eu');
 
         // Should request a new token because the cache was cleared
         $newToken = $client->getAccessToken();
@@ -261,7 +253,7 @@ class ClientTest extends TestCase
         $client = new Client('client_id', 'client_secret');
         $client->getAccessToken();
 
-        $this->assertEquals('cached_token', Cache::get('blizzard_access_token_eu'));
+        $this->assertEquals('cached_token', Cache::tags(['blizzard', 'api-auth'])->get('blizzard:access_token:eu'));
     }
 
     #[Test]

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
+use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\LootCouncil\CommentReactionController;
 use App\Http\Controllers\LootCouncil\ItemController;
 use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
+use App\Http\Controllers\LootCouncil\RaidController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\Raid\AttendanceController;
 use App\Http\Controllers\Raid\AttendanceMatrixController;
@@ -35,6 +37,7 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
 Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], function () {
     Route::get('/', [BiasToolController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('index');
     Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('phase');
+    Route::get('/raids/{raid}/{name?}', [RaidController::class, 'show'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('raids.show');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->can('create', 'App\Models\LootCouncil\Comment')->name('items.comments.store');
     Route::post('/items/{item}/notes', [NotesController::class, 'update'])->can('update', 'item')->name('items.notes.store');
     Route::put('/items/{item}/priorities', [PrioritiesController::class, 'update'])->can('update', 'item')->name('items.priorities.update');
@@ -85,9 +88,9 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
     Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
-    Route::get('/addon/settings', [AddonController::class, 'settings'])->name('addon.settings');
-    Route::post('/addon/settings/councillors', [AddonController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
-    Route::delete('/addon/settings/councillors/{character}', [AddonController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
+    Route::get('/addon/settings', [AddonSettingsController::class, 'index'])->name('addon.settings');
+    Route::post('/addon/settings/councillors', [AddonSettingsController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
+    Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
 
     /**
      * Guild ranks management

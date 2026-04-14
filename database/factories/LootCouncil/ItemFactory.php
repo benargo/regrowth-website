@@ -30,6 +30,8 @@ class ItemFactory extends Factory
         return [
             'raid_id' => Raid::factory(),
             'boss_id' => null,
+            'name' => null,
+            'icon' => null,
             'group' => fake()->optional(0.5)->randomElement(['Tokens', 'Weapons', 'Armor', 'Trinkets', 'Rings']),
             'notes' => null,
         ];
@@ -67,6 +69,37 @@ class ItemFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'group' => $group,
+        ]);
+    }
+
+    /**
+     * Set the item name.
+     */
+    public function withName(?string $name = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => $name ?? fake()->words(3, true),
+        ]);
+    }
+
+    /**
+     * Set the icon media data for the item.
+     *
+     * @param  array{id: int, assets: array<int, array{key: string, value: string, file_data_id: int}>}|null  $icon
+     */
+    public function withIcon(?array $icon = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'icon' => $icon ?? [
+                'id' => fake()->randomNumber(6),
+                'assets' => [
+                    [
+                        'key' => 'icon',
+                        'value' => fake()->imageUrl(),
+                        'file_data_id' => fake()->randomNumber(6),
+                    ],
+                ],
+            ],
         ]);
     }
 

@@ -146,13 +146,13 @@ class GuildRankStoreTest extends DashboardTestCase
     public function store_clears_guild_ranks_cache(): void
     {
 
-        Cache::put('guild_ranks.index', 'cached-data');
-        $this->assertTrue(Cache::has('guild_ranks.index'));
+        Cache::put('guild_ranks:index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks:index'));
 
         $this->actingAs($this->officer)->post(route('dashboard.ranks.store'), [
             'name' => 'New Rank',
         ]);
 
-        $this->assertFalse(Cache::has('guild_ranks.index'));
+        $this->assertFalse(Cache::has('guild_ranks:index'));
     }
 }

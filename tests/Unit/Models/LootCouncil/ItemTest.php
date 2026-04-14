@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models\LootCouncil;
 
+use App\Casts\ItemMediaCast;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\TBC\Boss;
@@ -43,6 +44,8 @@ class ItemTest extends ModelTestCase
         $this->assertFillable($model, [
             'raid_id',
             'boss_id',
+            'name',
+            'icon',
             'group',
             'notes',
         ]);
@@ -70,6 +73,7 @@ class ItemTest extends ModelTestCase
         $item = $this->create([
             'raid_id' => $raid->id,
             'boss_id' => $boss->id,
+            'name' => 'Warglaive of Azzinoth',
             'group' => 'Tokens',
             'notes' => 'Priority for tanks',
         ]);
@@ -77,6 +81,7 @@ class ItemTest extends ModelTestCase
         $this->assertTableHas([
             'raid_id' => $raid->id,
             'boss_id' => $boss->id,
+            'name' => 'Warglaive of Azzinoth',
             'group' => 'Tokens',
             'notes' => 'Priority for tanks',
         ]);
@@ -215,5 +220,84 @@ class ItemTest extends ModelTestCase
         $item->refresh();
 
         $this->assertSame(50, $item->priorities->first()->pivot->weight);
+    }
+
+    #[Test]
+    public function it_allows_null_name(): void
+    {
+        $item = $this->create(['name' => null]);
+
+        $this->assertNull($item->name);
+    }
+
+    #[Test]
+    public function it_allows_null_icon(): void
+    {
+        $item = $this->create(['icon' => null]);
+
+        $this->assertNull($item->icon);
+    }
+
+    #[Test]
+    public function it_casts_icon_to_item_media_cast(): void
+    {
+        $item = $this->factory()->withIcon()->create();
+
+        $this->assertInstanceOf(ItemMediaCast::class, $item->icon);
+    }
+
+    #[Test]
+    public function slug_is_derived_from_name(): void
+    {
+        $item = $this->create(['name' => 'Warglaive of Azzinoth']);
+
+        $this->assertSame('warglaive-of-azzinoth', $item->slug);
+    }
+
+    #[Test]
+    public function slug_is_empty_string_when_name_is_null(): void
+    {
+        $item = $this->create(['name' => null]);
+
+        $this->assertSame('', $item->slug);
+    }
+
+    #[Test]
+    public function wowhead_url_includes_slug_when_name_is_set(): void
+    {
+        $item = $this->create(['name' => 'Warglaive of Azzinoth']);
+
+        $this->assertSame(
+            "https://www.wowhead.com/tbc/item={$item->id}/warglaive-of-azzinoth",
+            $item->wowhead_url,
+        );
+    }
+
+    #[Test]
+    public function wowhead_url_excludes_slug_when_name_is_null(): void
+    {
+        $item = $this->create(['name' => null]);
+
+        $this->assertSame(
+            "https://www.wowhead.com/tbc/item={$item->id}",
+            $item->wowhead_url,
+        );
+    }
+
+    #[Test]
+    public function factory_with_name_state_sets_name(): void
+    {
+        $item = $this->factory()->withName('Blessed Blade of the Windseeker')->create();
+
+        $this->assertSame('Blessed Blade of the Windseeker', $item->name);
+    }
+
+    #[Test]
+    public function factory_with_icon_state_sets_icon(): void
+    {
+        $item = $this->factory()->withIcon()->create();
+
+        $this->assertInstanceOf(ItemMediaCast::class, $item->icon);
+        $this->assertNotEmpty($item->icon->assets);
     }
 }

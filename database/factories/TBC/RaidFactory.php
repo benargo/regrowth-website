@@ -2,6 +2,9 @@
 
 namespace Database\Factories\TBC;
 
+use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
+use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -72,5 +75,32 @@ class RaidFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'difficulty' => 'Heroic',
         ]);
+    }
+
+    /**
+     * Create the raid with bosses attached.
+     */
+    public function withBosses(int $count = 3): static
+    {
+        return $this->has(Boss::factory()->count($count), 'bosses');
+    }
+
+    /**
+     * Create the raid with items attached (trash drops).
+     */
+    public function withItems(int $count = 3): static
+    {
+        return $this->has(Item::factory()->count($count)->trashDrop(), 'items');
+    }
+
+    /**
+     * Create the raid with items and comments attached.
+     */
+    public function withComments(int $count = 3): static
+    {
+        return $this->has(
+            Item::factory()->has(Comment::factory()->count($count), 'comments'),
+            'items'
+        );
     }
 }

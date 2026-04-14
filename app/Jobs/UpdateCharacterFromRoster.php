@@ -4,6 +4,9 @@ namespace App\Jobs;
 
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\ValueObjects\PlayableClass;
+use App\Services\Blizzard\ValueObjects\PlayableRace;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -49,10 +52,18 @@ class UpdateCharacterFromRoster implements ShouldQueue
     {
         $this->character = Character::firstOrNew(['id' => Arr::get($this->characterData, 'character.id')]);
 
+        $blizzard = app(BlizzardService::class);
+        $classId = Arr::get($this->characterData, 'character.playable_class.id');
+        $raceId = Arr::get($this->characterData, 'character.playable_race.id');
+
         $this->character->fill([
             'name' => Arr::get($this->characterData, 'character.name'),
-            'playable_class_id' => Arr::get($this->characterData, 'character.playable_class.id'),
-            'playable_race_id' => Arr::get($this->characterData, 'character.playable_race.id'),
+            'playable_class' => $classId !== null
+                ? PlayableClass::fromApiResponse($blizzard->findPlayableClass($classId))
+                : null,
+            'playable_race' => $raceId !== null
+                ? PlayableRace::fromApiResponse($blizzard->findPlayableRace($raceId))
+                : null,
         ]);
 
         $guildRank = GuildRank::where('position', Arr::get($this->characterData, 'rank'))->firstOrFail();

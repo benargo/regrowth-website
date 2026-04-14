@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\LootCouncil\Comment;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
@@ -55,19 +55,6 @@ class NewLootCouncilComment extends Notification implements ShouldQueue
                 'color' => 5814783,
                 'description' => $description,
                 'timestamp' => $this->comment->created_at->toIso8601String(),
-            ])
-            ->components([
-                //     [
-                //         'type' => 1, // Action Row
-                //         'components' => [
-                //             [
-                //                 'type' => 2, // Button
-                //                 'style' => 3, // Success (green)
-                //                 'label' => 'Resolve',
-                //                 'custom_id' => "resolve_lc_comment:{$this->comment->id}",
-                //             ],
-                //         ],
-                //     ],
             ]);
     }
 
@@ -77,7 +64,7 @@ class NewLootCouncilComment extends Notification implements ShouldQueue
     protected function resolveItemName(int $itemId): string
     {
         try {
-            $data = app(ItemService::class)->find($itemId);
+            $data = app(BlizzardService::class)->findItem($itemId);
 
             return $data['name'] ?? "Item #{$itemId}";
         } catch (\Exception) {

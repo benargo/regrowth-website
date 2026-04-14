@@ -217,8 +217,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        Cache::put('guild_ranks.index', 'cached-data');
-        $this->assertTrue(Cache::has('guild_ranks.index'));
+        Cache::put('guild_ranks:index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks:index'));
 
         $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
             'ranks' => [
@@ -226,6 +226,6 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
             ],
         ]);
 
-        $this->assertFalse(Cache::has('guild_ranks.index'));
+        $this->assertFalse(Cache::has('guild_ranks:index'));
     }
 }

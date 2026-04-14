@@ -2,11 +2,8 @@
 
 namespace Tests\SmokeTest;
 
-use App\Services\Blizzard\GuildService;
-use App\Services\Blizzard\PlayableClassService;
-use App\Services\Blizzard\PlayableRaceService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -18,13 +15,6 @@ class PublicPagesTest extends TestCase
     #[Test]
     public function home_page_loads(): void
     {
-        $this->instance(
-            GuildService::class,
-            Mockery::mock(GuildService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('members')->andReturn(collect());
-            })
-        );
-
         $response = $this->get('/');
 
         $response->assertOk();
@@ -34,19 +24,14 @@ class PublicPagesTest extends TestCase
     #[Test]
     public function roster_page_loads(): void
     {
-        $this->instance(
-            PlayableClassService::class,
-            Mockery::mock(PlayableClassService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('index')->andReturn(['classes' => []]);
-            })
-        );
-
-        $this->instance(
-            PlayableRaceService::class,
-            Mockery::mock(PlayableRaceService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('index')->andReturn(['races' => []]);
-            })
-        );
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getPlayableClasses')->andReturn(['classes' => []]);
+            $mock->shouldReceive('getPlayableRaces')->andReturn(['races' => []]);
+            $mock->shouldReceive('getGuildRoster')->andReturn(['members' => []]);
+            $mock->shouldReceive('findPlayableClass')->andReturn([]);
+            $mock->shouldReceive('findPlayableRace')->andReturn([]);
+            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
+        });
 
         $response = $this->get('/roster');
 

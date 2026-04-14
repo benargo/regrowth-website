@@ -10,8 +10,11 @@ use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use App\Models\User;
+use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -24,6 +27,15 @@ class CommentCacheTest extends TestCase
         parent::setUp();
 
         Notification::fake();
+
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findItem')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Test Item {$id}"]);
+            $mock->shouldReceive('findMedia')->andReturn(['assets' => []]);
+        });
+
+        $this->mock(MediaService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('get')->andReturn(null);
+        });
 
         $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);

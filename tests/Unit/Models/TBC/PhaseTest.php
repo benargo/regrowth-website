@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models\TBC;
 
+use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -172,8 +173,18 @@ class PhaseTest extends ModelTestCase
         $phase = $this->create();
         Raid::factory()->count(3)->create(['phase_id' => $phase->id]);
 
-        $this->assertRelation($phase, 'raids', HasMany::class);
+        $this->assertRelation($phase, 'raids', HasManyKeyBy::class);
         $this->assertCount(3, $phase->raids);
+    }
+
+    #[Test]
+    public function raids_are_keyed_by_id(): void
+    {
+        $phase = $this->create();
+        $raids = Raid::factory()->count(3)->create(['phase_id' => $phase->id]);
+
+        $raidIds = $raids->pluck('id');
+        $this->assertEquals($raidIds->sort()->values(), $phase->raids->keys()->sort()->values());
     }
 
     #[Test]

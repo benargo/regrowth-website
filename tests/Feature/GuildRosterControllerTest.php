@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Services\Blizzard\GuildService;
-use App\Services\Blizzard\PlayableClassService;
-use App\Services\Blizzard\PlayableRaceService;
+use App\Services\Blizzard\BlizzardService;
+use Database\Seeders\GuildRankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -20,41 +19,43 @@ class GuildRosterControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->instance(
-            PlayableClassService::class,
-            Mockery::mock(PlayableClassService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('index')->andReturn([
-                    'classes' => [
-                        ['id' => 7, 'name' => 'Shaman'],
-                        ['id' => 1, 'name' => 'Warrior'],
-                    ],
-                ]);
+        $this->seed(GuildRankSeeder::class);
 
-                $mock->shouldReceive('find')
-                    ->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Class {$id}"]);
+        Cache::shouldReceive('tags')
+            ->with(['blizzard', 'mapped-response'])
+            ->andReturnSelf();
+        Cache::shouldReceive('remember')
+            ->andReturnUsing(fn (string $key, $ttl, callable $callback) => $callback());
 
-                $mock->shouldReceive('media')
-                    ->andReturn(['assets' => [['key' => 'icon', 'value' => 'https://example.com/icon.jpg']]]);
-            })
-        );
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getPlayableClasses')->andReturn([
+                'classes' => [
+                    ['id' => 7, 'name' => 'Shaman'],
+                    ['id' => 1, 'name' => 'Warrior'],
+                ],
+            ]);
 
-        $this->instance(
-            PlayableRaceService::class,
-            Mockery::mock(PlayableRaceService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('index')->andReturn([
-                    'races' => [
-                        ['id' => 1, 'name' => 'Human'],
-                        ['id' => 3, 'name' => 'Dwarf'],
-                        ['id' => 4, 'name' => 'Night Elf'],
-                        ['id' => 7, 'name' => 'Gnome'],
-                        ['id' => 11, 'name' => 'Draenei'],
-                    ],
-                ]);
+            $mock->shouldReceive('findPlayableClass')
+                ->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Class {$id}"]);
 
-                $mock->shouldReceive('find')
-                    ->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Race {$id}"]);
-            })
-        );
+            $mock->shouldReceive('getPlayableClassMedia')
+                ->andReturn(['assets' => [['key' => 'icon', 'value' => 'https://example.com/icon.jpg']]]);
+
+            $mock->shouldReceive('getPlayableRaces')->andReturn([
+                'races' => [
+                    ['id' => 1, 'name' => 'Human'],
+                    ['id' => 3, 'name' => 'Dwarf'],
+                    ['id' => 4, 'name' => 'Night Elf'],
+                    ['id' => 7, 'name' => 'Gnome'],
+                    ['id' => 11, 'name' => 'Draenei'],
+                ],
+            ]);
+
+            $mock->shouldReceive('findPlayableRace')
+                ->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Race {$id}"]);
+
+            $mock->shouldReceive('getGuildRoster')->andReturn(['members' => []]);
+        });
     }
 
     #[Test]
@@ -75,27 +76,29 @@ class GuildRosterControllerTest extends TestCase
     #[Test]
     public function it_loads_members_via_deferred_prop(): void
     {
-        $this->instance(
-            GuildService::class,
-            Mockery::mock(GuildService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('roster')->andReturn([
-                    'members' => [
-                        [
-                            'character' => [
-                                'id' => 12345,
-                                'name' => 'Thrall',
-                                'level' => 70,
-                                'realm' => ['id' => 1, 'slug' => 'thunderstrike'],
-                                'playable_class' => ['id' => 7],
-                                'playable_race' => ['id' => 2],
-                                'faction' => ['type' => 'ALLIANCE'],
-                            ],
-                            'rank' => 3,
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getPlayableClasses')->andReturn(['classes' => []]);
+            $mock->shouldReceive('findPlayableClass')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Class {$id}"]);
+            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
+            $mock->shouldReceive('getPlayableRaces')->andReturn(['races' => []]);
+            $mock->shouldReceive('findPlayableRace')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Race {$id}"]);
+            $mock->shouldReceive('getGuildRoster')->andReturn([
+                'members' => [
+                    [
+                        'character' => [
+                            'id' => 12345,
+                            'name' => 'Thrall',
+                            'level' => 70,
+                            'realm' => ['id' => 1, 'slug' => 'thunderstrike'],
+                            'playable_class' => ['id' => 7],
+                            'playable_race' => ['id' => 2],
+                            'faction' => ['type' => 'ALLIANCE'],
                         ],
+                        'rank' => 3,
                     ],
-                ]);
-            })
-        );
+                ],
+            ]);
+        });
 
         $response = $this->get('/roster');
 
@@ -114,27 +117,29 @@ class GuildRosterControllerTest extends TestCase
     #[Test]
     public function it_enriches_members_with_playable_class_and_race(): void
     {
-        $this->instance(
-            GuildService::class,
-            Mockery::mock(GuildService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('roster')->andReturn([
-                    'members' => [
-                        [
-                            'character' => [
-                                'id' => 1,
-                                'name' => 'Jaina',
-                                'level' => 70,
-                                'realm' => ['id' => 1, 'slug' => 'thunderstrike'],
-                                'playable_class' => ['id' => 8],
-                                'playable_race' => ['id' => 1],
-                                'faction' => ['type' => 'ALLIANCE'],
-                            ],
-                            'rank' => 0,
+        $this->mock(BlizzardService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getPlayableClasses')->andReturn(['classes' => []]);
+            $mock->shouldReceive('findPlayableClass')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Class {$id}"]);
+            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
+            $mock->shouldReceive('getPlayableRaces')->andReturn(['races' => []]);
+            $mock->shouldReceive('findPlayableRace')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Race {$id}"]);
+            $mock->shouldReceive('getGuildRoster')->andReturn([
+                'members' => [
+                    [
+                        'character' => [
+                            'id' => 1,
+                            'name' => 'Jaina',
+                            'level' => 70,
+                            'realm' => ['id' => 1, 'slug' => 'thunderstrike'],
+                            'playable_class' => ['id' => 8],
+                            'playable_race' => ['id' => 1],
+                            'faction' => ['type' => 'ALLIANCE'],
                         ],
+                        'rank' => 0,
                     ],
-                ]);
-            })
-        );
+                ],
+            ]);
+        });
 
         $response = $this->get('/roster');
 
@@ -145,6 +150,9 @@ class GuildRosterControllerTest extends TestCase
                 ->has('members', 1)
                 ->has('members.0.character.playable_class')
                 ->has('members.0.character.playable_race')
+                ->has('members.0.rank.id')
+                ->has('members.0.rank.position')
+                ->has('members.0.rank.name')
             )
         );
     }

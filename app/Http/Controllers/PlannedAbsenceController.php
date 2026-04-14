@@ -35,7 +35,7 @@ class PlannedAbsenceController extends Controller
     {
         return Inertia::render('Raids/PlannedAbsences/Index', [
             'plannedAbsences' => Inertia::defer(function () {
-                return Cache::tags(['planned_absences'])->remember('planned_absences.index', now()->addDay(), function () {
+                return Cache::tags(['planned_absences'])->remember('planned_absences:index', now()->addDay(), function () {
                     return PlannedAbsenceResource::collection(
                         PlannedAbsence::query()
                             ->with(['character', 'createdBy'])
@@ -52,7 +52,7 @@ class PlannedAbsenceController extends Controller
      */
     public function create(Request $request): Response
     {
-        $characters = Cache::tags(['characters'])->remember('characters.mains', now()->addDay(), function () {
+        $characters = Cache::tags(['characters'])->remember('characters:mains', now()->addDay(), function () {
             return CharacterResource::collection(
                 Character::query()
                     ->where('is_main', true)
@@ -131,7 +131,7 @@ class PlannedAbsenceController extends Controller
      */
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
-        $characters = Cache::tags(['characters'])->remember('characters.mains', now()->addDay(), function () {
+        $characters = Cache::tags(['characters'])->remember('characters:mains', now()->addDay(), function () {
             return CharacterResource::collection(
                 Character::query()
                     ->where('is_main', true)

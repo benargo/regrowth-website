@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreDailyQuestsRequest;
 use App\Models\TBC\DailyQuest;
 use App\Models\TBC\DailyQuestNotification;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -27,28 +28,28 @@ class DailyQuestsController extends Controller
 
     const PVP_QUEST_ICON = 'inv_bannerpvp_02';
 
-    public function index(MediaService $mediaService): Response
+    public function index(BlizzardService $blizzard, MediaService $media): Response
     {
         return Inertia::render('DailyQuests/Index', [
             'hasNotification' => DailyQuestNotification::existsForToday(),
-            'quests' => Inertia::defer(fn () => $this->buildQuestsData($mediaService)),
+            'quests' => Inertia::defer(fn () => $this->buildQuestsData($blizzard, $media)),
         ]);
     }
 
-    public function form(MediaService $mediaService): Response
+    public function form(MediaService $media): Response
     {
         $existingNotification = DailyQuestNotification::getTodaysNotification();
 
         $icons = [
-            'cooking' => $mediaService->getIconUrl(self::COOKING_QUEST_ICON),
-            'fishing' => $mediaService->getIconUrl(self::FISHING_QUEST_ICON),
-            'dungeon' => $mediaService->getIconUrl(self::DUNGEON_QUEST_ICON),
-            'heroic' => $mediaService->getIconUrl(self::HEROIC_QUEST_ICON),
-            'pvp' => $mediaService->getIconUrl(self::PVP_QUEST_ICON),
+            'cooking' => $media->get(self::COOKING_QUEST_ICON),
+            'fishing' => $media->get(self::FISHING_QUEST_ICON),
+            'dungeon' => $media->get(self::DUNGEON_QUEST_ICON),
+            'heroic' => $media->get(self::HEROIC_QUEST_ICON),
+            'pvp' => $media->get(self::PVP_QUEST_ICON),
         ];
 
         $quests = DailyQuest::hydrate(
-            Cache::remember('daily_quests.all', now()->addMonth(), function () {
+            Cache::remember('daily_quests:all', now()->addMonth(), function () {
                 return DailyQuest::all()->map->getAttributes()->toArray();
             })
         )->groupBy('type');
@@ -155,7 +156,7 @@ class DailyQuestsController extends Controller
      *
      * @return array<int, array<string, mixed>>|null
      */
-    protected function buildQuestsData(MediaService $mediaService): ?array
+    protected function buildQuestsData(BlizzardService $blizzard, MediaService $media): ?array
     {
         $nextReset = now('Europe/Paris')->hour < 3
             ? now('Europe/Paris')->setTime(3, 0, 0)
@@ -163,7 +164,7 @@ class DailyQuestsController extends Controller
 
         $ttl = (int) now()->diffInSeconds($nextReset);
 
-        return Cache::remember('daily_quest_notification.today', $ttl, function () use ($mediaService) {
+        return Cache::remember('daily_quest_notification:today', $ttl, function () use ($blizzard, $media) {
             $notification = DailyQuestNotification::with([
                 'fishingQuest',
                 'cookingQuest',
@@ -184,8 +185,6 @@ class DailyQuestsController extends Controller
                 ['key' => 'pvpQuest', 'label' => 'PvP'],
             ];
 
-            $itemService = app(ItemService::class);
-
             $quests = [];
 
             foreach ($questOrder as $entry) {
@@ -203,11 +202,11 @@ class DailyQuestsController extends Controller
                 $quests[] = [
                     'label' => $label,
                     'name' => $quest->name,
-                    'icon' => $mediaService->getIconUrl($this->getIconForQuestType($entry['key'])),
+                    'icon' => $media->get($this->getIconForQuestType($entry['key'])),
                     'type' => $quest->type,
                     'instance' => $quest->instance?->value,
                     'mode' => $quest->mode,
-                    'rewards' => $this->buildRewardsData($quest->rewards ?? [], $itemService, $mediaService),
+                    'rewards' => $this->buildRewardsData($quest->rewards ?? [], $blizzard, $media),
                 ];
             }
 
@@ -221,20 +220,20 @@ class DailyQuestsController extends Controller
      * @param  array<int, array{item_id: int, quantity: int}>  $rewards
      * @return array<int, array<string, mixed>>
      */
-    protected function buildRewardsData(array $rewards, ItemService $itemService, MediaService $mediaService): array
+    protected function buildRewardsData(array $rewards, BlizzardService $blizzard, MediaService $media): array
     {
-        return array_map(function (array $reward) use ($itemService, $mediaService) {
+        return array_map(function (array $reward) use ($blizzard, $media) {
             $itemId = $reward['item_id'];
             $quantity = $reward['quantity'] ?? 1;
 
             try {
-                $blizzardData = $itemService->find($itemId);
-                $media = $mediaService->find('item', $itemId);
-                $assets = $media['assets'] ?? [];
+                $blizzardData = $blizzard->findItem($itemId);
+                $mediaData = $blizzard->findMedia('item', $itemId);
+                $assets = Arr::get($mediaData, 'assets', []);
                 $iconUrl = null;
 
                 if (! empty($assets)) {
-                    $urls = $mediaService->getAssetUrls($assets);
+                    $urls = $media->get($assets);
                     $iconUrl = array_values($urls)[0] ?? null;
                 }
             } catch (\Exception) {

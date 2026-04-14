@@ -2,6 +2,7 @@
 
 namespace App\Models\LootCouncil;
 
+use App\Casts\ItemMediaCast;
 use App\Events\ItemSaved;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Raid;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Item extends Model
 {
@@ -32,6 +34,8 @@ class Item extends Model
     protected $fillable = [
         'raid_id',
         'boss_id',
+        'name',
+        'icon',
         'group',
         'notes',
     ];
@@ -44,6 +48,18 @@ class Item extends Model
     protected $dispatchesEvents = [
         'saved' => ItemSaved::class,
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'icon' => ItemMediaCast::class,
+        ];
+    }
 
     /**
      * Get the raid that this item drops from.
@@ -86,5 +102,23 @@ class Item extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Get the slug for this item based on its name.
+     */
+    public function getSlugAttribute(): string
+    {
+        return Str::slug($this->name ?? '');
+    }
+
+    /**
+     * Get the Wowhead URL for this item.
+     */
+    public function getWowheadUrlAttribute(): string
+    {
+        $base = "https://www.wowhead.com/tbc/item={$this->id}";
+
+        return $this->name ? $base.'/'.$this->slug : $base;
     }
 }

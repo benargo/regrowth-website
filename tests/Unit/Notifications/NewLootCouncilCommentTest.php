@@ -5,7 +5,7 @@ namespace Tests\Unit\Notifications;
 use App\Models\LootCouncil\Comment;
 use App\Notifications\DiscordNotifiable;
 use App\Notifications\NewLootCouncilComment;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use NotificationChannels\Discord\DiscordChannel;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,8 +29,8 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(ItemService::class, function ($mock) {
-            $mock->shouldReceive('find')
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findItem')
                 ->andReturn(['name' => 'Thunderfury']);
         });
 
@@ -45,8 +45,8 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(ItemService::class, function ($mock) {
-            $mock->shouldReceive('find')
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findItem')
                 ->andThrow(new \Exception('API error'));
         });
 
@@ -61,8 +61,8 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(ItemService::class, function ($mock) {
-            $mock->shouldReceive('find')
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findItem')
                 ->andReturn(['name' => null]);
         });
 
@@ -77,8 +77,8 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(ItemService::class, function ($mock) {
-            $mock->shouldReceive('find')->andReturn(['name' => 'Warglaive']);
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findItem')->andReturn(['name' => 'Warglaive']);
         });
 
         $notification = new NewLootCouncilComment($comment);
@@ -95,8 +95,8 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(ItemService::class, function ($mock) {
-            $mock->shouldReceive('find')->andReturn(['name' => 'Warglaive']);
+        $this->mock(BlizzardService::class, function ($mock) {
+            $mock->shouldReceive('findItem')->andReturn(['name' => 'Warglaive']);
         });
 
         $notification = new NewLootCouncilComment($comment);

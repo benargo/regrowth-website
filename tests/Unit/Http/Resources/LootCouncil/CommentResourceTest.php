@@ -9,7 +9,7 @@ use App\Models\LootCouncil\CommentReaction;
 use App\Models\LootCouncil\Item;
 use App\Models\Permission;
 use App\Models\User;
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -35,24 +35,27 @@ class CommentResourceTest extends TestCase
 
     protected function mockBlizzardServices(): void
     {
-        $itemService = Mockery::mock(ItemService::class);
-        $itemService->shouldReceive('find')->andReturn([
+        $blizzardService = Mockery::mock(BlizzardService::class);
+        $blizzardService->shouldReceive('findItem')->andReturn([
             'name' => 'Test Item',
             'item_class' => ['name' => 'Armor'],
             'item_subclass' => ['name' => 'Plate'],
             'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
             'inventory_type' => ['name' => 'Head'],
         ]);
+        $blizzardService->shouldReceive('findMedia')
+            ->with('item', Mockery::any())
+            ->andReturn([
+                'assets' => [
+                    ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 12345],
+                ],
+            ]);
 
         $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('find')->andReturn([
-            'assets' => [
-                ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 12345],
-            ],
-        ]);
-        $mediaService->shouldReceive('getAssetUrls')->andReturn([12345 => 'https://example.com/icon.jpg']);
+        $mediaService->shouldReceive('get')
+            ->andReturn([12345 => 'https://example.com/icon.jpg']);
 
-        $this->app->instance(ItemService::class, $itemService);
+        $this->app->instance(BlizzardService::class, $blizzardService);
         $this->app->instance(MediaService::class, $mediaService);
     }
 
@@ -64,7 +67,7 @@ class CommentResourceTest extends TestCase
         $cacheStore->shouldReceive('flush')->andReturn(true);
 
         Cache::shouldReceive('tags')
-            ->with(['lootcouncil'])
+            ->with(['db', 'lootcouncil'])
             ->andReturn($cacheStore);
     }
 

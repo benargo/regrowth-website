@@ -19,14 +19,14 @@ class ReportsIndexRequestTest extends TestCase
     {
         $taggedCache = \Mockery::mock();
         $taggedCache->shouldReceive('remember')->andReturn(null);
-        Cache::shouldReceive('tags')->with('warcraftlogs')->andReturn($taggedCache);
+        Cache::shouldReceive('tags')->with(['warcraftlogs'])->andReturn($taggedCache);
     }
 
     private function mockMinDate(string $rawStartTime): void
     {
         $taggedCache = \Mockery::mock();
         $taggedCache->shouldReceive('remember')->andReturn($rawStartTime);
-        Cache::shouldReceive('tags')->with('warcraftlogs')->andReturn($taggedCache);
+        Cache::shouldReceive('tags')->with(['warcraftlogs'])->andReturn($taggedCache);
     }
 
     // ==================== zoneIds ====================

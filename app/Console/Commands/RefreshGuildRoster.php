@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Blizzard\GuildService;
+use App\Services\Blizzard\BlizzardService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class RefreshGuildRoster extends Command
 {
@@ -24,8 +25,15 @@ class RefreshGuildRoster extends Command
     /**
      * Execute the console command.
      */
-    public function handle(GuildService $guildService): void
+    public function handle(BlizzardService $blizzard): void
     {
-        $guildService->fresh()->roster();
+        if (Cache::tags(['blizzard', 'blizzard-api-response'])->has($blizzard->cacheKey('getGuildRoster'))) {
+            $this->error('The guild roster was fetched recently. Please wait for the cache to expire.');
+
+            return;
+        }
+
+        $blizzard->getGuildRoster();
+        $this->info('Guild roster refreshed.');
     }
 }

@@ -88,11 +88,11 @@ class GuildRankDeleteTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        Cache::put('guild_ranks.index', 'cached-data');
-        $this->assertTrue(Cache::has('guild_ranks.index'));
+        Cache::put('guild_ranks:index', 'cached-data');
+        $this->assertTrue(Cache::has('guild_ranks:index'));
 
         $this->actingAs($this->officer)->delete(route('dashboard.ranks.destroy', $rank));
 
-        $this->assertFalse(Cache::has('guild_ranks.index'));
+        $this->assertFalse(Cache::has('guild_ranks:index'));
     }
 }

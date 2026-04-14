@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Requests\Raid;
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -17,16 +18,16 @@ class AttendanceMatrixRequestTest extends TestCase
 
     private function mockNoMinDate(): void
     {
-        $taggedCache = \Mockery::mock();
+        $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('remember')->andReturn(null);
-        Cache::shouldReceive('tags')->with('warcraftlogs')->andReturn($taggedCache);
+        Cache::shouldReceive('tags')->with(['attendance', 'warcraftlogs'])->andReturn($taggedCache);
     }
 
     private function mockMinDate(string $rawStartTime): void
     {
-        $taggedCache = \Mockery::mock();
+        $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('remember')->andReturn($rawStartTime);
-        Cache::shouldReceive('tags')->with('warcraftlogs')->andReturn($taggedCache);
+        Cache::shouldReceive('tags')->with(['attendance', 'warcraftlogs'])->andReturn($taggedCache);
     }
 
     // ==================== zoneIds ====================

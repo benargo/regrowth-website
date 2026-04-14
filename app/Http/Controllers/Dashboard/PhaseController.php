@@ -90,6 +90,6 @@ class PhaseController extends Controller
      */
     protected function clearCache(): void
     {
-        Cache::forget('phases.tbc.index');
+        Cache::forget('phases:index');
     }
 }

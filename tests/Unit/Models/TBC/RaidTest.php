@@ -2,11 +2,14 @@
 
 namespace Tests\Unit\Models\TBC;
 
+use App\Models\LootCouncil\Comment;
+use App\Models\LootCouncil\Item;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -108,6 +111,31 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_generates_a_slug_from_the_name(): void
+    {
+        $raid = $this->create(['name' => 'Serpentshrine Cavern']);
+
+        $this->assertSame('serpentshrine-cavern', $raid->slug);
+    }
+
+    #[Test]
+    public function it_generates_a_slug_with_special_characters_removed(): void
+    {
+        $raid = $this->create(['name' => "Magtheridon's Lair"]);
+
+        $this->assertSame('magtheridons-lair', $raid->slug);
+    }
+
+    #[Test]
+    public function slug_is_not_persisted_to_the_database(): void
+    {
+        $raid = $this->create(['name' => 'Karazhan']);
+
+        $this->assertArrayNotHasKey('slug', $raid->getAttributes());
+        $this->assertSame('karazhan', $raid->slug);
+    }
+
+    #[Test]
     public function it_belongs_to_a_phase(): void
     {
         $phase = Phase::factory()->create();
@@ -125,5 +153,63 @@ class RaidTest extends ModelTestCase
 
         $this->assertRelation($raid, 'bosses', HasMany::class);
         $this->assertCount(3, $raid->bosses);
+    }
+
+    #[Test]
+    public function it_has_many_items(): void
+    {
+        $raid = $this->factory()->withItems(2)->create();
+
+        $this->assertRelation($raid, 'items', HasMany::class);
+        $this->assertCount(2, $raid->items);
+        $this->assertInstanceOf(Item::class, $raid->items->first());
+    }
+
+    #[Test]
+    public function it_has_many_trash_items(): void
+    {
+        $raid = $this->factory()->withItems(2)->create();
+        Item::factory()->fromBoss()->create(['raid_id' => $raid->id]);
+
+        $this->assertRelation($raid, 'trashItems', HasMany::class);
+        $this->assertCount(2, $raid->trashItems);
+        $this->assertTrue($raid->trashItems->every(fn (Item $item) => $item->boss_id === null));
+    }
+
+    #[Test]
+    public function it_has_many_comments_through_items(): void
+    {
+        $raid = $this->factory()->withComments(2)->create();
+
+        $this->assertRelation($raid, 'comments', HasManyThrough::class);
+        $this->assertCount(2, $raid->comments);
+        $this->assertInstanceOf(Comment::class, $raid->comments->first());
+    }
+
+    #[Test]
+    public function factory_with_bosses_state_creates_bosses(): void
+    {
+        $raid = $this->factory()->withBosses(3)->create();
+
+        $this->assertCount(3, $raid->bosses);
+        $this->assertTrue($raid->bosses->every(fn (Boss $boss) => $boss->raid_id === $raid->id));
+    }
+
+    #[Test]
+    public function factory_with_items_state_creates_trash_items(): void
+    {
+        $raid = $this->factory()->withItems(3)->create();
+
+        $this->assertCount(3, $raid->items);
+        $this->assertTrue($raid->items->every(fn (Item $item) => $item->boss_id === null));
+    }
+
+    #[Test]
+    public function factory_with_comments_state_creates_comments_through_items(): void
+    {
+        $raid = $this->factory()->withComments(2)->create();
+
+        $this->assertCount(1, $raid->items);
+        $this->assertCount(2, $raid->comments);
     }
 }

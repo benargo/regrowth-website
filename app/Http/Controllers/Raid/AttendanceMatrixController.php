@@ -43,20 +43,12 @@ class AttendanceMatrixController extends Controller
     {
         $filters = $this->resolveFilters($request);
 
-        $earliestDate = Cache::tags('warcraftlogs')->remember(
-            'attendance_matrix_earliest_date',
-            now()->addDays(7),
-            fn () => Report::min('start_time'),
-        );
-
         return Inertia::render('Raids/Attendance/Matrix', [
             'ranks' => GuildRank::orderBy('position')->get(),
             'zones' => Report::select('zone_id', 'zone_name')->whereNotNull('zone_id')->distinct()->get()->map(fn ($r) => ['id' => $r->zone_id, 'name' => $r->zone_name])->sortBy('name')->values(),
             'guildTags' => GuildTag::orderBy('name')->get(),
             'filters' => $this->serializeFilters($filters, $request),
-            'earliestDate' => $earliestDate
-                ? Carbon::parse($earliestDate, 'UTC')->timezone($this->timezone)->subDay()->toDateString()
-                : null,
+            'earliestDate' => $request->resolveMinDate(),
             'matrix' => Inertia::defer(function () use ($filters) {
                 $cacheKey = $this->matrixCacheKey($filters);
 

@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources\LootCouncil;
 
-use App\Services\Blizzard\ItemService;
+use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class ItemResource extends JsonResource
@@ -17,10 +18,10 @@ class ItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $itemService = app(ItemService::class);
-        $mediaService = app(MediaService::class);
-        $blizzardData = $this->getBlizzardData($itemService);
-        $iconUrl = $this->getIconUrl($mediaService);
+        $blizzard = app(BlizzardService::class);
+        $media = app(MediaService::class);
+        $blizzardData = $this->getBlizzardData($blizzard);
+        $iconUrl = $this->getIconUrl($blizzard, $media);
 
         return [
             'id' => $this->id,
@@ -64,10 +65,10 @@ class ItemResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    protected function getBlizzardData(ItemService $itemService): array
+    protected function getBlizzardData(BlizzardService $blizzard): array
     {
         try {
-            return $itemService->find($this->id);
+            return $blizzard->findItem($this->id);
         } catch (\Exception) {
             return [];
         }
@@ -76,17 +77,17 @@ class ItemResource extends JsonResource
     /**
      * Get icon URL from Blizzard media API.
      */
-    protected function getIconUrl(MediaService $mediaService): ?string
+    protected function getIconUrl(BlizzardService $blizzard, MediaService $media): ?string
     {
         try {
-            $media = $mediaService->find('item', $this->id);
-            $assets = $media['assets'] ?? [];
+            $mediaData = $blizzard->findMedia('item', $this->id);
+            $assets = Arr::get($mediaData, 'assets', []);
 
             if (empty($assets)) {
                 return null;
             }
 
-            $urls = $mediaService->getAssetUrls($assets);
+            $urls = $media->get($assets);
 
             return array_values($urls)[0] ?? null;
         } catch (\Exception) {

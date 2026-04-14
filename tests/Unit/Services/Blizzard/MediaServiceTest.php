@@ -2,648 +2,225 @@
 
 namespace Tests\Unit\Services\Blizzard;
 
-use App\Services\Blizzard\Client;
 use App\Services\Blizzard\MediaService;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MediaServiceTest extends TestCase
 {
-    protected function setUp(): void
+    private function makeService(?string $region = null, ?string $diskName = null): MediaService
     {
-        parent::setUp();
+        return new MediaService(
+            $region ?? 'eu',
+            app(FilesystemManager::class),
+            $diskName ?? 'public',
+        );
+    }
 
-        config([
-            'services.blizzard.client_id' => 'test_client_id',
-            'services.blizzard.client_secret' => 'test_client_secret',
-            'services.blizzard.region' => 'eu',
-            'services.blizzard.locale' => 'en_GB',
-        ]);
+    // ==================== Single Asset: get (string) ====================
+
+    #[Test]
+    public function get_by_name_downloads_and_returns_local_url(): void
+    {
+        Storage::fake('public');
 
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
+            'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
+
+        $service = $this->makeService();
+        $url = $service->get('inv_misc_food_15');
+
+        $this->assertIsString($url);
+        $this->assertStringContainsString('blizzard/icons/inv_misc_food_15.jpg', $url);
+        Storage::disk('public')->assertExists('blizzard/icons/inv_misc_food_15.jpg');
     }
 
     #[Test]
-    public function constructor_sets_static_namespace(): void
+    public function get_by_name_returns_cached_url_without_re_downloading(): void
     {
-        $client = new Client('client_id', 'client_secret');
-        new MediaService($client);
+        Storage::fake('public');
+        Storage::disk('public')->put('blizzard/icons/inv_misc_food_15.jpg', 'existing-content');
 
-        $this->assertEquals('static-eu', $client->getNamespace());
-    }
-
-    #[Test]
-    public function find_returns_media_data(): void
-    {
+        $httpCallCount = 0;
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response([
-                'assets' => [
-                    ['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/icons/56/inv_sword.jpg'],
-                ],
-            ]),
-        ]);
+            'render.worldofwarcraft.com/*' => function () use (&$httpCallCount) {
+                $httpCallCount++;
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $media = $service->find('item', 19019);
-
-        $this->assertIsArray($media);
-        $this->assertArrayHasKey('assets', $media);
-        $this->assertEquals('icon', $media['assets'][0]['key']);
-    }
-
-    #[Test]
-    public function find_caches_result(): void
-    {
-        $callCount = 0;
-
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
-
-                return Http::response(['assets' => []]);
+                return Http::response('new-content', 200);
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $url = $service->get('inv_misc_food_15');
 
-        $service->find('item', 19019);
-        $service->find('item', 19019);
-        $service->find('item', 19019);
-
-        $this->assertEquals(1, $callCount);
+        $this->assertIsString($url);
+        $this->assertEquals(0, $httpCallCount);
     }
 
     #[Test]
-    public function find_uses_namespace_in_cache_key(): void
+    public function get_by_name_returns_null_on_download_failure(): void
     {
+        Storage::fake('public');
+
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['assets' => []]),
+            'render.worldofwarcraft.com/*' => Http::response('Not Found', 404),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $url = $service->get('nonexistent_icon');
 
-        $service->find('item', 19019);
-
-        $this->assertTrue(Cache::has('blizzard.media.item.static-eu.19019'));
+        $this->assertNull($url);
     }
 
     #[Test]
-    public function find_throws_exception_for_invalid_media(): void
+    public function get_by_name_uses_correct_region_in_remote_url(): void
     {
+        Storage::fake('public');
+
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['error' => 'Not Found'], 404),
+            'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $this->expectException(RequestException::class);
-
-        $service->find('item', 99999999);
-    }
-
-    #[Test]
-    public function find_throws_exception_for_invalid_tag(): void
-    {
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid tag(s): invalid. Allowed tags are: item, spell, playable-class');
-
-        $service->find('invalid', 19019);
-    }
-
-    #[Test]
-    public function find_accepts_item_tag(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['assets' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $media = $service->find('item', 19019);
-
-        $this->assertIsArray($media);
+        $service = $this->makeService('us');
+        $service->get('inv_sword_39');
 
         Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                return str_contains($request->url(), '/media/item/19019');
-            }
-
-            return true;
+            return str_contains($request->url(), 'render.worldofwarcraft.com/us/icons/56/inv_sword_39.jpg');
         });
     }
 
+    // ==================== Single Asset: download (string) ====================
+
     #[Test]
-    public function find_accepts_spell_tag(): void
+    public function download_by_name_returns_local_path(): void
     {
+        Storage::fake('public');
+
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['assets' => []]),
+            'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $path = $service->download('inv_sword_39');
 
-        $media = $service->find('spell', 12345);
-
-        $this->assertIsArray($media);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                return str_contains($request->url(), '/media/spell/12345');
-            }
-
-            return true;
-        });
+        $this->assertEquals('blizzard/icons/inv_sword_39.jpg', $path);
+        Storage::disk('public')->assertExists('blizzard/icons/inv_sword_39.jpg');
+        $this->assertEquals('fake-image-content', Storage::disk('public')->get($path));
     }
 
     #[Test]
-    public function find_accepts_playable_class_tag(): void
+    public function download_by_name_returns_null_on_failure(): void
     {
+        Storage::fake('public');
+
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['assets' => []]),
+            'render.worldofwarcraft.com/*' => Http::response('Not Found', 404),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $path = $service->download('nonexistent_icon');
 
-        $media = $service->find('playable-class', 1);
-
-        $this->assertIsArray($media);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                return str_contains($request->url(), '/media/playable-class/1');
-            }
-
-            return true;
-        });
+        $this->assertNull($path);
     }
 
     #[Test]
-    public function find_fresh_bypasses_cache(): void
+    public function download_by_name_skips_existing_file(): void
     {
-        $callCount = 0;
+        Storage::fake('public');
+        Storage::disk('public')->put('blizzard/icons/inv_sword_39.jpg', 'existing-content');
 
+        $httpCallCount = 0;
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
+            'render.worldofwarcraft.com/*' => function () use (&$httpCallCount) {
+                $httpCallCount++;
 
-                return Http::response(['assets' => []]);
+                return Http::response('new-content', 200);
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $path = $service->download('inv_sword_39');
 
-        $service->find('item', 19019);
-        $service->fresh()->find('item', 19019);
-
-        $this->assertEquals(2, $callCount);
+        $this->assertEquals('blizzard/icons/inv_sword_39.jpg', $path);
+        $this->assertEquals(0, $httpCallCount);
+        $this->assertEquals('existing-content', Storage::disk('public')->get($path));
     }
 
-    #[Test]
-    public function find_fresh_throws_exception_for_invalid_tag(): void
-    {
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid tag(s): invalid. Allowed tags are: item, spell, playable-class');
-
-        $service->fresh()->find('invalid', 19019);
-    }
+    // ==================== Multiple Assets: get (array) ====================
 
     #[Test]
-    public function search_requires_tags_parameter(): void
+    public function get_assets_returns_local_urls(): void
     {
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The "tags" parameter is required for media search.');
-
-        $service->search(['name' => 'test']);
-    }
-
-    #[Test]
-    public function search_returns_results(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response([
-                'page' => 1,
-                'pageSize' => 100,
-                'maxPageSize' => 1000,
-                'pageCount' => 5,
-                'results' => [
-                    ['id' => 19019],
-                ],
-            ]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $results = $service->search(['tags' => ['item']]);
-
-        $this->assertArrayHasKey('page', $results);
-        $this->assertArrayHasKey('pageCount', $results);
-        $this->assertArrayHasKey('results', $results);
-        $this->assertEquals(1, $results['page']);
-    }
-
-    #[Test]
-    public function search_throws_for_invalid_tags(): void
-    {
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid tag(s): invalid. Allowed tags are: item, spell, playable-class');
-
-        $service->search(['tags' => ['item', 'invalid']]);
-    }
-
-    #[Test]
-    public function search_maps_tags_parameter(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->search(['tags' => ['item', 'spell']]);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                $query = parse_url($request->url(), PHP_URL_QUERY);
-                parse_str($query, $params);
-
-                return isset($params['_tags']) && $params['_tags'] === 'item,spell';
-            }
-
-            return true;
-        });
-    }
-
-    #[Test]
-    public function search_maps_item_id_parameter(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->search(['tags' => ['item'], 'itemId' => 19019]);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                $query = parse_url($request->url(), PHP_URL_QUERY);
-                parse_str($query, $params);
-
-                return isset($params['itemId']) && $params['itemId'] === '19019';
-            }
-
-            return true;
-        });
-    }
-
-    #[Test]
-    public function search_maps_name_parameter(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->search(['tags' => ['item'], 'name' => 'Thunderfury']);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                $query = parse_url($request->url(), PHP_URL_QUERY);
-                parse_str($query, $params);
-
-                return isset($params['name.en_US']) && $params['name.en_US'] === 'Thunderfury';
-            }
-
-            return true;
-        });
-    }
-
-    #[Test]
-    public function search_maps_orderby_parameter(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->search(['tags' => ['item'], 'orderby' => 'name']);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                $query = parse_url($request->url(), PHP_URL_QUERY);
-                parse_str($query, $params);
-
-                return isset($params['orderby']) && $params['orderby'] === 'name';
-            }
-
-            return true;
-        });
-    }
-
-    #[Test]
-    public function search_maps_page_parameter(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->search(['tags' => ['item'], 'page' => 3]);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                $query = parse_url($request->url(), PHP_URL_QUERY);
-                parse_str($query, $params);
-
-                return isset($params['_page']) && $params['_page'] === '3';
-            }
-
-            return true;
-        });
-    }
-
-    #[Test]
-    public function search_maps_page_size_parameter(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->search(['tags' => ['item'], 'pageSize' => 50]);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                $query = parse_url($request->url(), PHP_URL_QUERY);
-                parse_str($query, $params);
-
-                return isset($params['_pageSize']) && $params['_pageSize'] === '50';
-            }
-
-            return true;
-        });
-    }
-
-    #[Test]
-    public function search_caps_page_size_at_maximum(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->search(['tags' => ['item'], 'pageSize' => 5000]);
-
-        Http::assertSent(function ($request) {
-            if (str_contains($request->url(), 'api.blizzard.com')) {
-                $query = parse_url($request->url(), PHP_URL_QUERY);
-                parse_str($query, $params);
-
-                return isset($params['_pageSize']) && $params['_pageSize'] === '1000';
-            }
-
-            return true;
-        });
-    }
-
-    #[Test]
-    public function search_caches_results(): void
-    {
-        $callCount = 0;
+        Storage::fake('public');
 
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
-
-                return Http::response(['results' => []]);
-            },
+            'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $urls = $service->get([
+            'key' => 'icon',
+            'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
+            'file_data_id' => 135349,
+        ]);
 
-        $service->search(['tags' => ['item'], 'name' => 'Thunderfury']);
-        $service->search(['tags' => ['item'], 'name' => 'Thunderfury']);
-
-        $this->assertEquals(1, $callCount);
+        $this->assertIsArray($urls);
+        $this->assertArrayHasKey(135349, $urls);
+        $this->assertStringContainsString('blizzard/media/135349.jpg', $urls[135349]);
     }
 
     #[Test]
-    public function search_cache_key_varies_by_parameters(): void
+    public function get_assets_returns_null_on_failure(): void
     {
-        $callCount = 0;
+        Storage::fake('public');
 
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
-
-                return Http::response(['results' => []]);
-            },
+            'render.worldofwarcraft.com/*' => Http::response('Not Found', 404),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $urls = $service->get([
+            'key' => 'icon',
+            'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
+            'file_data_id' => 135349,
+        ]);
 
-        $service->search(['tags' => ['item'], 'name' => 'Thunderfury']);
-        $service->search(['tags' => ['item'], 'name' => 'Ashkandi']);
-
-        $this->assertEquals(2, $callCount);
+        $this->assertNull($urls[135349]);
     }
 
     #[Test]
-    public function with_namespace_affects_cache_keys(): void
+    public function get_assets_handles_multiple_assets(): void
     {
-        $callCount = 0;
+        Storage::fake('public');
 
         Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => function () use (&$callCount) {
-                $callCount++;
-
-                return Http::response(['assets' => []]);
-            },
+            'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $service->find('item', 19019);
-        $service->withNamespace('static-classic-eu')->find('item', 19019);
-
-        $this->assertEquals(2, $callCount);
-        $this->assertTrue(Cache::has('blizzard.media.item.static-eu.19019'));
-        $this->assertTrue(Cache::has('blizzard.media.item.static-classic-eu.19019'));
-    }
-
-    #[Test]
-    public function validate_tags_accepts_valid_array(): void
-    {
-        Http::fake([
-            'eu.battle.net/oauth/token' => Http::response([
-                'access_token' => 'test_token',
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]),
-            'eu.api.blizzard.com/*' => Http::response(['results' => []]),
+        $service = $this->makeService();
+        $urls = $service->get([
+            [
+                'key' => 'icon',
+                'value' => 'https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg',
+                'file_data_id' => 135349,
+            ],
+            [
+                'key' => 'thumbnail',
+                'value' => 'https://render.worldofwarcraft.com/icons/32/inv_sword_39.jpg',
+                'file_data_id' => 135350,
+            ],
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $results = $service->search(['tags' => ['item', 'spell']]);
-
-        $this->assertIsArray($results);
+        $this->assertCount(2, $urls);
+        $this->assertStringContainsString('blizzard/media/135349.jpg', $urls[135349]);
+        $this->assertStringContainsString('blizzard/media/135350.jpg', $urls[135350]);
     }
 
-    #[Test]
-    public function validate_tags_throws_for_multiple_invalid_tags(): void
-    {
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid tag(s): foo, bar. Allowed tags are: item, spell, playable-class');
-
-        $service->search(['tags' => ['foo', 'bar']]);
-    }
+    // ==================== Multiple Assets: download (array) ====================
 
     #[Test]
     public function download_assets_stores_file_on_disk(): void
@@ -654,17 +231,14 @@ class MediaServiceTest extends TestCase
             'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
+        $service = $this->makeService();
+        $paths = $service->download([
             'key' => 'icon',
             'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
             'file_data_id' => 135349,
-        ];
+        ]);
 
-        $paths = $service->downloadAssets($asset);
-
+        $this->assertIsArray($paths);
         $this->assertArrayHasKey(135349, $paths);
         $this->assertEquals('blizzard/media/135349.jpg', $paths[135349]);
         Storage::disk('public')->assertExists('blizzard/media/135349.jpg');
@@ -678,7 +252,6 @@ class MediaServiceTest extends TestCase
         Storage::disk('public')->put('blizzard/media/135349.jpg', 'existing-content');
 
         $httpCallCount = 0;
-
         Http::fake([
             'render.worldofwarcraft.com/*' => function () use (&$httpCallCount) {
                 $httpCallCount++;
@@ -687,16 +260,12 @@ class MediaServiceTest extends TestCase
             },
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
+        $service = $this->makeService();
+        $paths = $service->download([
             'key' => 'icon',
             'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
             'file_data_id' => 135349,
-        ];
-
-        $paths = $service->downloadAssets($asset);
+        ]);
 
         $this->assertEquals('blizzard/media/135349.jpg', $paths[135349]);
         $this->assertEquals(0, $httpCallCount);
@@ -712,16 +281,12 @@ class MediaServiceTest extends TestCase
             'render.worldofwarcraft.com/*' => Http::response('Not Found', 404),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
+        $service = $this->makeService();
+        $paths = $service->download([
             'key' => 'icon',
             'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
             'file_data_id' => 135349,
-        ];
-
-        $paths = $service->downloadAssets($asset);
+        ]);
 
         $this->assertNull($paths[135349]);
         Storage::disk('public')->assertMissing('blizzard/media/135349.jpg');
@@ -732,11 +297,10 @@ class MediaServiceTest extends TestCase
     {
         Storage::fake('public');
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
+        $service = $this->makeService();
+        $paths = $service->download(['key' => 'icon']);
 
-        $paths = $service->downloadAssets(['key' => 'icon']);
-
+        $this->assertIsArray($paths);
         $this->assertEmpty($paths);
     }
 
@@ -749,10 +313,8 @@ class MediaServiceTest extends TestCase
             'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $assets = [
+        $service = $this->makeService();
+        $results = $service->download([
             [
                 'key' => 'icon',
                 'value' => 'https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg',
@@ -763,9 +325,7 @@ class MediaServiceTest extends TestCase
                 'value' => 'https://render.worldofwarcraft.com/icons/32/inv_sword_39.jpg',
                 'file_data_id' => 135350,
             ],
-        ];
-
-        $results = $service->downloadAssets($assets);
+        ]);
 
         $this->assertCount(2, $results);
         $this->assertEquals('blizzard/media/135349.jpg', $results[135349]);
@@ -774,154 +334,10 @@ class MediaServiceTest extends TestCase
         Storage::disk('public')->assertExists('blizzard/media/135350.jpg');
     }
 
-    #[Test]
-    public function get_asset_urls_returns_public_urls(): void
-    {
-        Storage::fake('public');
-
-        Http::fake([
-            'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
-            'key' => 'icon',
-            'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
-            'file_data_id' => 135349,
-        ];
-
-        $urls = $service->getAssetUrls($asset);
-
-        $this->assertArrayHasKey(135349, $urls);
-        $this->assertStringContainsString('blizzard/media/135349.jpg', $urls[135349]);
-    }
+    // ==================== File Extension Handling ====================
 
     #[Test]
-    public function get_asset_urls_returns_null_on_failure(): void
-    {
-        Storage::fake('public');
-
-        Http::fake([
-            'render.worldofwarcraft.com/*' => Http::response('Not Found', 404),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
-            'key' => 'icon',
-            'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
-            'file_data_id' => 135349,
-        ];
-
-        $urls = $service->getAssetUrls($asset);
-
-        $this->assertNull($urls[135349]);
-    }
-
-    #[Test]
-    public function get_asset_urls_handles_multiple_assets(): void
-    {
-        Storage::fake('public');
-
-        Http::fake([
-            'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
-        ]);
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $assets = [
-            [
-                'key' => 'icon',
-                'value' => 'https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg',
-                'file_data_id' => 135349,
-            ],
-            [
-                'key' => 'thumbnail',
-                'value' => 'https://render.worldofwarcraft.com/icons/32/inv_sword_39.jpg',
-                'file_data_id' => 135350,
-            ],
-        ];
-
-        $urls = $service->getAssetUrls($assets);
-
-        $this->assertCount(2, $urls);
-        $this->assertStringContainsString('blizzard/media/135349.jpg', $urls[135349]);
-        $this->assertStringContainsString('blizzard/media/135350.jpg', $urls[135350]);
-    }
-
-    #[Test]
-    public function assets_exist_returns_true_when_file_exists(): void
-    {
-        Storage::fake('public');
-        Storage::disk('public')->put('blizzard/media/135349.jpg', 'content');
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
-            'key' => 'icon',
-            'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
-            'file_data_id' => 135349,
-        ];
-
-        $exists = $service->assetsExist($asset);
-
-        $this->assertTrue($exists[135349]);
-    }
-
-    #[Test]
-    public function assets_exist_returns_false_when_file_missing(): void
-    {
-        Storage::fake('public');
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
-            'key' => 'icon',
-            'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
-            'file_data_id' => 135349,
-        ];
-
-        $exists = $service->assetsExist($asset);
-
-        $this->assertFalse($exists[135349]);
-    }
-
-    #[Test]
-    public function assets_exist_handles_multiple_assets(): void
-    {
-        Storage::fake('public');
-        Storage::disk('public')->put('blizzard/media/135349.jpg', 'content');
-
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $assets = [
-            [
-                'key' => 'icon',
-                'value' => 'https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg',
-                'file_data_id' => 135349,
-            ],
-            [
-                'key' => 'thumbnail',
-                'value' => 'https://render.worldofwarcraft.com/icons/32/inv_sword_39.jpg',
-                'file_data_id' => 135350,
-            ],
-        ];
-
-        $exists = $service->assetsExist($assets);
-
-        $this->assertTrue($exists[135349]);
-        $this->assertFalse($exists[135350]);
-    }
-
-    #[Test]
-    public function extract_extension_handles_various_urls(): void
+    public function download_handles_png_extension(): void
     {
         Storage::fake('public');
 
@@ -929,41 +345,33 @@ class MediaServiceTest extends TestCase
             '*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
+        $service = $this->makeService();
+        $paths = $service->download([
             'key' => 'icon',
             'value' => 'https://render.worldofwarcraft.com/icons/56/inv_sword_39.png',
             'file_data_id' => 111111,
-        ];
-
-        $paths = $service->downloadAssets($asset);
+        ]);
 
         $this->assertEquals('blizzard/media/111111.png', $paths[111111]);
     }
+
+    // ==================== Filesystem Configuration ====================
 
     #[Test]
     public function download_uses_configured_filesystem(): void
     {
         Storage::fake('custom_disk');
 
-        config(['services.blizzard.filesystem' => 'custom_disk']);
-
         Http::fake([
             'render.worldofwarcraft.com/*' => Http::response('fake-image-content', 200),
         ]);
 
-        $client = new Client('client_id', 'client_secret');
-        $service = new MediaService($client);
-
-        $asset = [
+        $service = $this->makeService('eu', 'custom_disk');
+        $service->download([
             'key' => 'icon',
             'value' => 'https://render.worldofwarcraft.com/classic-us/icons/56/inv_sword_39.jpg',
             'file_data_id' => 135349,
-        ];
-
-        $service->downloadAssets($asset);
+        ]);
 
         Storage::disk('custom_disk')->assertExists('blizzard/media/135349.jpg');
     }

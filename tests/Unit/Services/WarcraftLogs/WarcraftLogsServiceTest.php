@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services\WarcraftLogs;
 
-use App\Exceptions\CacheException;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\BaseService;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
@@ -63,14 +62,14 @@ class WarcraftLogsServiceTest extends TestCase
 
         // Mock the auth token cache to return our test token
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
     }
 
     protected function fakeNotRateLimited(): void
     {
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(false);
     }
 
@@ -85,7 +84,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -119,7 +118,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -150,7 +149,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -181,7 +180,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -215,7 +214,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -253,7 +252,7 @@ class WarcraftLogsServiceTest extends TestCase
     public function query_caches_responses(): void
     {
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -272,109 +271,6 @@ class WarcraftLogsServiceTest extends TestCase
     }
 
     #[Test]
-    public function fresh_bypasses_cache(): void
-    {
-        Http::preventStrayRequests();
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guild' => ['id' => 774848]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        $this->fakeNotRateLimited();
-
-        $service = $this->getService();
-        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
-
-        // fresh(true) should forget the cache key and then remember new value
-        Cache::shouldReceive('forget')
-            ->once()
-            ->with($expectedKey);
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->with($expectedKey, 3600, \Mockery::type('callable'))
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
-        $data = $service->fresh()->publicQuery('query { guild { id } }');
-
-        $this->assertEquals(['guild' => ['id' => 774848]], $data);
-    }
-
-    #[Test]
-    public function fresh_false_uses_cache_only(): void
-    {
-        $this->fakeNotRateLimited();
-
-        $service = $this->getService();
-        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
-
-        Cache::shouldReceive('has')
-            ->once()
-            ->with($expectedKey)
-            ->andReturn(true);
-
-        Cache::shouldReceive('get')
-            ->once()
-            ->with($expectedKey)
-            ->andReturn(['guild' => ['id' => 774848]]);
-
-        $data = $service->fresh(false)->publicQuery('query { guild { id } }');
-
-        $this->assertEquals(['guild' => ['id' => 774848]], $data);
-    }
-
-    #[Test]
-    public function fresh_false_throws_when_cache_missing(): void
-    {
-        $this->fakeNotRateLimited();
-
-        $service = $this->getService();
-        $expectedKey = $service->publicQueryCacheKey('query { guild { id } }', []);
-
-        Cache::shouldReceive('has')
-            ->once()
-            ->with($expectedKey)
-            ->andReturn(false);
-
-        $this->expectException(CacheException::class);
-
-        $service->fresh(false)->publicQuery('query { guild { id } }');
-    }
-
-    #[Test]
-    public function ignore_cache_skips_cache_entirely(): void
-    {
-        Http::preventStrayRequests();
-        Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
-                'data' => ['guild' => ['id' => 774848]],
-            ], 200),
-        ]);
-
-        Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
-            ->andReturn('test_access_token');
-
-        $this->fakeNotRateLimited();
-
-        // ignoreCache() should not interact with Cache::remember at all
-        Cache::shouldNotReceive('remember');
-        Cache::shouldNotReceive('forget');
-
-        $service = $this->getService();
-        $data = $service->ignoreCache()->publicQuery('query { guild { id } }');
-
-        $this->assertEquals(['guild' => ['id' => 774848]], $data);
-    }
-
-    #[Test]
     public function query_cache_key_is_unique_per_query_and_variables(): void
     {
         $service = $this->getService();
@@ -387,7 +283,7 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertNotEquals($key1, $key2);
         $this->assertNotEquals($key1, $key3);
         $this->assertNotEquals($key3, $key4);
-        $this->assertStringStartsWith('warcraftlogs.', $key1);
+        $this->assertStringStartsWith('warcraftlogs:', $key1);
     }
 
     #[Test]
@@ -424,11 +320,11 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(false);
 
         Cache::shouldReceive('remember')
@@ -439,7 +335,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limited', true, 3600);
+            ->with('warcraftlogs:rate_limited', true, 3600);
 
         Log::shouldReceive('warning')
             ->once()
@@ -458,7 +354,7 @@ class WarcraftLogsServiceTest extends TestCase
         Http::preventStrayRequests();
 
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(true);
 
         $service = $this->getService();
@@ -482,11 +378,11 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         Cache::shouldReceive('has')
-            ->with('warcraftlogs.rate_limited')
+            ->with('warcraftlogs:rate_limited')
             ->andReturn(false);
 
         Cache::shouldReceive('remember')
@@ -506,7 +402,7 @@ class WarcraftLogsServiceTest extends TestCase
     public function custom_ttl_passed_to_query(): void
     {
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -539,7 +435,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -552,7 +448,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 793], 3600);
+            ->with('warcraftlogs:rate_limit', ['limit' => 800, 'remaining' => 793], 3600);
 
         $service = $this->getService();
         $service->publicQuery('query { guild { id } }');
@@ -572,7 +468,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -585,7 +481,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 50], 3600);
+            ->with('warcraftlogs:rate_limit', ['limit' => 800, 'remaining' => 50], 3600);
 
         Log::shouldReceive('warning')
             ->once()
@@ -612,7 +508,7 @@ class WarcraftLogsServiceTest extends TestCase
         ]);
 
         Cache::shouldReceive('get')
-            ->with('warcraftlogs.client_token', \Mockery::type('callable'))
+            ->with('warcraftlogs:client_token', \Mockery::type('callable'))
             ->andReturn('test_access_token');
 
         $this->fakeNotRateLimited();
@@ -625,7 +521,7 @@ class WarcraftLogsServiceTest extends TestCase
 
         Cache::shouldReceive('put')
             ->once()
-            ->with('warcraftlogs.rate_limit', ['limit' => 800, 'remaining' => 500], 3600);
+            ->with('warcraftlogs:rate_limit', ['limit' => 800, 'remaining' => 500], 3600);
 
         Log::spy();
 

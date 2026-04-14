@@ -85,10 +85,10 @@ class AttendanceMatrixRequest extends FormRequest
      * Resolve the minimum allowed date for date filters, which is one day
      * before the earliest report in the database.
      */
-    private function resolveMinDate(): ?string
+    public function resolveMinDate(): ?string
     {
-        $earliestRaw = Cache::tags('warcraftlogs')->remember(
-            'attendance_matrix_earliest_date',
+        $earliestRaw = Cache::tags(['attendance', 'warcraftlogs'])->remember(
+            'attendance:matrix:earliest_date',
             now()->addDay(),
             fn () => Report::min('start_time'),
         );

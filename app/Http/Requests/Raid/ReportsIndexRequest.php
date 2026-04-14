@@ -75,11 +75,11 @@ class ReportsIndexRequest extends FormRequest
      * Resolve the minimum allowed date for date filters, which is one day
      * before the earliest report in the database.
      */
-    private function resolveMinDate(): ?string
+    public function resolveMinDate(): ?string
     {
-        $earliestRaw = Cache::tags('warcraftlogs')->remember(
-            'reports_earliest_date',
-            now()->addDays(7),
+        $earliestRaw = Cache::tags(['warcraftlogs'])->remember(
+            'reports:earliest_date',
+            now()->addDay(),
             fn () => Report::min('start_time'),
         );
 
