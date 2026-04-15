@@ -9,6 +9,7 @@ use App\Models\LootCouncil\Priority;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
 use App\Services\AttendanceCalculator\CharacterAttendanceStats;
 use Carbon\Carbon;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
@@ -16,7 +17,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-class BuildAddonExportFile implements ShouldQueue
+class BuildAddonExportFile implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 

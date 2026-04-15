@@ -12,6 +12,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Report;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
 use Carbon\Carbon;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,12 @@ class BuildAddonExportFileTest extends TestCase
     public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new BuildAddonExportFile);
+    }
+
+    #[Test]
+    public function it_implements_should_be_unique(): void
+    {
+        $this->assertInstanceOf(ShouldBeUnique::class, new BuildAddonExportFile);
     }
 
     #[Test]
