@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 class ClientAuthenticationTest extends TestCase
 {
-    private const TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
+    private const TOKEN_URL = 'https://fresh.warcraftlogs.com/oauth/token';
 
     protected function setUp(): void
     {

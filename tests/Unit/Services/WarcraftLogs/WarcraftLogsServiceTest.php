@@ -41,8 +41,8 @@ class WarcraftLogsServiceTest extends TestCase
         $config = array_merge([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
-            'graphql_url' => 'https://www.warcraftlogs.com/api/v2/client*',
+            'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
+            'graphql_url' => 'https://fresh.warcraftlogs.com/api/v2/client*',
             'guild_id' => 774848,
             'timeout' => 30,
         ], $configOverrides);
@@ -57,7 +57,7 @@ class WarcraftLogsServiceTest extends TestCase
         Http::preventStrayRequests();
 
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response($data, $status),
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response($data, $status),
         ]);
 
         // Mock the auth token cache to return our test token
@@ -78,7 +78,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => ['guild' => ['id' => 774848]],
             ], 200),
         ]);
@@ -112,7 +112,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => ['guild' => ['id' => 774848]],
             ], 200),
         ]);
@@ -143,7 +143,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => ['guild' => ['id' => 774848, 'name' => 'Test Guild']],
             ], 200),
         ]);
@@ -171,7 +171,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => null,
                 'errors' => [
                     ['message' => 'Guild not found', 'path' => ['guild']],
@@ -204,7 +204,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => null,
                 'errors' => [
                     ['message' => 'First error'],
@@ -302,7 +302,7 @@ class WarcraftLogsServiceTest extends TestCase
         $service = new TestableWarcraftLogsService([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
+            'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
         ], $auth);
 
         $this->assertEquals(0, $service->publicGetGuildId());
@@ -313,7 +313,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response(
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
                 ['error' => 'Too many requests'],
                 429,
             ),
@@ -371,7 +371,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response(
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
                 ['error' => 'Internal Server Error'],
                 500,
             ),
@@ -426,7 +426,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => ['guild' => ['id' => 774848]],
             ], 200, [
                 'x-ratelimit-limit' => '800',
@@ -459,7 +459,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => ['guild' => ['id' => 774848]],
             ], 200, [
                 'x-ratelimit-limit' => '800',
@@ -499,7 +499,7 @@ class WarcraftLogsServiceTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => ['guild' => ['id' => 774848]],
             ], 200, [
                 'x-ratelimit-limit' => '800',

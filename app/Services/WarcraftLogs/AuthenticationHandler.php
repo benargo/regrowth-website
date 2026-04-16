@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 class AuthenticationHandler
 {
-    private const TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
+    private const TOKEN_URL = 'https://fresh.warcraftlogs.com/oauth/token';
 
     protected string $clientId;
 

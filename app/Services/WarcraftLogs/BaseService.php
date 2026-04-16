@@ -18,7 +18,7 @@ abstract class BaseService
 
     protected const BASE_CACHE_KEY = 'warcraftlogs';
 
-    protected const GRAPHQL_URL = 'https://www.warcraftlogs.com/api/v2/client';
+    protected const GRAPHQL_URL = 'https://fresh.warcraftlogs.com/api/v2/client';
 
     protected AuthenticationHandler $auth;
 

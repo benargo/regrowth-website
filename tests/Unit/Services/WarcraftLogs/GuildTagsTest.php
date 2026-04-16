@@ -24,7 +24,7 @@ class GuildTagsTest extends TestCase
         Http::preventStrayRequests();
 
         Http::fake([
-            'www.warcraftlogs.com/api/v2/client*' => Http::response([
+            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => [
                     'guildData' => [
                         'guild' => [
@@ -64,8 +64,8 @@ class GuildTagsTest extends TestCase
         return array_merge([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
-            'graphql_url' => 'https://www.warcraftlogs.com/api/v2/client',
+            'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
+            'graphql_url' => 'https://fresh.warcraftlogs.com/api/v2/client',
             'guild_id' => 774848,
             'timeout' => 30,
             'cache_ttl' => 43200,
