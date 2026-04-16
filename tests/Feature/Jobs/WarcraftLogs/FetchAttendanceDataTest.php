@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Feature\Jobs\WarcraftLogs;
 
-use App\Jobs\FetchWarcraftLogsAttendanceData;
+use App\Jobs\WarcraftLogs\FetchAttendanceData;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\Raids\Report;
@@ -17,7 +17,7 @@ use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class FetchWarcraftLogsAttendanceDataTest extends TestCase
+class FetchAttendanceDataTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -41,7 +41,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertDatabaseHas('pivot_characters_raid_reports', [
@@ -67,7 +67,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertDatabaseHas('pivot_characters_raid_reports', [
@@ -97,7 +97,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertDatabaseMissing('pivot_characters_raid_reports', [
@@ -120,7 +120,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertDatabaseMissing('pivot_characters_raid_reports', [
@@ -146,7 +146,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertDatabaseCount('pivot_characters_raid_reports', 0);
@@ -168,7 +168,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertDatabaseCount('pivot_characters_raid_reports', 0);
@@ -196,7 +196,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertGreaterThan($originalTime, $report->fresh()->updated_at);
@@ -217,7 +217,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$guildAttendance]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertEquals($originalTime->toDateTimeString(), $report->fresh()->updated_at->toDateTimeString());
@@ -244,7 +244,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService->shouldReceive('lazy')->twice()->andReturn(LazyCollection::make([$guildAttendance]));
 
         // Run the job twice to simulate concurrent execution or a re-run
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
         $job->handle($attendanceService);
 
@@ -278,7 +278,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService = Mockery::mock(Attendance::class);
         $attendanceService->shouldReceive('lazy')->once()->andReturn(LazyCollection::make([$existsRecord, $missingRecord]));
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->handle($attendanceService);
 
         $this->assertDatabaseHas('pivot_characters_raid_reports', ['raid_report_id' => $report->id]);
@@ -295,7 +295,7 @@ class FetchWarcraftLogsAttendanceDataTest extends TestCase
         $attendanceService->shouldNotReceive('lazy');
         $this->app->instance(Attendance::class, $attendanceService);
 
-        $job = new FetchWarcraftLogsAttendanceData;
+        $job = new FetchAttendanceData;
         $job->batchId = $batch->id;
         dispatch_sync($job);
     }

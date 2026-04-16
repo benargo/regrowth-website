@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Feature\Jobs;
+namespace Tests\Feature\Jobs\WarcraftLogs;
 
-use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
+use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
@@ -16,7 +16,7 @@ use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
+class FetchReportsByGuildTagTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -45,7 +45,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldReceive('endTime')->once()->with(null)->andReturnSelf();
         $reportsService->shouldReceive('get')->once()->andReturn(collect([$report]));
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($reportsService);
 
         $this->assertDatabaseHas('raid_reports', ['code' => 'ABC123', 'title' => 'Test Report']);
@@ -67,7 +67,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldReceive('endTime')->once()->with(null)->andReturnSelf();
         $reportsService->shouldReceive('get')->once()->andReturn(collect());
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag, since: $since);
+        $job = new FetchReportsByGuildTag($guildTag, since: $since);
         $job->handle($reportsService);
     }
 
@@ -83,7 +83,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldReceive('endTime')->once()->with($before)->andReturnSelf();
         $reportsService->shouldReceive('get')->once()->andReturn(collect());
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag, before: $before);
+        $job = new FetchReportsByGuildTag($guildTag, before: $before);
         $job->handle($reportsService);
     }
 
@@ -100,7 +100,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldReceive('endTime')->once()->with($before)->andReturnSelf();
         $reportsService->shouldReceive('get')->once()->andReturn(collect());
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag, since: $since, before: $before);
+        $job = new FetchReportsByGuildTag($guildTag, since: $since, before: $before);
         $job->handle($reportsService);
     }
 
@@ -121,7 +121,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $reportsService->shouldNotReceive('get');
         $this->app->instance(Reports::class, $reportsService);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->batchId = $batch->id;
         dispatch_sync($job);
     }
@@ -151,7 +151,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         $r1 = Report::where('code', 'AAA111')->first();
@@ -170,7 +170,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         $this->assertDatabaseCount('raid_report_links', 0);
@@ -187,7 +187,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-16 03:00:00', 'Europe/Paris'), Carbon::parse('2025-01-16 04:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         $r1 = Report::where('code', 'AAA111')->first();
@@ -207,7 +207,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-16 06:00:00', 'Europe/Paris'), Carbon::parse('2025-01-16 08:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         $this->assertDatabaseCount('raid_report_links', 0);
@@ -225,7 +225,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
         // Seed a stale auto-link that shouldn't exist
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         $r1Id = Report::where('code', 'AAA111')->value('id');
@@ -238,7 +238,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $this->assertDatabaseCount('raid_report_links', 2);
 
         // Run the job again — the stale links should be removed
-        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
         $this->assertDatabaseCount('raid_report_links', 0);
@@ -256,7 +256,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         // Officer manually creates a link between the two reports
@@ -268,7 +268,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         ]);
 
         // Run the job again — the manual links must be preserved
-        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
         $this->assertDatabaseHas('raid_report_links', ['report_1' => $r1Id, 'report_2' => $r2Id, 'created_by' => $officer->id]);
@@ -290,13 +290,13 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         // Backdate the reports after the first run to isolate the touch from the second run
         Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
 
-        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
         // No new links inserted on second run, so timestamps must remain unchanged
@@ -315,7 +315,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report1 = new ReportData('AAA111', 'Report 1', Carbon::parse('2025-01-15 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-22 19:00:00', 'Europe/Paris'), Carbon::parse('2025-01-22 22:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         // Seed a stale auto-link
@@ -329,7 +329,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $originalTime = now()->subHour();
         Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
 
-        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
         // Both reports referenced in the deleted link must be touched
@@ -348,7 +348,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report2Data = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
         // Persist both reports first so we can track their updated_at
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1Data, $report2Data]));
 
         // Backdate to isolate the initial persist from our assertion
@@ -357,7 +357,7 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         DB::table('raid_report_links')->truncate();
 
         // Run again — links should now be inserted and reports touched
-        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1Data, $report2Data]));
 
         $this->assertGreaterThan($originalTime, Report::where('code', 'AAA111')->first()->updated_at);
@@ -375,13 +375,13 @@ class FetchWarcraftLogsReportsByGuildTagTest extends TestCase
         $report2 = new ReportData('BBB222', 'Report 2', Carbon::parse('2025-01-15 20:00:00', 'Europe/Paris'), Carbon::parse('2025-01-15 23:00:00', 'Europe/Paris'), guildTag: $guildTag);
 
         // Run once — creates links
-        $job = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
         $this->assertDatabaseCount('raid_report_links', 2);
 
         // Run again — must not insert duplicates
-        $job2 = new FetchWarcraftLogsReportsByGuildTag($guildTag);
+        $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
         $this->assertDatabaseCount('raid_report_links', 2);

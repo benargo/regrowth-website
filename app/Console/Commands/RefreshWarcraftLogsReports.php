@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\FetchWarcraftLogsAttendanceData;
-use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
+use App\Jobs\WarcraftLogs\FetchAttendanceData;
+use App\Jobs\WarcraftLogs\FetchGuildTags;
+use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use Illuminate\Bus\Batch;
@@ -33,6 +34,8 @@ class RefreshWarcraftLogsReports extends Command
      */
     public function handle(): void
     {
+        dispatch_sync(new FetchGuildTags);
+
         $since = null;
 
         if ($this->option('latest')) {
@@ -46,12 +49,12 @@ class RefreshWarcraftLogsReports extends Command
             $guildTags = GuildTag::where('count_attendance', true)->get();
         }
 
-        $jobs = $guildTags->map(fn ($guildTag) => new FetchWarcraftLogsReportsByGuildTag($guildTag, $since));
+        $jobs = $guildTags->map(fn ($guildTag) => new FetchReportsByGuildTag($guildTag, $since));
 
         Bus::batch($jobs->toArray())->then(function (Batch $batch) {
             Log::info('Batch completed successfully. Refreshed reports.');
             Log::info('Starting to fetch attendance data.');
-            dispatch(new FetchWarcraftLogsAttendanceData);
+            dispatch(new FetchAttendanceData);
         })->catch(function (Throwable $e) {
             Log::error('Batch failed with error: '.$e->getMessage());
         })->dispatch();

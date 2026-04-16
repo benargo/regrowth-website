@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\WarcraftLogs;
 
 use App\Models\Character;
 use App\Models\Raids\Report;
@@ -14,7 +14,7 @@ use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class FetchWarcraftLogsAttendanceData implements ShouldQueue
+class FetchAttendanceData implements ShouldQueue
 {
     use Batchable, Queueable;
 

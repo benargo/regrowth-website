@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\WarcraftLogs;
 
 use App\Models\Raids\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class FetchWarcraftLogsReportsByGuildTag implements ShouldQueue
+class FetchReportsByGuildTag implements ShouldQueue
 {
     use Batchable, Queueable;
 

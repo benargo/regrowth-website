@@ -2,7 +2,8 @@
 
 namespace Tests\Feature\Console\Commands;
 
-use App\Jobs\FetchWarcraftLogsReportsByGuildTag;
+use App\Jobs\WarcraftLogs\FetchGuildTags;
+use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
@@ -31,9 +32,10 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports')
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
         Bus::assertBatched(function (PendingBatch $batch) use ($tag1, $tag2) {
-            return $batch->jobs->contains(fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag && $job->guildTag->is($tag1) && $job->since === null)
-                && $batch->jobs->contains(fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag && $job->guildTag->is($tag2) && $job->since === null);
+            return $batch->jobs->contains(fn ($job) => $job instanceof FetchReportsByGuildTag && $job->guildTag->is($tag1) && $job->since === null)
+                && $batch->jobs->contains(fn ($job) => $job instanceof FetchReportsByGuildTag && $job->guildTag->is($tag2) && $job->since === null);
         });
     }
 
@@ -48,9 +50,10 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports')
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
         Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag) {
             $fetchReportJobs = $batch->jobs->filter(
-                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+                fn ($job) => $job instanceof FetchReportsByGuildTag
             );
 
             return $fetchReportJobs->count() === 1
@@ -73,9 +76,10 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports')
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
         Bus::assertBatched(function (PendingBatch $batch) {
             $fetchReportJob = $batch->jobs->first(
-                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+                fn ($job) => $job instanceof FetchReportsByGuildTag
             );
 
             return $fetchReportJob->since === null;
@@ -95,11 +99,13 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports', ['--latest' => true])
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+
         $expectedSince = $endTime->copy()->addSecond();
 
         Bus::assertBatched(function (PendingBatch $batch) use ($expectedSince) {
             $fetchReportJob = $batch->jobs->first(
-                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+                fn ($job) => $job instanceof FetchReportsByGuildTag
             );
 
             return $fetchReportJob->since->eq($expectedSince);
@@ -116,9 +122,10 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports', ['--latest' => true])
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
         Bus::assertBatched(function (PendingBatch $batch) {
             $fetchReportJob = $batch->jobs->first(
-                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+                fn ($job) => $job instanceof FetchReportsByGuildTag
             );
 
             return $fetchReportJob->since === null;
@@ -141,11 +148,13 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports', ['--latest' => true])
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+
         $expectedSince = $newerEndTime->copy()->addSecond();
 
         Bus::assertBatched(function (PendingBatch $batch) use ($expectedSince) {
             $fetchReportJob = $batch->jobs->first(
-                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+                fn ($job) => $job instanceof FetchReportsByGuildTag
             );
 
             return $fetchReportJob->since->eq($expectedSince);
@@ -167,9 +176,10 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports', ['--all' => true])
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
         Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag, $nonAttendanceTag) {
             $fetchReportJobs = $batch->jobs->filter(
-                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+                fn ($job) => $job instanceof FetchReportsByGuildTag
             );
 
             return $fetchReportJobs->count() === 2
@@ -189,9 +199,10 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports')
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
         Bus::assertBatched(function (PendingBatch $batch) use ($attendanceTag, $nonAttendanceTag) {
             $fetchReportJobs = $batch->jobs->filter(
-                fn ($job) => $job instanceof FetchWarcraftLogsReportsByGuildTag
+                fn ($job) => $job instanceof FetchReportsByGuildTag
             );
 
             return $fetchReportJobs->count() === 1
@@ -214,6 +225,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports')
             ->assertSuccessful();
 
+        Bus::assertDispatchedSync(FetchGuildTags::class);
         Bus::assertBatchCount(1);
     }
 
@@ -227,7 +239,26 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         $this->artisan('app:refresh-warcraft-logs-reports')
             ->assertSuccessful();
 
-        // 3 FetchWarcraftLogsReportsByGuildTag jobs (one per guild tag)
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        // 3 FetchReportsByGuildTag jobs (one per guild tag)
         Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 3);
+    }
+
+    // ==========================================
+    // FetchGuildTags Sync Dispatch
+    // ==========================================
+
+    #[Test]
+    public function it_dispatches_fetch_guild_tags_synchronously_before_the_batch(): void
+    {
+        Bus::fake();
+
+        GuildTag::factory()->countsAttendance()->create();
+
+        $this->artisan('app:refresh-warcraft-logs-reports')
+            ->assertSuccessful();
+
+        Bus::assertDispatchedSync(FetchGuildTags::class);
+        Bus::assertBatchCount(1);
     }
 }
