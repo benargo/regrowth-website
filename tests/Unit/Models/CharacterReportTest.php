@@ -39,6 +39,47 @@ class CharacterReportTest extends TestCase
         $this->assertContains('report', $pivot->getTouchedRelations());
     }
 
+    // ==================== is_loot_councillor ====================
+
+    #[Test]
+    public function it_defaults_is_loot_councillor_to_false(): void
+    {
+        $character = Character::factory()->create();
+        $report = Report::factory()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        $pivot = CharacterReport::where('character_id', $character->id)
+            ->where('raid_report_id', $report->id)
+            ->first();
+
+        $this->assertFalse($pivot->is_loot_councillor);
+    }
+
+    #[Test]
+    public function it_can_set_is_loot_councillor_to_true(): void
+    {
+        $character = Character::factory()->create();
+        $report = Report::factory()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => true]);
+
+        $pivot = CharacterReport::where('character_id', $character->id)
+            ->where('raid_report_id', $report->id)
+            ->first();
+
+        $this->assertTrue($pivot->is_loot_councillor);
+    }
+
+    #[Test]
+    public function it_casts_is_loot_councillor_to_boolean(): void
+    {
+        $pivot = new CharacterReport;
+
+        $this->assertArrayHasKey('is_loot_councillor', $pivot->getCasts());
+        $this->assertSame('boolean', $pivot->getCasts()['is_loot_councillor']);
+    }
+
     // ==================== report ====================
 
     #[Test]

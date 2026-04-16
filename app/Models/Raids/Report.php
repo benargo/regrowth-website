@@ -97,7 +97,7 @@ class Report extends Model
     {
         return $this->belongsToMany(Character::class, 'pivot_characters_raid_reports', 'raid_report_id', 'character_id')
             ->using(CharacterReport::class)
-            ->withPivot('presence');
+            ->withPivot('presence', 'is_loot_councillor');
     }
 
     /**

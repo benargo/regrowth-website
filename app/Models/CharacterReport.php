@@ -23,6 +23,27 @@ class CharacterReport extends Pivot
     public $timestamps = false;
 
     /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'character_id',
+        'raid_report_id',
+        'presence',
+        'is_loot_councillor',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'is_loot_councillor' => 'boolean',
+    ];
+
+    /**
      * All of the relationships to be touched.
      *
      * @var array<int, string>
