@@ -7,7 +7,7 @@ use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\Data\Zone;
+use App\Services\WarcraftLogs\ValueObjects\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;

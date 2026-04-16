@@ -1,48 +1,23 @@
 <?php
 
-namespace App\Services\WarcraftLogs\Data;
+namespace App\Services\WarcraftLogs\ValueObjects;
 
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 
-readonly class Report
+readonly class Report implements Arrayable
 {
     public function __construct(
-        /**
-         * The unique code of the report.
-         */
         public string $code,
-
-        /**
-         * The title of the report.
-         */
         public string $title,
-
-        /**
-         * The start time of the report.
-         */
         public Carbon $startTime,
-
-        /**
-         * The end time of the report.
-         */
         public Carbon $endTime,
-
-        /**
-         * The guild tag associated with the report.
-         */
         public ?GuildTag $guildTag = null,
-
-        /**
-         * The principal zone of the report.
-         */
         public ?Zone $zone = null,
     ) {}
 
-    /**
-     * @param  array{code: string, title: string, startTime: float, endTime: float, guildTag?: array{id: int, name: string}, zone?: array{id: int, name: string}}  $data
-     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -55,9 +30,6 @@ readonly class Report
         );
     }
 
-    /**
-     * @return array{code: string, title: string, startTime: float, endTime: float, guildTag?: array{id: int, name: string}, zone?: array{id: int, name: string}}
-     */
     public function toArray(): array
     {
         $response = [

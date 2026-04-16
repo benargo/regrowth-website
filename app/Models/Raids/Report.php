@@ -6,7 +6,7 @@ use App\Events\ReportCreated;
 use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\Data\Zone;
+use App\Services\WarcraftLogs\ValueObjects\Zone;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

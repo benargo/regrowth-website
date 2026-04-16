@@ -5,7 +5,7 @@ namespace App\Jobs\WarcraftLogs;
 use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Services\WarcraftLogs\Attendance;
-use App\Services\WarcraftLogs\Data\GuildAttendance;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;

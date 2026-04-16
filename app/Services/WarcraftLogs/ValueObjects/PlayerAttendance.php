@@ -1,33 +1,29 @@
 <?php
 
-namespace App\Services\WarcraftLogs\Data;
+namespace App\Services\WarcraftLogs\ValueObjects;
 
-readonly class Faction
+use Illuminate\Contracts\Support\Arrayable;
+
+readonly class PlayerAttendance implements Arrayable
 {
     public function __construct(
-        public int $id,
         public string $name,
+        public int $presence,
     ) {}
 
-    /**
-     * @param  array{id: int, name: string}  $data
-     */
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
             name: $data['name'],
+            presence: $data['presence'],
         );
     }
 
-    /**
-     * @return array{id: int, name: string}
-     */
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
             'name' => $this->name,
+            'presence' => $this->presence,
         ];
     }
 }

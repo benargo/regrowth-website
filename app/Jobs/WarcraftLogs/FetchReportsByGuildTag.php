@@ -4,8 +4,8 @@ namespace App\Jobs\WarcraftLogs;
 
 use App\Models\Raids\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\Data\Report;
 use App\Services\WarcraftLogs\Reports;
+use App\Services\WarcraftLogs\ValueObjects\Report;
 use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;

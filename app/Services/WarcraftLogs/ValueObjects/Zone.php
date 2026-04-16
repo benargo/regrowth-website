@@ -1,18 +1,13 @@
 <?php
 
-namespace App\Services\WarcraftLogs\Data;
+namespace App\Services\WarcraftLogs\ValueObjects;
 
-readonly class Zone
+use Illuminate\Contracts\Support\Arrayable;
+
+readonly class Zone implements Arrayable
 {
     public function __construct(
-        /**
-         * The ID of the zone.
-         */
         public int $id,
-
-        /**
-         * The name of the zone.
-         */
         public string $name,
     ) {}
 
@@ -24,9 +19,6 @@ readonly class Zone
         );
     }
 
-    /**
-     * @return array{id: int, name: string}
-     */
     public function toArray(): array
     {
         return [

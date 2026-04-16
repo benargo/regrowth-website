@@ -1,47 +1,20 @@
 <?php
 
-namespace App\Services\WarcraftLogs\Data;
+namespace App\Services\WarcraftLogs\ValueObjects;
 
 use Carbon\Carbon;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 
-readonly class GuildAttendance
+readonly class GuildAttendance implements Arrayable
 {
     public function __construct(
-        /**
-         * The code of the report for the raid night.
-         *
-         * @param  string  $code
-         */
         public string $code,
-
-        /**
-         * The players that attended that raid night.
-         *
-         * @param  array<PlayerAttendance>  $players
-         */
         public array $players,
-
-        /**
-         * The start time of the raid night.
-         *
-         * @param  Carbon  $startTime
-         */
         public Carbon $startTime,
-
-        /**
-         * The principal zone of the raid night. This data is not to be queried or processed.
-         *
-         * @param  Zone|null  $zone
-         */
         public ?Zone $zone = null,
     ) {}
 
-    /**
-     * @param  array{code: string, players: array, startTime: string, zone: array{id: int, name: string}|null}  $data
-     *
-     * @throws ModelNotFoundException
-     */
     public static function fromArray(array $data): self
     {
         $players = Arr::map(
@@ -57,9 +30,6 @@ readonly class GuildAttendance
         );
     }
 
-    /**
-     * @return array{code: string, players: array, startTime: string, zone: array{id: int, name: string}}
-     */
     public function toArray(): array
     {
         $response = [
@@ -78,12 +48,6 @@ readonly class GuildAttendance
         return $response;
     }
 
-    /**
-     * Filter players to only include those with matching names.
-     *
-     * @param  array<string>  $playerNames  Player names to include.
-     * @return self New instance with filtered players.
-     */
     public function filterPlayers(array $playerNames): self
     {
         $filteredPlayers = array_filter(

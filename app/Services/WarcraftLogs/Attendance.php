@@ -2,12 +2,11 @@
 
 namespace App\Services\WarcraftLogs;
 
-use App\Services\WarcraftLogs\Data\GuildAttendance;
-use App\Services\WarcraftLogs\Data\GuildAttendancePagination;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
 use App\Services\WarcraftLogs\Traits\Paginates;
-use Carbon\Carbon;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 
@@ -105,22 +104,6 @@ class Attendance extends BaseService
     }
 
     /**
-     * Get the first attendance date for a specific player.
-     */
-    public function getPlayerFirstAttendanceDate(string $playerName): ?Carbon
-    {
-        foreach ($this->attendance ?? [] as $record) {
-            foreach ($record->players as $player) {
-                if ($player->name === $playerName) {
-                    return $record->startTime;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Get the attendance records sorted by date ascending.
      *
      * @param  iterable<GuildAttendance>  $attendance
@@ -129,109 +112,6 @@ class Attendance extends BaseService
     protected function sortAttendanceData(iterable $attendance): Collection
     {
         return collect($attendance)->sortBy(fn (GuildAttendance $a) => $a->startTime)->values();
-    }
-
-    // ==================== API Query Methods ====================
-
-    /**
-     * Fetch a single page of attendance for the configured guild.
-     *
-     * @param  array{page?: int, limit?: int, playerNames?: array<string>, zoneID?: int}  $params
-     *
-     * @throws GuildNotFoundException
-     * @throws GraphQLException
-     */
-    public function getAttendance(array $params = []): GuildAttendancePagination
-    {
-        return $this->getGuildAttendance(
-            $this->guildId,
-            $params['page'] ?? 1,
-            $params['limit'] ?? 25,
-            $params['playerNames'] ?? null,
-            $params['zoneID'] ?? null,
-        );
-    }
-
-    /**
-     * Fetch a single page of attendance for a guild.
-     *
-     * @param  array<string>|null  $playerNames  Filter to only include these players.
-     *
-     * @throws GuildNotFoundException
-     * @throws GraphQLException
-     */
-    public function getGuildAttendance(
-        int $guildId,
-        ?int $page = 1,
-        ?int $limit = 25,
-        ?array $playerNames = null,
-        ?int $zoneID = null,
-    ): GuildAttendancePagination {
-        return $this->querySingleTagAttendance(
-            $guildId,
-            $page,
-            $limit,
-            $playerNames,
-            null,
-            $zoneID,
-        );
-    }
-
-    /**
-     * Get a LazyCollection that auto-fetches pages of attendance as items are consumed.
-     * Memory efficient for iterating over all attendance records.
-     *
-     * @param  array<string>|null  $playerNames  Filter to only include these players.
-     *
-     * @throws GuildNotFoundException
-     * @throws GraphQLException
-     */
-    public function getAttendanceLazy(
-        ?int $limit = 25,
-        ?array $playerNames = null,
-        ?int $zoneID = null,
-    ): LazyCollection {
-        return $this->getGuildAttendanceLazy(
-            $this->guildId,
-            $limit,
-            $playerNames,
-            $zoneID,
-        );
-    }
-
-    /**
-     * Get a LazyCollection that auto-fetches pages of attendance as items are consumed.
-     * Memory efficient for iterating over all attendance records.
-     *
-     * @param  array<string>|null  $playerNames  Filter to only include these players.
-     *
-     * @throws GuildNotFoundException
-     * @throws GraphQLException
-     */
-    public function getGuildAttendanceLazy(
-        int $guildId,
-        int $limit = 25,
-        ?array $playerNames = null,
-        ?int $zoneID = null,
-    ): LazyCollection {
-        return $this->paginateLazy(function (int $page) use ($guildId, $limit, $playerNames, $zoneID) {
-            $result = $this->querySingleTagAttendance($guildId, $page, $limit, null, null, $zoneID);
-
-            $items = [];
-
-            foreach ($result->data as $attendance) {
-                if ($playerNames !== null) {
-                    $attendance = $attendance->filterPlayers($playerNames);
-                    if (empty($attendance->players)) {
-                        continue;
-                    }
-                }
-
-                $items[] = $attendance;
-            }
-
-            return ['items' => $items, 'hasMorePages' => $result->hasMorePages];
-        });
     }
 
     /**
@@ -254,14 +134,12 @@ class Attendance extends BaseService
             $guildId ?? $this->guildId,
             $page,
             $limit ?? 25,
-            null,
-            null,
             $zoneID,
         );
 
         $items = [];
 
-        foreach ($result->data as $attendance) {
+        foreach ($result['data'] as $attendance) {
             if ($playerNames !== null) {
                 $attendance = $attendance->filterPlayers($playerNames);
                 if (empty($attendance->players)) {
@@ -272,13 +150,13 @@ class Attendance extends BaseService
             $items[] = $attendance;
         }
 
-        return ['items' => $items, 'hasMorePages' => $result->hasMorePages];
+        return ['items' => $items, 'hasMorePages' => $result['hasMorePages']];
     }
 
     /**
-     * Fetch a single page of attendance for a guild, with optional filters.
+     * Fetch a single page of attendance for a guild.
      *
-     * @param  array<string>|null  $playerNames  Filter to only include these players.
+     * @return array{data: array<GuildAttendance>, hasMorePages: bool}
      *
      * @throws GuildNotFoundException
      * @throws GraphQLException
@@ -287,10 +165,8 @@ class Attendance extends BaseService
         int $guildId,
         ?int $page = 1,
         ?int $limit = 25,
-        ?array $playerNames = null,
-        ?int $guildTagID = null,
         ?int $zoneID = null,
-    ): GuildAttendancePagination {
+    ): array {
         $query = $this->buildGraphQuery($zoneID);
 
         $variables = [
@@ -318,31 +194,13 @@ class Attendance extends BaseService
             throw new GuildNotFoundException("Guild with ID {$guildId} not found");
         }
 
-        $pagination = GuildAttendancePagination::fromArray($attendanceData);
-
-        if ($playerNames !== null) {
-            $filteredData = array_map(
-                fn (GuildAttendance $attendance) => $attendance->filterPlayers($playerNames),
-                $pagination->data,
-            );
-            $filteredData = array_filter(
-                $filteredData,
-                fn (GuildAttendance $attendance) => ! empty($attendance->players),
-            );
-
-            return new GuildAttendancePagination(
-                data: array_values($filteredData),
-                total: $pagination->total,
-                perPage: $pagination->perPage,
-                currentPage: $pagination->currentPage,
-                from: $pagination->from,
-                to: $pagination->to,
-                lastPage: $pagination->lastPage,
-                hasMorePages: $pagination->hasMorePages,
-            );
-        }
-
-        return $pagination;
+        return [
+            'data' => Arr::map(
+                $attendanceData['data'] ?? [],
+                fn (array $attendance) => GuildAttendance::fromArray($attendance),
+            ),
+            'hasMorePages' => $attendanceData['has_more_pages'] ?? false,
+        ];
     }
 
     /**

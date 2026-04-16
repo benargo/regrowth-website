@@ -1,8 +1,9 @@
 <?php
 
-namespace Tests\Unit\Services\WarcraftLogs\Data;
+namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
-use App\Services\WarcraftLogs\Data\PlayerAttendance;
+use App\Services\WarcraftLogs\ValueObjects\PlayerAttendance;
+use Illuminate\Contracts\Support\Arrayable;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -15,6 +16,7 @@ class PlayerAttendanceTest extends TestCase
 
         $attendance = PlayerAttendance::fromArray($data);
 
+        $this->assertInstanceOf(Arrayable::class, $attendance);
         $this->assertSame('Thrall', $attendance->name);
         $this->assertSame(1, $attendance->presence);
     }

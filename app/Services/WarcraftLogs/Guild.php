@@ -2,9 +2,9 @@
 
 namespace App\Services\WarcraftLogs;
 
-use App\Services\WarcraftLogs\Data\Faction;
-use App\Services\WarcraftLogs\Data\Server;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
+use App\Services\WarcraftLogs\ValueObjects\Faction;
+use App\Services\WarcraftLogs\ValueObjects\Server;
 
 class Guild extends BaseService
 {

@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Services\WarcraftLogs\Data;
+namespace App\Services\WarcraftLogs\ValueObjects;
 
-readonly class Server
+use Illuminate\Contracts\Support\Arrayable;
+
+readonly class Server implements Arrayable
 {
     public function __construct(
         public int $id,
@@ -11,9 +13,6 @@ readonly class Server
         public Region $region,
     ) {}
 
-    /**
-     * @param  array{id: int, name: string, slug: string, region: array{id: int, name: string, slug: string}}  $data
-     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -24,9 +23,6 @@ readonly class Server
         );
     }
 
-    /**
-     * @return array{id: int, name: string, slug: string, region: array{id: int, name: string, slug: string}}
-     */
     public function toArray(): array
     {
         return [
