@@ -99,7 +99,7 @@ class ReportsTest extends TestCase
         $report2 = $this->makeReportData('DEF456', 'Gruul', 1771612483423, 1771626471711, ['id' => 1048, 'name' => "Gruul's Lair"]);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
                 $this->fakeReportsResponse([$report1, $report2]),
                 200,
                 ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
@@ -142,7 +142,7 @@ class ReportsTest extends TestCase
         $report3 = $this->makeReportData('GHI789', 'Magtheridon', 1771700000000, 1771710000000);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::sequence()
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
                 ->push($this->fakeReportsResponse([$report1, $report2]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
                 ->push($this->fakeReportsResponse([$report2, $report3]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
         ]);
@@ -174,7 +174,7 @@ class ReportsTest extends TestCase
         $sharedReport = $this->makeReportData('SHARED1', 'Karazhan', 1771611168498, 1771625431211);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::sequence()
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
                 ->push($this->fakeReportsResponse([$sharedReport]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
                 ->push($this->fakeReportsResponse([$sharedReport]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
         ]);
@@ -202,7 +202,7 @@ class ReportsTest extends TestCase
         $report = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
                 $this->fakeReportsResponse([$report]),
                 200,
                 ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
@@ -244,7 +244,7 @@ class ReportsTest extends TestCase
         $page2Reports = [$this->makeReportData('PAGE2A', 'Kara 2', 1771700000000, 1771710000000)];
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::sequence()
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
                 ->push($this->fakeReportsResponse($page1Reports, hasMorePages: true, currentPage: 1), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
                 ->push($this->fakeReportsResponse($page2Reports, hasMorePages: false, currentPage: 2), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
         ]);
@@ -273,7 +273,7 @@ class ReportsTest extends TestCase
         $report = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
                 $this->fakeReportsResponse([$report]),
                 200,
                 ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
@@ -328,7 +328,7 @@ class ReportsTest extends TestCase
         Http::preventStrayRequests();
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::sequence()
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
                 ->push($this->fakeReportsResponse([]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
                 ->push($this->fakeReportsResponse([]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
         ]);
@@ -360,7 +360,7 @@ class ReportsTest extends TestCase
         Http::preventStrayRequests();
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
                 $this->fakeReportsResponse([]),
                 200,
                 ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
@@ -387,7 +387,7 @@ class ReportsTest extends TestCase
         $report2 = $this->makeReportData('DEF456', 'Gruul', 1771612483423, 1771626471711);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
                 $this->fakeReportsResponse([$report1, $report2]),
                 200,
                 ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
@@ -414,7 +414,7 @@ class ReportsTest extends TestCase
         $report1 = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
                 $this->fakeReportsResponse([$report1]),
                 200,
                 ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],
@@ -443,7 +443,7 @@ class ReportsTest extends TestCase
         $sharedReport = $this->makeReportData('SHARED1', 'Karazhan', 1771611168498, 1771625431211);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::sequence()
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
                 ->push($this->fakeReportsResponse([$sharedReport]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
                 ->push($this->fakeReportsResponse([$sharedReport]), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
         ]);
@@ -472,7 +472,7 @@ class ReportsTest extends TestCase
         $page2Reports = [$this->makeReportData('PAGE2A', 'Kara 2', 1771700000000, 1771710000000)];
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::sequence()
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
                 ->push($this->fakeReportsResponse($page1Reports, hasMorePages: true, currentPage: 1), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '798'])
                 ->push($this->fakeReportsResponse($page2Reports, hasMorePages: false, currentPage: 2), 200, ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '797']),
         ]);
@@ -501,7 +501,7 @@ class ReportsTest extends TestCase
         $report = $this->makeReportData('ABC123', 'Karazhan', 1771611168498, 1771625431211);
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response(
+            'www.warcraftlogs.com/api/v2/client*' => Http::response(
                 $this->fakeReportsResponse([$report]),
                 200,
                 ['x-ratelimit-limit' => '800', 'x-ratelimit-remaining' => '799'],

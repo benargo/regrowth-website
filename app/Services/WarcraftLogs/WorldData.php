@@ -2,12 +2,20 @@
 
 namespace App\Services\WarcraftLogs;
 
+use App\Services\WarcraftLogs\Enums\Endpoints;
 use App\Services\WarcraftLogs\ValueObjects\Expansion;
 use App\Services\WarcraftLogs\ValueObjects\Zone;
 use InvalidArgumentException;
 
 class WorldData extends BaseService
 {
+    /**
+     * The endpoint to use for world data queries.
+     *
+     * This is set to "fresh" to ensure we get the most up-to-date information, as expansions and zones can change over time.
+     */
+    protected Endpoints $endpoint = Endpoints::FRESH;
+
     /**
      * @var array<Expansion>
      */

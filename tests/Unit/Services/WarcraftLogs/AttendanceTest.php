@@ -23,7 +23,7 @@ class AttendanceTest extends TestCase
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
             'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
-            'graphql_url' => 'https://fresh.warcraftlogs.com/api/v2/client',
+            'graphql_url' => 'https://www.warcraftlogs.com/api/v2/client',
             'guild_id' => 774848,
             'timeout' => 30,
             'cache_ttl' => 3600,
@@ -39,7 +39,7 @@ class AttendanceTest extends TestCase
         Http::preventStrayRequests();
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => [
                     'guildData' => [
                         'guild' => [
@@ -335,7 +335,7 @@ class AttendanceTest extends TestCase
         Http::preventStrayRequests();
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::response([
+            'www.warcraftlogs.com/api/v2/client*' => Http::response([
                 'data' => [
                     'guildData' => [
                         'guild' => null,
@@ -403,7 +403,7 @@ class AttendanceTest extends TestCase
         ];
 
         Http::fake([
-            'fresh.warcraftlogs.com/api/v2/client*' => Http::sequence()
+            'www.warcraftlogs.com/api/v2/client*' => Http::sequence()
                 ->push(['data' => ['guildData' => ['guild' => ['attendance' => $page1Data]]]], 200)
                 ->push(['data' => ['guildData' => ['guild' => ['attendance' => $page2Data]]]], 200),
         ]);
