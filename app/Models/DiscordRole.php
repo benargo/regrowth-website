@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\DiscordRoleUpdated;
 use App\Traits\HasPermissions;
 use Database\Factories\DiscordRoleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -46,6 +47,15 @@ class DiscordRole extends Model
         'name',
         'position',
         'is_visible',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => DiscordRoleUpdated::class,
     ];
 
     /**
