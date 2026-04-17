@@ -3,6 +3,8 @@
 namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Events\AddonSettingsProcessed;
+use App\Events\ReportCreated;
+use App\Events\ReportUpdated;
 use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Models\User;
@@ -323,6 +325,30 @@ class ReportTest extends ModelTestCase
         $report->refresh();
 
         $this->assertNull($report->guild_tag_id);
+    }
+
+    // ==================== events ====================
+
+    #[Test]
+    public function it_dispatches_report_created_event_on_create(): void
+    {
+        Event::fake([ReportCreated::class]);
+
+        $report = $this->create();
+
+        Event::assertDispatched(ReportCreated::class, fn ($e) => $e->report->is($report));
+    }
+
+    #[Test]
+    public function it_dispatches_report_updated_event_on_update(): void
+    {
+        $report = $this->create();
+
+        Event::fake([ReportUpdated::class]);
+
+        $report->update(['title' => 'Updated Title']);
+
+        Event::assertDispatched(ReportUpdated::class, fn ($e) => $e->report->is($report));
     }
 
     // ==================== linkedReports ====================

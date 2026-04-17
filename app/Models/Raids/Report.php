@@ -3,6 +3,7 @@
 namespace App\Models\Raids;
 
 use App\Events\ReportCreated;
+use App\Events\ReportUpdated;
 use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Models\WarcraftLogs\GuildTag;
@@ -76,6 +77,7 @@ class Report extends Model
      */
     protected $dispatchesEvents = [
         'created' => ReportCreated::class,
+        'updated' => ReportUpdated::class,
     ];
 
     /**
