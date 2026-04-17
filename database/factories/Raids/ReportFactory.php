@@ -4,6 +4,7 @@ namespace Database\Factories\Raids;
 
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,8 +36,6 @@ class ReportFactory extends Factory
             'title' => fake()->words(3, true),
             'start_time' => $startTime,
             'end_time' => $endTime,
-            'zone_id' => fake()->optional(0.7)->numberBetween(1000, 1100),
-            'zone_name' => fn (array $attrs) => $attrs['zone_id'] ? fake()->word() : null,
         ];
     }
 
@@ -47,7 +46,6 @@ class ReportFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'zone_id' => null,
-            'zone_name' => null,
         ]);
     }
 
@@ -74,11 +72,10 @@ class ReportFactory extends Factory
     /**
      * Indicate that the report has a specific zone.
      */
-    public function withZone(int $zoneId, string $zoneName): static
+    public function withZone(?Zone $zone = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'zone_id' => $zoneId,
-            'zone_name' => $zoneName,
+            'zone_id' => $zone?->id ?? Zone::factory(),
         ]);
     }
 }

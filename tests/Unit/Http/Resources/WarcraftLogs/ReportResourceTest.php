@@ -6,6 +6,7 @@ use App\Http\Resources\WarcraftLogs\ReportResource;
 use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,7 +21,7 @@ class ReportResourceTest extends TestCase
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
-        $report = Report::factory()->withoutGuildTag()->withZone(1001, 'Karazhan')->create();
+        $report = Report::factory()->withoutGuildTag()->withZone(Zone::factory()->create(['id' => 1001, 'name' => 'Karazhan']))->create();
 
         $array = (new ReportResource($report))->toArray(new Request);
 
@@ -38,7 +39,7 @@ class ReportResourceTest extends TestCase
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
-        $report = Report::factory()->withoutGuildTag()->withZone(1001, 'Karazhan')->create();
+        $report = Report::factory()->withoutGuildTag()->withZone(Zone::factory()->create(['id' => 1001, 'name' => 'Karazhan']))->create();
 
         $array = (new ReportResource($report))->toArray(new Request);
 
@@ -52,7 +53,7 @@ class ReportResourceTest extends TestCase
     #[Test]
     public function it_returns_zone_as_array(): void
     {
-        $report = Report::factory()->withoutGuildTag()->withZone(1001, 'Karazhan')->create();
+        $report = Report::factory()->withoutGuildTag()->withZone(Zone::factory()->create(['id' => 1001, 'name' => 'Karazhan']))->create();
 
         $array = (new ReportResource($report))->toArray(new Request);
 

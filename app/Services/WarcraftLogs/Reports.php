@@ -193,6 +193,15 @@ class Reports extends BaseService
                         zone {
                             id
                             name
+                            difficulties {
+                                id
+                                name
+                                sizes
+                            }
+                            expansion {
+                                id
+                                name
+                            }
                         }
                     }
                     current_page

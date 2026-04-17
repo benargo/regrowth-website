@@ -4,6 +4,7 @@ namespace App\Jobs\WarcraftLogs;
 
 use App\Models\Raids\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\ValueObjects\Report;
 use Carbon\Carbon;
@@ -59,6 +60,17 @@ class FetchReportsByGuildTag implements ShouldQueue
         $reports->each(function (Report $report) {
             Log::info('Processing report '.$report->code.' ('.$report->title.') for guild tag '.$report->guildTag?->name.'.');
 
+            if ($report->zone !== null) {
+                Zone::updateOrCreate(
+                    ['id' => $report->zone->id],
+                    [
+                        'name' => $report->zone->name,
+                        'difficulties' => $report->zone->difficulties,
+                        'expansion' => $report->zone->expansion,
+                    ]
+                );
+            }
+
             $reportModel = ReportModel::updateOrCreate(
                 ['code' => $report->code],
                 [
@@ -66,7 +78,6 @@ class FetchReportsByGuildTag implements ShouldQueue
                     'start_time' => $report->startTime,
                     'end_time' => $report->endTime,
                     'zone_id' => $report->zone?->id,
-                    'zone_name' => $report->zone?->name,
                 ],
             );
 

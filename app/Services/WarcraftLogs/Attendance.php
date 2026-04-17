@@ -234,6 +234,15 @@ class Attendance extends BaseService
                             zone {
                                 id
                                 name
+                                difficulties {
+                                    id
+                                    name
+                                    sizes
+                                }
+                                expansion {
+                                    id
+                                    name
+                                }
                             }
                         }
                         total

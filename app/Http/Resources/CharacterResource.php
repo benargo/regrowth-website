@@ -33,6 +33,7 @@ class CharacterResource extends JsonResource
             'playable_race' => $this->playable_race,
             'pivot' => $this->whenPivotLoaded('pivot_characters_raid_reports', fn () => [
                 'presence' => $this->pivot->presence,
+                'is_loot_councillor' => $this->pivot->is_loot_councillor,
             ]),
             'rank' => $this->whenLoaded('rank', fn () => new GuildRankResource($this->rank)),
         ];

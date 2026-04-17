@@ -7,7 +7,10 @@ use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Reports;
+use App\Services\WarcraftLogs\ValueObjects\Difficulty;
+use App\Services\WarcraftLogs\ValueObjects\Expansion;
 use App\Services\WarcraftLogs\ValueObjects\Report as ReportData;
+use App\Services\WarcraftLogs\ValueObjects\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -49,6 +52,40 @@ class FetchReportsByGuildTagTest extends TestCase
         $job->handle($reportsService);
 
         $this->assertDatabaseHas('raid_reports', ['code' => 'ABC123', 'title' => 'Test Report']);
+    }
+
+    #[Test]
+    public function it_upserts_the_zone_when_persisting_a_report_with_a_zone(): void
+    {
+        $guildTag = GuildTag::factory()->create();
+
+        $zone = new Zone(
+            id: 2000,
+            name: 'Karazhan',
+            difficulties: [new Difficulty(id: 3, name: 'Normal', sizes: [10])],
+            expansion: new Expansion(id: 1001, name: 'TBC'),
+        );
+
+        $report = new ReportData(
+            code: 'ZONE01',
+            title: 'Zone Test Report',
+            startTime: Carbon::parse('2025-01-01 19:00:00'),
+            endTime: Carbon::parse('2025-01-01 22:00:00'),
+            guildTag: $guildTag,
+            zone: $zone,
+        );
+
+        $reportsService = Mockery::mock(Reports::class);
+        $reportsService->shouldReceive('byGuildTags')->once()->andReturnSelf();
+        $reportsService->shouldReceive('startTime')->once()->with(null)->andReturnSelf();
+        $reportsService->shouldReceive('endTime')->once()->with(null)->andReturnSelf();
+        $reportsService->shouldReceive('get')->once()->andReturn(collect([$report]));
+
+        $job = new FetchReportsByGuildTag($guildTag);
+        $job->handle($reportsService);
+
+        $this->assertDatabaseHas('wcl_zones', ['id' => 2000, 'name' => 'Karazhan']);
+        $this->assertDatabaseHas('raid_reports', ['code' => 'ZONE01', 'zone_id' => 2000]);
     }
 
     // ==========================================

@@ -8,6 +8,7 @@ use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
 use App\Services\AttendanceCalculator\AttendanceMatrix;
 use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
@@ -1110,8 +1111,10 @@ class AttendanceCalculatorTest extends TestCase
         $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
-        $report1 = Report::factory()->withGuildTag($tag)->withZone(1001, 'Black Temple')->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $report2 = Report::factory()->withGuildTag($tag)->withZone(1002, 'Sunwell Plateau')->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'Europe/Paris')]);
+        $zoneA = Zone::factory()->create(['id' => 1001, 'name' => 'Black Temple']);
+        $zoneB = Zone::factory()->create(['id' => 1002, 'name' => 'Sunwell Plateau']);
+        $report1 = Report::factory()->withGuildTag($tag)->withZone($zoneA)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
+        $report2 = Report::factory()->withGuildTag($tag)->withZone($zoneB)->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'Europe/Paris')]);
         $this->attachCharacter($report1, $thrall, 1);
         $this->attachCharacter($report2, $jaina, 1);
 

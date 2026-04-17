@@ -71,9 +71,10 @@ Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], 
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/create', [ReportController::class, 'create'])->can('create', 'App\Models\Raids\Report')->name('reports.create');
+    Route::post('/reports', [ReportController::class, 'store'])->can('create', 'App\Models\Raids\Report')->name('reports.store');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->can('view', 'report')->name('reports.show');
-    Route::post('/reports/{report}/links', [ReportController::class, 'storeLinks'])->can('update', 'report')->name('reports.store-links');
-    Route::patch('/reports/{report}/links', [ReportController::class, 'destroyLinks'])->can('update', 'report')->name('reports.destroy-links');
+    Route::patch('/reports/{report}', [ReportController::class, 'update'])->can('update', 'report')->name('reports.update');
 });
 
 /*

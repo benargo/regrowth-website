@@ -120,6 +120,6 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($loadedCharacter))->toArray(new Request);
 
-        $this->assertSame(['presence' => 3], $array['pivot']);
+        $this->assertSame(['presence' => 3, 'is_loot_councillor' => false], $array['pivot']);
     }
 }

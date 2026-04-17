@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Raid;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Raid\DestroyReportLinksRequest;
 use App\Http\Requests\Raid\ReportsIndexRequest;
-use App\Http\Requests\Raid\StoreReportLinksRequest;
+use App\Http\Requests\Raid\StoreReportRequest;
+use App\Http\Requests\Raid\UpdateReportRequest;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Http\Resources\WarcraftLogs\ReportResource;
+use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,18 +24,133 @@ use Inertia\Response;
 class ReportController extends Controller
 {
     /**
+     * Display the form to manually create a new raid report.
+     */
+    public function create(Request $request): Response
+    {
+        $zones = Zone::orderBy('name')->get();
+
+        $expansions = $zones
+            ->groupBy(fn (Zone $zone) => $zone->expansion->id)
+            ->map(fn ($groupedZones, $expansionId) => [
+                'id' => $groupedZones->first()->expansion->id,
+                'name' => $groupedZones->first()->expansion->name,
+                'zones' => $groupedZones->map(fn (Zone $zone) => [
+                    'id' => $zone->id,
+                    'name' => $zone->name,
+                ])->values()->all(),
+            ])
+            ->values()
+            ->all();
+
+        return Inertia::render('Raids/Reports/Create', [
+            'expansions' => $expansions,
+            'defaultExpansionId' => config('services.warcraftlogs.expansion_id'),
+            'guildTags' => GuildTag::orderBy('name')->get(),
+            'characters' => Character::select('id', 'name', 'playable_class', 'is_main')->orderBy('name')->get(),
+            'lootCouncillorCandidates' => Inertia::optional(function () {
+                return Character::select('id', 'name', 'playable_class', 'is_main')
+                    ->where('is_loot_councillor', true)
+                    ->orderBy('name')
+                    ->get();
+            }),
+            'nearbyReports' => Inertia::optional(function () use ($request) {
+                $page = max(1, $request->integer('nearby', 1));
+                $perPage = 15;
+
+                $total = Cache::tags(['warcraftlogs'])->remember(
+                    'reports:total_count',
+                    now()->addMinutes(5),
+                    fn () => Report::count()
+                );
+
+                $reports = Report::orderBy('start_time', 'desc')
+                    ->with('zone')
+                    ->skip(($page - 1) * $perPage)
+                    ->take($perPage)
+                    ->get();
+
+                $paginator = new LengthAwarePaginator($reports, $total, $perPage, $page, [
+                    'path' => $request->url(),
+                    'pageName' => 'nearby',
+                ]);
+
+                return LinkedReportResource::collection($paginator);
+            }),
+        ]);
+    }
+
+    /**
+     * Store a manually created raid report.
+     */
+    public function store(StoreReportRequest $request): RedirectResponse
+    {
+        $report = Report::create([
+            'title' => $request->title,
+            'start_time' => Carbon::parse($request->start_time, 'Europe/Paris')->utc(),
+            'end_time' => Carbon::parse($request->end_time, 'Europe/Paris')->utc(),
+            'guild_tag_id' => $request->guild_tag_id,
+            'zone_id' => $request->zone_id,
+        ]);
+
+        if (! empty($request->character_ids)) {
+            $report->characters()->attach(
+                collect($request->character_ids)
+                    ->mapWithKeys(fn ($id) => [$id => ['presence' => 1]])
+                    ->all()
+            );
+        }
+
+        if (! empty($request->loot_councillor_ids)) {
+            $existingIds = $report->characters()->pluck('characters.id')->toArray();
+
+            foreach ($request->loot_councillor_ids as $characterId) {
+                if (in_array($characterId, $existingIds)) {
+                    $report->characters()->updateExistingPivot($characterId, ['is_loot_councillor' => true]);
+                } else {
+                    $report->characters()->attach($characterId, ['presence' => 0, 'is_loot_councillor' => true]);
+                }
+            }
+        }
+
+        if (! empty($request->linked_report_ids)) {
+            $selectedReports = Report::whereIn('id', $request->linked_report_ids)->get();
+            $allReports = $selectedReports->push($report);
+
+            foreach ($allReports as $r1) {
+                $r1->load('linkedReports');
+
+                $existingIds = $r1->linkedReports->pluck('id')->all();
+
+                $newIds = $allReports
+                    ->where('id', '!=', $r1->id)
+                    ->pluck('id')
+                    ->diff($existingIds);
+
+                $pivotData = $newIds
+                    ->mapWithKeys(fn ($id) => [$id => ['created_by' => $request->user()->getKey()]])
+                    ->all();
+
+                if (! empty($pivotData)) {
+                    $r1->linkedReports()->attach($pivotData);
+                }
+            }
+        }
+
+        Cache::tags('warcraftlogs')->flush();
+
+        return redirect()->route('raids.reports.show', $report)->with('success', 'New report created');
+    }
+
+    /**
      * Display a paginated index of WarcraftLogs reports with optional filters.
      */
     public function index(ReportsIndexRequest $request): Response
     {
         $timezone = config('app.timezone', 'UTC');
-        $zones = Report::select('zone_id', 'zone_name')
-            ->whereNotNull('zone_id')
-            ->distinct()
-            ->get()
-            ->map(fn ($r) => ['id' => $r->zone_id, 'name' => $r->zone_name])
-            ->sortBy('name')
-            ->values();
+        $zones = Zone::whereIn('id', Report::select('zone_id')->whereNotNull('zone_id')->distinct())
+            ->orderBy('name')
+            ->get();
 
         $guildTags = GuildTag::orderBy('name')->get();
 
@@ -63,7 +180,7 @@ class ReportController extends Controller
             'reports' => Inertia::defer(function () use ($zoneIds, $guildTagIds, $days, $sinceDate, $beforeDate) {
                 return ReportResource::collection(
                     Report::query()
-                        ->with('guildTag')
+                        ->with(['guildTag', 'zone'])
                         ->withCount('linkedReports')
                         ->when($zoneIds !== null, fn ($q) => $q->whereIn('zone_id', $zoneIds))
                         ->when($guildTagIds !== null, fn ($q) => $q->whereIn('guild_tag_id', $guildTagIds))
@@ -90,11 +207,26 @@ class ReportController extends Controller
      */
     public function show(Request $request, Report $report): Response
     {
-        $report->load(['guildTag', 'characters.rank', 'linkedReports']);
+        $report->load(['guildTag', 'zone', 'characters.rank', 'linkedReports']);
 
         return Inertia::render('Raids/Reports/Show', [
             'report' => new ReportResource($report),
             'canManageLinks' => $request->user()->can('update', $report),
+            'lootCouncillorCandidates' => Inertia::optional(function () use ($report) {
+                $linkedReportIds = $report->linkedReports->pluck('id');
+
+                $excludedIds = Character::select('characters.id')
+                    ->join('pivot_characters_raid_reports', 'characters.id', '=', 'pivot_characters_raid_reports.character_id')
+                    ->where('pivot_characters_raid_reports.is_loot_councillor', true)
+                    ->whereIn('pivot_characters_raid_reports.raid_report_id', $linkedReportIds->push($report->id))
+                    ->pluck('characters.id');
+
+                return Character::select('id', 'name', 'playable_class', 'is_main')
+                    ->where('is_loot_councillor', true)
+                    ->whereNotIn('id', $excludedIds)
+                    ->orderBy('name')
+                    ->get();
+            }),
             'impactedReports' => Inertia::optional(function () use ($report) {
                 return LinkedReportResource::collection(
                     $report->linkedReports()->wherePivotNotNull('created_by')->get()
@@ -112,6 +244,7 @@ class ReportController extends Controller
                 $totalFromStart = $total - $page1Offset;
 
                 $reports = Report::orderBy('start_time', 'desc')
+                    ->with('zone')
                     ->skip($offset)
                     ->take($perPage)
                     ->get();
@@ -127,61 +260,97 @@ class ReportController extends Controller
     }
 
     /**
-     * Remove all manually created bidirectional links for the given report.
+     * Update a raid report.
+     *
+     * Manages bidirectional linked reports via the `links` payload:
+     *   - `action: create` → create links between this report and all reports in `link_ids`.
+     *   - `action: delete` → remove all manually created links for this report.
      */
-    public function destroyLinks(DestroyReportLinksRequest $request, Report $report): RedirectResponse
+    public function update(UpdateReportRequest $request, Report $report): RedirectResponse
     {
-        $linkedIds = $report->linkedReports()
-            ->wherePivotNotNull('created_by')
-            ->pluck('id')
-            ->all();
+        /**
+         * Linked reports creation and deletion.
+         *
+         * When creating links, we need to ensure that links are created in both directions (report → linked and linked → report) while avoiding duplicates.
+         * When deleting links, we need to ensure that links are deleted in both directions while preserving manually created links from the other report if they exist.
+         */
+        $linksAction = $request->input('links.action');
 
-        if (! empty($linkedIds)) {
-            // Delete forward direction: report → linked
-            $report->linkedReports()->detach($linkedIds);
-
-            // Delete reverse direction: linked → report
-            DB::table('raid_report_links')
-                ->whereIn('report_1', $linkedIds)
-                ->where('report_2', $report->id)
-                ->delete();
-        }
-
-        Cache::tags('warcraftlogs')->flush();
-
-        return back();
-    }
-
-    /**
-     * Create bidirectional links between the given report and all selected reports,
-     * including links between the selected reports themselves.
-     */
-    public function storeLinks(StoreReportLinksRequest $request, Report $report): RedirectResponse
-    {
-        $selectedReports = Report::whereIn('code', $request->validated('codes'))->get();
-
-        $allReports = $selectedReports->push($report);
-
-        foreach ($allReports as $r1) {
-            $r1->load('linkedReports');
-
-            $existingIds = $r1->linkedReports->pluck('id')->all();
-
-            $newIds = $allReports
-                ->where('id', '!=', $r1->id)
+        if ($linksAction === 'delete') {
+            $existingLinkedIds = $report->linkedReports()
+                ->wherePivotNotNull('created_by')
                 ->pluck('id')
-                ->diff($existingIds);
-
-            $pivotData = $newIds
-                ->mapWithKeys(fn ($id) => [$id => ['created_by' => $request->user()->getKey()]])
                 ->all();
 
-            if (! empty($pivotData)) {
-                $r1->linkedReports()->attach($pivotData);
+            if (! empty($existingLinkedIds)) {
+                // Delete forward direction: report → linked
+                $report->linkedReports()->detach($existingLinkedIds);
+
+                // Delete reverse direction: linked → report
+                DB::table('raid_report_links')
+                    ->whereIn('report_1', $existingLinkedIds)
+                    ->where('report_2', $report->id)
+                    ->delete();
+            }
+        } elseif ($linksAction === 'create') {
+            $selectedReports = Report::whereIn('id', $request->input('links.link_ids', []))->get();
+            $allReports = $selectedReports->push($report);
+
+            foreach ($allReports as $r1) {
+                $r1->load('linkedReports');
+
+                $existingIds = $r1->linkedReports->pluck('id')->all();
+
+                $newIds = $allReports
+                    ->where('id', '!=', $r1->id)
+                    ->pluck('id')
+                    ->diff($existingIds);
+
+                $pivotData = $newIds
+                    ->mapWithKeys(fn ($id) => [$id => ['created_by' => $request->user()->getKey()]])
+                    ->all();
+
+                if (! empty($pivotData)) {
+                    $r1->linkedReports()->attach($pivotData);
+                }
             }
         }
 
-        Cache::tags('warcraftlogs')->flush();
+        /**
+         * Loot councillors management.
+         *
+         * When creating or deleting loot councillors, we need to update the pivot table accordingly.
+         * If a character is being added as a loot councillor, we either update the existing pivot or attach a new one.
+         * If a character is being removed as a loot councillor, we either update the existing pivot or detach it if the presence is 0.
+         */
+        $lootCouncillorsAction = $request->input('loot_councillors.action');
+
+        if ($lootCouncillorsAction === 'create') {
+            $characterIds = $request->input('loot_councillors.character_ids', []);
+            $existingIds = $report->characters()->pluck('characters.id')->toArray();
+
+            foreach ($characterIds as $characterId) {
+                if (in_array($characterId, $existingIds)) {
+                    $report->characters()->updateExistingPivot($characterId, ['is_loot_councillor' => true]);
+                } else {
+                    $report->characters()->attach($characterId, ['presence' => 0, 'is_loot_councillor' => true]);
+                }
+            }
+        } elseif ($lootCouncillorsAction === 'delete') {
+            $characterIds = $request->input('loot_councillors.character_ids', []);
+
+            foreach ($characterIds as $characterId) {
+                $pivot = $report->characters()->wherePivot('character_id', $characterId)->first()?->pivot;
+
+                if ($pivot && $pivot->presence === 0) {
+                    $report->characters()->detach($characterId);
+                } else {
+                    $report->characters()->updateExistingPivot($characterId, ['is_loot_councillor' => false]);
+                }
+            }
+        }
+
+        $report->touch();
 
         return back();
     }

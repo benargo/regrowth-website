@@ -49,7 +49,16 @@ class WorldData extends BaseService
             zones(expansion_id: $expansionId) {
               id
               name
+              difficulties {
+                id
+                name
+                sizes
+              }
               frozen
+              expansion {
+                id
+                name
+              }
             }
           }
         }

@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\AttendanceCalculator\AttendanceMatrix;
 use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
 use Carbon\Carbon;
@@ -45,7 +46,7 @@ class AttendanceMatrixController extends Controller
 
         return Inertia::render('Raids/Attendance/Matrix', [
             'ranks' => GuildRank::orderBy('position')->get(),
-            'zones' => Report::select('zone_id', 'zone_name')->whereNotNull('zone_id')->distinct()->get()->map(fn ($r) => ['id' => $r->zone_id, 'name' => $r->zone_name])->sortBy('name')->values(),
+            'zones' => Zone::whereIn('id', Report::select('zone_id')->whereNotNull('zone_id')->distinct())->orderBy('name')->get(),
             'guildTags' => GuildTag::orderBy('name')->get(),
             'filters' => $this->serializeFilters($filters, $request),
             'earliestDate' => $request->resolveMinDate(),

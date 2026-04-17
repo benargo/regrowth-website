@@ -5,43 +5,43 @@ namespace App\Services\WarcraftLogs\ValueObjects;
 use Illuminate\Contracts\Support\Arrayable;
 use JsonSerializable;
 
-readonly class Expansion implements Arrayable, JsonSerializable
+readonly class Difficulty implements Arrayable, JsonSerializable
 {
     /**
-     * @param  array<Zone>  $zones
+     * @param  array<int>  $sizes
      */
     public function __construct(
         public int $id,
         public string $name,
-        public array $zones = [],
+        public array $sizes = [],
     ) {}
 
     /**
-     * @param  array{id: int, name: string, zones: array<array{id: int, name: string}>}  $data
+     * @param  array{id: int, name: string, sizes?: array<int>}  $data
      */
     public static function fromArray(array $data): self
     {
         return new self(
             id: $data['id'],
             name: $data['name'],
-            zones: array_map(fn (array $zone) => Zone::fromArray($zone), $data['zones'] ?? []),
+            sizes: $data['sizes'] ?? [],
         );
     }
 
     /**
-     * @return array{id: int, name: string, zones: array<array{id: int, name: string}>}
+     * @return array{id: int, name: string, sizes: array<int>}
      */
     public function toArray(): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'zones' => array_map(fn (Zone $zone) => $zone->toArray(), $this->zones),
+            'sizes' => $this->sizes,
         ];
     }
 
     /**
-     * @return array{id: int, name: string, zones: array<array{id: int, name: string}>}
+     * @return array{id: int, name: string, sizes: array<int>}
      */
     public function jsonSerialize(): array
     {

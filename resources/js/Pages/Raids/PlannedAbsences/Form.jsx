@@ -328,6 +328,7 @@ export default function Create() {
                                 }}
                                 min={canBackdate ? undefined : new Date().toISOString().split("T")[0]}
                                 max="2099-12-31"
+                                helpText="Leave blank to show all available dates."
                             />
                             <InputError message={errors.start_date} className="mt-2" />
                         </div>
@@ -345,6 +346,7 @@ export default function Create() {
                                 }}
                                 min={startDate}
                                 max="2099-12-31"
+                                helpText="Leave blank to show all available dates."
                             />
                             <InputError message={errors.end_date} className="mt-2" />
                         </div>

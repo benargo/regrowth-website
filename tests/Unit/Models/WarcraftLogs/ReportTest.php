@@ -9,7 +9,7 @@ use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -54,7 +54,6 @@ class ReportTest extends ModelTestCase
             'end_time',
             'guild_tag_id',
             'zone_id',
-            'zone_name',
         ]);
     }
 
@@ -66,7 +65,6 @@ class ReportTest extends ModelTestCase
         $this->assertCasts($report, [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
-            'zone_id' => 'integer',
         ]);
     }
 
@@ -79,7 +77,6 @@ class ReportTest extends ModelTestCase
             'created_at',
             'updated_at',
             'zone_id',
-            'zone_name',
         ]);
     }
 
@@ -108,17 +105,6 @@ class ReportTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_casts_zone_id_to_integer(): void
-    {
-        $report = $this->factory()->withZone(1047, 'Karazhan')->create();
-
-        $report->refresh();
-
-        $this->assertIsInt($report->zone_id);
-        $this->assertSame(1047, $report->zone_id);
-    }
-
-    #[Test]
     public function it_can_be_created_without_zone(): void
     {
         $report = $this->factory()->withoutZone()->create();
@@ -126,30 +112,60 @@ class ReportTest extends ModelTestCase
         $this->assertTableHas([
             'code' => $report->code,
             'zone_id' => null,
-            'zone_name' => null,
         ]);
     }
 
     #[Test]
-    public function zone_accessor_returns_zone_object(): void
+    public function zone_returns_belongs_to_relationship(): void
     {
-        $report = $this->factory()->withZone(1047, 'Karazhan')->create();
+        $report = new Report;
+
+        $this->assertInstanceOf(BelongsTo::class, $report->zone());
+    }
+
+    #[Test]
+    public function zone_relationship_returns_zone_model(): void
+    {
+        $zone = Zone::factory()->create();
+        $report = $this->factory()->withZone($zone)->create();
 
         $report->refresh();
 
         $this->assertInstanceOf(Zone::class, $report->zone);
-        $this->assertSame(1047, $report->zone->id);
-        $this->assertSame('Karazhan', $report->zone->name);
+        $this->assertSame($zone->id, $report->zone->id);
+        $this->assertSame($zone->name, $report->zone->name);
     }
 
     #[Test]
-    public function zone_accessor_returns_null_when_no_zone(): void
+    public function zone_relationship_returns_null_when_no_zone(): void
     {
         $report = $this->factory()->withoutZone()->create();
 
         $report->refresh();
 
         $this->assertNull($report->zone);
+    }
+
+    #[Test]
+    public function expansion_accessor_returns_expansion_from_zone(): void
+    {
+        $zone = Zone::factory()->create();
+        $report = $this->factory()->withZone($zone)->create();
+
+        $report->refresh();
+        $report->load('zone');
+
+        $this->assertEquals($zone->expansion, $report->expansion);
+    }
+
+    #[Test]
+    public function expansion_accessor_returns_null_when_no_zone(): void
+    {
+        $report = $this->factory()->withoutZone()->create();
+
+        $report->refresh();
+
+        $this->assertNull($report->expansion);
     }
 
     #[Test]

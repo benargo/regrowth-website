@@ -7,7 +7,7 @@ use App\Events\ReportUpdated;
 use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Models\WarcraftLogs\Zone;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -53,22 +53,17 @@ class Report extends Model
         'end_time',
         'guild_tag_id',
         'zone_id',
-        'zone_name',
     ];
 
     /**
      * Get the attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, mixed>
      */
-    protected function casts(): array
-    {
-        return [
-            'start_time' => 'datetime',
-            'end_time' => 'datetime',
-            'zone_id' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+    ];
 
     /**
      * The event map for the model.
@@ -89,7 +84,6 @@ class Report extends Model
         'created_at',
         'updated_at',
         'zone_id',
-        'zone_name',
     ];
 
     /**
@@ -126,14 +120,20 @@ class Report extends Model
     }
 
     /**
-     * Get the zone attribute as a Zone object.
+     * Get the zone associated with this report.
      */
-    public function zone(): Attribute
+    public function zone(): BelongsTo
+    {
+        return $this->belongsTo(Zone::class);
+    }
+
+    /**
+     * Get the expansion associated with this report through the zone relationship.
+     */
+    public function expansion(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->zone_id !== null
-                ? Zone::fromArray(['id' => $this->zone_id, 'name' => $this->zone_name])
-                : null,
+            get: fn () => $this->zone?->expansion,
         );
     }
 }

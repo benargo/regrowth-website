@@ -3,10 +3,26 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
 import TextInput from "@/Components/TextInput";
 
-export default function DateFilterButton({ label, value, onChange, onClear, min, max }) {
+function formatDateValue(value, includeTime) {
+    if (!value) return null;
+    if (includeTime) {
+        // value is "YYYY-MM-DDTHH:MM"
+        const [datePart, timePart] = value.split("T");
+        if (!datePart) return value;
+        const formatted = datePart.split("-").reverse().join("/");
+        return timePart ? `${formatted} ${timePart}` : formatted;
+    }
+    // value is "YYYY-MM-DD"
+    return value.split("-").reverse().join("/");
+}
+
+export default function DateFilterButton({ label, value, onChange, onClear, min, max, includeTime = false, helpText = "Leave blank to show all available dates." }) {
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState(value);
-    const today = new Date().toISOString().split("T")[0];
+
+    const defaultMax = includeTime
+        ? new Date().toISOString().slice(0, 16)
+        : new Date().toISOString().split("T")[0];
 
     const open = () => {
         setDraft(value);
@@ -29,6 +45,8 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
         close();
     };
 
+    const formattedValue = formatDateValue(value, includeTime);
+
     return (
         <>
             <button
@@ -38,7 +56,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
             >
                 <span className="flex items-center gap-2 truncate">
                     <Icon icon="calendar" style="regular" className="shrink-0 text-amber-500" />
-                    {value ? `${label}: ${value.split("-").reverse().join("/")}` : label}
+                    {formattedValue ? `${label}: ${formattedValue}` : label}
                 </span>
                 {value && (
                     <span className="ml-2 shrink-0 rounded-full bg-amber-600 px-1.5 py-0.5 text-xs text-white">
@@ -50,12 +68,16 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
             <Modal show={isOpen} onClose={close} maxWidth="sm">
                 <div className="p-6">
                     <h2 className="mb-1 text-lg font-bold text-white">{label} date</h2>
-                    <p className="mb-4 text-sm text-gray-400">Leave blank to show all available dates.</p>
+                    {typeof helpText === "string" ? (
+                        <p className="mb-4 text-sm text-gray-400">{helpText}</p>
+                    ) : (
+                        <div className="mb-4 text-sm text-gray-400">{helpText}</div>
+                    )}
                     <TextInput
-                        type="date"
+                        type={includeTime ? "datetime-local" : "date"}
                         value={draft}
                         min={min}
-                        max={max ?? today}
+                        max={max ?? defaultMax}
                         onChange={(e) => setDraft(e.target.value)}
                         className="block w-full bg-brown-800/50 text-white [color-scheme:dark]"
                     />

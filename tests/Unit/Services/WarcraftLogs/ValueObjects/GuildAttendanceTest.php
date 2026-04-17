@@ -77,7 +77,7 @@ class GuildAttendanceTest extends TestCase
         $this->assertSame('abc123', $array['code']);
         $this->assertSame(1736971200000.0, $array['startTime']);
         $this->assertCount(2, $array['players']);
-        $this->assertSame(['id' => 1047, 'name' => 'Karazhan'], $array['zone']);
+        $this->assertSame(['id' => 1047, 'name' => 'Karazhan', 'difficulties' => [], 'frozen' => false, 'expansion' => null], $array['zone']);
     }
 
     #[Test]

@@ -55,6 +55,7 @@ class AttendanceCalculator
             ->with([
                 'characters' => fn ($query) => $query->whereHas('rank', fn ($q) => $q->whereIn('id', $rankIds)),
                 'linkedReports',
+                'zone',
             ])
             ->get();
 
@@ -73,6 +74,7 @@ class AttendanceCalculator
             ->with([
                 'characters' => fn ($query) => $query->where('id', $character->id)->whereHas('rank', fn ($q) => $q->where('count_attendance', true)),
                 'linkedReports',
+                'zone',
             ])
             ->get();
 
@@ -94,6 +96,7 @@ class AttendanceCalculator
         $report->load([
             'characters' => fn ($query) => $query->whereHas('rank', fn ($q) => $q->where('count_attendance', true)),
             'linkedReports',
+            'zone',
         ]);
 
         return $this->calculate(collect([$report]));
@@ -243,7 +246,7 @@ class AttendanceCalculator
                 return [
                     'code' => $report->code,
                     'startTime' => $report->start_time,
-                    'zoneName' => $report->zone_name ?? null,
+                    'zoneName' => $report->zone?->name,
                     'players' => $report->characters->mapWithKeys(fn ($char) => [
                         $char->name => [
                             'id' => $char->id,
@@ -277,7 +280,7 @@ class AttendanceCalculator
             return [
                 'code' => collect($group)->pluck('code')->sort()->implode('+'),
                 'startTime' => $sortedGroup->first()->start_time,
-                'zoneName' => $sortedGroup->first()->zone_name ?? null,
+                'zoneName' => $sortedGroup->first()->zone?->name,
                 'players' => $mergedPlayers,
             ];
         })->values();

@@ -31,7 +31,7 @@ class LinkedReportResource extends JsonResource
             'end_time' => $this->end_time,
             'zone' => [
                 'id' => $this->zone_id,
-                'name' => $this->zone_name,
+                'name' => $this->zone?->name,
             ],
             'pivot' => $this->whenPivotLoaded('raid_report_links', fn () => [
                 'created_by' => $this->pivot->creator ? new UserResource($this->pivot->creator) : null,

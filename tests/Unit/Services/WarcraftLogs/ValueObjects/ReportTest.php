@@ -112,7 +112,7 @@ class ReportTest extends TestCase
         $this->assertSame('Test Report', $array['title']);
         $this->assertSame(1771611168498.0, $array['startTime']);
         $this->assertSame(1771625431211.0, $array['endTime']);
-        $this->assertSame(['id' => 1047, 'name' => 'Karazhan'], $array['zone']);
+        $this->assertSame(['id' => 1047, 'name' => 'Karazhan', 'difficulties' => [], 'frozen' => false, 'expansion' => null], $array['zone']);
     }
 
     #[Test]

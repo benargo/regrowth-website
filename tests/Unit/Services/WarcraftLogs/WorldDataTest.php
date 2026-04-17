@@ -152,8 +152,8 @@ class WorldDataTest extends TestCase
             'data' => [
                 'worldData' => [
                     'zones' => [
-                        ['id' => 10, 'name' => 'Molten Core', 'frozen' => false],
-                        ['id' => 11, 'name' => 'Blackwing Lair', 'frozen' => false],
+                        ['id' => 10, 'name' => 'Molten Core', 'difficulties' => [], 'frozen' => false, 'expansion' => ['id' => 1, 'name' => 'Classic', 'zones' => []]],
+                        ['id' => 11, 'name' => 'Blackwing Lair', 'difficulties' => [], 'frozen' => false, 'expansion' => ['id' => 1, 'name' => 'Classic', 'zones' => []]],
                     ],
                 ],
             ],
@@ -189,7 +189,7 @@ class WorldDataTest extends TestCase
                     'data' => [
                         'worldData' => [
                             'zones' => [
-                                ['id' => 10, 'name' => 'Molten Core', 'frozen' => false],
+                                ['id' => 10, 'name' => 'Molten Core', 'difficulties' => [], 'frozen' => false, 'expansion' => ['id' => 1, 'name' => 'Classic', 'zones' => []]],
                             ],
                         ],
                     ],
@@ -258,7 +258,7 @@ class WorldDataTest extends TestCase
                     'data' => [
                         'worldData' => [
                             'zones' => [
-                                ['id' => 50, 'name' => 'Dragon Soul', 'frozen' => false],
+                                ['id' => 50, 'name' => 'Dragon Soul', 'difficulties' => [], 'frozen' => false, 'expansion' => ['id' => 5, 'name' => 'Cataclysm', 'zones' => []]],
                             ],
                         ],
                     ],
@@ -298,7 +298,7 @@ class WorldDataTest extends TestCase
                     'data' => [
                         'worldData' => [
                             'zones' => [
-                                ['id' => 10, 'name' => 'Molten Core', 'frozen' => false],
+                                ['id' => 10, 'name' => 'Molten Core', 'difficulties' => [], 'frozen' => false, 'expansion' => ['id' => 1, 'name' => 'Classic', 'zones' => []]],
                             ],
                         ],
                     ],
@@ -340,10 +340,10 @@ class WorldDataTest extends TestCase
                     ],
                 ], 200)
                 ->push([
-                    'data' => ['worldData' => ['zones' => [['id' => 10, 'name' => 'Molten Core', 'frozen' => false]]]],
+                    'data' => ['worldData' => ['zones' => [['id' => 10, 'name' => 'Molten Core', 'difficulties' => [], 'frozen' => false, 'expansion' => ['id' => 1, 'name' => 'Classic', 'zones' => []]]]]],
                 ], 200)
                 ->push([
-                    'data' => ['worldData' => ['zones' => [['id' => 20, 'name' => 'Karazhan', 'frozen' => false]]]],
+                    'data' => ['worldData' => ['zones' => [['id' => 20, 'name' => 'Karazhan', 'difficulties' => [], 'frozen' => false, 'expansion' => ['id' => 2, 'name' => 'The Burning Crusade', 'zones' => []]]]]],
                 ], 200),
         ]);
 
