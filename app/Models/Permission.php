@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Events\PermissionUpdated;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 
@@ -47,5 +48,15 @@ class Permission extends SpatiePermission
         return Attribute::make(
             set: fn (?string $value) => $value !== null ? Str::slug($value) : null
         );
+    }
+
+    /**
+     * Get the Discord roles associated with this permission.
+     *
+     * @return BelongsToMany<DiscordRole>
+     */
+    public function discordRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(DiscordRole::class, 'discord_role_has_permissions');
     }
 }

@@ -72,6 +72,11 @@ class DiscordRole extends Model
         ];
     }
 
+    /**
+     * Get the users that belong to this Discord role.
+     *
+     * @return BelongsToMany<User>
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'discord_role_user', 'discord_role_id', 'user_id');

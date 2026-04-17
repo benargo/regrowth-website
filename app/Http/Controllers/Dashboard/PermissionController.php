@@ -103,8 +103,6 @@ class PermissionController extends Controller
             $role->revokePermissionTo($permission);
         }
 
-        Cache::forget('discord:roles:with_permissions');
-
         return back();
     }
 }

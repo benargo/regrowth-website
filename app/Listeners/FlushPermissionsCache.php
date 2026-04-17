@@ -2,12 +2,12 @@
 
 namespace App\Listeners;
 
-use App\Events\DiscordRoleUpdated;
-use App\Events\PermissionUpdated;
+use App\Contracts\Events\FlushesPermissionsCache;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\PermissionRegistrar;
 
-class FlushPermissionsCache
+class FlushPermissionsCache implements ShouldBeUnique
 {
     /**
      * Create the event listener.
@@ -19,7 +19,7 @@ class FlushPermissionsCache
     /**
      * Handle the event.
      */
-    public function handle(DiscordRoleUpdated|PermissionUpdated $event): void
+    public function handle(FlushesPermissionsCache $event): void
     {
         Cache::tags('permissions')->flush();
         $this->permissionRegistrar->forgetCachedPermissions();

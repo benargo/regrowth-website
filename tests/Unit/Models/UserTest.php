@@ -442,7 +442,7 @@ class UserTest extends ModelTestCase
     {
         $user = User::factory()->create();
 
-        $this->assertEmpty($user->permissions());
+        $this->assertEmpty($user->permissions()->get());
     }
 
     #[Test]
@@ -452,9 +452,8 @@ class UserTest extends ModelTestCase
 
         $user = User::factory()->officer()->create();
         $user->discordRoles->first()->givePermissionTo('view-officer-dashboard');
-        $user->load('discordRoles.permissions');
 
-        $this->assertTrue($user->permissions()->contains('name', 'view-officer-dashboard'));
+        $this->assertTrue($user->permissions()->where('name', 'view-officer-dashboard')->exists());
     }
 
     #[Test]
@@ -473,11 +472,10 @@ class UserTest extends ModelTestCase
 
         $user = User::factory()->create();
         $user->discordRoles()->attach([$officer->id, $member->id]);
-        $user->load('discordRoles.permissions');
 
         // Officer is the highest role — only its permissions are returned
-        $this->assertTrue($user->permissions()->contains('name', 'view-officer-dashboard'));
-        $this->assertFalse($user->permissions()->contains('name', 'comment-on-loot-items'));
+        $this->assertTrue($user->permissions()->where('name', 'view-officer-dashboard')->exists());
+        $this->assertFalse($user->permissions()->where('name', 'comment-on-loot-items')->exists());
     }
 
     #[Test]
