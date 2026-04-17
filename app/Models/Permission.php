@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\PermissionUpdated;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
@@ -27,6 +28,15 @@ class Permission extends SpatiePermission
         'guard_name',
         'created_at',
         'updated_at',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => PermissionUpdated::class,
     ];
 
     /**
