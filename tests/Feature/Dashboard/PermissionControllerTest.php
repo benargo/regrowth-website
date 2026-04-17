@@ -111,11 +111,34 @@ class PermissionControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    public function show_group_saves_group_to_session(): void
+    {
+        $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
+
+        $response->assertSessionHas('dashboard.permissions.group', 'loot-bias-tool');
+    }
+
+    #[Test]
     public function show_group_returns_404_for_unknown_group(): void
     {
         $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'nonexistent-group']));
 
         $response->assertNotFound();
+    }
+
+    #[Test]
+    public function index_redirects_to_session_group_when_present(): void
+    {
+        Permission::firstOrCreate(
+            ['name' => 'manage-roster', 'guard_name' => 'web'],
+            ['group' => 'roster'],
+        );
+
+        $response = $this->actingAs($this->officer)
+            ->withSession(['dashboard.permissions.group' => 'roster'])
+            ->get(route('dashboard.permissions.index'));
+
+        $response->assertRedirect(route('dashboard.permissions.group.show', ['group' => 'roster']));
     }
 
     #[Test]

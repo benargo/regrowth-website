@@ -20,18 +20,26 @@ class PermissionController extends Controller
      */
     public function index(Request $request): RedirectResponse
     {
-        $firstPermissionGroup = Cache::tags(['db', 'permissions'])->remember('permissions:first_group', now()->addMinutes(5), function () {
+        // If a permission group is stored in the session, redirect to that group. Otherwise, redirect to the first available group.
+        if ($request->session()->has('dashboard.permissions.group')) {
+            return redirect()->route('dashboard.permissions.group.show', ['group' => $request->session()->get('dashboard.permissions.group')]);
+        }
+
+        $group = Cache::tags(['db', 'permissions'])->remember('permissions:first_group', now()->addMinutes(5), function () {
             return Permission::whereNotNull('group')->orderBy('group')->value('group');
         });
 
-        return redirect()->route('dashboard.permissions.group.show', ['group' => $firstPermissionGroup]);
+        return redirect()->route('dashboard.permissions.group.show', ['group' => $group]);
     }
 
     /**
      * Display permissions for a specific group and the list of Discord roles for management.
      */
-    public function showGroup(string $group): Response
+    public function showGroup(Request $request, string $group): Response
     {
+        // Store the selected group in the session to remember the user's last visited group.
+        $request->session()->put('dashboard.permissions.group', $group);
+
         // Cache the list of permission groups for 5 minutes to reduce database queries.
         $permissionGroups = collect(
             Cache::tags(['db', 'permissions'])->remember('permissions:groups', now()->addMinutes(5), function () {
