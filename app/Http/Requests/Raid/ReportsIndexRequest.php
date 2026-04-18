@@ -77,7 +77,7 @@ class ReportsIndexRequest extends FormRequest
      */
     public function resolveMinDate(): ?string
     {
-        $earliestRaw = Cache::tags(['warcraftlogs'])->remember(
+        $earliestRaw = Cache::tags(['reports'])->remember(
             'reports:earliest_date',
             now()->addDay(),
             fn () => Report::min('start_time'),
