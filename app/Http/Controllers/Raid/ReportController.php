@@ -60,7 +60,8 @@ class ReportController extends Controller
                             return Character::select('id', 'name', 'playable_class', 'is_main')
                                 ->where('is_loot_councillor', true)
                                 ->orderBy('name')
-                                ->get();
+                                ->get()
+                                ->toArray();
                         }
                     )
                 );
