@@ -21,7 +21,7 @@ function formatDuration(startTime, endTime) {
 function ViewOnWarcraftLogsLink({ code, children }) {
     return (
         <Tooltip text="View on Warcraft Logs" position="top">
-            <Link
+            <a
                 href={`https://fresh.warcraftlogs.com/reports/${code}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -48,7 +48,7 @@ function ViewOnWarcraftLogsLink({ code, children }) {
                     <path d="M393.53,436.84l-33.28-30.67c19.2-11.88,34.65-26.96,46.65-46.75l30.65,33.42-44.02,43.99Z" />
                 </svg>
                 {children}
-            </Link>
+            </a>
         </Tooltip>
     );
 }
