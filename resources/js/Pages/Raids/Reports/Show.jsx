@@ -100,7 +100,14 @@ function CharactersTable({ characters }) {
                             <td className="px-4 py-3 text-sm text-gray-300">
                                 {character.rank ? <GuildRankLabel rank={character.rank} /> : "—"}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-300">{character.playable_class?.name ?? "—"}</td>
+                            <td className="flex flex-row items-center gap-2 px-4 py-3 text-sm text-gray-300">
+                                <img
+                                    src={character.playable_class?.icon_url}
+                                    alt={character.playable_class?.name}
+                                    className="h-4 w-4"
+                                />
+                                {character.playable_class?.name ?? "—"}
+                            </td>
                             <td className="px-4 py-3 text-sm text-gray-300">{character.playable_race?.name ?? "—"}</td>
                             {usePermission("view-attendance") && (
                                 <td className="px-4 py-3">
