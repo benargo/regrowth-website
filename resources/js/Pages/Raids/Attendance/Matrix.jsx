@@ -348,7 +348,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
         decodeFilter(
             filters.guild_tag_ids,
-            guildTags.map((g) => g.id),
+            guildTags.filter((g) => g.count_attendance).map((g) => g.id),
         ),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
