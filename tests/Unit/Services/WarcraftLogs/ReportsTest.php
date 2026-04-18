@@ -4,9 +4,8 @@ namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\AuthenticationHandler;
-use App\Services\WarcraftLogs\Data\Report;
-use App\Services\WarcraftLogs\Data\Zone;
 use App\Services\WarcraftLogs\Reports;
+use App\Services\WarcraftLogs\ValueObjects\Report;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -526,106 +525,5 @@ class ReportsTest extends TestCase
                 && ! str_contains($body['query'], 'guildTagID')
                 && $body['variables']['guildID'] === 774848;
         });
-    }
-
-    // ==================== Report Data Object Tests ====================
-
-    #[Test]
-    public function report_data_object_parses_guild_tag_correctly(): void
-    {
-        $guildTag = GuildTag::factory()->create(['name' => 'Main Roster']);
-
-        $data = [
-            'code' => 'ABC123',
-            'title' => 'Test Report',
-            'startTime' => 1771611168498,
-            'endTime' => 1771625431211,
-            'guildTag' => ['id' => $guildTag->id, 'name' => $guildTag->name],
-        ];
-
-        $report = Report::fromArray($data);
-
-        $this->assertInstanceOf(GuildTag::class, $report->guildTag);
-        $this->assertSame($guildTag->id, $report->guildTag->id);
-        $this->assertSame('Main Roster', $report->guildTag->name);
-    }
-
-    #[Test]
-    public function report_data_object_guild_tag_is_null_when_absent(): void
-    {
-        $data = [
-            'code' => 'ABC123',
-            'title' => 'Test Report',
-            'startTime' => 1771611168498,
-            'endTime' => 1771625431211,
-        ];
-
-        $report = Report::fromArray($data);
-
-        $this->assertNull($report->guildTag);
-    }
-
-    #[Test]
-    public function report_data_object_parses_correctly_with_zone(): void
-    {
-        $data = [
-            'code' => 'Tcdkf1AZQyFPRKBa',
-            'title' => 'Karazhan Group 2',
-            'startTime' => 1771612483423,
-            'endTime' => 1771626471711,
-            'zone' => [
-                'id' => 1047,
-                'name' => 'Karazhan',
-            ],
-        ];
-
-        $report = Report::fromArray($data);
-
-        $this->assertEquals('Tcdkf1AZQyFPRKBa', $report->code);
-        $this->assertEquals('Karazhan Group 2', $report->title);
-        $this->assertInstanceOf(Carbon::class, $report->startTime);
-        $this->assertEquals(1771612483423, $report->startTime->valueOf());
-        $this->assertInstanceOf(Carbon::class, $report->endTime);
-        $this->assertEquals(1771626471711, $report->endTime->valueOf());
-        $this->assertInstanceOf(Zone::class, $report->zone);
-        $this->assertEquals(1047, $report->zone->id);
-        $this->assertEquals('Karazhan', $report->zone->name);
-    }
-
-    #[Test]
-    public function report_data_object_parses_correctly_without_zone(): void
-    {
-        $data = [
-            'code' => 'ABC123',
-            'title' => 'Test Report',
-            'startTime' => 1771611168498,
-            'endTime' => 1771625431211,
-        ];
-
-        $report = Report::fromArray($data);
-
-        $this->assertEquals('ABC123', $report->code);
-        $this->assertNull($report->zone);
-    }
-
-    #[Test]
-    public function report_data_object_to_array(): void
-    {
-        $data = [
-            'code' => 'ABC123',
-            'title' => 'Test Report',
-            'startTime' => 1771611168498,
-            'endTime' => 1771625431211,
-            'zone' => ['id' => 1047, 'name' => 'Karazhan'],
-        ];
-
-        $report = Report::fromArray($data);
-        $array = $report->toArray();
-
-        $this->assertEquals('ABC123', $array['code']);
-        $this->assertEquals('Test Report', $array['title']);
-        $this->assertEquals(1771611168498.0, $array['startTime']);
-        $this->assertEquals(1771625431211.0, $array['endTime']);
-        $this->assertEquals(['id' => 1047, 'name' => 'Karazhan'], $array['zone']);
     }
 }

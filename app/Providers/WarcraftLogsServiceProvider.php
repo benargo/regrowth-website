@@ -7,6 +7,7 @@ use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Guild;
 use App\Services\WarcraftLogs\GuildTags;
 use App\Services\WarcraftLogs\Reports;
+use App\Services\WarcraftLogs\WorldData;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
@@ -42,6 +43,10 @@ class WarcraftLogsServiceProvider extends ServiceProvider implements DeferrableP
         $this->app->singleton(Reports::class, function (Application $app) {
             return new Reports(config('services.warcraftlogs'), $app->make(AuthenticationHandler::class));
         });
+
+        $this->app->singleton(WorldData::class, function (Application $app) {
+            return new WorldData(config('services.warcraftlogs'), $app->make(AuthenticationHandler::class));
+        });
     }
 
     /**
@@ -64,6 +69,7 @@ class WarcraftLogsServiceProvider extends ServiceProvider implements DeferrableP
             GuildTags::class,
             Attendance::class,
             Reports::class,
+            WorldData::class,
             AuthenticationHandler::class,
         ];
     }

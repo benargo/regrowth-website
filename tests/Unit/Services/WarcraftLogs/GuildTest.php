@@ -3,10 +3,10 @@
 namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Services\WarcraftLogs\AuthenticationHandler;
-use App\Services\WarcraftLogs\Data\Faction;
-use App\Services\WarcraftLogs\Data\Server;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
 use App\Services\WarcraftLogs\Guild;
+use App\Services\WarcraftLogs\ValueObjects\Faction;
+use App\Services\WarcraftLogs\ValueObjects\Server;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
@@ -69,7 +69,7 @@ class GuildTest extends TestCase
         return array_merge([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
+            'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
             'graphql_url' => 'https://www.warcraftlogs.com/api/v2/client',
             'guild_id' => 774848,
             'timeout' => 30,

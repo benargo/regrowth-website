@@ -2,13 +2,12 @@
 
 namespace App\Services\WarcraftLogs;
 
+use App\Services\WarcraftLogs\Enums\Endpoints;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class AuthenticationHandler
 {
-    private const TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
-
     protected string $clientId;
 
     protected string $clientSecret;
@@ -22,7 +21,7 @@ class AuthenticationHandler
     public function clientToken(): string
     {
         return Cache::get('warcraftlogs:client_token', function () {
-            $response = Http::withBasicAuth($this->clientId, $this->clientSecret)->post(self::TOKEN_URL, [
+            $response = Http::withBasicAuth($this->clientId, $this->clientSecret)->post(Endpoints::TOKEN->url(), [
                 'grant_type' => 'client_credentials',
             ]);
 

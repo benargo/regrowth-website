@@ -328,6 +328,7 @@ export default function Create() {
                                 }}
                                 min={canBackdate ? undefined : new Date().toISOString().split("T")[0]}
                                 max="2099-12-31"
+                                helpText="This is the first date of the planned absence."
                             />
                             <InputError message={errors.start_date} className="mt-2" />
                         </div>
@@ -345,6 +346,15 @@ export default function Create() {
                                 }}
                                 min={startDate}
                                 max="2099-12-31"
+                                helpText={
+                                    <>
+                                        <p>This is the last date of the planned absence.</p>
+                                        <p>
+                                            If you are unsure, you can leave this blank and it will show as ongoing.
+                                            Make sure it is updated once the absence ends.
+                                        </p>
+                                    </>
+                                }
                             />
                             <InputError message={errors.end_date} className="mt-2" />
                         </div>

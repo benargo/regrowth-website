@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -213,16 +213,16 @@ class User extends Authenticatable
     */
 
     /**
-     * Get all permissions the user has access to via their highest Discord role.
-     *
-     * @return Collection<int, Permission>
+     * Get a query builder for all permissions the user has access to via their highest Discord role.
      */
-    public function permissions(): Collection
+    public function permissions(): Builder
     {
-        $this->loadMissing('discordRoles.permissions');
+        $highestRoleId = $this->highestRole()?->id;
 
-        return $this->highestRole()?->permissions
-            ?? new Collection;
+        return Permission::query()
+            ->join('discord_role_has_permissions', 'discord_role_has_permissions.permission_id', '=', 'permissions.id')
+            ->where('discord_role_has_permissions.discord_role_id', $highestRoleId)
+            ->select('permissions.*');
     }
 
     /**

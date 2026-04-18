@@ -2,7 +2,11 @@
 
 namespace Tests\Unit\Models;
 
+use App\Events\PermissionUpdated;
+use App\Models\DiscordRole;
 use App\Models\Permission;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -86,5 +90,50 @@ class PermissionTest extends ModelTestCase
         $permission = Permission::factory()->inGroup('Raids')->create(['name' => 'view-reports']);
 
         $this->assertSame('raids', $permission->group);
+    }
+
+    // ==================== relationships ====================
+
+    #[Test]
+    public function discord_roles_returns_belongs_to_many_relationship(): void
+    {
+        $permission = new Permission;
+
+        $this->assertInstanceOf(BelongsToMany::class, $permission->discordRoles());
+    }
+
+    #[Test]
+    public function discord_roles_returns_associated_discord_roles(): void
+    {
+        $permission = $this->create(['name' => 'view-reports']);
+
+        $role1 = DiscordRole::factory()->create();
+        $role2 = DiscordRole::factory()->create();
+        $permission->discordRoles()->attach([$role1->id, $role2->id]);
+
+        $this->assertCount(2, $permission->discordRoles);
+        $this->assertTrue($permission->discordRoles->contains($role1));
+        $this->assertTrue($permission->discordRoles->contains($role2));
+    }
+
+    #[Test]
+    public function discord_roles_returns_empty_collection_when_no_roles_exist(): void
+    {
+        $permission = $this->create(['name' => 'view-reports']);
+
+        $this->assertCount(0, $permission->discordRoles);
+    }
+
+    // ==================== events ====================
+
+    #[Test]
+    public function it_dispatches_permission_updated_event_on_update(): void
+    {
+        $permission = $this->create(['name' => 'view-reports']);
+        Event::fake();
+
+        $permission->update(['group' => 'raids']);
+
+        Event::assertDispatched(PermissionUpdated::class);
     }
 }

@@ -3,8 +3,8 @@
 namespace App\Services\WarcraftLogs;
 
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\Data\Report;
 use App\Services\WarcraftLogs\Traits\Paginates;
+use App\Services\WarcraftLogs\ValueObjects\Report;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
@@ -193,6 +193,15 @@ class Reports extends BaseService
                         zone {
                             id
                             name
+                            difficulties {
+                                id
+                                name
+                                sizes
+                            }
+                            expansion {
+                                id
+                                name
+                            }
                         }
                     }
                     current_page

@@ -2,6 +2,7 @@
 
 namespace App\Services\WarcraftLogs;
 
+use App\Services\WarcraftLogs\Enums\Endpoints;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\Exceptions\RateLimitedException;
 use App\Services\WarcraftLogs\Traits\RateLimited;
@@ -18,7 +19,7 @@ abstract class BaseService
 
     protected const BASE_CACHE_KEY = 'warcraftlogs';
 
-    protected const GRAPHQL_URL = 'https://www.warcraftlogs.com/api/v2/client';
+    protected Endpoints $endpoint = Endpoints::WWW;
 
     protected AuthenticationHandler $auth;
 
@@ -44,7 +45,7 @@ abstract class BaseService
      */
     protected function http(?int $timeout = null): PendingRequest
     {
-        return Http::baseUrl(self::GRAPHQL_URL)
+        return Http::baseUrl($this->endpoint->url())
             ->withToken($this->auth->clientToken())
             ->acceptJson()
             ->asJson()

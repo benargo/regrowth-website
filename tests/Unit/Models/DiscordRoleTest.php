@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Models;
 
+use App\Events\DiscordRoleUpdated;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -191,5 +193,22 @@ class DiscordRoleTest extends ModelTestCase
         Permission::firstOrCreate(['name' => 'test-permission', 'guard_name' => 'web']);
 
         $this->assertFalse($role->hasPermissionTo('test-permission'));
+    }
+
+    // ==================== events ====================
+
+    #[Test]
+    public function it_dispatches_discord_role_updated_event_on_update(): void
+    {
+        $role = $this->create([
+            'id' => '123456789012345678',
+            'name' => 'TestRole',
+            'position' => 50,
+        ]);
+        Event::fake();
+
+        $role->update(['name' => 'UpdatedRole']);
+
+        Event::assertDispatched(DiscordRoleUpdated::class);
     }
 }

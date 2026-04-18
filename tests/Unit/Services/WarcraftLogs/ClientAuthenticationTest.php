@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Services\WarcraftLogs\AuthenticationHandler;
+use App\Services\WarcraftLogs\Enums\Endpoints;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
@@ -10,11 +11,13 @@ use Tests\TestCase;
 
 class ClientAuthenticationTest extends TestCase
 {
-    private const TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
+    private string $tokenUrl;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->tokenUrl = Endpoints::TOKEN->url();
 
         // Ensure warcraftlogs config has all required keys for service provider
         config([
@@ -40,7 +43,7 @@ class ClientAuthenticationTest extends TestCase
         );
 
         Http::fake([
-            self::TOKEN_URL => Http::response([
+            $this->tokenUrl => Http::response([
                 'access_token' => 'test_access_token',
                 'expires_in' => 3600,
             ], 200),

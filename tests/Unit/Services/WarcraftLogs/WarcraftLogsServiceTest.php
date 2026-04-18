@@ -41,7 +41,7 @@ class WarcraftLogsServiceTest extends TestCase
         $config = array_merge([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
+            'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
             'graphql_url' => 'https://www.warcraftlogs.com/api/v2/client*',
             'guild_id' => 774848,
             'timeout' => 30,
@@ -302,7 +302,7 @@ class WarcraftLogsServiceTest extends TestCase
         $service = new TestableWarcraftLogsService([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
+            'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
         ], $auth);
 
         $this->assertEquals(0, $service->publicGetGuildId());

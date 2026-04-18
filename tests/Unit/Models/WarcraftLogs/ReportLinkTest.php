@@ -4,8 +4,8 @@ namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Events\ReportLinkDeleted;
 use App\Events\ReportLinkSaved;
-use App\Models\WarcraftLogs\Report;
-use App\Models\WarcraftLogs\ReportLink;
+use App\Models\Raids\Report;
+use App\Models\Raids\ReportLink;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,7 +18,7 @@ class ReportLinkTest extends TestCase
     {
         $pivot = new ReportLink;
 
-        $this->assertSame('pivot_wcl_reports_links', $pivot->getTable());
+        $this->assertSame('raid_report_links', $pivot->getTable());
     }
 
     #[Test]

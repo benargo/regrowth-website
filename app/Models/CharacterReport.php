@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -13,7 +13,7 @@ class CharacterReport extends Pivot
      *
      * @var string
      */
-    protected $table = 'pivot_characters_wcl_reports';
+    protected $table = 'pivot_characters_raid_reports';
 
     /**
      * Indicates if the model should be timestamped.
@@ -21,6 +21,27 @@ class CharacterReport extends Pivot
      * @var bool
      */
     public $timestamps = false;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'character_id',
+        'raid_report_id',
+        'presence',
+        'is_loot_councillor',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'is_loot_councillor' => 'boolean',
+    ];
 
     /**
      * All of the relationships to be touched.
@@ -34,7 +55,7 @@ class CharacterReport extends Pivot
      */
     public function report(): BelongsTo
     {
-        return $this->belongsTo(Report::class, 'wcl_report_code', 'code');
+        return $this->belongsTo(Report::class, 'raid_report_id');
     }
 
     /**

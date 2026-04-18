@@ -6,7 +6,7 @@ use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Support\Collection;
 
 class AttendanceMatrix
@@ -75,11 +75,12 @@ class AttendanceMatrix
             // can contribute attendance. mergeLinkedCharacters() will filter
             // the output to only mains from the resolved rank IDs.
             // linkedReports is loaded so mergeLinkedReports() can group reports.
-            $query->with(['characters', 'linkedReports']);
+            $query->with(['characters', 'linkedReports', 'zone']);
         } else {
             $query->with([
                 'characters' => fn ($q) => $q->whereHas('rank', fn ($q2) => $q2->whereIn('id', $resolvedRankIds)),
                 'linkedReports',
+                'zone',
             ]);
         }
 

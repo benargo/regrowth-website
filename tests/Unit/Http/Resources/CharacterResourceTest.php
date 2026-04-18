@@ -8,7 +8,7 @@ use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\WarcraftLogs\Report;
+use App\Models\Raids\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -120,6 +120,6 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($loadedCharacter))->toArray(new Request);
 
-        $this->assertSame(['presence' => 3], $array['pivot']);
+        $this->assertSame(['presence' => 3, 'is_loot_councillor' => false], $array['pivot']);
     }
 }

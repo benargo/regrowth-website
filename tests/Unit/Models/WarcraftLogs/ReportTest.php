@@ -3,11 +3,13 @@
 namespace Tests\Unit\Models\WarcraftLogs;
 
 use App\Events\AddonSettingsProcessed;
+use App\Events\ReportCreated;
+use App\Events\ReportUpdated;
 use App\Models\Character;
+use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
-use App\Services\WarcraftLogs\Data\Zone;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -27,7 +29,7 @@ class ReportTest extends ModelTestCase
     {
         $report = new Report;
 
-        $this->assertSame('wcl_reports', $report->getTable());
+        $this->assertSame('raid_reports', $report->getTable());
     }
 
     #[Test]
@@ -35,7 +37,7 @@ class ReportTest extends ModelTestCase
     {
         $report = new Report;
 
-        $this->assertSame('code', $report->getKeyName());
+        $this->assertSame('id', $report->getKeyName());
         $this->assertFalse($report->getIncrementing());
         $this->assertSame('string', $report->getKeyType());
     }
@@ -52,7 +54,6 @@ class ReportTest extends ModelTestCase
             'end_time',
             'guild_tag_id',
             'zone_id',
-            'zone_name',
         ]);
     }
 
@@ -64,7 +65,6 @@ class ReportTest extends ModelTestCase
         $this->assertCasts($report, [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
-            'zone_id' => 'integer',
         ]);
     }
 
@@ -77,7 +77,6 @@ class ReportTest extends ModelTestCase
             'created_at',
             'updated_at',
             'zone_id',
-            'zone_name',
         ]);
     }
 
@@ -106,17 +105,6 @@ class ReportTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_casts_zone_id_to_integer(): void
-    {
-        $report = $this->factory()->withZone(1047, 'Karazhan')->create();
-
-        $report->refresh();
-
-        $this->assertIsInt($report->zone_id);
-        $this->assertSame(1047, $report->zone_id);
-    }
-
-    #[Test]
     public function it_can_be_created_without_zone(): void
     {
         $report = $this->factory()->withoutZone()->create();
@@ -124,30 +112,60 @@ class ReportTest extends ModelTestCase
         $this->assertTableHas([
             'code' => $report->code,
             'zone_id' => null,
-            'zone_name' => null,
         ]);
     }
 
     #[Test]
-    public function zone_accessor_returns_zone_object(): void
+    public function zone_returns_belongs_to_relationship(): void
     {
-        $report = $this->factory()->withZone(1047, 'Karazhan')->create();
+        $report = new Report;
+
+        $this->assertInstanceOf(BelongsTo::class, $report->zone());
+    }
+
+    #[Test]
+    public function zone_relationship_returns_zone_model(): void
+    {
+        $zone = Zone::factory()->create();
+        $report = $this->factory()->withZone($zone)->create();
 
         $report->refresh();
 
         $this->assertInstanceOf(Zone::class, $report->zone);
-        $this->assertSame(1047, $report->zone->id);
-        $this->assertSame('Karazhan', $report->zone->name);
+        $this->assertSame($zone->id, $report->zone->id);
+        $this->assertSame($zone->name, $report->zone->name);
     }
 
     #[Test]
-    public function zone_accessor_returns_null_when_no_zone(): void
+    public function zone_relationship_returns_null_when_no_zone(): void
     {
         $report = $this->factory()->withoutZone()->create();
 
         $report->refresh();
 
         $this->assertNull($report->zone);
+    }
+
+    #[Test]
+    public function expansion_accessor_returns_expansion_from_zone(): void
+    {
+        $zone = Zone::factory()->create();
+        $report = $this->factory()->withZone($zone)->create();
+
+        $report->refresh();
+        $report->load('zone');
+
+        $this->assertEquals($zone->expansion, $report->expansion);
+    }
+
+    #[Test]
+    public function expansion_accessor_returns_null_when_no_zone(): void
+    {
+        $report = $this->factory()->withoutZone()->create();
+
+        $report->refresh();
+
+        $this->assertNull($report->expansion);
     }
 
     #[Test]
@@ -230,15 +248,15 @@ class ReportTest extends ModelTestCase
 
         $report->characters()->attach($character->id);
 
-        $this->assertDatabaseHas('pivot_characters_wcl_reports', [
-            'wcl_report_code' => $report->code,
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
             'character_id' => $character->id,
         ]);
 
         $report->delete();
 
-        $this->assertDatabaseMissing('pivot_characters_wcl_reports', [
-            'wcl_report_code' => $report->code,
+        $this->assertDatabaseMissing('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
         ]);
     }
 
@@ -252,14 +270,14 @@ class ReportTest extends ModelTestCase
 
         $report->characters()->attach($character->id);
 
-        $this->assertDatabaseHas('pivot_characters_wcl_reports', [
-            'wcl_report_code' => $report->code,
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
             'character_id' => $character->id,
         ]);
 
         $character->delete();
 
-        $this->assertDatabaseMissing('pivot_characters_wcl_reports', [
+        $this->assertDatabaseMissing('pivot_characters_raid_reports', [
             'character_id' => $character->id,
         ]);
     }
@@ -325,6 +343,30 @@ class ReportTest extends ModelTestCase
         $this->assertNull($report->guild_tag_id);
     }
 
+    // ==================== events ====================
+
+    #[Test]
+    public function it_dispatches_report_created_event_on_create(): void
+    {
+        Event::fake([ReportCreated::class]);
+
+        $report = $this->create();
+
+        Event::assertDispatched(ReportCreated::class, fn ($e) => $e->report->is($report));
+    }
+
+    #[Test]
+    public function it_dispatches_report_updated_event_on_update(): void
+    {
+        $report = $this->create();
+
+        Event::fake([ReportUpdated::class]);
+
+        $report->update(['title' => 'Updated Title']);
+
+        Event::assertDispatched(ReportUpdated::class, fn ($e) => $e->report->is($report));
+    }
+
     // ==================== linkedReports ====================
 
     #[Test]
@@ -341,9 +383,9 @@ class ReportTest extends ModelTestCase
         $report1 = $this->create();
         $report2 = $this->create();
 
-        \DB::table('pivot_wcl_reports_links')->insert([
-            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        \DB::table('raid_report_links')->insert([
+            ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $linked = $report1->linkedReports;
@@ -359,9 +401,9 @@ class ReportTest extends ModelTestCase
         $report2 = $this->create();
         $officer = User::factory()->officer()->create();
 
-        \DB::table('pivot_wcl_reports_links')->insert([
-            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
-            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
+        \DB::table('raid_report_links')->insert([
+            ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $linked = $report1->linkedReports;
@@ -377,14 +419,14 @@ class ReportTest extends ModelTestCase
         $report1 = $this->create();
         $report2 = $this->create();
 
-        \DB::table('pivot_wcl_reports_links')->insert([
-            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        \DB::table('raid_report_links')->insert([
+            ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $report1->delete();
 
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $report1->code]);
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_2' => $report1->code]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report1->id]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_2' => $report1->id]);
     }
 }

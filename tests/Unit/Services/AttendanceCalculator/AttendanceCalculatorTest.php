@@ -6,8 +6,9 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
+use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
+use App\Models\WarcraftLogs\Zone;
 use App\Services\AttendanceCalculator\AttendanceCalculator;
 use App\Services\AttendanceCalculator\AttendanceMatrix;
 use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
@@ -1110,8 +1111,10 @@ class AttendanceCalculatorTest extends TestCase
         $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
-        $report1 = Report::factory()->withGuildTag($tag)->withZone(1001, 'Black Temple')->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
-        $report2 = Report::factory()->withGuildTag($tag)->withZone(1002, 'Sunwell Plateau')->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'Europe/Paris')]);
+        $zoneA = Zone::factory()->create(['id' => 1001, 'name' => 'Black Temple']);
+        $zoneB = Zone::factory()->create(['id' => 1002, 'name' => 'Sunwell Plateau']);
+        $report1 = Report::factory()->withGuildTag($tag)->withZone($zoneA)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
+        $report2 = Report::factory()->withGuildTag($tag)->withZone($zoneB)->create(['start_time' => Carbon::parse('2025-01-08 20:00', 'Europe/Paris')]);
         $this->attachCharacter($report1, $thrall, 1);
         $this->attachCharacter($report2, $jaina, 1);
 
@@ -1188,9 +1191,9 @@ class AttendanceCalculatorTest extends TestCase
 
     protected function linkReports(Report $report1, Report $report2): void
     {
-        \DB::table('pivot_wcl_reports_links')->insert([
-            ['report_1' => $report1->code, 'report_2' => $report2->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['report_1' => $report2->code, 'report_2' => $report1->code, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        \DB::table('raid_report_links')->insert([
+            ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 

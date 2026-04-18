@@ -4,6 +4,7 @@ namespace App\Models\WarcraftLogs;
 
 use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
+use App\Models\Raids\Report;
 use App\Models\TBC\Phase;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

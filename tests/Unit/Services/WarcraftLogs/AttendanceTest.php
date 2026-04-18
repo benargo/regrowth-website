@@ -4,10 +4,9 @@ namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\AuthenticationHandler;
-use App\Services\WarcraftLogs\Data\GuildAttendance;
-use App\Services\WarcraftLogs\Data\GuildAttendancePagination;
-use App\Services\WarcraftLogs\Data\PlayerAttendance;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
+use App\Services\WarcraftLogs\ValueObjects\PlayerAttendance;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -23,7 +22,7 @@ class AttendanceTest extends TestCase
         $config = array_merge([
             'client_id' => 'test_client_id',
             'client_secret' => 'test_client_secret',
-            'token_url' => 'https://www.warcraftlogs.com/oauth/token',
+            'token_url' => 'https://fresh.warcraftlogs.com/oauth/token',
             'graphql_url' => 'https://www.warcraftlogs.com/api/v2/client',
             'guild_id' => 774848,
             'timeout' => 30,
@@ -330,152 +329,8 @@ class AttendanceTest extends TestCase
         $this->assertEquals(2, $benchedPlayer->presence);
     }
 
-    // ==================== getPlayerFirstAttendanceDate() Tests ====================
-
     #[Test]
-    public function get_player_first_attendance_date_returns_carbon_for_existing_player(): void
-    {
-        $attendance = [
-            $this->createGuildAttendance('abc123', 1736971200000, ['Jaina']), // Jan 15
-            $this->createGuildAttendance('def456', 1736366400000, ['Thrall', 'Jaina']), // Jan 8
-        ];
-
-        $service = $this->makeService();
-        $result = $service->setAttendance($attendance)->getPlayerFirstAttendanceDate('Jaina');
-
-        $this->assertInstanceOf(Carbon::class, $result);
-        // Returns first record found (abc123), not sorted
-        $this->assertEquals(1736971200000, $result->valueOf());
-    }
-
-    #[Test]
-    public function get_player_first_attendance_date_returns_null_for_nonexistent_player(): void
-    {
-        $attendance = [
-            $this->createGuildAttendance('abc123', 1736971200000, ['Thrall']),
-        ];
-
-        $service = $this->makeService();
-        $result = $service->setAttendance($attendance)->getPlayerFirstAttendanceDate('NonExistent');
-
-        $this->assertNull($result);
-    }
-
-    #[Test]
-    public function get_player_first_attendance_date_returns_null_when_no_attendance(): void
-    {
-        $service = $this->makeService();
-        $result = $service->setAttendance([])->getPlayerFirstAttendanceDate('Thrall');
-
-        $this->assertNull($result);
-    }
-
-    #[Test]
-    public function get_player_first_attendance_date_is_case_sensitive(): void
-    {
-        $attendance = [
-            $this->createGuildAttendance('abc123', 1736971200000, ['Thrall']),
-        ];
-
-        $service = $this->makeService();
-        $result = $service->setAttendance($attendance)->getPlayerFirstAttendanceDate('thrall');
-
-        $this->assertNull($result);
-    }
-
-    // ==================== API Method Tests - getAttendance() ====================
-
-    #[Test]
-    public function get_attendance_returns_pagination_object(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getAttendance();
-
-        $this->assertInstanceOf(GuildAttendancePagination::class, $result);
-        $this->assertCount(2, $result->data);
-    }
-
-    #[Test]
-    public function get_attendance_accepts_pagination_parameters(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $service->getAttendance(['page' => 2, 'limit' => 50]);
-
-        Http::assertSent(function ($request) {
-            $body = json_decode($request->body(), true);
-
-            return $body['variables']['page'] === 2 && $body['variables']['limit'] === 50;
-        });
-    }
-
-    #[Test]
-    public function get_attendance_passes_zone_id(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $service->getAttendance(['zoneID' => 1]);
-
-        Http::assertSent(function ($request) {
-            $body = json_decode($request->body(), true);
-
-            return isset($body['variables']['zoneID']) && $body['variables']['zoneID'] === 1;
-        });
-    }
-
-    #[Test]
-    public function get_attendance_filters_by_player_names(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getAttendance(['playerNames' => ['Anduin']]);
-
-        // Only def456 has Anduin
-        $this->assertCount(1, $result->data);
-        $this->assertEquals('def456', $result->data[0]->code);
-        $this->assertCount(1, $result->data[0]->players);
-    }
-
-    // ==================== API Method Tests - getGuildAttendance() ====================
-
-    #[Test]
-    public function get_guild_attendance_returns_pagination_for_specific_guild(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $result = $service->getGuildAttendance(774848);
-
-        $this->assertInstanceOf(GuildAttendancePagination::class, $result);
-    }
-
-    #[Test]
-    public function get_guild_attendance_throws_exception_when_guild_not_found(): void
+    public function lazy_throws_exception_when_guild_not_found(): void
     {
         Http::preventStrayRequests();
 
@@ -505,84 +360,11 @@ class AttendanceTest extends TestCase
 
         $this->expectException(GuildNotFoundException::class);
 
-        $service->getGuildAttendance(99999);
+        $service->lazy()->all();
     }
 
     #[Test]
-    public function get_guild_attendance_does_not_pass_guild_tag_id(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $service->getGuildAttendance(774848);
-
-        Http::assertSent(function ($request) {
-            $body = json_decode($request->body(), true);
-
-            return ! isset($body['variables']['guildTagID']);
-        });
-    }
-
-    // ==================== API Method Tests - getAttendanceLazy() ====================
-
-    #[Test]
-    public function get_attendance_lazy_returns_lazy_collection(): void
-    {
-        $service = $this->makeService();
-        $result = $service->getAttendanceLazy();
-
-        $this->assertInstanceOf(LazyCollection::class, $result);
-    }
-
-    #[Test]
-    public function get_attendance_lazy_iterates_all_records(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $records = $service->getAttendanceLazy()->all();
-
-        $this->assertCount(2, $records);
-    }
-
-    #[Test]
-    public function get_attendance_lazy_filters_by_player_names(): void
-    {
-        $this->fakeSuccessfulAttendanceResponse($this->sampleAttendanceData());
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-
-        $service = $this->makeService();
-        $records = $service->getAttendanceLazy(playerNames: ['Anduin'])->all();
-
-        // Only def456 has Anduin
-        $this->assertCount(1, $records);
-        $this->assertEquals('def456', $records[0]->code);
-    }
-
-    // ==================== API Method Tests - getGuildAttendanceLazy() ====================
-
-    #[Test]
-    public function get_guild_attendance_lazy_returns_lazy_collection(): void
-    {
-        $service = $this->makeService();
-        $result = $service->getGuildAttendanceLazy(774848);
-
-        $this->assertInstanceOf(LazyCollection::class, $result);
-    }
-
-    #[Test]
-    public function get_guild_attendance_lazy_fetches_multiple_pages(): void
+    public function lazy_fetches_multiple_pages(): void
     {
         Http::preventStrayRequests();
 
@@ -639,7 +421,7 @@ class AttendanceTest extends TestCase
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $service = $this->makeService();
-        $records = $service->getGuildAttendanceLazy(774848, limit: 1)->all();
+        $records = $service->lazy()->all();
 
         $this->assertCount(2, $records);
         $this->assertEquals('page1', $records[0]->code);

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\DiscordRoleUpdated;
 use App\Traits\HasPermissions;
 use Database\Factories\DiscordRoleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,6 +50,15 @@ class DiscordRole extends Model
     ];
 
     /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => DiscordRoleUpdated::class,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -62,6 +72,11 @@ class DiscordRole extends Model
         ];
     }
 
+    /**
+     * Get the users that belong to this Discord role.
+     *
+     * @return BelongsToMany<User>
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'discord_role_user', 'discord_role_id', 'user_id');

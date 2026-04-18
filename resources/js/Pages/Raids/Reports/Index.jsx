@@ -8,6 +8,7 @@ import DateFilterButton from "@/Components/DateFilterButton";
 import Pagination from "@/Components/Pagination";
 import formatDate from "@/Helpers/FormatDate";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
+import usePermission from "@/Hooks/Permissions";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -180,7 +181,7 @@ function ReportsTable({ reports }) {
                         const formattedDate = formatDate(report.start_time);
 
                         return (
-                            <tr key={report.code} className="transition-colors hover:bg-brown-800/50">
+                            <tr key={report.id} className="transition-colors hover:bg-brown-800/50">
                                 <td className="whitespace-nowrap px-4 py-3">
                                     <p className="text-xs text-gray-500">{dayOfWeek}</p>
                                     <p className="text-sm text-gray-300">
@@ -191,7 +192,7 @@ function ReportsTable({ reports }) {
                                 </td>
                                 <td className="px-4 py-3 text-sm">
                                     <Link
-                                        href={route('raids.reports.show', report.code)}
+                                        href={route('raids.reports.show', report.id)}
                                         target="_blank"
                                         className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                     >
@@ -300,6 +301,19 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
             <SharedHeader title="Raid Reports" backgroundClass="bg-illidan" />
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
+                    {/* Actions */}
+                    {usePermission("manage-reports") && (
+                        <div className="mb-4 flex justify-end">
+                            <Link
+                                href={route("raids.reports.create")}
+                                className="inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800"
+                            >
+                                <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
+                                Create a manual report
+                            </Link>
+                        </div>
+                    )}
+
                     {/* Filter controls */}
                     <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                         <FilterDropdown
@@ -328,12 +342,14 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                             value={sinceDate}
                             onChange={setSinceDate}
                             min={earliestDate}
+                            helpText="Leave blank to show all available dates."
                         />
                         <DateFilterButton
                             label="Before"
                             value={beforeDate}
                             onChange={setBeforeDate}
                             min={earliestDate}
+                            helpText="Leave blank to show all available dates."
                         />
                     </div>
 

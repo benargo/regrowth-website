@@ -16,6 +16,7 @@ class ReportResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'code' => $this->code,
             'title' => $this->title,
             'start_time' => $this->start_time,
@@ -23,7 +24,7 @@ class ReportResource extends JsonResource
             'guild_tag' => new GuildTagResource($this->whenLoaded('guildTag')),
             'zone' => [
                 'id' => $this->zone_id,
-                'name' => $this->zone_name,
+                'name' => $this->zone?->name,
             ],
             'characters' => CharacterResource::collection($this->whenLoaded('characters')),
             'linked_reports' => LinkedReportResource::collection($this->whenLoaded('linkedReports')),

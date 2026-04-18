@@ -5,12 +5,14 @@ namespace Tests\Feature\Raids;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Report;
+use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -189,6 +191,7 @@ class ReportControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('reports.data.0.id')
                 ->has('reports.data.0.code')
                 ->has('reports.data.0.title')
                 ->has('reports.data.0.start_time')
@@ -229,8 +232,10 @@ class ReportControllerTest extends TestCase
     public function zone_filter_limits_results_to_matching_zone(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->withGuildTag($tag)->create(['title' => 'Zone A Raid', 'zone_id' => 1, 'zone_name' => 'Zone A', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
-        Report::factory()->withGuildTag($tag)->create(['title' => 'Zone B Raid', 'zone_id' => 2, 'zone_name' => 'Zone B', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
+        $zoneA = Zone::factory()->create(['id' => 1, 'name' => 'Zone A']);
+        $zoneB = Zone::factory()->create(['id' => 2, 'name' => 'Zone B']);
+        Report::factory()->withGuildTag($tag)->withZone($zoneA)->create(['title' => 'Zone A Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        Report::factory()->withGuildTag($tag)->withZone($zoneB)->create(['title' => 'Zone B Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
         $user = User::factory()->officer()->create();
 
@@ -596,7 +601,8 @@ class ReportControllerTest extends TestCase
     public function show_includes_expected_report_fields(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->withZone(1000, 'Karazhan')->create([
+        $zone = Zone::factory()->create(['id' => 1000, 'name' => 'Karazhan']);
+        $report = Report::factory()->withGuildTag($tag)->withZone($zone)->create([
             'title' => 'Sunday Raid',
             'start_time' => Carbon::parse('2025-01-05 20:00', 'UTC'),
             'end_time' => Carbon::parse('2025-01-05 23:30', 'UTC'),
@@ -606,6 +612,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
+            ->has('report.data.id')
             ->has('report.data.code')
             ->has('report.data.title')
             ->has('report.data.start_time')
@@ -644,7 +651,7 @@ class ReportControllerTest extends TestCase
     {
         $report1 = Report::factory()->withoutGuildTag()->create(['title' => 'Main Report']);
         $report2 = Report::factory()->withoutGuildTag()->create(['title' => 'Linked Report']);
-        $report1->linkedReports()->attach($report2->code, ['created_by' => null]);
+        $report1->linkedReports()->attach($report2->id, ['created_by' => null]);
 
         $user = User::factory()->officer()->create();
 
@@ -733,12 +740,11 @@ class ReportControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_nearby_reports_page_one_centres_on_current_report(): void
+    public function show_nearby_reports_paginates_clusters_at_five_per_page(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
 
-        // Create 20 reports. Current (index 9, 0-based) has 10 newer reports (days 10-19).
-        // newerCount=10, page1Offset=3, so page 1 returns 15 items.
+        // 20 unlinked reports → 20 singleton clusters → 5 per page, 4 pages.
         $reports = collect();
         for ($i = 0; $i < 20; $i++) {
             $reports->push(Report::factory()->withGuildTag($tag)->create([
@@ -753,67 +759,48 @@ class ReportControllerTest extends TestCase
             ->get(route('raids.reports.show', $current))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
-                    ->has('nearbyReports.data', 15)
+                    ->has('nearbyReports.data', 5)
                     ->where('nearbyReports.meta.current_page', 1)
+                    ->where('nearbyReports.meta.per_page', 5)
+                    ->where('nearbyReports.meta.total', 20)
+                    ->where('nearbyReports.meta.last_page', 4)
                 )
             );
     }
 
     #[Test]
-    public function show_nearby_reports_handles_current_report_being_newest(): void
+    public function show_nearby_reports_groups_linked_reports_into_one_cluster(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
 
-        for ($i = 0; $i < 5; $i++) {
-            Report::factory()->withGuildTag($tag)->create([
-                'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')->addDays($i),
-            ]);
-        }
+        $a = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        $b = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-02 20:00', 'UTC')]);
+        $c = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-03 20:00', 'UTC')]);
+        $d = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-04 20:00', 'UTC')]);
 
-        $current = Report::factory()->withGuildTag($tag)->create([
-            'start_time' => Carbon::parse('2025-01-10 20:00', 'UTC'),
+        // Link a ↔ b and b ↔ c → cluster {a,b,c}; d stands alone.
+        DB::table('raid_report_links')->insert([
+            ['report_1' => $a->id, 'report_2' => $b->id],
+            ['report_1' => $b->id, 'report_2' => $a->id],
+            ['report_1' => $b->id, 'report_2' => $c->id],
+            ['report_1' => $c->id, 'report_2' => $b->id],
         ]);
 
         $user = User::factory()->officer()->create();
 
-        // newerCount=0, page1Offset=0, returns all 6 reports
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $current))
+            ->get(route('raids.reports.show', $a))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
-                    ->has('nearbyReports.data', 6)
+                    ->has('nearbyReports.data', 2)
+                    ->has('nearbyReports.data.0.reports', 1) // d
+                    ->has('nearbyReports.data.1.reports', 3) // {a,b,c}
+                    ->where('nearbyReports.meta.total', 2)
                 )
             );
     }
 
-    #[Test]
-    public function show_nearby_reports_handles_current_report_being_oldest(): void
-    {
-        $tag = GuildTag::factory()->withoutPhase()->create();
-
-        $current = Report::factory()->withGuildTag($tag)->create([
-            'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC'),
-        ]);
-
-        for ($i = 1; $i <= 5; $i++) {
-            Report::factory()->withGuildTag($tag)->create([
-                'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')->addDays($i),
-            ]);
-        }
-
-        $user = User::factory()->officer()->create();
-
-        // newerCount=5, page1Offset=max(0,5-7)=0, returns all 6 reports
-        $this->actingAs($user)
-            ->get(route('raids.reports.show', $current))
-            ->assertInertia(fn (Assert $page) => $page
-                ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
-                    ->has('nearbyReports.data', 6)
-                )
-            );
-    }
-
-    // ==================== storeLinks ====================
+    // ==================== update ====================
 
     private function grantManageReports(): void
     {
@@ -823,110 +810,140 @@ class ReportControllerTest extends TestCase
     }
 
     #[Test]
-    public function store_links_requires_authentication(): void
+    public function update_requires_authentication(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
 
-        $response = $this->post(route('raids.reports.store-links', $report), ['codes' => []]);
+        $response = $this->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => []],
+        ]);
 
         $response->assertRedirect('/login');
     }
 
     #[Test]
-    public function store_links_returns_forbidden_without_manage_reports(): void
+    public function update_returns_forbidden_without_manage_reports(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [$other->code],
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
         $response->assertForbidden();
     }
 
     #[Test]
-    public function store_links_rejects_empty_codes(): void
+    public function update_with_empty_payload_is_a_no_op(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [],
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), []);
+
+        $response->assertRedirect();
+    }
+
+    #[Test]
+    public function update_rejects_invalid_action(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'invalid', 'link_ids' => []],
         ]);
 
-        $response->assertSessionHasErrors(['codes']);
+        $response->assertSessionHasErrors(['links.action']);
     }
 
     #[Test]
-    public function store_links_rejects_missing_codes(): void
+    public function update_rejects_empty_link_ids_for_create_action(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), []);
-
-        $response->assertSessionHasErrors(['codes']);
-    }
-
-    #[Test]
-    public function store_links_rejects_nonexistent_report_code(): void
-    {
-        $this->grantManageReports();
-        $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => ['does-not-exist'],
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => []],
         ]);
 
-        $response->assertSessionHasErrors(['codes.0']);
+        $response->assertSessionHasErrors(['links.link_ids']);
     }
 
     #[Test]
-    public function store_links_rejects_current_report_in_codes(): void
+    public function update_rejects_missing_link_ids_for_create_action(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [$report->code],
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create'],
         ]);
 
-        $response->assertSessionHasErrors(['codes.0']);
+        $response->assertSessionHasErrors(['links.link_ids']);
     }
 
     #[Test]
-    public function store_links_creates_bidirectional_link_between_current_and_selected(): void
+    public function update_rejects_nonexistent_report_id(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => ['00000000-0000-0000-0000-000000000000']],
+        ]);
+
+        $response->assertSessionHasErrors(['links.link_ids.0']);
+    }
+
+    #[Test]
+    public function update_rejects_current_report_in_link_ids(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$report->id]],
+        ]);
+
+        $response->assertSessionHasErrors(['links.link_ids.0']);
+    }
+
+    #[Test]
+    public function update_creates_bidirectional_link_between_current_and_selected(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [$other->code],
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
         // Forward direction: report → other
-        $this->assertDatabaseHas('pivot_wcl_reports_links', [
-            'report_1' => $report->code,
-            'report_2' => $other->code,
+        $this->assertDatabaseHas('raid_report_links', [
+            'report_1' => $report->id,
+            'report_2' => $other->id,
         ]);
 
         // Reverse direction: other → report
-        $this->assertDatabaseHas('pivot_wcl_reports_links', [
-            'report_1' => $other->code,
-            'report_2' => $report->code,
+        $this->assertDatabaseHas('raid_report_links', [
+            'report_1' => $other->id,
+            'report_2' => $report->id,
         ]);
     }
 
     #[Test]
-    public function store_links_creates_all_combinations_when_multiple_reports_selected(): void
+    public function update_creates_all_combinations_when_multiple_reports_selected(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -934,97 +951,79 @@ class ReportControllerTest extends TestCase
         $reportB = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [$reportA->code, $reportB->code],
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$reportA->id, $reportB->id]],
         ]);
 
         // All 6 directed pairs should exist
         foreach ([
-            [$report->code, $reportA->code],
-            [$reportA->code, $report->code],
-            [$report->code, $reportB->code],
-            [$reportB->code, $report->code],
-            [$reportA->code, $reportB->code],
-            [$reportB->code, $reportA->code],
+            [$report->id, $reportA->id],
+            [$reportA->id, $report->id],
+            [$report->id, $reportB->id],
+            [$reportB->id, $report->id],
+            [$reportA->id, $reportB->id],
+            [$reportB->id, $reportA->id],
         ] as [$r1, $r2]) {
-            $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => $r1, 'report_2' => $r2]);
+            $this->assertDatabaseHas('raid_report_links', ['report_1' => $r1, 'report_2' => $r2]);
         }
     }
 
     #[Test]
-    public function store_links_is_idempotent_for_already_linked_reports(): void
+    public function update_create_is_idempotent_for_already_linked_reports(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
-        $report->linkedReports()->attach($other->code, ['created_by' => null]);
+        $report->linkedReports()->attach($other->id, ['created_by' => null]);
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [$other->code],
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseCount('pivot_wcl_reports_links', 2); // forward + reverse, no duplicates
+        $this->assertDatabaseCount('raid_report_links', 2); // forward + reverse, no duplicates
     }
 
     #[Test]
-    public function store_links_flushes_warcraftlogs_cache(): void
+    public function update_create_extends_links_to_reports_already_linked_to_selected(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
-        $other = Report::factory()->withoutGuildTag()->create();
+        $reportA = Report::factory()->withoutGuildTag()->create();
+        $reportB = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        Cache::tags('warcraftlogs')->put('some_key', 'some_value', 3600);
+        // A is already linked to B
+        $reportA->linkedReports()->attach($reportB->id, ['created_by' => $user->id]);
+        $reportB->linkedReports()->attach($reportA->id, ['created_by' => $user->id]);
 
-        $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [$other->code],
+        // Link report to A only — it should also be linked to B transitively
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$reportA->id]],
         ]);
 
-        $this->assertNull(Cache::tags('warcraftlogs')->get('some_key'));
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
     }
 
     #[Test]
-    public function store_links_redirects_back_on_success(): void
+    public function update_create_redirects_back_on_success(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store-links', $report), [
-            'codes' => [$other->code],
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
         $response->assertRedirect();
     }
 
-    // ==================== destroyLinks ====================
-
     #[Test]
-    public function destroy_links_requires_authentication(): void
-    {
-        $report = Report::factory()->withoutGuildTag()->create();
-
-        $response = $this->patch(route('raids.reports.destroy-links', $report));
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
-    public function destroy_links_returns_forbidden_without_manage_reports(): void
-    {
-        $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function destroy_links_deletes_all_manual_links_bidirectionally(): void
+    public function update_delete_deletes_all_manual_links_bidirectionally(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
@@ -1032,76 +1031,71 @@ class ReportControllerTest extends TestCase
         $reportC = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        // Create manual bidirectional links: report ↔ B, report ↔ C, B ↔ C
-        $report->linkedReports()->attach($reportB->code, ['created_by' => $user->id]);
-        $reportB->linkedReports()->attach($report->code, ['created_by' => $user->id]);
-        $report->linkedReports()->attach($reportC->code, ['created_by' => $user->id]);
-        $reportC->linkedReports()->attach($report->code, ['created_by' => $user->id]);
+        // Create manual bidirectional links: report ↔ B, report ↔ C
+        $report->linkedReports()->attach($reportB->id, ['created_by' => $user->id]);
+        $reportB->linkedReports()->attach($report->id, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($reportC->id, ['created_by' => $user->id]);
+        $reportC->linkedReports()->attach($report->id, ['created_by' => $user->id]);
 
-        $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'delete', 'link_ids' => []],
+        ]);
 
         // Forward links from report should be gone
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $report->code, 'report_2' => $reportB->code]);
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $report->code, 'report_2' => $reportC->code]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportC->id]);
         // Reverse links back to report should be gone
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $reportB->code, 'report_2' => $report->code]);
-        $this->assertDatabaseMissing('pivot_wcl_reports_links', ['report_1' => $reportC->code, 'report_2' => $report->code]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
+        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $reportC->id, 'report_2' => $report->id]);
     }
 
     #[Test]
-    public function destroy_links_does_not_delete_auto_linked_reports(): void
+    public function update_delete_does_not_delete_auto_linked_reports(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $autoLinked = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($autoLinked->code, ['created_by' => null]);
-        $autoLinked->linkedReports()->attach($report->code, ['created_by' => null]);
+        // Insert with created_at = null to simulate auto-linked rows (no Eloquent timestamps)
+        DB::table('raid_report_links')->insert([
+            ['report_1' => $report->id, 'report_2' => $autoLinked->id, 'created_by' => null, 'created_at' => null, 'updated_at' => null],
+            ['report_1' => $autoLinked->id, 'report_2' => $report->id, 'created_by' => null, 'created_at' => null, 'updated_at' => null],
+        ]);
 
-        $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'delete', 'link_ids' => []],
+        ]);
 
-        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => $report->code, 'report_2' => $autoLinked->code]);
-        $this->assertDatabaseHas('pivot_wcl_reports_links', ['report_1' => $autoLinked->code, 'report_2' => $report->code]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $report->id, 'report_2' => $autoLinked->id]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $autoLinked->id, 'report_2' => $report->id]);
     }
 
     #[Test]
-    public function destroy_links_is_a_no_op_when_no_manual_links_exist(): void
+    public function update_delete_is_a_no_op_when_no_manual_links_exist(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'delete', 'link_ids' => []],
+        ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseCount('pivot_wcl_reports_links', 0);
+        $this->assertDatabaseCount('raid_report_links', 0);
     }
 
     #[Test]
-    public function destroy_links_flushes_warcraftlogs_cache(): void
-    {
-        $this->grantManageReports();
-        $report = Report::factory()->withoutGuildTag()->create();
-        $other = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
-
-        $report->linkedReports()->attach($other->code, ['created_by' => $user->id]);
-        Cache::tags('warcraftlogs')->put('some_key', 'some_value', 3600);
-
-        $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
-
-        $this->assertNull(Cache::tags('warcraftlogs')->get('some_key'));
-    }
-
-    #[Test]
-    public function destroy_links_redirects_back_on_success(): void
+    public function update_delete_redirects_back_on_success(): void
     {
         $this->grantManageReports();
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.destroy-links', $report));
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'delete', 'link_ids' => []],
+        ]);
 
         $response->assertRedirect();
     }
@@ -1128,7 +1122,7 @@ class ReportControllerTest extends TestCase
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($other->code, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($other->id, ['created_by' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('raids.reports.show', $report))
@@ -1148,8 +1142,8 @@ class ReportControllerTest extends TestCase
         $manualLinked = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($autoLinked->code, ['created_by' => null]);
-        $report->linkedReports()->attach($manualLinked->code, ['created_by' => $user->id]);
+        $report->linkedReports()->attach($autoLinked->id, ['created_by' => null]);
+        $report->linkedReports()->attach($manualLinked->id, ['created_by' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('raids.reports.show', $report))
@@ -1159,5 +1153,557 @@ class ReportControllerTest extends TestCase
                     ->where('impactedReports.data.0.code', $manualLinked->code)
                 )
             );
+    }
+
+    // ==================== create ====================
+
+    #[Test]
+    public function create_requires_authentication(): void
+    {
+        $response = $this->get(route('raids.reports.create'));
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function create_forbids_users_without_manage_reports(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function create_allows_users_with_manage_reports(): void
+    {
+        $this->grantManageReports();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+
+        $response->assertOk();
+    }
+
+    #[Test]
+    public function create_renders_correct_inertia_component(): void
+    {
+        $this->grantManageReports();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Raids/Reports/Create')
+        );
+    }
+
+    #[Test]
+    public function create_includes_expected_props(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create();
+        GuildTag::factory()->withoutPhase()->create();
+        Character::factory()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('expansions')
+            ->has('expansions.0.id')
+            ->has('expansions.0.name')
+            ->has('expansions.0.zones')
+            ->has('guildTags')
+            ->has('characters')
+            ->has('defaultExpansionId')
+        );
+    }
+
+    #[Test]
+    public function create_nearby_reports_absent_on_initial_load(): void
+    {
+        $this->grantManageReports();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('nearbyReports')
+        );
+    }
+
+    // ==================== store ====================
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validStoreData(GuildTag $tag): array
+    {
+        return [
+            'title' => 'Sunday Karazhan',
+            'start_time' => '2025-01-05 20:00',
+            'end_time' => '2025-01-05 23:30',
+            'guild_tag_id' => $tag->id,
+            'zone_id' => 1000,
+        ];
+    }
+
+    #[Test]
+    public function store_requires_authentication(): void
+    {
+        $response = $this->post(route('raids.reports.store'), []);
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function store_forbids_users_without_manage_reports(): void
+    {
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), $this->validStoreData($tag));
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function store_creates_report_with_valid_data(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000, 'name' => 'Karazhan']);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raids.reports.store'), $this->validStoreData($tag));
+
+        $this->assertDatabaseHas('raid_reports', [
+            'title' => 'Sunday Karazhan',
+            'zone_id' => 1000,
+            'guild_tag_id' => $tag->id,
+            'code' => null,
+        ]);
+    }
+
+    #[Test]
+    public function store_redirects_to_show_with_success_flash(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000]);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), $this->validStoreData($tag));
+
+        $report = Report::where('title', 'Sunday Karazhan')->firstOrFail();
+        $response->assertRedirect(route('raids.reports.show', $report));
+        $response->assertSessionHas('success', 'New report created');
+    }
+
+    #[Test]
+    public function store_attaches_characters_to_report(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000]);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $character = Character::factory()->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['character_ids' => [$character->id]]
+        ));
+
+        $report = Report::where('title', 'Sunday Karazhan')->firstOrFail();
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
+            'character_id' => $character->id,
+            'presence' => 1,
+        ]);
+    }
+
+    #[Test]
+    public function store_creates_bidirectional_links(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000]);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $existingReport = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['linked_report_ids' => [$existingReport->id]]
+        ));
+
+        $newReport = Report::where('title', 'Sunday Karazhan')->firstOrFail();
+
+        $this->assertDatabaseHas('raid_report_links', [
+            'report_1' => $newReport->id,
+            'report_2' => $existingReport->id,
+        ]);
+        $this->assertDatabaseHas('raid_report_links', [
+            'report_1' => $existingReport->id,
+            'report_2' => $newReport->id,
+        ]);
+    }
+
+    #[Test]
+    public function store_creates_links_to_reports_already_linked_to_selected(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000]);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $reportA = Report::factory()->withoutGuildTag()->create();
+        $reportB = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        // A is already linked to B
+        $reportA->linkedReports()->attach($reportB->id, ['created_by' => $user->id]);
+        $reportB->linkedReports()->attach($reportA->id, ['created_by' => $user->id]);
+
+        // Store new report linked to A only — it should also be linked to B transitively
+        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['linked_report_ids' => [$reportA->id]]
+        ));
+
+        $newReport = Report::where('title', 'Sunday Karazhan')->firstOrFail();
+
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $newReport->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $newReport->id]);
+    }
+
+    #[Test]
+    public function store_sets_loot_councillor_flag_on_attending_character(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000]);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['character_ids' => [$character->id], 'loot_councillor_ids' => [$character->id]]
+        ));
+
+        $report = Report::where('title', 'Sunday Karazhan')->firstOrFail();
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
+            'character_id' => $character->id,
+            'presence' => 1,
+            'is_loot_councillor' => true,
+        ]);
+    }
+
+    #[Test]
+    public function store_attaches_absent_loot_councillor_with_presence_zero(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000]);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['loot_councillor_ids' => [$character->id]]
+        ));
+
+        $report = Report::where('title', 'Sunday Karazhan')->firstOrFail();
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
+            'character_id' => $character->id,
+            'presence' => 0,
+            'is_loot_councillor' => true,
+        ]);
+    }
+
+    #[Test]
+    public function store_rejects_non_loot_councillor_character_for_loot_councillor_ids(): void
+    {
+        $this->grantManageReports();
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $character = Character::factory()->create(['is_loot_councillor' => false]);
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['loot_councillor_ids' => [$character->id]]
+        ));
+
+        $response->assertSessionHasErrors(['loot_councillor_ids.0']);
+    }
+
+    #[Test]
+    public function store_rejects_missing_title(): void
+    {
+        $this->grantManageReports();
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['title' => '']
+        ));
+
+        $response->assertSessionHasErrors(['title']);
+    }
+
+    #[Test]
+    public function store_rejects_end_time_before_start_time(): void
+    {
+        $this->grantManageReports();
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['start_time' => '2025-01-05 23:30', 'end_time' => '2025-01-05 20:00']
+        ));
+
+        $response->assertSessionHasErrors(['end_time']);
+    }
+
+    #[Test]
+    public function store_rejects_invalid_guild_tag_id(): void
+    {
+        $this->grantManageReports();
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['guild_tag_id' => 99999]
+        ));
+
+        $response->assertSessionHasErrors(['guild_tag_id']);
+    }
+
+    #[Test]
+    public function store_rejects_nonexistent_character_id(): void
+    {
+        $this->grantManageReports();
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['character_ids' => [99999]]
+        ));
+
+        $response->assertSessionHasErrors(['character_ids.0']);
+    }
+
+    #[Test]
+    public function store_rejects_nonexistent_linked_report_id(): void
+    {
+        $this->grantManageReports();
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['linked_report_ids' => ['00000000-0000-0000-0000-000000000000']]
+        ));
+
+        $response->assertSessionHasErrors(['linked_report_ids.0']);
+    }
+
+    #[Test]
+    public function store_rejects_invalid_zone_id(): void
+    {
+        $this->grantManageReports();
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['zone_id' => 9999]
+        ));
+
+        $response->assertSessionHasErrors(['zone_id']);
+    }
+
+    // ==================== update: loot_councillors ====================
+
+    #[Test]
+    public function update_loot_councillors_rejects_invalid_action(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'loot_councillors' => ['action' => 'invalid', 'character_ids' => [$character->id]],
+        ]);
+
+        $response->assertSessionHasErrors(['loot_councillors.action']);
+    }
+
+    #[Test]
+    public function update_loot_councillors_create_rejects_character_without_loot_councillor_flag(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->create(['is_loot_councillor' => false]);
+
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
+        ]);
+
+        $response->assertSessionHasErrors(['loot_councillors.character_ids.0']);
+    }
+
+    #[Test]
+    public function update_loot_councillors_create_sets_is_loot_councillor_on_existing_pivot(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => false]);
+
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
+        ]);
+
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
+            'character_id' => $character->id,
+            'presence' => 1,
+            'is_loot_councillor' => true,
+        ]);
+    }
+
+    #[Test]
+    public function update_loot_councillors_create_attaches_absent_character_with_presence_zero(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
+        ]);
+
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
+            'character_id' => $character->id,
+            'presence' => 0,
+            'is_loot_councillor' => true,
+        ]);
+    }
+
+    #[Test]
+    public function update_loot_councillors_delete_sets_is_loot_councillor_false_for_present_character(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => true]);
+
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'loot_councillors' => ['action' => 'delete', 'character_ids' => [$character->id]],
+        ]);
+
+        $this->assertDatabaseHas('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
+            'character_id' => $character->id,
+            'presence' => 1,
+            'is_loot_councillor' => false,
+        ]);
+    }
+
+    #[Test]
+    public function update_loot_councillors_delete_removes_pivot_row_for_absence_only_character(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 0, 'is_loot_councillor' => true]);
+
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'loot_councillors' => ['action' => 'delete', 'character_ids' => [$character->id]],
+        ]);
+
+        $this->assertDatabaseMissing('pivot_characters_raid_reports', [
+            'raid_report_id' => $report->id,
+            'character_id' => $character->id,
+        ]);
+    }
+
+    #[Test]
+    public function update_loot_councillors_redirects_back_on_success(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
+        ]);
+
+        $response->assertRedirect();
+    }
+
+    // ==================== Show: loot councillor props ====================
+
+    #[Test]
+    public function show_loot_councillor_candidates_is_absent_on_initial_load(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('lootCouncillorCandidates')
+        );
+    }
+
+    #[Test]
+    public function show_loot_councillor_candidates_returned_on_partial_reload(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        Character::factory()->lootCouncillor()->create();
+
+        $this->actingAs($user)
+            ->get(route('raids.reports.show', $report))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
+                    ->has('lootCouncillorCandidates', 1)
+                )
+            );
+    }
+
+    #[Test]
+    public function show_report_characters_include_pivot_is_loot_councillor(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+        $character = Character::factory()->lootCouncillor()->create();
+
+        $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => true]);
+
+        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('report.data.characters', 1)
+            ->where('report.data.characters.0.pivot.is_loot_councillor', true)
+        );
     }
 }
