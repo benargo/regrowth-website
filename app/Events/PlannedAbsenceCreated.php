@@ -2,14 +2,14 @@
 
 namespace App\Events;
 
-use App\Contracts\Events\PlannedAbsenceModified;
+use App\Contracts\Events\FlushesAttendanceCache;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PlannedAbsenceCreated implements PlannedAbsenceModified
+class PlannedAbsenceCreated implements FlushesAttendanceCache
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
