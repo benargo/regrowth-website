@@ -21,7 +21,7 @@ class FlushPermissionsCache implements ShouldBeUnique
      */
     public function handle(FlushesPermissionsCache $event): void
     {
-        Cache::tags('permissions')->flush();
+        Cache::tags(['permissions'])->flush();
         $this->permissionRegistrar->forgetCachedPermissions();
     }
 }
