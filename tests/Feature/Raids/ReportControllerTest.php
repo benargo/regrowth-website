@@ -135,6 +135,31 @@ class ReportControllerTest extends TestCase
     }
 
     #[Test]
+    public function pagination_links_preserve_filter_query_string(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->count(30)->withGuildTag($tag)->create([
+            'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC'),
+        ]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.index', [
+            'guild_tag_ids' => (string) $tag->id,
+            'days' => '0,1,2,3,4,5,6',
+        ]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('reports.meta.last_page', fn ($lastPage) => $lastPage > 1)
+                ->where('reports.links.next', fn ($url) => str_contains($url, 'guild_tag_ids=')
+                    && str_contains($url, 'days=')
+                )
+            )
+        );
+    }
+
+    #[Test]
     public function reports_deferred_prop_returns_empty_when_no_data(): void
     {
         $user = User::factory()->officer()->create();

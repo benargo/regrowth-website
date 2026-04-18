@@ -160,6 +160,7 @@ class ReportController extends Controller
                         ->when($beforeDate, fn ($q) => $q->where('start_time', '<=', $beforeDate))
                         ->orderBy('start_time', 'desc')
                         ->paginate(25)
+                        ->withQueryString()
                 );
             }),
         ]);
