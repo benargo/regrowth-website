@@ -20,6 +20,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        DB::table('raid_reports')
+            ->whereNotNull('zone_id')
+            ->whereNotIn('zone_id', DB::table('wcl_zones')->select('id'))
+            ->update(['zone_id' => null]);
+
         Schema::table('raid_reports', function (Blueprint $table) {
             $table->foreign('zone_id')->references('id')->on('wcl_zones')->nullOnDelete();
             $table->dropColumn('zone_name');
