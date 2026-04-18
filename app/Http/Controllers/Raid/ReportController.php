@@ -7,9 +7,11 @@ use App\Http\Requests\Raid\ReportsIndexRequest;
 use App\Http\Requests\Raid\StoreReportRequest;
 use App\Http\Requests\Raid\UpdateReportRequest;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
+use App\Http\Resources\WarcraftLogs\ReportClusterResource;
 use App\Http\Resources\WarcraftLogs\ReportResource;
 use App\Models\Character;
 use App\Models\Raids\Report;
+use App\Models\Raids\ReportLink;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
@@ -50,34 +52,22 @@ class ReportController extends Controller
             'guildTags' => GuildTag::orderBy('name')->get(),
             'characters' => Character::select('id', 'name', 'playable_class', 'is_main')->orderBy('name')->get(),
             'lootCouncillorCandidates' => Inertia::optional(function () {
-                return Character::select('id', 'name', 'playable_class', 'is_main')
-                    ->where('is_loot_councillor', true)
-                    ->orderBy('name')
-                    ->get();
-            }),
-            'nearbyReports' => Inertia::optional(function () use ($request) {
-                $page = max(1, $request->integer('nearby', 1));
-                $perPage = 15;
-
-                $total = Cache::tags(['warcraftlogs'])->remember(
-                    'reports:total_count',
-                    now()->addMinutes(5),
-                    fn () => Report::count()
+                return Character::hydrate(
+                    Cache::tags('characters')->remember(
+                        'characters:loot_councillors',
+                        now()->addDay(),
+                        function () {
+                            return Character::select('id', 'name', 'playable_class', 'is_main')
+                                ->where('is_loot_councillor', true)
+                                ->orderBy('name')
+                                ->get();
+                        }
+                    )
                 );
-
-                $reports = Report::orderBy('start_time', 'desc')
-                    ->with('zone')
-                    ->skip(($page - 1) * $perPage)
-                    ->take($perPage)
-                    ->get();
-
-                $paginator = new LengthAwarePaginator($reports, $total, $perPage, $page, [
-                    'path' => $request->url(),
-                    'pageName' => 'nearby',
-                ]);
-
-                return LinkedReportResource::collection($paginator);
             }),
+            'nearbyReports' => Inertia::optional(
+                fn () => ReportClusterResource::collection($this->buildNearbyReportClusters($request))
+            ),
         ]);
     }
 
@@ -205,30 +195,9 @@ class ReportController extends Controller
                     $report->linkedReports()->wherePivotNotNull('created_by')->get()
                 );
             }),
-            'nearbyReports' => Inertia::optional(function () use ($request, $report) {
-                $page = max(1, $request->integer('nearby', 1));
-                $perPage = 15;
-
-                $newerCount = Report::where('start_time', '>', $report->start_time)->count();
-                $page1Offset = max(0, $newerCount - 7);
-                $offset = $page1Offset + ($page - 1) * $perPage;
-
-                $total = Report::count();
-                $totalFromStart = $total - $page1Offset;
-
-                $reports = Report::orderBy('start_time', 'desc')
-                    ->with('zone')
-                    ->skip($offset)
-                    ->take($perPage)
-                    ->get();
-
-                $paginator = new LengthAwarePaginator($reports, $totalFromStart, $perPage, $page, [
-                    'path' => $request->url(),
-                    'pageName' => 'nearby',
-                ]);
-
-                return LinkedReportResource::collection($paginator);
-            }),
+            'nearbyReports' => Inertia::optional(
+                fn () => ReportClusterResource::collection($this->buildNearbyReportClusters($request))
+            ),
         ]);
     }
 
@@ -322,6 +291,92 @@ class ReportController extends Controller
                 $r1->linkedReports()->attach($pivotData);
             }
         }
+    }
+
+    /**
+     * Build a paginated collection of report clusters for the "Link Reports" modal.
+     *
+     * Uses Union-Find over all reports and their links to group them into transitive
+     * clusters, then paginates the resulting clusters at 5 per page.
+     */
+    private function buildNearbyReportClusters(Request $request): LengthAwarePaginator
+    {
+        $page = max(1, $request->integer('nearby', 1));
+        $perPage = 5;
+
+        $reportTimes = Report::hydrate(
+            Cache::tags(['raids', 'warcraftlogs'])->remember(
+                'reports:select:id,start_time',
+                now()->addMinutes(5),
+                fn () => Report::select('id', 'start_time')->get()->toArray()
+            )
+        )->pluck('start_time', 'id');
+
+        $links = ReportLink::hydrate(
+            Cache::tags(['raids', 'warcraftlogs'])->remember(
+                'reports:links:all_edges',
+                now()->addMinutes(5),
+                fn () => DB::table('raid_report_links')->select('report_1', 'report_2')->get()->toArray()
+            )
+        );
+
+        $allIds = $reportTimes->keys()->all();
+        $parent = array_combine($allIds, $allIds);
+
+        $find = function (string $id) use (&$parent): string {
+            $root = $id;
+            while ($parent[$root] !== $root) {
+                $root = $parent[$root];
+            }
+            while ($parent[$id] !== $root) {
+                $next = $parent[$id];
+                $parent[$id] = $root;
+                $id = $next;
+            }
+
+            return $root;
+        };
+
+        foreach ($links as $link) {
+            if (! isset($parent[$link->report_1]) || ! isset($parent[$link->report_2])) {
+                continue;
+            }
+
+            $rootA = $find($link->report_1);
+            $rootB = $find($link->report_2);
+
+            if ($rootA !== $rootB) {
+                $parent[$rootB] = $rootA;
+            }
+        }
+
+        $clusterMap = [];
+        foreach ($allIds as $id) {
+            $clusterMap[$find($id)][] = $id;
+        }
+
+        $sortedClusters = collect($clusterMap)
+            ->map(fn (array $ids) => collect($ids)->sortByDesc(fn ($id) => $reportTimes[$id])->values()->all())
+            ->sortByDesc(fn (array $ids) => $reportTimes[$ids[0]])
+            ->values();
+
+        $total = $sortedClusters->count();
+        $pageItems = $sortedClusters->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $pageReports = Report::whereIn('id', $pageItems->flatten()->all())
+            ->with('zone')
+            ->get()
+            ->keyBy('id');
+
+        $clusters = $pageItems->map(fn (array $ids) => [
+            'id' => $ids[0],
+            'reports' => collect($ids)->map(fn ($id) => $pageReports[$id])->filter()->values(),
+        ]);
+
+        return new LengthAwarePaginator($clusters, $total, $perPage, $page, [
+            'path' => $request->url(),
+            'pageName' => 'nearby',
+        ]);
     }
 
     /**

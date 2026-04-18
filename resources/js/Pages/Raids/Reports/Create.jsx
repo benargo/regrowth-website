@@ -356,6 +356,7 @@ export default function Create() {
                             nearbyReports={nearbyReports}
                             impactedReports={null}
                             onChange={(ids) => setLinkedReportIds(ids)}
+                            referenceDate={startTime || null}
                         />
 
                         {/* Actions */}

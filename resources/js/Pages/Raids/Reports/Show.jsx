@@ -190,6 +190,7 @@ export default function Show({ report, nearbyReports, impactedReports, canManage
                         canManageLinks={canManageLinks}
                         nearbyReports={nearbyReports}
                         impactedReports={impactedReports}
+                        referenceDate={data.start_time}
                     />
                 </div>
             </div>

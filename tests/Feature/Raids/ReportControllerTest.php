@@ -740,12 +740,11 @@ class ReportControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_nearby_reports_page_one_centres_on_current_report(): void
+    public function show_nearby_reports_paginates_clusters_at_five_per_page(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
 
-        // Create 20 reports. Current (index 9, 0-based) has 10 newer reports (days 10-19).
-        // newerCount=10, page1Offset=3, so page 1 returns 15 items.
+        // 20 unlinked reports → 20 singleton clusters → 5 per page, 4 pages.
         $reports = collect();
         for ($i = 0; $i < 20; $i++) {
             $reports->push(Report::factory()->withGuildTag($tag)->create([
@@ -760,62 +759,43 @@ class ReportControllerTest extends TestCase
             ->get(route('raids.reports.show', $current))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
-                    ->has('nearbyReports.data', 15)
+                    ->has('nearbyReports.data', 5)
                     ->where('nearbyReports.meta.current_page', 1)
+                    ->where('nearbyReports.meta.per_page', 5)
+                    ->where('nearbyReports.meta.total', 20)
+                    ->where('nearbyReports.meta.last_page', 4)
                 )
             );
     }
 
     #[Test]
-    public function show_nearby_reports_handles_current_report_being_newest(): void
+    public function show_nearby_reports_groups_linked_reports_into_one_cluster(): void
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
 
-        for ($i = 0; $i < 5; $i++) {
-            Report::factory()->withGuildTag($tag)->create([
-                'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')->addDays($i),
-            ]);
-        }
+        $a = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
+        $b = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-02 20:00', 'UTC')]);
+        $c = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-03 20:00', 'UTC')]);
+        $d = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-04 20:00', 'UTC')]);
 
-        $current = Report::factory()->withGuildTag($tag)->create([
-            'start_time' => Carbon::parse('2025-01-10 20:00', 'UTC'),
+        // Link a ↔ b and b ↔ c → cluster {a,b,c}; d stands alone.
+        DB::table('raid_report_links')->insert([
+            ['report_1' => $a->id, 'report_2' => $b->id],
+            ['report_1' => $b->id, 'report_2' => $a->id],
+            ['report_1' => $b->id, 'report_2' => $c->id],
+            ['report_1' => $c->id, 'report_2' => $b->id],
         ]);
 
         $user = User::factory()->officer()->create();
 
-        // newerCount=0, page1Offset=0, returns all 6 reports
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $current))
+            ->get(route('raids.reports.show', $a))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
-                    ->has('nearbyReports.data', 6)
-                )
-            );
-    }
-
-    #[Test]
-    public function show_nearby_reports_handles_current_report_being_oldest(): void
-    {
-        $tag = GuildTag::factory()->withoutPhase()->create();
-
-        $current = Report::factory()->withGuildTag($tag)->create([
-            'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC'),
-        ]);
-
-        for ($i = 1; $i <= 5; $i++) {
-            Report::factory()->withGuildTag($tag)->create([
-                'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')->addDays($i),
-            ]);
-        }
-
-        $user = User::factory()->officer()->create();
-
-        // newerCount=5, page1Offset=max(0,5-7)=0, returns all 6 reports
-        $this->actingAs($user)
-            ->get(route('raids.reports.show', $current))
-            ->assertInertia(fn (Assert $page) => $page
-                ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
-                    ->has('nearbyReports.data', 6)
+                    ->has('nearbyReports.data', 2)
+                    ->has('nearbyReports.data.0.reports', 1) // d
+                    ->has('nearbyReports.data.1.reports', 3) // {a,b,c}
+                    ->where('nearbyReports.meta.total', 2)
                 )
             );
     }

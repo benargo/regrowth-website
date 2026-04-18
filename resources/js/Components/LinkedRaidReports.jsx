@@ -4,6 +4,25 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
 import Tooltip from "@/Components/Tooltip";
 import formatDate from "@/Helpers/FormatDate";
+import getDayDifference from "@/Helpers/GetDayDifference";
+
+function ClusterReportRow({ report, dayDiff }) {
+    const formattedDate = formatDate(report.start_time);
+    return (
+        <div>
+            <p className="truncate text-sm font-medium text-white">{report.title}</p>
+            <div className="flex flex-col gap-2 md:flex-row">
+                <p className="mt-0.5 text-xs text-gray-500">{report.zone?.name}</p>
+                <p className="mt-0.5 text-xs text-gray-500 md:border-l md:border-gray-700 md:pl-2">
+                    <span className="md:hidden">{formattedDate.short}</span>
+                    <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
+                    <span className="hidden lg:inline">{formattedDate.long}</span>
+                    {dayDiff && <span>&nbsp;&ndash;&nbsp;{dayDiff}</span>}
+                </p>
+            </div>
+        </div>
+    );
+}
 
 function LinkReportsModal({
     isOpen,
@@ -14,6 +33,7 @@ function LinkReportsModal({
     onSubmit,
     isSubmitting,
     isCreateMode,
+    referenceDate,
 }) {
     const [selected, setSelected] = useState(new Set());
     const [isLoading, setIsLoading] = useState(false);
@@ -53,34 +73,39 @@ function LinkReportsModal({
         });
     };
 
-    const isAlreadyLinked = (report) => alreadyLinkedIds.has(report.id);
+    const isClusterCurrent = (cluster) => !isCreateMode && cluster.reports.some((r) => r.id === currentId);
 
-    const isCurrent = (report) => {
-        if (isCreateMode) return false;
-        return report.id === currentId;
-    };
+    const isClusterLinked = (cluster) => cluster.reports.some((r) => alreadyLinkedIds.has(r.id));
 
-    const getIdentifier = (report) => report.id;
-
-    const toggleItem = (report) => {
-        const id = getIdentifier(report);
-        if (isCurrent(report) || isAlreadyLinked(report)) {
+    const toggleCluster = (cluster) => {
+        if (isClusterCurrent(cluster) || isClusterLinked(cluster)) {
             return;
         }
         setSelected((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
+            if (next.has(cluster.id)) {
+                next.delete(cluster.id);
             } else {
-                next.add(id);
+                next.add(cluster.id);
             }
             return next;
         });
     };
 
-    const newlySelectedCount = [...selected].filter((id) => !isAlreadyLinked({ id, code: id })).length;
+    const newlySelectedCount = [...selected].reduce((n, clusterId) => {
+        const cluster = nearbyReports?.data?.find((c) => c.id === clusterId);
+        return n + (cluster?.reports.filter((r) => !alreadyLinkedIds.has(r.id)).length ?? 0);
+    }, 0);
 
-    const skeletonRows = Array.from({ length: 15 });
+    const handleSubmit = () => {
+        const allIds = [...selected].flatMap((clusterId) => {
+            const cluster = nearbyReports?.data?.find((c) => c.id === clusterId);
+            return cluster ? cluster.reports.map((r) => r.id) : [];
+        });
+        onSubmit(allIds);
+    };
+
+    const skeletonRows = Array.from({ length: 5 });
     const meta = nearbyReports?.meta;
 
     return (
@@ -111,52 +136,101 @@ function LinkReportsModal({
                     </div>
                 ) : (
                     <ul className="divide-y divide-brown-700">
-                        {nearbyReports.data.map((report) => {
-                            const linked = isAlreadyLinked(report);
-                            const current = isCurrent(report);
-                            const identifier = getIdentifier(report);
-                            const isChecked = current || linked || selected.has(identifier);
+                        {nearbyReports.data.map((cluster) => {
+                            const linked = isClusterLinked(cluster);
+                            const current = isClusterCurrent(cluster);
+                            const isChecked = current || linked || selected.has(cluster.id);
                             const isDisabled = current || linked;
-                            const formattedDate = formatDate(report.start_time);
+                            const isSingle = cluster.reports.length === 1;
+                            const clusterDayDiff = getDayDifference(referenceDate, cluster.reports[0]?.start_time);
 
                             return (
                                 <li
-                                    key={report.id}
-                                    onClick={() => toggleItem(report)}
-                                    className={`flex cursor-pointer items-center gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "hover:bg-brown-800/50"}`}
+                                    key={cluster.id}
+                                    onClick={() => toggleCluster(cluster)}
+                                    className={`flex gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "cursor-pointer hover:bg-brown-800/50"}`}
                                 >
                                     <input
                                         type="checkbox"
                                         checked={isChecked}
                                         disabled={isDisabled}
-                                        onChange={() => toggleItem(report)}
+                                        onChange={() => toggleCluster(cluster)}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="h-4 w-4 rounded border-amber-600 bg-brown-800 text-amber-500 accent-amber-500"
+                                        className="mt-1 h-4 w-4 flex-shrink-0 rounded border-amber-600 bg-brown-800 text-amber-500 accent-amber-500"
                                     />
                                     <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="truncate text-sm font-medium text-white">
-                                                {report.title}
-                                            </span>
-                                            {current && (
-                                                <span className="flex-shrink-0 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
-                                                    Current
+                                        {!isSingle && (
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <span className="text-xs text-gray-500">
+                                                    {cluster.reports.length} reports
                                                 </span>
-                                            )}
-                                            {linked && (
-                                                <span className="flex-shrink-0 rounded bg-green-600/20 px-1.5 py-0.5 text-xs text-green-400">
-                                                    Linked
-                                                </span>
+                                                {current && (
+                                                    <span className="flex-shrink-0 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
+                                                        Current
+                                                    </span>
+                                                )}
+                                                {linked && (
+                                                    <span className="flex-shrink-0 rounded bg-green-600/20 px-1.5 py-0.5 text-xs text-green-400">
+                                                        Linked
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                        <div className={!isSingle ? "space-y-2 border-l-2 border-brown-700 pl-3" : ""}>
+                                            {isSingle ? (
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="truncate text-sm font-medium text-white">
+                                                            {cluster.reports[0].title}
+                                                        </span>
+                                                        {current && (
+                                                            <span className="flex-shrink-0 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
+                                                                Current
+                                                            </span>
+                                                        )}
+                                                        {linked && (
+                                                            <span className="flex-shrink-0 rounded bg-green-600/20 px-1.5 py-0.5 text-xs text-green-400">
+                                                                Linked
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-0.5 text-xs text-gray-500">
+                                                        {(() => {
+                                                            const d = formatDate(cluster.reports[0].start_time);
+                                                            return (
+                                                                <div className="flex flex-col gap-2 md:flex-row">
+                                                                    <p className="mt-0.5 text-xs text-gray-500">
+                                                                        {cluster.reports[0].zone.name}
+                                                                    </p>
+                                                                    <p className="mt-0.5 text-xs text-gray-500 md:border-l md:border-gray-700 md:pl-2">
+                                                                        <span className="md:hidden">{d.short}</span>
+                                                                        <span className="hidden md:inline lg:hidden">
+                                                                            {d.medium}
+                                                                        </span>
+                                                                        <span className="hidden lg:inline">
+                                                                            {d.long}
+                                                                        </span>
+                                                                        {clusterDayDiff && (
+                                                                            <span>
+                                                                                &nbsp;&ndash;&nbsp;{clusterDayDiff}
+                                                                            </span>
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                cluster.reports.map((report) => (
+                                                    <ClusterReportRow
+                                                        key={report.id}
+                                                        report={report}
+                                                        dayDiff={getDayDifference(referenceDate, report.start_time)}
+                                                    />
+                                                ))
                                             )}
                                         </div>
-                                        <p className="mt-0.5 text-xs text-gray-500">
-                                            <span className="md:hidden">{formattedDate.short}</span>
-                                            <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
-                                            <span className="hidden lg:inline">{formattedDate.long}</span>
-                                            {report.zone?.name && (
-                                                <span className="ml-2">&mdash; {report.zone.name}</span>
-                                            )}
-                                        </p>
                                     </div>
                                 </li>
                             );
@@ -190,7 +264,7 @@ function LinkReportsModal({
                     )}
                 </div>
                 <button
-                    onClick={() => onSubmit([...selected])}
+                    onClick={handleSubmit}
                     disabled={newlySelectedCount === 0 || isSubmitting}
                     className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -271,7 +345,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
                                         <span className="md:hidden">{formattedDate.short}</span>
                                         <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                         <span className="hidden lg:inline">{formattedDate.long}</span>
-                                        {report.zone?.name && <span className="ml-2">&mdash; {report.zone.name}</span>}
+                                        {report.zone?.name && <span className="ml-2">&ndash; {report.zone.name}</span>}
                                     </p>
                                 </li>
                             );
@@ -300,17 +374,21 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
     );
 }
 
-export default function LinkedRaidReports({ currentReport, canManageLinks, nearbyReports, impactedReports, onChange }) {
+export default function LinkedRaidReports({
+    currentReport,
+    canManageLinks,
+    nearbyReports,
+    impactedReports,
+    onChange,
+    referenceDate,
+}) {
     const isCreateMode = currentReport === null;
 
-    // Create mode: locally managed linked reports
     const [localLinkedReports, setLocalLinkedReports] = useState([]);
 
-    // Show mode: link modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Show mode: delete modal state
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeletingLink, setIsDeletingLink] = useState(false);
 
@@ -320,7 +398,6 @@ export default function LinkedRaidReports({ currentReport, canManageLinks, nearb
 
     const handleAddLink = () => setIsModalOpen(true);
 
-    // Show mode: submit links via API
     const handleShowModeSubmit = (identifiers) => {
         setIsSubmitting(true);
         router.patch(
@@ -334,23 +411,21 @@ export default function LinkedRaidReports({ currentReport, canManageLinks, nearb
         );
     };
 
-    // Create mode: add selected reports to local state
     const handleCreateModeSubmit = (ids) => {
-        const newReports = (nearbyReports?.data ?? []).filter((r) => ids.includes(r.id) && !alreadyLinkedIds.has(r.id));
+        const allReports = (nearbyReports?.data ?? []).flatMap((c) => c.reports);
+        const newReports = allReports.filter((r) => ids.includes(r.id) && !alreadyLinkedIds.has(r.id));
         const updated = [...localLinkedReports, ...newReports];
         setLocalLinkedReports(updated);
         setIsModalOpen(false);
         onChange?.(updated.map((r) => r.id));
     };
 
-    // Create mode: remove a single report from local state
     const handleCreateModeRemove = (reportToRemove) => {
         const updated = localLinkedReports.filter((r) => r.id !== reportToRemove.id);
         setLocalLinkedReports(updated);
         onChange?.(updated.map((r) => r.id));
     };
 
-    // Show mode: open bulk delete modal
     const handleShowModeDelete = () => setIsDeleteModalOpen(true);
 
     const handleConfirmDelete = () => {
@@ -382,6 +457,7 @@ export default function LinkedRaidReports({ currentReport, canManageLinks, nearb
                     {linkedReports.map((linked) => {
                         const formattedDate = formatDate(linked.start_time);
                         const isManualLink = linked.pivot?.created_by;
+                        const dayDiff = getDayDifference(referenceDate, linked.start_time);
 
                         return (
                             <div key={linked.id} className="flex items-center justify-between px-4 py-3">
@@ -403,6 +479,7 @@ export default function LinkedRaidReports({ currentReport, canManageLinks, nearb
                                         {linked.zone?.name && (
                                             <span className="ml-2 text-gray-500">{linked.zone.name}</span>
                                         )}
+                                        {dayDiff && <span className="ml-2 text-gray-500">{dayDiff}</span>}
                                         {!isCreateMode && isManualLink && (
                                             <span className="ml-2 text-gray-500">
                                                 Linked by {linked.pivot.created_by.display_name} on{" "}
@@ -469,6 +546,7 @@ export default function LinkedRaidReports({ currentReport, canManageLinks, nearb
                 onSubmit={isCreateMode ? handleCreateModeSubmit : handleShowModeSubmit}
                 isSubmitting={isSubmitting}
                 isCreateMode={isCreateMode}
+                referenceDate={referenceDate}
             />
 
             {!isCreateMode && (
