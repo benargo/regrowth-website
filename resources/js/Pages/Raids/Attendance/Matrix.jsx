@@ -254,7 +254,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences }) {
                         </th>
                         {raids.map((raid) => (
                             <th
-                                key={raid.code}
+                                key={raid.id}
                                 className="whitespace-nowrap px-3 py-3 text-center text-sm font-semibold text-amber-500"
                             >
                                 <Tooltip text={raid.zoneName} position="bottom">

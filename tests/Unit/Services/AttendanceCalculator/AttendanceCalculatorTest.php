@@ -806,6 +806,71 @@ class AttendanceCalculatorTest extends TestCase
         $this->assertArrayHasKey('Charlie', $records->first()['players']);
     }
 
+    #[Test]
+    public function merge_linked_reports_handles_manual_reports_with_null_code(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $wclReport = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $manualReport = Report::factory()
+            ->withGuildTag($tag)
+            ->create([
+                'code' => null,
+                'start_time' => Carbon::parse('2025-01-22 19:00', 'Europe/Paris'),
+            ]);
+
+        $this->attachCharacter($wclReport, $thrall, 1);
+        $this->attachCharacter($manualReport, $jaina, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(2, $records);
+
+        $manualRecord = $records->firstWhere('id', $manualReport->id);
+        $this->assertNotNull($manualRecord);
+        $this->assertNull($manualRecord['code']);
+        $this->assertArrayHasKey('Jaina', $manualRecord['players']);
+
+        $wclRecord = $records->firstWhere('id', $wclReport->id);
+        $this->assertNotNull($wclRecord);
+        $this->assertSame($wclReport->code, $wclRecord['code']);
+        $this->assertArrayHasKey('Thrall', $wclRecord['players']);
+    }
+
+    #[Test]
+    public function merge_linked_reports_merges_manual_and_wcl_reports_when_linked(): void
+    {
+        $rank = $this->makeRank();
+        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $wclReport = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $manualReport = Report::factory()
+            ->withGuildTag($tag)
+            ->create([
+                'code' => null,
+                'start_time' => Carbon::parse('2025-01-15 20:00', 'Europe/Paris'),
+            ]);
+
+        $this->linkReports($wclReport, $manualReport);
+
+        $this->attachCharacter($wclReport, $thrall, 1);
+        $this->attachCharacter($manualReport, $jaina, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(1, $records);
+        $this->assertArrayHasKey('Thrall', $records->first()['players']);
+        $this->assertArrayHasKey('Jaina', $records->first()['players']);
+        $this->assertSame($wclReport->code, $records->first()['code']);
+    }
+
     // ==================== matrixForWholeGuild: Return Type Tests ====================
 
     #[Test]
