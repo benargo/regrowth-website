@@ -16,6 +16,7 @@ use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -31,17 +32,17 @@ class PlannedAbsenceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('Raids/PlannedAbsences/Index', [
-            'plannedAbsences' => Inertia::defer(function () {
-                return Cache::tags(['planned_absences'])->remember('planned_absences:index', now()->addDay(), function () {
+            'plannedAbsences' => Inertia::defer(function () use ($request) {
+                return Cache::tags(['attendance'])->remember('planned_absences:resource_collection', now()->addDay(), function () use ($request) {
                     return PlannedAbsenceResource::collection(
                         PlannedAbsence::query()
                             ->with(['character', 'createdBy'])
                             ->orderBy('start_date')
                             ->get()
-                    )->response(request())->getData(true);
+                    )->response($request)->getData(true);
                 });
             }),
         ]);
@@ -52,14 +53,7 @@ class PlannedAbsenceController extends Controller
      */
     public function create(Request $request): Response
     {
-        $characters = Cache::tags(['characters'])->remember('characters:mains', now()->addDay(), function () {
-            return CharacterResource::collection(
-                Character::query()
-                    ->where('is_main', true)
-                    ->orderBy('name')
-                    ->get()
-            )->response(request())->getData(true);
-        });
+        $characters = $this->buildCharactersResourceCollection();
 
         $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
             ? $this->resolveCharacterFromUserNickname($request->user())
@@ -131,14 +125,7 @@ class PlannedAbsenceController extends Controller
      */
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
-        $characters = Cache::tags(['characters'])->remember('characters:mains', now()->addDay(), function () {
-            return CharacterResource::collection(
-                Character::query()
-                    ->where('is_main', true)
-                    ->orderBy('name')
-                    ->get()
-            )->response(request())->getData(true);
-        });
+        $characters = $this->buildCharactersResourceCollection();
 
         $plannedAbsence->load(['character', 'createdBy']);
 
@@ -275,5 +262,22 @@ class PlannedAbsenceController extends Controller
         $user->discordRoles()->sync($recognizedRoleIds);
 
         return $user;
+    }
+
+    /**
+     * Build a resource collection of main characters for use in the create/edit forms.
+     */
+    private function buildCharactersResourceCollection(): AnonymousResourceCollection
+    {
+        return CharacterResource::collection(
+            Character::hydrate(
+                Cache::tags(['characters'])->remember('characters:mains', now()->addDay(), function () {
+                    return Character::query()
+                        ->where('is_main', true)
+                        ->get()
+                        ->toArray();
+                })
+            )->sortBy('name')
+        );
     }
 }
