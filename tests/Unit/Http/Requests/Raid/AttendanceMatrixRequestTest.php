@@ -20,14 +20,14 @@ class AttendanceMatrixRequestTest extends TestCase
     {
         $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('remember')->andReturn(null);
-        Cache::shouldReceive('tags')->with(['attendance', 'warcraftlogs'])->andReturn($taggedCache);
+        Cache::shouldReceive('tags')->with(['attendance', 'reports'])->andReturn($taggedCache);
     }
 
     private function mockMinDate(string $rawStartTime): void
     {
         $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('remember')->andReturn($rawStartTime);
-        Cache::shouldReceive('tags')->with(['attendance', 'warcraftlogs'])->andReturn($taggedCache);
+        Cache::shouldReceive('tags')->with(['attendance', 'reports'])->andReturn($taggedCache);
     }
 
     // ==================== zoneIds ====================
