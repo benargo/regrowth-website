@@ -21,6 +21,21 @@ class Zone extends Model
     protected $table = 'wcl_zones';
 
     /**
+     * Indicates if the IDs are auto-incrementing.
+     * Zone IDs are sourced externally from Warcraft Logs.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * The data type of the primary key.
+     *
+     * @var string
+     */
+    protected $keyType = 'int';
+
+    /**
      * The attributes that are the model's default values.
      *
      * @var array<string, mixed>

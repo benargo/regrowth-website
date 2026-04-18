@@ -29,12 +29,13 @@ class ZoneTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_auto_incrementing_id(): void
+    public function it_uses_non_incrementing_integer_id(): void
     {
         $model = new Zone;
 
         $this->assertSame('id', $model->getKeyName());
-        $this->assertTrue($model->getIncrementing());
+        $this->assertFalse($model->getIncrementing());
+        $this->assertSame('int', $model->getKeyType());
     }
 
     #[Test]
