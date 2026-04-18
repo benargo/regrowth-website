@@ -38,7 +38,7 @@ class FetchAttendanceData implements ShouldQueue
      */
     public function handle(Attendance $attendanceService): void
     {
-        $reports = Report::all()->keyBy('code');
+        $reports = Report::whereNotNull('code')->get()->keyBy('code');
 
         $attendanceRecords = $attendanceService->lazy()->whereIn('code', $reports->keys());
 
