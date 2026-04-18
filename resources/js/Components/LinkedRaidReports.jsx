@@ -19,8 +19,6 @@ function LinkReportsModal({
     const [isLoading, setIsLoading] = useState(false);
     const initialLoadDone = useRef(false);
 
-    const pageParamName = isCreateMode ? "nearby" : "nearby_page";
-
     useEffect(() => {
         if (!isOpen) {
             return;
@@ -31,7 +29,7 @@ function LinkReportsModal({
             setIsLoading(true);
             router.reload({
                 only: ["nearbyReports"],
-                data: { [pageParamName]: 1 },
+                data: { ["nearby"]: 1 },
                 preserveState: true,
                 onFinish: () => setIsLoading(false),
             });
@@ -49,7 +47,7 @@ function LinkReportsModal({
         setIsLoading(true);
         router.reload({
             only: ["nearbyReports"],
-            data: { [pageParamName]: page },
+            data: { ["nearby"]: page },
             preserveState: true,
             onFinish: () => setIsLoading(false),
         });

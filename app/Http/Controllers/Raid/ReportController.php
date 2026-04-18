@@ -206,7 +206,7 @@ class ReportController extends Controller
                 );
             }),
             'nearbyReports' => Inertia::optional(function () use ($request, $report) {
-                $page = max(1, $request->integer('nearby_page', 1));
+                $page = max(1, $request->integer('nearby', 1));
                 $perPage = 15;
 
                 $newerCount = Report::where('start_time', '>', $report->start_time)->count();
@@ -224,7 +224,7 @@ class ReportController extends Controller
 
                 $paginator = new LengthAwarePaginator($reports, $totalFromStart, $perPage, $page, [
                     'path' => $request->url(),
-                    'pageName' => 'nearby_page',
+                    'pageName' => 'nearby',
                 ]);
 
                 return LinkedReportResource::collection($paginator);
