@@ -12,6 +12,7 @@ use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -1005,6 +1006,28 @@ class ReportControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_create_extends_links_to_reports_already_linked_to_selected(): void
+    {
+        $this->grantManageReports();
+        $report = Report::factory()->withoutGuildTag()->create();
+        $reportA = Report::factory()->withoutGuildTag()->create();
+        $reportB = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        // A is already linked to B
+        $reportA->linkedReports()->attach($reportB->id, ['created_by' => $user->id]);
+        $reportB->linkedReports()->attach($reportA->id, ['created_by' => $user->id]);
+
+        // Link report to A only — it should also be linked to B transitively
+        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+            'links' => ['action' => 'create', 'link_ids' => [$reportA->id]],
+        ]);
+
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
+    }
+
+    #[Test]
     public function update_create_redirects_back_on_success(): void
     {
         $this->grantManageReports();
@@ -1054,8 +1077,11 @@ class ReportControllerTest extends TestCase
         $autoLinked = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $report->linkedReports()->attach($autoLinked->id, ['created_by' => null]);
-        $autoLinked->linkedReports()->attach($report->id, ['created_by' => null]);
+        // Insert with created_at = null to simulate auto-linked rows (no Eloquent timestamps)
+        DB::table('raid_report_links')->insert([
+            ['report_1' => $report->id, 'report_2' => $autoLinked->id, 'created_by' => null, 'created_at' => null, 'updated_at' => null],
+            ['report_1' => $autoLinked->id, 'report_2' => $report->id, 'created_by' => null, 'created_at' => null, 'updated_at' => null],
+        ]);
 
         $this->actingAs($user)->patch(route('raids.reports.update', $report), [
             'links' => ['action' => 'delete', 'link_ids' => []],
@@ -1342,6 +1368,32 @@ class ReportControllerTest extends TestCase
             'report_1' => $existingReport->id,
             'report_2' => $newReport->id,
         ]);
+    }
+
+    #[Test]
+    public function store_creates_links_to_reports_already_linked_to_selected(): void
+    {
+        $this->grantManageReports();
+        Zone::factory()->create(['id' => 1000]);
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $reportA = Report::factory()->withoutGuildTag()->create();
+        $reportB = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->officer()->create();
+
+        // A is already linked to B
+        $reportA->linkedReports()->attach($reportB->id, ['created_by' => $user->id]);
+        $reportB->linkedReports()->attach($reportA->id, ['created_by' => $user->id]);
+
+        // Store new report linked to A only — it should also be linked to B transitively
+        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+            $this->validStoreData($tag),
+            ['linked_report_ids' => [$reportA->id]]
+        ));
+
+        $newReport = Report::where('title', 'Sunday Karazhan')->firstOrFail();
+
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $newReport->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseHas('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $newReport->id]);
     }
 
     #[Test]

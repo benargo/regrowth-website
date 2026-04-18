@@ -10,6 +10,7 @@ use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Http\Resources\WarcraftLogs\ReportResource;
 use App\Models\Character;
 use App\Models\Raids\Report;
+use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
@@ -101,40 +102,12 @@ class ReportController extends Controller
             );
         }
 
-        if (! empty($request->loot_councillor_ids)) {
-            $existingIds = $report->characters()->pluck('characters.id')->toArray();
-
-            foreach ($request->loot_councillor_ids as $characterId) {
-                if (in_array($characterId, $existingIds)) {
-                    $report->characters()->updateExistingPivot($characterId, ['is_loot_councillor' => true]);
-                } else {
-                    $report->characters()->attach($characterId, ['presence' => 0, 'is_loot_councillor' => true]);
-                }
-            }
+        if (! empty($request->linked_report_ids)) {
+            $this->createReportLinks($report, $request->linked_report_ids, $request->user());
         }
 
-        if (! empty($request->linked_report_ids)) {
-            $selectedReports = Report::whereIn('id', $request->linked_report_ids)->get();
-            $allReports = $selectedReports->push($report);
-
-            foreach ($allReports as $r1) {
-                $r1->load('linkedReports');
-
-                $existingIds = $r1->linkedReports->pluck('id')->all();
-
-                $newIds = $allReports
-                    ->where('id', '!=', $r1->id)
-                    ->pluck('id')
-                    ->diff($existingIds);
-
-                $pivotData = $newIds
-                    ->mapWithKeys(fn ($id) => [$id => ['created_by' => $request->user()->getKey()]])
-                    ->all();
-
-                if (! empty($pivotData)) {
-                    $r1->linkedReports()->attach($pivotData);
-                }
-            }
+        if (! empty($request->loot_councillor_ids)) {
+            $this->attachLootCouncillors($report, $request->loot_councillor_ids);
         }
 
         Cache::tags('warcraftlogs')->flush();
@@ -268,17 +241,11 @@ class ReportController extends Controller
      */
     public function update(UpdateReportRequest $request, Report $report): RedirectResponse
     {
-        /**
-         * Linked reports creation and deletion.
-         *
-         * When creating links, we need to ensure that links are created in both directions (report → linked and linked → report) while avoiding duplicates.
-         * When deleting links, we need to ensure that links are deleted in both directions while preserving manually created links from the other report if they exist.
-         */
         $linksAction = $request->input('links.action');
 
         if ($linksAction === 'delete') {
             $existingLinkedIds = $report->linkedReports()
-                ->wherePivotNotNull('created_by')
+                ->wherePivotNotNull('created_at')
                 ->pluck('id')
                 ->all();
 
@@ -286,56 +253,21 @@ class ReportController extends Controller
                 // Delete forward direction: report → linked
                 $report->linkedReports()->detach($existingLinkedIds);
 
-                // Delete reverse direction: linked → report
+                // Delete reverse direction: linked → report (manual links only)
                 DB::table('raid_report_links')
                     ->whereIn('report_1', $existingLinkedIds)
                     ->where('report_2', $report->id)
+                    ->whereNotNull('created_at')
                     ->delete();
             }
         } elseif ($linksAction === 'create') {
-            $selectedReports = Report::whereIn('id', $request->input('links.link_ids', []))->get();
-            $allReports = $selectedReports->push($report);
-
-            foreach ($allReports as $r1) {
-                $r1->load('linkedReports');
-
-                $existingIds = $r1->linkedReports->pluck('id')->all();
-
-                $newIds = $allReports
-                    ->where('id', '!=', $r1->id)
-                    ->pluck('id')
-                    ->diff($existingIds);
-
-                $pivotData = $newIds
-                    ->mapWithKeys(fn ($id) => [$id => ['created_by' => $request->user()->getKey()]])
-                    ->all();
-
-                if (! empty($pivotData)) {
-                    $r1->linkedReports()->attach($pivotData);
-                }
-            }
+            $this->createReportLinks($report, $request->input('links.link_ids', []), $request->user());
         }
 
-        /**
-         * Loot councillors management.
-         *
-         * When creating or deleting loot councillors, we need to update the pivot table accordingly.
-         * If a character is being added as a loot councillor, we either update the existing pivot or attach a new one.
-         * If a character is being removed as a loot councillor, we either update the existing pivot or detach it if the presence is 0.
-         */
         $lootCouncillorsAction = $request->input('loot_councillors.action');
 
         if ($lootCouncillorsAction === 'create') {
-            $characterIds = $request->input('loot_councillors.character_ids', []);
-            $existingIds = $report->characters()->pluck('characters.id')->toArray();
-
-            foreach ($characterIds as $characterId) {
-                if (in_array($characterId, $existingIds)) {
-                    $report->characters()->updateExistingPivot($characterId, ['is_loot_councillor' => true]);
-                } else {
-                    $report->characters()->attach($characterId, ['presence' => 0, 'is_loot_councillor' => true]);
-                }
-            }
+            $this->attachLootCouncillors($report, $request->input('loot_councillors.character_ids', []));
         } elseif ($lootCouncillorsAction === 'delete') {
             $characterIds = $request->input('loot_councillors.character_ids', []);
 
@@ -353,5 +285,60 @@ class ReportController extends Controller
         $report->touch();
 
         return back();
+    }
+
+    /**
+     * Create bidirectional links between the given report and all selected reports,
+     * expanding the set to include reports already linked to the selected ones.
+     *
+     * @param  array<int, string>  $selectedIds
+     */
+    private function createReportLinks(Report $report, array $selectedIds, User $user): void
+    {
+        $selectedReports = Report::whereIn('id', $selectedIds)->with('linkedReports')->get();
+
+        $transitiveReports = $selectedReports
+            ->flatMap(fn (Report $r) => $r->linkedReports)
+            ->unique('id')
+            ->reject(fn (Report $r) => $r->id === $report->id);
+
+        $allReports = $selectedReports->merge($transitiveReports)->push($report)->unique('id');
+
+        foreach ($allReports as $r1) {
+            $r1->load('linkedReports');
+
+            $existingIds = $r1->linkedReports->pluck('id')->all();
+
+            $newIds = $allReports
+                ->where('id', '!=', $r1->id)
+                ->pluck('id')
+                ->diff($existingIds);
+
+            $pivotData = $newIds
+                ->mapWithKeys(fn ($id) => [$id => ['created_by' => $user->getKey()]])
+                ->all();
+
+            if (! empty($pivotData)) {
+                $r1->linkedReports()->attach($pivotData);
+            }
+        }
+    }
+
+    /**
+     * Attach or update loot councillor status for the given characters on a report.
+     *
+     * @param  array<int, int>  $characterIds
+     */
+    private function attachLootCouncillors(Report $report, array $characterIds): void
+    {
+        $existingIds = $report->characters()->pluck('characters.id')->toArray();
+
+        foreach ($characterIds as $characterId) {
+            if (in_array($characterId, $existingIds)) {
+                $report->characters()->updateExistingPivot($characterId, ['is_loot_councillor' => true]);
+            } else {
+                $report->characters()->attach($characterId, ['presence' => 0, 'is_loot_councillor' => true]);
+            }
+        }
     }
 }
