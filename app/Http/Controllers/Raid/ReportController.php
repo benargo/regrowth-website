@@ -101,8 +101,6 @@ class ReportController extends Controller
             $this->attachLootCouncillors($report, $request->loot_councillor_ids);
         }
 
-        Cache::tags('warcraftlogs')->flush();
-
         return redirect()->route('raids.reports.show', $report)->with('success', 'New report created');
     }
 
@@ -161,6 +159,7 @@ class ReportController extends Controller
                         ->when($beforeDate, fn ($q) => $q->where('start_time', '<=', $beforeDate))
                         ->orderBy('start_time', 'desc')
                         ->paginate(25)
+                        ->withQueryString()
                 );
             }),
         ]);

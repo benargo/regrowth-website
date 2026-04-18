@@ -53,7 +53,7 @@ class AttendanceMatrixController extends Controller
             'matrix' => Inertia::defer(function () use ($filters) {
                 $cacheKey = $this->matrixCacheKey($filters);
 
-                return Cache::tags(['attendance', 'attendance:matrix'])
+                return Cache::tags(['attendance'])
                     ->remember($cacheKey, now()->addHours(24), function () use ($filters) {
                         $matrix = $this->matrix->matrixWithFilters($filters);
 

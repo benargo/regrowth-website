@@ -14,7 +14,7 @@ class AttendanceMatrix
     /**
      * The raids that form the columns of the matrix, in chronological order.
      *
-     * @var array<int, array{code: string, dayOfWeek: string, date: string, zoneName: string|null}>
+     * @var array<int, array{id: string, code: string|null, dayOfWeek: string, date: string, zoneName: string|null}>
      */
     public array $raids;
 
@@ -113,7 +113,7 @@ class AttendanceMatrix
     }
 
     /**
-     * @return array{raids: array<int, array{code: string, date: string}>, rows: array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>, planned_absences: array<int, string|null>}>, planned_absences: array<int, mixed>}
+     * @return array{raids: array<int, array{id: string, code: string|null, dayOfWeek: string, date: string, zoneName: string|null}>, rows: array<int, array{name: string, id: int, rank_id: int|null, percentage: float, attendance: array<int, int|null>, planned_absences: array<int, string|null>}>, planned_absences: array<int, mixed>}
      */
     public function toArray(): array
     {
@@ -157,6 +157,7 @@ class AttendanceMatrix
 
         // Build the ordered raids list (columns).
         $raids = $records->map(fn (array $record) => [
+            'id' => $record['id'],
             'code' => $record['code'],
             'dayOfWeek' => $record['startTime']->copy()->setTimezone($this->timezone)->format('D'),
             'date' => $record['startTime']->copy()->setTimezone($this->timezone)->format('d/m'),

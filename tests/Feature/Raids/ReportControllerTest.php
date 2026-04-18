@@ -11,7 +11,6 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,7 +26,6 @@ class ReportControllerTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
-        Cache::tags(['warcraftlogs'])->flush();
 
         $permission = Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
@@ -130,6 +128,31 @@ class ReportControllerTest extends TestCase
                 ->has('reports.data', 1)
                 ->has('reports.links')
                 ->has('reports.meta.total')
+            )
+        );
+    }
+
+    #[Test]
+    public function pagination_links_preserve_filter_query_string(): void
+    {
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        Report::factory()->count(30)->withGuildTag($tag)->create([
+            'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC'),
+        ]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.index', [
+            'guild_tag_ids' => (string) $tag->id,
+            'days' => '0,1,2,3,4,5,6',
+        ]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('reports.meta.last_page', fn ($lastPage) => $lastPage > 1)
+                ->where('reports.links.next', fn ($url) => str_contains($url, 'guild_tag_ids=')
+                    && str_contains($url, 'days=')
+                )
             )
         );
     }
@@ -643,6 +666,31 @@ class ReportControllerTest extends TestCase
             ->has('report.data.characters', 1)
             ->where('report.data.characters.0.name', 'Thrall')
             ->where('report.data.characters.0.pivot.presence', 75)
+        );
+    }
+
+    #[Test]
+    public function show_returns_characters_sorted_alphabetically(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $charlie = Character::factory()->create(['name' => 'Charlie']);
+        $alice = Character::factory()->create(['name' => 'Alice']);
+        $bob = Character::factory()->create(['name' => 'Bob']);
+        $report->characters()->attach([
+            $charlie->id => ['presence' => 1],
+            $alice->id => ['presence' => 1],
+            $bob->id => ['presence' => 1],
+        ]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('report.data.characters', 3)
+            ->where('report.data.characters.0.name', 'Alice')
+            ->where('report.data.characters.1.name', 'Bob')
+            ->where('report.data.characters.2.name', 'Charlie')
         );
     }
 

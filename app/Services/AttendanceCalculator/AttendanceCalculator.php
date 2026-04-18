@@ -188,12 +188,13 @@ class AttendanceCalculator
     /**
      * Merge reports that are linked together in the database into single raid records.
      *
-     * Reports connected via the pivot_wcl_reports_links table are treated as a single
+     * Reports connected via the raid_report_links table are treated as a single
      * raid, and their player data is merged keeping the best presence per player.
-     * Uses union-find to resolve connected components within the provided collection.
+     * Uses union-find (keyed on report id, since code is nullable for manual reports)
+     * to resolve connected components within the provided collection.
      *
      * @param  Collection<int, Report>  $reports  Reports with 'characters' and 'linkedReports' eager loaded.
-     * @return Collection<int, array{code: string, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, playable_class: mixed, presence: int}>}>
+     * @return Collection<int, array{id: string, code: string|null, startTime: Carbon, zoneName: string|null, players: array<string, array{id: int, rank_id: int|null, playable_class: mixed, presence: int}>}>
      */
     public function mergeLinkedReports(Collection $reports): Collection
     {
@@ -201,29 +202,38 @@ class AttendanceCalculator
             return collect();
         }
 
-        $codes = $reports->pluck('code')->all();
-        $codeSet = array_flip($codes);
+        $ids = $reports->pluck('id')->all();
+        $idSet = array_flip($ids);
 
-        // Union-Find initialisation
-        $parent = array_combine($codes, $codes);
+        // Union-Find initialisation, keyed on report id (UUID).
+        $parent = array_combine($ids, $ids);
 
-        $find = function (string $code) use (&$parent, &$find): string {
-            if ($parent[$code] !== $code) {
-                $parent[$code] = $find($parent[$code]);
+        // Iterative path-compression find.
+        $find = function (string $id) use (&$parent): string {
+            $root = $id;
+
+            while ($parent[$root] !== $root) {
+                $root = $parent[$root];
             }
 
-            return $parent[$code];
+            while ($parent[$id] !== $root) {
+                $next = $parent[$id];
+                $parent[$id] = $root;
+                $id = $next;
+            }
+
+            return $root;
         };
 
-        // Union reports connected by a link that is within our fetched set
+        // Union reports connected by a link that is within our fetched set.
         foreach ($reports as $report) {
             foreach ($report->linkedReports as $linked) {
-                if (! isset($codeSet[$linked->code])) {
+                if (! isset($idSet[$linked->id])) {
                     continue;
                 }
 
-                $rootA = $find($report->code);
-                $rootB = $find($linked->code);
+                $rootA = $find($report->id);
+                $rootB = $find($linked->id);
 
                 if ($rootA !== $rootB) {
                     $parent[$rootB] = $rootA;
@@ -231,19 +241,20 @@ class AttendanceCalculator
             }
         }
 
-        // Group reports by their root
+        // Group reports by their root id.
         $groups = [];
         foreach ($reports as $report) {
-            $root = $find($report->code);
+            $root = $find($report->id);
             $groups[$root][] = $report;
         }
 
-        // Merge each group into a single raid record
+        // Merge each group into a single raid record.
         return collect($groups)->map(function (array $group): array {
             if (count($group) === 1) {
                 $report = $group[0];
 
                 return [
+                    'id' => $report->id,
                     'code' => $report->code,
                     'startTime' => $report->start_time,
                     'zoneName' => $report->zone?->name,
@@ -277,8 +288,11 @@ class AttendanceCalculator
                 }
             }
 
+            $codes = collect($group)->pluck('code')->filter()->sort()->values();
+
             return [
-                'code' => collect($group)->pluck('code')->sort()->implode('+'),
+                'id' => collect($group)->pluck('id')->sort()->implode('+'),
+                'code' => $codes->isEmpty() ? null : $codes->implode('+'),
                 'startTime' => $sortedGroup->first()->start_time,
                 'zoneName' => $sortedGroup->first()->zone?->name,
                 'players' => $mergedPlayers,
@@ -325,8 +339,8 @@ class AttendanceCalculator
     /**
      * Get the raid records sorted by startTime ascending.
      *
-     * @param  Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>  $records
-     * @return Collection<int, array{code: string, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>
+     * @param  Collection<int, array{id: string, code: string|null, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>  $records
+     * @return Collection<int, array{id: string, code: string|null, startTime: Carbon, players: array<string, array{id: int, rank_id: int|null, presence: int}>}>
      */
     public function sortRaidRecords(Collection $records): Collection
     {

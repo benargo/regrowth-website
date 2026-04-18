@@ -26,7 +26,7 @@ class ReportResource extends JsonResource
                 'id' => $this->zone_id,
                 'name' => $this->zone?->name,
             ],
-            'characters' => CharacterResource::collection($this->whenLoaded('characters')),
+            'characters' => CharacterResource::collection($this->whenLoaded('characters', fn ($characters) => $characters->sortBy('name')->values())),
             'linked_reports' => LinkedReportResource::collection($this->whenLoaded('linkedReports')),
             'linked_reports_count' => $this->whenCounted('linkedReports'),
         ];

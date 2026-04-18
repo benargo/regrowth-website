@@ -12,6 +12,6 @@ class FlushWarcraftLogsCache
      */
     public function handle(ReportUpdated $event): void
     {
-        Cache::tags('warcraftlogs')->flush();
+        Cache::tags(['warcraftlogs'])->flush();
     }
 }

@@ -254,7 +254,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences }) {
                         </th>
                         {raids.map((raid) => (
                             <th
-                                key={raid.code}
+                                key={raid.id}
                                 className="whitespace-nowrap px-3 py-3 text-center text-sm font-semibold text-amber-500"
                             >
                                 <Tooltip text={raid.zoneName} position="bottom">
@@ -348,7 +348,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
         decodeFilter(
             filters.guild_tag_ids,
-            guildTags.map((g) => g.id),
+            guildTags.filter((g) => g.count_attendance).map((g) => g.id),
         ),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
