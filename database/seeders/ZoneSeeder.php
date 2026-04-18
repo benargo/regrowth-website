@@ -45,7 +45,7 @@ class ZoneSeeder extends Seeder
                     'name' => $zone['name'],
                     'difficulties' => $zone['difficulties'],
                     'expansion' => new Expansion(
-                        id: 3,
+                        id: 1001,
                         name: 'The Burning Crusade'
                     ),
                     'is_frozen' => false,
