@@ -100,8 +100,6 @@ class ReportController extends Controller
             $this->attachLootCouncillors($report, $request->loot_councillor_ids);
         }
 
-        Cache::tags('warcraftlogs')->flush();
-
         return redirect()->route('raids.reports.show', $report)->with('success', 'New report created');
     }
 

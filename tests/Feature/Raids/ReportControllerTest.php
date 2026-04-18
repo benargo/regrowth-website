@@ -11,7 +11,6 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,7 +26,6 @@ class ReportControllerTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
-        Cache::tags(['warcraftlogs'])->flush();
 
         $permission = Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(
