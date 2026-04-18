@@ -118,6 +118,22 @@ class ReportResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_characters_sorted_by_name(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $charlie = Character::factory()->create(['name' => 'Charlie']);
+        $alice = Character::factory()->create(['name' => 'Alice']);
+        $bob = Character::factory()->create(['name' => 'Bob']);
+        $report->characters()->attach([$charlie->id => ['presence' => 1], $alice->id => ['presence' => 1], $bob->id => ['presence' => 1]]);
+        $report->load('characters');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $names = $array['characters']->collection->map(fn ($r) => $r->resource->name)->values()->all();
+        $this->assertSame(['Alice', 'Bob', 'Charlie'], $names);
+    }
+
+    #[Test]
     public function it_omits_linked_reports_when_not_loaded(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();

@@ -670,6 +670,31 @@ class ReportControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_returns_characters_sorted_alphabetically(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $charlie = Character::factory()->create(['name' => 'Charlie']);
+        $alice = Character::factory()->create(['name' => 'Alice']);
+        $bob = Character::factory()->create(['name' => 'Bob']);
+        $report->characters()->attach([
+            $charlie->id => ['presence' => 1],
+            $alice->id => ['presence' => 1],
+            $bob->id => ['presence' => 1],
+        ]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('report.data.characters', 3)
+            ->where('report.data.characters.0.name', 'Alice')
+            ->where('report.data.characters.1.name', 'Bob')
+            ->where('report.data.characters.2.name', 'Charlie')
+        );
+    }
+
+    #[Test]
     public function show_includes_linked_reports(): void
     {
         $report1 = Report::factory()->withoutGuildTag()->create(['title' => 'Main Report']);
