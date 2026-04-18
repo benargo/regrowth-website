@@ -28,12 +28,13 @@ class ZoneFactory extends Factory
     public function definition(): array
     {
         return [
+            'id' => fake()->unique()->numberBetween(1000, 1100),
             'name' => fake()->words(3, true),
             'difficulties' => [
                 new Difficulty(id: 3, name: 'Normal', sizes: [10, 25]),
                 new Difficulty(id: 4, name: 'Heroic', sizes: [10, 25]),
             ],
-            'expansion' => new Expansion(id: fake()->numberBetween(1, 10), name: fake()->word()),
+            'expansion' => new Expansion(id: 1001, name: 'The Burning Crusade'),
             'is_frozen' => false,
         ];
     }
