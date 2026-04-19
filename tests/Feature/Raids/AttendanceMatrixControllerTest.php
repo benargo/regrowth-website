@@ -6,6 +6,7 @@ use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GuildRank;
 use App\Models\Permission;
+use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
@@ -225,7 +226,8 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => $character->id]));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('filters.character', 'Thrall')
+            ->where('filters.character.id', $character->id)
+            ->where('filters.character.name', 'Thrall')
         );
     }
 
@@ -240,7 +242,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('filters.guild_tag_ids', null)
+            ->where('filters.guild_tag_ids', [$countingTag->id])
         );
     }
 
@@ -697,6 +699,110 @@ class AttendanceMatrixControllerTest extends TestCase
                     ->where('matrix.rows.0.name', 'Thrall')
                 )
             );
+    }
+
+    // ==================== matrix: Zone Filter ====================
+
+    #[Test]
+    public function matrix_sorts_zone_ids_for_deterministic_caching_when_provided(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        // Non-null zone_ids exercises the sort($zoneIds) branch in matrixCacheKey()
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => '3,1,2']));
+
+        $response->assertOk();
+        $response->assertSessionDoesntHaveErrors(['zone_ids']);
+    }
+
+    // ==================== matrix: Planned Absences ====================
+
+    #[Test]
+    public function matrix_includes_referenced_planned_absences_in_response(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+
+        $raidDate = Carbon::parse('2025-01-15 20:00', 'UTC');
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => $raidDate]);
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        PlannedAbsence::factory()->create([
+            'character_id' => $character->id,
+            'start_date' => '2025-01-15',
+            'end_date' => '2025-01-15',
+        ]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('matrix.planned_absences', 1)
+            )
+        );
+    }
+
+    // ==================== matrix: Rank Filter ====================
+
+    #[Test]
+    public function matrix_excludes_mains_whose_rank_is_not_in_the_rank_filter(): void
+    {
+        $rank1 = GuildRank::factory()->create();
+        $rank2 = GuildRank::factory()->create();
+        $main1 = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank1->id]);
+        $main2 = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank2->id]);
+
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
+        $report->characters()->attach($main1->id, ['presence' => 1]);
+        $report->characters()->attach($main2->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', [
+            'rank_ids' => (string) $rank1->id,
+        ]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('matrix.rows', 1)
+                ->where('matrix.rows.0.name', 'Thrall')
+            )
+        );
+    }
+
+    // ==================== matrix: Zero Attendance ====================
+
+    #[Test]
+    public function matrix_records_zero_attendance_when_all_merged_characters_were_absent(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'ThrallAlt', 'is_main' => false, 'rank_id' => $rank->id]);
+
+        \DB::table('character_links')->insert([
+            ['character_id' => $main->id, 'linked_character_id' => $alt->id, 'created_at' => now(), 'updated_at' => now()],
+            ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
+        $report->characters()->attach($main->id, ['presence' => 0]);
+        $report->characters()->attach($alt->id, ['presence' => 0]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('matrix.rows', 1)
+                ->where('matrix.rows.0.attendance.0', 0)
+            )
+        );
     }
 
     #[Test]

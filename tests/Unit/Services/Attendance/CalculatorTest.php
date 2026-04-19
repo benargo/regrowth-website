@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Services\AttendanceCalculator;
+namespace Tests\Unit\Services\Attendance;
 
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
@@ -9,17 +9,19 @@ use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
-use App\Services\AttendanceCalculator\AttendanceCalculator;
-use App\Services\AttendanceCalculator\AttendanceMatrix;
-use App\Services\AttendanceCalculator\AttendanceMatrixFilters;
-use App\Services\AttendanceCalculator\CharacterAttendanceStats;
+use App\Services\Attendance\AttendanceMatrix;
+use App\Services\Attendance\Calculator;
+use App\Services\Attendance\CharacterAttendanceRow;
+use App\Services\Attendance\CharacterAttendanceStats;
+use App\Services\Attendance\Filters;
+use App\Services\Attendance\Matrix;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class AttendanceCalculatorTest extends TestCase
+class CalculatorTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -30,14 +32,14 @@ class AttendanceCalculatorTest extends TestCase
         config(['app.timezone' => 'Europe/Paris']);
     }
 
-    protected function makeCalculator(): AttendanceCalculator
+    protected function makeCalculator(): Calculator
     {
-        return new AttendanceCalculator(config('app.timezone'));
+        return new Calculator(config('app.timezone'));
     }
 
-    protected function makeMatrix(): AttendanceMatrix
+    protected function makeMatrix(): Matrix
     {
-        return new AttendanceMatrix($this->makeCalculator(), config('app.timezone'));
+        return new Matrix($this->makeCalculator());
     }
 
     protected function makeRank(bool $countsAttendance = true): GuildRank
@@ -64,17 +66,26 @@ class AttendanceCalculatorTest extends TestCase
         $report->characters()->attach($character->id, ['presence' => $presence]);
     }
 
+    protected function findStats(Collection $stats, string $name): ?CharacterAttendanceStats
+    {
+        return $stats->first(fn (CharacterAttendanceStats $s) => $s->character->name === $name);
+    }
+
+    protected function findRow(Collection $rows, string $name): ?CharacterAttendanceRow
+    {
+        return $rows->first(fn (CharacterAttendanceRow $r) => $r->character->name === $name);
+    }
+
     // ==================== wholeGuild: Empty Input Tests ====================
 
     #[Test]
-    public function calculate_returns_empty_collection_when_no_counting_ranks_exist(): void
+    public function calculate_throws_when_no_counting_ranks_exist(): void
     {
         GuildRank::factory()->doesNotCountAttendance()->create();
 
-        $result = $this->makeCalculator()->wholeGuild();
+        $this->expectException(EmptyCollectionException::class);
 
-        $this->assertInstanceOf(Collection::class, $result);
-        $this->assertTrue($result->isEmpty());
+        $this->makeCalculator()->wholeGuild();
     }
 
     #[Test]
@@ -103,7 +114,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report1, $character, 1);
         $this->attachCharacter($report2, $character, 0);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         $this->assertEquals(2, $thrall->totalReports);
         $this->assertEquals(1, $thrall->reportsAttended);
@@ -122,7 +133,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report1, $character, 1);
         $this->attachCharacter($report2, $character, 3);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         $this->assertEquals(2, $thrall->totalReports);
         $this->assertEquals(1, $thrall->reportsAttended);
@@ -143,7 +154,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report2, $character, 2);
         $this->attachCharacter($report3, $character, 0);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         $this->assertEquals(3, $thrall->totalReports);
         $this->assertEquals(2, $thrall->reportsAttended);
@@ -162,7 +173,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report1, $character, 0);
         $this->attachCharacter($report2, $character, 3);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         $this->assertEquals(2, $thrall->totalReports);
         $this->assertEquals(0, $thrall->reportsAttended);
@@ -185,9 +196,9 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        $this->assertEquals('Alice', $stats[0]->name);
-        $this->assertEquals('Milo', $stats[1]->name);
-        $this->assertEquals('Zara', $stats[2]->name);
+        $this->assertEquals('Alice', $stats[0]->character->name);
+        $this->assertEquals('Milo', $stats[1]->character->name);
+        $this->assertEquals('Zara', $stats[2]->character->name);
     }
 
     // ==================== wholeGuild: Absent Player Tests ====================
@@ -209,7 +220,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report2, $thrall, 1);
         $this->attachCharacter($report3, $thrall, 1);
 
-        $jainaStats = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Jaina');
+        $jainaStats = $this->findStats($this->makeCalculator()->wholeGuild(), 'Jaina');
 
         $this->assertEquals(3, $jainaStats->totalReports);
         $this->assertEquals(1, $jainaStats->reportsAttended);
@@ -250,7 +261,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report1, $character, 1);
         $this->attachCharacter($report2, $character, 1);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         $this->assertTrue($thrall->firstAttendance->eq($jan08));
     }
@@ -275,8 +286,8 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        $thrallStats = $stats->firstWhere('name', 'Thrall');
-        $jainaStats = $stats->firstWhere('name', 'Jaina');
+        $thrallStats = $this->findStats($stats, 'Thrall');
+        $jainaStats = $this->findStats($stats, 'Jaina');
 
         $this->assertTrue($thrallStats->firstAttendance->eq($jan01));
         $this->assertTrue($jainaStats->firstAttendance->eq($jan08));
@@ -300,7 +311,7 @@ class AttendanceCalculatorTest extends TestCase
 
         $thrall = $this->makeCalculator()->wholeGuild()->first();
 
-        $this->assertEquals($character->id, $thrall->id);
+        $this->assertEquals($character->id, $thrall->character->id);
     }
 
     // ==================== wholeGuild: Multiple Players Tests ====================
@@ -320,12 +331,12 @@ class AttendanceCalculatorTest extends TestCase
         $stats = $this->makeCalculator()->wholeGuild();
 
         $this->assertCount(3, $stats);
-        $this->assertNotNull($stats->firstWhere('name', 'Thrall'));
-        $this->assertNotNull($stats->firstWhere('name', 'Jaina'));
-        $this->assertNotNull($stats->firstWhere('name', 'Sylvanas'));
+        $this->assertNotNull($this->findStats($stats, 'Thrall'));
+        $this->assertNotNull($this->findStats($stats, 'Jaina'));
+        $this->assertNotNull($this->findStats($stats, 'Sylvanas'));
     }
 
-    // ==================== wholeGuild: Returns CharacterAttendanceStats Tests ====================
+    // ==================== wholeGuild: Returns row arrays Tests ====================
 
     #[Test]
     public function calculate_returns_character_attendance_stats_objects(): void
@@ -357,7 +368,7 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        $names = $stats->pluck('name')->toArray();
+        $names = $stats->pluck('character.name')->toArray();
         $this->assertContains('CountingPlayer', $names);
         $this->assertNotContains('NonCountingPlayer', $names);
     }
@@ -375,7 +386,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($countingReport, $character, 1);
         $this->attachCharacter($nonCountingReport, $character, 1);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Only the one counting report should be included
         $this->assertEquals(1, $thrall->totalReports);
@@ -405,12 +416,12 @@ class AttendanceCalculatorTest extends TestCase
         $stats = $this->makeCalculator()->wholeGuild();
 
         // Should be 1 total report (merged), all players attended
-        $this->assertEquals(1, $stats->firstWhere('name', 'Fizzywigs')->totalReports);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Fizzywigs')->reportsAttended);
-        $this->assertEquals(100.0, $stats->firstWhere('name', 'Fizzywigs')->percentage);
+        $this->assertEquals(1, $this->findStats($stats, 'Fizzywigs')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Fizzywigs')->reportsAttended);
+        $this->assertEquals(100.0, $this->findStats($stats, 'Fizzywigs')->percentage);
 
-        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->totalReports);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Thrall')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Jaina')->totalReports);
     }
 
     #[Test]
@@ -428,8 +439,8 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        $this->assertEquals(2, $stats->firstWhere('name', 'Thrall')->totalReports);
-        $this->assertEquals(2, $stats->firstWhere('name', 'Thrall')->reportsAttended);
+        $this->assertEquals(2, $this->findStats($stats, 'Thrall')->totalReports);
+        $this->assertEquals(2, $this->findStats($stats, 'Thrall')->reportsAttended);
     }
 
     #[Test]
@@ -449,8 +460,8 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->reportsAttended);
-        $this->assertEquals(100.0, $stats->firstWhere('name', 'Thrall')->percentage);
+        $this->assertEquals(1, $this->findStats($stats, 'Thrall')->reportsAttended);
+        $this->assertEquals(100.0, $this->findStats($stats, 'Thrall')->percentage);
     }
 
     #[Test]
@@ -471,8 +482,8 @@ class AttendanceCalculatorTest extends TestCase
         $stats = $this->makeCalculator()->wholeGuild();
 
         // Both 1 and 2 count as attended, so either way it's 100%
-        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->reportsAttended);
-        $this->assertEquals(100.0, $stats->firstWhere('name', 'Thrall')->percentage);
+        $this->assertEquals(1, $this->findStats($stats, 'Thrall')->reportsAttended);
+        $this->assertEquals(100.0, $this->findStats($stats, 'Thrall')->percentage);
     }
 
     #[Test]
@@ -498,9 +509,9 @@ class AttendanceCalculatorTest extends TestCase
 
         // All three raids merge into one — 3 players, 1 report each
         $this->assertCount(3, $stats);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Alice')->totalReports);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Bob')->totalReports);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Charlie')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Alice')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Bob')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Charlie')->totalReports);
     }
 
     // ==================== forRanks: Tests ====================
@@ -528,7 +539,7 @@ class AttendanceCalculatorTest extends TestCase
         // Only query rank1 — only Thrall should appear
         $stats = $this->makeCalculator()->forRanks(collect([$rank1]));
 
-        $names = $stats->pluck('name')->toArray();
+        $names = $stats->pluck('character.name')->toArray();
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Jaina', $names);
     }
@@ -586,7 +597,7 @@ class AttendanceCalculatorTest extends TestCase
         $stats = $this->makeCalculator()->forCharacter($thrall);
 
         $this->assertCount(1, $stats);
-        $this->assertEquals('Thrall', $stats->first()->name);
+        $this->assertEquals('Thrall', $stats->first()->character->name);
     }
 
     #[Test]
@@ -652,8 +663,8 @@ class AttendanceCalculatorTest extends TestCase
         $stats = $this->makeCalculator()->forReport($report);
 
         $this->assertCount(2, $stats);
-        $this->assertNotNull($stats->firstWhere('name', 'Thrall'));
-        $this->assertNotNull($stats->firstWhere('name', 'Jaina'));
+        $this->assertNotNull($this->findStats($stats, 'Thrall'));
+        $this->assertNotNull($this->findStats($stats, 'Jaina'));
     }
 
     #[Test]
@@ -670,7 +681,7 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->forReport($report);
 
-        $names = $stats->pluck('name')->toArray();
+        $names = $stats->pluck('character.name')->toArray();
         $this->assertContains('CountingPlayer', $names);
         $this->assertNotContains('NonCountingPlayer', $names);
     }
@@ -688,10 +699,10 @@ class AttendanceCalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->forReport($report);
 
-        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->totalReports);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Thrall')->reportsAttended);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->totalReports);
-        $this->assertEquals(1, $stats->firstWhere('name', 'Jaina')->reportsAttended);
+        $this->assertEquals(1, $this->findStats($stats, 'Thrall')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Thrall')->reportsAttended);
+        $this->assertEquals(1, $this->findStats($stats, 'Jaina')->totalReports);
+        $this->assertEquals(1, $this->findStats($stats, 'Jaina')->reportsAttended);
     }
 
     // ==================== mergeLinkedReports: Unit Tests ====================
@@ -709,8 +720,8 @@ class AttendanceCalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertEquals($report->code, $records->first()['code']);
-        $this->assertArrayHasKey('Thrall', $records->first()['players']);
+        $this->assertEquals($report->code, $records->first()->code());
+        $this->assertTrue($records->first()->players()->has('Thrall'));
     }
 
     #[Test]
@@ -732,8 +743,8 @@ class AttendanceCalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertArrayHasKey('Thrall', $records->first()['players']);
-        $this->assertArrayHasKey('Jaina', $records->first()['players']);
+        $this->assertTrue($records->first()->players()->has('Thrall'));
+        $this->assertTrue($records->first()->players()->has('Jaina'));
     }
 
     #[Test]
@@ -755,7 +766,7 @@ class AttendanceCalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertEquals(1, $records->first()['players']['Thrall']['presence']);
+        $this->assertEquals(1, $records->first()->players()['Thrall']->presence);
     }
 
     #[Test]
@@ -801,9 +812,9 @@ class AttendanceCalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertArrayHasKey('Alice', $records->first()['players']);
-        $this->assertArrayHasKey('Bob', $records->first()['players']);
-        $this->assertArrayHasKey('Charlie', $records->first()['players']);
+        $this->assertTrue($records->first()->players()->has('Alice'));
+        $this->assertTrue($records->first()->players()->has('Bob'));
+        $this->assertTrue($records->first()->players()->has('Charlie'));
     }
 
     #[Test]
@@ -830,15 +841,15 @@ class AttendanceCalculatorTest extends TestCase
 
         $this->assertCount(2, $records);
 
-        $manualRecord = $records->firstWhere('id', $manualReport->id);
+        $manualRecord = $records->first(fn ($cluster) => $cluster->id() === $manualReport->id);
         $this->assertNotNull($manualRecord);
-        $this->assertNull($manualRecord['code']);
-        $this->assertArrayHasKey('Jaina', $manualRecord['players']);
+        $this->assertNull($manualRecord->code());
+        $this->assertTrue($manualRecord->players()->has('Jaina'));
 
-        $wclRecord = $records->firstWhere('id', $wclReport->id);
+        $wclRecord = $records->first(fn ($cluster) => $cluster->id() === $wclReport->id);
         $this->assertNotNull($wclRecord);
-        $this->assertSame($wclReport->code, $wclRecord['code']);
-        $this->assertArrayHasKey('Thrall', $wclRecord['players']);
+        $this->assertSame($wclReport->code, $wclRecord->code());
+        $this->assertTrue($wclRecord->players()->has('Thrall'));
     }
 
     #[Test]
@@ -866,9 +877,70 @@ class AttendanceCalculatorTest extends TestCase
         $records = $this->makeCalculator()->mergeLinkedReports($reports);
 
         $this->assertCount(1, $records);
-        $this->assertArrayHasKey('Thrall', $records->first()['players']);
-        $this->assertArrayHasKey('Jaina', $records->first()['players']);
-        $this->assertSame($wclReport->code, $records->first()['code']);
+        $this->assertTrue($records->first()->players()->has('Thrall'));
+        $this->assertTrue($records->first()->players()->has('Jaina'));
+        $this->assertSame($wclReport->code, $records->first()->code());
+    }
+
+    #[Test]
+    public function merge_linked_reports_path_compresses_union_find_tree_when_depth_exceeds_one(): void
+    {
+        $rank = $this->makeRank();
+        $alice = Character::factory()->create(['name' => 'Alice', 'rank_id' => $rank->id]);
+        $bob = Character::factory()->create(['name' => 'Bob', 'rank_id' => $rank->id]);
+        $charlie = Character::factory()->create(['name' => 'Charlie', 'rank_id' => $rank->id]);
+        $diana = Character::factory()->create(['name' => 'Diana', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:30', 'Europe/Paris'));
+        $raid3 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
+        $raid4 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:30', 'Europe/Paris'));
+
+        // Links R1↔R3, R2↔R4, R3↔R4 create parent[R4]→R2→R1 after the first three unions,
+        // so find(R4) on the fourth pass traverses two levels and path compression fires.
+        $this->linkReports($raid1, $raid3);
+        $this->linkReports($raid2, $raid4);
+        $this->linkReports($raid3, $raid4);
+
+        $this->attachCharacter($raid1, $alice, 1);
+        $this->attachCharacter($raid2, $bob, 1);
+        $this->attachCharacter($raid3, $charlie, 1);
+        $this->attachCharacter($raid4, $diana, 1);
+
+        $reports = Report::with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(1, $records);
+        $this->assertTrue($records->first()->players()->has('Alice'));
+        $this->assertTrue($records->first()->players()->has('Bob'));
+        $this->assertTrue($records->first()->players()->has('Charlie'));
+        $this->assertTrue($records->first()->players()->has('Diana'));
+    }
+
+    #[Test]
+    public function merge_linked_reports_skips_linked_reports_not_in_the_passed_collection(): void
+    {
+        $rank = $this->makeRank();
+        $alice = Character::factory()->create(['name' => 'Alice', 'rank_id' => $rank->id]);
+        $bob = Character::factory()->create(['name' => 'Bob', 'rank_id' => $rank->id]);
+        $tag = $this->makeTag();
+
+        $raid1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
+        $raid2 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:30', 'Europe/Paris'));
+
+        $this->linkReports($raid1, $raid2);
+
+        $this->attachCharacter($raid1, $alice, 1);
+        $this->attachCharacter($raid2, $bob, 1);
+
+        // Pass only raid1 so raid2 is outside the collection's $idSet.
+        // raid1->linkedReports still returns raid2, but the guard should skip it.
+        $reports = Report::where('id', $raid1->id)->with(['characters', 'linkedReports'])->get();
+        $records = $this->makeCalculator()->mergeLinkedReports($reports);
+
+        $this->assertCount(1, $records);
+        $this->assertTrue($records->first()->players()->has('Alice'));
     }
 
     // ==================== matrixForWholeGuild: Return Type Tests ====================
@@ -973,9 +1045,9 @@ class AttendanceCalculatorTest extends TestCase
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
 
-        $this->assertEquals('Alice', $matrix->rows[0]['name']);
-        $this->assertEquals('Milo', $matrix->rows[1]['name']);
-        $this->assertEquals('Zara', $matrix->rows[2]['name']);
+        $this->assertEquals('Alice', $matrix->rows[0]->character->name);
+        $this->assertEquals('Milo', $matrix->rows[1]->character->name);
+        $this->assertEquals('Zara', $matrix->rows[2]->character->name);
     }
 
     #[Test]
@@ -992,9 +1064,9 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report3, $character, 1);
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
-        $this->assertEquals(66.67, $row['percentage']);
+        $this->assertEquals(66.67, $row->percentage);
     }
 
     // ==================== matrixForWholeGuild: Cell Value Tests ====================
@@ -1015,13 +1087,13 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report2, $jaina, 1);
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $jainaRow = collect($matrix->rows)->firstWhere('name', 'Jaina');
+        $jainaRow = $this->findRow($matrix->rows, 'Jaina');
 
         // Columns are newest-first: raids[0]=Jan 8, raids[1]=Jan 1
         // attendance[0] = Jan 8 = Jaina's first raid — should be 1
-        $this->assertEquals(1, $jainaRow['attendance'][0]);
+        $this->assertEquals(1, $jainaRow->attendance[0]);
         // attendance[1] = Jan 1 = before Jaina's first attendance — should be null
-        $this->assertNull($jainaRow['attendance'][1]);
+        $this->assertNull($jainaRow->attendance[1]);
     }
 
     #[Test]
@@ -1037,11 +1109,11 @@ class AttendanceCalculatorTest extends TestCase
         // Thrall is absent from report 2
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
         // Columns are newest-first: raids[0]=Jan 8 (absent), raids[1]=Jan 1 (present)
-        $this->assertEquals(0, $row['attendance'][0]);
-        $this->assertEquals(1, $row['attendance'][1]);
+        $this->assertEquals(0, $row->attendance[0]);
+        $this->assertEquals(1, $row->attendance[1]);
     }
 
     #[Test]
@@ -1054,9 +1126,9 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $character, 1);
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
-        $this->assertEquals(1, $row['attendance'][0]);
+        $this->assertEquals(1, $row->attendance[0]);
     }
 
     #[Test]
@@ -1069,9 +1141,9 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $character, 2);
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
-        $this->assertEquals(2, $row['attendance'][0]);
+        $this->assertEquals(2, $row->attendance[0]);
     }
 
     #[Test]
@@ -1092,10 +1164,10 @@ class AttendanceCalculatorTest extends TestCase
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
 
         $this->assertCount(1, $matrix->raids);
-        $thrallRow = collect($matrix->rows)->firstWhere('name', 'Thrall');
-        $jainaRow = collect($matrix->rows)->firstWhere('name', 'Jaina');
-        $this->assertEquals(1, $thrallRow['attendance'][0]);
-        $this->assertEquals(1, $jainaRow['attendance'][0]);
+        $thrallRow = $this->findRow($matrix->rows, 'Thrall');
+        $jainaRow = $this->findRow($matrix->rows, 'Jaina');
+        $this->assertEquals(1, $thrallRow->attendance[0]);
+        $this->assertEquals(1, $jainaRow->attendance[0]);
     }
 
     #[Test]
@@ -1132,13 +1204,11 @@ class AttendanceCalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters);
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters);
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
-        $this->assertArrayHasKey('id', $row);
-        $this->assertArrayHasKey('rank_id', $row);
-        $this->assertEquals($character->id, $row['id']);
-        $this->assertEquals($rank->id, $row['rank_id']);
+        $this->assertEquals($character->id, $row->character->id);
+        $this->assertEquals($rank->id, $row->character->rank_id);
     }
 
     // ==================== matrixWithFilters: Guild Tag Filter Tests ====================
@@ -1157,11 +1227,11 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report1, $thrall, 1);
         $this->attachCharacter($report2, $jaina, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             guildTagIds: [$tag1->id],
         ));
 
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Jaina', $names);
     }
@@ -1183,11 +1253,11 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report1, $thrall, 1);
         $this->attachCharacter($report2, $jaina, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             zoneIds: [1001],
         ));
 
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Jaina', $names);
     }
@@ -1210,11 +1280,11 @@ class AttendanceCalculatorTest extends TestCase
         // sinceDate = Jan 15 at 05:00 UTC, excludes Jan 1 report
         $sinceDate = Carbon::parse('2025-01-15 05:00:00', 'UTC');
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             sinceDate: $sinceDate,
         ));
 
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertNotContains('Thrall', $names);
         $this->assertContains('Jaina', $names);
     }
@@ -1235,11 +1305,11 @@ class AttendanceCalculatorTest extends TestCase
         // beforeDate = Jan 15 at 05:00 UTC, excludes Feb 1 report
         $beforeDate = Carbon::parse('2025-01-15 05:00:00', 'UTC');
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             beforeDate: $beforeDate,
         ));
 
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Jaina', $names);
     }
@@ -1276,11 +1346,11 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 1);
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Shaman', $names);
         $this->assertCount(1, $matrix->rows);
@@ -1300,11 +1370,11 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 1);
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: false,
         ));
 
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertContains('Thrall', $names);
         $this->assertContains('Shaman', $names);
         $this->assertCount(2, $matrix->rows);
@@ -1324,15 +1394,15 @@ class AttendanceCalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
         $this->assertNotNull($row);
         // Alt was present, so merged cell = 1
-        $this->assertEquals(1, $row['attendance'][0]);
-        $this->assertEquals(100.0, $row['percentage']);
+        $this->assertEquals(1, $row->attendance[0]);
+        $this->assertEquals(100.0, $row->percentage);
     }
 
     #[Test]
@@ -1351,12 +1421,12 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report1, $alt, 1);
         $this->attachCharacter($report2, $main, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
-        $this->assertEquals(100.0, $row['percentage']);
+        $row = $this->findRow($matrix->rows, 'Thrall');
+        $this->assertEquals(100.0, $row->percentage);
     }
 
     #[Test]
@@ -1374,12 +1444,12 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 2);
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
-        $this->assertEquals(1, $row['attendance'][0]);
+        $row = $this->findRow($matrix->rows, 'Thrall');
+        $this->assertEquals(1, $row->attendance[0]);
     }
 
     #[Test]
@@ -1396,15 +1466,15 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 1);
         $this->attachCharacter($report, $alt, 2);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
-        $this->assertArrayHasKey('attendance_names', $row);
+        $row = $this->findRow($matrix->rows, 'Thrall');
+        $this->assertNotNull($row->attendanceNames);
         // Both characters attended — names listed in order of rows (main first)
-        $this->assertContains('Thrall', $row['attendance_names'][0]);
-        $this->assertContains('Shaman', $row['attendance_names'][0]);
+        $this->assertContains('Thrall', $row->attendanceNames[0]);
+        $this->assertContains('Shaman', $row->attendanceNames[0]);
     }
 
     #[Test]
@@ -1422,14 +1492,14 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report2, $main, 1); // main present on newest raid (Jan 8)
         // both absent on oldest raid (Jan 1)
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
         // raids[0] = newest (Jan 8, main present), raids[1] = oldest (Jan 1, both absent)
-        $this->assertNotEmpty($row['attendance_names'][0]); // newest: main attended
-        $this->assertEmpty($row['attendance_names'][1]);    // oldest: nobody attended
+        $this->assertNotEmpty($row->attendanceNames[0]); // newest: main attended
+        $this->assertEmpty($row->attendanceNames[1]);    // oldest: nobody attended
     }
 
     #[Test]
@@ -1446,17 +1516,17 @@ class AttendanceCalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Shaman', $names);
 
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
-        $this->assertEquals(1, $row['attendance'][0]);
-        $this->assertEquals(100.0, $row['percentage']);
+        $row = $this->findRow($matrix->rows, 'Thrall');
+        $this->assertEquals(1, $row->attendance[0]);
+        $this->assertEquals(100.0, $row->percentage);
     }
 
     #[Test]
@@ -1470,7 +1540,7 @@ class AttendanceCalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             includeLinkedCharacters: true,
         ));
 
@@ -1495,21 +1565,21 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $alt, 1);
 
         // Filter to rank1 only (main's rank); alt is in rank2
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             rankIds: [$rank1->id],
             includeLinkedCharacters: true,
         ));
 
         // Only the main row appears (from rank1)
         $this->assertCount(1, $matrix->rows);
-        $names = collect($matrix->rows)->pluck('name');
+        $names = $matrix->rows->pluck('character.name');
         $this->assertContains('Thrall', $names);
         $this->assertNotContains('Shaman', $names);
 
         // Alt's attendance is merged into the main's row
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
-        $this->assertEquals(1, $row['attendance'][0]);
-        $this->assertEquals(100.0, $row['percentage']);
+        $row = $this->findRow($matrix->rows, 'Thrall');
+        $this->assertEquals(1, $row->attendance[0]);
+        $this->assertEquals(100.0, $row->percentage);
     }
 
     #[Test]
@@ -1528,7 +1598,7 @@ class AttendanceCalculatorTest extends TestCase
         $this->attachCharacter($report, $alt, 1);
 
         // Filter to rank1 only — main is in rank2, so should not appear
-        $matrix = $this->makeMatrix()->matrixWithFilters(new AttendanceMatrixFilters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
             rankIds: [$rank1->id],
             includeLinkedCharacters: true,
         ));
@@ -1558,7 +1628,7 @@ class AttendanceCalculatorTest extends TestCase
             'end_date' => '2025-01-08',
         ]);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Report 2 is excluded from both numerator and denominator
         $this->assertEquals(2, $thrall->totalReports);
@@ -1589,8 +1659,8 @@ class AttendanceCalculatorTest extends TestCase
         ]);
 
         $stats = $this->makeCalculator()->wholeGuild();
-        $thrallStats = $stats->firstWhere('name', 'Thrall');
-        $jainaStats = $stats->firstWhere('name', 'Jaina');
+        $thrallStats = $this->findStats($stats, 'Thrall');
+        $jainaStats = $this->findStats($stats, 'Jaina');
 
         // Thrall's absent report is excluded
         $this->assertEquals(1, $thrallStats->totalReports);
@@ -1623,7 +1693,7 @@ class AttendanceCalculatorTest extends TestCase
             'start_date' => '2025-01-08',
         ]);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Only report 1 is counted; reports 2 and 3 are excluded by the open-ended absence
         $this->assertEquals(1, $thrall->totalReports);
@@ -1651,7 +1721,7 @@ class AttendanceCalculatorTest extends TestCase
             'end_date' => '2025-01-10',
         ]);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Reports 1 and 3 count normally; report 2 is excluded
         $this->assertEquals(2, $thrall->totalReports);
@@ -1687,7 +1757,7 @@ class AttendanceCalculatorTest extends TestCase
             'end_date' => '2025-01-22',
         ]);
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Only reports 1 and 3 count
         $this->assertEquals(2, $thrall->totalReports);
@@ -1714,7 +1784,7 @@ class AttendanceCalculatorTest extends TestCase
         ]);
         $absence->delete();
 
-        $thrall = $this->makeCalculator()->wholeGuild()->firstWhere('name', 'Thrall');
+        $thrall = $this->findStats($this->makeCalculator()->wholeGuild(), 'Thrall');
 
         // Soft-deleted absence is ignored; the missed report counts against attendance
         $this->assertEquals(2, $thrall->totalReports);
@@ -1743,14 +1813,14 @@ class AttendanceCalculatorTest extends TestCase
         ]);
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
         // Columns are newest-first: raids[0]=Jan 8 (absence-covered), raids[1]=Jan 1
-        $this->assertNotNull($row['planned_absences'][0]);
-        $this->assertNull($row['planned_absences'][1]);
+        $this->assertNotNull($row->plannedAbsences[0]);
+        $this->assertNull($row->plannedAbsences[1]);
 
         // Jan 8 excluded from denominator; only Jan 1 (attended) counts → 100%
-        $this->assertEquals(100.0, $row['percentage']);
+        $this->assertEquals(100.0, $row->percentage);
     }
 
     #[Test]
@@ -1772,16 +1842,16 @@ class AttendanceCalculatorTest extends TestCase
         ]);
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $thrallRow = collect($matrix->rows)->firstWhere('name', 'Thrall');
-        $jainaRow = collect($matrix->rows)->firstWhere('name', 'Jaina');
+        $thrallRow = $this->findRow($matrix->rows, 'Thrall');
+        $jainaRow = $this->findRow($matrix->rows, 'Jaina');
 
-        $this->assertNotNull($thrallRow['planned_absences'][0]);
-        $this->assertNull($jainaRow['planned_absences'][0]);
+        $this->assertNotNull($thrallRow->plannedAbsences[0]);
+        $this->assertNull($jainaRow->plannedAbsences[0]);
 
         // Thrall's only raid is absence-covered, so 0 countable reports → 0%
-        $this->assertEquals(0.0, $thrallRow['percentage']);
+        $this->assertEquals(0.0, $thrallRow->percentage);
         // Jaina's raid counts normally → absent → 0/1 = 0%
-        $this->assertEquals(0.0, $jainaRow['percentage']);
+        $this->assertEquals(0.0, $jainaRow->percentage);
     }
 
     #[Test]
@@ -1805,15 +1875,15 @@ class AttendanceCalculatorTest extends TestCase
         ]);
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
         // Newest-first: raids[0]=Jan 15, raids[1]=Jan 8, raids[2]=Jan 1
-        $this->assertNull($row['planned_absences'][0]);    // Jan 15 — not covered
-        $this->assertNotNull($row['planned_absences'][1]); // Jan 8 — covered
-        $this->assertNull($row['planned_absences'][2]);    // Jan 1 — not covered
+        $this->assertNull($row->plannedAbsences[0]);    // Jan 15 — not covered
+        $this->assertNotNull($row->plannedAbsences[1]); // Jan 8 — covered
+        $this->assertNull($row->plannedAbsences[2]);    // Jan 1 — not covered
 
         // Jan 8 excluded from denominator; Jan 1 + Jan 15 both attended → 2/2 = 100%
-        $this->assertEquals(100.0, $row['percentage']);
+        $this->assertEquals(100.0, $row->percentage);
     }
 
     #[Test]
@@ -1834,8 +1904,8 @@ class AttendanceCalculatorTest extends TestCase
         $absence->delete();
 
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
-        $row = collect($matrix->rows)->firstWhere('name', 'Thrall');
+        $row = $this->findRow($matrix->rows, 'Thrall');
 
-        $this->assertNull($row['planned_absences'][0]);
+        $this->assertNull($row->plannedAbsences[0]);
     }
 }

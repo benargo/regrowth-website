@@ -7,10 +7,12 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\User;
+use App\Services\Discord\DiscordGuildService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -1047,5 +1049,115 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response->assertForbidden();
         $this->assertDatabaseHas('planned_absences', ['id' => $absence->id]);
+    }
+
+    // ==================== create: Null Nickname ====================
+
+    #[Test]
+    public function create_passes_null_resolved_character_when_user_has_no_nickname(): void
+    {
+        $role = DiscordRole::firstOrCreate(
+            ['id' => '829022020301094923'],
+            ['name' => 'Raider', 'position' => 2, 'is_visible' => true]
+        );
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'create-planned-absences', 'guard_name' => 'web']));
+
+        $user = User::factory()->create(['nickname' => null]);
+        $user->discordRoles()->sync([$role->id]);
+
+        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('resolvedCharacter', null)
+        );
+    }
+
+    // ==================== store: Character Not Found ====================
+
+    #[Test]
+    public function store_redirects_back_with_error_when_character_name_matches_nothing(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+            'character' => 'Zzyzx',
+            'start_date' => now()->addDay()->format('Y-m-d'),
+            'reason' => 'Gone.',
+        ]);
+
+        $response->assertSessionHasErrors(['character']);
+    }
+
+    // ==================== store/update: User Field ====================
+
+    #[Test]
+    public function store_assigns_absence_to_specified_existing_user_when_user_field_is_provided(): void
+    {
+        $officer = User::factory()->officer()->create();
+        $targetUser = User::factory()->create();
+        $character = Character::factory()->main()->create();
+
+        $response = $this->actingAs($officer)->post(route('raids.absences.store'), [
+            'character' => $character->id,
+            'user' => $targetUser->id,
+            'start_date' => now()->addDay()->format('Y-m-d'),
+            'reason' => 'Away for work.',
+        ]);
+
+        $response->assertRedirectToRoute('raids.absences.index');
+        $this->assertDatabaseHas('planned_absences', [
+            'character_id' => $character->id,
+            'user_id' => $targetUser->id,
+        ]);
+    }
+
+    #[Test]
+    public function update_reassigns_absence_to_specified_user_when_user_field_is_provided(): void
+    {
+        $officer = User::factory()->officer()->create();
+        $newUser = User::factory()->create();
+        $absence = PlannedAbsence::factory()->withCharacter()->create();
+
+        $response = $this->actingAs($officer)->patchJson(route('raids.absences.update', $absence), [
+            'user' => $newUser->id,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('planned_absences', [
+            'id' => $absence->id,
+            'user_id' => $newUser->id,
+        ]);
+    }
+
+    #[Test]
+    public function store_creates_user_from_discord_and_assigns_absence_when_user_not_in_database(): void
+    {
+        $this->mock(DiscordGuildService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('getGuildMember')->once()->andReturn([
+                'user' => ['username' => 'discorduser', 'discriminator' => '0', 'avatar' => null],
+                'nick' => 'DiscordNick',
+                'avatar' => null,
+                'banner' => null,
+                'roles' => [],
+            ]);
+        });
+
+        $officer = User::factory()->officer()->create();
+        $character = Character::factory()->main()->create();
+        $unknownUserId = '999999999999999999';
+
+        $response = $this->actingAs($officer)->post(route('raids.absences.store'), [
+            'character' => $character->id,
+            'user' => $unknownUserId,
+            'start_date' => now()->addDay()->format('Y-m-d'),
+            'reason' => 'Away.',
+        ]);
+
+        $response->assertRedirectToRoute('raids.absences.index');
+        $this->assertDatabaseHas('users', ['id' => $unknownUserId, 'username' => 'discorduser']);
+        $this->assertDatabaseHas('planned_absences', [
+            'character_id' => $character->id,
+            'user_id' => $unknownUserId,
+        ]);
     }
 }

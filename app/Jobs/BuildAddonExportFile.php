@@ -6,8 +6,8 @@ use App\Models\Character;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
-use App\Services\AttendanceCalculator\AttendanceCalculator;
-use App\Services\AttendanceCalculator\CharacterAttendanceStats;
+use App\Services\Attendance\Calculator;
+use App\Services\Attendance\CharacterAttendanceStats;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -55,7 +55,7 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(AttendanceCalculator $calculator): void
+    public function handle(Calculator $calculator): void
     {
         $data = [
             'system' => [
@@ -105,16 +105,16 @@ class BuildAddonExportFile implements ShouldQueue
     /**
      * Build player attendance statistics.
      */
-    protected function buildPlayerAttendance(AttendanceCalculator $calculator): Collection
+    protected function buildPlayerAttendance(Calculator $calculator): Collection
     {
-        return $calculator->wholeGuild()->map(fn (CharacterAttendanceStats $character) => [
-            'id' => $character->id,
-            'name' => $character->name,
+        return $calculator->wholeGuild()->map(fn (CharacterAttendanceStats $stats) => [
+            'id' => $stats->character->id,
+            'name' => $stats->character->name,
             'attendance' => [
-                'first_attendance' => $character->firstAttendance->setTimezone(config('app.timezone'))->toIso8601String(),
-                'attended' => $character->reportsAttended,
-                'total' => $character->totalReports,
-                'percentage' => $character->percentage,
+                'first_attendance' => $stats->firstAttendance->copy()->setTimezone(config('app.timezone'))->toIso8601String(),
+                'attended' => $stats->reportsAttended,
+                'total' => $stats->totalReports,
+                'percentage' => $stats->percentage,
             ],
         ]);
     }
