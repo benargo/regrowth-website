@@ -16,19 +16,20 @@ function formatAbsenceDate(isoDate) {
 
 function BoxLabel({ icon, label }) {
     return (
-        <p className="flex items-center gap-2 text-sm text-gray-400">
+        <p className="flex items-center gap-2 align-top text-sm text-gray-400">
             {icon && <Icon icon={icon} style="light" className="text-amber-400" />}
             <span>{label}</span>
         </p>
     );
 }
 
-function StatBox({ icon, label, value, subLabel }) {
+function StatBox({ icon, label, value, subLabel, subText, className }) {
     return (
-        <div className="rounded border border-amber-600 p-4">
+        <div className={`flex flex-col rounded border border-amber-600 p-4${className ? ` ${className}` : ""}`}>
             <BoxLabel icon={icon} label={label} />
-            <p className="mt-1 text-3xl font-bold text-amber-400">{value ?? "—"}</p>
-            {subLabel && <p className="mt-1 text-xs text-gray-500">{subLabel}</p>}
+            {value && <p className="mt-1 flex-grow align-top text-3xl font-bold text-amber-400">{value}</p>}
+            {subText && <p className="mt-1 flex-grow text-xs text-gray-400">{subText}</p>}
+            {subLabel && <p className="mt-2 flex-grow text-xs text-gray-500">{subLabel}</p>}
         </div>
     );
 }
@@ -189,24 +190,32 @@ function StatsHeaderRow({ stats, latestReportDate }) {
     const hasPreviousPhase = stats.previousPhaseAttendance !== null;
 
     return (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <StatBox icon="users" label="Total players monitored" value={stats.totalPlayers} />
-            <StatBox icon="calendar" label="Latest report date" value={latestReportDate ?? "No reports yet"} />
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
-                <StatBox
-                    icon="chart-line"
-                    label="Average attendance this phase"
-                    value={stats.phaseAttendance !== null ? `${stats.phaseAttendance}%` : null}
-                    subLabel={stats.phaseAttendance === null ? "No raids yet this phase" : undefined}
-                />
-                {hasPreviousPhase && (
-                    <StatBox
-                        icon="clock-rotate-left"
-                        label="Average attendance last phase"
-                        value={`${stats.previousPhaseAttendance}%`}
-                    />
-                )}
-            </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-6">
+            <StatBox
+                icon="users"
+                label="Total players monitored"
+                value={stats.totalPlayers}
+                subText={`${stats.totalMains} mains · ${stats.totalLinkedCharacters} linked ${stats.totalLinkedCharacters === 1 ? "character" : "characters"}`}
+                className="col-span-2"
+            />
+            <StatBox
+                icon="calendar"
+                label="Latest report date"
+                value={latestReportDate ?? "No reports yet"}
+                className="col-span-2"
+            />
+            <StatBox
+                icon="play"
+                label="Average attendance this phase"
+                value={stats.phaseAttendance !== null ? `${stats.phaseAttendance}%` : null}
+                subLabel={stats.phaseAttendance === null ? "No raids yet this phase" : undefined}
+            />
+            <StatBox
+                icon="step-backward"
+                label="Average attendance last phase"
+                value={hasPreviousPhase ? `${stats.previousPhaseAttendance}%` : null}
+                subLabel={!hasPreviousPhase ? "No data available" : undefined}
+            />
         </div>
     );
 }
@@ -215,22 +224,31 @@ function PlayerListRows({ stats }) {
     return (
         <>
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <PlayerListBox icon="star" label="Players above 80% attendance" players={stats.above80} />
+                <PlayerListBox
+                    icon="star"
+                    label="Players above 80% attendance"
+                    players={stats.percentageGroups[">=80"] ?? []}
+                />
                 <PlayerListBox
                     icon="user-check"
                     label="Players between 50–80% attendance"
-                    players={stats.between50and80}
+                    players={stats.percentageGroups["50-80"] ?? []}
+                />
+                <PlayerListBox
+                    icon="user-check"
+                    label="Players below 50% attendance"
+                    players={stats.percentageGroups["<50"] ?? []}
                 />
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <BenchedByTagBox icon="couch" label="Players benched last week" groups={stats.benchedLastWeek} />
-                <PlayerListBox icon="arrow-trend-down" label="Players dropping off" players={stats.droppingOff} />
-                <PlayerListBox icon="arrow-trend-up" label="Players picking up" players={stats.pickingUp} />
+                <PlayerListBox icon="chart-line-down" label="Players dropping off" players={stats.droppingOff} />
+                <PlayerListBox icon="chart-line" label="Players picking up" players={stats.pickingUp} />
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <UpcomingAbsencesBox icon="calendar-xmark" absences={stats.upcomingAbsences} />
+                <UpcomingAbsencesBox icon="umbrella-beach" absences={stats.upcomingAbsences} />
                 <Link
                     href={route("raids.attendance.graphs.index")}
                     className="flex items-center gap-4 rounded border border-amber-600 p-4 transition-colors hover:bg-amber-600/20"
@@ -240,7 +258,9 @@ function PlayerListRows({ stats }) {
                     </div>
                     <div className="flex flex-col gap-1">
                         <h3 className="text-lg font-semibold">Attendance distribution</h3>
-                        <p className="text-sm text-gray-400">View per-player attendance spread on an interactive chart.</p>
+                        <p className="text-sm text-gray-400">
+                            View per-player attendance spread on an interactive chart.
+                        </p>
                     </div>
                 </Link>
                 <Link

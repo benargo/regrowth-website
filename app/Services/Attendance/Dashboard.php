@@ -39,17 +39,13 @@ class Dashboard
     {
         $rows = $this->table->rows();
 
-        $above80 = $rows
-            ->filter(fn (CharacterAttendanceRow $r) => $r->percentage >= 80)
-            ->map(fn (CharacterAttendanceRow $r) => $this->toPlayer($r))
-            ->values()
-            ->all();
-
-        $between50and80 = $rows
-            ->filter(fn (CharacterAttendanceRow $r) => $r->percentage >= 50 && $r->percentage < 80)
-            ->map(fn (CharacterAttendanceRow $r) => $this->toPlayer($r))
-            ->values()
-            ->all();
+        $percentageGroups = $rows
+            ->filter(fn (CharacterAttendanceRow $r) => $r->character->is_main)
+            ->groupBy(fn (CharacterAttendanceRow $r) => match (true) {
+                $r->percentage >= 80 => '>=80',
+                $r->percentage >= 50 => '50-80',
+                default => '<50',
+            })->map(fn ($group) => $group->map(fn (CharacterAttendanceRow $r) => $this->toPlayer($r))->values()->all());
 
         $phases = $this->phases();
         $currentPhase = $phases->first();
@@ -74,11 +70,12 @@ class Dashboard
             ->all();
 
         return [
-            'above80' => $above80,
-            'between50and80' => $between50and80,
+            'percentageGroups' => $percentageGroups,
             'droppingOff' => $droppingOff,
             'pickingUp' => $pickingUp,
             'totalPlayers' => $rows->count(),
+            'totalMains' => $rows->filter(fn (CharacterAttendanceRow $r) => $r->character->is_main)->count(),
+            'totalLinkedCharacters' => $rows->filter(fn (CharacterAttendanceRow $r) => ! $r->character->is_main)->count(),
             'phaseAttendance' => $phaseAttendance,
             'previousPhaseAttendance' => $previousPhaseAttendance,
             'benchedLastWeek' => $this->calculator->benchedLastWeek(),

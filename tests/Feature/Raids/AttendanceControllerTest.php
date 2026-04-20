@@ -149,11 +149,12 @@ class AttendanceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.above80')
-                ->has('stats.between50and80')
+                ->has('stats.percentageGroups')
                 ->has('stats.droppingOff')
                 ->has('stats.pickingUp')
                 ->has('stats.totalPlayers')
+                ->has('stats.totalMains')
+                ->has('stats.totalLinkedCharacters')
                 ->has('stats.phaseAttendance')
                 ->has('stats.previousPhaseAttendance')
                 ->has('stats.benchedLastWeek')
@@ -259,9 +260,9 @@ class AttendanceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('stats.above80', 1)
-                ->where('stats.above80.0.name', 'Thrall')
-                ->where('stats.between50and80', [])
+                ->has('stats.percentageGroups.>=80', 1)
+                ->where('stats.percentageGroups.>=80.0.name', 'Thrall')
+                ->missing('stats.percentageGroups.50-80')
                 ->where('stats.totalPlayers', 1)
             )
         );
@@ -417,6 +418,34 @@ class AttendanceControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('stats.phaseAttendance', 50)
+            )
+        );
+    }
+
+    #[Test]
+    public function index_total_players_breakdown_counts_mains_and_linked_separately(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+
+        $main1 = Character::factory()->main()->create(['rank_id' => $rank->id]);
+        $main2 = Character::factory()->main()->create(['rank_id' => $rank->id]);
+        $linked = Character::factory()->create(['is_main' => false, 'rank_id' => $rank->id]);
+
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(1)]);
+        $report->characters()->attach($main1->id, ['presence' => 1]);
+        $report->characters()->attach($main2->id, ['presence' => 1]);
+        $report->characters()->attach($linked->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('stats.totalPlayers', 3)
+                ->where('stats.totalMains', 2)
+                ->where('stats.totalLinkedCharacters', 1)
             )
         );
     }
