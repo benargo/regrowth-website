@@ -27,7 +27,7 @@ function StatBox({ icon, label, value, subLabel, subText, className }) {
     return (
         <div className={`flex flex-col rounded border border-amber-600 p-4${className ? ` ${className}` : ""}`}>
             <BoxLabel icon={icon} label={label} />
-            {value && <p className="mt-1 flex-grow align-top text-3xl font-bold text-amber-400">{value}</p>}
+            <p className="mt-1 flex-grow align-top text-3xl font-bold text-amber-400">{value ?? "–"}</p>
             {subText && <p className="mt-1 flex-grow text-xs text-gray-400">{subText}</p>}
             {subLabel && <p className="mt-2 flex-grow text-xs text-gray-500">{subLabel}</p>}
         </div>
