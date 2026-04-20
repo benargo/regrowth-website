@@ -88,6 +88,22 @@ class DataTable
             ->get()
             ->keyBy('id');
 
+        if ($this->filters->includeLinkedCharacters) {
+            $resolvedIds = $this->resolvedRankIds();
+
+            $characters = $characters->filter(
+                function (Character $c) use ($resolvedIds) {
+                    if (in_array($c->rank_id, $resolvedIds, true)) {
+                        return true;
+                    }
+
+                    return $c->linkedCharacters->contains(
+                        fn (Character $linked) => in_array($linked->rank_id, $resolvedIds, true)
+                    );
+                }
+            );
+        }
+
         $absencesByCharacterId = PlannedAbsence::whereIn('character_id', $characterIds)
             ->get()
             ->groupBy('character_id');

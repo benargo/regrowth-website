@@ -1039,7 +1039,7 @@ class CalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
 
         foreach (['Zara', 'Alice', 'Milo'] as $name) {
-            $character = Character::factory()->create(['name' => $name, 'rank_id' => $rank->id]);
+            $character = Character::factory()->main()->create(['name' => $name, 'rank_id' => $rank->id]);
             $this->attachCharacter($report, $character, 1);
         }
 
@@ -1054,7 +1054,7 @@ class CalculatorTest extends TestCase
     public function matrix_row_percentage_is_calculated_correctly(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
@@ -1075,8 +1075,8 @@ class CalculatorTest extends TestCase
     public function matrix_cells_before_first_attendance_are_null(): void
     {
         $rank = $this->makeRank();
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         // Thrall attends from raid 1; Jaina only joins on raid 2
@@ -1100,7 +1100,7 @@ class CalculatorTest extends TestCase
     public function matrix_absent_cell_after_first_attendance_is_zero(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
@@ -1120,7 +1120,7 @@ class CalculatorTest extends TestCase
     public function matrix_presence_1_cell_is_one(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
@@ -1135,7 +1135,7 @@ class CalculatorTest extends TestCase
     public function matrix_presence_2_cell_is_two(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 2);
@@ -1150,8 +1150,8 @@ class CalculatorTest extends TestCase
     public function matrix_linked_raids_are_merged_into_one_column(): void
     {
         $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         // Two linked raids — one column should appear
@@ -1174,7 +1174,7 @@ class CalculatorTest extends TestCase
     public function matrix_to_array_returns_correct_structure(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
@@ -1199,7 +1199,7 @@ class CalculatorTest extends TestCase
     public function matrix_rows_include_id_and_rank_id(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
@@ -1217,8 +1217,8 @@ class CalculatorTest extends TestCase
     public function matrix_with_filters_guild_tag_filter_includes_only_selected_tag(): void
     {
         $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag1 = $this->makeTag();
         $tag2 = $this->makeTag();
 
@@ -1242,8 +1242,8 @@ class CalculatorTest extends TestCase
     public function matrix_with_filters_zone_filter_includes_only_reports_for_that_zone(): void
     {
         $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $zoneA = Zone::factory()->create(['id' => 1001, 'name' => 'Black Temple']);
@@ -1268,8 +1268,8 @@ class CalculatorTest extends TestCase
     public function matrix_with_filters_since_date_excludes_older_reports(): void
     {
         $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $oldReport = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
@@ -1293,8 +1293,8 @@ class CalculatorTest extends TestCase
     public function matrix_with_filters_before_date_excludes_newer_reports(): void
     {
         $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $oldReport = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
@@ -1798,7 +1798,7 @@ class CalculatorTest extends TestCase
     public function matrix_planned_absence_marks_cell_with_flag(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
@@ -1827,8 +1827,8 @@ class CalculatorTest extends TestCase
     public function matrix_planned_absence_does_not_affect_other_characters(): void
     {
         $rank = $this->makeRank();
-        $thrall = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $jaina = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
+        $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $jaina = Character::factory()->main()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $report = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
@@ -1858,7 +1858,7 @@ class CalculatorTest extends TestCase
     public function matrix_planned_absence_outside_range_is_not_marked(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $report1 = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
@@ -1890,7 +1890,7 @@ class CalculatorTest extends TestCase
     public function matrix_soft_deleted_absence_is_not_marked(): void
     {
         $rank = $this->makeRank();
-        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $tag = $this->makeTag();
 
         $report = $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));

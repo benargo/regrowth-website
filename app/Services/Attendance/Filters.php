@@ -29,7 +29,7 @@ class Filters implements Arrayable, JsonSerializable
         public array $guildTagIds = [],
         public ?Carbon $sinceDate = null,
         public ?Carbon $beforeDate = null,
-        public bool $includeLinkedCharacters = false,
+        public bool $includeLinkedCharacters = true,
     ) {}
 
     /**

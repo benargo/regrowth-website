@@ -56,6 +56,14 @@ class DataTableTest extends TestCase
         $report->characters()->attach($character->id, ['presence' => $presence]);
     }
 
+    protected function linkCharacters(Character $main, Character $alt): void
+    {
+        \DB::table('character_links')->insert([
+            ['character_id' => $main->id, 'linked_character_id' => $alt->id, 'created_at' => now(), 'updated_at' => now()],
+            ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+    }
+
     protected function linkReports(Report $report1, Report $report2): void
     {
         $report1->linkedReports()->attach($report2->id);
@@ -416,8 +424,9 @@ class DataTableTest extends TestCase
     {
         $rank = $this->makeRank();
         $tag = $this->makeTag();
-        $character = Character::factory()->create(['rank_id' => $rank->id]);
+        $character = Character::factory()->main()->create(['rank_id' => $rank->id]);
         $alt = Character::factory()->create(['rank_id' => null]);
+        $this->linkCharacters($character, $alt);
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
         $this->attachCharacter($report, $alt, 1);
