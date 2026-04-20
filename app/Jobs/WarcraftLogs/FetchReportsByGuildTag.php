@@ -43,7 +43,7 @@ class FetchReportsByGuildTag implements ShouldQueue
         public ?Carbon $since = null,
         public ?Carbon $before = null,
     ) {
-        $this->timezone = config('app.timezone', 'UTC');
+        $this->timezone = config('app.timezone');
     }
 
     /**

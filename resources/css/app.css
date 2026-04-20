@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+svg.recharts-surface {
+    overflow: visible;
+}
+
 .bg-arcatraz {
     background-image: url('../images/bg_arcatraz.webp');
     background-position: center;

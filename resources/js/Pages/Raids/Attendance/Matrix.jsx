@@ -312,7 +312,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences }) {
 
 export default function Matrix({ matrix, ranks, zones, guildTags, filters, earliestDate }) {
     // ── Client-side filter state (no server reload) ──────────────────────────
-    const [characterName, setCharacterName] = useState(filters.character ?? "");
+    const [characterName, setCharacterName] = useState(filters.character?.name ?? "");
     // null = "all selected" (initial state before matrix loads or after explicit reset)
     const [selectedClassIds, setSelectedClassIds] = useState(null);
     const [selectedRankIds, setSelectedRankIds] = useState(() =>

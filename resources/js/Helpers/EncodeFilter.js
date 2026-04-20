@@ -16,18 +16,21 @@ export function encodeFilter(selected, options) {
 }
 
 /**
- * Decode a filter string received from the server back into an array of IDs.
+ * Decode a filter value received from the server back into an array of IDs.
  *
- * - null / undefined / 'all' → defaultIds (use the provided defaults)
- * - 'none'                   → [] (nothing selected)
- * - '1028,1029'              → [1028, 1029]
+ * Accepts either the URL-query CSV form or the hydrated DTO form:
  *
- * @param {string|null|undefined} value - The raw filter value from the server
+ * - null / undefined / 'all'   → defaultIds (use the provided defaults)
+ * - 'none' / empty array []    → [] (nothing selected)
+ * - '1028,1029' / [1028, 1029] → [1028, 1029]
+ *
+ * @param {string|number[]|null|undefined} value - The raw filter value from the server
  * @param {number[]} defaultIds - IDs to use when no filter is set
  * @returns {number[]}
  */
 export function decodeFilter(value, defaultIds) {
-    if (!value || value === "all") return defaultIds;
+    if (value === null || value === undefined || value === "all") return defaultIds;
+    if (Array.isArray(value)) return value;
     if (value === "none") return [];
     return value.split(",").map(Number);
 }

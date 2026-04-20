@@ -11,6 +11,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
@@ -1734,6 +1735,96 @@ class ReportControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
                     ->has('lootCouncillorCandidates', 1)
+                )
+            );
+    }
+
+    // ==================== create: lootCouncillorCandidates optional ====================
+
+    #[Test]
+    public function create_loot_councillor_candidates_returned_on_partial_reload(): void
+    {
+        $this->grantManageReports();
+        $user = User::factory()->officer()->create();
+        Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
+
+        $this->actingAs($user)
+            ->get(route('raids.reports.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
+                    ->has('lootCouncillorCandidates', 1)
+                    ->where('lootCouncillorCandidates.0.name', 'Alice')
+                )
+            );
+    }
+
+    // ==================== create: nearbyReports optional (union-find) ====================
+
+    #[Test]
+    public function create_nearby_reports_path_compresses_union_find_tree_for_deep_link_chains(): void
+    {
+        $this->grantManageReports();
+        Cache::tags(['raids', 'warcraftlogs'])->flush();
+
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+
+        $r1 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 19:00', 'UTC')]);
+        $r2 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 19:30', 'UTC')]);
+        $r3 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
+        $r4 = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:30', 'UTC')]);
+
+        // R1↔R3, R2↔R4, R3↔R4 creates parent[R4]→R2→R1 after initial unions;
+        // the next find(R4) traverses two levels and path compression fires.
+        DB::table('raid_report_links')->insert([
+            ['report_1' => $r1->id, 'report_2' => $r3->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $r3->id, 'report_2' => $r1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $r2->id, 'report_2' => $r4->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $r4->id, 'report_2' => $r2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $r3->id, 'report_2' => $r4->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['report_1' => $r4->id, 'report_2' => $r3->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('raids.reports.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
+                    ->has('nearbyReports.data', 1)
+                )
+            );
+    }
+
+    #[Test]
+    public function create_nearby_reports_skips_links_referencing_nonexistent_reports(): void
+    {
+        $this->grantManageReports();
+        Cache::tags(['raids', 'warcraftlogs'])->flush();
+
+        $tag = GuildTag::factory()->withoutPhase()->create();
+        $user = User::factory()->officer()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
+
+        $phantom = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:30', 'UTC')]);
+
+        // Create a valid FK link, then prime the reports cache with only $report's data.
+        // The links cache refetches from DB (both were flushed above), so the link is present
+        // but $phantom's ID is absent from $parent — simulating a dangling reference.
+        // buildNearbyReportClusters() must skip it via the isset() guard at line 341.
+        DB::table('raid_report_links')->insert([
+            ['report_1' => $report->id, 'report_2' => $phantom->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        Cache::tags(['raids', 'warcraftlogs'])->put(
+            'reports:select:id,start_time',
+            Report::select('id', 'start_time')->where('id', $report->id)->get()->toArray(),
+            now()->addMinutes(5)
+        );
+
+        $this->actingAs($user)
+            ->get(route('raids.reports.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
+                    ->has('nearbyReports.data', 1)
                 )
             );
     }

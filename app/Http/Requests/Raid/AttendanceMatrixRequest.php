@@ -2,18 +2,13 @@
 
 namespace App\Http\Requests\Raid;
 
-use App\Models\Raids\Report;
-use App\Traits\ParsesFilterParam;
-use Carbon\Carbon;
+use App\Services\Attendance\Filters;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 
 class AttendanceMatrixRequest extends FormRequest
 {
-    use ParsesFilterParam;
-
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -29,77 +24,22 @@ class AttendanceMatrixRequest extends FormRequest
      */
     public function rules(): array
     {
-        $minDate = $this->resolveMinDate();
-        $today = Carbon::today(config('app.timezone', 'UTC'))->toDateString();
-
-        $dateRules = ['nullable', 'date', 'before_or_equal:'.$today];
-
-        if ($minDate !== null) {
-            $dateRules[] = 'after_or_equal:'.$minDate;
-        }
-
-        // Derive specific rules for the range boundaries so we can enforce ordering
-        $sinceDateRules = $dateRules;
-        $beforeDateRules = $dateRules;
-
-        // Ensure since_date is not after before_date when both are present
-        if ($this->filled('before_date')) {
-            $sinceDateRules[] = 'before_or_equal:before_date';
-        }
-        if ($this->filled('since_date')) {
-            $beforeDateRules[] = 'after_or_equal:since_date';
-        }
-
-        return [
-            'character' => ['nullable', 'integer', 'exists:characters,id'],
-            'rank_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
-            'zone_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
-            'guild_tag_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
-            'since_date' => $sinceDateRules,
-            'before_date' => $beforeDateRules,
-            'combine_linked_characters' => ['nullable', 'boolean'],
-        ];
-    }
-
-    public function zoneIds(): ?array
-    {
-        return $this->parseFilterParam('zone_ids');
-    }
-
-    public function guildTagIds(): ?array
-    {
-        return $this->parseFilterParam('guild_tag_ids');
-    }
-
-    public function rankIds(): ?array
-    {
-        return $this->parseFilterParam('rank_ids');
-    }
-
-    public function combineLinkedCharacters(): bool
-    {
-        return $this->boolean('combine_linked_characters', true);
+        return Filters::rules($this->all());
     }
 
     /**
-     * Resolve the minimum allowed date for date filters, which is one day
-     * before the earliest report in the database.
+     * Build a validated Filters DTO from the request input.
+     */
+    public function filters(): Filters
+    {
+        return Filters::fromArray($this->validated());
+    }
+
+    /**
+     * The minimum date allowed for date filters, exposed so the view can render the date picker bounds.
      */
     public function resolveMinDate(): ?string
     {
-        $earliestRaw = Cache::tags(['attendance', 'reports'])->remember(
-            'reports:earliest_date',
-            now()->addDay(),
-            fn () => Report::min('start_time'),
-        );
-
-        if ($earliestRaw === null) {
-            return null;
-        }
-
-        return Carbon::parse($earliestRaw, 'UTC')
-            ->timezone(config('app.timezone', 'UTC'))
-            ->subDay()
-            ->toDateString();
+        return Filters::resolveMinDate();
     }
 }

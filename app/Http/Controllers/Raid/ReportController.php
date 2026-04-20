@@ -109,7 +109,7 @@ class ReportController extends Controller
      */
     public function index(ReportsIndexRequest $request): Response
     {
-        $timezone = config('app.timezone', 'UTC');
+        $timezone = config('app.timezone');
         $zones = Zone::whereIn('id', Report::select('zone_id')->whereNotNull('zone_id')->distinct())
             ->orderBy('name')
             ->get();
