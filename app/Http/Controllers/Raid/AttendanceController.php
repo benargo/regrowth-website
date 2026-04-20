@@ -19,8 +19,7 @@ class AttendanceController extends Controller
             'stats' => Inertia::defer(fn () => [
                 ...$this->dashboard->stats(),
                 'upcomingAbsences' => PlannedAbsenceResource::collection($this->dashboard->upcomingAbsences())
-                    ->toResponse(request())
-                    ->getData(true)['data'],
+                    ->resolve(request()),
             ]),
         ]);
     }
