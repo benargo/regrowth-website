@@ -14,11 +14,6 @@ use JsonSerializable;
 
 class Filters implements Arrayable, JsonSerializable
 {
-    /**
-     * The timezone to use when parsing date inputs.
-     */
-    private static string $timezone;
-
     public function __construct(
         public ?Character $character = null,
         /** @var array<int, int> */
@@ -29,7 +24,7 @@ class Filters implements Arrayable, JsonSerializable
         public array $guildTagIds = [],
         public ?Carbon $sinceDate = null,
         public ?Carbon $beforeDate = null,
-        public bool $includeLinkedCharacters = true,
+        public bool $includeLinkedCharacters = false,
     ) {}
 
     /**
@@ -86,11 +81,11 @@ class Filters implements Arrayable, JsonSerializable
             ?? GuildTag::where('count_attendance', true)->pluck('id')->toArray();
 
         $sinceDate = ! empty($input['since_date'])
-            ? Carbon::parse($input['since_date'], self::timezone())->addDay()->setTime(5, 0, 0)->utc()
+            ? Carbon::parse($input['since_date'], config('app.timezone'))->addDay()->setTime(5, 0, 0)->utc()
             : null;
 
         $beforeDate = ! empty($input['before_date'])
-            ? Carbon::parse($input['before_date'], self::timezone())->setTime(5, 0, 0)->utc()
+            ? Carbon::parse($input['before_date'], config('app.timezone'))->setTime(5, 0, 0)->utc()
             : null;
 
         $combineLinkedCharacters = array_key_exists('combine_linked_characters', $input)
@@ -119,7 +114,7 @@ class Filters implements Arrayable, JsonSerializable
     public static function rules(array $input = []): array
     {
         $minDate = self::resolveMinDate();
-        $today = Carbon::today(self::timezone())->toDateString();
+        $today = Carbon::today(config('app.timezone'))->toDateString();
 
         $dateRules = ['nullable', 'date', 'before_or_equal:'.$today];
 
@@ -195,7 +190,7 @@ class Filters implements Arrayable, JsonSerializable
         }
 
         return Carbon::parse($earliestRaw, 'UTC')
-            ->timezone(self::timezone())
+            ->timezone(config('app.timezone'))
             ->subDay()
             ->toDateString();
     }
@@ -227,17 +222,5 @@ class Filters implements Arrayable, JsonSerializable
         }
 
         return array_map('intval', explode(',', (string) $value));
-    }
-
-    /**
-     * Get the timezone to use for parsing date inputs, initializing it from config if it hasn't been already.
-     */
-    private static function timezone(): string
-    {
-        if (! isset(self::$timezone)) {
-            self::$timezone = config('app.timezone', 'UTC');
-        }
-
-        return self::$timezone;
     }
 }

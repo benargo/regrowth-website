@@ -14,10 +14,6 @@ use Illuminate\Support\Facades\Cache;
 
 class Calculator
 {
-    public function __construct(
-        public readonly string $timezone = 'UTC',
-    ) {}
-
     /**
      * Calculate attendance for every character whose rank counts towards attendance.
      *
@@ -371,7 +367,7 @@ class Calculator
      */
     public function isCoveredByPlannedAbsence(Collection $absences, Carbon $startTime): ?PlannedAbsence
     {
-        $raidDate = $startTime->copy()->setTimezone($this->timezone)->startOfDay();
+        $raidDate = $startTime->copy()->setTimezone(config('app.timezone'))->startOfDay();
 
         foreach ($absences as $absence) {
             $absenceStart = $absence->start_date->copy()->startOfDay();

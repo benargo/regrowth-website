@@ -29,7 +29,7 @@ class ReportsIndexRequest extends FormRequest
     public function rules(): array
     {
         $minDate = $this->resolveMinDate();
-        $today = Carbon::today(config('app.timezone', 'UTC'))->toDateString();
+        $today = Carbon::today(config('app.timezone'))->toDateString();
 
         $dateRules = ['nullable', 'date', 'before_or_equal:'.$today];
 
@@ -88,7 +88,7 @@ class ReportsIndexRequest extends FormRequest
         }
 
         return Carbon::parse($earliestRaw, 'UTC')
-            ->timezone(config('app.timezone', 'UTC'))
+            ->timezone(config('app.timezone'))
             ->subDay()
             ->toDateString();
     }

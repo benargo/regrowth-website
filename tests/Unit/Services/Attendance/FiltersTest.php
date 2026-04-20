@@ -231,7 +231,7 @@ class FiltersTest extends TestCase
         $this->mockMinDate($rawStartTime);
 
         $expectedMinDate = Carbon::parse($rawStartTime, 'UTC')
-            ->timezone(config('app.timezone', 'UTC'))
+            ->timezone(config('app.timezone'))
             ->subDay()
             ->toDateString();
 
@@ -262,7 +262,7 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $today = Carbon::today(config('app.timezone', 'UTC'))->toDateString();
+        $today = Carbon::today(config('app.timezone'))->toDateString();
 
         $rules = Filters::rules();
 

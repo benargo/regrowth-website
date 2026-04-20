@@ -31,7 +31,7 @@ class DataTable
      */
     public function columns(): Collection
     {
-        $timezone = $this->calculator->timezone;
+        $timezone = config('app.timezone');
 
         return $this->records()
             ->map(fn (ReportCluster $cluster) => [

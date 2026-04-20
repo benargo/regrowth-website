@@ -190,7 +190,7 @@ class ReportsIndexRequestTest extends TestCase
         $this->mockMinDate($rawStartTime);
 
         $expectedMinDate = Carbon::parse($rawStartTime, 'UTC')
-            ->timezone(config('app.timezone', 'UTC'))
+            ->timezone(config('app.timezone'))
             ->subDay()
             ->toDateString();
 
@@ -221,7 +221,7 @@ class ReportsIndexRequestTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $today = Carbon::today(config('app.timezone', 'UTC'))->toDateString();
+        $today = Carbon::today(config('app.timezone'))->toDateString();
 
         $rules = $this->makeRequest()->rules();
 
