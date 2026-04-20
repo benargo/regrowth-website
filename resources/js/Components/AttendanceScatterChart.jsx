@@ -5,22 +5,22 @@ import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAx
 function TooltipBody({ point }) {
     return (
         <div className="flex flex-col gap-0.5 text-left">
-            <h3 className="text-nowrap text-sm font-semibold text-amber-300">{point.name}</h3>
-            <p className="font-weight-bold text-nowrap">{point.percentage.toFixed(2)}% attendance</p>
-            <p className="text-nowrap">
-                <span className="font-weight-bold">Raids:</span> {point.raidsTotal}
+            <h3 className="whitespace-nowrap text-sm font-semibold text-amber-300">{point.name}</h3>
+            <p className="font-bold whitespace-nowrap">{point.percentage.toFixed(2)}% attendance</p>
+            <p className="whitespace-nowrap">
+                <span className="font-bold">Raids:</span> {point.raidsTotal}
             </p>
-            <p className="text-nowrap">
-                <span className="font-weight-bold">Attended:</span> {point.raidsAttended}
+            <p className="whitespace-nowrap">
+                <span className="font-bold">Attended:</span> {point.raidsAttended}
             </p>
-            <p className="text-nowrap">
-                <span className="font-weight-bold">Benched:</span> {point.benched}
+            <p className="whitespace-nowrap">
+                <span className="font-bold">Benched:</span> {point.benched}
             </p>
-            <p className="text-nowrap">
-                <span className="font-weight-bold">Planned absences:</span> {point.plannedAbsences}
+            <p className="whitespace-nowrap">
+                <span className="font-bold">Planned absences:</span> {point.plannedAbsences}
             </p>
-            <p className="text-nowrap">
-                <span className="font-weight-bold">Other absences:</span> {point.otherAbsences}
+            <p className="whitespace-nowrap">
+                <span className="font-bold">Other absences:</span> {point.otherAbsences}
             </p>
         </div>
     );
