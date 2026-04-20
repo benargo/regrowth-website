@@ -37,6 +37,19 @@ export default {
                     lootcouncillor: '#a335ee',
                     guest: '#9b59b6',
                 },
+                /*-- Playable class colors --*/
+                'playable-class': {
+                    'death-knight': '#c41f3b',
+                    'druid': '#ff7d0a',
+                    'hunter': '#abd473',
+                    'mage': '#69ccf0',
+                    'paladin': '#f58cba',
+                    'priest': '#ffffff',
+                    'rogue': '#fff569',
+                    'shaman': '#0070de',
+                    'warlock': '#9482c9',
+                    'warrior': '#c79c63',
+                },
                 /*-- WoW item quality colors --*/
                 quality: {
                     DEFAULT: '#ffffff',
@@ -75,7 +88,8 @@ export default {
 
     safelist: [
         { pattern: /(bg|text|border)-discord-(officer|raider|member|lootcouncillor|guest)/, },
-        { pattern: /(bg|text|border)-quality-(poor|common|uncommon|rare|epic|legendary|artifact|heirloom)/, },
         { pattern: /(bg|text|border)-guild-rank-(guild-master|officer|raider|trial-raider|warden|champion|veteran|member|initiate|inactive)/, },
+        { pattern: /(bg|text|border)-playable-class-(death-knight|druid|hunter|mage|paladin|priest|rogue|shaman|warlock|warrior)/, },
+        { pattern: /(bg|text|border)-quality-(poor|common|uncommon|rare|epic|legendary|artifact|heirloom)/, },
     ],
 };

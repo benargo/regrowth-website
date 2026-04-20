@@ -6,6 +6,7 @@ use App\Services\Attendance\Calculator;
 use App\Services\Attendance\Dashboard;
 use App\Services\Attendance\DataTable;
 use App\Services\Attendance\Filters;
+use App\Services\Attendance\Graphs;
 use App\Services\Attendance\Matrix;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
@@ -46,6 +47,13 @@ class AttendanceServiceProvider extends ServiceProvider implements DeferrablePro
         $this->app->singleton(Matrix::class, function ($app) {
             return new Matrix($app->make(Calculator::class));
         });
+
+        $this->app->singleton(Graphs::class, function ($app) {
+            return new Graphs(
+                $app->make(Calculator::class),
+                $app->make(DataTable::class),
+            );
+        });
     }
 
     /**
@@ -68,6 +76,7 @@ class AttendanceServiceProvider extends ServiceProvider implements DeferrablePro
             Dashboard::class,
             DataTable::class,
             Matrix::class,
+            Graphs::class,
         ];
     }
 }

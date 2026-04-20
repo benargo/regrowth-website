@@ -154,14 +154,19 @@ function UpcomingAbsencesBox({ icon, absences }) {
     );
 }
 
-function DashboardSkeleton() {
+function HeaderRowSkeleton() {
+    return (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <SkeletonBox />
+            <SkeletonBox />
+            <SkeletonBox />
+        </div>
+    );
+}
+
+function PlayerRowsSkeleton() {
     return (
         <>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <SkeletonBox />
-                <SkeletonBox />
-                <SkeletonBox />
-            </div>
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <SkeletonBox />
                 <SkeletonPlayerBox />
@@ -180,31 +185,35 @@ function DashboardSkeleton() {
     );
 }
 
-function DashboardStats({ stats, latestReportDate }) {
+function StatsHeaderRow({ stats, latestReportDate }) {
     const hasPreviousPhase = stats.previousPhaseAttendance !== null;
 
     return (
-        <>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <StatBox icon="users" label="Total players monitored" value={stats.totalPlayers} />
-                <StatBox icon="calendar" label="Latest report date" value={latestReportDate ?? "No reports yet"} />
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <StatBox icon="users" label="Total players monitored" value={stats.totalPlayers} />
+            <StatBox icon="calendar" label="Latest report date" value={latestReportDate ?? "No reports yet"} />
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
+                <StatBox
+                    icon="chart-line"
+                    label="Average attendance this phase"
+                    value={stats.phaseAttendance !== null ? `${stats.phaseAttendance}%` : null}
+                    subLabel={stats.phaseAttendance === null ? "No raids yet this phase" : undefined}
+                />
+                {hasPreviousPhase && (
                     <StatBox
-                        icon="chart-line"
-                        label="Average attendance this phase"
-                        value={stats.phaseAttendance !== null ? `${stats.phaseAttendance}%` : null}
-                        subLabel={stats.phaseAttendance === null ? "No raids yet this phase" : undefined}
+                        icon="clock-rotate-left"
+                        label="Average attendance last phase"
+                        value={`${stats.previousPhaseAttendance}%`}
                     />
-                    {hasPreviousPhase && (
-                        <StatBox
-                            icon="clock-rotate-left"
-                            label="Average attendance last phase"
-                            value={`${stats.previousPhaseAttendance}%`}
-                        />
-                    )}
-                </div>
+                )}
             </div>
+        </div>
+    );
+}
 
+function PlayerListRows({ stats }) {
+    return (
+        <>
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <PlayerListBox icon="star" label="Players above 80% attendance" players={stats.above80} />
                 <PlayerListBox
@@ -220,8 +229,20 @@ function DashboardStats({ stats, latestReportDate }) {
                 <PlayerListBox icon="arrow-trend-up" label="Players picking up" players={stats.pickingUp} />
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <UpcomingAbsencesBox icon="calendar-xmark" absences={stats.upcomingAbsences} />
+                <Link
+                    href={route("raids.attendance.graphs.index")}
+                    className="flex items-center gap-4 rounded border border-amber-600 p-4 transition-colors hover:bg-amber-600/20"
+                >
+                    <div className="text-center">
+                        <Icon icon="chart-scatter" style="light" className="text-3xl text-amber-400" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <h3 className="text-lg font-semibold">Attendance distribution</h3>
+                        <p className="text-sm text-gray-400">View per-player attendance spread on an interactive chart.</p>
+                    </div>
+                </Link>
                 <Link
                     href={route("raids.attendance.matrix")}
                     className="flex items-center gap-4 rounded border border-amber-600 p-4 transition-colors hover:bg-amber-600/20"
@@ -245,8 +266,12 @@ export default function Index({ latestReportDate, stats }) {
             <SharedHeader title="Attendance Dashboard" backgroundClass="bg-illidan" />
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
-                    <Deferred data="stats" fallback={<DashboardSkeleton latestReportDate={latestReportDate} />}>
-                        <DashboardStats stats={stats} latestReportDate={latestReportDate} />
+                    <Deferred data="stats" fallback={<HeaderRowSkeleton />}>
+                        <StatsHeaderRow stats={stats} latestReportDate={latestReportDate} />
+                    </Deferred>
+
+                    <Deferred data="stats" fallback={<PlayerRowsSkeleton />}>
+                        <PlayerListRows stats={stats} />
                     </Deferred>
                 </div>
             </div>

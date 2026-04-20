@@ -18,6 +18,7 @@ use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\LootCouncil\RaidController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\Raid\AttendanceController;
+use App\Http\Controllers\Raid\AttendanceGraphsController;
 use App\Http\Controllers\Raid\AttendanceMatrixController;
 use App\Http\Controllers\Raid\ReportController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
@@ -67,6 +68,7 @@ Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], 
 
     // Attendance routes
     Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance')->name('attendance.index');
+    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->middleware('can:view-attendance')->name('attendance.graphs.index');
     Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance')->name('attendance.matrix');
 
     // Reports routes
