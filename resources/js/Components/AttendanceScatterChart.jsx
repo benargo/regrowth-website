@@ -33,7 +33,7 @@ function PointShape({ cx, cy, payload }) {
     const iconSize = 20;
     const divRef = useRef(null);
     const [size, setSize] = useState({ width: 200, height: 40 });
-    const colorClass = `playable-class-${point.playable_class.name.toLowerCase()}`;
+    const colorClass = `playable-class-${point.playable_class.name.toLowerCase().replace(/\s+/g, "-")}`;
 
     useEffect(() => {
         if (!divRef.current) return;

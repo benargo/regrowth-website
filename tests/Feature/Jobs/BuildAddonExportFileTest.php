@@ -403,6 +403,25 @@ class BuildAddonExportFileTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_empty_players_and_logs_warning_when_calculator_throws_empty_collection_exception(): void
+    {
+        GuildRank::where('count_attendance', true)->delete();
+
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(function ($message, $context) {
+                return $message === 'BuildAddonExportFile: no counting ranks configured, skipping attendance data.'
+                    && isset($context['error']);
+            });
+        Log::shouldReceive('info')->once();
+
+        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+
+        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $this->assertEmpty($data['players']);
+    }
+
+    #[Test]
     public function it_caches_empty_attendance_when_no_qualifying_reports_exist(): void
     {
         $rank = GuildRank::factory()->create();

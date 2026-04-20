@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
@@ -107,16 +108,24 @@ class BuildAddonExportFile implements ShouldQueue
      */
     protected function buildPlayerAttendance(Calculator $calculator): Collection
     {
-        return $calculator->wholeGuild()->map(fn (CharacterAttendanceStats $stats) => [
-            'id' => $stats->character->id,
-            'name' => $stats->character->name,
-            'attendance' => [
-                'first_attendance' => $stats->firstAttendance->copy()->setTimezone(config('app.timezone'))->toIso8601String(),
-                'attended' => $stats->reportsAttended,
-                'total' => $stats->totalReports,
-                'percentage' => $stats->percentage,
-            ],
-        ]);
+        try {
+            return $calculator->wholeGuild()->map(fn (CharacterAttendanceStats $stats) => [
+                'id' => $stats->character->id,
+                'name' => $stats->character->name,
+                'attendance' => [
+                    'first_attendance' => $stats->firstAttendance->copy()->setTimezone(config('app.timezone'))->toIso8601String(),
+                    'attended' => $stats->reportsAttended,
+                    'total' => $stats->totalReports,
+                    'percentage' => $stats->percentage,
+                ],
+            ]);
+        } catch (EmptyCollectionException $e) {
+            Log::warning('BuildAddonExportFile: no counting ranks configured, skipping attendance data.', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return collect();
+        }
     }
 
     /**
