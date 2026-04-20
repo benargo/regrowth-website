@@ -10,13 +10,19 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <!-- Open Graph -->
+        <meta property="og:title" content="{{ config('app.name', 'Laravel') }}">
+        <meta property="og:description" content="The homepage of {{ config('app.name', 'Laravel') }} on {{ config('services.blizzard.realm.name') }}.">
+        <meta property="og:image" content="{{ asset('images/og_image.webp') }}">
+        <meta property="og:url" content="{{ url('/') }}">
+
         <!-- Scripts -->
         @routes
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead
 
-        <link rel="icon" type="image/webp" rel="noopener" target="_blank" href="/images/guild_emblem.webp" />
+        <link rel="icon" type="image/webp" rel="noopener" target="_blank" href="{{ asset('images/guild_emblem.webp') }}" />
     </head>
     <body class="font-sans antialiased">
         @inertia
