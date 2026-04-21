@@ -76,13 +76,25 @@ class PrioritySeeder extends Seeder
             ['type' => 'Spec', 'title' => 'Arms Warrior', 'media' => ['media_name' => 'ability_warrior_savageblow']],
             ['type' => 'Spec', 'title' => 'Fury Warrior', 'media' => ['media_name' => 'ability_warrior_innerrage']],
             ['type' => 'Spec', 'title' => 'Protection Warrior', 'media' => ['media_name' => 'ability_warrior_defensivestance']],
+
+            // Custom
+            ['type' => 'Custom', 'title' => 'Fire Warlock', 'media' => ['media_name' => 'spell_fire_burnout']],
+            ['type' => 'Custom', 'title' => 'Shadow Warlock', 'media' => ['media_name' => 'spell_shadow_shadowbolt']],
+            ['type' => 'Custom', 'title' => 'Healing Priest', 'media' => ['media_name' => 'spell_holy_greaterheal']],
+            ['type' => 'Custom', 'title' => 'DPS Warrior', 'media' => ['media_name' => 'ability_rogue_ambush']],
+
+            // Disenchant
+            ['type' => 'Disenchant', 'title' => 'Disenchant', 'media' => ['media_name' => 'inv_enchant_voidcrystal']],
         ];
 
         foreach ($priorities as $priority) {
             Priority::query()->updateOrCreate(
-                ['type' => $priority['type'], 'title' => $priority['title']],
+                ['title' => $priority['title']],
                 $priority
             );
         }
+
+        // Update 'Ranged DPS' to 'Caster DPS'
+        Priority::where(['type' => 'Role', 'title' => 'Ranged DPS'])->update(['title' => 'Caster DPS']);
     }
 }

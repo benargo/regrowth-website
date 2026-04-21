@@ -145,7 +145,7 @@ function AddNewWeightRow({ weight, onAddClick }) {
             >
                 <Icon icon="plus" style="solid" />
             </button>
-            <span className="ml-4 text-gray-400">Add new priority level</span>
+            <span className="ml-4 text-gray-400">Add new bias level</span>
         </div>
     );
 }
@@ -164,31 +164,22 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
         }, {});
     }, [priorities]);
 
-    const typeLabels = {
-        role: "Roles",
-        class: "Classes",
-        spec: "Specializations",
-        other: "Other",
-    };
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
             <div
-                className="max-h-[80vh] max-w-2xl overflow-y-auto rounded-lg border border-primary bg-brown-900 p-6"
+                className="max-h-[80vh] max-w-6xl overflow-y-auto rounded-lg border border-primary bg-brown-900 p-6"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-bold">Select Priority</h3>
+                    <h3 className="text-xl font-bold">Select an option</h3>
                     <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">
                         <Icon icon="times" style="solid" />
                     </button>
                 </div>
                 {Object.entries(groupedPriorities).map(([type, typePriorities]) => (
                     <div key={type} className="mb-4">
-                        <h4 className="mb-2 text-sm font-semibold uppercase text-amber-500">
-                            {typeLabels[type] || type}
-                        </h4>
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        <h4 className="mb-2 text-sm font-semibold uppercase text-amber-500">{type}</h4>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                             {typePriorities.map((priority) => (
                                 <button
                                     key={priority.id}
@@ -206,7 +197,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                     </div>
                 ))}
                 {Object.keys(groupedPriorities).length === 0 && (
-                    <p className="py-4 text-center text-gray-400">All priorities have been assigned to this item.</p>
+                    <p className="py-4 text-center text-gray-400">All options have been assigned to this item.</p>
                 )}
             </div>
         </div>
@@ -346,14 +337,14 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     if (priorities.length === 0 && data.priorities.length === 0) {
         return (
             <div className="py-8 text-center">
-                <p className="mb-4 text-gray-400">No priorities assigned to this item.</p>
+                <p className="mb-4 text-gray-400">No biases assigned to this item.</p>
                 <button
                     type="button"
                     onClick={() => handleAddNewWeight(0)}
                     className="inline-flex items-center gap-2 rounded-md bg-amber-600 px-4 py-2 text-white transition-colors hover:bg-amber-700"
                 >
                     <Icon icon="plus" style="solid" />
-                    Add First Priority
+                    Add first bias level
                 </button>
                 <PriorityPickerModal
                     isOpen={showPicker}
@@ -511,9 +502,9 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 <ItemDetailsCard item={item.data} />
 
                 {/* Editable Priorities */}
-                <h2 className="mb-2 mt-8 text-xl font-bold">Loot Priorities</h2>
+                <h2 className="mb-2 mt-8 text-xl font-bold">Loot Biases</h2>
                 <p className="mb-4 text-gray-400">
-                    Drag priorities between rows to change their weight. Use the + buttons to add new priorities.
+                    Drag biases between rows to change their weight. Use the + buttons to add new biases.
                 </p>
                 <div className="mt-8 w-full">
                     <EditablePriorityDisplay

@@ -2,7 +2,7 @@ import { Link } from "@inertiajs/react";
 
 export default function ItemDetailsCard({ item }) {
     return (
-        <div className="flex flex-row items-start gap-2 md:gap-6">
+        <div className="flex flex-col items-start gap-2 md:gap-6 lg:flex-row">
             <div className="h-8 w-8 flex-none md:h-24 md:w-24">
                 <Link
                     href={item.wowhead_url}
@@ -49,7 +49,7 @@ export default function ItemDetailsCard({ item }) {
                     </div>
                     {/* Wowhead Link */}
                     <div className="flex-auto md:text-right">
-                        <Link
+                        <a
                             href={item.wowhead_url}
                             data-wowhead={`item=${item.id}&domain=tbc`}
                             target="_blank"
@@ -62,7 +62,7 @@ export default function ItemDetailsCard({ item }) {
                                 className="-mt-1 mr-2 inline-block h-5 w-5"
                             />
                             View on Wowhead
-                        </Link>
+                        </a>
                     </div>
                 </div>
             </div>

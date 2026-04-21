@@ -5,6 +5,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import Notes from "@/Components/Loot/Notes";
 import usePermission from "@/Hooks/Permissions";
+import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 
 function PriorityItem({ priority }) {
     return (
@@ -17,7 +18,7 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="italic text-gray-500">Item not subject to loot council.</p>;
+        return <p className="italic text-gray-500">This item has no biases.</p>;
     }
 
     // Sort by weight (ascending) and group by weight
@@ -71,8 +72,8 @@ function PriorityDisplay({ priorities }) {
 }
 
 export default function ItemShow({ item, comments }) {
-    const canEditItem = usePermission('edit-items');
-    const canCreateComment = usePermission('comment-on-loot-items');
+    const canEditItem = usePermission("edit-items");
+    const canCreateComment = usePermission("comment-on-loot-items");
 
     return (
         <Master title={item.data.name}>
@@ -106,86 +107,22 @@ export default function ItemShow({ item, comments }) {
             </nav>
             {/* Content */}
             <main className="container mx-auto px-4 py-8">
-                <div className="flex flex-row items-start gap-2 md:gap-6">
-                    <div className="h-8 w-8 flex-none md:h-24 md:w-24">
-                        <Link
-                            href={item.data.wowhead_url}
-                            data-wowhead={`item=${item.data.id}&domain=tbc`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            <img
-                                src={item.data.icon}
-                                alt={item.data.name}
-                                className="box-shadow h-8 w-8 rounded-lg md:h-24 md:w-24"
-                            />
-                        </Link>
-                    </div>
-                    <div className="flex w-full flex-initial flex-col">
-                        <h2
-                            className={`text-2xl font-bold text-quality-${item.data.quality?.name?.toLowerCase() || "common"} mb-2`}
-                        >
-                            {item.data.name}
-                        </h2>
-                        <div className="mb-4 flex flex-col gap-2 md:flex-row">
-                            {/* Item Details */}
-                            <div className="flex-auto">
-                                {item.data.id && (
-                                    <p className="mb-2">
-                                        <strong>Item ID:</strong> {item.data.id}
-                                    </p>
-                                )}
-                                {item.data.item_class && (
-                                    <p className="mb-2">
-                                        <strong>Type:</strong> {item.data.item_class}
-                                        {item.data.item_subclass ? ` / ${item.data.item_subclass}` : ""}
-                                    </p>
-                                )}
-                                {item.data.inventory_type && (
-                                    <p className="mb-2">
-                                        <strong>Slot:</strong> {item.data.inventory_type}
-                                    </p>
-                                )}
-                                {item.data.boss && (
-                                    <p className="mb-2">
-                                        <strong>Drops from:</strong> {item.data.boss.name}
-                                    </p>
-                                )}
-                                {item.data.group && (
-                                    <p className="mb-2">
-                                        <strong>Group:</strong> {item.data.group}
-                                    </p>
-                                )}
-                            </div>
-                            {/* Wowhead Link */}
-                            <div className="flex-auto md:text-right">
-                                <a
-                                    href={item.data.wowhead_url}
-                                    data-wowhead={`item=${item.data.id}&domain=tbc`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-block rounded-md bg-wowhead px-4 py-2 font-medium text-white transition-opacity hover:opacity-90"
-                                >
-                                    <img
-                                        src="/images/logo_wowhead_white.webp"
-                                        alt="Wowhead Logo"
-                                        className="-mt-1 mr-2 inline-block h-5 w-5"
-                                    />
-                                    View on Wowhead
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <h2 className="mb-4 mt-8 text-xl font-bold">Loot Priorities</h2>
-                {/* Priorities List */}
+                <ItemDetailsCard item={item.data} />
+
+                <h2 className="mb-4 mt-8 text-xl font-bold">Loot Biases</h2>
+                {/* Biases List */}
                 {item.data.priorities.length > 0 ? (
                     <div className="mt-8 w-full">
                         <PriorityDisplay priorities={item.data.priorities} />
-                        <p className="text-gray-400">Beyond the above priorities, this item will be distributed <strong>MS &gt; OS</strong>.</p>
+                        <p className="text-gray-400">
+                            Beyond the above biases, this item will be distributed <strong>MS &gt; OS</strong>.
+                        </p>
                     </div>
                 ) : (
-                    <p className="text-gray-300">No loot priorities have been set for this item. This item will be distributed <strong>MS &gt; OS</strong>.</p>
+                    <p className="text-gray-300">
+                        No biases have been set for this item. This item will be distributed <strong>MS &gt; OS</strong>
+                        .
+                    </p>
                 )}
 
                 {/* Notes Section */}
