@@ -3,7 +3,7 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsDifficultyCollection;
-use App\Services\WarcraftLogs\ValueObjects\Difficulty;
+use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
@@ -31,7 +31,7 @@ class AsDifficultyCollectionTest extends TestCase
 
         $this->assertInstanceOf(Collection::class, $result);
         $this->assertCount(2, $result);
-        $this->assertContainsOnlyInstancesOf(Difficulty::class, $result);
+        $this->assertContainsOnlyInstancesOf(DifficultyData::class, $result);
     }
 
     #[Test]
@@ -83,8 +83,8 @@ class AsDifficultyCollectionTest extends TestCase
         $cast = new AsDifficultyCollection;
         $model = $this->createStub(Model::class);
         $collection = collect([
-            new Difficulty(id: 3, name: 'Normal', sizes: [10, 25]),
-            new Difficulty(id: 4, name: 'Heroic', sizes: [10, 25]),
+            new DifficultyData(id: 3, name: 'Normal', sizes: [10, 25]),
+            new DifficultyData(id: 4, name: 'Heroic', sizes: [10, 25]),
         ]);
 
         $result = $cast->set($model, 'difficulties', $collection, []);
@@ -97,7 +97,7 @@ class AsDifficultyCollectionTest extends TestCase
     {
         $cast = new AsDifficultyCollection;
         $model = $this->createStub(Model::class);
-        $array = [new Difficulty(id: 3, name: 'Normal', sizes: [10, 25])];
+        $array = [new DifficultyData(id: 3, name: 'Normal', sizes: [10, 25])];
 
         $result = $cast->set($model, 'difficulties', $array, []);
 

@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
-use App\Services\WarcraftLogs\ValueObjects\Region;
-use App\Services\WarcraftLogs\ValueObjects\Server;
+use App\Services\WarcraftLogs\ValueObjects\RegionData;
+use App\Services\WarcraftLogs\ValueObjects\ServerData;
 use Illuminate\Contracts\Support\Arrayable;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -30,13 +30,13 @@ class ServerTest extends TestCase
     #[Test]
     public function from_array_parses_all_fields(): void
     {
-        $server = Server::fromArray($this->sampleData());
+        $server = ServerData::from($this->sampleData());
 
         $this->assertInstanceOf(Arrayable::class, $server);
         $this->assertSame(1234, $server->id);
         $this->assertSame('Pyrewood Village', $server->name);
         $this->assertSame('pyrewood-village', $server->slug);
-        $this->assertInstanceOf(Region::class, $server->region);
+        $this->assertInstanceOf(RegionData::class, $server->region);
         $this->assertSame(1, $server->region->id);
         $this->assertSame('EU', $server->region->name);
         $this->assertSame('eu', $server->region->slug);
@@ -47,7 +47,7 @@ class ServerTest extends TestCase
     {
         $data = $this->sampleData();
 
-        $server = Server::fromArray($data);
+        $server = ServerData::from($data);
 
         $this->assertSame($data, $server->toArray());
     }

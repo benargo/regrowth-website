@@ -5,7 +5,7 @@ namespace App\Jobs\WarcraftLogs;
 use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Services\WarcraftLogs\Attendance;
-use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,7 +47,7 @@ class FetchAttendanceData implements ShouldQueue
             ->get()
             ->keyBy('name');
 
-        $attendanceRecords->each(function (GuildAttendance $guildAttendance) use ($reports, $characters) {
+        $attendanceRecords->each(function (GuildAttendanceData $guildAttendance) use ($reports, $characters) {
             $report = $reports->get($guildAttendance->code);
 
             if ($report === null) {

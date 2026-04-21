@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
-use App\Services\WarcraftLogs\ValueObjects\Region;
+use App\Services\WarcraftLogs\ValueObjects\RegionData;
 use Illuminate\Contracts\Support\Arrayable;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -24,7 +24,7 @@ class RegionTest extends TestCase
     #[Test]
     public function from_array_parses_all_fields(): void
     {
-        $region = Region::fromArray($this->sampleData());
+        $region = RegionData::from($this->sampleData());
 
         $this->assertInstanceOf(Arrayable::class, $region);
         $this->assertSame(1, $region->id);
@@ -37,7 +37,7 @@ class RegionTest extends TestCase
     {
         $data = $this->sampleData();
 
-        $region = Region::fromArray($data);
+        $region = RegionData::from($data);
 
         $this->assertSame($data, $region->toArray());
     }

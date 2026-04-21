@@ -5,7 +5,7 @@ namespace Tests\Unit\Services\Attendance;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Services\Attendance\CharacterAttendanceRow;
+use App\Services\Attendance\CharacterAttendanceRowData;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use JsonSerializable;
@@ -16,12 +16,12 @@ class CharacterAttendanceRowTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function makeRow(array $overrides = []): CharacterAttendanceRow
+    protected function makeRow(array $overrides = []): CharacterAttendanceRowData
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
 
-        return new CharacterAttendanceRow(
+        return new CharacterAttendanceRowData(
             character: $overrides['character'] ?? $character,
             percentage: $overrides['percentage'] ?? 75.0,
             attendance: $overrides['attendance'] ?? [1, 0, 1],

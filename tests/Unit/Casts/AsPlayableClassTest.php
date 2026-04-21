@@ -5,7 +5,7 @@ namespace Tests\Unit\Casts;
 use App\Casts\AsPlayableClass;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\ValueObjects\PlayableClass;
+use App\Services\Blizzard\ValueObjects\PlayableClassData;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use Mockery\MockInterface;
@@ -147,7 +147,7 @@ class AsPlayableClassTest extends TestCase
 
         $cast = new AsPlayableClass;
         $model = $this->createStub(Model::class);
-        $vo = PlayableClass::fromApiResponse($this->sampleApiResponse(7, 'Shaman'));
+        $vo = PlayableClassData::from($this->sampleApiResponse(7, 'Shaman'));
 
         $result = $cast->set($model, 'playable_class', $vo, []);
 
@@ -174,7 +174,7 @@ class AsPlayableClassTest extends TestCase
 
         $cast = new AsPlayableClass;
         $model = $this->createStub(Model::class);
-        $vo = PlayableClass::fromApiResponse($this->sampleApiResponse(7, 'Shaman'));
+        $vo = PlayableClassData::from($this->sampleApiResponse(7, 'Shaman'));
 
         $result = $cast->set($model, 'playable_class', $vo, []);
 
@@ -203,7 +203,7 @@ class AsPlayableClassTest extends TestCase
 
         $cast = new AsPlayableClass;
         $model = $this->createStub(Model::class);
-        $vo = PlayableClass::fromApiResponse($this->sampleApiResponse(7, 'Shaman'));
+        $vo = PlayableClassData::from($this->sampleApiResponse(7, 'Shaman'));
 
         $result = $cast->set($model, 'playable_class', $vo, []);
 

@@ -3,8 +3,8 @@
 namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\WarcraftLogs\ValueObjects\Report;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Services\WarcraftLogs\ValueObjects\ReportData;
+use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,7 +29,7 @@ class ReportTest extends TestCase
             ],
         ];
 
-        $report = Report::fromArray($data);
+        $report = ReportData::fromArray($data);
 
         $this->assertInstanceOf(Arrayable::class, $report);
         $this->assertSame('Tcdkf1AZQyFPRKBa', $report->code);
@@ -38,7 +38,7 @@ class ReportTest extends TestCase
         $this->assertEquals(1771612483423, $report->startTime->valueOf());
         $this->assertInstanceOf(Carbon::class, $report->endTime);
         $this->assertEquals(1771626471711, $report->endTime->valueOf());
-        $this->assertInstanceOf(Zone::class, $report->zone);
+        $this->assertInstanceOf(ZoneData::class, $report->zone);
         $this->assertSame(1047, $report->zone->id);
         $this->assertSame('Karazhan', $report->zone->name);
     }
@@ -53,7 +53,7 @@ class ReportTest extends TestCase
             'endTime' => 1771625431211,
         ];
 
-        $report = Report::fromArray($data);
+        $report = ReportData::fromArray($data);
 
         $this->assertSame('ABC123', $report->code);
         $this->assertNull($report->zone);
@@ -72,7 +72,7 @@ class ReportTest extends TestCase
             'guildTag' => ['id' => $guildTag->id, 'name' => $guildTag->name],
         ];
 
-        $report = Report::fromArray($data);
+        $report = ReportData::fromArray($data);
 
         $this->assertInstanceOf(GuildTag::class, $report->guildTag);
         $this->assertSame($guildTag->id, $report->guildTag->id);
@@ -89,7 +89,7 @@ class ReportTest extends TestCase
             'endTime' => 1771625431211,
         ];
 
-        $report = Report::fromArray($data);
+        $report = ReportData::fromArray($data);
 
         $this->assertNull($report->guildTag);
     }
@@ -105,7 +105,7 @@ class ReportTest extends TestCase
             'zone' => ['id' => 1047, 'name' => 'Karazhan'],
         ];
 
-        $report = Report::fromArray($data);
+        $report = ReportData::fromArray($data);
         $array = $report->toArray();
 
         $this->assertSame('ABC123', $array['code']);
@@ -125,7 +125,7 @@ class ReportTest extends TestCase
             'endTime' => 1771625431211,
         ];
 
-        $report = Report::fromArray($data);
+        $report = ReportData::fromArray($data);
         $array = $report->toArray();
 
         $this->assertArrayNotHasKey('zone', $array);

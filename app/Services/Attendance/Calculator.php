@@ -17,7 +17,7 @@ class Calculator
     /**
      * Calculate attendance for every character whose rank counts towards attendance.
      *
-     * @return Collection<int, CharacterAttendanceStats>
+     * @return Collection<int, CharacterAttendanceStatsData>
      *
      * @throws EmptyCollectionException if no ranks are configured to count towards attendance
      */
@@ -42,7 +42,7 @@ class Calculator
      * Calculate attendance for characters in the specified ranks. Only characters who have attended at least one report while in these ranks will be included.
      *
      * @param  Collection<int, GuildRank>  $ranks
-     * @return Collection<int, CharacterAttendanceStats>
+     * @return Collection<int, CharacterAttendanceStatsData>
      *
      * @throws EmptyCollectionException if the provided collection of ranks is empty
      */
@@ -68,7 +68,7 @@ class Calculator
     /**
      * Calculate attendance for a specific character. Only reports attended while the character was in a rank that counts towards attendance will be included.
      *
-     * @return Collection<int, CharacterAttendanceStats>
+     * @return Collection<int, CharacterAttendanceStatsData>
      */
     public function forCharacter(Character $character): Collection
     {
@@ -87,7 +87,7 @@ class Calculator
     /**
      * Calculate attendance for a specific report. Only characters in the report who were in ranks that count towards attendance will be included.
      *
-     * @return Collection<int, CharacterAttendanceStats>
+     * @return Collection<int, CharacterAttendanceStatsData>
      */
     public function forReport(Report $report): Collection
     {
@@ -111,7 +111,7 @@ class Calculator
      * calculates each character's attendance percentage from their first appearance.
      *
      * @param  Collection<int, Report>  $reports
-     * @return Collection<int, CharacterAttendanceStats>
+     * @return Collection<int, CharacterAttendanceStatsData>
      */
     protected function calculate(Collection $reports): Collection
     {
@@ -121,7 +121,7 @@ class Calculator
             return collect();
         }
 
-        $clusterSnapshots = $clusters->map(fn (ReportCluster $cluster) => [
+        $clusterSnapshots = $clusters->map(fn (ReportClusterData $cluster) => [
             'startTime' => $cluster->startTime(),
             'players' => $cluster->players(),
         ])->values()->all();
@@ -172,7 +172,7 @@ class Calculator
 
             $percentage = $totalReports > 0 ? ($reportsAttended / $totalReports) * 100 : 0.0;
 
-            $stats[$characterName] = new CharacterAttendanceStats(
+            $stats[$characterName] = new CharacterAttendanceStatsData(
                 character: $info['character'],
                 firstAttendance: $info['firstAttendance'],
                 totalReports: $totalReports,
@@ -182,7 +182,7 @@ class Calculator
         }
 
         return (new Collection($stats))
-            ->sortBy(fn (CharacterAttendanceStats $s) => $s->character->name)
+            ->sortBy(fn (CharacterAttendanceStatsData $s) => $s->character->name)
             ->values();
     }
 
@@ -191,7 +191,7 @@ class Calculator
      *
      * Returns null when there are no rows so callers can distinguish "no data" from "0% attendance".
      *
-     * @param  array<int, CharacterAttendanceRow>  $rows
+     * @param  array<int, CharacterAttendanceRowData>  $rows
      */
     public function averageAttendance(array $rows): ?float
     {
@@ -213,8 +213,8 @@ class Calculator
      *
      * Requires at least three recent non-null attendance values and an overall percentage of at least 25 to qualify.
      *
-     * @param  array<int, CharacterAttendanceRow>  $rows
-     * @return array<int, CharacterAttendanceRow>
+     * @param  array<int, CharacterAttendanceRowData>  $rows
+     * @return array<int, CharacterAttendanceRowData>
      */
     public function findDroppingOff(array $rows): array
     {
@@ -240,8 +240,8 @@ class Calculator
      *
      * Requires at least three recent non-null attendance values and an overall percentage of at most 75 to qualify.
      *
-     * @param  array<int, CharacterAttendanceRow>  $rows
-     * @return array<int, CharacterAttendanceRow>
+     * @param  array<int, CharacterAttendanceRowData>  $rows
+     * @return array<int, CharacterAttendanceRowData>
      */
     public function findPickingUp(array $rows): array
     {
@@ -295,14 +295,14 @@ class Calculator
     }
 
     /**
-     * Merge reports that are linked together in the database into ReportCluster value objects.
+     * Merge reports that are linked together in the database into ReportClusterData value objects.
      *
      * Reports connected via the raid_report_links table are treated as a single
      * raid. Uses union-find (keyed on report id, since code is nullable for manual
      * reports) to resolve connected components within the provided collection.
      *
      * @param  Collection<int, Report>  $reports  Reports with 'characters' and 'linkedReports' eager loaded.
-     * @return Collection<int, ReportCluster>
+     * @return Collection<int, ReportClusterData>
      */
     public function mergeLinkedReports(Collection $reports): Collection
     {
@@ -353,7 +353,7 @@ class Calculator
         }
 
         return collect($groups)
-            ->map(fn (array $group) => new ReportCluster(collect($group)))
+            ->map(fn (array $group) => new ReportClusterData(collect($group)))
             ->values();
     }
 
@@ -396,12 +396,12 @@ class Calculator
     /**
      * Get the report clusters sorted by startTime ascending.
      *
-     * @param  Collection<int, ReportCluster>  $clusters
-     * @return Collection<int, ReportCluster>
+     * @param  Collection<int, ReportClusterData>  $clusters
+     * @return Collection<int, ReportClusterData>
      */
     public function sortReportClusters(Collection $clusters): Collection
     {
-        return $clusters->sortBy(fn (ReportCluster $cluster) => $cluster->startTime())->values();
+        return $clusters->sortBy(fn (ReportClusterData $cluster) => $cluster->startTime())->values();
     }
 
     /**

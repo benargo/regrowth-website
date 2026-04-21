@@ -17,14 +17,14 @@ class Graphs
     public function scatterPoints(): AttendanceScatterPointCollection
     {
         $points = $this->table->rows()
-            ->map(fn (CharacterAttendanceRow $row) => $this->buildPoint($row))
+            ->map(fn (CharacterAttendanceRowData $row) => $this->buildPoint($row))
             ->values();
 
         return new AttendanceScatterPointCollection($points);
     }
 
     /**
-     * Reduce a CharacterAttendanceRow to the scatter-point shape.
+     * Reduce a CharacterAttendanceRowData to the scatter-point shape.
      *
      * @return array{
      *     id: int,
@@ -38,7 +38,7 @@ class Graphs
      *     otherAbsences: int,
      * }
      */
-    private function buildPoint(CharacterAttendanceRow $row): array
+    private function buildPoint(CharacterAttendanceRowData $row): array
     {
         $attendance = $row->attendance;
 

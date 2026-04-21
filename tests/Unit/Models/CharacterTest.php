@@ -12,8 +12,8 @@ use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\ValueObjects\PlayableClass;
-use App\Services\Blizzard\ValueObjects\PlayableRace;
+use App\Services\Blizzard\ValueObjects\PlayableClassData;
+use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -333,7 +333,7 @@ class CharacterTest extends ModelTestCase
         $this->mockPlayableClassMediaResolution(7, 'https://cdn.local/shaman.jpg');
 
         $character = $this->create();
-        $character->playable_class = PlayableClass::fromApiResponse($this->sampleClassApiResponse(7, 'Shaman'));
+        $character->playable_class = PlayableClassData::from($this->sampleClassApiResponse(7, 'Shaman'));
         $character->save();
 
         $this->assertDatabaseHas('characters', [
@@ -406,7 +406,7 @@ class CharacterTest extends ModelTestCase
     public function assigning_playable_race_vo_persists_reduced_shape_via_cast(): void
     {
         $character = $this->create();
-        $character->playable_race = PlayableRace::fromApiResponse($this->sampleRaceApiResponse(2, 'Orc'));
+        $character->playable_race = PlayableRaceData::from($this->sampleRaceApiResponse(2, 'Orc'));
         $character->save();
 
         $this->assertDatabaseHas('characters', [

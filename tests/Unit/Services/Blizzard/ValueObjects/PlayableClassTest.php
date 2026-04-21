@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\Blizzard\ValueObjects;
 
-use App\Services\Blizzard\ValueObjects\PlayableClass;
+use App\Services\Blizzard\ValueObjects\PlayableClassData;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -59,7 +59,7 @@ class PlayableClassTest extends TestCase
     #[Test]
     public function from_api_response_parses_full_response(): void
     {
-        $vo = PlayableClass::fromApiResponse($this->sampleApiResponse());
+        $vo = PlayableClassData::from($this->sampleApiResponse());
 
         $this->assertSame(7, $vo->id);
         $this->assertSame('Shaman', $vo->name);
@@ -82,7 +82,7 @@ class PlayableClassTest extends TestCase
         $data = $this->sampleApiResponse();
         $data['playable_races'] = [];
 
-        $vo = PlayableClass::fromApiResponse($data);
+        $vo = PlayableClassData::from($data);
 
         $this->assertSame([], $vo->playableRaces);
     }
@@ -90,7 +90,7 @@ class PlayableClassTest extends TestCase
     #[Test]
     public function from_api_response_defaults_missing_keys_to_empty_arrays(): void
     {
-        $vo = PlayableClass::fromApiResponse(['id' => 1, 'name' => 'Warrior']);
+        $vo = PlayableClassData::from(['id' => 1, 'name' => 'Warrior']);
 
         $this->assertSame(1, $vo->id);
         $this->assertSame('Warrior', $vo->name);
@@ -107,7 +107,7 @@ class PlayableClassTest extends TestCase
         $data = $this->sampleApiResponse();
         unset($data['_links']);
 
-        $vo = PlayableClass::fromApiResponse($data);
+        $vo = PlayableClassData::from($data);
 
         $this->assertSame($data, $vo->toArray());
     }
@@ -115,7 +115,7 @@ class PlayableClassTest extends TestCase
     #[Test]
     public function to_array_keys_use_snake_case(): void
     {
-        $vo = PlayableClass::fromApiResponse($this->sampleApiResponse());
+        $vo = PlayableClassData::from($this->sampleApiResponse());
 
         $array = $vo->toArray();
 

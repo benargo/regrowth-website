@@ -4,7 +4,7 @@ namespace App\Services\WarcraftLogs;
 
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Traits\Paginates;
-use App\Services\WarcraftLogs\ValueObjects\Report;
+use App\Services\WarcraftLogs\ValueObjects\ReportData;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
@@ -68,27 +68,27 @@ class Reports extends BaseService
      * Fetch all reports across configured guild tags (or by guild ID if none set).
      * Results are deduplicated by report code and sorted by start time descending.
      *
-     * @return Collection<int, Report>
+     * @return Collection<int, ReportData>
      */
     public function get(): Collection
     {
         if (empty($this->guildTagIDs)) {
             return $this->paginateAll(
                 fn (int $page) => $this->fetchReportsPage($page, null),
-            )->sortByDesc(fn (Report $r) => $r->startTime)->values();
+            )->sortByDesc(fn (ReportData $r) => $r->startTime)->values();
         }
 
         return $this->paginateAllAcrossTags(
             $this->guildTagIDs,
             fn (int $tagID) => fn (int $page) => $this->fetchReportsPage($page, $tagID),
-        )->sortByDesc(fn (Report $r) => $r->startTime)->values();
+        )->sortByDesc(fn (ReportData $r) => $r->startTime)->values();
     }
 
     /**
      * Lazily fetch all reports across configured guild tags (or by guild ID if none set).
      * Results are deduplicated by report code. Items are yielded as they are fetched.
      *
-     * @return LazyCollection<int, Report>
+     * @return LazyCollection<int, ReportData>
      */
     public function lazy(): LazyCollection
     {
@@ -109,7 +109,7 @@ class Reports extends BaseService
     /**
      * Fetch a single page of reports and return a normalized result.
      *
-     * @return array{items: array<Report>, hasMorePages: bool}
+     * @return array{items: array<ReportData>, hasMorePages: bool}
      */
     protected function fetchReportsPage(int $page, ?int $guildTagID): array
     {
@@ -138,7 +138,7 @@ class Reports extends BaseService
         $pageData = $reportsData['data'] ?? [];
 
         $items = array_map(
-            fn (array $reportData) => Report::fromArray($reportData),
+            fn (array $reportData) => ReportData::fromArray($reportData),
             $pageData,
         );
 

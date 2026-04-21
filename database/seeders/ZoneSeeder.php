@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\WarcraftLogs\Zone;
-use App\Services\WarcraftLogs\ValueObjects\Difficulty;
-use App\Services\WarcraftLogs\ValueObjects\Expansion;
+use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
+use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Seeder;
 
 class ZoneSeeder extends Seeder
@@ -19,7 +19,7 @@ class ZoneSeeder extends Seeder
             [
                 'id' => 1047,
                 'name' => 'Karazhan',
-                'difficulties' => [new Difficulty(
+                'difficulties' => [new DifficultyData(
                     id: 3,
                     name: 'Normal',
                     sizes: [10]
@@ -28,7 +28,7 @@ class ZoneSeeder extends Seeder
             [
                 'id' => 1048,
                 'name' => 'Gruul / Magtheridon',
-                'difficulties' => [new Difficulty(
+                'difficulties' => [new DifficultyData(
                     id: 3,
                     name: 'Normal',
                     sizes: [25]
@@ -44,7 +44,7 @@ class ZoneSeeder extends Seeder
                 [
                     'name' => $zone['name'],
                     'difficulties' => $zone['difficulties'],
-                    'expansion' => new Expansion(
+                    'expansion' => new ExpansionData(
                         id: 1001,
                         name: 'The Burning Crusade'
                     ),

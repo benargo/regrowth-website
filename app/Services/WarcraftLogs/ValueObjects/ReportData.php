@@ -4,20 +4,23 @@ namespace App\Services\WarcraftLogs\ValueObjects;
 
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
+use Spatie\LaravelData\Data;
 
-readonly class Report implements Arrayable
+class ReportData extends Data
 {
     public function __construct(
-        public string $code,
-        public string $title,
-        public Carbon $startTime,
-        public Carbon $endTime,
-        public ?GuildTag $guildTag = null,
-        public ?Zone $zone = null,
+        public readonly string $code,
+        public readonly string $title,
+        public readonly Carbon $startTime,
+        public readonly Carbon $endTime,
+        public readonly ?GuildTag $guildTag = null,
+        public readonly ?ZoneData $zone = null,
     ) {}
 
+    /**
+     * @param  array{code: string, title: string, startTime: int|float, endTime: int|float, guildTag?: array{id: int, name: string}, zone?: array<string, mixed>}  $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -26,10 +29,13 @@ readonly class Report implements Arrayable
             startTime: Carbon::createFromTimestampMs($data['startTime']),
             endTime: Carbon::createFromTimestampMs($data['endTime']),
             guildTag: Arr::has($data, 'guildTag.id') ? GuildTag::find(Arr::get($data, 'guildTag.id')) : null,
-            zone: isset($data['zone']) ? Zone::fromArray($data['zone']) : null,
+            zone: isset($data['zone']) ? ZoneData::from($data['zone']) : null,
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         $response = [
@@ -46,10 +52,18 @@ readonly class Report implements Arrayable
             ];
         }
 
-        if ($this->zone instanceof Zone) {
+        if ($this->zone instanceof ZoneData) {
             $response['zone'] = $this->zone->toArray();
         }
 
         return $response;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }

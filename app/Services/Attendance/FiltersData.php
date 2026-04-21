@@ -6,13 +6,12 @@ use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use Carbon\Carbon;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use JsonSerializable;
+use Spatie\LaravelData\Data;
 
-class Filters implements Arrayable, JsonSerializable
+class FiltersData extends Data
 {
     public function __construct(
         public ?Character $character = null,
@@ -52,13 +51,13 @@ class Filters implements Arrayable, JsonSerializable
     }
 
     /**
-     * Validate the raw input and return a populated Filters instance.
+     * Validate the raw input and return a populated FiltersData instance.
      *
      * @param  array<string, mixed>  $input
      *
      * @throws ValidationException
      */
-    public static function validate(array $input): self
+    public static function validateInput(array $input): self
     {
         $validated = Validator::make($input, self::rules($input))->validate();
 
@@ -66,7 +65,7 @@ class Filters implements Arrayable, JsonSerializable
     }
 
     /**
-     * Hydrate a Filters instance from an input array (assumes validation has already passed).
+     * Hydrate a FiltersData instance from an input array (assumes validation has already passed).
      *
      * @param  array<string, mixed>  $input
      */
@@ -105,8 +104,6 @@ class Filters implements Arrayable, JsonSerializable
 
     /**
      * Validation rules for raw filter input.
-     *
-     * The date bounds depend on the caller's input so that since_date ≤ before_date is enforced only when both are provided.
      *
      * @param  array<string, mixed>  $input
      * @return array<string, array<int, string>>
@@ -196,12 +193,6 @@ class Filters implements Arrayable, JsonSerializable
     }
 
     /**
-     * Parse a CSV filter string into an array of ints, or null for "no filter".
-     *
-     * - 'none'            → [] (filter to nothing)
-     * - 'all' or absent   → null (no restriction; caller applies defaults)
-     * - '1,2,3'           → [1, 2, 3]
-     *
      * @param  array<string, mixed>  $input
      * @return array<int, int>|null
      */

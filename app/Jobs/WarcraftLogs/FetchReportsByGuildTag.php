@@ -6,7 +6,7 @@ use App\Models\Raids\Report as ReportModel;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
 use App\Services\WarcraftLogs\Reports;
-use App\Services\WarcraftLogs\ValueObjects\Report;
+use App\Services\WarcraftLogs\ValueObjects\ReportData;
 use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -57,7 +57,7 @@ class FetchReportsByGuildTag implements ShouldQueue
             ->endTime($this->before)
             ->get();
 
-        $reports->each(function (Report $report) {
+        $reports->each(function (ReportData $report) {
             Log::info('Processing report '.$report->code.' ('.$report->title.') for guild tag '.$report->guildTag?->name.'.');
 
             if ($report->zone !== null) {

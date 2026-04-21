@@ -3,10 +3,9 @@
 namespace App\Services\Attendance;
 
 use App\Models\Character;
-use Illuminate\Contracts\Support\Arrayable;
-use JsonSerializable;
+use Spatie\LaravelData\Data;
 
-final class PlayerPresence implements Arrayable, JsonSerializable
+final class PlayerPresenceData extends Data
 {
     public function __construct(
         public readonly Character $character,

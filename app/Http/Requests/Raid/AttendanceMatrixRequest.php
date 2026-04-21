@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Raid;
 
-use App\Services\Attendance\Filters;
+use App\Services\Attendance\FiltersData;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
@@ -24,15 +24,15 @@ class AttendanceMatrixRequest extends FormRequest
      */
     public function rules(): array
     {
-        return Filters::rules($this->all());
+        return FiltersData::rules($this->all());
     }
 
     /**
-     * Build a validated Filters DTO from the request input.
+     * Build a validated FiltersData DTO from the request input.
      */
-    public function filters(): Filters
+    public function filters(): FiltersData
     {
-        return Filters::fromArray($this->validated());
+        return FiltersData::fromArray($this->validated());
     }
 
     /**
@@ -40,6 +40,6 @@ class AttendanceMatrixRequest extends FormRequest
      */
     public function resolveMinDate(): ?string
     {
-        return Filters::resolveMinDate();
+        return FiltersData::resolveMinDate();
     }
 }

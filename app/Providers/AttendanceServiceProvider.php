@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\Dashboard;
 use App\Services\Attendance\DataTable;
-use App\Services\Attendance\Filters;
+use App\Services\Attendance\FiltersData;
 use App\Services\Attendance\Graphs;
 use App\Services\Attendance\Matrix;
 use Illuminate\Contracts\Support\DeferrableProvider;
@@ -19,7 +19,7 @@ class AttendanceServiceProvider extends ServiceProvider implements DeferrablePro
     public function register(): void
     {
         $this->app->singleton(Calculator::class, function ($app) {
-            return new Calculator(config('app.timezone'));
+            return new Calculator;
         });
 
         $this->app->singleton(Dashboard::class, function ($app) {
@@ -32,7 +32,7 @@ class AttendanceServiceProvider extends ServiceProvider implements DeferrablePro
         $this->app->bind(DataTable::class, function ($app) {
             return new DataTable(
                 $app->make(Calculator::class),
-                new Filters
+                new FiltersData
             );
         });
 
@@ -40,8 +40,8 @@ class AttendanceServiceProvider extends ServiceProvider implements DeferrablePro
             return $app->make(Calculator::class);
         });
 
-        $this->app->when(DataTable::class)->needs(Filters::class)->give(function ($app) {
-            return new Filters;
+        $this->app->when(DataTable::class)->needs(FiltersData::class)->give(function ($app) {
+            return new FiltersData;
         });
 
         $this->app->singleton(Matrix::class, function ($app) {

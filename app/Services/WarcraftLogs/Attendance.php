@@ -5,7 +5,7 @@ namespace App\Services\WarcraftLogs;
 use App\Services\WarcraftLogs\Exceptions\GraphQLException;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
 use App\Services\WarcraftLogs\Traits\Paginates;
-use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
@@ -70,7 +70,7 @@ class Attendance extends BaseService
      *
      * If attendance has been pre-loaded via setAttendance(), that data is returned instead.
      *
-     * @return Collection<int, GuildAttendance>
+     * @return Collection<int, GuildAttendanceData>
      */
     public function get(): Collection
     {
@@ -81,7 +81,7 @@ class Attendance extends BaseService
         return $this->paginateAll(
             fn (int $page) => $this->fetchAttendancePage($page, $this->playerNames, $this->zoneID),
         )
-            ->sortBy(fn (GuildAttendance $a) => $a->startTime)
+            ->sortBy(fn (GuildAttendanceData $a) => $a->startTime)
             ->values();
     }
 
@@ -90,7 +90,7 @@ class Attendance extends BaseService
      *
      * If attendance has been pre-loaded via setAttendance(), that data is returned instead.
      *
-     * @return LazyCollection<int, GuildAttendance>
+     * @return LazyCollection<int, GuildAttendanceData>
      */
     public function lazy(): LazyCollection
     {
@@ -106,19 +106,19 @@ class Attendance extends BaseService
     /**
      * Get the attendance records sorted by date ascending.
      *
-     * @param  iterable<GuildAttendance>  $attendance
-     * @return Collection<int, GuildAttendance>
+     * @param  iterable<GuildAttendanceData>  $attendance
+     * @return Collection<int, GuildAttendanceData>
      */
     protected function sortAttendanceData(iterable $attendance): Collection
     {
-        return collect($attendance)->sortBy(fn (GuildAttendance $a) => $a->startTime)->values();
+        return collect($attendance)->sortBy(fn (GuildAttendanceData $a) => $a->startTime)->values();
     }
 
     /**
      * Fetch a single page of attendance and return a normalized result for pagination.
      *
      * @param  array<string>|null  $playerNames  Filter to only include these players.
-     * @return array{items: array<GuildAttendance>, hasMorePages: bool}
+     * @return array{items: array<GuildAttendanceData>, hasMorePages: bool}
      *
      * @throws GuildNotFoundException
      * @throws GraphQLException
@@ -156,7 +156,7 @@ class Attendance extends BaseService
     /**
      * Fetch a single page of attendance for a guild.
      *
-     * @return array{data: array<GuildAttendance>, hasMorePages: bool}
+     * @return array{data: array<GuildAttendanceData>, hasMorePages: bool}
      *
      * @throws GuildNotFoundException
      * @throws GraphQLException
@@ -197,7 +197,7 @@ class Attendance extends BaseService
         return [
             'data' => Arr::map(
                 $attendanceData['data'] ?? [],
-                fn (array $attendance) => GuildAttendance::fromArray($attendance),
+                fn (array $attendance) => GuildAttendanceData::fromArray($attendance),
             ),
             'hasMorePages' => $attendanceData['has_more_pages'] ?? false,
         ];
@@ -220,7 +220,7 @@ class Attendance extends BaseService
         $attendanceArgsStr = implode(', ', $attendanceArgs);
 
         return <<<GRAPHQL
-        query GetGuildAttendance({$variableDefinitionsStr}) {
+        query GetGuildAttendanceData({$variableDefinitionsStr}) {
             guildData {
                 guild(id: \$id) {
                     attendance({$attendanceArgsStr}) {

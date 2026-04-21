@@ -3,8 +3,8 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsExpansion;
-use App\Services\WarcraftLogs\ValueObjects\Expansion;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
+use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,7 +33,7 @@ class AsExpansionTest extends TestCase
 
         $result = $cast->get($model, 'expansion', $this->sampleJson(), []);
 
-        $this->assertInstanceOf(Expansion::class, $result);
+        $this->assertInstanceOf(ExpansionData::class, $result);
         $this->assertSame(9, $result->id);
         $this->assertSame('The War Within', $result->name);
     }
@@ -47,7 +47,7 @@ class AsExpansionTest extends TestCase
         $result = $cast->get($model, 'expansion', $this->sampleJson(), []);
 
         $this->assertCount(2, $result->zones);
-        $this->assertContainsOnlyInstancesOf(Zone::class, $result->zones);
+        $this->assertContainsOnlyInstancesOf(ZoneData::class, $result->zones);
         $this->assertSame(43, $result->zones[0]->id);
         $this->assertSame('Nerub-ar Palace', $result->zones[0]->name);
         $this->assertSame(44, $result->zones[1]->id);
@@ -82,12 +82,12 @@ class AsExpansionTest extends TestCase
     {
         $cast = new AsExpansion;
         $model = $this->createStub(Model::class);
-        $expansion = new Expansion(
+        $expansion = new ExpansionData(
             id: 9,
             name: 'The War Within',
             zones: [
-                new Zone(id: 43, name: 'Nerub-ar Palace'),
-                new Zone(id: 44, name: 'Blackrock Depths'),
+                new ZoneData(id: 43, name: 'Nerub-ar Palace'),
+                new ZoneData(id: 44, name: 'Blackrock Depths'),
             ],
         );
 
@@ -101,7 +101,7 @@ class AsExpansionTest extends TestCase
     {
         $cast = new AsExpansion;
         $model = $this->createStub(Model::class);
-        $expansion = new Expansion(id: 9, name: 'The War Within');
+        $expansion = new ExpansionData(id: 9, name: 'The War Within');
 
         $result = $cast->set($model, 'expansion', $expansion, []);
 

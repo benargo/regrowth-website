@@ -4,12 +4,11 @@ namespace App\Services\Attendance;
 
 use App\Models\Raids\Report;
 use Carbon\Carbon;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
-use JsonSerializable;
+use Spatie\LaravelData\Data;
 
-final class ReportCluster implements Arrayable, JsonSerializable
+final class ReportClusterData extends Data
 {
     /**
      * @param  Collection<int, Report>  $reports  eager-loaded with characters (with pivot.presence) and zone
@@ -18,7 +17,7 @@ final class ReportCluster implements Arrayable, JsonSerializable
         public readonly Collection $reports,
     ) {
         if ($this->reports->isEmpty()) {
-            throw new InvalidArgumentException('ReportCluster requires at least one report.');
+            throw new InvalidArgumentException('ReportClusterData requires at least one report.');
         }
     }
 
@@ -63,7 +62,7 @@ final class ReportCluster implements Arrayable, JsonSerializable
      * Merged per-character presence across the cluster, keyed by character name. Higher
      * presencePriority wins (present beats late beats absent).
      *
-     * @return Collection<string, PlayerPresence>
+     * @return Collection<string, PlayerPresenceData>
      */
     public function players(): Collection
     {
@@ -76,7 +75,7 @@ final class ReportCluster implements Arrayable, JsonSerializable
 
                 if (! isset($merged[$name])
                     || Calculator::presencePriority($presence) > Calculator::presencePriority($merged[$name]->presence)) {
-                    $merged[$name] = new PlayerPresence($character, $presence);
+                    $merged[$name] = new PlayerPresenceData($character, $presence);
                 }
             }
         }
@@ -94,7 +93,7 @@ final class ReportCluster implements Arrayable, JsonSerializable
             'code' => $this->code(),
             'startTime' => $this->startTime()->toISOString(),
             'zoneName' => $this->zoneName(),
-            'players' => $this->players()->values()->map(fn (PlayerPresence $p) => $p->toArray())->all(),
+            'players' => $this->players()->values()->map(fn (PlayerPresenceData $p) => $p->toArray())->all(),
         ];
     }
 

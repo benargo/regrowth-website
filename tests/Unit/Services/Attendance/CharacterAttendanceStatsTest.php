@@ -4,7 +4,7 @@ namespace Tests\Unit\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Services\Attendance\CharacterAttendanceStats;
+use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +23,7 @@ class CharacterAttendanceStatsTest extends TestCase
         config(['app.timezone' => 'Europe/Paris']);
     }
 
-    protected function makeStats(array $overrides = []): CharacterAttendanceStats
+    protected function makeStats(array $overrides = []): CharacterAttendanceStatsData
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create([
@@ -31,7 +31,7 @@ class CharacterAttendanceStatsTest extends TestCase
             'rank_id' => $rank->id,
         ]);
 
-        return new CharacterAttendanceStats(
+        return new CharacterAttendanceStatsData(
             character: $overrides['character'] ?? $character,
             firstAttendance: $overrides['firstAttendance'] ?? Carbon::parse('2024-01-15 20:00:00', 'UTC'),
             totalReports: $overrides['totalReports'] ?? 20,

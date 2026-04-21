@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
-use App\Services\WarcraftLogs\ValueObjects\Faction;
+use App\Services\WarcraftLogs\ValueObjects\FactionData;
 use Illuminate\Contracts\Support\Arrayable;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -23,7 +23,7 @@ class FactionTest extends TestCase
     #[Test]
     public function from_array_parses_all_fields(): void
     {
-        $faction = Faction::fromArray($this->sampleData());
+        $faction = FactionData::from($this->sampleData());
 
         $this->assertInstanceOf(Arrayable::class, $faction);
         $this->assertSame(1, $faction->id);
@@ -35,7 +35,7 @@ class FactionTest extends TestCase
     {
         $data = $this->sampleData();
 
-        $faction = Faction::fromArray($data);
+        $faction = FactionData::from($data);
 
         $this->assertSame($data, $faction->toArray());
     }

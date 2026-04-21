@@ -4,10 +4,9 @@ namespace App\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\PlannedAbsence;
-use Illuminate\Contracts\Support\Arrayable;
-use JsonSerializable;
+use Spatie\LaravelData\Data;
 
-final class CharacterAttendanceRow implements Arrayable, JsonSerializable
+final class CharacterAttendanceRowData extends Data
 {
     public function __construct(
         public readonly Character $character,

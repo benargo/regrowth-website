@@ -15,13 +15,13 @@ class DataTable
     /**
      * Memoised output of mergeLinkedReports() + sortReportClusters() for the loaded reports.
      *
-     * @var Collection<int, ReportCluster>|null
+     * @var Collection<int, ReportClusterData>|null
      */
     private ?Collection $records = null;
 
     public function __construct(
         private Calculator $calculator,
-        private Filters $filters
+        private FiltersData $filters
     ) {}
 
     /**
@@ -34,7 +34,7 @@ class DataTable
         $timezone = config('app.timezone');
 
         return $this->records()
-            ->map(fn (ReportCluster $cluster) => [
+            ->map(fn (ReportClusterData $cluster) => [
                 'id' => $cluster->id(),
                 'code' => $cluster->code(),
                 'dayOfWeek' => $cluster->startTime()->copy()->setTimezone($timezone)->format('D'),
@@ -51,7 +51,7 @@ class DataTable
      * Attendance values: null = before the character's first raid, 0 = absent, 1 = present, 2 = late.
      * Percentage excludes raids covered by a planned absence.
      *
-     * @return Collection<int, CharacterAttendanceRow>
+     * @return Collection<int, CharacterAttendanceRowData>
      */
     public function rows(): Collection
     {
@@ -61,8 +61,8 @@ class DataTable
             return collect();
         }
 
-        /** @var array<int, array{startTime: Carbon, players: Collection<string, PlayerPresence>}> $clusterSnapshots */
-        $clusterSnapshots = $records->values()->map(fn (ReportCluster $cluster) => [
+        /** @var array<int, array{startTime: Carbon, players: Collection<string, PlayerPresenceData>}> $clusterSnapshots */
+        $clusterSnapshots = $records->values()->map(fn (ReportClusterData $cluster) => [
             'startTime' => $cluster->startTime(),
             'players' => $cluster->players(),
         ])->all();
@@ -158,7 +158,7 @@ class DataTable
 
             $percentage = $totalReports > 0 ? round(($reportsAttended / $totalReports) * 100, 2) : 0.0;
 
-            $rows[] = new CharacterAttendanceRow(
+            $rows[] = new CharacterAttendanceRowData(
                 character: $character,
                 percentage: $percentage,
                 attendance: $attendance,
@@ -166,7 +166,7 @@ class DataTable
             );
         }
 
-        usort($rows, fn (CharacterAttendanceRow $a, CharacterAttendanceRow $b) => strcmp($a->character->name, $b->character->name));
+        usort($rows, fn (CharacterAttendanceRowData $a, CharacterAttendanceRowData $b) => strcmp($a->character->name, $b->character->name));
 
         return collect($rows);
     }
@@ -186,7 +186,7 @@ class DataTable
     /**
      * Memoised merged + sorted report clusters for the loaded reports.
      *
-     * @return Collection<int, ReportCluster>
+     * @return Collection<int, ReportClusterData>
      */
     private function records(): Collection
     {

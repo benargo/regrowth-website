@@ -4,7 +4,7 @@ namespace Tests\Unit\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\WarcraftLogs\GuildTag;
-use App\Services\Attendance\Filters;
+use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -36,7 +36,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function zone_ids_default_to_null_when_absent(): void
     {
-        $filters = Filters::fromArray([]);
+        $filters = FiltersData::fromArray([]);
 
         $this->assertNull($filters->zoneIds);
     }
@@ -44,7 +44,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function zone_ids_parse_all_as_null(): void
     {
-        $filters = Filters::fromArray(['zone_ids' => 'all']);
+        $filters = FiltersData::fromArray(['zone_ids' => 'all']);
 
         $this->assertNull($filters->zoneIds);
     }
@@ -52,7 +52,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function zone_ids_parse_none_as_empty_array(): void
     {
-        $filters = Filters::fromArray(['zone_ids' => 'none']);
+        $filters = FiltersData::fromArray(['zone_ids' => 'none']);
 
         $this->assertSame([], $filters->zoneIds);
     }
@@ -60,7 +60,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function zone_ids_parse_csv_into_array_of_integers(): void
     {
-        $filters = Filters::fromArray(['zone_ids' => '1,2,3']);
+        $filters = FiltersData::fromArray(['zone_ids' => '1,2,3']);
 
         $this->assertSame([1, 2, 3], $filters->zoneIds);
     }
@@ -71,7 +71,7 @@ class FiltersTest extends TestCase
         $counting = GuildTag::factory()->create(['count_attendance' => true]);
         GuildTag::factory()->create(['count_attendance' => false]);
 
-        $filters = Filters::fromArray([]);
+        $filters = FiltersData::fromArray([]);
 
         $this->assertSame([$counting->id], $filters->guildTagIds);
     }
@@ -79,7 +79,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function guild_tag_ids_parse_none_as_empty_array(): void
     {
-        $filters = Filters::fromArray(['guild_tag_ids' => 'none']);
+        $filters = FiltersData::fromArray(['guild_tag_ids' => 'none']);
 
         $this->assertSame([], $filters->guildTagIds);
     }
@@ -87,7 +87,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function guild_tag_ids_parse_csv_into_array_of_integers(): void
     {
-        $filters = Filters::fromArray(['guild_tag_ids' => '4,5']);
+        $filters = FiltersData::fromArray(['guild_tag_ids' => '4,5']);
 
         $this->assertSame([4, 5], $filters->guildTagIds);
     }
@@ -95,7 +95,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function rank_ids_default_to_empty_array_when_absent(): void
     {
-        $filters = Filters::fromArray([]);
+        $filters = FiltersData::fromArray([]);
 
         $this->assertSame([], $filters->rankIds);
     }
@@ -103,7 +103,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function rank_ids_parse_none_as_empty_array(): void
     {
-        $filters = Filters::fromArray(['rank_ids' => 'none']);
+        $filters = FiltersData::fromArray(['rank_ids' => 'none']);
 
         $this->assertSame([], $filters->rankIds);
     }
@@ -111,7 +111,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function rank_ids_parse_csv_into_array_of_integers(): void
     {
-        $filters = Filters::fromArray(['rank_ids' => '10,20']);
+        $filters = FiltersData::fromArray(['rank_ids' => '10,20']);
 
         $this->assertSame([10, 20], $filters->rankIds);
     }
@@ -121,7 +121,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function combine_linked_characters_defaults_to_true_when_absent(): void
     {
-        $filters = Filters::fromArray([]);
+        $filters = FiltersData::fromArray([]);
 
         $this->assertTrue($filters->includeLinkedCharacters);
     }
@@ -129,7 +129,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function combine_linked_characters_returns_true_when_set_to_true(): void
     {
-        $filters = Filters::fromArray(['combine_linked_characters' => '1']);
+        $filters = FiltersData::fromArray(['combine_linked_characters' => '1']);
 
         $this->assertTrue($filters->includeLinkedCharacters);
     }
@@ -137,7 +137,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function combine_linked_characters_returns_false_when_set_to_false(): void
     {
-        $filters = Filters::fromArray(['combine_linked_characters' => '0']);
+        $filters = FiltersData::fromArray(['combine_linked_characters' => '0']);
 
         $this->assertFalse($filters->includeLinkedCharacters);
     }
@@ -147,7 +147,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function character_defaults_to_null_when_absent(): void
     {
-        $filters = Filters::fromArray([]);
+        $filters = FiltersData::fromArray([]);
 
         $this->assertNull($filters->character);
     }
@@ -157,7 +157,7 @@ class FiltersTest extends TestCase
     {
         $character = Character::factory()->create();
 
-        $filters = Filters::fromArray(['character' => $character->id]);
+        $filters = FiltersData::fromArray(['character' => $character->id]);
 
         $this->assertSame($character->id, $filters->character?->id);
     }
@@ -169,7 +169,7 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = Filters::rules();
+        $rules = FiltersData::rules();
 
         $this->assertArrayHasKey('character', $rules);
         $this->assertArrayHasKey('rank_ids', $rules);
@@ -187,7 +187,7 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = Filters::rules(['before_date' => '2025-06-01']);
+        $rules = FiltersData::rules(['before_date' => '2025-06-01']);
 
         $this->assertContains('before_or_equal:before_date', $rules['since_date']);
     }
@@ -197,7 +197,7 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = Filters::rules();
+        $rules = FiltersData::rules();
 
         $this->assertNotContains('before_or_equal:before_date', $rules['since_date']);
     }
@@ -207,7 +207,7 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = Filters::rules(['since_date' => '2025-01-01']);
+        $rules = FiltersData::rules(['since_date' => '2025-01-01']);
 
         $this->assertContains('after_or_equal:since_date', $rules['before_date']);
     }
@@ -217,7 +217,7 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = Filters::rules();
+        $rules = FiltersData::rules();
 
         $this->assertNotContains('after_or_equal:since_date', $rules['before_date']);
     }
@@ -235,7 +235,7 @@ class FiltersTest extends TestCase
             ->subDay()
             ->toDateString();
 
-        $rules = Filters::rules();
+        $rules = FiltersData::rules();
 
         $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['since_date']);
         $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['before_date']);
@@ -246,7 +246,7 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = Filters::rules();
+        $rules = FiltersData::rules();
 
         $sinceHasMinDate = collect($rules['since_date'])->contains(fn ($r) => str_starts_with((string) $r, 'after_or_equal:20'));
         $beforeHasMinDate = collect($rules['before_date'])->contains(fn ($r) => str_starts_with((string) $r, 'after_or_equal:20'));
@@ -264,7 +264,7 @@ class FiltersTest extends TestCase
 
         $today = Carbon::today(config('app.timezone'))->toDateString();
 
-        $rules = Filters::rules();
+        $rules = FiltersData::rules();
 
         $this->assertContains('before_or_equal:'.$today, $rules['since_date']);
         $this->assertContains('before_or_equal:'.$today, $rules['before_date']);
@@ -275,7 +275,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function to_array_returns_resolved_dto_shape(): void
     {
-        $filters = new Filters(
+        $filters = new FiltersData(
             rankIds: [1, 2, 3],
             zoneIds: [10, 20],
             guildTagIds: [7],
@@ -298,7 +298,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function json_serialize_matches_to_array(): void
     {
-        $filters = new Filters(rankIds: [1, 2], includeLinkedCharacters: false);
+        $filters = new FiltersData(rankIds: [1, 2], includeLinkedCharacters: false);
 
         $this->assertSame($filters->toArray(), $filters->jsonSerialize());
     }
@@ -310,9 +310,9 @@ class FiltersTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $filters = Filters::validate(['since_date' => '2024-01-01']);
+        $filters = FiltersData::validateInput(['since_date' => '2024-01-01']);
 
-        $this->assertInstanceOf(Filters::class, $filters);
+        $this->assertInstanceOf(FiltersData::class, $filters);
         $this->assertNotNull($filters->sinceDate);
     }
 
@@ -323,7 +323,7 @@ class FiltersTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        Filters::validate(['since_date' => 'not-a-date']);
+        FiltersData::validateInput(['since_date' => 'not-a-date']);
     }
 
     #[Test]
@@ -331,7 +331,7 @@ class FiltersTest extends TestCase
     {
         $character = Character::factory()->create(['name' => 'Thrall']);
 
-        $filters = new Filters(character: $character);
+        $filters = new FiltersData(character: $character);
 
         $this->assertSame([
             'id' => $character->id,
@@ -344,7 +344,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_returns_string_with_given_prefix(): void
     {
-        $filters = new Filters;
+        $filters = new FiltersData;
 
         $key = $filters->cacheKey('my_prefix:');
 
@@ -354,7 +354,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_is_deterministic_for_same_filters(): void
     {
-        $filters = new Filters(
+        $filters = new FiltersData(
             rankIds: [1, 2],
             zoneIds: [10],
             guildTagIds: [7],
@@ -369,7 +369,7 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_prefix_differs(): void
     {
-        $filters = new Filters;
+        $filters = new FiltersData;
 
         $this->assertNotSame($filters->cacheKey('a:'), $filters->cacheKey('b:'));
     }
@@ -380,8 +380,8 @@ class FiltersTest extends TestCase
         $charA = Character::factory()->create();
         $charB = Character::factory()->create();
 
-        $keyA = (new Filters(character: $charA))->cacheKey('prefix:');
-        $keyB = (new Filters(character: $charB))->cacheKey('prefix:');
+        $keyA = (new FiltersData(character: $charA))->cacheKey('prefix:');
+        $keyB = (new FiltersData(character: $charB))->cacheKey('prefix:');
 
         $this->assertNotSame($keyA, $keyB);
     }
@@ -391,8 +391,8 @@ class FiltersTest extends TestCase
     {
         $character = Character::factory()->create();
 
-        $keyNull = (new Filters)->cacheKey('prefix:');
-        $keySet = (new Filters(character: $character))->cacheKey('prefix:');
+        $keyNull = (new FiltersData)->cacheKey('prefix:');
+        $keySet = (new FiltersData(character: $character))->cacheKey('prefix:');
 
         $this->assertNotSame($keyNull, $keySet);
     }
@@ -400,8 +400,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_rank_ids_differ(): void
     {
-        $keyA = (new Filters(rankIds: [1, 2]))->cacheKey('prefix:');
-        $keyB = (new Filters(rankIds: [3, 4]))->cacheKey('prefix:');
+        $keyA = (new FiltersData(rankIds: [1, 2]))->cacheKey('prefix:');
+        $keyB = (new FiltersData(rankIds: [3, 4]))->cacheKey('prefix:');
 
         $this->assertNotSame($keyA, $keyB);
     }
@@ -409,8 +409,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_is_same_regardless_of_rank_ids_order(): void
     {
-        $keyA = (new Filters(rankIds: [1, 2]))->cacheKey('prefix:');
-        $keyB = (new Filters(rankIds: [2, 1]))->cacheKey('prefix:');
+        $keyA = (new FiltersData(rankIds: [1, 2]))->cacheKey('prefix:');
+        $keyB = (new FiltersData(rankIds: [2, 1]))->cacheKey('prefix:');
 
         $this->assertSame($keyA, $keyB);
     }
@@ -418,8 +418,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_zone_ids_differ(): void
     {
-        $keyA = (new Filters(zoneIds: [10]))->cacheKey('prefix:');
-        $keyB = (new Filters(zoneIds: [20]))->cacheKey('prefix:');
+        $keyA = (new FiltersData(zoneIds: [10]))->cacheKey('prefix:');
+        $keyB = (new FiltersData(zoneIds: [20]))->cacheKey('prefix:');
 
         $this->assertNotSame($keyA, $keyB);
     }
@@ -427,8 +427,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_zone_ids_is_null_vs_empty(): void
     {
-        $keyNull = (new Filters(zoneIds: null))->cacheKey('prefix:');
-        $keyEmpty = (new Filters(zoneIds: []))->cacheKey('prefix:');
+        $keyNull = (new FiltersData(zoneIds: null))->cacheKey('prefix:');
+        $keyEmpty = (new FiltersData(zoneIds: []))->cacheKey('prefix:');
 
         $this->assertNotSame($keyNull, $keyEmpty);
     }
@@ -436,8 +436,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_is_same_regardless_of_zone_ids_order(): void
     {
-        $keyA = (new Filters(zoneIds: [10, 20]))->cacheKey('prefix:');
-        $keyB = (new Filters(zoneIds: [20, 10]))->cacheKey('prefix:');
+        $keyA = (new FiltersData(zoneIds: [10, 20]))->cacheKey('prefix:');
+        $keyB = (new FiltersData(zoneIds: [20, 10]))->cacheKey('prefix:');
 
         $this->assertSame($keyA, $keyB);
     }
@@ -445,8 +445,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_guild_tag_ids_differ(): void
     {
-        $keyA = (new Filters(guildTagIds: [7]))->cacheKey('prefix:');
-        $keyB = (new Filters(guildTagIds: [8]))->cacheKey('prefix:');
+        $keyA = (new FiltersData(guildTagIds: [7]))->cacheKey('prefix:');
+        $keyB = (new FiltersData(guildTagIds: [8]))->cacheKey('prefix:');
 
         $this->assertNotSame($keyA, $keyB);
     }
@@ -454,8 +454,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_is_same_regardless_of_guild_tag_ids_order(): void
     {
-        $keyA = (new Filters(guildTagIds: [7, 8]))->cacheKey('prefix:');
-        $keyB = (new Filters(guildTagIds: [8, 7]))->cacheKey('prefix:');
+        $keyA = (new FiltersData(guildTagIds: [7, 8]))->cacheKey('prefix:');
+        $keyB = (new FiltersData(guildTagIds: [8, 7]))->cacheKey('prefix:');
 
         $this->assertSame($keyA, $keyB);
     }
@@ -463,8 +463,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_since_date_differs(): void
     {
-        $keyA = (new Filters(sinceDate: Carbon::parse('2025-01-01', 'UTC')))->cacheKey('prefix:');
-        $keyB = (new Filters(sinceDate: Carbon::parse('2025-06-01', 'UTC')))->cacheKey('prefix:');
+        $keyA = (new FiltersData(sinceDate: Carbon::parse('2025-01-01', 'UTC')))->cacheKey('prefix:');
+        $keyB = (new FiltersData(sinceDate: Carbon::parse('2025-06-01', 'UTC')))->cacheKey('prefix:');
 
         $this->assertNotSame($keyA, $keyB);
     }
@@ -472,8 +472,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_since_date_is_null_vs_set(): void
     {
-        $keyNull = (new Filters(sinceDate: null))->cacheKey('prefix:');
-        $keySet = (new Filters(sinceDate: Carbon::parse('2025-01-01', 'UTC')))->cacheKey('prefix:');
+        $keyNull = (new FiltersData(sinceDate: null))->cacheKey('prefix:');
+        $keySet = (new FiltersData(sinceDate: Carbon::parse('2025-01-01', 'UTC')))->cacheKey('prefix:');
 
         $this->assertNotSame($keyNull, $keySet);
     }
@@ -481,8 +481,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_before_date_differs(): void
     {
-        $keyA = (new Filters(beforeDate: Carbon::parse('2025-03-01', 'UTC')))->cacheKey('prefix:');
-        $keyB = (new Filters(beforeDate: Carbon::parse('2025-09-01', 'UTC')))->cacheKey('prefix:');
+        $keyA = (new FiltersData(beforeDate: Carbon::parse('2025-03-01', 'UTC')))->cacheKey('prefix:');
+        $keyB = (new FiltersData(beforeDate: Carbon::parse('2025-09-01', 'UTC')))->cacheKey('prefix:');
 
         $this->assertNotSame($keyA, $keyB);
     }
@@ -490,8 +490,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_before_date_is_null_vs_set(): void
     {
-        $keyNull = (new Filters(beforeDate: null))->cacheKey('prefix:');
-        $keySet = (new Filters(beforeDate: Carbon::parse('2025-03-01', 'UTC')))->cacheKey('prefix:');
+        $keyNull = (new FiltersData(beforeDate: null))->cacheKey('prefix:');
+        $keySet = (new FiltersData(beforeDate: Carbon::parse('2025-03-01', 'UTC')))->cacheKey('prefix:');
 
         $this->assertNotSame($keyNull, $keySet);
     }
@@ -499,8 +499,8 @@ class FiltersTest extends TestCase
     #[Test]
     public function cache_key_differs_when_include_linked_characters_differs(): void
     {
-        $keyTrue = (new Filters(includeLinkedCharacters: true))->cacheKey('prefix:');
-        $keyFalse = (new Filters(includeLinkedCharacters: false))->cacheKey('prefix:');
+        $keyTrue = (new FiltersData(includeLinkedCharacters: true))->cacheKey('prefix:');
+        $keyFalse = (new FiltersData(includeLinkedCharacters: false))->cacheKey('prefix:');
 
         $this->assertNotSame($keyTrue, $keyFalse);
     }

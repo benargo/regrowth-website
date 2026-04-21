@@ -11,7 +11,7 @@ use App\Models\WarcraftLogs\GuildTag;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\Dashboard;
 use App\Services\Attendance\DataTable;
-use App\Services\Attendance\Filters;
+use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -32,8 +32,8 @@ class DashboardTest extends TestCase
 
     protected function makeDashboard(): Dashboard
     {
-        $calculator = new Calculator(config('app.timezone'));
-        $filters = new Filters;
+        $calculator = new Calculator;
+        $filters = new FiltersData;
         $table = new DataTable($calculator, $filters);
 
         return new Dashboard($calculator, $table);

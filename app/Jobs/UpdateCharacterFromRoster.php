@@ -5,8 +5,8 @@ namespace App\Jobs;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\ValueObjects\PlayableClass;
-use App\Services\Blizzard\ValueObjects\PlayableRace;
+use App\Services\Blizzard\ValueObjects\PlayableClassData;
+use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -59,10 +59,10 @@ class UpdateCharacterFromRoster implements ShouldQueue
         $this->character->fill([
             'name' => Arr::get($this->characterData, 'character.name'),
             'playable_class' => $classId !== null
-                ? PlayableClass::fromApiResponse($blizzard->findPlayableClass($classId))
+                ? PlayableClassData::from($blizzard->findPlayableClass($classId))
                 : null,
             'playable_race' => $raceId !== null
-                ? PlayableRace::fromApiResponse($blizzard->findPlayableRace($raceId))
+                ? PlayableRaceData::from($blizzard->findPlayableRace($raceId))
                 : null,
         ]);
 

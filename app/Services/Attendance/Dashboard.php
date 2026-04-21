@@ -40,12 +40,12 @@ class Dashboard
         $rows = $this->table->rows();
 
         $percentageGroups = $rows
-            ->filter(fn (CharacterAttendanceRow $r) => $r->character->is_main)
-            ->groupBy(fn (CharacterAttendanceRow $r) => match (true) {
+            ->filter(fn (CharacterAttendanceRowData $r) => $r->character->is_main)
+            ->groupBy(fn (CharacterAttendanceRowData $r) => match (true) {
                 $r->percentage >= 80 => '>=80',
                 $r->percentage >= 50 => '50-80',
                 default => '<50',
-            })->map(fn ($group) => $group->map(fn (CharacterAttendanceRow $r) => $this->toPlayer($r))->values()->all());
+            })->map(fn ($group) => $group->map(fn (CharacterAttendanceRowData $r) => $this->toPlayer($r))->values()->all());
 
         $phases = $this->phases();
         $currentPhase = $phases->first();
@@ -60,12 +60,12 @@ class Dashboard
             : null;
 
         $droppingOff = collect($this->calculator->findDroppingOff($rows->all()))
-            ->map(fn (CharacterAttendanceRow $r) => $this->toPlayer($r))
+            ->map(fn (CharacterAttendanceRowData $r) => $this->toPlayer($r))
             ->values()
             ->all();
 
         $pickingUp = collect($this->calculator->findPickingUp($rows->all()))
-            ->map(fn (CharacterAttendanceRow $r) => $this->toPlayer($r))
+            ->map(fn (CharacterAttendanceRowData $r) => $this->toPlayer($r))
             ->values()
             ->all();
 
@@ -74,8 +74,8 @@ class Dashboard
             'droppingOff' => $droppingOff,
             'pickingUp' => $pickingUp,
             'totalPlayers' => $rows->count(),
-            'totalMains' => $rows->filter(fn (CharacterAttendanceRow $r) => $r->character->is_main)->count(),
-            'totalLinkedCharacters' => $rows->filter(fn (CharacterAttendanceRow $r) => ! $r->character->is_main)->count(),
+            'totalMains' => $rows->filter(fn (CharacterAttendanceRowData $r) => $r->character->is_main)->count(),
+            'totalLinkedCharacters' => $rows->filter(fn (CharacterAttendanceRowData $r) => ! $r->character->is_main)->count(),
             'phaseAttendance' => $phaseAttendance,
             'previousPhaseAttendance' => $previousPhaseAttendance,
             'benchedLastWeek' => $this->calculator->benchedLastWeek(),
@@ -89,7 +89,7 @@ class Dashboard
     {
         $rows = (new DataTable(
             $this->calculator,
-            new Filters(sinceDate: $since, beforeDate: $before),
+            new FiltersData(sinceDate: $since, beforeDate: $before),
         ))->rows()->all();
 
         return $this->calculator->averageAttendance($rows);
@@ -138,7 +138,7 @@ class Dashboard
      *
      * @return array{name: string, playable_class: mixed}
      */
-    private function toPlayer(CharacterAttendanceRow $row): array
+    private function toPlayer(CharacterAttendanceRowData $row): array
     {
         return [
             'name' => $row->character->name,

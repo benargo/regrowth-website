@@ -5,7 +5,7 @@ namespace Tests\Unit\Services\WarcraftLogs;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Reports;
-use App\Services\WarcraftLogs\ValueObjects\Report;
+use App\Services\WarcraftLogs\ValueObjects\ReportData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -117,7 +117,7 @@ class ReportsTest extends TestCase
         $results = $service->byGuildTags(collect([$guildTag]))->get();
 
         $this->assertCount(2, $results);
-        $this->assertContainsOnlyInstancesOf(Report::class, $results);
+        $this->assertContainsOnlyInstancesOf(ReportData::class, $results);
 
         // Results should be sorted by startTime descending
         $this->assertEquals('DEF456', $results->first()->code);
@@ -403,7 +403,7 @@ class ReportsTest extends TestCase
         $records = $service->lazy()->all();
 
         $this->assertCount(2, $records);
-        $this->assertContainsOnlyInstancesOf(Report::class, $records);
+        $this->assertContainsOnlyInstancesOf(ReportData::class, $records);
     }
 
     #[Test]
@@ -488,7 +488,7 @@ class ReportsTest extends TestCase
         $records = $service->byGuildTags(collect([$guildTag]))->lazy()->all();
 
         $this->assertCount(2, $records);
-        $codes = array_map(fn (Report $r) => $r->code, $records);
+        $codes = array_map(fn (ReportData $r) => $r->code, $records);
         $this->assertContains('PAGE1A', $codes);
         $this->assertContains('PAGE2A', $codes);
     }

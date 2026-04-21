@@ -6,7 +6,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Services\Attendance\Calculator;
-use App\Services\Attendance\CharacterAttendanceRow;
+use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;
 use App\Services\Attendance\Graphs;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +27,7 @@ class GraphsTest extends TestCase
     /**
      * Build a Graphs instance whose DataTable returns the given rows.
      *
-     * @param  array<int, CharacterAttendanceRow>  $rows
+     * @param  array<int, CharacterAttendanceRowData>  $rows
      */
     private function makeGraphs(array $rows): Graphs
     {
@@ -47,13 +47,13 @@ class GraphsTest extends TestCase
     #[Test]
     public function it_builds_one_scatter_point_per_row(): void
     {
-        $rowA = new CharacterAttendanceRow(
+        $rowA = new CharacterAttendanceRowData(
             character: $this->makeCharacter('Aerith'),
             percentage: 80.0,
             attendance: [1, 1, 1, 1, 0],
             plannedAbsences: [null, null, null, null, null],
         );
-        $rowB = new CharacterAttendanceRow(
+        $rowB = new CharacterAttendanceRowData(
             character: $this->makeCharacter('Barret'),
             percentage: 50.0,
             attendance: [1, 0, 1, 0],
@@ -73,7 +73,7 @@ class GraphsTest extends TestCase
     #[Test]
     public function it_excludes_pre_start_raids_from_raids_total(): void
     {
-        $row = new CharacterAttendanceRow(
+        $row = new CharacterAttendanceRowData(
             character: $this->makeCharacter(),
             percentage: 100.0,
             attendance: [null, null, 1, 1, 1],
@@ -89,7 +89,7 @@ class GraphsTest extends TestCase
     #[Test]
     public function it_distinguishes_attended_benched_and_other_absences(): void
     {
-        $row = new CharacterAttendanceRow(
+        $row = new CharacterAttendanceRowData(
             character: $this->makeCharacter(),
             percentage: 60.0,
             attendance: [1, 1, 1, 2, 2, 0, 0, 0, 0, 0],
@@ -110,7 +110,7 @@ class GraphsTest extends TestCase
         $character = $this->makeCharacter();
         $absence = PlannedAbsence::factory()->create(['character_id' => $character->id]);
 
-        $row = new CharacterAttendanceRow(
+        $row = new CharacterAttendanceRowData(
             character: $character,
             percentage: 0.0,
             attendance: [0, 0, 0, 0],
@@ -127,7 +127,7 @@ class GraphsTest extends TestCase
     {
         $character = $this->makeCharacter('Cloud');
 
-        $row = new CharacterAttendanceRow(
+        $row = new CharacterAttendanceRowData(
             character: $character,
             percentage: 75.0,
             attendance: [1, 0, 1, 0],

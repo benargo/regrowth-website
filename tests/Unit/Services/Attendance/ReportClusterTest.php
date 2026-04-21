@@ -7,8 +7,8 @@ use App\Models\GuildRank;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
-use App\Services\Attendance\PlayerPresence;
-use App\Services\Attendance\ReportCluster;
+use App\Services\Attendance\PlayerPresenceData;
+use App\Services\Attendance\ReportClusterData;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,7 +63,7 @@ class ReportClusterTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new ReportCluster(collect());
+        new ReportClusterData(collect());
     }
 
     #[Test]
@@ -72,7 +72,7 @@ class ReportClusterTest extends TestCase
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
 
-        $cluster = new ReportCluster(collect([$report]));
+        $cluster = new ReportClusterData(collect([$report]));
 
         $this->assertInstanceOf(Arrayable::class, $cluster);
         $this->assertInstanceOf(JsonSerializable::class, $cluster);
@@ -84,7 +84,7 @@ class ReportClusterTest extends TestCase
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
 
-        $cluster = new ReportCluster(collect([$report]));
+        $cluster = new ReportClusterData(collect([$report]));
 
         $this->assertSame($report->id, $cluster->id());
         $this->assertFalse($cluster->isMerged());
@@ -97,7 +97,7 @@ class ReportClusterTest extends TestCase
         $r1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
         $r2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
 
-        $cluster = new ReportCluster(collect([$r2, $r1]));
+        $cluster = new ReportClusterData(collect([$r2, $r1]));
 
         $ids = [$r1->id, $r2->id];
         sort($ids);
@@ -111,7 +111,7 @@ class ReportClusterTest extends TestCase
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), code: 'ABCDEF');
 
-        $cluster = new ReportCluster(collect([$report]));
+        $cluster = new ReportClusterData(collect([$report]));
 
         $this->assertSame('ABCDEF', $cluster->code());
     }
@@ -122,7 +122,7 @@ class ReportClusterTest extends TestCase
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), code: null);
 
-        $cluster = new ReportCluster(collect([$report]));
+        $cluster = new ReportClusterData(collect([$report]));
 
         $this->assertNull($cluster->code());
     }
@@ -134,7 +134,7 @@ class ReportClusterTest extends TestCase
         $r1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), code: 'ZZZ');
         $r2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'), code: 'AAA');
 
-        $cluster = new ReportCluster(collect([$r1, $r2]));
+        $cluster = new ReportClusterData(collect([$r1, $r2]));
 
         $this->assertSame('AAA+ZZZ', $cluster->code());
     }
@@ -146,7 +146,7 @@ class ReportClusterTest extends TestCase
         $wcl = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), code: 'ABC');
         $manual = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'), code: null);
 
-        $cluster = new ReportCluster(collect([$wcl, $manual]));
+        $cluster = new ReportClusterData(collect([$wcl, $manual]));
 
         $this->assertSame('ABC', $cluster->code());
     }
@@ -158,7 +158,7 @@ class ReportClusterTest extends TestCase
         $m1 = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), code: null);
         $m2 = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'), code: null);
 
-        $cluster = new ReportCluster(collect([$m1, $m2]));
+        $cluster = new ReportClusterData(collect([$m1, $m2]));
 
         $this->assertNull($cluster->code());
     }
@@ -171,7 +171,7 @@ class ReportClusterTest extends TestCase
         $early = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
         $mid = $this->makeReport($tag, Carbon::parse('2025-01-15 20:00', 'Europe/Paris'));
 
-        $cluster = new ReportCluster(collect([$late, $mid, $early]));
+        $cluster = new ReportClusterData(collect([$late, $mid, $early]));
 
         $this->assertTrue($cluster->startTime()->equalTo($early->start_time));
     }
@@ -186,7 +186,7 @@ class ReportClusterTest extends TestCase
         $early = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), $zoneA);
         $late = $this->makeReport($tag, Carbon::parse('2025-01-15 21:00', 'Europe/Paris'), $zoneB);
 
-        $cluster = new ReportCluster(Report::with('zone')->whereIn('id', [$late->id, $early->id])->get());
+        $cluster = new ReportClusterData(Report::with('zone')->whereIn('id', [$late->id, $early->id])->get());
 
         $this->assertSame('Zone A', $cluster->zoneName());
     }
@@ -197,7 +197,7 @@ class ReportClusterTest extends TestCase
         $tag = $this->makeTag();
         $report = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
 
-        $cluster = new ReportCluster(Report::with('zone')->whereKey($report->id)->get());
+        $cluster = new ReportClusterData(Report::with('zone')->whereKey($report->id)->get());
 
         $this->assertNull($cluster->zoneName());
     }
@@ -213,11 +213,11 @@ class ReportClusterTest extends TestCase
         $this->attachCharacter($report, $thrall, 1);
         $this->attachCharacter($report, $jaina, 2);
 
-        $cluster = new ReportCluster($this->loadReports());
+        $cluster = new ReportClusterData($this->loadReports());
         $players = $cluster->players();
 
         $this->assertCount(2, $players);
-        $this->assertInstanceOf(PlayerPresence::class, $players['Thrall']);
+        $this->assertInstanceOf(PlayerPresenceData::class, $players['Thrall']);
         $this->assertSame(1, $players['Thrall']->presence);
         $this->assertSame(2, $players['Jaina']->presence);
     }
@@ -234,7 +234,7 @@ class ReportClusterTest extends TestCase
         $this->attachCharacter($r1, $thrall, 0); // absent
         $this->attachCharacter($r2, $thrall, 1); // present — wins
 
-        $cluster = new ReportCluster($this->loadReports());
+        $cluster = new ReportClusterData($this->loadReports());
         $players = $cluster->players();
 
         $this->assertCount(1, $players);
@@ -253,7 +253,7 @@ class ReportClusterTest extends TestCase
         $this->attachCharacter($r1, $thrall, 2); // late
         $this->attachCharacter($r2, $thrall, 1); // present — wins (priority 2 > 1)
 
-        $cluster = new ReportCluster($this->loadReports());
+        $cluster = new ReportClusterData($this->loadReports());
 
         $this->assertSame(1, $cluster->players()['Thrall']->presence);
     }
@@ -270,7 +270,7 @@ class ReportClusterTest extends TestCase
         $this->attachCharacter($r1, $thrall, 0); // absent
         $this->attachCharacter($r2, $thrall, 2); // late — wins (priority 1 > 0)
 
-        $cluster = new ReportCluster($this->loadReports());
+        $cluster = new ReportClusterData($this->loadReports());
 
         $this->assertSame(2, $cluster->players()['Thrall']->presence);
     }
@@ -285,7 +285,7 @@ class ReportClusterTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'), $zone, 'WCLCODE');
         $this->attachCharacter($report, $thrall, 1);
 
-        $cluster = new ReportCluster(Report::with(['characters', 'zone'])->get());
+        $cluster = new ReportClusterData(Report::with(['characters', 'zone'])->get());
         $array = $cluster->toArray();
 
         $this->assertSame($report->id, $array['id']);
@@ -305,7 +305,7 @@ class ReportClusterTest extends TestCase
         $tag = $this->makeTag();
         $this->makeReport($tag, Carbon::parse('2025-01-15 19:00', 'Europe/Paris'));
 
-        $cluster = new ReportCluster(Report::with(['characters', 'zone'])->get());
+        $cluster = new ReportClusterData(Report::with(['characters', 'zone'])->get());
 
         $this->assertSame($cluster->toArray(), $cluster->jsonSerialize());
     }

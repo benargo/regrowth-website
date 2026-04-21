@@ -155,7 +155,8 @@ class ReportTest extends ModelTestCase
         $report->refresh();
         $report->load('zone');
 
-        $this->assertEquals($zone->expansion, $report->expansion);
+        $this->assertSame($zone->expansion->id, $report->expansion->id);
+        $this->assertSame($zone->expansion->name, $report->expansion->name);
     }
 
     #[Test]

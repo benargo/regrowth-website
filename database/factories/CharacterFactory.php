@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Services\Blizzard\ValueObjects\PlayableClass;
-use App\Services\Blizzard\ValueObjects\PlayableRace;
+use App\Services\Blizzard\ValueObjects\PlayableClassData;
+use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -79,7 +79,7 @@ class CharacterFactory extends Factory
     public function withPlayableClass(int $classId = 1, string $name = 'Warrior'): static
     {
         return $this->state(fn (array $attributes) => [
-            'playable_class' => PlayableClass::fromApiResponse([
+            'playable_class' => PlayableClassData::from([
                 'id' => $classId,
                 'name' => $name,
                 'gender_name' => ['male' => $name, 'female' => $name],
@@ -100,7 +100,7 @@ class CharacterFactory extends Factory
     public function withPlayableRace(int $raceId = 1, string $name = 'Human'): static
     {
         return $this->state(fn (array $attributes) => [
-            'playable_race' => PlayableRace::fromApiResponse([
+            'playable_race' => PlayableRaceData::from([
                 'id' => $raceId,
                 'name' => $name,
                 'gender_name' => ['male' => $name, 'female' => $name],

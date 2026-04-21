@@ -8,9 +8,9 @@ use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\Attendance\Calculator;
-use App\Services\Attendance\CharacterAttendanceRow;
+use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;
-use App\Services\Attendance\Filters;
+use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,9 +27,9 @@ class DataTableTest extends TestCase
         config(['app.timezone' => 'Europe/Paris']);
     }
 
-    protected function makeDataTable(Filters $filters = new Filters): DataTable
+    protected function makeDataTable(FiltersData $filters = new FiltersData): DataTable
     {
-        return new DataTable(new Calculator(config('app.timezone')), $filters);
+        return new DataTable(new Calculator, $filters);
     }
 
     protected function makeRank(bool $countsAttendance = true): GuildRank
@@ -152,7 +152,7 @@ class DataTableTest extends TestCase
         $this->makeReport($tag1, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->makeReport($tag2, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
 
-        $filters = new Filters(guildTagIds: [$tag1->id]);
+        $filters = new FiltersData(guildTagIds: [$tag1->id]);
         $table = $this->makeDataTable($filters);
 
         $this->assertCount(1, $table->columns());
@@ -165,7 +165,7 @@ class DataTableTest extends TestCase
         $this->makeReport($tag, Carbon::parse('2024-12-25 20:00', 'Europe/Paris'));
         $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
 
-        $filters = new Filters(sinceDate: Carbon::parse('2025-01-01', 'Europe/Paris')->utc());
+        $filters = new FiltersData(sinceDate: Carbon::parse('2025-01-01', 'Europe/Paris')->utc());
         $table = $this->makeDataTable($filters);
 
         $this->assertCount(1, $table->columns());
@@ -178,7 +178,7 @@ class DataTableTest extends TestCase
         $this->makeReport($tag, Carbon::parse('2024-12-25 20:00', 'Europe/Paris'));
         $this->makeReport($tag, Carbon::parse('2025-01-08 20:00', 'Europe/Paris'));
 
-        $filters = new Filters(beforeDate: Carbon::parse('2025-01-01', 'Europe/Paris')->utc());
+        $filters = new FiltersData(beforeDate: Carbon::parse('2025-01-01', 'Europe/Paris')->utc());
         $table = $this->makeDataTable($filters);
 
         $this->assertCount(1, $table->columns());
@@ -381,7 +381,7 @@ class DataTableTest extends TestCase
 
         $row = $this->makeDataTable()->rows()->first();
 
-        $this->assertInstanceOf(CharacterAttendanceRow::class, $row);
+        $this->assertInstanceOf(CharacterAttendanceRowData::class, $row);
         $this->assertEquals($character->id, $row->character->id);
         $this->assertEquals($rank->id, $row->character->rank_id);
     }
@@ -412,7 +412,7 @@ class DataTableTest extends TestCase
         $this->attachCharacter($report, $char1, 1);
         $this->attachCharacter($report, $char2, 1);
 
-        $filters = new Filters(rankIds: [$rank1->id]);
+        $filters = new FiltersData(rankIds: [$rank1->id]);
         $rows = $this->makeDataTable($filters)->rows();
 
         $this->assertCount(1, $rows);
@@ -431,7 +431,7 @@ class DataTableTest extends TestCase
         $this->attachCharacter($report, $character, 1);
         $this->attachCharacter($report, $alt, 1);
 
-        $filters = new Filters(includeLinkedCharacters: true);
+        $filters = new FiltersData(includeLinkedCharacters: true);
         $rows = $this->makeDataTable($filters)->rows();
 
         $names = $rows->pluck('character.name');
@@ -458,7 +458,7 @@ class DataTableTest extends TestCase
         $rank1 = $this->makeRank();
         $rank2 = $this->makeRank();
 
-        $filters = new Filters(rankIds: [$rank1->id]);
+        $filters = new FiltersData(rankIds: [$rank1->id]);
         $rankIds = $this->makeDataTable($filters)->resolvedRankIds();
 
         $this->assertEquals([$rank1->id], $rankIds);

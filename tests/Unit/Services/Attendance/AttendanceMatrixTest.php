@@ -5,8 +5,8 @@ namespace Tests\Unit\Services\Attendance;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Services\Attendance\AttendanceMatrix;
-use App\Services\Attendance\CharacterAttendanceRow;
+use App\Services\Attendance\AttendanceMatrixData;
+use App\Services\Attendance\CharacterAttendanceRowData;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use JsonSerializable;
@@ -17,9 +17,9 @@ class AttendanceMatrixTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function makeRow(Character $character, array $plannedAbsences = [null, null]): CharacterAttendanceRow
+    protected function makeRow(Character $character, array $plannedAbsences = [null, null]): CharacterAttendanceRowData
     {
-        return new CharacterAttendanceRow(
+        return new CharacterAttendanceRowData(
             character: $character,
             percentage: 75.0,
             attendance: [1, 0],
@@ -30,22 +30,22 @@ class AttendanceMatrixTest extends TestCase
     #[Test]
     public function it_implements_arrayable_and_json_serializable(): void
     {
-        $matrix = new AttendanceMatrix(collect(), collect());
+        $matrix = new AttendanceMatrixData(collect(), collect());
 
         $this->assertInstanceOf(Arrayable::class, $matrix);
         $this->assertInstanceOf(JsonSerializable::class, $matrix);
     }
 
     #[Test]
-    public function to_array_returns_empty_raids_rows_and_planned_absences_for_empty_matrix(): void
+    public function to_array_returns_empty_raids_and_rows_for_empty_matrix(): void
     {
-        $matrix = new AttendanceMatrix(collect(), collect());
+        $matrix = new AttendanceMatrixData(collect(), collect());
 
         $array = $matrix->toArray();
 
         $this->assertSame([], $array['raids']);
         $this->assertSame([], $array['rows']);
-        $this->assertSame([], $array['planned_absences']);
+        $this->assertArrayNotHasKey('planned_absences', $array);
     }
 
     #[Test]
@@ -55,7 +55,7 @@ class AttendanceMatrixTest extends TestCase
             ['id' => 'r1', 'code' => 'ABC', 'dayOfWeek' => 'Wed', 'date' => '01/01', 'zoneName' => 'Karazhan'],
         ]);
 
-        $matrix = new AttendanceMatrix($raids, collect());
+        $matrix = new AttendanceMatrixData($raids, collect());
 
         $array = $matrix->toArray();
 
@@ -70,7 +70,7 @@ class AttendanceMatrixTest extends TestCase
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
 
-        $matrix = new AttendanceMatrix(collect(), collect([$this->makeRow($character)]));
+        $matrix = new AttendanceMatrixData(collect(), collect([$this->makeRow($character)]));
 
         $array = $matrix->toArray();
 
@@ -80,46 +80,27 @@ class AttendanceMatrixTest extends TestCase
     }
 
     #[Test]
-    public function to_array_collects_unique_planned_absences_into_the_top_level_map(): void
+    public function to_array_exposes_planned_absences_per_row_as_ids(): void
     {
         $rank = GuildRank::factory()->create();
         $charA = Character::factory()->create(['name' => 'Alice', 'rank_id' => $rank->id]);
-        $charB = Character::factory()->create(['name' => 'Bob', 'rank_id' => $rank->id]);
 
         $absenceA = PlannedAbsence::factory()->create(['character_id' => $charA->id]);
-        $absenceB = PlannedAbsence::factory()->create(['character_id' => $charB->id]);
 
-        // Same absence referenced twice across a single row should appear once in the map
-        $rows = collect([
-            $this->makeRow($charA, [$absenceA, $absenceA]),
-            $this->makeRow($charB, [$absenceB, null]),
-        ]);
+        $rows = collect([$this->makeRow($charA, [$absenceA, null])]);
 
-        $matrix = new AttendanceMatrix(collect(), $rows);
+        $matrix = new AttendanceMatrixData(collect(), $rows);
 
         $array = $matrix->toArray();
 
-        $this->assertCount(2, $array['planned_absences']);
-        $ids = array_column($array['planned_absences'], 'id');
-        $this->assertContains($absenceA->id, $ids);
-        $this->assertContains($absenceB->id, $ids);
-    }
-
-    #[Test]
-    public function to_array_omits_planned_absences_when_no_row_references_any(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $character = Character::factory()->create(['rank_id' => $rank->id]);
-
-        $matrix = new AttendanceMatrix(collect(), collect([$this->makeRow($character)]));
-
-        $this->assertSame([], $matrix->toArray()['planned_absences']);
+        $this->assertSame($absenceA->id, $array['rows'][0]['planned_absences'][0]);
+        $this->assertNull($array['rows'][0]['planned_absences'][1]);
     }
 
     #[Test]
     public function json_serialize_matches_to_array(): void
     {
-        $matrix = new AttendanceMatrix(collect(), collect());
+        $matrix = new AttendanceMatrixData(collect(), collect());
 
         $this->assertSame($matrix->toArray(), $matrix->jsonSerialize());
     }

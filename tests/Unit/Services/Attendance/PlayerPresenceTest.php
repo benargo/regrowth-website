@@ -4,7 +4,7 @@ namespace Tests\Unit\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Services\Attendance\PlayerPresence;
+use App\Services\Attendance\PlayerPresenceData;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use JsonSerializable;
@@ -21,7 +21,7 @@ class PlayerPresenceTest extends TestCase
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
 
-        $presence = new PlayerPresence($character, 1);
+        $presence = new PlayerPresenceData($character, 1);
 
         $this->assertSame($character, $presence->character);
         $this->assertSame(1, $presence->presence);
@@ -33,7 +33,7 @@ class PlayerPresenceTest extends TestCase
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
 
-        $presence = new PlayerPresence($character, 1);
+        $presence = new PlayerPresenceData($character, 1);
 
         $this->assertInstanceOf(Arrayable::class, $presence);
         $this->assertInstanceOf(JsonSerializable::class, $presence);
@@ -45,7 +45,7 @@ class PlayerPresenceTest extends TestCase
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
 
-        $array = (new PlayerPresence($character, 2))->toArray();
+        $array = (new PlayerPresenceData($character, 2))->toArray();
 
         $this->assertSame($character->id, $array['id']);
         $this->assertSame('Thrall', $array['name']);
@@ -60,7 +60,7 @@ class PlayerPresenceTest extends TestCase
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
 
-        $presence = new PlayerPresence($character, 0);
+        $presence = new PlayerPresenceData($character, 0);
 
         $this->assertSame($presence->toArray(), $presence->jsonSerialize());
     }

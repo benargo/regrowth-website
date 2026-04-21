@@ -3,8 +3,8 @@
 namespace App\Services\WarcraftLogs;
 
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
-use App\Services\WarcraftLogs\ValueObjects\Faction;
-use App\Services\WarcraftLogs\ValueObjects\Server;
+use App\Services\WarcraftLogs\ValueObjects\FactionData;
+use App\Services\WarcraftLogs\ValueObjects\ServerData;
 
 class Guild extends BaseService
 {
@@ -17,9 +17,9 @@ class Guild extends BaseService
 
     private string $name;
 
-    private Server $server;
+    private ServerData $server;
 
-    private Faction $faction;
+    private FactionData $faction;
 
     public function __construct(array $config, AuthenticationHandler $auth)
     {
@@ -38,8 +38,8 @@ class Guild extends BaseService
 
         $this->id = $guildData['id'];
         $this->name = $guildData['name'];
-        $this->server = Server::fromArray($guildData['server']);
-        $this->faction = Faction::fromArray($guildData['faction']);
+        $this->server = ServerData::from($guildData['server']);
+        $this->faction = FactionData::from($guildData['faction']);
     }
 
     public function __get(string $name): mixed

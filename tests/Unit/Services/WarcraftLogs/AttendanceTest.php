@@ -5,8 +5,8 @@ namespace Tests\Unit\Services\WarcraftLogs;
 use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
-use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
-use App\Services\WarcraftLogs\ValueObjects\PlayerAttendance;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
+use App\Services\WarcraftLogs\ValueObjects\PlayerAttendanceData;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -98,14 +98,14 @@ class AttendanceTest extends TestCase
         ];
     }
 
-    protected function createGuildAttendance(string $code, int $startTimeMs, array $playerNames): GuildAttendance
+    protected function createGuildAttendance(string $code, int $startTimeMs, array $playerNames): GuildAttendanceData
     {
         $players = array_map(
-            fn (string $name) => new PlayerAttendance($name, 1),
+            fn (string $name) => new PlayerAttendanceData($name, 1),
             $playerNames,
         );
 
-        return new GuildAttendance(
+        return new GuildAttendanceData(
             code: $code,
             players: $players,
             startTime: Carbon::createFromTimestampMs($startTimeMs),
@@ -168,7 +168,7 @@ class AttendanceTest extends TestCase
 
         $this->assertInstanceOf(Collection::class, $result);
         $this->assertCount(2, $result);
-        $this->assertContainsOnlyInstancesOf(GuildAttendance::class, $result);
+        $this->assertContainsOnlyInstancesOf(GuildAttendanceData::class, $result);
     }
 
     #[Test]
@@ -291,7 +291,7 @@ class AttendanceTest extends TestCase
         $result = $service->setAttendance($attendance)->lazy()->all();
 
         $this->assertCount(2, $result);
-        $this->assertContainsOnlyInstancesOf(GuildAttendance::class, $result);
+        $this->assertContainsOnlyInstancesOf(GuildAttendanceData::class, $result);
     }
 
     #[Test]

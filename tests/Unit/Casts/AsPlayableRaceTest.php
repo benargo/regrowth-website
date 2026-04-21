@@ -3,7 +3,7 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsPlayableRace;
-use App\Services\Blizzard\ValueObjects\PlayableRace;
+use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -106,7 +106,7 @@ class AsPlayableRaceTest extends TestCase
     {
         $cast = new AsPlayableRace;
         $model = $this->createStub(Model::class);
-        $vo = PlayableRace::fromApiResponse($this->sampleApiResponse(2, 'Orc'));
+        $vo = PlayableRaceData::from($this->sampleApiResponse(2, 'Orc'));
 
         $result = $cast->set($model, 'playable_race', $vo, []);
 

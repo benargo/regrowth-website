@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
-use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
-use App\Services\WarcraftLogs\ValueObjects\PlayerAttendance;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
+use App\Services\WarcraftLogs\ValueObjects\PlayerAttendanceData;
+use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Arrayable;
 use PHPUnit\Framework\Attributes\Test;
@@ -31,17 +31,17 @@ class GuildAttendanceTest extends TestCase
     #[Test]
     public function from_array_parses_all_fields(): void
     {
-        $attendance = GuildAttendance::fromArray($this->sampleData());
+        $attendance = GuildAttendanceData::fromArray($this->sampleData());
 
         $this->assertInstanceOf(Arrayable::class, $attendance);
         $this->assertSame('abc123', $attendance->code);
         $this->assertInstanceOf(Carbon::class, $attendance->startTime);
         $this->assertEquals(1736971200000, $attendance->startTime->valueOf());
         $this->assertCount(2, $attendance->players);
-        $this->assertContainsOnlyInstancesOf(PlayerAttendance::class, $attendance->players);
+        $this->assertContainsOnlyInstancesOf(PlayerAttendanceData::class, $attendance->players);
         $this->assertSame('Thrall', $attendance->players[0]->name);
         $this->assertSame(1, $attendance->players[0]->presence);
-        $this->assertInstanceOf(Zone::class, $attendance->zone);
+        $this->assertInstanceOf(ZoneData::class, $attendance->zone);
         $this->assertSame(1047, $attendance->zone->id);
     }
 
@@ -51,7 +51,7 @@ class GuildAttendanceTest extends TestCase
         $data = $this->sampleData();
         unset($data['zone']);
 
-        $attendance = GuildAttendance::fromArray($data);
+        $attendance = GuildAttendanceData::fromArray($data);
 
         $this->assertNull($attendance->zone);
     }
@@ -62,7 +62,7 @@ class GuildAttendanceTest extends TestCase
         $data = $this->sampleData();
         $data['players'] = [];
 
-        $attendance = GuildAttendance::fromArray($data);
+        $attendance = GuildAttendanceData::fromArray($data);
 
         $this->assertSame([], $attendance->players);
     }
@@ -70,7 +70,7 @@ class GuildAttendanceTest extends TestCase
     #[Test]
     public function to_array_includes_zone_when_present(): void
     {
-        $attendance = GuildAttendance::fromArray($this->sampleData());
+        $attendance = GuildAttendanceData::fromArray($this->sampleData());
 
         $array = $attendance->toArray();
 
@@ -86,7 +86,7 @@ class GuildAttendanceTest extends TestCase
         $data = $this->sampleData();
         unset($data['zone']);
 
-        $attendance = GuildAttendance::fromArray($data);
+        $attendance = GuildAttendanceData::fromArray($data);
         $array = $attendance->toArray();
 
         $this->assertArrayNotHasKey('zone', $array);
@@ -95,11 +95,11 @@ class GuildAttendanceTest extends TestCase
     #[Test]
     public function filter_players_returns_new_instance_with_matching_players(): void
     {
-        $attendance = GuildAttendance::fromArray($this->sampleData());
+        $attendance = GuildAttendanceData::fromArray($this->sampleData());
 
         $filtered = $attendance->filterPlayers(['Thrall']);
 
-        $this->assertInstanceOf(GuildAttendance::class, $filtered);
+        $this->assertInstanceOf(GuildAttendanceData::class, $filtered);
         $this->assertCount(1, $filtered->players);
         $this->assertSame('Thrall', $filtered->players[0]->name);
     }
@@ -107,7 +107,7 @@ class GuildAttendanceTest extends TestCase
     #[Test]
     public function filter_players_returns_empty_players_when_no_match(): void
     {
-        $attendance = GuildAttendance::fromArray($this->sampleData());
+        $attendance = GuildAttendanceData::fromArray($this->sampleData());
 
         $filtered = $attendance->filterPlayers(['NonExistent']);
 
@@ -117,7 +117,7 @@ class GuildAttendanceTest extends TestCase
     #[Test]
     public function filter_players_preserves_code_and_start_time_and_zone(): void
     {
-        $attendance = GuildAttendance::fromArray($this->sampleData());
+        $attendance = GuildAttendanceData::fromArray($this->sampleData());
 
         $filtered = $attendance->filterPlayers(['Thrall']);
 

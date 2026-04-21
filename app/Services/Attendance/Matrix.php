@@ -14,15 +14,15 @@ class Matrix
     /**
      * Build the whole-guild attendance matrix, including per-raid presence values per character.
      */
-    public function matrixForWholeGuild(): AttendanceMatrix
+    public function matrixForWholeGuild(): AttendanceMatrixData
     {
-        return $this->matrixWithFilters(new Filters);
+        return $this->matrixWithFilters(new FiltersData);
     }
 
     /**
      * Build the attendance matrix with the given server-side filters applied.
      */
-    public function matrixWithFilters(Filters $filters): AttendanceMatrix
+    public function matrixWithFilters(FiltersData $filters): AttendanceMatrixData
     {
         $table = new DataTable($this->calculator, $filters);
         $raids = $table->columns();
@@ -34,10 +34,10 @@ class Matrix
 
         if ($filters->character !== null) {
             $characterId = $filters->character->id;
-            $rows = $rows->filter(fn (CharacterAttendanceRow $row) => $row->character->id === $characterId)->values();
+            $rows = $rows->filter(fn (CharacterAttendanceRowData $row) => $row->character->id === $characterId)->values();
         }
 
-        return new AttendanceMatrix($raids, $rows);
+        return new AttendanceMatrixData($raids, $rows);
     }
 
     /**
@@ -46,13 +46,13 @@ class Matrix
      * Only characters flagged as is_main appear in the output. Their linked alts'
      * attendance is aggregated per raid using: 1 (present) > 2 (late) > 0 (absent) > null.
      *
-     * @param  Collection<int, CharacterAttendanceRow>  $rows
+     * @param  Collection<int, CharacterAttendanceRowData>  $rows
      * @param  array<int, int>  $rankIds  Only mains whose rank_id is in this list will appear in output.
-     * @return Collection<int, CharacterAttendanceRow>
+     * @return Collection<int, CharacterAttendanceRowData>
      */
     protected function mergeLinkedCharacters(Collection $rows, array $rankIds, int $raidCount): Collection
     {
-        $rowsById = $rows->keyBy(fn (CharacterAttendanceRow $row) => $row->character->id);
+        $rowsById = $rows->keyBy(fn (CharacterAttendanceRowData $row) => $row->character->id);
 
         $altToMainId = [];
         $mainToAltIds = [];
@@ -71,7 +71,7 @@ class Matrix
         }
 
         $mainIdsInMatrix = $rowsById
-            ->filter(fn (CharacterAttendanceRow $row) => $row->character->is_main)
+            ->filter(fn (CharacterAttendanceRowData $row) => $row->character->is_main)
             ->keys()
             ->all();
 
@@ -82,6 +82,7 @@ class Matrix
         $result = [];
 
         foreach ($rowsById as $id => $row) {
+            /** @var CharacterAttendanceRowData $row */
             if (isset($altToMainId[$id])) {
                 continue;
             }
@@ -122,7 +123,7 @@ class Matrix
                 array_map(fn ($altId) => $rowsById->get($altId), $altIds),
             ));
 
-            $syntheticRow = new CharacterAttendanceRow(
+            $syntheticRow = new CharacterAttendanceRowData(
                 character: $mainChar,
                 percentage: 0.0,
                 attendance: array_fill(0, $raidCount, null),
@@ -132,7 +133,7 @@ class Matrix
             $result[] = $this->buildMergedRow($syntheticRow, $altRows, $raidCount);
         }
 
-        usort($result, fn (CharacterAttendanceRow $a, CharacterAttendanceRow $b) => strcmp($a->character->name, $b->character->name));
+        usort($result, fn (CharacterAttendanceRowData $a, CharacterAttendanceRowData $b) => strcmp($a->character->name, $b->character->name));
 
         return collect($result);
     }
@@ -144,9 +145,9 @@ class Matrix
      * characters: 1 (present) beats 2 (late) beats 0 (absent); all-null stays null.
      * attendanceNames lists the names of characters who contributed a presence value (1 or 2).
      *
-     * @param  array<int, CharacterAttendanceRow>  $altRows
+     * @param  array<int, CharacterAttendanceRowData>  $altRows
      */
-    protected function buildMergedRow(CharacterAttendanceRow $mainRow, array $altRows, int $raidCount): CharacterAttendanceRow
+    protected function buildMergedRow(CharacterAttendanceRowData $mainRow, array $altRows, int $raidCount): CharacterAttendanceRowData
     {
         $allRows = [$mainRow, ...$altRows];
         $attendance = [];
@@ -155,7 +156,7 @@ class Matrix
         $reportsAttended = 0;
 
         for ($i = 0; $i < $raidCount; $i++) {
-            $values = array_map(fn (CharacterAttendanceRow $row) => $row->attendance[$i] ?? null, $allRows);
+            $values = array_map(fn (CharacterAttendanceRowData $row) => $row->attendance[$i] ?? null, $allRows);
             $nonNull = array_values(array_filter($values, fn ($v) => $v !== null));
 
             if (empty($nonNull)) {
@@ -174,6 +175,7 @@ class Matrix
                 $names = [];
 
                 foreach ($allRows as $row) {
+                    /** @var CharacterAttendanceRowData $row */
                     if (in_array($row->attendance[$i] ?? null, [1, 2], true)) {
                         $names[] = $row->character->name;
                     }
@@ -196,7 +198,7 @@ class Matrix
 
         $percentage = $totalReports > 0 ? round(($reportsAttended / $totalReports) * 100, 2) : 0.0;
 
-        return new CharacterAttendanceRow(
+        return new CharacterAttendanceRowData(
             character: $mainRow->character,
             percentage: $percentage,
             attendance: $attendance,

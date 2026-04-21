@@ -9,11 +9,11 @@ use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Models\WarcraftLogs\Zone;
-use App\Services\Attendance\AttendanceMatrix;
+use App\Services\Attendance\AttendanceMatrixData;
 use App\Services\Attendance\Calculator;
-use App\Services\Attendance\CharacterAttendanceRow;
-use App\Services\Attendance\CharacterAttendanceStats;
-use App\Services\Attendance\Filters;
+use App\Services\Attendance\CharacterAttendanceRowData;
+use App\Services\Attendance\CharacterAttendanceStatsData;
+use App\Services\Attendance\FiltersData;
 use App\Services\Attendance\Matrix;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,7 +34,7 @@ class CalculatorTest extends TestCase
 
     protected function makeCalculator(): Calculator
     {
-        return new Calculator(config('app.timezone'));
+        return new Calculator;
     }
 
     protected function makeMatrix(): Matrix
@@ -66,14 +66,14 @@ class CalculatorTest extends TestCase
         $report->characters()->attach($character->id, ['presence' => $presence]);
     }
 
-    protected function findStats(Collection $stats, string $name): ?CharacterAttendanceStats
+    protected function findStats(Collection $stats, string $name): ?CharacterAttendanceStatsData
     {
-        return $stats->first(fn (CharacterAttendanceStats $s) => $s->character->name === $name);
+        return $stats->first(fn (CharacterAttendanceStatsData $s) => $s->character->name === $name);
     }
 
-    protected function findRow(Collection $rows, string $name): ?CharacterAttendanceRow
+    protected function findRow(Collection $rows, string $name): ?CharacterAttendanceRowData
     {
-        return $rows->first(fn (CharacterAttendanceRow $r) => $r->character->name === $name);
+        return $rows->first(fn (CharacterAttendanceRowData $r) => $r->character->name === $name);
     }
 
     // ==================== wholeGuild: Empty Input Tests ====================
@@ -349,7 +349,7 @@ class CalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->wholeGuild();
 
-        $this->assertInstanceOf(CharacterAttendanceStats::class, $stats->first());
+        $this->assertInstanceOf(CharacterAttendanceStatsData::class, $stats->first());
     }
 
     // ==================== wholeGuild: Rank Filtering Tests ====================
@@ -567,7 +567,7 @@ class CalculatorTest extends TestCase
 
         $stats = $this->makeCalculator()->forRanks(collect([$rank]));
 
-        $this->assertInstanceOf(CharacterAttendanceStats::class, $stats->first());
+        $this->assertInstanceOf(CharacterAttendanceStatsData::class, $stats->first());
     }
 
     // ==================== forCharacter: Tests ====================
@@ -950,7 +950,7 @@ class CalculatorTest extends TestCase
     {
         $matrix = $this->makeMatrix()->matrixForWholeGuild();
 
-        $this->assertInstanceOf(AttendanceMatrix::class, $matrix);
+        $this->assertInstanceOf(AttendanceMatrixData::class, $matrix);
     }
 
     // ==================== matrixForWholeGuild: Empty Input Tests ====================
@@ -1204,7 +1204,7 @@ class CalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters);
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData);
         $row = $this->findRow($matrix->rows, 'Thrall');
 
         $this->assertEquals($character->id, $row->character->id);
@@ -1227,7 +1227,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report1, $thrall, 1);
         $this->attachCharacter($report2, $jaina, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             guildTagIds: [$tag1->id],
         ));
 
@@ -1253,7 +1253,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report1, $thrall, 1);
         $this->attachCharacter($report2, $jaina, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             zoneIds: [1001],
         ));
 
@@ -1280,7 +1280,7 @@ class CalculatorTest extends TestCase
         // sinceDate = Jan 15 at 05:00 UTC, excludes Jan 1 report
         $sinceDate = Carbon::parse('2025-01-15 05:00:00', 'UTC');
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             sinceDate: $sinceDate,
         ));
 
@@ -1305,7 +1305,7 @@ class CalculatorTest extends TestCase
         // beforeDate = Jan 15 at 05:00 UTC, excludes Feb 1 report
         $beforeDate = Carbon::parse('2025-01-15 05:00:00', 'UTC');
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             beforeDate: $beforeDate,
         ));
 
@@ -1346,7 +1346,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 1);
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1370,7 +1370,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 1);
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: false,
         ));
 
@@ -1394,7 +1394,7 @@ class CalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1421,7 +1421,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report1, $alt, 1);
         $this->attachCharacter($report2, $main, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1444,7 +1444,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 2);
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1466,7 +1466,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report, $main, 1);
         $this->attachCharacter($report, $alt, 2);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1492,7 +1492,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report2, $main, 1); // main present on newest raid (Jan 8)
         // both absent on oldest raid (Jan 1)
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1516,7 +1516,7 @@ class CalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $alt, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1540,7 +1540,7 @@ class CalculatorTest extends TestCase
         $report = $this->makeReport($tag, Carbon::parse('2025-01-01 20:00', 'Europe/Paris'));
         $this->attachCharacter($report, $character, 1);
 
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             includeLinkedCharacters: true,
         ));
 
@@ -1565,7 +1565,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report, $alt, 1);
 
         // Filter to rank1 only (main's rank); alt is in rank2
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             rankIds: [$rank1->id],
             includeLinkedCharacters: true,
         ));
@@ -1598,7 +1598,7 @@ class CalculatorTest extends TestCase
         $this->attachCharacter($report, $alt, 1);
 
         // Filter to rank1 only — main is in rank2, so should not appear
-        $matrix = $this->makeMatrix()->matrixWithFilters(new Filters(
+        $matrix = $this->makeMatrix()->matrixWithFilters(new FiltersData(
             rankIds: [$rank1->id],
             includeLinkedCharacters: true,
         ));

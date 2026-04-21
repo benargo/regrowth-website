@@ -3,8 +3,8 @@
 namespace App\Services\WarcraftLogs;
 
 use App\Services\WarcraftLogs\Enums\Endpoints;
-use App\Services\WarcraftLogs\ValueObjects\Expansion;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
+use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use InvalidArgumentException;
 
 class WorldData extends BaseService
@@ -17,14 +17,14 @@ class WorldData extends BaseService
     protected Endpoints $endpoint = Endpoints::FRESH;
 
     /**
-     * @var array<Expansion>
+     * @var array<ExpansionData>
      */
     private array $expansions = [];
 
     /**
      * Zones fetched, keyed by expansion ID (or "all" when no filter was applied).
      *
-     * @var array<string, array<Zone>>
+     * @var array<string, array<ZoneData>>
      */
     private array $zones = [];
 
@@ -69,7 +69,7 @@ class WorldData extends BaseService
      *
      * Results are cached in-memory for the lifetime of the service instance.
      *
-     * @return array<Expansion>
+     * @return array<ExpansionData>
      */
     public function getExpansions(): array
     {
@@ -80,7 +80,7 @@ class WorldData extends BaseService
         $data = $this->query(self::GET_EXPANSIONS_QUERY);
 
         $this->expansions = array_map(
-            fn (array $expansion) => Expansion::fromArray($expansion),
+            fn (array $expansion) => ExpansionData::from($expansion),
             $data['worldData']['expansions'] ?? [],
         );
 
@@ -92,7 +92,7 @@ class WorldData extends BaseService
      *
      * Results are cached in-memory per expansion ID for the lifetime of the service instance.
      *
-     * @return array<Zone>
+     * @return array<ZoneData>
      *
      * @throws InvalidArgumentException When the given expansion ID does not exist.
      */
@@ -105,7 +105,7 @@ class WorldData extends BaseService
         }
 
         if ($expansionId !== null) {
-            $validIds = array_map(fn (Expansion $e) => $e->id, $this->getExpansions());
+            $validIds = array_map(fn (ExpansionData $e) => $e->id, $this->getExpansions());
 
             if (! in_array($expansionId, $validIds, strict: true)) {
                 throw new InvalidArgumentException("Expansion ID {$expansionId} is not valid.");
@@ -117,7 +117,7 @@ class WorldData extends BaseService
         $data = $this->query(self::GET_ZONES_QUERY, $variables);
 
         $this->zones[$memoryKey] = array_map(
-            fn (array $zone) => Zone::fromArray($zone),
+            fn (array $zone) => ZoneData::from($zone),
             $data['worldData']['zones'] ?? [],
         );
 

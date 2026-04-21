@@ -4,14 +4,14 @@ namespace App\Casts;
 
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\ValueObjects\PlayableClass;
+use App\Services\Blizzard\ValueObjects\PlayableClassData;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
 
 /**
- * @implements CastsAttributes<array{id: int|null, name: string, icon_url: string|null}, PlayableClass>
+ * @implements CastsAttributes<array{id: int|null, name: string, icon_url: string|null}, PlayableClassData>
  */
 class AsPlayableClass implements CastsAttributes
 {
@@ -46,11 +46,11 @@ class AsPlayableClass implements CastsAttributes
             return null;
         }
 
-        if (! $value instanceof PlayableClass) {
+        if (! $value instanceof PlayableClassData) {
             throw new InvalidArgumentException(sprintf(
                 'The %s attribute must be assigned a %s value object or null.',
                 $key,
-                PlayableClass::class,
+                PlayableClassData::class,
             ));
         }
 

@@ -2,13 +2,13 @@
 
 namespace App\Casts;
 
-use App\Services\Blizzard\ValueObjects\PlayableRace;
+use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
 /**
- * @implements CastsAttributes<array{id: int|null, name: string}, PlayableRace>
+ * @implements CastsAttributes<array{id: int|null, name: string}, PlayableRaceData>
  */
 class AsPlayableRace implements CastsAttributes
 {
@@ -42,11 +42,11 @@ class AsPlayableRace implements CastsAttributes
             return null;
         }
 
-        if (! $value instanceof PlayableRace) {
+        if (! $value instanceof PlayableRaceData) {
             throw new InvalidArgumentException(sprintf(
                 'The %s attribute must be assigned a %s value object or null.',
                 $key,
-                PlayableRace::class,
+                PlayableRaceData::class,
             ));
         }
 

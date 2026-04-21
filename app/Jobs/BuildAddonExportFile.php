@@ -8,7 +8,7 @@ use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Services\Attendance\Calculator;
-use App\Services\Attendance\CharacterAttendanceStats;
+use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -109,7 +109,7 @@ class BuildAddonExportFile implements ShouldQueue
     protected function buildPlayerAttendance(Calculator $calculator): Collection
     {
         try {
-            return $calculator->wholeGuild()->map(fn (CharacterAttendanceStats $stats) => [
+            return $calculator->wholeGuild()->map(fn (CharacterAttendanceStatsData $stats) => [
                 'id' => $stats->character->id,
                 'name' => $stats->character->name,
                 'attendance' => [

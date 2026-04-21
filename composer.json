@@ -19,6 +19,7 @@
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "socialiteproviders/discord": "^4.2",
+        "spatie/laravel-data": "^4.22",
         "spatie/laravel-permission": "^7.1",
         "tightenco/ziggy": "^2.0"
     },

@@ -3,8 +3,8 @@
 namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Services\WarcraftLogs\AuthenticationHandler;
-use App\Services\WarcraftLogs\ValueObjects\Expansion;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
+use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use App\Services\WarcraftLogs\WorldData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -88,11 +88,11 @@ class WorldDataTest extends TestCase
         $expansions = $service->getExpansions();
 
         $this->assertCount(2, $expansions);
-        $this->assertContainsOnlyInstancesOf(Expansion::class, $expansions);
+        $this->assertContainsOnlyInstancesOf(ExpansionData::class, $expansions);
         $this->assertEquals(1, $expansions[0]->id);
         $this->assertEquals('Classic', $expansions[0]->name);
         $this->assertCount(1, $expansions[0]->zones);
-        $this->assertInstanceOf(Zone::class, $expansions[0]->zones[0]);
+        $this->assertInstanceOf(ZoneData::class, $expansions[0]->zones[0]);
         $this->assertEquals(10, $expansions[0]->zones[0]->id);
         $this->assertEquals('Molten Core', $expansions[0]->zones[0]->name);
     }
@@ -165,7 +165,7 @@ class WorldDataTest extends TestCase
         $zones = $this->getService()->getZones();
 
         $this->assertCount(2, $zones);
-        $this->assertContainsOnlyInstancesOf(Zone::class, $zones);
+        $this->assertContainsOnlyInstancesOf(ZoneData::class, $zones);
         $this->assertEquals(10, $zones[0]->id);
         $this->assertEquals('Molten Core', $zones[0]->name);
     }

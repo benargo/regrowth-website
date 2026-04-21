@@ -3,8 +3,8 @@
 namespace Database\Factories\WarcraftLogs;
 
 use App\Models\WarcraftLogs\Zone;
-use App\Services\WarcraftLogs\ValueObjects\Difficulty;
-use App\Services\WarcraftLogs\ValueObjects\Expansion;
+use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
+use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,10 +31,10 @@ class ZoneFactory extends Factory
             'id' => fake()->unique()->numberBetween(1000, 1100),
             'name' => fake()->words(3, true),
             'difficulties' => [
-                new Difficulty(id: 3, name: 'Normal', sizes: [10, 25]),
-                new Difficulty(id: 4, name: 'Heroic', sizes: [10, 25]),
+                new DifficultyData(id: 3, name: 'Normal', sizes: [10, 25]),
+                new DifficultyData(id: 4, name: 'Heroic', sizes: [10, 25]),
             ],
-            'expansion' => new Expansion(id: 1001, name: 'The Burning Crusade'),
+            'expansion' => new ExpansionData(id: 1001, name: 'The Burning Crusade'),
             'is_frozen' => false,
         ];
     }
@@ -62,7 +62,7 @@ class ZoneFactory extends Factory
     /**
      * Set a specific expansion on the zone.
      */
-    public function withExpansion(Expansion $expansion): static
+    public function withExpansion(ExpansionData $expansion): static
     {
         return $this->state(fn (array $attributes) => [
             'expansion' => $expansion,
@@ -72,7 +72,7 @@ class ZoneFactory extends Factory
     /**
      * Set specific difficulties on the zone.
      *
-     * @param  array<Difficulty>  $difficulties
+     * @param  array<DifficultyData>  $difficulties
      */
     public function withDifficulties(array $difficulties): static
     {

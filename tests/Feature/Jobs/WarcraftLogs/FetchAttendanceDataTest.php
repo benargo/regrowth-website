@@ -7,8 +7,8 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\Raids\Report;
 use App\Services\WarcraftLogs\Attendance;
-use App\Services\WarcraftLogs\ValueObjects\GuildAttendance;
-use App\Services\WarcraftLogs\ValueObjects\PlayerAttendance;
+use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
+use App\Services\WarcraftLogs\ValueObjects\PlayerAttendanceData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -32,9 +32,9 @@ class FetchAttendanceDataTest extends TestCase
         $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
         $report = Report::factory()->create(['code' => 'abc123']);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'abc123',
-            players: [new PlayerAttendance(name: 'Thrall', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Thrall', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -58,9 +58,9 @@ class FetchAttendanceDataTest extends TestCase
         $character = Character::factory()->create(['name' => 'Jaina', 'rank_id' => $rank->id]);
         $report = Report::factory()->create(['code' => 'bench001']);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'bench001',
-            players: [new PlayerAttendance(name: 'Jaina', presence: 2)],
+            players: [new PlayerAttendanceData(name: 'Jaina', presence: 2)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -88,9 +88,9 @@ class FetchAttendanceDataTest extends TestCase
         $character = Character::factory()->create(['name' => 'Sylvanas', 'rank_id' => $rank->id]);
         $report = Report::factory()->create(['code' => 'skp001']);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'skp001',
-            players: [new PlayerAttendance(name: 'Sylvanas', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Sylvanas', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -111,9 +111,9 @@ class FetchAttendanceDataTest extends TestCase
         $character = Character::factory()->create(['name' => 'Illidan', 'rank_id' => null]);
         $report = Report::factory()->create(['code' => 'norank1']);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'norank1',
-            players: [new PlayerAttendance(name: 'Illidan', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Illidan', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -137,9 +137,9 @@ class FetchAttendanceDataTest extends TestCase
     {
         $report = Report::factory()->create(['code' => 'unk001']);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'unk001',
-            players: [new PlayerAttendance(name: 'UnknownPlayer', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'UnknownPlayer', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -159,9 +159,9 @@ class FetchAttendanceDataTest extends TestCase
         $character = Character::factory()->create(['name' => 'Arthas', 'rank_id' => $rank->id]);
 
         // No report created — simulates attendance for a report not in the DB
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'missing1',
-            players: [new PlayerAttendance(name: 'Arthas', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Arthas', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -187,9 +187,9 @@ class FetchAttendanceDataTest extends TestCase
         $originalTime = now()->subHour();
         $report = Report::factory()->create(['code' => 'touch01', 'updated_at' => $originalTime]);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'touch01',
-            players: [new PlayerAttendance(name: 'Thrall', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Thrall', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -208,7 +208,7 @@ class FetchAttendanceDataTest extends TestCase
         $originalTime = now()->subHour();
         $report = Report::factory()->create(['code' => 'notouch1', 'updated_at' => $originalTime]);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'notouch1',
             players: [],
             startTime: Carbon::parse('2025-06-01'),
@@ -234,9 +234,9 @@ class FetchAttendanceDataTest extends TestCase
         $character = Character::factory()->create(['name' => 'Rexxar', 'rank_id' => $rank->id]);
         $report = Report::factory()->create(['code' => 'dup001']);
 
-        $guildAttendance = new GuildAttendance(
+        $guildAttendance = new GuildAttendanceData(
             code: 'dup001',
-            players: [new PlayerAttendance(name: 'Rexxar', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Rexxar', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
@@ -263,15 +263,15 @@ class FetchAttendanceDataTest extends TestCase
         $character = Character::factory()->create(['name' => 'Varian', 'rank_id' => $rank->id]);
         $report = Report::factory()->create(['code' => 'exists1']);
 
-        $existsRecord = new GuildAttendance(
+        $existsRecord = new GuildAttendanceData(
             code: 'exists1',
-            players: [new PlayerAttendance(name: 'Varian', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Varian', presence: 1)],
             startTime: Carbon::parse('2025-06-01'),
         );
 
-        $missingRecord = new GuildAttendance(
+        $missingRecord = new GuildAttendanceData(
             code: 'notindb1',
-            players: [new PlayerAttendance(name: 'Varian', presence: 1)],
+            players: [new PlayerAttendanceData(name: 'Varian', presence: 1)],
             startTime: Carbon::parse('2025-06-02'),
         );
 

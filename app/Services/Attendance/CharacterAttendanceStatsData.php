@@ -4,10 +4,9 @@ namespace App\Services\Attendance;
 
 use App\Models\Character;
 use Carbon\Carbon;
-use Illuminate\Contracts\Support\Arrayable;
-use JsonSerializable;
+use Spatie\LaravelData\Data;
 
-final class CharacterAttendanceStats implements Arrayable, JsonSerializable
+final class CharacterAttendanceStatsData extends Data
 {
     public function __construct(
         public readonly Character $character,

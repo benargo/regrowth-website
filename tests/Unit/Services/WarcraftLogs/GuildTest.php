@@ -5,8 +5,8 @@ namespace Tests\Unit\Services\WarcraftLogs;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Exceptions\GuildNotFoundException;
 use App\Services\WarcraftLogs\Guild;
-use App\Services\WarcraftLogs\ValueObjects\Faction;
-use App\Services\WarcraftLogs\ValueObjects\Server;
+use App\Services\WarcraftLogs\ValueObjects\FactionData;
+use App\Services\WarcraftLogs\ValueObjects\ServerData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
@@ -190,7 +190,7 @@ class GuildTest extends TestCase
     {
         $guild = $this->makeGuild();
 
-        $this->assertInstanceOf(Server::class, $guild->server);
+        $this->assertInstanceOf(ServerData::class, $guild->server);
         $this->assertEquals('Pyrewood Village', $guild->server->name);
         $this->assertEquals('pyrewood-village', $guild->server->slug);
         $this->assertEquals('EU', $guild->server->region->name);
@@ -201,7 +201,7 @@ class GuildTest extends TestCase
     {
         $guild = $this->makeGuild();
 
-        $this->assertInstanceOf(Faction::class, $guild->faction);
+        $this->assertInstanceOf(FactionData::class, $guild->faction);
         $this->assertEquals(1, $guild->faction->id);
         $this->assertEquals('Alliance', $guild->faction->name);
     }

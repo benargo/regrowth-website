@@ -7,10 +7,10 @@ use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Services\WarcraftLogs\Reports;
-use App\Services\WarcraftLogs\ValueObjects\Difficulty;
-use App\Services\WarcraftLogs\ValueObjects\Expansion;
-use App\Services\WarcraftLogs\ValueObjects\Report as ReportData;
-use App\Services\WarcraftLogs\ValueObjects\Zone;
+use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
+use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
+use App\Services\WarcraftLogs\ValueObjects\ReportData;
+use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -59,11 +59,11 @@ class FetchReportsByGuildTagTest extends TestCase
     {
         $guildTag = GuildTag::factory()->create();
 
-        $zone = new Zone(
+        $zone = new ZoneData(
             id: 2000,
             name: 'Karazhan',
-            difficulties: [new Difficulty(id: 3, name: 'Normal', sizes: [10])],
-            expansion: new Expansion(id: 1001, name: 'TBC'),
+            difficulties: [new DifficultyData(id: 3, name: 'Normal', sizes: [10])],
+            expansion: new ExpansionData(id: 1001, name: 'TBC'),
         );
 
         $report = new ReportData(

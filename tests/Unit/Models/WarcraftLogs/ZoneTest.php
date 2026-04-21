@@ -6,8 +6,8 @@ use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
 use App\Models\Raids\Report;
 use App\Models\WarcraftLogs\Zone;
-use App\Services\WarcraftLogs\ValueObjects\Difficulty;
-use App\Services\WarcraftLogs\ValueObjects\Expansion;
+use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
+use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
@@ -86,8 +86,8 @@ class ZoneTest extends ModelTestCase
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
-        $expansion = new Expansion(id: 5, name: 'The War Within');
-        $difficulties = [new Difficulty(id: 3, name: 'Normal', sizes: [10, 25])];
+        $expansion = new ExpansionData(id: 5, name: 'The War Within');
+        $difficulties = [new DifficultyData(id: 3, name: 'Normal', sizes: [10, 25])];
 
         $zone = $this->create([
             'name' => 'Nerub-ar Palace',
@@ -103,15 +103,15 @@ class ZoneTest extends ModelTestCase
     public function it_casts_difficulties_to_a_collection_of_difficulty_objects(): void
     {
         $difficulties = [
-            new Difficulty(id: 3, name: 'Normal', sizes: [10, 25]),
-            new Difficulty(id: 4, name: 'Heroic', sizes: [10, 25]),
+            new DifficultyData(id: 3, name: 'Normal', sizes: [10, 25]),
+            new DifficultyData(id: 4, name: 'Heroic', sizes: [10, 25]),
         ];
 
         $zone = $this->create(['difficulties' => $difficulties]);
 
         $this->assertInstanceOf(Collection::class, $zone->difficulties);
         $this->assertCount(2, $zone->difficulties);
-        $this->assertInstanceOf(Difficulty::class, $zone->difficulties->first());
+        $this->assertInstanceOf(DifficultyData::class, $zone->difficulties->first());
         $this->assertSame('Normal', $zone->difficulties->first()->name);
         $this->assertSame('Heroic', $zone->difficulties->last()->name);
     }
@@ -119,11 +119,11 @@ class ZoneTest extends ModelTestCase
     #[Test]
     public function it_casts_expansion_to_an_expansion_object(): void
     {
-        $expansion = new Expansion(id: 5, name: 'The War Within');
+        $expansion = new ExpansionData(id: 5, name: 'The War Within');
 
         $zone = $this->create(['expansion' => $expansion]);
 
-        $this->assertInstanceOf(Expansion::class, $zone->expansion);
+        $this->assertInstanceOf(ExpansionData::class, $zone->expansion);
         $this->assertSame(5, $zone->expansion->id);
         $this->assertSame('The War Within', $zone->expansion->name);
     }
@@ -168,7 +168,7 @@ class ZoneTest extends ModelTestCase
 
         $this->assertNotEmpty($zone->name);
         $this->assertInstanceOf(Collection::class, $zone->difficulties);
-        $this->assertInstanceOf(Expansion::class, $zone->expansion);
+        $this->assertInstanceOf(ExpansionData::class, $zone->expansion);
         $this->assertModelExists($zone);
     }
 
@@ -191,7 +191,7 @@ class ZoneTest extends ModelTestCase
     #[Test]
     public function factory_with_expansion_state_sets_expansion(): void
     {
-        $expansion = new Expansion(id: 9, name: 'Midnight');
+        $expansion = new ExpansionData(id: 9, name: 'Midnight');
 
         $zone = $this->factory()->withExpansion($expansion)->create();
 
@@ -202,7 +202,7 @@ class ZoneTest extends ModelTestCase
     #[Test]
     public function factory_with_difficulties_state_sets_difficulties(): void
     {
-        $difficulties = [new Difficulty(id: 14, name: 'Mythic', sizes: [20])];
+        $difficulties = [new DifficultyData(id: 14, name: 'Mythic', sizes: [20])];
 
         $zone = $this->factory()->withDifficulties($difficulties)->create();
 
