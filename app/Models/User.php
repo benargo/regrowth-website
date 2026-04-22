@@ -66,6 +66,8 @@ class User extends Authenticatable
         'discriminator',
         'remember_token',
         'is_admin',
+        'created_at',
+        'updated_at',
     ];
 
     /**
@@ -204,6 +206,20 @@ class User extends Authenticatable
     public function highestRole(): ?DiscordRole
     {
         return $this->discordRoles->where('is_visible', true)->sortByDesc('position')->first() ?: null;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Administrators
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Check if the user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->is_admin;
     }
 
     /*

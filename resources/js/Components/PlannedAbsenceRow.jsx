@@ -1,11 +1,33 @@
 import { useState } from "react";
-import { Link, router } from "@inertiajs/react";
+import { usePage, Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
 import formatDate from "@/Helpers/FormatDate";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 
+function RestoreButton({ userCanRestore = false, absence }) {
+    const restoreAbsence = () => {
+        userCanRestore &&
+            router.post(route("raids.absences.restore", absence.id), {
+                preserveScroll: true,
+            });
+    };
+
+    if (!userCanRestore) {
+        return <div className="flex items-center text-sm text-red-700">Deleted</div>;
+    }
+
+    return (
+        <button onClick={restoreAbsence} className="flex items-center text-sm text-green-400 hover:text-green-300">
+            <Icon icon="trash-restore" style="regular" className="mr-1.5 h-4" />
+            Restore
+        </button>
+    );
+}
+
 export default function PlannedAbsenceRow({ absence, showCharacter = false, showCreatedBy = false }) {
+    const { auth } = usePage().props;
+    const userCanRestore = auth.user?.admin ?? false; // Only admins can restore absences
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const deleteAbsence = () => {
@@ -42,7 +64,9 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
                 )}
 
                 {showCreatedBy && absence.created_by && absence.created_at && (
-                    <div className="shrink-0 text-xs text-gray-500">Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}</div>
+                    <div className="shrink-0 text-xs text-gray-500">
+                        Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
+                    </div>
                 )}
 
                 <div className="flex shrink-0 gap-4">
@@ -53,13 +77,17 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
                         <Icon icon="pen" style="regular" className="mr-1.5 h-4" />
                         Edit
                     </Link>
-                    <button
-                        onClick={() => setConfirmingDelete(true)}
-                        className="flex items-center text-sm text-red-400 hover:text-red-300"
-                    >
-                        <Icon icon="trash" style="regular" className="mr-1.5 h-4" />
-                        Delete
-                    </button>
+                    {absence.deleted_at ? (
+                        <RestoreButton userCanRestore={userCanRestore} absence={absence} />
+                    ) : (
+                        <button
+                            onClick={() => setConfirmingDelete(true)}
+                            className="flex items-center text-sm text-red-400 hover:text-red-300"
+                        >
+                            <Icon icon="trash" style="regular" className="mr-1.5 h-4" />
+                            Delete
+                        </button>
+                    )}
                 </div>
             </div>
 

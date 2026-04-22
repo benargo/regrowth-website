@@ -8,8 +8,9 @@ use App\Events\PlannedAbsenceUpdated;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
 use App\Models\User;
+use App\Observers\PlannedAbsenceObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Event;
@@ -85,51 +86,6 @@ class PlannedAbsenceTest extends ModelTestCase
         $model = new PlannedAbsence;
 
         $this->assertContains(SoftDeletes::class, class_uses_recursive($model));
-    }
-
-    #[Test]
-    public function it_uses_prunable(): void
-    {
-        $model = new PlannedAbsence;
-
-        $this->assertContains(Prunable::class, class_uses_recursive($model));
-    }
-
-    #[Test]
-    public function prunable_excludes_records_without_end_date(): void
-    {
-        $this->create(['end_date' => null]);
-
-        $prunable = PlannedAbsence::withTrashed()
-            ->whereIn('id', PlannedAbsence::make()->prunable()->select('id'))
-            ->get();
-
-        $this->assertCount(0, $prunable);
-    }
-
-    #[Test]
-    public function prunable_excludes_records_with_recent_end_date(): void
-    {
-        $this->create(['end_date' => now()->subWeek()]);
-
-        $prunable = PlannedAbsence::withTrashed()
-            ->whereIn('id', PlannedAbsence::make()->prunable()->select('id'))
-            ->get();
-
-        $this->assertCount(0, $prunable);
-    }
-
-    #[Test]
-    public function prunable_includes_records_with_end_date_older_than_one_month(): void
-    {
-        $absence = $this->create(['end_date' => now()->subMonth()->subDay()]);
-
-        $prunable = PlannedAbsence::withTrashed()
-            ->whereIn('id', PlannedAbsence::make()->prunable()->select('id'))
-            ->get();
-
-        $this->assertCount(1, $prunable);
-        $this->assertTrue($prunable->first()->is($absence));
     }
 
     #[Test]
@@ -264,37 +220,17 @@ class PlannedAbsenceTest extends ModelTestCase
         $this->assertSame('2026-03-20', $array['end_date']);
     }
 
-    // ==================== events ====================
+    // ==================== observer ====================
 
     #[Test]
-    public function it_dispatches_planned_absence_created_event_on_create(): void
+    public function it_is_observed_by_planned_absence_observer(): void
     {
-        Event::fake();
+        $attributes = (new \ReflectionClass(PlannedAbsence::class))
+            ->getAttributes(ObservedBy::class);
 
-        $this->create();
+        $this->assertNotEmpty($attributes);
 
-        Event::assertDispatched(PlannedAbsenceCreated::class);
-    }
-
-    #[Test]
-    public function it_dispatches_planned_absence_updated_event_on_update(): void
-    {
-        $absence = $this->create();
-        Event::fake();
-
-        $absence->update(['reason' => 'Updated reason']);
-
-        Event::assertDispatched(PlannedAbsenceUpdated::class);
-    }
-
-    #[Test]
-    public function it_dispatches_planned_absence_deleted_event_on_delete(): void
-    {
-        $absence = $this->create();
-        Event::fake();
-
-        $absence->delete();
-
-        Event::assertDispatched(PlannedAbsenceDeleted::class);
+        $observerClasses = $attributes[0]->getArguments()[0];
+        $this->assertContains(PlannedAbsenceObserver::class, $observerClasses);
     }
 }

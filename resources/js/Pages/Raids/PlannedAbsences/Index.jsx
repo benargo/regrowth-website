@@ -17,14 +17,14 @@ function PlannedAbsencesSkeleton() {
 }
 
 export default function Index() {
-    const { plannedAbsences } = usePage().props;
+    const { planned_absences: plannedAbsences } = usePage().props;
 
     const grouped = useMemo(() => {
         if (!plannedAbsences) {
             return null;
         }
 
-        return plannedAbsences.data.reduce((acc, absence) => {
+        return plannedAbsences.reduce((acc, absence) => {
             const key = absence.character?.name ?? "Unknown Character";
             if (!acc[key]) {
                 acc[key] = [];

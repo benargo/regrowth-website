@@ -65,6 +65,8 @@ Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], 
     Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->can('update', 'plannedAbsence')->name('absences.edit');
     Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->can('update', 'plannedAbsence')->name('absences.update');
     Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->can('delete', 'plannedAbsence')->name('absences.destroy');
+    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->can('restore', 'plannedAbsence')->name('absences.restore');
+    // Route::post('/absences/{id}/restore', [PlannedAbsenceController::class, 'restore'])->can('restore', 'App\Models\PlannedAbsence')->name('absences.restore');
 
     // Attendance routes
     Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance')->name('attendance.index');

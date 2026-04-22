@@ -2,14 +2,15 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
-use App\Http\Resources\UserResource;
 use App\Models\PlannedAbsence;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -17,9 +18,13 @@ class PlannedAbsenceResourceTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $user;
+
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
@@ -37,6 +42,8 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create([
             'reason' => 'I will be on holiday.',
         ]);
@@ -50,6 +57,8 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_omits_character_when_not_loaded(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
@@ -60,18 +69,22 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_includes_character_when_loaded(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->withCharacter()->create();
         $absence->load('character');
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
-        $this->assertInstanceOf(CharacterResource::class, $array['character']);
-        $this->assertSame($absence->character_id, $array['character']->resource->id);
+        $this->assertIsArray($array['character']);
+        $this->assertSame($absence->character_id, $array['character']['id']);
     }
 
     #[Test]
     public function it_omits_user_when_not_loaded(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
@@ -82,13 +95,15 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_includes_user_when_loaded(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create();
         $absence->load('user');
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
-        $this->assertInstanceOf(UserResource::class, $array['user']);
-        $this->assertSame($absence->user->id, $array['user']->resource->id);
+        $this->assertIsArray($array['user']);
+        $this->assertSame($absence->user->id, $array['user']['id']);
     }
 
     #[Test]
@@ -105,6 +120,8 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_omits_created_by_when_not_loaded(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
@@ -115,18 +132,22 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_includes_created_by_when_loaded(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create();
         $absence->load('createdBy');
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
-        $this->assertInstanceOf(UserResource::class, $array['created_by']);
-        $this->assertSame($absence->createdBy->id, $array['created_by']->resource->id);
+        $this->assertIsArray($array['created_by']);
+        $this->assertSame($absence->createdBy->id, $array['created_by']['id']);
     }
 
     #[Test]
     public function it_returns_null_end_date_when_not_set(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->withoutEndDate()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
@@ -137,6 +158,8 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_returns_null_discord_message_id_when_not_set(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
@@ -147,6 +170,8 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_returns_discord_message_id_when_set(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->withDiscordMessageId()->create();
 
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
@@ -157,6 +182,8 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_formats_start_date_as_d_m_y(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create([
             'start_date' => Carbon::parse('2026-06-15 10:00:00'),
         ]);
@@ -169,6 +196,8 @@ class PlannedAbsenceResourceTest extends TestCase
     #[Test]
     public function it_formats_end_date_as_d_m_y_when_set(): void
     {
+        $this->mockRequestUser();
+
         $absence = PlannedAbsence::factory()->create([
             'end_date' => Carbon::parse('2026-06-20 10:00:00'),
         ]);
@@ -176,5 +205,19 @@ class PlannedAbsenceResourceTest extends TestCase
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
         $this->assertSame('2026-06-20', $array['end_date']);
+    }
+
+    /**
+     * Helper method to mock the request user for testing authorization logic in the resource.
+     *
+     * @param  bool  $is_admin  Whether the mocked user should have admin privileges.
+     */
+    private function mockRequestUser(bool $is_admin = false): void
+    {
+        $this->user = $is_admin ? User::factory()->admin()->create() : User::factory()->create();
+
+        Mockery::mock(Request::class, function (MockInterface $mock) {
+            $mock->shouldReceive('user')->andReturn($this->user);
+        });
     }
 }

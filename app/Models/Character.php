@@ -77,6 +77,16 @@ class Character extends Model
     ];
 
     /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
+    /**
      * All of the relationships to be touched.
      *
      * @var array

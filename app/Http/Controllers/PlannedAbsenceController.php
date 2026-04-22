@@ -16,7 +16,6 @@ use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -29,31 +28,44 @@ class PlannedAbsenceController extends Controller
         protected DiscordGuildService $discordGuildService
     ) {}
 
+    /*
+    |--------------------------------------------------------------------------
+    | Index
+    |--------------------------------------------------------------------------
+    */
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): Response
     {
         return Inertia::render('Raids/PlannedAbsences/Index', [
-            'plannedAbsences' => Inertia::defer(function () use ($request) {
-                return Cache::tags(['attendance'])->remember('planned_absences:resource_collection', now()->addDay(), function () use ($request) {
+            'planned_absences' => Inertia::defer(function () use ($request) {
+                return Cache::tags(['attendance'])->remember('planned_absences:with_trashed', now()->addDay(), function () use ($request) {
                     return PlannedAbsenceResource::collection(
                         PlannedAbsence::query()
+                            ->withTrashed()
                             ->with(['character', 'createdBy'])
                             ->orderBy('start_date')
                             ->get()
-                    )->response($request)->getData(true);
+                    )->resolve($request);
                 });
             }),
         ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create & Store
+    |--------------------------------------------------------------------------
+    */
 
     /**
      * Show the form for creating a new resource.
      */
     public function create(Request $request): Response
     {
-        $characters = $this->buildCharactersResourceCollection();
+        $characters = $this->buildCharactersResourceCollection($request);
 
         $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
             ? $this->resolveCharacterFromUserNickname($request->user())
@@ -61,7 +73,7 @@ class PlannedAbsenceController extends Controller
 
         return Inertia::render('Raids/PlannedAbsences/Form', [
             'characters' => $characters,
-            'resolvedCharacter' => $resolvedCharacter ? new CharacterResource($resolvedCharacter) : null,
+            'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
             'action' => route('raids.absences.store'),
         ]);
     }
@@ -113,19 +125,21 @@ class PlannedAbsenceController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
-        if ($request->user()->can('viewAny', PlannedAbsence::class)) {
-            return to_route('raids.absences.index')->with('success', 'Planned absence created successfully.');
-        }
-
-        return to_route('account.index')->with('success', 'Planned absence created successfully.');
+        return $this->redirectAfterModification($request, 'Planned absence created successfully.');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit & Update
+    |--------------------------------------------------------------------------
+    */
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
-        $characters = $this->buildCharactersResourceCollection();
+        $characters = $this->buildCharactersResourceCollection($request);
 
         $plannedAbsence->load(['character', 'createdBy']);
 
@@ -135,8 +149,8 @@ class PlannedAbsenceController extends Controller
 
         return Inertia::render('Raids/PlannedAbsences/Form', [
             'characters' => $characters,
-            'plannedAbsence' => new PlannedAbsenceResource($plannedAbsence),
-            'resolvedCharacter' => $resolvedCharacter ? new CharacterResource($resolvedCharacter) : null,
+            'planned_absence' => new PlannedAbsenceResource($plannedAbsence)->resolve($request),
+            'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
             'action' => route('raids.absences.update', $plannedAbsence),
         ]);
     }
@@ -179,17 +193,59 @@ class PlannedAbsenceController extends Controller
 
         $plannedAbsence->update($updates);
 
-        return back()->with('success', 'Planned absence updated successfully.');
+        return $this->redirectAfterModification($request, 'Planned absence updated successfully.');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Destroy & Restore
+    |--------------------------------------------------------------------------
+    */
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(PlannedAbsence $plannedAbsence): RedirectResponse
+    public function destroy(Request $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
         $plannedAbsence->delete();
 
-        return back()->with('success', 'Planned absence deleted successfully.');
+        return $this->redirectAfterModification($request, 'Planned absence deleted successfully.');
+    }
+
+    /**
+     * Restore the specified resource from storage.
+     */
+    public function restore(Request $request, PlannedAbsence $plannedAbsence): RedirectResponse
+    {
+        if ($plannedAbsence === null) {
+            return back()->with(['error' => 'Planned absence not found.']);
+        }
+
+        if (! $plannedAbsence->trashed()) {
+            return back()->with(['error' => 'Planned absence is not deleted.']);
+        }
+
+        $plannedAbsence->restore();
+
+        return back()->with('success', 'Planned absence restored successfully.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Determine where to redirect the user after creating/updating a planned absence, based on their permissions
+     */
+    private function redirectAfterModification(Request $request, string $successMessage = 'Success'): RedirectResponse
+    {
+        if ($request->user()->can('viewAny', PlannedAbsence::class)) {
+            return to_route('raids.absences.index')->with('success', $successMessage);
+        }
+
+        return to_route('account.index')->with('success', $successMessage);
     }
 
     /**
@@ -267,17 +323,15 @@ class PlannedAbsenceController extends Controller
     /**
      * Build a resource collection of main characters for use in the create/edit forms.
      */
-    private function buildCharactersResourceCollection(): AnonymousResourceCollection
+    private function buildCharactersResourceCollection(Request $request): array
     {
-        return CharacterResource::collection(
-            Character::hydrate(
-                Cache::tags(['characters'])->remember('characters:mains', now()->addDay(), function () {
-                    return Character::query()
-                        ->where('is_main', true)
-                        ->get()
-                        ->toArray();
-                })
-            )->sortBy('name')
-        );
+        return Cache::tags(['characters'])->remember('characters:mains:to_resource_collection', now()->addDay(), function () use ($request) {
+            return CharacterResource::collection(
+                Character::query()
+                    ->where('is_main', true)
+                    ->orderBy('name')
+                    ->get()
+            )->resolve($request);
+        });
     }
 }

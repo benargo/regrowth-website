@@ -97,7 +97,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raids/PlannedAbsences/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('plannedAbsences.data', 0)
+                ->has('planned_absences', 0)
             )
         );
     }
@@ -113,8 +113,8 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raids/PlannedAbsences/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('plannedAbsences.data', 1)
-                ->has('plannedAbsences.data.0', fn (Assert $absence) => $absence
+                ->has('planned_absences', 1)
+                ->has('planned_absences.0', fn (Assert $absence) => $absence
                     ->has('id')
                     ->has('character')
                     ->has('start_date')
@@ -123,6 +123,8 @@ class PlannedAbsenceControllerTest extends TestCase
                     ->has('discord_message_id')
                     ->has('created_by')
                     ->has('created_at')
+                    ->has('updated_at')
+                    ->has('deleted_at')
                 )
             )
         );
@@ -144,9 +146,9 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('plannedAbsences.data', 2)
-                ->where('plannedAbsences.data.0.id', $sooner->id)
-                ->where('plannedAbsences.data.1.id', $later->id)
+                ->has('planned_absences', 2)
+                ->where('planned_absences.0.id', $sooner->id)
+                ->where('planned_absences.1.id', $later->id)
             )
         );
     }
@@ -207,8 +209,8 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raids/PlannedAbsences/Form')
-            ->has('characters.data', 1)
-            ->where('characters.data.0.id', $main->id)
+            ->has('characters', 1)
+            ->where('characters.0.id', $main->id)
         );
     }
 
@@ -237,7 +239,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter', null)
+            ->where('resolved_character', null)
         );
     }
 
@@ -258,8 +260,8 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter.data.id', $character->id)
-            ->where('resolvedCharacter.data.name', 'Aragorn')
+            ->where('resolved_character.id', $character->id)
+            ->where('resolved_character.name', 'Aragorn')
         );
     }
 
@@ -280,7 +282,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter', null)
+            ->where('resolved_character', null)
         );
     }
 
@@ -301,7 +303,8 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter.data.id', $character->id)
+            ->where('resolved_character.id', $character->id)
+            ->where('resolved_character.name', 'Marktführer')
         );
     }
 
@@ -379,7 +382,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raids/PlannedAbsences/Form')
-            ->has('plannedAbsence.data', fn (Assert $data) => $data
+            ->has('planned_absence', fn (Assert $data) => $data
                 ->where('id', $absence->id)
                 ->has('character')
                 ->where('start_date', '2026-06-01')
@@ -388,6 +391,8 @@ class PlannedAbsenceControllerTest extends TestCase
                 ->has('discord_message_id')
                 ->has('created_by')
                 ->has('created_at')
+                ->has('updated_at')
+                ->has('deleted_at')
             )
         );
     }
@@ -404,8 +409,8 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('characters.data', 1)
-            ->where('characters.data.0.id', $main->id)
+            ->has('characters', 1)
+            ->where('characters.0.id', $main->id)
         );
     }
 
@@ -434,7 +439,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter', null)
+            ->where('resolved_character', null)
         );
     }
 
@@ -451,8 +456,8 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter.data.id', $character->id)
-            ->where('resolvedCharacter.data.name', 'Aragorn')
+            ->where('resolved_character.id', $character->id)
+            ->where('resolved_character.name', 'Aragorn')
         );
     }
 
@@ -467,7 +472,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter', null)
+            ->where('resolved_character', null)
         );
     }
 
@@ -484,7 +489,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter.data.id', $character->id)
+            ->where('resolved_character.id', $character->id)
         );
     }
 
@@ -1068,7 +1073,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('resolvedCharacter', null)
+            ->where('resolved_character', null)
         );
     }
 

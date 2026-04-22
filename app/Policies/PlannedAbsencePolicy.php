@@ -68,7 +68,7 @@ class PlannedAbsencePolicy
      */
     public function restore(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->is_admin ?? false;
+        return $user->isAdmin() ?? false;
     }
 
     /**
@@ -76,6 +76,6 @@ class PlannedAbsencePolicy
      */
     public function forceDelete(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->is_admin ?? false;
+        return $user->isAdmin() ?? false;
     }
 }

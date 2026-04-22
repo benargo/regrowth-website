@@ -111,6 +111,8 @@ class UserTest extends ModelTestCase
             'discriminator',
             'remember_token',
             'is_admin',
+            'created_at',
+            'updated_at',
         ]);
     }
 

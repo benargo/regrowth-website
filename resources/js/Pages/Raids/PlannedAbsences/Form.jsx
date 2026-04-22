@@ -105,17 +105,17 @@ function CharacterSearch({ characters, value, onChange, error, disabled = false 
     );
 }
 
-export default function Create() {
+export default function Form() {
     const {
         auth,
         characters,
-        plannedAbsence: rawPlannedAbsence = null,
-        resolvedCharacter: rawResolvedCharacter = null,
+        planned_absence: plannedAbsence = null,
+        resolved_character: resolvedCharacter = null,
         action,
     } = usePage().props;
-    const plannedAbsence = rawPlannedAbsence?.data ?? null;
-    const resolvedCharacter = rawResolvedCharacter?.data ?? null;
+
     const isEditing = plannedAbsence !== null;
+    const canViewAny = usePermission("view-planned-absences");
     const canAssignOtherUser = usePermission("manage-planned-absences");
     const canBackdate = usePermission("manage-planned-absences");
 
@@ -130,7 +130,7 @@ export default function Create() {
             return;
         }
 
-        const matched = characters.data.find((c) => c.name.toLowerCase() === member.nickname.toLowerCase());
+        const matched = characters.find((c) => c.name.toLowerCase() === member.nickname.toLowerCase());
 
         if (matched) {
             setCharacterId(matched.id);
@@ -304,7 +304,7 @@ export default function Create() {
                         <div>
                             <label className="text-md mb-1.5 block font-medium text-gray-300">Character</label>
                             <CharacterSearch
-                                characters={characters.data}
+                                characters={characters}
                                 value={characterId}
                                 onChange={(id) => {
                                     setCharacterId(id);
@@ -384,9 +384,18 @@ export default function Create() {
                                 <Icon icon="calendar-plus" style="solid" />
                                 {processing ? "Saving..." : isEditing ? "Save Changes" : "Log Absence"}
                             </button>
-                            <a href={route("raids.absences.index")} className="text-sm text-gray-400 hover:text-white">
-                                Cancel
-                            </a>
+                            {canViewAny ? (
+                                <Link
+                                    href={route("raids.absences.index")}
+                                    className="text-sm text-gray-400 hover:text-white"
+                                >
+                                    Cancel
+                                </Link>
+                            ) : (
+                                <Link href={route("account.index")} className="text-sm text-gray-400 hover:text-white">
+                                    Cancel
+                                </Link>
+                            )}
                         </div>
                     </form>
                 </div>

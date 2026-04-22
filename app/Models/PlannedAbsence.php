@@ -2,21 +2,19 @@
 
 namespace App\Models;
 
-use App\Events\PlannedAbsenceCreated;
-use App\Events\PlannedAbsenceDeleted;
-use App\Events\PlannedAbsenceUpdated;
+use App\Observers\PlannedAbsenceObserver;
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ObservedBy([PlannedAbsenceObserver::class])]
 class PlannedAbsence extends Model
 {
-    use HasFactory, HasUuids, Prunable, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -38,17 +36,6 @@ class PlannedAbsence extends Model
         'reason',
         'discord_message_id',
         'created_by',
-    ];
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'created' => PlannedAbsenceCreated::class,
-        'updated' => PlannedAbsenceUpdated::class,
-        'deleted' => PlannedAbsenceDeleted::class,
     ];
 
     /**
@@ -98,15 +85,5 @@ class PlannedAbsence extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Prune records whose end_date (when set) is more than 1 month ago.
-     * Records with no end_date are never pruned.
-     */
-    public function prunable(): Builder
-    {
-        return static::whereNotNull('end_date')
-            ->where('end_date', '<=', now()->subMonth());
     }
 }
