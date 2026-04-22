@@ -18,6 +18,18 @@ class ReportsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::shouldReceive('tags')
+            ->zeroOrMoreTimes()
+            ->andReturnSelf();
+
+        Cache::shouldReceive('flush')
+            ->zeroOrMoreTimes();
+    }
+
     protected function getService(array $configOverrides = []): Reports
     {
         $config = array_merge([

@@ -5,7 +5,6 @@ namespace Tests\Feature\Dashboard;
 use App\Events\AddonSettingsProcessed;
 use App\Models\TBC\Phase;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
@@ -148,21 +147,5 @@ class PhaseUpdateTest extends DashboardTestCase
 
         $phase->refresh();
         $this->assertEquals('2025-01-15 14:00:00', $phase->start_date->utc()->format('Y-m-d H:i:s'));
-    }
-
-    #[Test]
-    public function update_phase_clears_phases_cache(): void
-    {
-        $phase = Phase::factory()->create();
-
-        // Pre-populate with valid cached data so the middleware doesn't fail
-        Cache::put('phases:index', Phase::all()->toArray());
-        $this->assertTrue(Cache::has('phases:index'));
-
-        $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
-            'start_date' => '2025-06-15T14:00',
-        ]);
-
-        $this->assertFalse(Cache::has('phases:index'));
     }
 }

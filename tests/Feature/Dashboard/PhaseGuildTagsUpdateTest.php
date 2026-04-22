@@ -5,7 +5,6 @@ namespace Tests\Feature\Dashboard;
 use App\Models\TBC\Phase;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
-use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
@@ -179,21 +178,5 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
 
         $this->assertNull($tagForPhase1->tbc_phase_id);
         $this->assertEquals($phase2->id, $tagForPhase2->tbc_phase_id);
-    }
-
-    #[Test]
-    public function update_guild_tags_clears_phases_cache(): void
-    {
-        $phase = Phase::factory()->create();
-
-        // Pre-populate with valid cached data so the middleware doesn't fail
-        Cache::put('phases:index', Phase::all()->toArray());
-        $this->assertTrue(Cache::has('phases:index'));
-
-        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
-            'guild_tag_ids' => [],
-        ]);
-
-        $this->assertFalse(Cache::has('phases:index'));
     }
 }

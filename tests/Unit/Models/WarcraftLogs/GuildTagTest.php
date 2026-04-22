@@ -5,6 +5,8 @@ namespace Tests\Unit\Models\WarcraftLogs;
 use App\Models\Raids\Report;
 use App\Models\TBC\Phase;
 use App\Models\WarcraftLogs\GuildTag;
+use App\Observers\GuildTagObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
@@ -15,6 +17,18 @@ class GuildTagTest extends ModelTestCase
     protected function modelClass(): string
     {
         return GuildTag::class;
+    }
+
+    #[Test]
+    public function it_is_observed_by_guild_tag_observer(): void
+    {
+        $attributes = (new \ReflectionClass(GuildTag::class))
+            ->getAttributes(ObservedBy::class);
+
+        $this->assertNotEmpty($attributes);
+
+        $observerClasses = $attributes[0]->getArguments()[0];
+        $this->assertContains(GuildTagObserver::class, $observerClasses);
     }
 
     #[Test]

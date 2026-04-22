@@ -13,24 +13,24 @@ use App\Services\WarcraftLogs\GuildTags as WarcraftLogsGuildTagsService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class PhaseController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function listAll(Request $request)
+    public function index(Request $request): Response
     {
-        $phases = Phase::with(['raids', 'bosses', 'guildTags'])->orderBy('start_date', 'desc')->get();
+        $phases = Phase::with(['raids', 'bosses', 'guildTags'])->orderBy('number')->get();
 
         $currentPhase = $phases->firstWhere('start_date', '<=', now());
-        $currentPhaseId = $currentPhase ? $currentPhase->id : null;
 
         return Inertia::render('Dashboard/ManagePhases', [
             'phases' => PhaseResource::collection($phases)->toArray($request),
-            'current_phase' => $currentPhaseId,
+            'current_phase' => $currentPhase?->id ?? null,
             'all_guild_tags' => Inertia::defer(fn () => $this->buildAllGuildTags()),
         ]);
     }
@@ -50,15 +50,13 @@ class PhaseController extends Controller
             'start_date' => $startDate,
         ]);
 
-        $this->clearCache();
-
         return back();
     }
 
     /**
      * Build all guild tags for selection.
      */
-    public function buildAllGuildTags()
+    public function buildAllGuildTags(): AnonymousResourceCollection
     {
         $allGuildTags = app(WarcraftLogsGuildTagsService::class)->toCollection();
 
@@ -80,16 +78,6 @@ class PhaseController extends Controller
             GuildTag::query()->whereIn('id', $guildTagIds)->update(['tbc_phase_id' => $phase->id]);
         }
 
-        $this->clearCache();
-
         return back();
-    }
-
-    /**
-     * Clear relevant caches when phases are updated.
-     */
-    protected function clearCache(): void
-    {
-        Cache::forget('phases:index');
     }
 }

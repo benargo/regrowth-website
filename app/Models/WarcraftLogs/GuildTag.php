@@ -3,14 +3,16 @@
 namespace App\Models\WarcraftLogs;
 
 use App\Contracts\Models\DatasetModel;
-use App\Events\AddonSettingsProcessed;
 use App\Models\Raids\Report;
 use App\Models\TBC\Phase;
+use App\Observers\GuildTagObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy([GuildTagObserver::class])]
 class GuildTag extends Model implements DatasetModel
 {
     use HasFactory;
@@ -41,15 +43,6 @@ class GuildTag extends Model implements DatasetModel
     ];
 
     /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'updated' => AddonSettingsProcessed::class,
-    ];
-
-    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -60,18 +53,6 @@ class GuildTag extends Model implements DatasetModel
         'count_attendance',
         'tbc_phase_id',
     ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'count_attendance' => 'boolean',
-        ];
-    }
 
     /**
      * Get the TBC phase associated with the guild tag.

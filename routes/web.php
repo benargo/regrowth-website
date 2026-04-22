@@ -110,7 +110,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     /**
      * Phases management
      */
-    Route::get('/phases', [PhaseController::class, 'listAll'])->name('phases.view');
+    Route::get('/phases', [PhaseController::class, 'index'])->name('phases.view');
     Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
     Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
 

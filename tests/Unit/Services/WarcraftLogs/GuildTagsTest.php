@@ -18,6 +18,21 @@ class GuildTagsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::shouldReceive('tags')
+            ->zeroOrMoreTimes()
+            ->andReturnSelf();
+
+        Cache::shouldReceive('flush')
+            ->zeroOrMoreTimes();
+
+        Cache::shouldReceive('refreshEventDispatcher')
+            ->zeroOrMoreTimes();
+    }
+
     protected function fakeSuccessfulTagsResponse(array $tagsData): void
     {
         Event::fake(AddonSettingsProcessed::class);
