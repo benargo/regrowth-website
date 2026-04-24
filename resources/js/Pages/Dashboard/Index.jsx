@@ -70,7 +70,7 @@ export default function Index({ discordRoles }) {
                             </DashboardCard>
                         )}
                         {usePermission("view-attendance") && (
-                            <DashboardCard href={route("raids.attendance.index")} icon="clipboard-list-check">
+                            <DashboardCard href={route("raids.attendance.dashboard")} icon="clipboard-list-check">
                                 <h3 className="text-md">Attendance tracker</h3>
                                 <p className="mb-1 text-sm">Review raid attendance records.</p>
                             </DashboardCard>

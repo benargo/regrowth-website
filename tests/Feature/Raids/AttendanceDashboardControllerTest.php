@@ -18,7 +18,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
-class AttendanceControllerTest extends TestCase
+class AttendanceDashboardControllerTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -40,59 +40,59 @@ class AttendanceControllerTest extends TestCase
     // ==================== index: Access Control ====================
 
     #[Test]
-    public function index_requires_authentication(): void
+    public function invoke_requires_authentication(): void
     {
-        $response = $this->get(route('raids.attendance.index'));
+        $response = $this->get(route('raids.attendance.dashboard'));
 
         $response->assertRedirect('/login');
     }
 
     #[Test]
-    public function index_forbids_guest_users(): void
+    public function invoke_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertForbidden();
     }
 
     #[Test]
-    public function index_forbids_member_users(): void
+    public function invoke_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertForbidden();
     }
 
     #[Test]
-    public function index_forbids_raider_users(): void
+    public function invoke_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertForbidden();
     }
 
     #[Test]
-    public function index_forbids_loot_councillor_users(): void
+    public function invoke_forbids_loot_councillor_users(): void
     {
         $user = User::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertForbidden();
     }
 
     #[Test]
-    public function index_allows_officer_users(): void
+    public function invoke_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertOk();
     }
@@ -100,7 +100,7 @@ class AttendanceControllerTest extends TestCase
     // ==================== index: Props ====================
 
     #[Test]
-    public function index_returns_latest_report_date(): void
+    public function invoke_returns_latest_report_date(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => '2025-03-07 12:00:00']);
@@ -109,7 +109,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('latestReportDate', '15 Mar 2025')
@@ -117,11 +117,11 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_returns_null_latest_report_date_when_no_reports(): void
+    public function invoke_returns_null_latest_report_date_when_no_reports(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('latestReportDate', null)
@@ -129,11 +129,11 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_stats_prop_is_deferred_and_not_in_initial_response(): void
+    public function invoke_stats_prop_is_deferred_and_not_in_initial_response(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('stats')
@@ -141,11 +141,11 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_deferred_stats_contains_expected_keys(): void
+    public function invoke_deferred_stats_contains_expected_keys(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -164,7 +164,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_upcoming_absences_returns_future_absences_in_order(): void
+    public function invoke_upcoming_absences_returns_future_absences_in_order(): void
     {
         $rank = GuildRank::factory()->create();
         $characterA = Character::factory()->main()->create(['name' => 'Arthas', 'rank_id' => $rank->id]);
@@ -183,7 +183,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -195,7 +195,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_upcoming_absences_excludes_past_absences(): void
+    public function invoke_upcoming_absences_excludes_past_absences(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Sylvanas', 'rank_id' => $rank->id]);
@@ -208,7 +208,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -218,7 +218,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_upcoming_absences_limited_to_four(): void
+    public function invoke_upcoming_absences_limited_to_four(): void
     {
         $rank = GuildRank::factory()->create();
 
@@ -233,7 +233,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -243,7 +243,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_classifies_above_80_correctly(): void
+    public function invoke_classifies_above_80_correctly(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -256,7 +256,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -269,7 +269,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_classifies_dropping_off_correctly(): void
+    public function invoke_classifies_dropping_off_correctly(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Vashj', 'rank_id' => $rank->id]);
@@ -288,7 +288,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -299,7 +299,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_benched_last_week_groups_characters_by_tag(): void
+    public function invoke_benched_last_week_groups_characters_by_tag(): void
     {
         $rank = GuildRank::factory()->create();
         $kael = Character::factory()->main()->create(['name' => 'Kael', 'rank_id' => $rank->id]);
@@ -316,7 +316,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -329,7 +329,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_benched_last_week_excludes_character_from_older_report(): void
+    public function invoke_benched_last_week_excludes_character_from_older_report(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Illidan', 'rank_id' => $rank->id]);
@@ -339,7 +339,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -349,7 +349,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_classifies_picking_up_correctly(): void
+    public function invoke_classifies_picking_up_correctly(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Maiev', 'rank_id' => $rank->id]);
@@ -369,7 +369,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -380,11 +380,11 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_phase_attendance_null_when_no_phase_started(): void
+    public function invoke_phase_attendance_null_when_no_phase_started(): void
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -395,7 +395,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_phase_attendance_only_counts_reports_since_current_phase_start(): void
+    public function invoke_phase_attendance_only_counts_reports_since_current_phase_start(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -413,7 +413,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -423,7 +423,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_total_players_breakdown_counts_mains_and_linked_separately(): void
+    public function invoke_total_players_breakdown_counts_mains_and_linked_separately(): void
     {
         $rank = GuildRank::factory()->create();
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
@@ -439,7 +439,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -451,7 +451,7 @@ class AttendanceControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_previous_phase_attendance_bounded_between_phase_starts(): void
+    public function invoke_previous_phase_attendance_bounded_between_phase_starts(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Vol\'jin', 'rank_id' => $rank->id]);
@@ -467,7 +467,7 @@ class AttendanceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
