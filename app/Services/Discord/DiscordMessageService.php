@@ -4,7 +4,9 @@ namespace App\Services\Discord;
 
 use Illuminate\Support\Facades\Log;
 
-class DiscordMessageService extends DiscordService
+// ==================== DEPRECATED CLASS ====================
+
+class DiscordMessageService extends DeprecatedDiscordService
 {
     /**
      * Create a Discord message in the specified channel.

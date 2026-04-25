@@ -5,7 +5,9 @@ namespace App\Services\Discord;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
-abstract class DiscordService
+// ==================== DEPRECATED CLASS ====================
+
+abstract class DeprecatedDiscordService
 {
     /**
      * Base URL for Discord API requests.
