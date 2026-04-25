@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Services\Discord;
+namespace Tests\Unit\Services\Discord\Resources;
 
-use App\Services\Discord\GuildMember;
+use App\Services\Discord\Resources\GuildMember;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;

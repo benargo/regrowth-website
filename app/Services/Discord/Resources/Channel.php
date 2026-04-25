@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Discord;
+namespace App\Services\Discord\Resources;
 
 use App\Services\Discord\Enums\ChannelType;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;

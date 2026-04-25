@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Services\Discord;
+namespace Tests\Unit\Services\Discord\Resources;
 
-use App\Services\Discord\Channel;
 use App\Services\Discord\Enums\ChannelType;
+use App\Services\Discord\Resources\Channel;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;

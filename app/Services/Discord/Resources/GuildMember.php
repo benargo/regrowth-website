@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Discord;
+namespace App\Services\Discord\Resources;
 
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
 use Spatie\LaravelData\Attributes\Validation\BooleanType;

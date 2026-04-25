@@ -3,10 +3,10 @@
 namespace Tests\Unit\Services\Discord;
 
 use App\Exceptions\MisconfigurationException;
-use App\Services\Discord\Channel;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
 use App\Services\Discord\Enums\ChannelType;
+use App\Services\Discord\Resources\Channel;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Mockery;

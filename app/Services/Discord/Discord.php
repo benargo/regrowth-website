@@ -3,6 +3,7 @@
 namespace App\Services\Discord;
 
 use App\Exceptions\MisconfigurationException;
+use App\Services\Discord\Resources\Channel;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
