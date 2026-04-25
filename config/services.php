@@ -41,7 +41,7 @@ return [
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'redirect' => env('DISCORD_REDIRECT_URI', '/auth/discord/callback'),
         'token' => env('DISCORD_BOT_TOKEN'),
-        'guild_id' => 829020506907869214,
+        'server_id' => env('DISCORD_SERVER_ID'),
         'channels' => [
             'announcements' => env('DISCORD_CHANNEL_ANNOUNCEMENTS'),
             'daily_quests' => env('DISCORD_CHANNEL_DAILY_QUESTS'),

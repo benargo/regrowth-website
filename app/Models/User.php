@@ -101,7 +101,7 @@ class User extends Authenticatable
         return Attribute::make(
             get: function () {
                 if ($this->guild_avatar) {
-                    $guild_id = Config::get('services.discord.guild_id');
+                    $guild_id = Config::get('services.discord.server_id');
 
                     return "https://cdn.discordapp.com/guilds/{$guild_id}/users/{$this->id}/avatars/{$this->guild_avatar}.webp";
                 } elseif ($this->avatar) {

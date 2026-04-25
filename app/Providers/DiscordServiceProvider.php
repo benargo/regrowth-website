@@ -20,7 +20,7 @@ class DiscordServiceProvider extends ServiceProvider
         $this->app->singleton(DiscordGuildService::class, function (Application $app) {
             $config = config('services.discord');
 
-            return new DiscordGuildService($config['token'], $config['guild_id']);
+            return new DiscordGuildService($config['token'], $config['server_id']);
         });
 
         $this->app->singleton(DiscordMessageService::class, function (Application $app) {
@@ -32,7 +32,7 @@ class DiscordServiceProvider extends ServiceProvider
         $this->app->singleton(DiscordRoleService::class, function (Application $app) {
             $config = config('services.discord');
 
-            return new DiscordRoleService($config['token'], $config['guild_id']);
+            return new DiscordRoleService($config['token'], $config['server_id']);
         });
     }
 

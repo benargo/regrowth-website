@@ -20,7 +20,7 @@ class UserResourceTest extends TestCase
     {
         parent::setUp();
 
-        Config::set('services.discord.guild_id', '123456789');
+        Config::set('services.discord.server_id', '123456789');
     }
 
     #[Test]
