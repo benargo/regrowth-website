@@ -4,15 +4,14 @@ namespace App\Http\Controllers\Api\Discord;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Discord\SearchGuildMembersRequest;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 
 class GuildResourceController extends Controller
 {
     public function __construct(
-        protected DiscordGuildService $discordGuildService
+        protected Discord $discord
     ) {}
 
     /**
@@ -28,14 +27,14 @@ class GuildResourceController extends Controller
         $results = Cache::tags(['discord'])->remember(
             'discord:members:search:'.mb_strtolower($query),
             now()->addMinutes(5),
-            fn () => $this->discordGuildService->searchGuildMembers($query, $limit)
+            fn () => $this->discord->searchGuildMembers($query, $limit)
         );
 
         return response()->json(
-            collect($results)->map(fn (array $member) => [
-                'id' => Arr::get($member, 'user.id'),
-                'nickname' => Arr::get($member, 'nick', null),
-                'username' => Arr::get($member, 'user.username'),
+            collect($results)->map(fn ($member) => [
+                'id' => $member->user?->id,
+                'nickname' => $member->nick,
+                'username' => $member->user?->username,
             ])
         );
     }

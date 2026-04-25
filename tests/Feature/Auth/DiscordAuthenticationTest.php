@@ -4,8 +4,9 @@ namespace Tests\Feature\Auth;
 
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
+use App\Services\Discord\Resources\GuildMember;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery;
@@ -88,7 +89,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
     {
         $this->mockDiscordOAuth();
 
-        $this->mock(DiscordGuildService::class, function ($mock) {
+        $this->mock(Discord::class, function ($mock) {
             $mock->shouldReceive('getGuildMember')
                 ->andThrow(new UserNotInGuildException('User is not a member of the guild'));
         });
@@ -105,7 +106,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
     {
         $this->mockDiscordOAuth();
 
-        $this->mock(DiscordGuildService::class, function ($mock) {
+        $this->mock(Discord::class, function ($mock) {
             $mock->shouldReceive('getGuildMember')
                 ->andThrow(new \RuntimeException('API Error'));
         });
@@ -209,9 +210,9 @@ class DiscordAuthenticationTest extends DashboardTestCase
             'roles' => ['829022020301094922'],
         ];
 
-        $this->mock(DiscordGuildService::class, function ($mock) use ($defaultData, $overrides) {
+        $this->mock(Discord::class, function ($mock) use ($defaultData, $overrides) {
             $mock->shouldReceive('getGuildMember')
-                ->andReturn(array_merge($defaultData, $overrides));
+                ->andReturn(GuildMember::from(array_merge($defaultData, $overrides)));
         });
     }
 }

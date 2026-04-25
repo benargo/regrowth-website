@@ -4,9 +4,7 @@ namespace App\Providers;
 
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
-use App\Services\Discord\DiscordGuildService;
 use App\Services\Discord\DiscordMessageService;
-use App\Services\Discord\DiscordRoleService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
@@ -30,22 +28,10 @@ class DiscordServiceProvider extends ServiceProvider
             return new Discord($app->make(DiscordClient::class), $config);
         });
 
-        $this->app->singleton(DiscordGuildService::class, function (Application $app) {
-            $config = config('services.discord');
-
-            return new DiscordGuildService($config['token'], $config['server_id']);
-        });
-
         $this->app->singleton(DiscordMessageService::class, function (Application $app) {
             $config = config('services.discord');
 
             return new DiscordMessageService($config['token']);
-        });
-
-        $this->app->singleton(DiscordRoleService::class, function (Application $app) {
-            $config = config('services.discord');
-
-            return new DiscordRoleService($config['token'], $config['server_id']);
         });
     }
 

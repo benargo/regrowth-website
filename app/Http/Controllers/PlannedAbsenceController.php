@@ -12,7 +12,7 @@ use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\PlannedAbsence;
 use App\Models\User;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +25,7 @@ use Normalizer;
 class PlannedAbsenceController extends Controller
 {
     public function __construct(
-        protected DiscordGuildService $discordGuildService
+        protected Discord $discord
     ) {}
 
     /*
@@ -300,20 +300,20 @@ class PlannedAbsenceController extends Controller
         }
 
         // If the user doesn't exist in our database, attempt to fetch them from the Discord API
-        $guildMemberData = $this->discordGuildService->getGuildMember($userIdentifier);
+        $member = $this->discord->getGuildMember($userIdentifier);
 
         // If we successfully fetch the guild member data, create a new user record in our database
         $user = User::create([
             'id' => $userIdentifier,
-            'username' => Arr::get($guildMemberData, 'user.username', null),
-            'discriminator' => Arr::get($guildMemberData, 'user.discriminator', '0'),
-            'nickname' => Arr::get($guildMemberData, 'nick', null),
-            'avatar' => Arr::get($guildMemberData, 'user.avatar', null),
-            'guild_avatar' => Arr::get($guildMemberData, 'avatar', null),
-            'banner' => Arr::get($guildMemberData, 'banner', null),
+            'username' => $member->user?->username,
+            'discriminator' => $member->user?->discriminator ?? '0',
+            'nickname' => $member->nick,
+            'avatar' => $member->user?->avatar,
+            'guild_avatar' => $member->avatar,
+            'banner' => $member->banner,
         ]);
 
-        $incomingRoleIds = Arr::get($guildMemberData, 'roles', []);
+        $incomingRoleIds = $member->roles;
         $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
         $user->discordRoles()->sync($recognizedRoleIds);
 

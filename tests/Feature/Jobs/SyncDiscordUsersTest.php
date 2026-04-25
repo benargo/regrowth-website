@@ -5,8 +5,9 @@ namespace Tests\Feature\Jobs;
 use App\Jobs\SyncDiscordUsers;
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
+use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Mockery\MockInterface;
@@ -28,16 +29,16 @@ class SyncDiscordUsersTest extends TestCase
 
         $user = User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getGuildMember')
                 ->with('100000000000000000')
                 ->once()
-                ->andReturn([
+                ->andReturn(GuildMember::from([
                     'nick' => 'TestNick',
                     'avatar' => 'avatar_hash',
                     'banner' => 'banner_hash',
                     'roles' => ['111111111111111111'],
-                ]);
+                ]));
         });
 
         SyncDiscordUsers::dispatchSync();
@@ -59,16 +60,16 @@ class SyncDiscordUsersTest extends TestCase
             'banner' => 'old_banner',
         ]);
 
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getGuildMember')
                 ->with('100000000000000000')
                 ->once()
-                ->andReturn([
+                ->andReturn(GuildMember::from([
                     'nick' => 'NewNick',
                     'avatar' => 'new_avatar',
                     'banner' => 'new_banner',
                     'roles' => [],
-                ]);
+                ]));
         });
 
         SyncDiscordUsers::dispatchSync();
@@ -84,7 +85,7 @@ class SyncDiscordUsersTest extends TestCase
     {
         User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getGuildMember')
                 ->with('100000000000000000')
                 ->once()
@@ -101,7 +102,7 @@ class SyncDiscordUsersTest extends TestCase
     {
         User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getGuildMember')
                 ->with('100000000000000000')
                 ->once()
@@ -126,16 +127,16 @@ class SyncDiscordUsersTest extends TestCase
         $goneUser = User::factory()->create(['id' => '200000000000000000']);
         $errorUser = User::factory()->create(['id' => '300000000000000000']);
 
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getGuildMember')
                 ->with('100000000000000000')
                 ->once()
-                ->andReturn([
+                ->andReturn(GuildMember::from([
                     'nick' => 'ValidUser',
                     'avatar' => null,
                     'banner' => null,
                     'roles' => ['111111111111111111'],
-                ]);
+                ]));
 
             $mock->shouldReceive('getGuildMember')
                 ->with('200000000000000000')
@@ -172,7 +173,7 @@ class SyncDiscordUsersTest extends TestCase
         $batch = Bus::batch([])->dispatch();
         $batch->cancel();
 
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldNotReceive('getGuildMember');
         });
 
@@ -192,16 +193,16 @@ class SyncDiscordUsersTest extends TestCase
 
         $user = User::factory()->create(['id' => '100000000000000000']);
 
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock) {
+        $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getGuildMember')
                 ->with('100000000000000000')
                 ->once()
-                ->andReturn([
+                ->andReturn(GuildMember::from([
                     'nick' => null,
                     'avatar' => null,
                     'banner' => null,
                     'roles' => ['111111111111111111', '999999999999999999'],
-                ]);
+                ]));
         });
 
         SyncDiscordUsers::dispatchSync();

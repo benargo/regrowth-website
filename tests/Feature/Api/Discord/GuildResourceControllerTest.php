@@ -3,7 +3,8 @@
 namespace Tests\Feature\Api\Discord;
 
 use App\Models\User;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,21 +23,13 @@ class GuildResourceControllerTest extends TestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
-    /**
-     * @return array{user: array{id: string, username: string}, nick: string|null, avatar: null, banner: null, roles: array, joined_at: string, deaf: bool, mute: bool}
-     */
-    private function fakeGuildMember(string $userId, string $username, ?string $nickname = null): array
+    private function fakeGuildMember(string $userId, string $username, ?string $nickname = null): GuildMember
     {
-        return [
-            'user' => ['id' => $userId, 'username' => $username],
+        return GuildMember::from([
+            'user' => ['id' => $userId, 'username' => $username, 'discriminator' => '0'],
             'nick' => $nickname,
-            'avatar' => null,
-            'banner' => null,
             'roles' => [],
-            'joined_at' => '2021-01-01T00:00:00.000000+00:00',
-            'deaf' => false,
-            'mute' => false,
-        ];
+        ]);
     }
 
     // ==================== searchMembers: Validation ====================
@@ -60,11 +53,11 @@ class GuildResourceControllerTest extends TestCase
     {
         $user = User::factory()->withPermissions('create-planned-absences')->create();
 
-        $this->mock(DiscordGuildService::class)
+        $this->mock(Discord::class)
             ->shouldReceive('searchGuildMembers')
             ->once()
             ->with('test', 1)
-            ->andReturn([$this->fakeGuildMember('111111111111111111', 'testuser', 'TestNick')]);
+            ->andReturn(collect([$this->fakeGuildMember('111111111111111111', 'testuser', 'TestNick')]));
 
         $response = $this->actingAs($user)
             ->getJson(route('api.discord.guild.members.search', ['query' => 'test']));
@@ -80,11 +73,11 @@ class GuildResourceControllerTest extends TestCase
     {
         $user = User::factory()->withPermissions('manage-planned-absences')->create();
 
-        $this->mock(DiscordGuildService::class)
+        $this->mock(Discord::class)
             ->shouldReceive('searchGuildMembers')
             ->once()
             ->with('officer', 1)
-            ->andReturn([$this->fakeGuildMember('222222222222222222', 'guildofficer', 'Guild Officer')]);
+            ->andReturn(collect([$this->fakeGuildMember('222222222222222222', 'guildofficer', 'Guild Officer')]));
 
         $response = $this->actingAs($user)
             ->getJson(route('api.discord.guild.members.search', ['query' => 'officer']));
@@ -100,10 +93,10 @@ class GuildResourceControllerTest extends TestCase
     {
         $user = User::factory()->withPermissions('create-planned-absences')->create();
 
-        $this->mock(DiscordGuildService::class)
+        $this->mock(Discord::class)
             ->shouldReceive('searchGuildMembers')
             ->once()
-            ->andReturn([$this->fakeGuildMember('333333333333333333', 'nonick')]);
+            ->andReturn(collect([$this->fakeGuildMember('333333333333333333', 'nonick')]));
 
         $response = $this->actingAs($user)
             ->getJson(route('api.discord.guild.members.search', ['query' => 'nonick']));
@@ -119,11 +112,11 @@ class GuildResourceControllerTest extends TestCase
     {
         $user = User::factory()->withPermissions('create-planned-absences')->create();
 
-        $this->mock(DiscordGuildService::class)
+        $this->mock(Discord::class)
             ->shouldReceive('searchGuildMembers')
             ->once()
             ->with('test', 10)
-            ->andReturn([]);
+            ->andReturn(collect([]));
 
         $response = $this->actingAs($user)
             ->getJson(route('api.discord.guild.members.search', ['query' => 'test', 'limit' => 10]));
@@ -136,10 +129,10 @@ class GuildResourceControllerTest extends TestCase
     {
         $user = User::factory()->withPermissions('create-planned-absences')->create();
 
-        $this->mock(DiscordGuildService::class)
+        $this->mock(Discord::class)
             ->shouldReceive('searchGuildMembers')
             ->once() // Only called once despite two requests
-            ->andReturn([$this->fakeGuildMember('444444444444444444', 'cacheduser', 'Cached')]);
+            ->andReturn(collect([$this->fakeGuildMember('444444444444444444', 'cacheduser', 'Cached')]));
 
         $this->actingAs($user)
             ->getJson(route('api.discord.guild.members.search', ['query' => 'cach']));
@@ -157,10 +150,10 @@ class GuildResourceControllerTest extends TestCase
     {
         $user = User::factory()->withPermissions('create-planned-absences')->create();
 
-        $this->mock(DiscordGuildService::class)
+        $this->mock(Discord::class)
             ->shouldReceive('searchGuildMembers')
             ->once()
-            ->andReturn([]);
+            ->andReturn(collect([]));
 
         $response = $this->actingAs($user)
             ->getJson(route('api.discord.guild.members.search', ['query' => 'zzznobodymatchesthis']));

@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\DiscordRole;
-use App\Services\Discord\DiscordRoleService;
+use App\Services\Discord\Discord;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,22 +34,19 @@ class SyncDiscordRoles implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(DiscordRoleService $discordRoleService): void
+    public function handle(Discord $discord): void
     {
-        $roles = $discordRoleService->getAllRoles();
+        $roles = $discord->getGuildRoles()->filter(fn ($role) => $role->position !== 0);
 
-        // Filter out the @everyone role (position 0)
-        $roles = array_filter($roles, fn (array $role) => $role['position'] !== 0);
-
-        $syncedIds = array_map(fn (array $role) => (string) $role['id'], $roles);
+        $syncedIds = $roles->map(fn ($role) => (string) $role->id)->values()->all();
 
         DB::transaction(function () use ($roles, $syncedIds) {
             $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
 
             foreach ($roles as $role) {
                 DiscordRole::updateOrCreate(
-                    ['id' => (string) $role['id']],
-                    ['name' => $role['name'], 'position' => $role['position']],
+                    ['id' => (string) $role->id],
+                    ['name' => $role->name, 'position' => $role->position],
                 );
             }
 

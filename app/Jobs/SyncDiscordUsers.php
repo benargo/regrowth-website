@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,7 +37,7 @@ class SyncDiscordUsers implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(DiscordGuildService $guildService): void
+    public function handle(Discord $discord): void
     {
         $users = User::all();
 
@@ -47,15 +47,15 @@ class SyncDiscordUsers implements ShouldQueue
 
         foreach ($users as $user) {
             try {
-                $guildMemberData = $guildService->getGuildMember($user->id);
+                $member = $discord->getGuildMember($user->id);
 
                 $user->update([
-                    'nickname' => $guildMemberData['nick'],
-                    'guild_avatar' => $guildMemberData['avatar'] ?? null,
-                    'banner' => $guildMemberData['banner'] ?? null,
+                    'nickname' => $member->nick,
+                    'guild_avatar' => $member->avatar,
+                    'banner' => $member->banner,
                 ]);
 
-                $incomingRoleIds = $guildMemberData['roles'] ?? [];
+                $incomingRoleIds = $member->roles;
                 $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
                 $user->discordRoles()->sync($recognizedRoleIds);
 
