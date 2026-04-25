@@ -14,9 +14,9 @@ use Spatie\LaravelData\Data;
 class GuildMember extends Data
 {
     public function __construct(
-        /** @var array<string, mixed>|null The user this guild member represents */
-        #[Nullable, ArrayType]
-        public readonly ?array $user = null,
+        /** @var User|null The user this guild member represents */
+        #[Nullable]
+        public readonly ?User $user = null,
 
         /** @var string|null This user's guild nickname */
         #[Nullable, StringType]

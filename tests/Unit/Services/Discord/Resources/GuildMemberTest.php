@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\Discord\Resources;
 
 use App\Services\Discord\Resources\GuildMember;
+use App\Services\Discord\Resources\User;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
@@ -36,7 +37,7 @@ class GuildMemberTest extends TestCase
     public function it_constructs_from_the_discord_example_payload(): void
     {
         $member = GuildMember::from([
-            'user' => [],
+            'user' => ['id' => '1', 'username' => 'test', 'discriminator' => '0000'],
             'nick' => 'NOT API SUPPORT',
             'avatar' => null,
             'banner' => null,
@@ -46,7 +47,7 @@ class GuildMemberTest extends TestCase
             'mute' => false,
         ]);
 
-        $this->assertSame([], $member->user);
+        $this->assertInstanceOf(User::class, $member->user);
         $this->assertSame('NOT API SUPPORT', $member->nick);
         $this->assertNull($member->avatar);
         $this->assertNull($member->banner);
@@ -60,7 +61,7 @@ class GuildMemberTest extends TestCase
     public function it_stores_all_scalar_fields(): void
     {
         $member = GuildMember::from([
-            'user' => ['id' => '123', 'username' => 'Thrall'],
+            'user' => ['id' => '123', 'username' => 'Thrall', 'discriminator' => '0001'],
             'nick' => 'Warchief',
             'avatar' => 'avatar_hash',
             'banner' => 'banner_hash',
@@ -75,7 +76,9 @@ class GuildMemberTest extends TestCase
             'communication_disabled_until' => '2024-12-31T23:59:59Z',
         ]);
 
-        $this->assertSame(['id' => '123', 'username' => 'Thrall'], $member->user);
+        $this->assertInstanceOf(User::class, $member->user);
+        $this->assertSame('123', $member->user->id);
+        $this->assertSame('Thrall', $member->user->username);
         $this->assertSame('Warchief', $member->nick);
         $this->assertSame('avatar_hash', $member->avatar);
         $this->assertSame('banner_hash', $member->banner);
