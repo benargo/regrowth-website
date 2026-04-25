@@ -2,7 +2,7 @@
 
 namespace App\Services\Discord\Enums;
 
-enum ChannelTypes: int
+enum ChannelType: int
 {
     case GUILD_TEXT = 0; // a text channel with a server
     case DM = 1; // a direct message between users

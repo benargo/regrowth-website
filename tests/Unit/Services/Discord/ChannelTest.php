@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\Discord;
 
 use App\Services\Discord\Channel;
-use App\Services\Discord\Enums\ChannelTypes;
+use App\Services\Discord\Enums\ChannelType;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
@@ -18,7 +18,7 @@ class ChannelTest extends TestCase
     {
         return [
             'id' => '123456789012345678',
-            'type' => ChannelTypes::GUILD_TEXT->value,
+            'type' => ChannelType::GUILD_TEXT->value,
         ];
     }
 
@@ -28,7 +28,7 @@ class ChannelTest extends TestCase
         $channel = Channel::from($this->minimalPayload());
 
         $this->assertSame('123456789012345678', $channel->id);
-        $this->assertSame(ChannelTypes::GUILD_TEXT, $channel->type);
+        $this->assertSame(ChannelType::GUILD_TEXT, $channel->type);
     }
 
     #[Test]
@@ -74,7 +74,7 @@ class ChannelTest extends TestCase
     #[Test]
     public function it_hydrates_the_channel_type_enum(): void
     {
-        foreach (ChannelTypes::cases() as $case) {
+        foreach (ChannelType::cases() as $case) {
             $channel = Channel::from(['id' => '1', 'type' => $case->value]);
             $this->assertSame($case, $channel->type);
         }

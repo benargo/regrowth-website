@@ -6,7 +6,7 @@ use App\Exceptions\MisconfigurationException;
 use App\Services\Discord\Channel;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
-use App\Services\Discord\Enums\ChannelTypes;
+use App\Services\Discord\Enums\ChannelType;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Mockery;
@@ -38,7 +38,7 @@ class DiscordTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'id' => '987654321098765432',
-            'type' => ChannelTypes::GUILD_TEXT->value,
+            'type' => ChannelType::GUILD_TEXT->value,
             'name' => 'general',
         ]);
 
@@ -50,7 +50,7 @@ class DiscordTest extends TestCase
 
         $this->assertInstanceOf(Channel::class, $channel);
         $this->assertSame('987654321098765432', $channel->id);
-        $this->assertSame(ChannelTypes::GUILD_TEXT, $channel->type);
+        $this->assertSame(ChannelType::GUILD_TEXT, $channel->type);
         $this->assertSame('general', $channel->name);
     }
 
@@ -60,7 +60,7 @@ class DiscordTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'id' => '111000111000111000',
-            'type' => ChannelTypes::GUILD_VOICE->value,
+            'type' => ChannelType::GUILD_VOICE->value,
         ]);
 
         $this->client->expects('get')
@@ -79,8 +79,8 @@ class DiscordTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            ['id' => '111000111000111001', 'type' => ChannelTypes::GUILD_TEXT->value, 'name' => 'general'],
-            ['id' => '111000111000111002', 'type' => ChannelTypes::GUILD_VOICE->value, 'name' => 'voice-chat'],
+            ['id' => '111000111000111001', 'type' => ChannelType::GUILD_TEXT->value, 'name' => 'general'],
+            ['id' => '111000111000111002', 'type' => ChannelType::GUILD_VOICE->value, 'name' => 'voice-chat'],
         ]);
 
         $this->client->expects('get')
@@ -100,7 +100,7 @@ class DiscordTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            ['id' => '222000222000222001', 'type' => ChannelTypes::GUILD_TEXT->value, 'name' => 'announcements'],
+            ['id' => '222000222000222001', 'type' => ChannelType::GUILD_TEXT->value, 'name' => 'announcements'],
         ]);
 
         $this->client->expects('get')

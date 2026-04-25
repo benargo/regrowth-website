@@ -2,7 +2,7 @@
 
 namespace App\Services\Discord;
 
-use App\Services\Discord\Enums\ChannelTypes;
+use App\Services\Discord\Enums\ChannelType;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
 use Spatie\LaravelData\Attributes\Validation\BooleanType;
 use Spatie\LaravelData\Attributes\Validation\DateFormat;
@@ -21,7 +21,7 @@ class Channel extends Data
         #[StringType]
         public readonly string $id,
 
-        public readonly ChannelTypes $type,
+        public readonly ChannelType $type,
 
         /** @var string|null Snowflake of the owning guild; absent in some gateway dispatches */
         #[Nullable, StringType]
