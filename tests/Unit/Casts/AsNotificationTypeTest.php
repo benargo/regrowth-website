@@ -3,8 +3,8 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsNotificationType;
-use App\Notifications\DailyQuestsMessage;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notification;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use stdClass;
@@ -18,9 +18,9 @@ class AsNotificationTypeTest extends TestCase
         $cast = new AsNotificationType;
         $model = $this->createStub(Model::class);
 
-        $result = $cast->get($model, 'notification_type', DailyQuestsMessage::class, []);
+        $result = $cast->get($model, 'notification_type', Notification::class, []);
 
-        $this->assertSame(DailyQuestsMessage::class, $result);
+        $this->assertSame(Notification::class, $result);
     }
 
     #[Test]
@@ -40,9 +40,9 @@ class AsNotificationTypeTest extends TestCase
         $cast = new AsNotificationType;
         $model = $this->createStub(Model::class);
 
-        $result = $cast->set($model, 'notification_type', DailyQuestsMessage::class, []);
+        $result = $cast->set($model, 'notification_type', Notification::class, []);
 
-        $this->assertSame(DailyQuestsMessage::class, $result);
+        $this->assertSame(Notification::class, $result);
     }
 
     #[Test]
