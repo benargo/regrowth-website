@@ -78,6 +78,7 @@ class PrioritySeeder extends Seeder
             ['type' => 'Spec', 'title' => 'Protection Warrior', 'media' => ['media_name' => 'ability_warrior_defensivestance']],
 
             // Custom
+            ['type' => 'Custom', 'title' => 'Feral Druid', 'media' => ['media_name' => 'ability_druid_mangle2']],
             ['type' => 'Custom', 'title' => 'Fire Warlock', 'media' => ['media_name' => 'spell_fire_burnout']],
             ['type' => 'Custom', 'title' => 'Shadow Warlock', 'media' => ['media_name' => 'spell_shadow_shadowbolt']],
             ['type' => 'Custom', 'title' => 'Healing Priest', 'media' => ['media_name' => 'spell_holy_greaterheal']],
