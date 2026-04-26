@@ -2,7 +2,7 @@
 
 namespace Database\Factories\TBC;
 
-use App\Models\TBC\DailyQuest;
+use App\Models\DailyQuest;
 use App\Models\TBC\DailyQuestNotification;
 use App\Models\User;
 use Carbon\Carbon;

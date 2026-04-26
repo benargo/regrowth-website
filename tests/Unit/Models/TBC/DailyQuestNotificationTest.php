@@ -5,7 +5,7 @@ namespace Tests\Unit\Models\TBC;
 use App\Events\DailyQuestNotificationCreated;
 use App\Events\DailyQuestNotificationDeleting;
 use App\Events\DailyQuestNotificationUpdated;
-use App\Models\TBC\DailyQuest;
+use App\Models\DailyQuest;
 use App\Models\TBC\DailyQuestNotification;
 use App\Models\User;
 use Carbon\Carbon;

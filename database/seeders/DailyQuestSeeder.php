@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Seeders\TBC;
+namespace Database\Seeders;
 
 use App\Enums\Instance;
-use App\Models\TBC\DailyQuest;
+use App\Models\DailyQuest;
 use Illuminate\Database\Seeder;
 
 class DailyQuestSeeder extends Seeder

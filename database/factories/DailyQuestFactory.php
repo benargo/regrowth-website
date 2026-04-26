@@ -1,13 +1,12 @@
 <?php
 
-namespace Database\Factories\TBC;
+namespace Database\Factories;
 
-use App\Models\TBC\DailyQuest;
+use App\Models\DailyQuest;
+use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<DailyQuest>
- */
+#[UseModel(DailyQuest::class)]
 class DailyQuestFactory extends Factory
 {
     protected $model = DailyQuest::class;

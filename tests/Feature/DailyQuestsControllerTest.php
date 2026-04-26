@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\TBC\DailyQuest;
+use App\Models\DailyQuest;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;

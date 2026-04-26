@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Models\TBC;
+namespace Tests\Unit\Models;
 
-use App\Models\TBC\DailyQuest;
+use App\Models\DailyQuest;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -42,6 +42,17 @@ class DailyQuestTest extends ModelTestCase
 
         $this->assertCasts($model, [
             'rewards' => 'json',
+        ]);
+    }
+
+    #[Test]
+    public function it_hides_timestamps(): void
+    {
+        $model = new DailyQuest;
+
+        $this->assertHidden($model, [
+            'created_at',
+            'updated_at',
         ]);
     }
 
@@ -136,5 +147,26 @@ class DailyQuestTest extends ModelTestCase
         $this->assertIsArray($quest->rewards);
         $this->assertCount(2, $quest->rewards);
         $this->assertEquals($rewards, $quest->rewards);
+    }
+
+    #[Test]
+    public function name_accessor_returns_plain_name_for_non_dungeon_quests(): void
+    {
+        $quest = $this->create(['name' => 'Crocolisks in the City', 'type' => 'Fishing', 'instance' => null]);
+
+        $this->assertSame('Crocolisks in the City', $quest->name);
+    }
+
+    #[Test]
+    public function name_accessor_appends_instance_name_for_dungeon_quests(): void
+    {
+        $quest = $this->create([
+            'name' => 'Wanted: Shadowy Executioner',
+            'type' => 'Dungeon',
+            'instance' => 'Shadow Labyrinth',
+            'mode' => 'Normal',
+        ]);
+
+        $this->assertSame('Wanted: Shadowy Executioner (Shadow Labyrinth)', $quest->name);
     }
 }

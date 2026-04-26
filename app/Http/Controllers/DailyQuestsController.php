@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\DailyQuestIcons;
 use App\Http\Requests\StoreDailyQuestsRequest;
-use App\Models\TBC\DailyQuest;
+use App\Models\DailyQuest;
 use App\Models\TBC\DailyQuestNotification;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
