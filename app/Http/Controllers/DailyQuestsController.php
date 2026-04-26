@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DailyQuestIcons;
 use App\Http\Requests\StoreDailyQuestsRequest;
 use App\Models\TBC\DailyQuest;
 use App\Models\TBC\DailyQuestNotification;
@@ -18,16 +19,6 @@ use Inertia\Response;
 
 class DailyQuestsController extends Controller
 {
-    const COOKING_QUEST_ICON = 'inv_misc_food_15';
-
-    const FISHING_QUEST_ICON = 'trade_fishing';
-
-    const DUNGEON_QUEST_ICON = 'inv_qiraj_jewelencased';
-
-    const HEROIC_QUEST_ICON = 'spell_holy_championsbond';
-
-    const PVP_QUEST_ICON = 'inv_bannerpvp_02';
-
     public function index(BlizzardService $blizzard, MediaService $media): Response
     {
         return Inertia::render('DailyQuests/Index', [
@@ -41,11 +32,11 @@ class DailyQuestsController extends Controller
         $existingNotification = DailyQuestNotification::getTodaysNotification();
 
         $icons = [
-            'cooking' => $media->get(self::COOKING_QUEST_ICON),
-            'fishing' => $media->get(self::FISHING_QUEST_ICON),
-            'dungeon' => $media->get(self::DUNGEON_QUEST_ICON),
-            'heroic' => $media->get(self::HEROIC_QUEST_ICON),
-            'pvp' => $media->get(self::PVP_QUEST_ICON),
+            'cooking' => $media->get(DailyQuestIcons::Cooking->value),
+            'fishing' => $media->get(DailyQuestIcons::Fishing->value),
+            'dungeon' => $media->get(DailyQuestIcons::Dungeon->value),
+            'heroic' => $media->get(DailyQuestIcons::HeroicDungeon->value),
+            'pvp' => $media->get(DailyQuestIcons::PvP->value),
         ];
 
         $quests = DailyQuest::hydrate(
@@ -255,12 +246,12 @@ class DailyQuestsController extends Controller
     protected function getIconForQuestType(string $type): string
     {
         return match ($type) {
-            'fishingQuest' => self::FISHING_QUEST_ICON,
-            'cookingQuest' => self::COOKING_QUEST_ICON,
-            'dungeonQuest' => self::DUNGEON_QUEST_ICON,
-            'heroicQuest' => self::HEROIC_QUEST_ICON,
-            'pvpQuest' => self::PVP_QUEST_ICON,
-            default => 'inv_misc_questionmark',
+            'fishingQuest' => DailyQuestIcons::Fishing->value,
+            'cookingQuest' => DailyQuestIcons::Cooking->value,
+            'dungeonQuest' => DailyQuestIcons::Dungeon->value,
+            'heroicQuest' => DailyQuestIcons::HeroicDungeon->value,
+            'pvpQuest' => DailyQuestIcons::PvP->value,
+            default => DailyQuestIcons::Default->value,
         };
     }
 }
