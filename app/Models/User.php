@@ -129,6 +129,20 @@ class User extends Authenticatable
 
     /*
     |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get the notifications associated with the user.
+     */
+    public function notificationsCreated(): HasMany
+    {
+        return $this->hasMany(DiscordNotification::class, 'created_by_user_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Planned Absences
     |--------------------------------------------------------------------------
     */
