@@ -5,6 +5,8 @@ namespace App\Notifications;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 
+// ==================== DEPRECATED CLASS ====================
+
 class DiscordNotifiable
 {
     use Notifiable;

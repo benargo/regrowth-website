@@ -18,16 +18,19 @@ class DiscordServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        /** API client */
         $this->app->singleton(DiscordClient::class, function (Application $app) {
             return new DiscordClient(config('services.discord.token'));
         });
 
+        /** Main Discord service */
         $this->app->singleton(Discord::class, function (Application $app) {
             $config = Arr::only(config('services.discord'), ['server_id', 'channels']);
 
             return new Discord($app->make(DiscordClient::class), $config);
         });
 
+        /** DEPRECATED: Message service */
         $this->app->singleton(DiscordMessageService::class, function (Application $app) {
             $config = config('services.discord');
 
@@ -44,5 +47,19 @@ class DiscordServiceProvider extends ServiceProvider
         $this->app['events']->listen(SocialiteWasCalled::class, function (SocialiteWasCalled $event) {
             $event->extendSocialite('discord', DiscordProvider::class);
         });
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array<int, string>
+     */
+    public function provides(): array
+    {
+        return [
+            DiscordClient::class,
+            Discord::class,
+            DiscordMessageService::class,
+        ];
     }
 }
