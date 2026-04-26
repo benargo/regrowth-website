@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -97,68 +96,6 @@ class DiscordNotificationTest extends ModelTestCase
         $this->assertUniqueConstraint(
             fn () => $this->create(['message_id' => $notification->message_id])
         );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Relationships — replacedByNotification
-    |--------------------------------------------------------------------------
-    */
-
-    #[Test]
-    public function replaced_by_notification_returns_has_one_relationship(): void
-    {
-        $model = new DiscordNotification;
-
-        $this->assertInstanceOf(HasOne::class, $model->replacedByNotification());
-    }
-
-    #[Test]
-    public function replaced_by_notification_returns_the_replacing_notification(): void
-    {
-        $original = $this->create();
-        $replacement = DiscordNotification::factory()->replacingNotification($original)->create();
-
-        $this->assertTrue($original->replacedByNotification->is($replacement));
-    }
-
-    #[Test]
-    public function replaced_by_notification_returns_null_when_not_replaced(): void
-    {
-        $notification = $this->create();
-
-        $this->assertNull($notification->replacedByNotification);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Relationships — replacesNotification
-    |--------------------------------------------------------------------------
-    */
-
-    #[Test]
-    public function replaces_notification_returns_belongs_to_relationship(): void
-    {
-        $model = new DiscordNotification;
-
-        $this->assertInstanceOf(BelongsTo::class, $model->replacesNotification());
-    }
-
-    #[Test]
-    public function replaces_notification_returns_the_original_notification(): void
-    {
-        $original = $this->create();
-        $replacement = DiscordNotification::factory()->replacingNotification($original)->create();
-
-        $this->assertTrue($replacement->replacesNotification->is($original));
-    }
-
-    #[Test]
-    public function replaces_notification_returns_null_when_not_a_replacement(): void
-    {
-        $notification = $this->create();
-
-        $this->assertNull($notification->replacesNotification);
     }
 
     /*

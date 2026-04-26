@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[UseFactory(DiscordNotificationFactory::class)]
@@ -49,22 +48,6 @@ class DiscordNotification extends Model
         'updated_at',
         'deleted_at',
     ];
-
-    /**
-     * Get the notification that replaces this notification, if any.
-     */
-    public function replacedByNotification(): HasOne
-    {
-        return $this->hasOne(self::class, 'replaces_notification_id');
-    }
-
-    /**
-     * Get the notification that this notification replaces, if any.
-     */
-    public function replacesNotification(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'replaces_notification_id');
-    }
 
     /**
      * Get the user who created this notification.

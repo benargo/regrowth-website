@@ -26,16 +26,8 @@ class DiscordNotificationFactory extends Factory
             'payload' => MessagePayload::from([
                 'content' => fake()->sentence(),
             ]),
-            'replaces_notification_id' => null,
             'created_by_user_id' => null,
         ];
-    }
-
-    public function replacingNotification(DiscordNotification $notification): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'replaces_notification_id' => $notification->id,
-        ]);
     }
 
     public function createdByUser(User $user): static
