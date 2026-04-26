@@ -77,7 +77,7 @@ export default function ItemShow({ item, comments }) {
 
     return (
         <Master title={item.data.name}>
-            <SharedHeader backgroundClass="bg-karazhan" title="Loot Bias" />
+            <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
             {/* Tool navigation */}
             <nav className="bg-brown-900 shadow">
                 <div className="container mx-auto px-4">

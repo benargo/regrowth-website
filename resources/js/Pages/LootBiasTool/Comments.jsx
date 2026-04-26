@@ -21,7 +21,7 @@ export default function Comments({ comments }) {
 
     return (
         <Master title="All Comments">
-            <SharedHeader backgroundClass="bg-karazhan" title="Loot Bias" />
+            <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
 
             {/* Tool navigation */}
             <nav className="bg-brown-900 shadow">

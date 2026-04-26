@@ -482,7 +482,7 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
 
     return (
         <Master title="Loot Bias">
-            <SharedHeader backgroundClass="bg-karazhan" title="Loot Bias" />
+            <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
             {/* Content */}
             <main className="container mx-auto px-4 py-8">
                 {/* Mobile navigation */}

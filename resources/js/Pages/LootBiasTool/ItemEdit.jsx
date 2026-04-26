@@ -466,7 +466,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
 
     return (
         <Master title={`Editing ${item.data.name}`}>
-            <SharedHeader backgroundClass="bg-karazhan" title="Edit Loot Biases" />
+            <SharedHeader backgroundClass="bg-ssctk" title="Edit Loot Biases" />
             {/* Tool navigation */}
             <nav className="bg-brown-900 shadow">
                 <div className="container mx-auto px-4">
