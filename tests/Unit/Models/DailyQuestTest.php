@@ -150,15 +150,15 @@ class DailyQuestTest extends ModelTestCase
     }
 
     #[Test]
-    public function name_accessor_returns_plain_name_for_non_dungeon_quests(): void
+    public function display_name_returns_plain_name_for_non_dungeon_quests(): void
     {
         $quest = $this->create(['name' => 'Crocolisks in the City', 'type' => 'Fishing', 'instance' => null]);
 
-        $this->assertSame('Crocolisks in the City', $quest->name);
+        $this->assertSame('Crocolisks in the City', $quest->displayName());
     }
 
     #[Test]
-    public function name_accessor_appends_instance_name_for_dungeon_quests(): void
+    public function display_name_appends_instance_name_for_dungeon_quests(): void
     {
         $quest = $this->create([
             'name' => 'Wanted: Shadowy Executioner',
@@ -167,6 +167,6 @@ class DailyQuestTest extends ModelTestCase
             'mode' => 'Normal',
         ]);
 
-        $this->assertSame('Wanted: Shadowy Executioner (Shadow Labyrinth)', $quest->name);
+        $this->assertSame('Wanted: Shadowy Executioner (Shadow Labyrinth)', $quest->displayName());
     }
 }

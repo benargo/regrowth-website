@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\Instance;
 use Database\Factories\DailyQuestFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -55,21 +54,17 @@ class DailyQuest extends Model
     ];
 
     /**
-     * Get the quest name.
+     * Get the quest name with the instance name appended for dungeon quests.
      *
-     * This accessor allows us to display the quest name as "Quest Name (Instance Name)" when the quest is a dungeon quest with an associated instance.
-     * For non-dungeon quests, it will simply return the quest name.
+     * Using a plain method rather than an Eloquent accessor prevents the formatted
+     * value from being cached in $attributes and re-appended after queue serialisation.
      */
-    protected function name(): Attribute
+    public function displayName(): string
     {
-        return Attribute::make(
-            get: function ($value) {
-                if ($this->type === 'Dungeon' && $this->instance) {
-                    return "{$value} ({$this->instance->value})";
-                }
+        if ($this->type === 'Dungeon' && $this->instance) {
+            return "{$this->name} ({$this->instance->value})";
+        }
 
-                return $value;
-            }
-        );
+        return $this->name;
     }
 }
