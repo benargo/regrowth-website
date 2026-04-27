@@ -238,6 +238,7 @@ class ItemSeeder extends Seeder
         ['id' => 30022, 'raid_id' => 4, 'boss_id' => null, 'group' => 'Trash drops'],
         ['id' => 30023, 'raid_id' => 4, 'boss_id' => null, 'group' => 'Trash drops'],
         ['id' => 30024, 'raid_id' => 5, 'boss_id' => null, 'group' => 'Trash drops'],
+        ['id' => 30025, 'raid_id' => 4, 'boss_id' => null, 'group' => 'Trash drops'], // Missing item: Serpentshrine Shuriken
         ['id' => 30026, 'raid_id' => 5, 'boss_id' => null, 'group' => 'Trash drops'],
         ['id' => 30027, 'raid_id' => 4, 'boss_id' => null, 'group' => 'Trash drops'],
         ['id' => 30028, 'raid_id' => 5, 'boss_id' => null, 'group' => 'Trash drops'],
@@ -247,6 +248,7 @@ class ItemSeeder extends Seeder
         ['id' => 30048, 'raid_id' => 4, 'boss_id' => 16, 'group' => null],
         ['id' => 30049, 'raid_id' => 4, 'boss_id' => 16, 'group' => null],
         ['id' => 30050, 'raid_id' => 4, 'boss_id' => 16, 'group' => null],
+        ['id' => 30051, 'raid_id' => 4, 'boss_id' => 16, 'group' => null], // Missing item: Idol of the Crescent Goddess
         ['id' => 30052, 'raid_id' => 4, 'boss_id' => 16, 'group' => null],
         ['id' => 30053, 'raid_id' => 4, 'boss_id' => 16, 'group' => null],
         ['id' => 30054, 'raid_id' => 4, 'boss_id' => 16, 'group' => null],
