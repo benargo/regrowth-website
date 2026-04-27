@@ -12,13 +12,16 @@ class PrioritySeeder extends Seeder
      */
     public function run(): void
     {
+        // Update 'Ranged DPS' to 'Caster DPS'
+        Priority::where(['type' => 'Role', 'title' => 'Ranged DPS'])->update(['title' => 'Caster DPS']);
+
         $priorities = [
             // Roles
             ['type' => 'Role', 'title' => 'Tank', 'media' => ['media_name' => 'inv_shield_04']],
             ['type' => 'Role', 'title' => 'Backup tank', 'media' => ['media_name' => 'inv_shield_09']],
             ['type' => 'Role', 'title' => 'Healer', 'media' => ['media_name' => 'spell_holy_heal']],
             ['type' => 'Role', 'title' => 'Melee DPS', 'media' => ['media_name' => 'inv_sword_04']],
-            ['type' => 'Role', 'title' => 'Ranged DPS', 'media' => ['media_name' => 'spell_nature_elementalprecision_1']],
+            ['type' => 'Role', 'title' => 'Caster DPS', 'media' => ['media_name' => 'spell_nature_elementalprecision_1']],
 
             // Classes
             ['type' => 'Class', 'title' => 'Druid', 'media' => ['media_name' => 'classicon_druid']],
@@ -85,7 +88,8 @@ class PrioritySeeder extends Seeder
             ['type' => 'Custom', 'title' => 'DPS Warrior', 'media' => ['media_name' => 'ability_rogue_ambush']],
 
             // Disenchant
-            ['type' => 'Disenchant', 'title' => 'Disenchant', 'media' => ['media_name' => 'inv_enchant_voidcrystal']],
+            ['type' => 'Meme', 'title' => 'Bakas', 'media' => ['media_name' => 'ui_embercourt-emoji-elated']],
+            ['type' => 'Meme', 'title' => 'Disenchant', 'media' => ['media_name' => 'inv_enchant_voidcrystal']],
         ];
 
         foreach ($priorities as $priority) {
@@ -94,8 +98,5 @@ class PrioritySeeder extends Seeder
                 $priority
             );
         }
-
-        // Update 'Ranged DPS' to 'Caster DPS'
-        Priority::where(['type' => 'Role', 'title' => 'Ranged DPS'])->update(['title' => 'Caster DPS']);
     }
 }

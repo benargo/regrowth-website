@@ -711,14 +711,16 @@ class ItemSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->items as $item) {
-            $model = Item::query()->updateOrCreate(
-                ['id' => $item['id']],
-                [
-                    'raid_id' => $item['raid_id'],
-                    'boss_id' => $item['boss_id'],
-                    'group' => $item['group'],
-                ]
-            );
+            $model = Item::withoutEvents(function () use ($item) {
+                return Item::updateOrCreate(
+                    ['id' => $item['id']],
+                    [
+                        'raid_id' => $item['raid_id'],
+                        'boss_id' => $item['boss_id'],
+                        'group' => $item['group'],
+                    ]
+                );
+            });
 
             try {
                 $itemData = $this->blizzard->findItem($item['id']);
