@@ -127,7 +127,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
     Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])
-        ->can('audit', 'App\Models\TBC\DailyQuestNotification')
+        ->can('audit-daily-quests')
         ->name('daily-quests.audit');
 
     /**
