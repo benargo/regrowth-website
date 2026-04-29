@@ -7,12 +7,10 @@ use App\Models\GuildRank;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\Raids\Report;
-use App\Models\TBC\DailyQuestNotification;
 use App\Models\TBC\Phase;
 use App\Models\User;
 use App\Models\WarcraftLogs\GuildTag;
 use App\Policies\CommentPolicy;
-use App\Policies\DailyQuestNotificationPolicy;
 use App\Policies\DatasetPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\ReportPolicy;
@@ -49,7 +47,6 @@ class AppServiceProvider extends ServiceProvider
          * Policies
          */
         Gate::policy(Comment::class, CommentPolicy::class);
-        Gate::policy(DailyQuestNotification::class, DailyQuestNotificationPolicy::class);
         Gate::policy(GuildRank::class, DatasetPolicy::class);
         Gate::policy(GuildTag::class, DatasetPolicy::class);
         Gate::policy(Item::class, ItemPolicy::class);
@@ -62,6 +59,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('impersonate-roles', fn (User $user) => $user->hasPermissionViaDiscordRoles('impersonate-roles'));
         Gate::define('view-attendance', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-officer-dashboard'));
+        Gate::define('set-daily-quests', fn (User $user) => $user->hasPermissionViaDiscordRoles('set-daily-quests'));
+        Gate::define('audit-daily-quests', fn (User $user) => $user->hasPermissionViaDiscordRoles('audit-daily-quests'));
 
         /**
          * Rate limiting

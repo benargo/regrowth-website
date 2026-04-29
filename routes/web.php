@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\AttendanceDashboardController;
+use App\Http\Controllers\AttendanceGraphsController;
+use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
@@ -17,9 +20,6 @@ use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\LootCouncil\RaidController;
 use App\Http\Controllers\PlannedAbsenceController;
-use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\AttendanceGraphsController;
-use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
@@ -69,9 +69,9 @@ Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], 
     // Route::post('/absences/{id}/restore', [PlannedAbsenceController::class, 'restore'])->can('restore', 'App\Models\PlannedAbsence')->name('absences.restore');
 
     // Attendance routes
-    Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('can:view-attendance')->name('attendance.index');
+    Route::get('/attendance', AttendanceDashboardController::class)->middleware('can:view-attendance')->name('attendance.dashboard');
     Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->middleware('can:view-attendance')->name('attendance.graphs.index');
-    Route::get('/attendance/matrix', [AttendanceMatrixController::class, 'matrix'])->middleware('can:view-attendance')->name('attendance.matrix');
+    Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware('can:view-attendance')->name('attendance.matrix');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -127,7 +127,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
     Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])
-        ->can('audit', 'App\Models\TBC\DailyQuestNotification')
+        ->can('audit-daily-quests')
         ->name('daily-quests.audit');
 
     /**

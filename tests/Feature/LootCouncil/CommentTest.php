@@ -12,8 +12,10 @@ use App\Models\TBC\Raid;
 use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\Channel as DiscordChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,7 +29,12 @@ class CommentTest extends TestCase
     {
         parent::setUp();
 
-        Notification::fake();
+        Queue::fake();
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getChannel')
+                ->andReturn(DiscordChannel::from(['id' => '123456789']));
+        });
 
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
             $mock->shouldReceive('findItem')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Test Item {$id}"]);

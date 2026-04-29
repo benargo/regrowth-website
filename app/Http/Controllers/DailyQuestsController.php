@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DailyQuestIcons;
 use App\Http\Requests\StoreDailyQuestsRequest;
-use App\Models\TBC\DailyQuest;
-use App\Models\TBC\DailyQuestNotification;
+use App\Models\DailyQuest;
+use App\Models\DiscordNotification;
+use App\Notifications\DailyQuestsMessage;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Notifications\NotifiableChannel;
+use App\Services\Discord\Payloads\MessagePayload;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -18,38 +25,57 @@ use Inertia\Response;
 
 class DailyQuestsController extends Controller
 {
-    const COOKING_QUEST_ICON = 'inv_misc_food_15';
+    public function __construct(
+        private Discord $discord
+    ) {}
 
-    const FISHING_QUEST_ICON = 'trade_fishing';
+    /*
+    |--------------------------------------------------------------------------
+    | Index
+    |--------------------------------------------------------------------------
+    */
 
-    const DUNGEON_QUEST_ICON = 'inv_qiraj_jewelencased';
-
-    const HEROIC_QUEST_ICON = 'spell_holy_championsbond';
-
-    const PVP_QUEST_ICON = 'inv_bannerpvp_02';
-
+    /**
+     * Display the current daily quests.
+     */
     public function index(BlizzardService $blizzard, MediaService $media): Response
     {
+        $hasNotification = Cache::tags(['dailyquests'])->remember('daily_quests:today:exists', $this->resetTime(), function () {
+            return DiscordNotification::where('type', DailyQuestsMessage::class)
+                ->where('created_at', '>=', Carbon::yesterday()->setHour(4, 0, 0))
+                ->where('created_at', '<=', Carbon::tomorrow()->setHour(3, 59, 59))
+                ->exists();
+        });
+
         return Inertia::render('DailyQuests/Index', [
-            'hasNotification' => DailyQuestNotification::existsForToday(),
+            'hasNotification' => $hasNotification,
             'quests' => Inertia::defer(fn () => $this->buildQuestsData($blizzard, $media)),
         ]);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Form and Store
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Show the form to set or update daily quests, along with the existing quests if they exist.
+     */
     public function form(MediaService $media): Response
     {
-        $existingNotification = DailyQuestNotification::getTodaysNotification();
+        // $existingNotification = $this->getExistingNotification();
 
         $icons = [
-            'cooking' => $media->get(self::COOKING_QUEST_ICON),
-            'fishing' => $media->get(self::FISHING_QUEST_ICON),
-            'dungeon' => $media->get(self::DUNGEON_QUEST_ICON),
-            'heroic' => $media->get(self::HEROIC_QUEST_ICON),
-            'pvp' => $media->get(self::PVP_QUEST_ICON),
+            'cooking' => $media->get(DailyQuestIcons::Cooking->value),
+            'fishing' => $media->get(DailyQuestIcons::Fishing->value),
+            'dungeon' => $media->get(DailyQuestIcons::Dungeon->value),
+            'heroic' => $media->get(DailyQuestIcons::HeroicDungeon->value),
+            'pvp' => $media->get(DailyQuestIcons::PvP->value),
         ];
 
         $quests = DailyQuest::hydrate(
-            Cache::remember('daily_quests:all', now()->addMonth(), function () {
+            Cache::tags(['dailyquests'])->remember('daily_quests:all', now()->addMonth(), function () {
                 return DailyQuest::all()->map->getAttributes()->toArray();
             })
         )->groupBy('type');
@@ -61,94 +87,90 @@ class DailyQuestsController extends Controller
             'heroicQuests' => $quests->get('Dungeon', collect())->where('mode', 'Heroic')->values()->toArray(),
             'pvpQuests' => $quests->get('PvP', collect())->toArray(),
             'icons' => $icons,
-            'existingNotification' => $existingNotification ? [
-                'id' => $existingNotification->id,
-                'cooking_quest_id' => $existingNotification->cooking_quest_id,
-                'fishing_quest_id' => $existingNotification->fishing_quest_id,
-                'dungeon_quest_id' => $existingNotification->dungeon_quest_id,
-                'heroic_quest_id' => $existingNotification->heroic_quest_id,
-                'pvp_quest_id' => $existingNotification->pvp_quest_id,
-            ] : null,
+            // 'existingNotification' => $existingNotification ? [
+            //     'id' => $existingNotification->id,
+            //     'cooking_quest_id' => $existingNotification->cooking_quest_id,
+            //     'fishing_quest_id' => $existingNotification->fishing_quest_id,
+            //     'dungeon_quest_id' => $existingNotification->dungeon_quest_id,
+            //     'heroic_quest_id' => $existingNotification->heroic_quest_id,
+            //     'pvp_quest_id' => $existingNotification->pvp_quest_id,
+            // ] : null,
         ]);
     }
 
+    /**
+     * Handle the form submission to set or update daily quests.
+     */
     public function store(StoreDailyQuestsRequest $request): RedirectResponse
     {
-        $existingNotification = DailyQuestNotification::getTodaysNotification();
-
-        $questData = [
-            'cooking_quest_id' => $request->validated('cooking_quest_id'),
-            'fishing_quest_id' => $request->validated('fishing_quest_id'),
-            'dungeon_quest_id' => $request->validated('dungeon_quest_id'),
-            'heroic_quest_id' => $request->validated('heroic_quest_id'),
-            'pvp_quest_id' => $request->validated('pvp_quest_id'),
-        ];
-
-        if ($existingNotification) {
-            $questData['updated_by_user_id'] = $request->user()->id;
-            $existingNotification->update($questData);
-
-            return back()->with('success', 'Daily quests updated and Discord message edited!');
-        }
-
-        $questData['date'] = DailyQuestNotification::currentDailyQuestDate();
-        $questData['sent_by_user_id'] = $request->user()->id;
-
-        DailyQuestNotification::create($questData);
-
-        DailyQuestNotification::where('date', '<', $questData['date'])
-            ->whereNull('deleted_at')
-            ->each(fn ($old) => $old->delete());
+        $this->channel()->notify(new DailyQuestsMessage(
+            dailyQuests: [
+                'Cooking' => $request->input('cooking_quest_id') ? DailyQuest::find($request->input('cooking_quest_id')) : null,
+                'Fishing' => $request->input('fishing_quest_id') ? DailyQuest::find($request->input('fishing_quest_id')) : null,
+                'Dungeon' => $request->input('dungeon_quest_id') ? DailyQuest::find($request->input('dungeon_quest_id')) : null,
+                'Heroic' => $request->input('heroic_quest_id') ? DailyQuest::find($request->input('heroic_quest_id')) : null,
+                'PvP' => $request->input('pvp_quest_id') ? DailyQuest::find($request->input('pvp_quest_id')) : null,
+            ],
+            sender: $request->user(),
+            updates: $this->getExistingNotification(),
+        ));
 
         return back()->with('success', 'Daily quests set and posted to Discord!');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Audit Log
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Display an audit log of all daily quest notifications.
+     */
     public function audit(Request $request): Response
     {
-        $logPath = storage_path('logs/daily-quests.log');
-        $entries = collect();
-
-        if (file_exists($logPath)) {
-            $lines = file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-            $entries = collect($lines)
-                ->map(function (string $line) {
-                    if (! preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] \w+\.\w+: (.+)$/', $line, $matches)) {
-                        return null;
-                    }
-
-                    $timestamp = $matches[1];
-                    $message = $matches[2];
-
-                    if (! preg_match('/^(.+?) (posted|updated|deleted) daily quests for (\d{4}-\d{2}-\d{2})\.$/', $message, $parts)) {
-                        return null;
-                    }
-
-                    return [
-                        'timestamp' => $timestamp,
-                        'user' => $parts[1],
-                        'action' => $parts[2],
-                        'date' => $parts[3],
-                    ];
-                })
-                ->filter()
-                ->reverse()
-                ->values();
-        }
-
-        $page = (int) $request->input('page', 1);
-        $perPage = 50;
-        $paginator = new LengthAwarePaginator(
-            $entries->forPage($page, $perPage)->values(),
-            $entries->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url()]
-        );
+        $paginator = DiscordNotification::where('type', DailyQuestsMessage::class)
+            ->latest()
+            ->paginate(20)
+            ->appends($request->query());
 
         return Inertia::render('Dashboard/DailyQuestsAuditLog', [
             'entries' => $paginator,
         ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get the Discord channel instance for daily quests notifications.
+     */
+    private function channel(): NotifiableChannel
+    {
+        return NotifiableChannel::fromConfig('daily_quests', $this->discord);
+    }
+
+    /**
+     * Calculate the number of seconds until the next reset time (3:59:59 AM Paris time) for caching purposes.
+     */
+    private function resetTime(): int
+    {
+        return Carbon::tomorrow()->setTime(3, 59, 59)->diffInSeconds(Carbon::now());
+    }
+
+    /**
+     * Get today's notification, if one exists.
+     */
+    private function getExistingNotification(): ?DiscordNotification
+    {
+        return DiscordNotification::where('type', DailyQuestsMessage::class)
+            ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
+            ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+            ->latest()
+            ->first();
     }
 
     /**
@@ -156,62 +178,32 @@ class DailyQuestsController extends Controller
      *
      * @return array<int, array<string, mixed>>|null
      */
-    protected function buildQuestsData(BlizzardService $blizzard, MediaService $media): ?array
+    private function buildQuestsData(): ?array
     {
-        $nextReset = now('Europe/Paris')->hour < 3
-            ? now('Europe/Paris')->setTime(3, 0, 0)
-            : now('Europe/Paris')->addDay()->setTime(3, 0, 0);
+        try {
+            Cache::tags(['daily_quests'])->remember('daily_quests:today', $this->resetTime(), function () {
+                $notification = DiscordNotification::where('type', DailyQuestsMessage::class)
+                    ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
+                    ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+                    ->latest()
+                    ->firstOrFail();
 
-        $ttl = (int) now()->diffInSeconds($nextReset);
-
-        return Cache::remember('daily_quest_notification:today', $ttl, function () use ($blizzard, $media) {
-            $notification = DailyQuestNotification::with([
-                'fishingQuest',
-                'cookingQuest',
-                'dungeonQuest',
-                'heroicQuest',
-                'pvpQuest',
-            ])->where('date', DailyQuestNotification::currentDailyQuestDate())->first();
-
-            if (! $notification) {
-                return null;
-            }
-
-            $questOrder = [
-                ['key' => 'fishingQuest', 'label' => 'Fishing'],
-                ['key' => 'cookingQuest', 'label' => 'Cooking'],
-                ['key' => 'dungeonQuest', 'label' => 'Dungeon'],
-                ['key' => 'heroicQuest', 'label' => 'Heroic'],
-                ['key' => 'pvpQuest', 'label' => 'PvP'],
-            ];
-
-            $quests = [];
-
-            foreach ($questOrder as $entry) {
-                $quest = $notification->{$entry['key']};
-
-                if (! $quest) {
-                    continue;
+                // Make sure the payload is valid and can be parsed.
+                if (! $notification->payload instanceof MessagePayload) {
+                    throw new Exception('Invalid payload for daily quests notification');
                 }
 
-                $label = $entry['label'];
-                if (in_array($entry['key'], ['dungeonQuest', 'heroicQuest']) && $quest->instance) {
-                    $label .= " ({$quest->mode})";
-                }
+                $fields = $notification->payload->embeds[0]->fields ?? [];
 
-                $quests[] = [
-                    'label' => $label,
-                    'name' => $quest->name,
-                    'icon' => $media->get($this->getIconForQuestType($entry['key'])),
-                    'type' => $quest->type,
-                    'instance' => $quest->instance?->value,
-                    'mode' => $quest->mode,
-                    'rewards' => $this->buildRewardsData($quest->rewards ?? [], $blizzard, $media),
-                ];
-            }
-
-            return $quests;
-        });
+                // Temporary
+                return [];
+            });
+        } catch (ModelNotFoundException $e) {
+            // It's fine if there's no notification for today, just return null and the frontend can handle it.
+            // We use this try-catch to avoid caching a null value, which would prevent the system from picking up
+            // a new notification if one is created later in the day.
+            return null;
+        }
     }
 
     /**
@@ -220,7 +212,7 @@ class DailyQuestsController extends Controller
      * @param  array<int, array{item_id: int, quantity: int}>  $rewards
      * @return array<int, array<string, mixed>>
      */
-    protected function buildRewardsData(array $rewards, BlizzardService $blizzard, MediaService $media): array
+    private function buildRewardsData(array $rewards, BlizzardService $blizzard, MediaService $media): array
     {
         return array_map(function (array $reward) use ($blizzard, $media) {
             $itemId = $reward['item_id'];
@@ -236,7 +228,7 @@ class DailyQuestsController extends Controller
                     $urls = $media->get($assets);
                     $iconUrl = array_values($urls)[0] ?? null;
                 }
-            } catch (\Exception) {
+            } catch (Exception) {
                 $blizzardData = [];
                 $iconUrl = null;
             }
@@ -252,15 +244,18 @@ class DailyQuestsController extends Controller
         }, $rewards);
     }
 
-    protected function getIconForQuestType(string $type): string
+    /**
+     * Get the appropriate icon URL for a given quest type.
+     */
+    private function getIconForQuestType(string $type): string
     {
         return match ($type) {
-            'fishingQuest' => self::FISHING_QUEST_ICON,
-            'cookingQuest' => self::COOKING_QUEST_ICON,
-            'dungeonQuest' => self::DUNGEON_QUEST_ICON,
-            'heroicQuest' => self::HEROIC_QUEST_ICON,
-            'pvpQuest' => self::PVP_QUEST_ICON,
-            default => 'inv_misc_questionmark',
+            'fishingQuest' => DailyQuestIcons::Fishing->value,
+            'cookingQuest' => DailyQuestIcons::Cooking->value,
+            'dungeonQuest' => DailyQuestIcons::Dungeon->value,
+            'heroicQuest' => DailyQuestIcons::HeroicDungeon->value,
+            'pvpQuest' => DailyQuestIcons::PvP->value,
+            default => DailyQuestIcons::Default->value,
         };
     }
 }

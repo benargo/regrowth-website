@@ -2,13 +2,20 @@
 
 namespace App\Notifications;
 
+use App\Contracts\Notifications\DiscordMessage;
+use App\Models\DiscordNotification;
+use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Services\Discord\Payloads\MessagePayload;
+use App\Services\Discord\Resources\Embed;
+use App\Services\Discord\Resources\EmbedField;
+use App\Services\Discord\Resources\EmbedMedia;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
-use NotificationChannels\Discord\DiscordChannel;
-use NotificationChannels\Discord\DiscordMessage;
+use Illuminate\Support\Collection;
 
-class GrmUploadFailed extends Notification implements ShouldQueue
+class GrmUploadFailed extends Notification implements DiscordMessage, ShouldQueue
 {
     use Queueable;
 
@@ -22,51 +29,71 @@ class GrmUploadFailed extends Notification implements ShouldQueue
         public ?string $exceptionMessage = null,
     ) {}
 
-    /**
-     * @return array<int, class-string>
-     */
-    public function via(object $notifiable): array
+    public function via(object $notifiable): string
     {
-        return [DiscordChannel::class];
+        return DiscordDriver::class;
     }
 
-    public function toDiscord(object $notifiable): DiscordMessage
+    public function toMessage(): MessagePayload
     {
-        $embed = [
-            'title' => $this->exceptionMessage
-                ? 'GRM Upload Processing Failed'
-                : 'GRM Upload Processing Completed with Errors',
-            'color' => 15158332,
-            'timestamp' => now()->toIso8601String(),
+        return $this->buildPayload();
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'type' => self::class,
+            'channel_id' => $notifiable->channel()->id,
+            'payload' => $this->buildPayload()->toArray(),
         ];
+    }
 
+    public function updates(): ?DiscordNotification
+    {
+        return null;
+    }
+
+    public function sender(): ?Authenticatable
+    {
+        return null;
+    }
+
+    public function relationships(): Collection
+    {
+        return collect();
+    }
+
+    private function buildPayload(): MessagePayload
+    {
         if ($this->exceptionMessage) {
-            $embed['description'] = "The GRM upload job failed completely after all retry attempts.\n\n**Error:** {$this->exceptionMessage}";
-        } else {
-            $embed['fields'] = [
-                ['name' => 'Processed', 'value' => (string) $this->processedCount, 'inline' => true],
-                ['name' => 'Errors', 'value' => (string) $this->errorCount, 'inline' => true],
-            ];
-            $embed['image'] = ['url' => config('app.url').'/images/jaina_broken.webp'];
-
-            $errorList = array_slice($this->errors, 0, 10);
-            $errorText = implode("\n", array_map(fn ($e) => "- {$e}", $errorList));
-            if (count($this->errors) > 10) {
-                $errorText .= "\n... and ".(count($this->errors) - 10).' more errors';
-            }
-            $embed['description'] = "**Errors:**\n{$errorText}";
+            return MessagePayload::from([
+                'embeds' => [new Embed(
+                    title: 'GRM Upload Processing Failed',
+                    description: "The GRM upload job failed completely after all retry attempts.\n\n**Error:** {$this->exceptionMessage}",
+                    color: 15158332,
+                    timestamp: now()->toIso8601String(),
+                )],
+            ]);
         }
 
-        return DiscordMessage::create()->embed($embed);
-    }
+        $errorList = array_slice($this->errors, 0, 10);
+        $errorText = implode("\n", array_map(fn ($e) => "- {$e}", $errorList));
+        if (count($this->errors) > 10) {
+            $errorText .= "\n... and ".(count($this->errors) - 10).' more errors';
+        }
 
-    /**
-     * Get the tags that should be assigned to the job.
-     *
-     * @return array<int, string>
-     */
-    public function tags(): array
-    {
-        return ['grm-upload'];
+        return MessagePayload::from([
+            'embeds' => [new Embed(
+                title: 'GRM Upload Processing Completed with Errors',
+                description: "**Errors:**\n{$errorText}",
+                color: 15158332,
+                image: new EmbedMedia(config('app.url').'/images/jaina_broken.webp'),
+                fields: [
+                    new EmbedField('Processed', (string) $this->processedCount, true),
+                    new EmbedField('Errors', (string) $this->errorCount, true),
+                ],
+                timestamp: now()->toIso8601String(),
+            )],
+        ]);
     }
 }

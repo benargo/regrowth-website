@@ -40,7 +40,7 @@ class RaidsPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.index'));
+        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

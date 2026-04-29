@@ -4,8 +4,11 @@ namespace Tests\Feature\Jobs;
 
 use App\Jobs\SyncDiscordRoles;
 use App\Models\DiscordRole;
-use App\Services\Discord\DiscordRoleService;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\Role;
+use App\Services\Discord\Resources\RoleColors;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -15,25 +18,25 @@ class SyncDiscordRolesTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Sample Discord API role response data.
-     *
-     * @return array<int, array{id: string, name: string, position: int}>
+     * @return Collection<Role>
      */
-    private function discordApiRoles(): array
+    private function discordApiRoles(): Collection
     {
-        return [
-            ['id' => '000000000000000000', 'name' => '@everyone', 'position' => 0],
-            ['id' => '111111111111111111', 'name' => 'Officer', 'position' => 10],
-            ['id' => '222222222222222222', 'name' => 'Raider', 'position' => 20],
-            ['id' => '333333333333333333', 'name' => 'Member', 'position' => 30],
-        ];
+        $colors = new RoleColors(primary_color: 0);
+
+        return collect([
+            new Role(id: '000000000000000000', name: '@everyone', colors: $colors, hoist: false, position: 0, permissions: '0', managed: false, mentionable: false, flags: 0),
+            new Role(id: '111111111111111111', name: 'Officer', colors: $colors, hoist: false, position: 10, permissions: '0', managed: false, mentionable: false, flags: 0),
+            new Role(id: '222222222222222222', name: 'Raider', colors: $colors, hoist: false, position: 20, permissions: '0', managed: false, mentionable: false, flags: 0),
+            new Role(id: '333333333333333333', name: 'Member', colors: $colors, hoist: false, position: 30, permissions: '0', managed: false, mentionable: false, flags: 0),
+        ]);
     }
 
     #[Test]
     public function it_creates_new_roles_from_discord(): void
     {
-        $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildRoles')->once()->andReturn($this->discordApiRoles());
         });
 
         SyncDiscordRoles::dispatchSync();
@@ -53,8 +56,8 @@ class SyncDiscordRolesTest extends TestCase
             'position' => 99,
         ]);
 
-        $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildRoles')->once()->andReturn($this->discordApiRoles());
         });
 
         SyncDiscordRoles::dispatchSync();
@@ -75,8 +78,8 @@ class SyncDiscordRolesTest extends TestCase
             'position' => 50,
         ]);
 
-        $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildRoles')->once()->andReturn($this->discordApiRoles());
         });
 
         SyncDiscordRoles::dispatchSync();
@@ -87,8 +90,8 @@ class SyncDiscordRolesTest extends TestCase
     #[Test]
     public function it_excludes_the_everyone_role(): void
     {
-        $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildRoles')->once()->andReturn($this->discordApiRoles());
         });
 
         SyncDiscordRoles::dispatchSync();
@@ -105,8 +108,8 @@ class SyncDiscordRolesTest extends TestCase
             'position' => 10,
         ]);
 
-        $this->mock(DiscordRoleService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getAllRoles')->once()->andReturn($this->discordApiRoles());
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildRoles')->once()->andReturn($this->discordApiRoles());
         });
 
         SyncDiscordRoles::dispatchSync();

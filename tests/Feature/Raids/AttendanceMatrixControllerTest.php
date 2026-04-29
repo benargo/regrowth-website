@@ -49,7 +49,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Access Control ====================
 
     #[Test]
-    public function matrix_requires_authentication(): void
+    public function invoke_requires_authentication(): void
     {
         $response = $this->get(route('raids.attendance.matrix'));
 
@@ -57,7 +57,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_forbids_guest_users(): void
+    public function invoke_forbids_guest_users(): void
     {
         $user = User::factory()->guest()->create();
 
@@ -67,7 +67,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_forbids_member_users(): void
+    public function invoke_forbids_member_users(): void
     {
         $user = User::factory()->member()->create();
 
@@ -77,7 +77,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_forbids_raider_users(): void
+    public function invoke_forbids_raider_users(): void
     {
         $user = User::factory()->raider()->create();
 
@@ -87,7 +87,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_forbids_loot_councillor_users(): void
+    public function invoke_forbids_loot_councillor_users(): void
     {
         $user = User::factory()->lootCouncillor()->create();
 
@@ -97,7 +97,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_allows_officer_users(): void
+    public function invoke_allows_officer_users(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -109,7 +109,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Deferred Prop ====================
 
     #[Test]
-    public function matrix_prop_is_deferred_and_not_in_initial_response(): void
+    public function invoke_prop_is_deferred_and_not_in_initial_response(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -122,7 +122,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_deferred_prop_returns_raids_and_rows(): void
+    public function invoke_deferred_prop_returns_raids_and_rows(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -148,7 +148,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_deferred_prop_returns_empty_when_no_data(): void
+    public function invoke_deferred_prop_returns_empty_when_no_data(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -165,7 +165,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Filter Props ====================
 
     #[Test]
-    public function matrix_includes_filter_option_props(): void
+    public function invoke_includes_filter_option_props(): void
     {
         GuildRank::factory()->create();
         GuildTag::factory()->countsAttendance()->withoutPhase()->create();
@@ -190,7 +190,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_ranks_includes_all_ranks_regardless_of_count_attendance(): void
+    public function invoke_ranks_includes_all_ranks_regardless_of_count_attendance(): void
     {
         $counting = GuildRank::factory()->create();
         $nonCounting = GuildRank::factory()->doesNotCountAttendance()->create();
@@ -206,7 +206,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_character_filter_is_null_when_not_specified(): void
+    public function invoke_character_filter_is_null_when_not_specified(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -218,7 +218,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_character_filter_returns_character_name(): void
+    public function invoke_character_filter_returns_character_name(): void
     {
         $character = Character::factory()->main()->create(['name' => 'Thrall']);
         $user = User::factory()->officer()->create();
@@ -232,7 +232,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_default_guild_tag_ids_include_only_attendance_counting_tags(): void
+    public function invoke_default_guild_tag_ids_include_only_attendance_counting_tags(): void
     {
         $countingTag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         GuildTag::factory()->withoutPhase()->create(['count_attendance' => false]);
@@ -249,7 +249,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Validation ====================
 
     #[Test]
-    public function matrix_accepts_omitted_optional_fields(): void
+    public function invoke_accepts_omitted_optional_fields(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -259,7 +259,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_valid_character_id(): void
+    public function invoke_accepts_valid_character_id(): void
     {
         $character = Character::factory()->main()->create();
         $user = User::factory()->officer()->create();
@@ -270,7 +270,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_nonexistent_character_id(): void
+    public function invoke_rejects_nonexistent_character_id(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -280,7 +280,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_non_integer_character(): void
+    public function invoke_rejects_non_integer_character(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -290,7 +290,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_valid_zone_ids_string(): void
+    public function invoke_accepts_valid_zone_ids_string(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -300,7 +300,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_zone_ids_with_invalid_format(): void
+    public function invoke_rejects_zone_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -310,7 +310,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_valid_guild_tag_ids_string(): void
+    public function invoke_accepts_valid_guild_tag_ids_string(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -320,7 +320,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_guild_tag_ids_with_invalid_format(): void
+    public function invoke_rejects_guild_tag_ids_with_invalid_format(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -330,7 +330,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_valid_since_date(): void
+    public function invoke_accepts_valid_since_date(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -340,7 +340,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_invalid_since_date(): void
+    public function invoke_rejects_invalid_since_date(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -350,7 +350,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_valid_before_date(): void
+    public function invoke_accepts_valid_before_date(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -360,7 +360,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_invalid_before_date(): void
+    public function invoke_rejects_invalid_before_date(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -370,7 +370,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_since_date_of_today(): void
+    public function invoke_accepts_since_date_of_today(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -381,7 +381,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_since_date_in_the_future(): void
+    public function invoke_rejects_since_date_in_the_future(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -392,7 +392,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_before_date_of_today(): void
+    public function invoke_accepts_before_date_of_today(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -403,7 +403,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_before_date_in_the_future(): void
+    public function invoke_rejects_before_date_in_the_future(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -414,7 +414,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_since_date_equal_to_minimum(): void
+    public function invoke_accepts_since_date_equal_to_minimum(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
@@ -428,7 +428,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_since_date_before_minimum(): void
+    public function invoke_rejects_since_date_before_minimum(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
@@ -442,7 +442,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_before_date_equal_to_minimum(): void
+    public function invoke_accepts_before_date_equal_to_minimum(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
@@ -455,7 +455,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_rejects_before_date_before_minimum(): void
+    public function invoke_rejects_before_date_before_minimum(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'Europe/Paris')]);
@@ -468,7 +468,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_accepts_any_date_when_no_reports_exist(): void
+    public function invoke_accepts_any_date_when_no_reports_exist(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -480,7 +480,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Earliest Date Prop ====================
 
     #[Test]
-    public function matrix_earliest_date_is_null_when_no_reports_exist(): void
+    public function invoke_earliest_date_is_null_when_no_reports_exist(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -492,7 +492,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_earliest_date_is_day_before_earliest_report(): void
+    public function invoke_earliest_date_is_day_before_earliest_report(): void
     {
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'Europe/Paris')]);
@@ -510,7 +510,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Server-Side Filter Behavior ====================
 
     #[Test]
-    public function matrix_character_filter_limits_data_to_that_character(): void
+    public function invoke_character_filter_limits_data_to_that_character(): void
     {
         $rank = GuildRank::factory()->create();
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -535,7 +535,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_guild_tag_filter_limits_data_to_selected_tag(): void
+    public function invoke_guild_tag_filter_limits_data_to_selected_tag(): void
     {
         $rank = GuildRank::factory()->create();
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -562,7 +562,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_since_date_filter_excludes_older_reports(): void
+    public function invoke_since_date_filter_excludes_older_reports(): void
     {
         $rank = GuildRank::factory()->create();
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -589,7 +589,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_before_date_filter_excludes_newer_reports(): void
+    public function invoke_before_date_filter_excludes_newer_reports(): void
     {
         $rank = GuildRank::factory()->create();
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -618,7 +618,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: combine_linked_characters Filter ====================
 
     #[Test]
-    public function matrix_filters_include_combine_linked_characters_filter(): void
+    public function invoke_filters_include_combine_linked_characters_filter(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -630,7 +630,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_combine_linked_characters_defaults_to_true_when_not_specified(): void
+    public function invoke_combine_linked_characters_defaults_to_true_when_not_specified(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -642,7 +642,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_combine_linked_characters_can_be_set_to_false(): void
+    public function invoke_combine_linked_characters_can_be_set_to_false(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -654,7 +654,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_combine_linked_characters_rejects_non_boolean(): void
+    public function invoke_combine_linked_characters_rejects_non_boolean(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -666,7 +666,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Caching ====================
 
     #[Test]
-    public function matrix_result_is_served_from_cache_on_second_request(): void
+    public function invoke_result_is_served_from_cache_on_second_request(): void
     {
         $rank = GuildRank::factory()->create();
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -704,7 +704,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Zone Filter ====================
 
     #[Test]
-    public function matrix_sorts_zone_ids_for_deterministic_caching_when_provided(): void
+    public function invoke_sorts_zone_ids_for_deterministic_caching_when_provided(): void
     {
         $user = User::factory()->officer()->create();
 
@@ -718,7 +718,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Planned Absences ====================
 
     #[Test]
-    public function matrix_includes_referenced_planned_absences_in_response(): void
+    public function invoke_includes_referenced_planned_absences_in_response(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -748,7 +748,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Rank Filter ====================
 
     #[Test]
-    public function matrix_excludes_mains_whose_rank_is_not_in_the_rank_filter(): void
+    public function invoke_excludes_mains_whose_rank_is_not_in_the_rank_filter(): void
     {
         $rank1 = GuildRank::factory()->create();
         $rank2 = GuildRank::factory()->create();
@@ -777,7 +777,7 @@ class AttendanceMatrixControllerTest extends TestCase
     // ==================== matrix: Zero Attendance ====================
 
     #[Test]
-    public function matrix_records_zero_attendance_when_all_merged_characters_were_absent(): void
+    public function invoke_records_zero_attendance_when_all_merged_characters_were_absent(): void
     {
         $rank = GuildRank::factory()->create();
         $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
@@ -806,7 +806,7 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function matrix_cache_is_distinct_per_filter_combination(): void
+    public function invoke_cache_is_distinct_per_filter_combination(): void
     {
         $rank = GuildRank::factory()->create();
         $thrall = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);

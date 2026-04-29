@@ -7,7 +7,8 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\User;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -1137,14 +1138,14 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Test]
     public function store_creates_user_from_discord_and_assigns_absence_when_user_not_in_database(): void
     {
-        $this->mock(DiscordGuildService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('getGuildMember')->once()->andReturn([
-                'user' => ['username' => 'discorduser', 'discriminator' => '0', 'avatar' => null],
+        $this->mock(Discord::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('getGuildMember')->once()->andReturn(GuildMember::from([
+                'user' => ['id' => '999999999999999999', 'username' => 'discorduser', 'discriminator' => '0', 'avatar' => null],
                 'nick' => 'DiscordNick',
                 'avatar' => null,
                 'banner' => null,
                 'roles' => [],
-            ]);
+            ]));
         });
 
         $officer = User::factory()->officer()->create();

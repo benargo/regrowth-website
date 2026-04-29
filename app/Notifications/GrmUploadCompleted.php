@@ -2,13 +2,20 @@
 
 namespace App\Notifications;
 
+use App\Contracts\Notifications\DiscordMessage;
+use App\Models\DiscordNotification;
+use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Services\Discord\Payloads\MessagePayload;
+use App\Services\Discord\Resources\Embed;
+use App\Services\Discord\Resources\EmbedField;
+use App\Services\Discord\Resources\EmbedMedia;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
-use NotificationChannels\Discord\DiscordChannel;
-use NotificationChannels\Discord\DiscordMessage;
+use Illuminate\Support\Collection;
 
-class GrmUploadCompleted extends Notification implements ShouldQueue
+class GrmUploadCompleted extends Notification implements DiscordMessage, ShouldQueue
 {
     use Queueable;
 
@@ -18,59 +25,62 @@ class GrmUploadCompleted extends Notification implements ShouldQueue
         public int $warningCount = 0,
     ) {}
 
-    /**
-     * @return array<int, class-string>
-     */
-    public function via(object $notifiable): array
+    public function via(object $notifiable): string
     {
-        return [DiscordChannel::class];
+        return DiscordDriver::class;
     }
 
-    public function toDiscord(object $notifiable): DiscordMessage
+    public function toMessage(): MessagePayload
     {
-        $fields = [
-            [
-                'name' => 'Processed',
-                'value' => (string) $this->processedCount,
-                'inline' => true,
-            ],
+        return $this->buildPayload();
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'type' => self::class,
+            'channel_id' => $notifiable->channel()->id,
+            'payload' => $this->buildPayload()->toArray(),
         ];
+    }
+
+    public function updates(): ?DiscordNotification
+    {
+        return null;
+    }
+
+    public function sender(): ?Authenticatable
+    {
+        return null;
+    }
+
+    public function relationships(): Collection
+    {
+        return collect();
+    }
+
+    private function buildPayload(): MessagePayload
+    {
+        $fields = [new EmbedField('Processed', (string) $this->processedCount, true)];
 
         if ($this->skippedCount > 0) {
-            $fields[] = [
-                'name' => 'Skipped (too low level)',
-                'value' => (string) $this->skippedCount,
-                'inline' => true,
-            ];
+            $fields[] = new EmbedField('Skipped (too low level)', (string) $this->skippedCount, true);
         }
 
         if ($this->warningCount > 0) {
-            $fields[] = [
-                'name' => 'Skipped (API issues)',
-                'value' => (string) $this->warningCount,
-                'inline' => true,
-            ];
+            $fields[] = new EmbedField('Skipped (API issues)', (string) $this->warningCount, true);
         }
 
-        return DiscordMessage::create()->embed([
-            'title' => 'GRM Upload Processing Completed',
-            'url' => route('dashboard.addon.export'),
-            'color' => 5763719,
-            'fields' => $fields,
-            'description' => 'Officers should make sure they update the RegrowthLootTool with new data.',
-            'image' => ['url' => config('app.url').'/images/jaina_thumbsup.webp'],
-            // 'image' => ['url' => 'https://regrowth.gg/images/jaina_thumbsup.webp'], // used for local testing
-            'timestamp' => now()->toIso8601String(),
+        return MessagePayload::from([
+            'embeds' => [new Embed(
+                title: 'GRM Upload Processing Completed',
+                description: 'Officers should make sure they update the RegrowthLootTool with new data.',
+                url: route('dashboard.addon.export'),
+                color: 5763719,
+                image: new EmbedMedia(config('app.url').'/images/jaina_thumbsup.webp'),
+                fields: $fields,
+                timestamp: now()->toIso8601String(),
+            )],
         ]);
-    }
-
-    /**
-     * Get the tags that should be assigned to the job.
-     *
-     * @return array<int, string>
-     */
-    public function tags(): array
-    {
-        return ['grm-upload'];
     }
 }

@@ -2,20 +2,29 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Notifications\DiscordNotifiable;
 use App\Notifications\GrmUploadFailed;
-use NotificationChannels\Discord\DiscordChannel;
+use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Services\Discord\Notifications\NotifiableChannel;
+use App\Services\Discord\Resources\Channel as ChannelResource;
+use App\Services\Discord\Resources\Embed;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class GrmUploadFailedTest extends TestCase
 {
+    private function makeNotifiable(): NotifiableChannel
+    {
+        $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+
+        return new NotifiableChannel($channel);
+    }
+
     #[Test]
-    public function it_uses_discord_channel(): void
+    public function it_uses_discord_driver(): void
     {
         $notification = new GrmUploadFailed(processedCount: 3, errorCount: 2);
 
-        $this->assertSame([DiscordChannel::class], $notification->via(new DiscordNotifiable('officer')));
+        $this->assertSame(DiscordDriver::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -26,13 +35,14 @@ class GrmUploadFailedTest extends TestCase
             errorCount: 1,
             exceptionMessage: 'Connection timed out',
         );
-        $message = $notification->toDiscord(new DiscordNotifiable('officer'));
+        $embed = $notification->toMessage()->embeds[0];
 
-        $this->assertSame('GRM Upload Processing Failed', $message->embed['title']);
-        $this->assertSame(15158332, $message->embed['color']);
-        $this->assertStringContainsString('Connection timed out', $message->embed['description']);
-        $this->assertStringContainsString('failed completely', $message->embed['description']);
-        $this->assertArrayNotHasKey('fields', $message->embed);
+        $this->assertInstanceOf(Embed::class, $embed);
+        $this->assertSame('GRM Upload Processing Failed', $embed->title);
+        $this->assertSame(15158332, $embed->color);
+        $this->assertStringContainsString('Connection timed out', $embed->description);
+        $this->assertStringContainsString('failed completely', $embed->description);
+        $this->assertNull($embed->fields);
     }
 
     #[Test]
@@ -43,16 +53,15 @@ class GrmUploadFailedTest extends TestCase
             errorCount: 2,
             errors: ['CharA: API error', 'CharB: not found'],
         );
-        $message = $notification->toDiscord(new DiscordNotifiable('officer'));
+        $embed = $notification->toMessage()->embeds[0];
 
-        $this->assertSame('GRM Upload Processing Completed with Errors', $message->embed['title']);
-        $this->assertArrayHasKey('fields', $message->embed);
-        $this->assertCount(2, $message->embed['fields']);
-        $this->assertSame('Processed', $message->embed['fields'][0]['name']);
-        $this->assertSame('8', $message->embed['fields'][0]['value']);
-        $this->assertSame('Errors', $message->embed['fields'][1]['name']);
-        $this->assertSame('2', $message->embed['fields'][1]['value']);
-        $this->assertArrayHasKey('image', $message->embed);
+        $this->assertSame('GRM Upload Processing Completed with Errors', $embed->title);
+        $this->assertCount(2, $embed->fields);
+        $this->assertSame('Processed', $embed->fields[0]->name);
+        $this->assertSame('8', $embed->fields[0]->value);
+        $this->assertSame('Errors', $embed->fields[1]->name);
+        $this->assertSame('2', $embed->fields[1]->value);
+        $this->assertNotNull($embed->image);
     }
 
     #[Test]
@@ -63,10 +72,10 @@ class GrmUploadFailedTest extends TestCase
             errorCount: 2,
             errors: ['CharA: API error', 'CharB: not found'],
         );
-        $message = $notification->toDiscord(new DiscordNotifiable('officer'));
+        $embed = $notification->toMessage()->embeds[0];
 
-        $this->assertStringContainsString('CharA: API error', $message->embed['description']);
-        $this->assertStringContainsString('CharB: not found', $message->embed['description']);
+        $this->assertStringContainsString('CharA: API error', $embed->description);
+        $this->assertStringContainsString('CharB: not found', $embed->description);
     }
 
     #[Test]
@@ -79,11 +88,11 @@ class GrmUploadFailedTest extends TestCase
             errorCount: 15,
             errors: $errors,
         );
-        $message = $notification->toDiscord(new DiscordNotifiable('officer'));
+        $embed = $notification->toMessage()->embeds[0];
 
-        $this->assertStringContainsString('Error 10', $message->embed['description']);
-        $this->assertStringNotContainsString('Error 11', $message->embed['description']);
-        $this->assertStringContainsString('and 5 more errors', $message->embed['description']);
+        $this->assertStringContainsString('Error 10', $embed->description);
+        $this->assertStringNotContainsString('Error 11', $embed->description);
+        $this->assertStringContainsString('and 5 more errors', $embed->description);
     }
 
     #[Test]
@@ -96,17 +105,27 @@ class GrmUploadFailedTest extends TestCase
             errorCount: 10,
             errors: $errors,
         );
-        $message = $notification->toDiscord(new DiscordNotifiable('officer'));
+        $embed = $notification->toMessage()->embeds[0];
 
-        $this->assertStringContainsString('Error 10', $message->embed['description']);
-        $this->assertStringNotContainsString('more errors', $message->embed['description']);
+        $this->assertStringContainsString('Error 10', $embed->description);
+        $this->assertStringNotContainsString('more errors', $embed->description);
     }
 
     #[Test]
-    public function it_returns_grm_upload_tags(): void
+    public function it_returns_null_for_updates(): void
     {
-        $notification = new GrmUploadFailed(processedCount: 0, errorCount: 1);
+        $this->assertNull((new GrmUploadFailed(processedCount: 0, errorCount: 1))->updates());
+    }
 
-        $this->assertSame(['grm-upload'], $notification->tags());
+    #[Test]
+    public function it_returns_null_for_sender(): void
+    {
+        $this->assertNull((new GrmUploadFailed(processedCount: 0, errorCount: 1))->sender());
+    }
+
+    #[Test]
+    public function it_returns_empty_array_for_relationships(): void
+    {
+        $this->assertEmpty((new GrmUploadFailed(processedCount: 0, errorCount: 1))->relationships());
     }
 }

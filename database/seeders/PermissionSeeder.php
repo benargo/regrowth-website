@@ -46,8 +46,9 @@ class PermissionSeeder extends Seeder
         /**
          * Daily quests permissions
          */
+        ['name' => 'view-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
         ['name' => 'set-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
-        ['name' => 'update-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
+        ['name' => 'audit-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
 
         /**
          * Hidden permissions (not shown in the dashboard, but still used for access control)

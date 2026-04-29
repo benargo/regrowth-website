@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\DiscordRole;
 use App\Models\User;
-use App\Services\Discord\DiscordGuildService;
+use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +14,7 @@ use Laravel\Socialite\Facades\Socialite;
 class DiscordController extends Controller
 {
     public function __construct(
-        protected DiscordGuildService $guildService
+        protected Discord $discord
     ) {}
 
     /**
@@ -43,7 +43,7 @@ class DiscordController extends Controller
 
         // Fetch guild member data
         try {
-            $guildMemberData = $this->guildService->getGuildMember($discordId);
+            $member = $this->discord->getGuildMember($discordId);
         } catch (UserNotInGuildException $e) {
             return redirect('/')
                 ->with('error', 'You must be a member of the Regrowth Discord server to log in.');
@@ -60,14 +60,14 @@ class DiscordController extends Controller
             [
                 'username' => $rawData['username'],
                 'discriminator' => $rawData['discriminator'] ?? '0',
-                'nickname' => $guildMemberData['nick'],
+                'nickname' => $member->nick,
                 'avatar' => $rawData['avatar'] ?? null,
-                'guild_avatar' => $guildMemberData['avatar'] ?? null,
-                'banner' => $guildMemberData['banner'] ?? $rawData['banner'] ?? null,
+                'guild_avatar' => $member->avatar,
+                'banner' => $member->banner ?? $rawData['banner'] ?? null,
             ]
         );
 
-        $incomingRoleIds = $guildMemberData['roles'] ?? [];
+        $incomingRoleIds = $member->roles;
         $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
         $user->discordRoles()->sync($recognizedRoleIds);
 

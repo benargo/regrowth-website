@@ -4,9 +4,7 @@ namespace Tests\Unit\Providers;
 
 use App\Providers\AttendanceServiceProvider;
 use App\Services\Attendance\Calculator;
-use App\Services\Attendance\Dashboard;
 use App\Services\Attendance\DataTable;
-use App\Services\Attendance\Matrix;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -21,9 +19,7 @@ class AttendanceServiceProviderTest extends TestCase
         $provides = $provider->provides();
 
         $this->assertContains(Calculator::class, $provides);
-        $this->assertContains(Dashboard::class, $provides);
         $this->assertContains(DataTable::class, $provides);
-        $this->assertContains(Matrix::class, $provides);
     }
 
     // ==================== contextual binding ====================
