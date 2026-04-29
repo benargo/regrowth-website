@@ -3,8 +3,9 @@
 namespace App\Services\Discord\Stubs;
 
 use App\Services\Discord\Contracts\Resources\Message as MessageContract;
+use Spatie\LaravelData\Data;
 
-class MessageStub implements MessageContract
+class MessageStub extends Data implements MessageContract
 {
     public function __construct(
         public readonly string $id,
