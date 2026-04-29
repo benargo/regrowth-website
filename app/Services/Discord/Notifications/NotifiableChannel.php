@@ -2,8 +2,8 @@
 
 namespace App\Services\Discord\Notifications;
 
+use App\Services\Discord\Contracts\Resources\Channel;
 use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Notifications\Notifiable;
 use RuntimeException;
 

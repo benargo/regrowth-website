@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Discord\Notifications;
 use App\Contracts\Notifications\DiscordMessage;
 use App\Models\DiscordNotification;
 use App\Models\User;
+use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Enums\ChannelType;
 use App\Services\Discord\Enums\MessageType;
@@ -28,7 +29,7 @@ class DriverTest extends TestCase
 
     private Driver $driver;
 
-    private Channel $channel;
+    private ChannelContract $channel;
 
     private NotifiableChannel $notifiable;
 
@@ -117,7 +118,7 @@ class DriverTest extends TestCase
             ->andReturn($existingDiscordMessage);
 
         $this->discord->expects('editMessage')
-            ->with($this->channel, $existingDiscordMessage, $payload)
+            ->with($existingDiscordMessage, $payload)
             ->andReturn($existingDiscordMessage);
 
         $this->driver->send($this->notifiable, $notification);
@@ -151,7 +152,7 @@ class DriverTest extends TestCase
             ->andReturn($existingDiscordMessage);
 
         $this->discord->expects('editMessage')
-            ->with($this->channel, $existingDiscordMessage, $payload)
+            ->with($existingDiscordMessage, $payload)
             ->andReturn($existingDiscordMessage);
 
         $this->driver->send($this->notifiable, $notification);

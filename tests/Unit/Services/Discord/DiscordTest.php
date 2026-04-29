@@ -417,7 +417,6 @@ class DiscordTest extends TestCase
     #[Test]
     public function it_patches_a_message_and_returns_the_updated_message(): void
     {
-        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
         $existingMessage = Message::from(['id' => '333333333333333333', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
         $payload = MessagePayload::from(['content' => 'Updated content']);
 
@@ -431,7 +430,7 @@ class DiscordTest extends TestCase
             ->with('channels/987654321098765432/messages/333333333333333333', Mockery::any())
             ->andReturn($response);
 
-        $updated = $this->discord->editMessage($channel, $existingMessage, $payload);
+        $updated = $this->discord->editMessage($existingMessage, $payload);
 
         $this->assertInstanceOf(Message::class, $updated);
         $this->assertSame('Updated content', $updated->content);
@@ -444,7 +443,6 @@ class DiscordTest extends TestCase
     #[Test]
     public function it_deletes_a_message(): void
     {
-        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
         $message = Message::from(['id' => '444444444444444444', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
 
         $response = Mockery::mock(Response::class);
@@ -454,7 +452,7 @@ class DiscordTest extends TestCase
             ->with('channels/987654321098765432/messages/444444444444444444')
             ->andReturn($response);
 
-        $this->discord->deleteMessage($channel, $message);
+        $this->discord->deleteMessage($message);
 
         // No exception = pass
         $this->assertTrue(true);

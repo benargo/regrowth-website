@@ -2,6 +2,7 @@
 
 namespace App\Services\Discord\Resources;
 
+use App\Services\Discord\Contracts\Resources\Message as MessageContract;
 use App\Services\Discord\Enums\MessageType;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\Validation\BooleanType;
@@ -11,7 +12,7 @@ use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
 
-class Message extends Data
+class Message extends Data implements MessageContract
 {
     public function __construct(
         /** @var string Message ID (snowflake) */

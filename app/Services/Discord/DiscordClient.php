@@ -10,7 +10,7 @@ class DiscordClient
     /**
      * Base URL for Discord API requests.
      */
-    private const BASE_URL = 'https://discord.com/api/v10';
+    private const BASE_URL = 'https://discord.com/api/v10/';
 
     /**
      * Instantiates a new DiscordClient.
@@ -29,7 +29,7 @@ class DiscordClient
     public function get(string $endpoint, array $query = []): Response
     {
         return Http::withHeaders($this->getAuthHeaders())
-            ->get(self::BASE_URL.$endpoint, $query);
+            ->get($this->endpoint($endpoint), $query);
     }
 
     /**
@@ -40,7 +40,7 @@ class DiscordClient
     public function post(string $endpoint, array $data = []): Response
     {
         return Http::withHeaders($this->getAuthHeaders())
-            ->post(self::BASE_URL.$endpoint, $data);
+            ->post($this->endpoint($endpoint), $data);
     }
 
     /**
@@ -51,7 +51,7 @@ class DiscordClient
     public function patch(string $endpoint, array $data = []): Response
     {
         return Http::withHeaders($this->getAuthHeaders())
-            ->patch(self::BASE_URL.$endpoint, $data);
+            ->patch($this->endpoint($endpoint), $data);
     }
 
     /**
@@ -60,7 +60,7 @@ class DiscordClient
     public function delete(string $endpoint): Response
     {
         return Http::withHeaders($this->getAuthHeaders())
-            ->delete(self::BASE_URL.$endpoint);
+            ->delete($this->endpoint($endpoint));
     }
 
     /**
@@ -71,5 +71,16 @@ class DiscordClient
         return [
             'Authorization' => "Bot {$this->token}",
         ];
+    }
+
+    /**
+     * Normalize the endpoint by ensuring it does not start with a slash, as the base URL already ends with one.
+     *
+     * @param  string  $endpoint  The API endpoint to normalize (e.g. '/channels/123/messages' or 'channels/123/messages')
+     * @return string The normalized endpoint (e.g. 'channels/123/messages')
+     */
+    protected function endpoint(string $endpoint): string
+    {
+        return self::BASE_URL.ltrim($endpoint, '/');
     }
 }

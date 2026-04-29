@@ -5,7 +5,6 @@ namespace App\Services\Discord\Notifications;
 use App\Contracts\Notifications\DiscordMessage;
 use App\Models\DiscordNotification;
 use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Message;
 use RuntimeException;
 
 class Driver
@@ -33,7 +32,7 @@ class Driver
                 $existingMessage = $this->discord->getChannelMessage($notifiable->channel(), $updates->message_id);
                 $payload = $notification->toMessage();
 
-                $this->discord->editMessage($notifiable->channel(), $existingMessage, $payload);
+                $this->discord->editMessage($existingMessage, $payload);
 
                 // Update the existing notification's payload and sender information in the database without firing model events
                 $updates->withoutEvents(function () use ($notification, $payload, $updates) {

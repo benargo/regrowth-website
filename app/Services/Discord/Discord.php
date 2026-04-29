@@ -3,13 +3,15 @@
 namespace App\Services\Discord;
 
 use App\Exceptions\MisconfigurationException;
+use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
+use App\Services\Discord\Contracts\Resources\Message as MessageContract;
 use App\Services\Discord\Exceptions\RoleNotFoundException;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use App\Services\Discord\Payloads\ChannelMessagesQueryString;
 use App\Services\Discord\Payloads\MessagePayload;
-use App\Services\Discord\Resources\Channel;
+use App\Services\Discord\Resources\Channel as ChannelResource;
 use App\Services\Discord\Resources\GuildMember;
-use App\Services\Discord\Resources\Message;
+use App\Services\Discord\Resources\Message as MessageResource;
 use App\Services\Discord\Resources\Role;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
@@ -54,11 +56,11 @@ class Discord
      * Returns a channel object. If the channel is a thread, a thread member object is included in the returned result.
      *
      * @param  string  $channelId  The ID of the channel to retrieve.
-     * @return Channel The retrieved channel.
+     * @return ChannelResource The retrieved channel.
      */
-    public function getChannel(string $channelId): Channel
+    public function getChannel(string $channelId): ChannelResource
     {
-        return Channel::from($this->client->get("channels/{$channelId}")->json());
+        return ChannelResource::from($this->client->get("channels/{$channelId}")->json());
     }
 
     /**
@@ -67,13 +69,13 @@ class Discord
      * Does not include threads.
      *
      * @param  string|null  $guildId  The ID of the guild to list channels from. Defaults to the configured server_id.
-     * @return Collection<Channel> A collection of channels in the guild.
+     * @return Collection<ChannelResource> A collection of channels in the guild.
      */
     public function getGuildChannels(?string $guildId = null): Collection
     {
         $guildId = $guildId ?? $this->config('server_id', null);
 
-        return Channel::collect($this->client->get("guilds/{$guildId}/channels")->json(), Collection::class);
+        return ChannelResource::collect($this->client->get("guilds/{$guildId}/channels")->json(), Collection::class);
     }
 
     // ==================== Guild Members ====================
@@ -215,11 +217,11 @@ class Discord
     /**
      * Retrieves the messages in a channel. Returns an array of message objects from newest to oldest on success.
      *
-     * @param  Channel  $channel  The channel to retrieve messages from.
+     * @param  ChannelContract  $channel  The channel to retrieve messages from.
      * @param  ChannelMessagesQueryString  $query  The query parameters for retrieving messages (pagination options).
      * @return Collection<Message> A collection of messages in the channel
      */
-    public function getChannelMessages(Channel $channel, ChannelMessagesQueryString $query): Collection
+    public function getChannelMessages(ChannelContract $channel, ChannelMessagesQueryString $query): Collection
     {
         $response = $this->client->get("channels/{$channel->id}/messages", $query->toArray());
 
@@ -227,17 +229,17 @@ class Discord
             throw new RuntimeException('Failed to fetch channel messages: '.$response->body());
         }
 
-        return Message::collect($response->json(), Collection::class);
+        return MessageResource::collect($response->json(), Collection::class);
     }
 
     /**
      * Retreive a message in the channel.
      *
-     * @param  Channel  $channel  The channel the message is in.
+     * @param  ChannelContract  $channel  The channel the message is in.
      * @param  string  $messageId  The ID of the message to retrieve.
      * @return Message The retrieved message.
      */
-    public function getChannelMessage(Channel $channel, string $messageId): Message
+    public function getChannelMessage(ChannelContract $channel, string $messageId): MessageResource
     {
         $response = $this->client->get("channels/{$channel->id}/messages/{$messageId}");
 
@@ -245,17 +247,17 @@ class Discord
             throw new RuntimeException('Failed to fetch channel message: '.$response->body());
         }
 
-        return Message::from($response->json());
+        return MessageResource::from($response->json());
     }
 
     /**
      * Post a message to a channel.
      *
-     * @param  Channel  $channel  The channel to post the message in.
+     * @param  ChannelContract  $channel  The channel to post the message in.
      * @param  MessagePayload  $payload  The payload containing the message content and options.
      * @return Message The created message.
      */
-    public function createMessage(Channel $channel, MessagePayload $payload): Message
+    public function createMessage(ChannelContract $channel, MessagePayload $payload): MessageResource
     {
         $response = $this->client->post("channels/{$channel->id}/messages", $payload->toArray());
 
@@ -263,37 +265,35 @@ class Discord
             throw new RuntimeException('Failed to create message: '.$response->body());
         }
 
-        return Message::from($response->json());
+        return MessageResource::from($response->json());
     }
 
     /**
      * Edit a message in the channel.
      *
-     * @param  Channel  $channel  The channel the message is in.
      * @param  Message  $message  The message to edit.
      * @param  MessagePayload  $payload  The payload containing the new message content and options.
      * @return Message The updated message.
      */
-    public function editMessage(Channel $channel, Message $message, MessagePayload $payload): Message
+    public function editMessage(MessageContract $message, MessagePayload $payload): MessageResource
     {
-        $response = $this->client->patch("channels/{$channel->id}/messages/{$message->id}", $payload->toArray());
+        $response = $this->client->patch("channels/{$message->channel_id}/messages/{$message->id}", $payload->toArray());
 
         if ($response->failed()) {
             throw new RuntimeException('Failed to edit message: '.$response->body());
         }
 
-        return Message::from($response->json());
+        return MessageResource::from($response->json());
     }
 
     /**
      * Delete a message in the channel.
      *
-     * @param  Channel  $channel  The channel the message is in.
-     * @param  Message  $message  The message to delete.
+     * @param  MessageContract  $message  The message to delete.
      */
-    public function deleteMessage(Channel $channel, Message $message): void
+    public function deleteMessage(MessageContract $message): void
     {
-        $response = $this->client->delete("channels/{$channel->id}/messages/{$message->id}");
+        $response = $this->client->delete("channels/{$message->channel_id}/messages/{$message->id}");
 
         if ($response->failed()) {
             throw new RuntimeException('Failed to delete message: '.$response->body());

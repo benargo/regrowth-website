@@ -2,6 +2,7 @@
 
 namespace App\Services\Discord\Resources;
 
+use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
 use App\Services\Discord\Enums\ChannelType;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
 use Spatie\LaravelData\Attributes\Validation\BooleanType;
@@ -14,14 +15,14 @@ use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
 
-class Channel extends Data
+class Channel extends Data implements ChannelContract
 {
     public function __construct(
         /** @var string Snowflake channel identifier */
         #[StringType]
         public readonly string $id,
 
-        public readonly ChannelType $type,
+        public readonly ?ChannelType $type = null,
 
         /** @var string|null Snowflake of the owning guild; absent in some gateway dispatches */
         #[Nullable, StringType]
