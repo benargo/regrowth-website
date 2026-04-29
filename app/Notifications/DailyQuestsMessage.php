@@ -17,6 +17,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Collection;
 
 class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQueue
 {
@@ -75,6 +76,14 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
             'type' => self::class,
             'channel_id' => $notifiable->channel()->id,
             'payload' => $this->getPayload()->toArray(),
+            'related_models' => $this->relationships()
+                ->map(fn ($model, $name) => [
+                    'name' => $name,
+                    'model' => get_class($model),
+                    'key' => $model->getKey(),
+                ])
+                ->values()
+                ->toArray(),
             'created_by_user_id' => $this->sender?->id,
         ];
     }
@@ -129,5 +138,12 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
     public function sender(): ?Authenticatable
     {
         return $this->sender;
+    }
+
+    public function relationships(): Collection
+    {
+        return collect($this->dailyQuests)
+            ->filter()
+            ->mapWithKeys(fn ($quest, $key) => [strtolower($key) => $quest]);
     }
 }

@@ -122,4 +122,10 @@ class GrmUploadFailedTest extends TestCase
     {
         $this->assertNull((new GrmUploadFailed(processedCount: 0, errorCount: 1))->sender());
     }
+
+    #[Test]
+    public function it_returns_empty_array_for_relationships(): void
+    {
+        $this->assertEmpty((new GrmUploadFailed(processedCount: 0, errorCount: 1))->relationships());
+    }
 }

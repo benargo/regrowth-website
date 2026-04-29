@@ -13,6 +13,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Collection;
 
 class GrmUploadCompleted extends Notification implements DiscordMessage, ShouldQueue
 {
@@ -51,6 +52,11 @@ class GrmUploadCompleted extends Notification implements DiscordMessage, ShouldQ
     public function sender(): ?Authenticatable
     {
         return null;
+    }
+
+    public function relationships(): Collection
+    {
+        return collect();
     }
 
     private function buildPayload(): MessagePayload

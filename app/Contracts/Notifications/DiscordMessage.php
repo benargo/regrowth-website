@@ -6,6 +6,8 @@ use App\Models\DiscordNotification;
 use App\Models\User;
 use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 interface DiscordMessage
 {
@@ -35,4 +37,11 @@ interface DiscordMessage
      * Get the user who sent this notification, if any.
      */
     public function sender(): ?Authenticatable;
+
+    /**
+     * Get a keyed array of related Eloquent models to store in the relationship index.
+     *
+     * @return Collection<string, Model|null>
+     */
+    public function relationships(): Collection;
 }

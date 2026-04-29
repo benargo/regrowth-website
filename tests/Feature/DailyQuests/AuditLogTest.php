@@ -11,6 +11,7 @@ use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
@@ -39,6 +40,11 @@ class OtherDiscordNotification extends Notification implements DiscordMessage
     public function sender(): ?Authenticatable
     {
         return null;
+    }
+
+    public function relationships(): Collection
+    {
+        return collect();
     }
 }
 

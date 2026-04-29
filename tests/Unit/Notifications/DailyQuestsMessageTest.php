@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Enums\DailyQuestTypeLabel;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
@@ -190,6 +189,41 @@ class DailyQuestsMessageTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // relationships()
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_returns_empty_array_for_relationships_when_all_quests_are_null(): void
+    {
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
+
+        $this->assertEmpty($notification->relationships());
+    }
+
+    #[Test]
+    public function it_returns_only_non_null_quests_in_relationships_keyed_by_lowercase_type(): void
+    {
+        $cooking = DailyQuest::factory()->cooking()->create();
+        $pvp = DailyQuest::factory()->pvp()->create();
+
+        $notification = new DailyQuestsMessage([
+            'Cooking' => $cooking,
+            'Fishing' => null,
+            'Dungeon' => null,
+            'Heroic' => null,
+            'PvP' => $pvp,
+        ]);
+
+        $relationships = $notification->relationships();
+
+        $this->assertCount(2, $relationships);
+        $this->assertArrayHasKey('cooking', $relationships);
+        $this->assertArrayHasKey('pvp', $relationships);
+        $this->assertTrue($relationships['cooking']->is($cooking));
+        $this->assertTrue($relationships['pvp']->is($pvp));
+    }
+
+    // -------------------------------------------------------------------------
     // toDatabase()
     // -------------------------------------------------------------------------
 
@@ -203,7 +237,29 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame(DailyQuestsMessage::class, $data['type']);
         $this->assertSame($this->notifiable->channel()->id, $data['channel_id']);
         $this->assertArrayHasKey('payload', $data);
+        $this->assertArrayHasKey('related_models', $data);
         $this->assertNull($data['created_by_user_id']);
+    }
+
+    #[Test]
+    public function it_includes_related_models_in_database_payload(): void
+    {
+        $cooking = DailyQuest::factory()->cooking()->create();
+
+        $notification = new DailyQuestsMessage([
+            'Cooking' => $cooking,
+            'Fishing' => null,
+            'Dungeon' => null,
+            'Heroic' => null,
+            'PvP' => null,
+        ]);
+
+        $data = $notification->toDatabase($this->notifiable);
+
+        $this->assertCount(1, $data['related_models']);
+        $this->assertSame('cooking', $data['related_models'][0]['name']);
+        $this->assertSame(DailyQuest::class, $data['related_models'][0]['model']);
+        $this->assertSame($cooking->id, $data['related_models'][0]['key']);
     }
 
     #[Test]
