@@ -6,11 +6,12 @@ use App\Events\GrmUploadProcessed;
 use App\Exceptions\CharacterTooLowLevelException;
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Notifications\DiscordNotifiable;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Exceptions\CharacterNotFoundException;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Http\Client\RequestException;
@@ -67,9 +68,20 @@ class ProcessGrmUpload implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * Flow:
+     *   1. Mark progress as "processing" in cache so the UI can poll for status.
+     *   2. Iterate every CSV row, delegating each to processRow(). Errors are
+     *      bucketed into skipped (level too low), warnings (character not found
+     *      in the Blizzard API), and hard errors (unexpected failures). Model
+     *      events are suppressed for the entire loop to avoid N+1 side-effects.
+     *   3. Persist the final counters back to cache, send a Discord notification
+     *      to the officer channel, and — when at least one row succeeded — fire
+     *      the GrmUploadProcessed event for any downstream listeners.
      */
-    public function handle(BlizzardService $blizzard): void
+    public function handle(BlizzardService $blizzard, Discord $discord): void
     {
+        // --- Step 1: initialise progress cache ---
         Cache::put(self::PROGRESS_CACHE_KEY, [
             'status' => 'processing',
             'step' => 1,
@@ -83,6 +95,7 @@ class ProcessGrmUpload implements ShouldQueue
         ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
 
         $delimiter = $this->grmData['delimiter'];
+        // GRM exports use one delimiter for columns and the opposite for alt lists.
         $altDelimiter = $delimiter === ',' ? ';' : ',';
         $rows = $this->grmData['rows'];
 
@@ -92,6 +105,7 @@ class ProcessGrmUpload implements ShouldQueue
         $warningCount = 0;
         $skippedCount = 0;
 
+        // --- Step 2: process each row, suppressing model events to prevent side-effects ---
         Character::withoutEvents(function () use (
             $rows,
             $altDelimiter,
@@ -107,6 +121,7 @@ class ProcessGrmUpload implements ShouldQueue
                     $this->processRow($row, $altDelimiter, $blizzard);
                     $processedCount++;
                 } catch (CharacterTooLowLevelException $e) {
+                    // Below level 60 — skip silently, not an error.
                     $skippedCount++;
                     $characterName = $row['Name'] ?? 'Unknown';
                     Log::notice("GRM Upload: Character too low level {$characterName}", [
@@ -114,6 +129,7 @@ class ProcessGrmUpload implements ShouldQueue
                         'row' => $row,
                     ]);
                 } catch (CharacterNotFoundException $e) {
+                    // Blizzard API returned no match — warn but continue.
                     $warningCount++;
                     $characterName = $row['Name'] ?? 'Unknown';
                     Log::warning("GRM Upload: Character not found via Blizzard API for {$characterName}", [
@@ -121,6 +137,7 @@ class ProcessGrmUpload implements ShouldQueue
                         'row' => $row,
                     ]);
                 } catch (\Exception $e) {
+                    // Unexpected failure — record for the summary notification.
                     $errorCount++;
                     $characterName = $row['Name'] ?? 'Unknown';
                     $errors[] = "{$characterName}: {$e->getMessage()}";
@@ -139,14 +156,15 @@ class ProcessGrmUpload implements ShouldQueue
             'total' => count($rows),
         ]);
 
-        if ($processedCount > 0) {
-            // Dispatch the event with metrics so the addon export chain can send the
-            // notification once it completes, rather than notifying immediately.
+        // --- Step 3: finalise cache, notify Discord, dispatch event ---
+        $channel = NotifiableChannel::fromConfig('officer', $discord);
+
+        if ($errorCount > 0) {
             Cache::put(self::PROGRESS_CACHE_KEY, [
-                'status' => 'processing',
-                'step' => 2,
+                'status' => 'failed',
+                'step' => 3,
                 'total' => 3,
-                'message' => 'Preparing Regrowth addon data...',
+                'message' => 'Upload completed with errors.',
                 'processedCount' => $processedCount,
                 'skippedCount' => $skippedCount,
                 'warningCount' => $warningCount,
@@ -154,43 +172,27 @@ class ProcessGrmUpload implements ShouldQueue
                 'errors' => $errors,
             ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
 
-            GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
+            $channel->notify(new GrmUploadFailed($processedCount, $errorCount, $errors));
         } else {
-            // No characters were updated so no addon export will be triggered;
-            // send the notification immediately.
-            if ($errorCount > 0) {
-                Cache::put(self::PROGRESS_CACHE_KEY, [
-                    'status' => 'failed',
-                    'step' => 3,
-                    'total' => 3,
-                    'message' => 'Upload completed with errors.',
-                    'processedCount' => $processedCount,
-                    'skippedCount' => $skippedCount,
-                    'warningCount' => $warningCount,
-                    'errorCount' => $errorCount,
-                    'errors' => $errors,
-                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+            Cache::put(self::PROGRESS_CACHE_KEY, [
+                'status' => 'completed',
+                'step' => 3,
+                'total' => 3,
+                'message' => 'Upload complete!',
+                'processedCount' => $processedCount,
+                'skippedCount' => $skippedCount,
+                'warningCount' => $warningCount,
+                'errorCount' => 0,
+                'errors' => [],
+            ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
 
-                DiscordNotifiable::officer()->notify(
-                    new GrmUploadFailed($processedCount, $errorCount, $errors)
-                );
-            } else {
-                Cache::put(self::PROGRESS_CACHE_KEY, [
-                    'status' => 'completed',
-                    'step' => 3,
-                    'total' => 3,
-                    'message' => 'Upload complete!',
-                    'processedCount' => $processedCount,
-                    'skippedCount' => $skippedCount,
-                    'warningCount' => $warningCount,
-                    'errorCount' => 0,
-                    'errors' => [],
-                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+            $channel->notify(new GrmUploadCompleted($processedCount, $skippedCount, $warningCount));
+        }
 
-                DiscordNotifiable::officer()->notify(
-                    new GrmUploadCompleted($processedCount, $skippedCount, $warningCount)
-                );
-            }
+        // Only dispatch the event when something was actually written; avoids
+        // triggering downstream listeners (e.g. Discord embeds) on no-op runs.
+        if ($processedCount > 0) {
+            GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
         }
     }
 
@@ -351,7 +353,7 @@ class ProcessGrmUpload implements ShouldQueue
         ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
 
         try {
-            DiscordNotifiable::officer()->notifyNow(
+            NotifiableChannel::fromConfig('officer', app(Discord::class))->notifyNow(
                 new GrmUploadFailed(0, 1, [], $exception->getMessage())
             );
         } catch (\Exception $e) {

@@ -6,13 +6,13 @@ use App\Events\GrmUploadProcessed;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Notifications\DiscordNotifiable;
-use App\Notifications\GrmUploadCompleted;
-use App\Notifications\GrmUploadFailed;
 use App\Services\Blizzard\BlizzardService;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Enums\MessageType;
+use App\Services\Discord\Resources\Channel as ChannelResource;
+use App\Services\Discord\Resources\Message as MessageResource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -21,15 +21,22 @@ class ProcessGrmUploadTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Discord $discord;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        Notification::fake();
-
         config([
             'services.discord.channels.officer' => '1407688195386114119',
         ]);
+
+        $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+
+        $this->discord = $this->mock(Discord::class, function (MockInterface $mock) use ($channel) {
+            $mock->shouldReceive('getChannel')->andReturn($channel);
+            $mock->shouldReceive('createMessage')->andReturn($this->makeMessage());
+        });
     }
 
     #[Test]
@@ -45,7 +52,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
@@ -68,7 +75,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $character = Character::find(12345);
         $this->assertEquals($rank->id, $character->rank_id);
@@ -86,7 +93,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseHas('characters', [
             'id' => 67890,
@@ -110,7 +117,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseHas('character_links', [
             'character_id' => 11111,
@@ -138,7 +145,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseHas('characters', [
             'id' => 22222,
@@ -161,7 +168,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseHas('characters', [
             'id' => 22222,
@@ -187,7 +194,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseCount('character_links', 2);
     }
@@ -213,18 +220,30 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseHas('characters', ['id' => 99999]);
         $this->assertDatabaseMissing('characters', ['name' => 'FailChar']);
     }
 
     #[Test]
-    public function it_sends_immediate_discord_notification_when_no_characters_are_processed(): void
+    public function it_sends_failed_notification_when_no_characters_are_processed(): void
     {
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getCharacterStatus')
                 ->andThrow(new \RuntimeException('Character not found'));
+        });
+
+        $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
+            $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+            $message = $this->makeMessage();
+
+            $mock->shouldReceive('getChannel')->andReturn($channel);
+            $mock->shouldReceive('createMessage')
+                ->withArgs(fn ($ch, $payload) => $payload->embeds[0]->title === 'GRM Upload Processing Failed'
+                    || $payload->embeds[0]->title === 'GRM Upload Processing Completed with Errors')
+                ->once()
+                ->andReturn($message);
         });
 
         $job = new ProcessGrmUpload([
@@ -235,20 +254,26 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
-
-        Notification::assertSentTo(
-            new DiscordNotifiable('officer'),
-            GrmUploadFailed::class
-        );
+        $job->handle(app(BlizzardService::class), $discordMock);
     }
 
     #[Test]
-    public function it_sends_immediate_completed_notification_when_all_characters_are_skipped(): void
+    public function it_sends_completed_notification_when_all_characters_are_skipped(): void
     {
         Event::fake([GrmUploadProcessed::class]);
 
         $this->mockCharacterService(['LowChar' => 99999]);
+
+        $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
+            $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+            $message = $this->makeMessage();
+
+            $mock->shouldReceive('getChannel')->andReturn($channel);
+            $mock->shouldReceive('createMessage')
+                ->withArgs(fn ($ch, $payload) => $payload->embeds[0]->title === 'GRM Upload Processing Completed')
+                ->once()
+                ->andReturn($message);
+        });
 
         $job = new ProcessGrmUpload([
             'delimiter' => ',',
@@ -258,19 +283,26 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $discordMock);
 
         Event::assertNotDispatched(GrmUploadProcessed::class);
-        Notification::assertSentTo(
-            new DiscordNotifiable('officer'),
-            GrmUploadCompleted::class
-        );
     }
 
     #[Test]
-    public function it_does_not_send_immediate_notification_when_characters_are_processed(): void
+    public function it_sends_completed_notification_when_characters_are_processed(): void
     {
         $this->mockCharacterService(['TestChar' => 12345]);
+
+        $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
+            $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+            $message = $this->makeMessage();
+
+            $mock->shouldReceive('getChannel')->andReturn($channel);
+            $mock->shouldReceive('createMessage')
+                ->withArgs(fn ($ch, $payload) => $payload->embeds[0]->title === 'GRM Upload Processing Completed')
+                ->once()
+                ->andReturn($message);
+        });
 
         $job = new ProcessGrmUpload([
             'delimiter' => ',',
@@ -280,9 +312,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
-
-        Notification::assertNothingSent();
+        $job->handle(app(BlizzardService::class), $discordMock);
     }
 
     #[Test]
@@ -306,7 +336,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         // Should still only have one link
         $this->assertDatabaseCount('character_links', 1);
@@ -328,7 +358,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         // Should be updated to main
         $this->assertDatabaseHas('characters', [
@@ -356,7 +386,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         Event::assertDispatchedTimes(GrmUploadProcessed::class, 1);
     }
@@ -385,7 +415,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         Event::assertDispatched(GrmUploadProcessed::class, function (GrmUploadProcessed $event) {
             return $event->processedCount === 1
@@ -414,7 +444,7 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         Event::assertNotDispatched(GrmUploadProcessed::class);
     }
@@ -432,9 +462,25 @@ class ProcessGrmUploadTest extends TestCase
             ],
         ]);
 
-        $job->handle(app(BlizzardService::class));
+        $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseCount('characters', 0);
+    }
+
+    private function makeMessage(): MessageResource
+    {
+        return MessageResource::from([
+            'id' => '9999999999999999999',
+            'channel_id' => '1407688195386114119',
+            'timestamp' => '2024-01-01T00:00:00.000000+00:00',
+            'tts' => false,
+            'mention_everyone' => false,
+            'mention_roles' => [],
+            'attachments' => [],
+            'embeds' => [],
+            'pinned' => false,
+            'type' => MessageType::Default,
+        ]);
     }
 
     /**
