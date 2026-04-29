@@ -11,27 +11,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tbc_daily_quest_notifications', function (Blueprint $table) {
-            $table->id();
-            $table->dateTime('date')->unique(); // Unique constraint
-            $table->string('discord_message_id')->nullable(); // Nullable initially
+        // ============================================================
+        // DEPRECATED - This table is no longer needed as of 2026-04-29
+        // ============================================================
 
-            // Quest foreign keys
-            $table->foreignId('cooking_quest_id')->nullable()->constrained('tbc_daily_quests');
-            $table->foreignId('fishing_quest_id')->nullable()->constrained('tbc_daily_quests');
-            $table->foreignId('dungeon_quest_id')->nullable()->constrained('tbc_daily_quests');
-            $table->foreignId('heroic_quest_id')->nullable()->constrained('tbc_daily_quests');
-            $table->foreignId('pvp_quest_id')->nullable()->constrained('tbc_daily_quests');
+        // Schema::create('tbc_daily_quest_notifications', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->dateTime('date')->unique(); // Unique constraint
+        //     $table->string('discord_message_id')->nullable(); // Nullable initially
 
-            // User foreign keys - DEFINE COLUMNS FIRST
-            $table->string('sent_by_user_id')->nullable();
-            $table->foreign('sent_by_user_id')->references('id')->on('users')->nullOnDelete();
-            $table->string('updated_by_user_id')->nullable();
-            $table->foreign('updated_by_user_id')->references('id')->on('users')->nullOnDelete();
+        //     // Quest foreign keys
+        //     $table->foreignId('cooking_quest_id')->nullable()->constrained('tbc_daily_quests');
+        //     $table->foreignId('fishing_quest_id')->nullable()->constrained('tbc_daily_quests');
+        //     $table->foreignId('dungeon_quest_id')->nullable()->constrained('tbc_daily_quests');
+        //     $table->foreignId('heroic_quest_id')->nullable()->constrained('tbc_daily_quests');
+        //     $table->foreignId('pvp_quest_id')->nullable()->constrained('tbc_daily_quests');
 
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        //     // User foreign keys - DEFINE COLUMNS FIRST
+        //     $table->string('sent_by_user_id')->nullable();
+        //     $table->foreign('sent_by_user_id')->references('id')->on('users')->nullOnDelete();
+        //     $table->string('updated_by_user_id')->nullable();
+        //     $table->foreign('updated_by_user_id')->references('id')->on('users')->nullOnDelete();
+
+        //     $table->timestamps();
+        //     $table->softDeletes();
+        // });
     }
 
     /**
