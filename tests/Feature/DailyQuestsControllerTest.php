@@ -4,6 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\DailyQuest;
 use App\Models\User;
+use App\Notifications\DailyQuestsMessage;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\Channel as ChannelResource;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
@@ -56,6 +60,11 @@ class DailyQuestsControllerTest extends DashboardTestCase
     {
         Queue::fake();
 
+        $this->mock(Discord::class)
+            ->shouldReceive('getChannel')
+            ->once()
+            ->andReturn(ChannelResource::from(['id' => '123456789']));
+
         $cookingQuest = DailyQuest::factory()->cooking()->create();
         $fishingQuest = DailyQuest::factory()->fishing()->create();
         $dungeonQuest = DailyQuest::factory()->dungeon()->create();
@@ -73,14 +82,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
         $response->assertRedirect();
         $response->assertSessionHas('success', 'Daily quests set and posted to Discord!');
 
-        $this->assertDatabaseHas('tbc_daily_quest_notifications', [
-            'cooking_quest_id' => $cookingQuest->id,
-            'fishing_quest_id' => $fishingQuest->id,
-            'dungeon_quest_id' => $dungeonQuest->id,
-            'heroic_quest_id' => $heroicQuest->id,
-            'pvp_quest_id' => $pvpQuest->id,
-            'sent_by_user_id' => $this->officer->id,
-        ]);
+        Queue::assertPushed(SendQueuedNotifications::class, fn ($job) => $job->notification instanceof DailyQuestsMessage);
     }
 
     #[Test]

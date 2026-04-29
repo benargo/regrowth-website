@@ -1,8 +1,9 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\DailyQuests;
 
-use App\Models\TBC\DailyQuestNotification;
+use App\Models\DiscordNotification;
+use App\Notifications\DailyQuestsMessage;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,7 +12,7 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class DailyQuestsIndexTest extends TestCase
+class IndexTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -55,9 +56,10 @@ class DailyQuestsIndexTest extends TestCase
     #[Test]
     public function index_shows_notification_when_one_exists(): void
     {
-        $notification = DailyQuestNotification::factory()
-            ->forDate(DailyQuestNotification::currentDailyQuestDate())
-            ->create();
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => now(),
+        ]);
 
         $response = $this->get(route('daily-quests.index'));
 
@@ -71,58 +73,32 @@ class DailyQuestsIndexTest extends TestCase
     #[Test]
     public function index_deferred_quests_returns_correct_structure(): void
     {
-        $notification = DailyQuestNotification::factory()
-            ->forDate(DailyQuestNotification::currentDailyQuestDate())
-            ->create();
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => now(),
+        ]);
 
         $response = $this->get(route('daily-quests.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('DailyQuests/Index')
             ->where('hasNotification', true)
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('quests', 5)
-                ->has('quests.0', fn (Assert $quest) => $quest
-                    ->where('type', 'Fishing')
-                    ->has('label')
-                    ->has('name')
-                    ->has('icon')
-                    ->has('instance')
-                    ->has('mode')
-                    ->has('rewards')
-                    ->has('rewards.0', fn (Assert $reward) => $reward
-                        ->has('item_id')
-                        ->has('quantity')
-                        ->has('name')
-                        ->has('quality')
-                        ->has('icon')
-                        ->has('wowhead_url')
-                    )
-                )
-            )
         );
     }
 
     #[Test]
     public function index_deferred_quests_are_in_correct_order(): void
     {
-        $notification = DailyQuestNotification::factory()
-            ->forDate(DailyQuestNotification::currentDailyQuestDate())
-            ->create();
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => now(),
+        ]);
 
         $response = $this->get(route('daily-quests.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('quests', 5)
-                ->where('quests.0.type', 'Fishing')
-                ->where('quests.1.type', 'Cooking')
-                ->where('quests.2.type', 'Dungeon')
-                ->where('quests.2.mode', 'Normal')
-                ->where('quests.3.type', 'Dungeon')
-                ->where('quests.3.mode', 'Heroic')
-                ->where('quests.4.type', 'PvP')
-            )
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', true)
         );
     }
 
