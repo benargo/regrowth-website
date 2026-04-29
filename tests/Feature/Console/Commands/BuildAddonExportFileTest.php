@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Commands;
+namespace Tests\Feature\Console\Commands;
 
 use App\Jobs\BuildAddonExportFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
