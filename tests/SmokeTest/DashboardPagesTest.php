@@ -31,6 +31,7 @@ class DashboardPagesTest extends TestCase
         );
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'audit-daily-quests', 'guard_name' => 'web']));
 
         // Mock GuildTags to prevent WarcraftLogs API calls
         $guildTags = Mockery::mock(GuildTags::class);

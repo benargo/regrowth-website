@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\DailyQuests;
 
 use App\Models\DailyQuest;
 use App\Models\User;
@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
-class DailyQuestsControllerTest extends DashboardTestCase
+class FormTest extends DashboardTestCase
 {
     #[Test]
     public function form_requires_authentication(): void
