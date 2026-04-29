@@ -14,6 +14,7 @@ use App\Services\Discord\Resources\Embed;
 use App\Services\Discord\Resources\EmbedField;
 use App\Services\Discord\Resources\EmbedFooter;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
@@ -36,18 +37,26 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
     /**
      * The user who set the daily quests, if available (used for attribution in the message footer)
      */
-    private readonly ?User $sender;
+    private readonly ?Authenticatable $sender;
+
+    /**
+     * The Discord role to mention in the notification message (e.g. "Daily Quests Subscribers")
+     */
+    private ?DiscordRole $subscribersRole;
 
     /**
      * @param  iterable<DailyQuestTypeLabel, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their type label
-     * @param  User|null  $sender  The user who set the daily quests, if available (used for attribution in the message footer)
+     * @param  Authenticatable|null  $sender  The user who set the daily quests, if available (used for attribution in the message footer)
      * @param  DiscordNotification|null  $updates  The Discord notification instance this new notification will update
      */
-    public function __construct(iterable $dailyQuests, ?User $sender = null, ?DiscordNotification $updates = null)
+    public function __construct(iterable $dailyQuests, ?Authenticatable $sender = null, ?DiscordNotification $updates = null)
     {
         $this->dailyQuests = $dailyQuests;
         $this->sender = $sender;
         $this->updates = $updates;
+
+        // Load the "Daily Quests Subscribers" role from the database to include in the message payload
+        $this->subscribersRole = DiscordRole::find(config('services.discord.roles.daily_quest_subscribers'));
     }
 
     public function via(object $notifiable): string
@@ -75,18 +84,15 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
      */
     private function getPayload(): MessagePayload
     {
-        // Get the role ID for the "Daily Quests Subscribers" role to mention in the message
-        $subscribersRole = DiscordRole::firstWhere('name', 'Daily Quests Subscribers');
-
         // Build the embed fields based on the available quests in the notification
         $embedFields = collect([]);
 
-        foreach (DailyQuestTypeLabel::cases() as $key => $label) {
+        foreach (DailyQuestTypeLabel::map() as $key => $label) {
             if ($this->dailyQuests[$key] === null) {
                 continue; // Skip if there's no quest for this type
             }
 
-            $embedFields->push(new EmbedField($label->value, $this->dailyQuests[$key]->displayName(), false));
+            $embedFields->push(new EmbedField($label, $this->dailyQuests[$key]->displayName(), false));
         }
 
         // If the notification has a sender, include that in the embed footer
@@ -102,7 +108,7 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
 
         // Build the message payload with the role mention and the embed containing the daily quests information
         return MessagePayload::from([
-            'content' => "<@&{$subscribersRole->id}>",
+            'content' => $this->subscribersRole ? "<@&{$this->subscribersRole->id}>" : '',
             'embeds' => [new Embed(
                 title: '📜 Today\'s Daily Quests',
                 description: 'Here are the daily quests for '.$now->format('l, d F Y').'.',
@@ -120,7 +126,7 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
         return $this->updates;
     }
 
-    public function sender(): ?User
+    public function sender(): ?Authenticatable
     {
         return $this->sender;
     }

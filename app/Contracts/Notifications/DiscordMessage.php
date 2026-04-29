@@ -5,6 +5,7 @@ namespace App\Contracts\Notifications;
 use App\Models\DiscordNotification;
 use App\Models\User;
 use App\Services\Discord\Payloads\MessagePayload;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 interface DiscordMessage
 {
@@ -33,5 +34,5 @@ interface DiscordMessage
     /**
      * Get the user who sent this notification, if any.
      */
-    public function sender(): ?User;
+    public function sender(): ?Authenticatable;
 }

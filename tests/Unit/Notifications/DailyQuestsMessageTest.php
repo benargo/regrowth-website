@@ -29,6 +29,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->notifiable = new NotifiableChannel($channel);
 
         DiscordRole::factory()->create(['name' => 'Daily Quests Subscribers', 'id' => '999000111222333444']);
+        config(['services.discord.roles.daily_quest_subscribers' => '999000111222333444']);
     }
 
     // -------------------------------------------------------------------------
@@ -38,7 +39,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_routes_through_the_discord_driver(): void
     {
-        $notification = new DailyQuestsMessage([]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $this->assertSame(DiscordDriver::class, $notification->via($this->notifiable));
     }
@@ -50,7 +51,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_mentions_the_daily_quests_subscribers_role_in_the_message_content(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $payload = $notification->toMessage();
 
@@ -64,7 +65,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_builds_an_embed_with_the_correct_title(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $embed = $notification->toMessage()->embeds[0];
 
@@ -72,9 +73,19 @@ class DailyQuestsMessageTest extends TestCase
     }
 
     #[Test]
+    public function it_builds_an_embed_with_a_description(): void
+    {
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
+
+        $embed = $notification->toMessage()->embeds[0];
+
+        $this->assertNotNull($embed->description);
+    }
+
+    #[Test]
     public function it_builds_an_embed_with_the_gold_color(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $embed = $notification->toMessage()->embeds[0];
 
@@ -84,7 +95,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_builds_an_embed_with_a_timestamp(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $embed = $notification->toMessage()->embeds[0];
 
@@ -94,7 +105,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_builds_an_embed_with_the_daily_quests_url(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $embed = $notification->toMessage()->embeds[0];
 
@@ -111,13 +122,12 @@ class DailyQuestsMessageTest extends TestCase
         $cooking = DailyQuest::factory()->cooking()->create();
         $fishing = DailyQuest::factory()->fishing()->create();
 
-        // Array is keyed by the integer index matching DailyQuestTypeLabel::cases()
         $notification = new DailyQuestsMessage([
-            0 => $cooking,  // Cooking
-            1 => $fishing,  // Fishing
-            2 => null,      // Dungeon
-            3 => null,      // Heroic
-            4 => null,      // PvP
+            'Cooking' => $cooking,
+            'Fishing' => $fishing,
+            'Dungeon' => null,
+            'Heroic' => null,
+            'PvP' => null,
         ]);
 
         $fields = $notification->toMessage()->embeds[0]->fields;
@@ -128,7 +138,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_skips_null_quest_entries(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $fields = $notification->toMessage()->embeds[0]->fields;
 
@@ -141,11 +151,11 @@ class DailyQuestsMessageTest extends TestCase
         $cooking = DailyQuest::factory()->cooking()->create(['name' => 'Delicious Surprise']);
 
         $notification = new DailyQuestsMessage([
-            0 => $cooking,  // Cooking
-            1 => null,      // Fishing
-            2 => null,      // Dungeon
-            3 => null,      // Heroic
-            4 => null,      // PvP
+            'Cooking' => $cooking,
+            'Fishing' => null,
+            'Dungeon' => null,
+            'Heroic' => null,
+            'PvP' => null,
         ]);
 
         $field = $notification->toMessage()->embeds[0]->fields[0];
@@ -160,7 +170,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_omits_the_footer_when_no_sender_is_provided(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $embed = $notification->toMessage()->embeds[0];
 
@@ -171,7 +181,7 @@ class DailyQuestsMessageTest extends TestCase
     public function it_includes_the_sender_nickname_in_the_footer(): void
     {
         $user = User::factory()->create(['nickname' => 'Arthas']);
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null], $user);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], $user);
 
         $footer = $notification->toMessage()->embeds[0]->footer;
 
@@ -186,7 +196,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_returns_the_correct_database_payload(): void
     {
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $data = $notification->toDatabase($this->notifiable);
 
@@ -200,7 +210,7 @@ class DailyQuestsMessageTest extends TestCase
     public function it_includes_the_sender_id_in_the_database_payload(): void
     {
         $user = User::factory()->create();
-        $notification = new DailyQuestsMessage([0 => null, 1 => null, 2 => null, 3 => null, 4 => null], $user);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], $user);
 
         $data = $notification->toDatabase($this->notifiable);
 
@@ -214,7 +224,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_returns_null_for_updates_when_none_provided(): void
     {
-        $notification = new DailyQuestsMessage([]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $this->assertNull($notification->updates());
     }
@@ -223,7 +233,7 @@ class DailyQuestsMessageTest extends TestCase
     public function it_returns_the_discord_notification_instance_to_update(): void
     {
         $existing = DiscordNotification::factory()->create();
-        $notification = new DailyQuestsMessage([], null, $existing);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], null, $existing);
 
         $this->assertSame($existing->id, $notification->updates()->id);
     }
@@ -231,7 +241,7 @@ class DailyQuestsMessageTest extends TestCase
     #[Test]
     public function it_returns_null_for_sender_when_none_provided(): void
     {
-        $notification = new DailyQuestsMessage([]);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
         $this->assertNull($notification->sender());
     }
@@ -240,7 +250,7 @@ class DailyQuestsMessageTest extends TestCase
     public function it_returns_the_sender_user(): void
     {
         $user = User::factory()->create();
-        $notification = new DailyQuestsMessage([], $user);
+        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], $user);
 
         $this->assertSame($user->id, $notification->sender()->id);
     }

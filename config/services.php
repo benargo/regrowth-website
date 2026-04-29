@@ -49,6 +49,9 @@ return [
             'officer' => env('DISCORD_CHANNEL_OFFICER'),
             'tbc_chat' => env('DISCORD_CHANNEL_TBC_CHAT'),
         ],
+        'roles' => [
+            'daily_quest_subscribers' => env('DISCORD_ROLE_DAILY_QUEST_SUBSCRIBERS'),
+        ],
     ],
 
     'warcraftlogs' => [
