@@ -15,4 +15,15 @@ class DailyQuestTypeLabelTest extends TestCase
         $this->assertSame('Heroic dungeon', DailyQuestTypeLabel::Heroic->value);
         $this->assertSame('PvP battleground', DailyQuestTypeLabel::PvP->value);
     }
+
+    public function test_map_returns_name_to_value_array(): void
+    {
+        $this->assertSame([
+            'Cooking' => 'Cooking',
+            'Fishing' => 'Fishing',
+            'Dungeon' => 'Normal dungeon',
+            'Heroic' => 'Heroic dungeon',
+            'PvP' => 'PvP battleground',
+        ], DailyQuestTypeLabel::map());
+    }
 }
