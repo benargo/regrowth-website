@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\BuildAddonExportFile;
+use App\Jobs\DeleteStaleDailyQuestsMessage;
 use Illuminate\Support\Facades\Schedule;
 
 /**
@@ -24,6 +25,7 @@ Schedule::command('app:refresh-warcraft-logs-reports --latest')->twiceDailyAt(16
  * Reset daily quests at 3:00 AM server time.
  */
 Schedule::command('app:reset-daily-quests')->dailyAt('03:00')->name('reset-daily-quests');
+Schedule::job(new DeleteStaleDailyQuestsMessage)->dailyAt('03:00')->name('delete-stale-daily-quests-message');
 
 /**
  * Export the Regrowth Addon data daily at 3:15 AM server time.
