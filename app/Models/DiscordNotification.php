@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\AsNotificationType;
+use App\Casts\AsRelationshipIndex;
 use App\Services\Discord\Payloads\MessagePayload;
 use Database\Factories\DiscordNotificationFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 #[UseFactory(DiscordNotificationFactory::class)]
 class DiscordNotification extends Model
@@ -24,6 +26,7 @@ class DiscordNotification extends Model
     protected $casts = [
         'type' => AsNotificationType::class,
         'payload' => MessagePayload::class,
+        'related_models' => AsRelationshipIndex::class,
     ];
 
     /**
@@ -36,6 +39,7 @@ class DiscordNotification extends Model
         'channel_id',
         'message_id',
         'payload',
+        'related_models',
         'created_by_user_id',
     ];
 
@@ -57,5 +61,15 @@ class DiscordNotification extends Model
     public function createdByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    /**
+     * Get the related models for this notification.
+     *
+     * @return Collection<string, Model>
+     */
+    public function relatedModels(): Collection
+    {
+        return $this->related_models;
     }
 }
