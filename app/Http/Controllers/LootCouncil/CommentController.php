@@ -8,8 +8,9 @@ use App\Http\Requests\Comments\UpdateCommentRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use App\Notifications\DiscordNotifiable;
 use App\Notifications\NewLootCouncilComment;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,6 +19,10 @@ use Inertia\Inertia;
 
 class CommentController extends Controller
 {
+    public function __construct(
+        protected Discord $discord,
+    ) {}
+
     /**
      * Display a listing of comments for a specific loot item.
      *
@@ -46,7 +51,7 @@ class CommentController extends Controller
 
         $comment->load(['user', 'item']);
 
-        DiscordNotifiable::channel('lootcouncil')->notify(
+        NotifiableChannel::fromConfig('lootcouncil', $this->discord)->notify(
             new NewLootCouncilComment($comment)
         );
 

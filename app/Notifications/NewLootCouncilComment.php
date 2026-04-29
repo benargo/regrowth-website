@@ -2,16 +2,21 @@
 
 namespace App\Notifications;
 
+use App\Contracts\Notifications\DiscordMessage;
+use App\Models\DiscordNotification;
 use App\Models\LootCouncil\Comment;
 use App\Services\Blizzard\BlizzardService;
+use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Services\Discord\Payloads\MessagePayload;
+use App\Services\Discord\Resources\Embed;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use NotificationChannels\Discord\DiscordChannel;
-use NotificationChannels\Discord\DiscordMessage;
 
-class NewLootCouncilComment extends Notification implements ShouldQueue
+class NewLootCouncilComment extends Notification implements DiscordMessage, ShouldQueue
 {
     use Queueable;
 
@@ -19,18 +24,12 @@ class NewLootCouncilComment extends Notification implements ShouldQueue
         public Comment $comment,
     ) {}
 
-    /**
-     * @return array<int, class-string>
-     */
-    public function via(object $notifiable): array
+    public function via(object $notifiable): string
     {
-        return [DiscordChannel::class];
+        return DiscordDriver::class;
     }
 
-    /**
-     * Get the Discord representation of the notification.
-     */
-    public function toDiscord(object $notifiable): DiscordMessage
+    public function toMessage(): MessagePayload
     {
         $item = $this->comment->item;
         $user = $this->comment->user;
@@ -48,14 +47,48 @@ class NewLootCouncilComment extends Notification implements ShouldQueue
             'name' => Str::slug($itemName),
         ]);
 
-        return DiscordMessage::create()
-            ->embed([
-                'title' => 'New comment received',
-                'url' => $itemUrl,
-                'color' => 5814783,
-                'description' => $description,
-                'timestamp' => $this->comment->created_at->toIso8601String(),
-            ]);
+        return MessagePayload::from([
+            'embeds' => [new Embed(
+                title: 'New comment received',
+                url: $itemUrl,
+                color: 5814783,
+                description: $description,
+                timestamp: $this->comment->created_at->toIso8601String(),
+            )],
+        ]);
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'type' => self::class,
+            'channel_id' => $notifiable->channel()->id,
+            'payload' => $this->toMessage()->toArray(),
+            'related_models' => $this->relationships()
+                ->map(fn ($model, $name) => [
+                    'name' => $name,
+                    'model' => get_class($model),
+                    'key' => $model->getKey(),
+                ])
+                ->values()
+                ->toArray(),
+            'created_by_user_id' => $this->sender()?->id,
+        ];
+    }
+
+    public function relationships(): Collection
+    {
+        return collect(['comment' => $this->comment]);
+    }
+
+    public function updates(): ?DiscordNotification
+    {
+        return null;
+    }
+
+    public function sender(): ?Authenticatable
+    {
+        return $this->comment->user;
     }
 
     /**
