@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\RaidHelper;
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
 use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\RaidHelperClient;
+use App\Services\RaidHelper\Resources\Event;
 use App\Services\RaidHelper\Resources\PostedEvent;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
@@ -74,6 +75,58 @@ class RaidHelperTest extends TestCase
         $property->setAccessible(true);
 
         $this->assertSame([], $property->getValue($raidHelper));
+    }
+
+    // -------------------------------------------------------------------------
+    // getEvent
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_returns_an_event_for_the_given_event_id(): void
+    {
+        $payload = $this->minimalEventPayload();
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($payload);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/events/12345')
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getEvent(12345);
+
+        $this->assertInstanceOf(Event::class, $result);
+        $this->assertSame('999000000000000001', $result->id);
+    }
+
+    #[Test]
+    public function get_event_uses_the_configured_server_id_in_the_api_path(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($this->minimalEventPayload());
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/events/12345')
+            ->andReturn($response);
+
+        $this->raidHelper->getEvent(12345);
+    }
+
+    #[Test]
+    public function get_event_maps_the_response_to_an_event_value_object(): void
+    {
+        $payload = $this->minimalEventPayload(['title' => 'Molten Core']);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($payload);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/events/12345')
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getEvent(12345);
+
+        $this->assertSame('Molten Core', $result->title);
     }
 
     // -------------------------------------------------------------------------
@@ -428,5 +481,41 @@ class RaidHelperTest extends TestCase
         $result = $this->raidHelper->getEvents();
 
         $this->assertSame(1000, $result->perPage());
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function minimalEventPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => '999000000000000001',
+            'serverId' => '111222333444555666',
+            'leaderId' => '200000000000000001',
+            'leaderName' => 'Raid Leader',
+            'channelId' => '100000000000000001',
+            'channelName' => 'raid-signups',
+            'channelType' => 'GUILD_TEXT',
+            'templateId' => 'wowclassic',
+            'templateEmoteId' => '0',
+            'title' => 'Weekly Raid',
+            'description' => '',
+            'startTime' => 1700000000,
+            'endTime' => 1700007200,
+            'closingTime' => 1699999800,
+            'date' => '2023-11-14',
+            'time' => '20:00',
+            'advancedSettings' => [],
+            'classes' => [],
+            'roles' => [],
+            'signUps' => [],
+            'lastUpdated' => 1699999000,
+            'color' => '0,0,0',
+        ], $overrides);
     }
 }

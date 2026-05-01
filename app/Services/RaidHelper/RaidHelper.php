@@ -3,6 +3,7 @@
 namespace App\Services\RaidHelper;
 
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
+use App\Services\RaidHelper\Resources\Event;
 use App\Services\RaidHelper\Resources\PostedEvent;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -36,6 +37,18 @@ class RaidHelper
         $this->client = $client;
         $this->server_id = Arr::get($config, 'server_id', '');
         $this->channel_ids = array_merge($this->channel_ids, Arr::map(Arr::get($config, 'channel_ids', []), fn ($id) => (string) $id));
+    }
+
+    /**
+     * Get a single event from the Raid Helper API.
+     *
+     * @param  int  $eventId  The ID of the event to retrieve.
+     */
+    public function getEvent(int $eventId): Event
+    {
+        $response = $this->client->get("/servers/{$this->server_id}/events/{$eventId}");
+
+        return Event::from($response->json());
     }
 
     /**
