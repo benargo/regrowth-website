@@ -18,6 +18,14 @@ class NotifiableChannel
     /**
      * Get the unique identifier for the notifiable.
      */
+    public function getKey(): string
+    {
+        return $this->channel->id;
+    }
+
+    /**
+     * Get the Discord channel resource associated with this notifiable channel.
+     */
     public function channel(): Channel
     {
         return $this->channel;

@@ -24,6 +24,20 @@ class NotifiableChannelTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // getKey
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_returns_the_channel_id_as_the_key(): void
+    {
+        $channel = Channel::from(['id' => '111222333444555666', 'type' => ChannelType::GUILD_TEXT->value]);
+
+        $notifiable = new NotifiableChannel($channel);
+
+        $this->assertSame('111222333444555666', $notifiable->getKey());
+    }
+
+    // -------------------------------------------------------------------------
     // constructor / channel()
     // -------------------------------------------------------------------------
 
