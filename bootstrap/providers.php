@@ -5,13 +5,15 @@ use App\Providers\AttendanceServiceProvider;
 use App\Providers\BlizzardServiceProvider;
 use App\Providers\DiscordServiceProvider;
 use App\Providers\HorizonServiceProvider;
+use App\Providers\RaidHelperServiceProvider;
 use App\Providers\WarcraftLogsServiceProvider;
 
 return [
     AppServiceProvider::class,
+    AttendanceServiceProvider::class,
     BlizzardServiceProvider::class,
     DiscordServiceProvider::class,
     HorizonServiceProvider::class,
-    AttendanceServiceProvider::class,
+    RaidHelperServiceProvider::class,
     WarcraftLogsServiceProvider::class,
 ];
