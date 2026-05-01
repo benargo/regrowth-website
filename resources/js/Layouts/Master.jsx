@@ -376,9 +376,10 @@ export default function Master({ title, children }) {
                                     <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
                                 </Link>
-                                <Link
+                                <a
                                     href="https://www.warcraftlogs.com/guilds/774848-regrowth"
                                     className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    rel="noopener noreferrer"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -401,7 +402,7 @@ export default function Master({ title, children }) {
                                         <path d="M393.53,436.84l-33.28-30.67c19.2-11.88,34.65-26.96,46.65-46.75l30.65,33.42-44.02,43.99Z" />
                                     </svg>
                                     Warcraft Logs
-                                </Link>
+                                </a>
                                 <a
                                     href="https://discord.gg/pM6haPnQRt"
                                     target="_blank"
