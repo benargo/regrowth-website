@@ -6,7 +6,6 @@ use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
 use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\RaidHelperClient;
 use App\Services\RaidHelper\Resources\Event;
-use App\Services\RaidHelper\Resources\PostedEvent;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -139,8 +138,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [
-                ['id' => '999000000000000001'],
-                ['id' => '999000000000000002'],
+                $this->minimalListingEventPayload(['id' => '999000000000000001']),
+                $this->minimalListingEventPayload(['id' => '999000000000000002']),
             ],
             'eventCountOverall' => 2,
             'eventCountTransmitted' => 2,
@@ -155,7 +154,7 @@ class RaidHelperTest extends TestCase
 
         $this->assertInstanceOf(LengthAwarePaginator::class, $result);
         $this->assertCount(2, $result->items());
-        $this->assertInstanceOf(PostedEvent::class, $result->items()[0]);
+        $this->assertInstanceOf(Event::class, $result->items()[0]);
     }
 
     #[Test]
@@ -163,7 +162,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -181,7 +180,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 3,
@@ -199,7 +198,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -217,7 +216,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -235,7 +234,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -253,7 +252,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -271,7 +270,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -291,7 +290,7 @@ class RaidHelperTest extends TestCase
 
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -309,7 +308,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -329,7 +328,7 @@ class RaidHelperTest extends TestCase
 
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -347,7 +346,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 1,
             'eventCountTransmitted' => 1,
             'currentPage' => 1,
@@ -365,7 +364,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 50,
             'eventCountTransmitted' => 10,
             'currentPage' => 1,
@@ -385,7 +384,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 50,
             'eventCountTransmitted' => 10,
             'currentPage' => 1,
@@ -426,9 +425,9 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [
-                ['id' => '999000000000000001'],
-                ['id' => '999000000000000002'],
-                ['id' => '999000000000000003'],
+                $this->minimalListingEventPayload(['id' => '999000000000000001']),
+                $this->minimalListingEventPayload(['id' => '999000000000000002']),
+                $this->minimalListingEventPayload(['id' => '999000000000000003']),
             ],
             'eventCountTransmitted' => 3,
         ]);
@@ -468,7 +467,7 @@ class RaidHelperTest extends TestCase
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [['id' => '999000000000000001']],
+            'postedEvents' => [$this->minimalListingEventPayload()],
             'eventCountOverall' => 5000,
             'eventCountTransmitted' => 2000,
             'currentPage' => 1,
@@ -488,6 +487,8 @@ class RaidHelperTest extends TestCase
     // -------------------------------------------------------------------------
 
     /**
+     * Minimal payload for a single event as returned by the detail endpoint.
+     *
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
@@ -514,6 +515,29 @@ class RaidHelperTest extends TestCase
             'classes' => [],
             'roles' => [],
             'signUps' => [],
+            'lastUpdated' => 1699999000,
+            'color' => '0,0,0',
+        ], $overrides);
+    }
+
+    /**
+     * Minimal payload for an event as returned by the listing endpoint.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function minimalListingEventPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => '999000000000000001',
+            'channelId' => '100000000000000001',
+            'leaderId' => '200000000000000001',
+            'leaderName' => 'Raid Leader',
+            'title' => 'Weekly Raid',
+            'description' => '',
+            'startTime' => 1700000000,
+            'endTime' => 1700007200,
+            'closingTime' => 1699999800,
             'lastUpdated' => 1699999000,
             'color' => '0,0,0',
         ], $overrides);

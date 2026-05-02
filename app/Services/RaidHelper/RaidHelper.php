@@ -4,7 +4,6 @@ namespace App\Services\RaidHelper;
 
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
 use App\Services\RaidHelper\Resources\Event;
-use App\Services\RaidHelper\Resources\PostedEvent;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
@@ -96,7 +95,7 @@ class RaidHelper
         }
 
         $rawEvents = Arr::get($response, 'postedEvents', []);
-        $events = PostedEvent::collect($rawEvents);
+        $events = Event::collect($rawEvents);
         $perPage = min(Arr::get($response, 'eventCountTransmitted', count($rawEvents)), 1000);
 
         return new LengthAwarePaginator(
