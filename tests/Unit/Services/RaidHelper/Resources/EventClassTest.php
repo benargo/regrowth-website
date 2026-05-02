@@ -36,9 +36,25 @@ class EventClassTest extends TestCase
         $raidClass = EventClass::from($this->payload());
 
         $this->assertSame('Druid', $raidClass->name);
-        $this->assertSame('5', $raidClass->limit);
+        $this->assertSame(5, $raidClass->limit);
         $this->assertSame('1111111111', $raidClass->emoteId);
         $this->assertSame('primary', $raidClass->type);
+    }
+
+    #[Test]
+    public function it_casts_limit_string_to_integer(): void
+    {
+        $raidClass = EventClass::from([...$this->payload(), 'limit' => '10']);
+
+        $this->assertSame(10, $raidClass->limit);
+    }
+
+    #[Test]
+    public function it_casts_limit_integer_directly(): void
+    {
+        $raidClass = EventClass::from([...$this->payload(), 'limit' => 999]);
+
+        $this->assertSame(999, $raidClass->limit);
     }
 
     #[Test]
@@ -61,14 +77,41 @@ class EventClassTest extends TestCase
     }
 
     #[Test]
+    public function optional_fields_default_to_null_when_omitted(): void
+    {
+        $raidClass = EventClass::from($this->payload());
+
+        $this->assertNull($raidClass->cName);
+        $this->assertNull($raidClass->effectiveName);
+    }
+
+    #[Test]
+    public function it_stores_c_name_when_provided(): void
+    {
+        $raidClass = EventClass::from([...$this->payload(), 'cName' => 'Druid']);
+
+        $this->assertSame('Druid', $raidClass->cName);
+    }
+
+    #[Test]
+    public function it_stores_effective_name_when_provided(): void
+    {
+        $raidClass = EventClass::from([...$this->payload(), 'effectiveName' => 'Absence']);
+
+        $this->assertSame('Absence', $raidClass->effectiveName);
+    }
+
+    #[Test]
     public function to_array_produces_snake_case_keys(): void
     {
-        $array = EventClass::from($this->payload())->toArray();
+        $array = EventClass::from([...$this->payload(), 'cName' => 'Druid', 'effectiveName' => 'Absence'])->toArray();
 
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('limit', $array);
         $this->assertArrayHasKey('emote_id', $array);
         $this->assertArrayHasKey('type', $array);
         $this->assertArrayHasKey('specs', $array);
+        $this->assertArrayHasKey('c_name', $array);
+        $this->assertArrayHasKey('effective_name', $array);
     }
 }

@@ -6,9 +6,11 @@ use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Attributes\WithCast;
+use Spatie\LaravelData\Casts\BuiltinTypeCast;
 use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
 
@@ -48,6 +50,7 @@ class Event extends Data
         public readonly CarbonInterface $endTime,
 
         /** @var CarbonInterface The unix timestamp of when this event will close and deny further sign-ups */
+        #[MapInputName('closeTime')]
         #[WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]
         public readonly CarbonInterface $closingTime,
 
@@ -111,7 +114,19 @@ class Event extends Data
         public readonly ?string $imageUrl = null,
 
         /** @var int|null The number of sign-ups on this event */
+        #[WithCast(BuiltinTypeCast::class, type: 'int')]
         public readonly ?int $signUpCount = null,
+
+        /** @var string|null The scheduled id of this event */
+        #[Nullable, StringType]
+        public readonly ?string $scheduledId = null,
+
+        /** @var string|null The display title of this event */
+        #[Nullable, StringType]
+        public readonly ?string $displayTitle = null,
+
+        /** @var array|null The announcements for this event */
+        public readonly ?array $announcements = null,
     ) {}
 
     /**

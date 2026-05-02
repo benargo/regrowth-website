@@ -139,6 +139,9 @@ class EventTest extends TestCase
         $this->assertNull($event->classes);
         $this->assertNull($event->roles);
         $this->assertNull($event->signUps);
+        $this->assertNull($event->scheduledId);
+        $this->assertNull($event->displayTitle);
+        $this->assertNull($event->announcements);
     }
 
     #[Test]
@@ -180,6 +183,9 @@ class EventTest extends TestCase
     {
         $event = Event::from($this->listingPayload(['signUpCount' => 12]));
 
+        $this->assertSame(12, $event->signUpCount);
+
+        $event = Event::from($this->listingPayload(['signUpCount' => '12']));
         $this->assertSame(12, $event->signUpCount);
     }
 
@@ -331,5 +337,65 @@ class EventTest extends TestCase
         $this->assertArrayHasKey('classes', $array);
         $this->assertArrayHasKey('roles', $array);
         $this->assertArrayHasKey('sign_ups', $array);
+    }
+
+    // -------------------------------------------------------------------------
+    // New optional fields
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function new_fields_default_to_null_when_omitted(): void
+    {
+        $event = Event::from($this->listingPayload());
+
+        $this->assertNull($event->scheduledId);
+        $this->assertNull($event->displayTitle);
+        $this->assertNull($event->announcements);
+    }
+
+    #[Test]
+    public function it_stores_scheduled_id_when_provided(): void
+    {
+        $event = Event::from($this->listingPayload(['scheduledId' => '902879335676006421-1']));
+
+        $this->assertSame('902879335676006421-1', $event->scheduledId);
+    }
+
+    #[Test]
+    public function it_stores_display_title_when_provided(): void
+    {
+        $event = Event::from($this->listingPayload(['displayTitle' => 'Karazhan']));
+
+        $this->assertSame('Karazhan', $event->displayTitle);
+    }
+
+    #[Test]
+    public function it_stores_announcements_when_provided(): void
+    {
+        $event = Event::from($this->listingPayload(['announcements' => []]));
+
+        $this->assertSame([], $event->announcements);
+    }
+
+    #[Test]
+    public function it_maps_close_time_to_closing_time(): void
+    {
+        $payload = array_merge(
+            array_diff_key($this->listingPayload(), ['closingTime' => null]),
+            ['closeTime' => 1746313200],
+        );
+
+        $event = Event::from($payload);
+
+        $this->assertInstanceOf(CarbonInterface::class, $event->closingTime);
+        $this->assertSame(1746313200, $event->closingTime->unix());
+    }
+
+    #[Test]
+    public function it_casts_sign_up_count_string_to_integer(): void
+    {
+        $event = Event::from($this->listingPayload(['signUpCount' => '16']));
+
+        $this->assertSame(16, $event->signUpCount);
     }
 }

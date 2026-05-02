@@ -23,17 +23,17 @@ class SignUp extends Data
         #[StringType]
         public readonly string $userId,
 
-        /** @var string The status of the sign-up (primary/queued) */
-        #[StringType]
-        public readonly string $status,
-
         /** @var int The unix timestamp of the registration time */
         #[IntegerType, Min(0)]
         public readonly int $entryTime,
 
-        /** @var int The order number of this sign-up */
-        #[IntegerType, Min(0)]
-        public readonly int $position,
+        /** @var string|null The status of the sign-up (primary/queued) */
+        #[Nullable, StringType]
+        public readonly ?string $status = null,
+
+        /** @var int|null The order number of this sign-up */
+        #[Nullable, IntegerType, Min(0)]
+        public readonly ?int $position = null,
 
         /** @var string|null The class name of the sign-up */
         #[Nullable, StringType]
@@ -47,14 +47,6 @@ class SignUp extends Data
         #[Nullable, StringType]
         public readonly ?string $specName = null,
 
-        /** @var string|null The second spec of this sign-up */
-        #[Nullable, StringType]
-        public readonly ?string $spec2Name = null,
-
-        /** @var string|null The third spec of this sign-up */
-        #[Nullable, StringType]
-        public readonly ?string $spec3Name = null,
-
         /** @var string|null The spec emote id of the sign-up */
         #[Nullable, StringType]
         public readonly ?string $specEmoteId = null,
@@ -66,5 +58,17 @@ class SignUp extends Data
         /** @var string|null The role emote id of the sign-up */
         #[Nullable, StringType]
         public readonly ?string $roleEmoteId = null,
+
+        /** @var string|null The canonical class name of the sign-up */
+        #[Nullable, StringType]
+        public readonly ?string $cClassName = null,
+
+        /** @var string|null The canonical spec name of the sign-up */
+        #[Nullable, StringType]
+        public readonly ?string $cSpecName = null,
+
+        /** @var string|null The canonical role name of the sign-up */
+        #[Nullable, StringType]
+        public readonly ?string $cRoleName = null,
     ) {}
 }
