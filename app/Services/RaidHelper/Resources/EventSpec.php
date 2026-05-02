@@ -19,13 +19,17 @@ class EventSpec extends Data
         #[StringType]
         public readonly string $emoteId,
 
-        /** @var string The name of the role that this spec belongs to */
-        #[StringType]
-        public readonly string $roleName,
-
         /** @var string The emote id of the role that this spec belongs to */
         #[StringType]
         public readonly string $roleEmoteId,
+
+        /** @var string|null The color of this spec */
+        #[Nullable, StringType]
+        public readonly ?string $color = null,
+
+        /** @var string|null The name of the role that this spec belongs to */
+        #[Nullable, StringType]
+        public readonly ?string $roleName = null,
 
         /** @var string|null The canonical name of this spec */
         #[Nullable, StringType]

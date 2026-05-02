@@ -16,21 +16,21 @@ class EventClass extends Data
         #[StringType]
         public readonly string $name,
 
-        /** @var int The maximum allowed sign-ups for this class */
-        #[WithCast(BuiltinTypeCast::class, type: 'int')]
-        public readonly int $limit,
-
         /** @var string The emote id of this class */
         #[StringType]
         public readonly string $emoteId,
 
-        /** @var string The type of this class (primary/default) */
-        #[StringType]
-        public readonly string $type,
-
         /** @var array<int, EventSpec> The specs that are applied to this class */
         #[DataCollectionOf(EventSpec::class)]
         public readonly array $specs,
+
+        /** @var int|null The maximum allowed sign-ups for this class */
+        #[Nullable, WithCast(BuiltinTypeCast::class, type: 'int')]
+        public readonly ?int $limit = null,
+
+        /** @var string|null The type of this class (primary/default) */
+        #[Nullable, StringType]
+        public readonly ?string $type = null,
 
         /** @var ?string The canonical name of this class */
         #[Nullable, StringType]
