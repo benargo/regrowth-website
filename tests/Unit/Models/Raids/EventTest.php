@@ -5,7 +5,6 @@ namespace Tests\Unit\Models\Raids;
 use App\Models\Character;
 use App\Models\Raids\Event;
 use App\Models\Raids\EventCharacter;
-use App\Services\Discord\Stubs\ChannelStub;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -48,7 +47,6 @@ class EventTest extends ModelTestCase
         $this->assertCasts($model, [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
-            'channel_id' => ChannelStub::class,
         ]);
     }
 
@@ -76,15 +74,6 @@ class EventTest extends ModelTestCase
         $this->create(['raid_helper_event_id' => 'unique-123']);
 
         $this->assertUniqueConstraint(fn () => $this->create(['raid_helper_event_id' => 'unique-123']));
-    }
-
-    #[Test]
-    public function channel_id_is_cast_to_channel_stub(): void
-    {
-        $event = $this->create(['channel_id' => new ChannelStub('123456789')]);
-
-        $this->assertInstanceOf(ChannelStub::class, $event->channel_id);
-        $this->assertSame('123456789', $event->channel_id->id);
     }
 
     // characters

@@ -3,7 +3,6 @@
 namespace App\Models\Raids;
 
 use App\Models\Character;
-use App\Services\Discord\Stubs\ChannelStub;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,7 +41,6 @@ class Event extends Model
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
-        'channel_id' => ChannelStub::class,
     ];
 
     /**

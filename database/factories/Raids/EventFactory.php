@@ -4,7 +4,6 @@ namespace Database\Factories\Raids;
 
 use App\Models\Character;
 use App\Models\Raids\Event;
-use App\Services\Discord\Stubs\ChannelStub;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -36,7 +35,7 @@ class EventFactory extends Factory
             'title' => fake()->words(3, true),
             'start_time' => $startTime,
             'end_time' => $endTime,
-            'channel_id' => new ChannelStub(fake()->numerify('##################')),
+            'channel_id' => fake()->numerify('##################'),
         ];
     }
 
