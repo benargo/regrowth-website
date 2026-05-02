@@ -5,6 +5,8 @@ namespace Tests\Unit\Models\Raids;
 use App\Models\Character;
 use App\Models\Raids\Event;
 use App\Models\Raids\EventCharacter;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\Channel;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -40,6 +42,14 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_expected_hidden_attributes(): void
+    {
+        $model = new Event;
+
+        $this->assertHidden($model, ['channel_id']);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new Event;
@@ -48,6 +58,44 @@ class EventTest extends ModelTestCase
             'start_time' => 'datetime',
             'end_time' => 'datetime',
         ]);
+    }
+
+    #[Test]
+    public function channel_attribute_returns_discord_channel(): void
+    {
+        $channelId = '123456789';
+        $channel = Channel::from(['id' => $channelId]);
+
+        $discord = $this->createMock(Discord::class);
+        $discord->expects($this->once())
+            ->method('getChannel')
+            ->with($channelId)
+            ->willReturn($channel);
+
+        $this->app->instance(Discord::class, $discord);
+
+        $event = Event::factory()->make(['channel_id' => $channelId]);
+
+        $this->assertSame($channel, $event->channel);
+    }
+
+    #[Test]
+    public function channel_attribute_is_cached(): void
+    {
+        $channelId = '123456789';
+        $channel = Channel::from(['id' => $channelId]);
+
+        $discord = $this->createMock(Discord::class);
+        $discord->expects($this->once())
+            ->method('getChannel')
+            ->willReturn($channel);
+
+        $this->app->instance(Discord::class, $discord);
+
+        $event = Event::factory()->make(['channel_id' => $channelId]);
+
+        $event->channel;
+        $event->channel;
     }
 
     #[Test]

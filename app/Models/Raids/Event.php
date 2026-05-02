@@ -3,6 +3,8 @@
 namespace App\Models\Raids;
 
 use App\Models\Character;
+use App\Services\Discord\Discord;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +32,15 @@ class Event extends Model
         'title',
         'start_time',
         'end_time',
+        'channel_id',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array
+     */
+    protected $hidden = [
         'channel_id',
     ];
 
@@ -68,5 +79,15 @@ class Event extends Model
     public function lootCouncillors(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_loot_councillor', true);
+    }
+
+    /**
+     * Get the Discord channel associated with the event.
+     */
+    protected function channel(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => app(Discord::class)->getChannel($this->channel_id),
+        )->shouldCache();
     }
 }
