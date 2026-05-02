@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
-class RaidsPagesTest extends TestCase
+class RaidingPagesTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -40,7 +40,7 @@ class RaidsPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -51,7 +51,7 @@ class RaidsPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -63,7 +63,7 @@ class RaidsPagesTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -74,7 +74,7 @@ class RaidsPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -83,7 +83,7 @@ class RaidsPagesTest extends TestCase
     #[Test]
     public function planned_absences_index_redirects_unauthenticated_users(): void
     {
-        $response = $this->get(route('raids.absences.index'));
+        $response = $this->get(route('raiding.absences.index'));
 
         $response->assertRedirect('/login');
     }
@@ -93,7 +93,7 @@ class RaidsPagesTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertForbidden();
     }
@@ -103,7 +103,7 @@ class RaidsPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -112,7 +112,7 @@ class RaidsPagesTest extends TestCase
     #[Test]
     public function planned_absences_create_redirects_unauthenticated_users(): void
     {
-        $response = $this->get(route('raids.absences.create'));
+        $response = $this->get(route('raiding.absences.create'));
 
         $response->assertRedirect('/login');
     }
@@ -122,7 +122,7 @@ class RaidsPagesTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertForbidden();
     }
@@ -133,7 +133,7 @@ class RaidsPagesTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -144,7 +144,7 @@ class RaidsPagesTest extends TestCase
     {
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->get(route('raids.absences.edit', $absence));
+        $response = $this->get(route('raiding.absences.edit', $absence));
 
         $response->assertRedirect('/login');
     }
@@ -155,7 +155,7 @@ class RaidsPagesTest extends TestCase
         $member = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($member)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($member)->get(route('raiding.absences.edit', $absence));
 
         $response->assertForbidden();
     }

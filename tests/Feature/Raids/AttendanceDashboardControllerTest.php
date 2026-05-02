@@ -42,7 +42,7 @@ class AttendanceDashboardControllerTest extends TestCase
     #[Test]
     public function invoke_requires_authentication(): void
     {
-        $response = $this->get(route('raids.attendance.dashboard'));
+        $response = $this->get(route('raiding.attendance.dashboard'));
 
         $response->assertRedirect('/login');
     }
@@ -52,7 +52,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertForbidden();
     }
@@ -62,7 +62,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertForbidden();
     }
@@ -72,7 +72,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertForbidden();
     }
@@ -82,7 +82,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertForbidden();
     }
@@ -92,7 +92,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertOk();
     }
@@ -109,7 +109,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('latestReportDate', '15 Mar 2025')
@@ -121,7 +121,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('latestReportDate', null)
@@ -133,7 +133,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('stats')
@@ -145,7 +145,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -183,7 +183,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -208,7 +208,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -233,7 +233,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -256,7 +256,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -288,7 +288,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -316,7 +316,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -339,7 +339,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -369,7 +369,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -384,7 +384,7 @@ class AttendanceDashboardControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -413,7 +413,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -439,7 +439,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -467,7 +467,7 @@ class AttendanceDashboardControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.dashboard'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.dashboard'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload

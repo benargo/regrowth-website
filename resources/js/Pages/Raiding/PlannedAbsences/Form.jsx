@@ -165,7 +165,7 @@ export default function Form() {
                     reason,
                 })
                 .then(() => {
-                    router.visit(route("raids.absences.index"));
+                    router.visit(route("raiding.absences.index"));
                 })
                 .catch((err) => {
                     const status = err.response?.status;
@@ -386,7 +386,7 @@ export default function Form() {
                             </button>
                             {canViewAny ? (
                                 <Link
-                                    href={route("raids.absences.index")}
+                                    href={route("raiding.absences.index")}
                                     className="text-sm text-gray-400 hover:text-white"
                                 >
                                     Cancel

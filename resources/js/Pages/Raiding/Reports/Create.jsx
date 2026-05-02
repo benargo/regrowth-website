@@ -129,7 +129,7 @@ export default function Create() {
         setProcessing(true);
 
         router.post(
-            route("raids.reports.store"),
+            route("raiding.reports.store"),
             {
                 title,
                 start_time: startTime,
@@ -156,7 +156,7 @@ export default function Create() {
                 <div className="container mx-auto max-w-2xl px-4">
                     <div className="mb-6">
                         <Link
-                            href={route("raids.reports.index")}
+                            href={route("raiding.reports.index")}
                             className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 hover:underline"
                         >
                             <Icon icon="arrow-left" style="solid" />
@@ -370,7 +370,7 @@ export default function Create() {
                                 {processing ? "Creating…" : "Create Report"}
                             </button>
                             <Link
-                                href={route("raids.reports.index")}
+                                href={route("raiding.reports.index")}
                                 className="text-sm text-gray-400 hover:text-white"
                             >
                                 Cancel

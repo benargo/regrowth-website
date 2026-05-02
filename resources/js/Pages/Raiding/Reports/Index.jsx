@@ -192,7 +192,7 @@ function ReportsTable({ reports }) {
                                 </td>
                                 <td className="px-4 py-3 text-sm">
                                     <Link
-                                        href={route('raids.reports.show', report.id)}
+                                        href={route("raiding.reports.show", report.id)}
                                         target="_blank"
                                         className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                     >
@@ -206,10 +206,7 @@ function ReportsTable({ reports }) {
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                     {report.linked_reports_count > 0 ? (
-                                        <Tooltip
-                                            text={`${report.linked_reports_count}`}
-                                            position="right"
-                                        >
+                                        <Tooltip text={`${report.linked_reports_count}`} position="right">
                                             <Icon icon="link" style="solid" className="text-amber-500" />
                                         </Tooltip>
                                     ) : (
@@ -241,20 +238,30 @@ const DAYS = [
 
 export default function Index({ reports, zones, guildTags, filters, earliestDate }) {
     const [selectedZoneIds, setSelectedZoneIds] = useState(() =>
-        decodeFilter(filters.zone_ids, zones.map((z) => z.id)),
+        decodeFilter(
+            filters.zone_ids,
+            zones.map((z) => z.id),
+        ),
     );
     const [selectedGuildTagIds, setSelectedGuildTagIds] = useState(() =>
-        decodeFilter(filters.guild_tag_ids, guildTags.map((g) => g.id)),
+        decodeFilter(
+            filters.guild_tag_ids,
+            guildTags.map((g) => g.id),
+        ),
     );
     const [selectedDays, setSelectedDays] = useState(() =>
-        decodeFilter(filters.days, DAYS.map((d) => d.id)),
+        decodeFilter(
+            filters.days,
+            DAYS.map((d) => d.id),
+        ),
     );
     const [sinceDate, setSinceDate] = useState(filters.since_date ?? "");
     const [beforeDate, setBeforeDate] = useState(filters.before_date ?? "");
 
     const [isReloading, setIsReloading] = useState(false);
 
-    const hasEmptyFilter = selectedZoneIds.length === 0 || selectedGuildTagIds.length === 0 || selectedDays.length === 0;
+    const hasEmptyFilter =
+        selectedZoneIds.length === 0 || selectedGuildTagIds.length === 0 || selectedDays.length === 0;
 
     const buildFilters = () => ({
         zone_ids: encodeFilter(selectedZoneIds, zones),
@@ -305,7 +312,7 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                     {usePermission("manage-reports") && (
                         <div className="mb-4 flex justify-end">
                             <Link
-                                href={route("raids.reports.create")}
+                                href={route("raiding.reports.create")}
                                 className="inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800"
                             >
                                 <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
@@ -361,11 +368,7 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                     ) : (
                         <>
                             <ReportsTable reports={reports} />
-                            <Pagination
-                                links={reports.meta.links}
-                                meta={reports.meta}
-                                itemName="reports"
-                            />
+                            <Pagination links={reports.meta.links} meta={reports.meta} itemName="reports" />
                         </>
                     )}
                 </div>

@@ -144,7 +144,7 @@ export default function Show({ report, nearbyReports, impactedReports, canManage
                     {/* Back link */}
                     <div className="mb-6">
                         <Link
-                            href={route("raids.reports.index")}
+                            href={route("raiding.reports.index")}
                             className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 hover:underline"
                         >
                             <Icon icon="arrow-left" style="solid" />

@@ -74,7 +74,7 @@ class PlannedAbsenceController extends Controller
         return Inertia::render('Raiding/PlannedAbsences/Form', [
             'characters' => $characters,
             'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
-            'action' => route('raids.absences.store'),
+            'action' => route('raiding.absences.store'),
         ]);
     }
 
@@ -151,7 +151,7 @@ class PlannedAbsenceController extends Controller
             'characters' => $characters,
             'planned_absence' => new PlannedAbsenceResource($plannedAbsence)->resolve($request),
             'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
-            'action' => route('raids.absences.update', $plannedAbsence),
+            'action' => route('raiding.absences.update', $plannedAbsence),
         ]);
     }
 
@@ -242,7 +242,7 @@ class PlannedAbsenceController extends Controller
     private function redirectAfterModification(Request $request, string $successMessage = 'Success'): RedirectResponse
     {
         if ($request->user()->can('viewAny', PlannedAbsence::class)) {
-            return to_route('raids.absences.index')->with('success', $successMessage);
+            return to_route('raiding.absences.index')->with('success', $successMessage);
         }
 
         return to_route('account.index')->with('success', $successMessage);

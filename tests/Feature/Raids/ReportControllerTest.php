@@ -41,7 +41,7 @@ class ReportControllerTest extends TestCase
     #[Test]
     public function index_requires_authentication(): void
     {
-        $response = $this->get(route('raids.reports.index'));
+        $response = $this->get(route('raiding.reports.index'));
 
         $response->assertRedirect('/login');
     }
@@ -51,7 +51,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertForbidden();
     }
@@ -61,7 +61,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertForbidden();
     }
@@ -71,7 +71,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertForbidden();
     }
@@ -81,7 +81,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertForbidden();
     }
@@ -91,7 +91,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertOk();
     }
@@ -103,7 +103,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Reports/Index')
@@ -119,7 +119,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Reports/Index')
@@ -143,7 +143,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', [
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', [
             'guild_tag_ids' => (string) $tag->id,
             'days' => '0,1,2,3,4,5,6',
         ]));
@@ -163,7 +163,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -181,7 +181,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Reports/Index')
@@ -211,7 +211,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -240,7 +240,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -263,7 +263,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => '1']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => '1']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -283,7 +283,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => (string) $tag1->id]));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['guild_tag_ids' => (string) $tag1->id]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -305,7 +305,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Filter for Monday only (Carbon day 1)
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => '1']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => '1']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -324,7 +324,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['since_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['since_date' => '2025-01-15']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -343,7 +343,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['before_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['before_date' => '2025-01-15']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -361,7 +361,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => 'none']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => 'none']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -378,7 +378,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => 'none']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['guild_tag_ids' => 'none']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -395,7 +395,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => 'none']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => 'none']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -412,7 +412,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => 'all']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => 'all']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -429,7 +429,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -445,7 +445,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertSessionDoesntHaveErrors(['zone_ids', 'guild_tag_ids', 'days', 'since_date', 'before_date']);
     }
@@ -455,7 +455,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['zone_ids' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['zone_ids']);
     }
@@ -465,7 +465,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['guild_tag_ids' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['guild_tag_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
@@ -475,7 +475,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => 'not-valid']));
 
         $response->assertSessionHasErrors(['days']);
     }
@@ -485,7 +485,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => '7']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => '7']));
 
         $response->assertSessionHasErrors(['days']);
     }
@@ -495,7 +495,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['days' => '0,1,2,3,4,5,6']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => '0,1,2,3,4,5,6']));
 
         $response->assertSessionDoesntHaveErrors(['days']);
     }
@@ -505,7 +505,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['since_date' => 'not-a-date']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['since_date' => 'not-a-date']));
 
         $response->assertSessionHasErrors(['since_date']);
     }
@@ -516,7 +516,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['since_date' => $tomorrow]));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['since_date' => $tomorrow]));
 
         $response->assertSessionHasErrors(['since_date']);
     }
@@ -526,7 +526,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['before_date' => 'not-a-date']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['before_date' => 'not-a-date']));
 
         $response->assertSessionHasErrors(['before_date']);
     }
@@ -537,7 +537,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raids.reports.index', ['before_date' => $tomorrow]));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['before_date' => $tomorrow]));
 
         $response->assertSessionHasErrors(['before_date']);
     }
@@ -549,7 +549,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('earliestDate', null)
@@ -565,7 +565,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.index'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('earliestDate', '2025-01-04')
@@ -579,7 +579,7 @@ class ReportControllerTest extends TestCase
     {
         $report = Report::factory()->withoutGuildTag()->create();
 
-        $response = $this->get(route('raids.reports.show', $report));
+        $response = $this->get(route('raiding.reports.show', $report));
 
         $response->assertRedirect('/login');
     }
@@ -590,7 +590,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertForbidden();
     }
@@ -601,7 +601,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertOk();
     }
@@ -614,7 +614,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Reports/Show')
@@ -633,7 +633,7 @@ class ReportControllerTest extends TestCase
         ]);
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('report.data.id')
@@ -661,7 +661,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('report.data.characters', 1)
@@ -685,7 +685,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('report.data.characters', 3)
@@ -704,7 +704,7 @@ class ReportControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report1));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report1));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('report.data.linked_reports', 1)
@@ -717,7 +717,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', 'nonexistent-code'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', 'nonexistent-code'));
 
         $response->assertNotFound();
     }
@@ -732,7 +732,7 @@ class ReportControllerTest extends TestCase
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-reports', 'guard_name' => 'web']));
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('canManageLinks', true)
@@ -745,7 +745,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('canManageLinks', false)
@@ -760,7 +760,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('nearbyReports')
@@ -775,7 +775,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $report))
+            ->get(route('raiding.reports.show', $report))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
                     ->has('nearbyReports.data')
@@ -805,7 +805,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $current))
+            ->get(route('raiding.reports.show', $current))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
                     ->has('nearbyReports.data', 5)
@@ -838,7 +838,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $a))
+            ->get(route('raiding.reports.show', $a))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
                     ->has('nearbyReports.data', 2)
@@ -863,7 +863,7 @@ class ReportControllerTest extends TestCase
     {
         $report = Report::factory()->withoutGuildTag()->create();
 
-        $response = $this->patch(route('raids.reports.update', $report), [
+        $response = $this->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => []],
         ]);
 
@@ -877,7 +877,7 @@ class ReportControllerTest extends TestCase
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
@@ -891,7 +891,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), []);
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), []);
 
         $response->assertRedirect();
     }
@@ -903,7 +903,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'invalid', 'link_ids' => []],
         ]);
 
@@ -917,7 +917,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => []],
         ]);
 
@@ -931,7 +931,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create'],
         ]);
 
@@ -945,7 +945,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => ['00000000-0000-0000-0000-000000000000']],
         ]);
 
@@ -959,7 +959,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => [$report->id]],
         ]);
 
@@ -974,7 +974,7 @@ class ReportControllerTest extends TestCase
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
@@ -1000,7 +1000,7 @@ class ReportControllerTest extends TestCase
         $reportB = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => [$reportA->id, $reportB->id]],
         ]);
 
@@ -1026,7 +1026,7 @@ class ReportControllerTest extends TestCase
         $report->linkedReports()->attach($other->id, ['created_by' => null]);
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
@@ -1048,7 +1048,7 @@ class ReportControllerTest extends TestCase
         $reportB->linkedReports()->attach($reportA->id, ['created_by' => $user->id]);
 
         // Link report to A only — it should also be linked to B transitively
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => [$reportA->id]],
         ]);
 
@@ -1064,7 +1064,7 @@ class ReportControllerTest extends TestCase
         $other = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'create', 'link_ids' => [$other->id]],
         ]);
 
@@ -1086,7 +1086,7 @@ class ReportControllerTest extends TestCase
         $report->linkedReports()->attach($reportC->id, ['created_by' => $user->id]);
         $reportC->linkedReports()->attach($report->id, ['created_by' => $user->id]);
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'delete', 'link_ids' => []],
         ]);
 
@@ -1112,7 +1112,7 @@ class ReportControllerTest extends TestCase
             ['report_1' => $autoLinked->id, 'report_2' => $report->id, 'created_by' => null, 'created_at' => null, 'updated_at' => null],
         ]);
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'delete', 'link_ids' => []],
         ]);
 
@@ -1127,7 +1127,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'delete', 'link_ids' => []],
         ]);
 
@@ -1142,7 +1142,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'links' => ['action' => 'delete', 'link_ids' => []],
         ]);
 
@@ -1157,7 +1157,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('impactedReports')
@@ -1174,7 +1174,7 @@ class ReportControllerTest extends TestCase
         $report->linkedReports()->attach($other->id, ['created_by' => $user->id]);
 
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $report))
+            ->get(route('raiding.reports.show', $report))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('impactedReports', fn (Assert $reload) => $reload
                     ->has('impactedReports.data', 1)
@@ -1195,7 +1195,7 @@ class ReportControllerTest extends TestCase
         $report->linkedReports()->attach($manualLinked->id, ['created_by' => $user->id]);
 
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $report))
+            ->get(route('raiding.reports.show', $report))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('impactedReports', fn (Assert $reload) => $reload
                     ->has('impactedReports.data', 1)
@@ -1209,7 +1209,7 @@ class ReportControllerTest extends TestCase
     #[Test]
     public function create_requires_authentication(): void
     {
-        $response = $this->get(route('raids.reports.create'));
+        $response = $this->get(route('raiding.reports.create'));
 
         $response->assertRedirect('/login');
     }
@@ -1219,7 +1219,7 @@ class ReportControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.create'));
 
         $response->assertForbidden();
     }
@@ -1230,7 +1230,7 @@ class ReportControllerTest extends TestCase
         $this->grantManageReports();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.create'));
 
         $response->assertOk();
     }
@@ -1241,7 +1241,7 @@ class ReportControllerTest extends TestCase
         $this->grantManageReports();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Reports/Create')
@@ -1257,7 +1257,7 @@ class ReportControllerTest extends TestCase
         Character::factory()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('expansions')
@@ -1276,7 +1276,7 @@ class ReportControllerTest extends TestCase
         $this->grantManageReports();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.create'));
+        $response = $this->actingAs($user)->get(route('raiding.reports.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('nearbyReports')
@@ -1302,7 +1302,7 @@ class ReportControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post(route('raids.reports.store'), []);
+        $response = $this->post(route('raiding.reports.store'), []);
 
         $response->assertRedirect('/login');
     }
@@ -1313,7 +1313,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), $this->validStoreData($tag));
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
 
         $response->assertForbidden();
     }
@@ -1326,7 +1326,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('raids.reports.store'), $this->validStoreData($tag));
+        $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
 
         $this->assertDatabaseHas('raid_reports', [
             'title' => 'Sunday Karazhan',
@@ -1344,10 +1344,10 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), $this->validStoreData($tag));
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
 
         $report = Report::where('title', 'Sunday Karazhan')->firstOrFail();
-        $response->assertRedirect(route('raids.reports.show', $report));
+        $response->assertRedirect(route('raiding.reports.show', $report));
         $response->assertSessionHas('success', 'New report created');
     }
 
@@ -1360,7 +1360,7 @@ class ReportControllerTest extends TestCase
         $character = Character::factory()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['character_ids' => [$character->id]]
         ));
@@ -1382,7 +1382,7 @@ class ReportControllerTest extends TestCase
         $existingReport = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['linked_report_ids' => [$existingReport->id]]
         ));
@@ -1414,7 +1414,7 @@ class ReportControllerTest extends TestCase
         $reportB->linkedReports()->attach($reportA->id, ['created_by' => $user->id]);
 
         // Store new report linked to A only — it should also be linked to B transitively
-        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['linked_report_ids' => [$reportA->id]]
         ));
@@ -1434,7 +1434,7 @@ class ReportControllerTest extends TestCase
         $character = Character::factory()->lootCouncillor()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['character_ids' => [$character->id], 'loot_councillor_ids' => [$character->id]]
         ));
@@ -1457,7 +1457,7 @@ class ReportControllerTest extends TestCase
         $character = Character::factory()->lootCouncillor()->create();
         $user = User::factory()->officer()->create();
 
-        $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['loot_councillor_ids' => [$character->id]]
         ));
@@ -1479,7 +1479,7 @@ class ReportControllerTest extends TestCase
         $character = Character::factory()->create(['is_loot_councillor' => false]);
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['loot_councillor_ids' => [$character->id]]
         ));
@@ -1494,7 +1494,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['title' => '']
         ));
@@ -1509,7 +1509,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['start_time' => '2025-01-05 23:30', 'end_time' => '2025-01-05 20:00']
         ));
@@ -1524,7 +1524,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['guild_tag_id' => 99999]
         ));
@@ -1539,7 +1539,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['character_ids' => [99999]]
         ));
@@ -1554,7 +1554,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['linked_report_ids' => ['00000000-0000-0000-0000-000000000000']]
         ));
@@ -1569,7 +1569,7 @@ class ReportControllerTest extends TestCase
         $tag = GuildTag::factory()->withoutPhase()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.reports.store'), array_merge(
+        $response = $this->actingAs($user)->post(route('raiding.reports.store'), array_merge(
             $this->validStoreData($tag),
             ['zone_id' => 9999]
         ));
@@ -1587,7 +1587,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'loot_councillors' => ['action' => 'invalid', 'character_ids' => [$character->id]],
         ]);
 
@@ -1602,7 +1602,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->create(['is_loot_councillor' => false]);
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
         ]);
 
@@ -1619,7 +1619,7 @@ class ReportControllerTest extends TestCase
 
         $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => false]);
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
         ]);
 
@@ -1639,7 +1639,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
         ]);
 
@@ -1661,7 +1661,7 @@ class ReportControllerTest extends TestCase
 
         $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => true]);
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'loot_councillors' => ['action' => 'delete', 'character_ids' => [$character->id]],
         ]);
 
@@ -1683,7 +1683,7 @@ class ReportControllerTest extends TestCase
 
         $report->characters()->attach($character->id, ['presence' => 0, 'is_loot_councillor' => true]);
 
-        $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'loot_councillors' => ['action' => 'delete', 'character_ids' => [$character->id]],
         ]);
 
@@ -1701,7 +1701,7 @@ class ReportControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->patch(route('raids.reports.update', $report), [
+        $response = $this->actingAs($user)->patch(route('raiding.reports.update', $report), [
             'loot_councillors' => ['action' => 'create', 'character_ids' => [$character->id]],
         ]);
 
@@ -1716,7 +1716,7 @@ class ReportControllerTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('lootCouncillorCandidates')
@@ -1731,7 +1731,7 @@ class ReportControllerTest extends TestCase
         Character::factory()->lootCouncillor()->create();
 
         $this->actingAs($user)
-            ->get(route('raids.reports.show', $report))
+            ->get(route('raiding.reports.show', $report))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
                     ->has('lootCouncillorCandidates', 1)
@@ -1749,7 +1749,7 @@ class ReportControllerTest extends TestCase
         Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
 
         $this->actingAs($user)
-            ->get(route('raids.reports.create'))
+            ->get(route('raiding.reports.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
                     ->has('lootCouncillorCandidates', 1)
@@ -1786,7 +1786,7 @@ class ReportControllerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('raids.reports.create'))
+            ->get(route('raiding.reports.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
                     ->has('nearbyReports.data', 1)
@@ -1821,7 +1821,7 @@ class ReportControllerTest extends TestCase
         );
 
         $this->actingAs($user)
-            ->get(route('raids.reports.create'))
+            ->get(route('raiding.reports.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('nearbyReports', fn (Assert $reload) => $reload
                     ->has('nearbyReports.data', 1)
@@ -1838,7 +1838,7 @@ class ReportControllerTest extends TestCase
 
         $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => true]);
 
-        $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('report.data.characters', 1)

@@ -51,7 +51,7 @@ class AttendanceMatrixControllerTest extends TestCase
     #[Test]
     public function invoke_requires_authentication(): void
     {
-        $response = $this->get(route('raids.attendance.matrix'));
+        $response = $this->get(route('raiding.attendance.matrix'));
 
         $response->assertRedirect('/login');
     }
@@ -61,7 +61,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertForbidden();
     }
@@ -71,7 +71,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertForbidden();
     }
@@ -81,7 +81,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertForbidden();
     }
@@ -91,7 +91,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertForbidden();
     }
@@ -101,7 +101,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertOk();
     }
@@ -113,7 +113,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Attendance/Matrix')
@@ -132,7 +132,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Attendance/Matrix')
@@ -152,7 +152,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -172,7 +172,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Attendance/Matrix')
@@ -197,7 +197,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('ranks', 2)
@@ -210,7 +210,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.character', null)
@@ -223,7 +223,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $character = Character::factory()->main()->create(['name' => 'Thrall']);
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => $character->id]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $character->id]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.character.id', $character->id)
@@ -239,7 +239,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.guild_tag_ids', [$countingTag->id])
@@ -253,7 +253,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertSessionDoesntHaveErrors(['character', 'zone_ids', 'guild_tag_ids', 'since_date', 'before_date']);
     }
@@ -264,7 +264,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $character = Character::factory()->main()->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => $character->id]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $character->id]));
 
         $response->assertSessionDoesntHaveErrors(['character']);
     }
@@ -274,7 +274,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => 99999]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => 99999]));
 
         $response->assertSessionHasErrors(['character']);
     }
@@ -284,7 +284,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => 'thrall']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => 'thrall']));
 
         $response->assertSessionHasErrors(['character']);
     }
@@ -294,7 +294,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => '1,2,3']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['zone_ids' => '1,2,3']));
 
         $response->assertSessionDoesntHaveErrors(['zone_ids']);
     }
@@ -304,7 +304,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['zone_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['zone_ids']);
     }
@@ -314,7 +314,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => '1,2,3']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['guild_tag_ids' => '1,2,3']));
 
         $response->assertSessionDoesntHaveErrors(['guild_tag_ids']);
     }
@@ -324,7 +324,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['guild_tag_ids' => 'not-valid']));
 
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
@@ -334,7 +334,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => '2025-01-15']));
 
         $response->assertSessionDoesntHaveErrors(['since_date']);
     }
@@ -344,7 +344,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => 'not-a-date']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => 'not-a-date']));
 
         $response->assertSessionHasErrors(['since_date']);
     }
@@ -354,7 +354,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => '2025-01-15']));
 
         $response->assertSessionDoesntHaveErrors(['before_date']);
     }
@@ -364,7 +364,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => 'not-a-date']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => 'not-a-date']));
 
         $response->assertSessionHasErrors(['before_date']);
     }
@@ -375,7 +375,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $today = Carbon::today(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => $today]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => $today]));
 
         $response->assertSessionDoesntHaveErrors(['since_date']);
     }
@@ -386,7 +386,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => $tomorrow]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => $tomorrow]));
 
         $response->assertSessionHasErrors(['since_date']);
     }
@@ -397,7 +397,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $today = Carbon::today(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => $today]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => $today]));
 
         $response->assertSessionDoesntHaveErrors(['before_date']);
     }
@@ -408,7 +408,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => $tomorrow]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => $tomorrow]));
 
         $response->assertSessionHasErrors(['before_date']);
     }
@@ -422,7 +422,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Min date is 2025-01-04 (one day before earliest report date in app timezone)
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2025-01-04']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => '2025-01-04']));
 
         $response->assertSessionDoesntHaveErrors(['since_date']);
     }
@@ -436,7 +436,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Min date is 2025-01-04, so 2025-01-03 should be rejected
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2025-01-03']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => '2025-01-03']));
 
         $response->assertSessionHasErrors(['since_date']);
     }
@@ -449,7 +449,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => '2025-01-04']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => '2025-01-04']));
 
         $response->assertSessionDoesntHaveErrors(['before_date']);
     }
@@ -462,7 +462,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => '2025-01-03']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => '2025-01-03']));
 
         $response->assertSessionHasErrors(['before_date']);
     }
@@ -472,7 +472,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2000-01-01', 'before_date' => '2000-01-01']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => '2000-01-01', 'before_date' => '2000-01-01']));
 
         $response->assertSessionDoesntHaveErrors(['since_date', 'before_date']);
     }
@@ -484,7 +484,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('earliestDate', null)
@@ -500,7 +500,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('earliestDate', '2025-01-04')
@@ -524,7 +524,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['character' => $thrall->id]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['character' => $thrall->id]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -551,7 +551,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => (string) $tag1->id]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['guild_tag_ids' => (string) $tag1->id]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -578,7 +578,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // since_date = 2025-01-15, which means only reports on or after Jan 15 05:00 are included
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['since_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['since_date' => '2025-01-15']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -605,7 +605,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // before_date = 2025-01-15, which means only reports before Jan 16 05:00 are included
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['before_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['before_date' => '2025-01-15']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -622,7 +622,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('filters.combine_linked_characters')
@@ -634,7 +634,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.combine_linked_characters', true)
@@ -646,7 +646,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['combine_linked_characters' => false]));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['combine_linked_characters' => false]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.combine_linked_characters', false)
@@ -658,7 +658,7 @@ class AttendanceMatrixControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['combine_linked_characters' => 'banana']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['combine_linked_characters' => 'banana']));
 
         $response->assertSessionHasErrors(['combine_linked_characters']);
     }
@@ -678,7 +678,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $params = ['guild_tag_ids' => (string) $tag->id];
 
         // First request populates the cache.
-        $this->actingAs($user)->get(route('raids.attendance.matrix', $params))
+        $this->actingAs($user)->get(route('raiding.attendance.matrix', $params))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
@@ -692,7 +692,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $report2->characters()->attach($jaina->id, ['presence' => 1]);
 
         // Second request with identical filters should return the cached result.
-        $this->actingAs($user)->get(route('raids.attendance.matrix', $params))
+        $this->actingAs($user)->get(route('raiding.attendance.matrix', $params))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
@@ -709,7 +709,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Non-null zone_ids exercises the sort($zoneIds) branch in matrixCacheKey()
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', ['zone_ids' => '3,1,2']));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', ['zone_ids' => '3,1,2']));
 
         $response->assertOk();
         $response->assertSessionDoesntHaveErrors(['zone_ids']);
@@ -736,7 +736,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -762,7 +762,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix', [
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix', [
             'rank_ids' => (string) $rank1->id,
         ]));
 
@@ -795,7 +795,7 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -823,7 +823,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Warm both caches with their respective filter sets.
-        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => (string) $tag1->id]))
+        $this->actingAs($user)->get(route('raiding.attendance.matrix', ['guild_tag_ids' => (string) $tag1->id]))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)
@@ -831,7 +831,7 @@ class AttendanceMatrixControllerTest extends TestCase
                 )
             );
 
-        $this->actingAs($user)->get(route('raids.attendance.matrix', ['guild_tag_ids' => (string) $tag2->id]))
+        $this->actingAs($user)->get(route('raiding.attendance.matrix', ['guild_tag_ids' => (string) $tag2->id]))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
                     ->has('matrix.rows', 1)

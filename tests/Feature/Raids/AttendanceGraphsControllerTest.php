@@ -41,7 +41,7 @@ class AttendanceGraphsControllerTest extends TestCase
     #[Test]
     public function index_requires_authentication(): void
     {
-        $response = $this->get(route('raids.attendance.graphs.index'));
+        $response = $this->get(route('raiding.attendance.graphs.index'));
 
         $response->assertRedirect('/login');
     }
@@ -51,7 +51,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertForbidden();
     }
@@ -61,7 +61,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertForbidden();
     }
@@ -71,7 +71,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertForbidden();
     }
@@ -81,7 +81,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $user = User::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertForbidden();
     }
@@ -91,7 +91,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertOk();
     }
@@ -103,7 +103,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('scatterPoints')
@@ -122,7 +122,7 @@ class AttendanceGraphsControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -157,7 +157,7 @@ class AttendanceGraphsControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -190,7 +190,7 @@ class AttendanceGraphsControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -205,7 +205,7 @@ class AttendanceGraphsControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.attendance.graphs.index'));
+        $response = $this->actingAs($user)->get(route('raiding.attendance.graphs.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload

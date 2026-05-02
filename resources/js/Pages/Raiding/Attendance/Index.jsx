@@ -146,7 +146,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
                 </ul>
             )}
             <Link
-                href={route("raids.absences.index")}
+                href={route("raiding.absences.index")}
                 className="mt-3 inline-flex items-center gap-1 text-sm text-amber-400 hover:text-amber-300"
             >
                 See all <Icon icon="arrow-right" style="light" />
@@ -250,7 +250,7 @@ function PlayerListRows({ stats }) {
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <UpcomingAbsencesBox icon="umbrella-beach" absences={stats.upcomingAbsences} />
                 <Link
-                    href={route("raids.attendance.graphs.index")}
+                    href={route("raiding.attendance.graphs.index")}
                     className="flex items-center gap-4 rounded border border-amber-600 p-4 transition-colors hover:bg-amber-600/20"
                 >
                     <div className="text-center">
@@ -264,7 +264,7 @@ function PlayerListRows({ stats }) {
                     </div>
                 </Link>
                 <Link
-                    href={route("raids.attendance.matrix")}
+                    href={route("raiding.attendance.matrix")}
                     className="flex items-center gap-4 rounded border border-amber-600 p-4 transition-colors hover:bg-amber-600/20"
                 >
                     <div className="text-center">

@@ -45,7 +45,7 @@ export default function Index() {
                     <div className="mb-4 flex flex-row justify-end">
                         {usePermission("manage-planned-absences") && (
                             <Link
-                                href={route("raids.absences.create")}
+                                href={route("raiding.absences.create")}
                                 className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 md:mt-0"
                             >
                                 <Icon icon="plus" style="solid" className="mr-1.5 h-4" />

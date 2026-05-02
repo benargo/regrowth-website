@@ -20,6 +20,7 @@ use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\LootCouncil\RaidController;
 use App\Http\Controllers\PlannedAbsenceController;
+use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
@@ -57,7 +58,9 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], fu
 /**
  * Raid planning and attendance
  */
-Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'raiding', 'as' => 'raiding.', 'middleware' => ['auth']], function () {
+    Route::get('/', [RaidingController::class, 'index'])->name('index');
+
     // Planned absences routes
     Route::get('/absences', [PlannedAbsenceController::class, 'index'])->can('viewAny', 'App\Models\PlannedAbsence')->name('absences.index');
     Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->can('create', 'App\Models\PlannedAbsence')->name('absences.create');
@@ -66,7 +69,6 @@ Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], 
     Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->can('update', 'plannedAbsence')->name('absences.update');
     Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->can('delete', 'plannedAbsence')->name('absences.destroy');
     Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->can('restore', 'plannedAbsence')->name('absences.restore');
-    // Route::post('/absences/{id}/restore', [PlannedAbsenceController::class, 'restore'])->can('restore', 'App\Models\PlannedAbsence')->name('absences.restore');
 
     // Attendance routes
     Route::get('/attendance', AttendanceDashboardController::class)->middleware('can:view-attendance')->name('attendance.dashboard');

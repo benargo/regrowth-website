@@ -57,7 +57,7 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Test]
     public function index_requires_authentication(): void
     {
-        $response = $this->get(route('raids.absences.index'));
+        $response = $this->get(route('raiding.absences.index'));
 
         $response->assertRedirect('/login');
     }
@@ -67,7 +67,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertOk();
     }
@@ -79,7 +79,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/PlannedAbsences/Index')
@@ -93,7 +93,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/PlannedAbsences/Index')
@@ -109,7 +109,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->member()->create();
         PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/PlannedAbsences/Index')
@@ -143,7 +143,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'start_date' => now()->addDay(),
         ]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.index'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -159,7 +159,7 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Test]
     public function create_requires_authentication(): void
     {
-        $response = $this->get(route('raids.absences.create'));
+        $response = $this->get(route('raiding.absences.create'));
 
         $response->assertRedirect('/login');
     }
@@ -169,7 +169,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertForbidden();
     }
@@ -179,7 +179,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertOk();
     }
@@ -191,7 +191,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/PlannedAbsences/Form')
@@ -206,7 +206,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/PlannedAbsences/Form')
@@ -222,10 +222,10 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('action', route('raids.absences.store'))
+            ->where('action', route('raiding.absences.store'))
         );
     }
 
@@ -237,7 +237,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create(['nickname' => 'Aragorn']);
         Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character', null)
@@ -258,7 +258,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $character = Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character.id', $character->id)
@@ -280,7 +280,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character', null)
@@ -301,7 +301,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $character = Character::factory()->create(['name' => 'Marktführer', 'is_main' => true]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character.id', $character->id)
@@ -316,7 +316,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->get(route('raids.absences.edit', $absence));
+        $response = $this->get(route('raiding.absences.edit', $absence));
 
         $response->assertRedirect('/login');
     }
@@ -327,7 +327,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $member = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($member)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($member)->get(route('raiding.absences.edit', $absence));
 
         $response->assertForbidden();
     }
@@ -338,7 +338,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $owner = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $owner->id]);
 
-        $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($owner)->get(route('raiding.absences.edit', $absence));
 
         $response->assertOk();
     }
@@ -349,7 +349,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertOk();
     }
@@ -362,7 +362,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/PlannedAbsences/Form')
@@ -379,7 +379,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'reason' => 'On holiday.',
         ]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/PlannedAbsences/Form')
@@ -407,7 +407,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->create(['character_id' => $main->id, 'created_by' => $user->id]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('characters', 1)
@@ -421,10 +421,10 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('action', route('raids.absences.update', $absence))
+            ->where('action', route('raiding.absences.update', $absence))
         );
     }
 
@@ -437,7 +437,7 @@ class PlannedAbsenceControllerTest extends TestCase
         Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character', null)
@@ -454,7 +454,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'created_by' => $owner->id,
         ]);
 
-        $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($owner)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character.id', $character->id)
@@ -470,7 +470,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         Character::factory()->create(['name' => 'Aragorn', 'is_main' => true]);
 
-        $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($owner)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character', null)
@@ -487,7 +487,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'created_by' => $owner->id,
         ]);
 
-        $response = $this->actingAs($owner)->get(route('raids.absences.edit', $absence));
+        $response = $this->actingAs($owner)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character.id', $character->id)
@@ -499,7 +499,7 @@ class PlannedAbsenceControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->postJson(route('raids.absences.store'));
+        $response = $this->postJson(route('raiding.absences.store'));
 
         $response->assertUnauthorized();
     }
@@ -510,7 +510,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->member()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Going on holiday.',
@@ -530,14 +530,14 @@ class PlannedAbsenceControllerTest extends TestCase
         $startDate = now()->addDay();
         $endDate = now()->addDays(7);
 
-        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raiding.absences.store'), [
             'character' => $character->id,
             'start_date' => $startDate->format('Y-m-d'),
             'end_date' => $endDate->format('Y-m-d'),
             'reason' => 'Going on holiday.',
         ]);
 
-        $response->assertRedirectToRoute('raids.absences.index');
+        $response->assertRedirectToRoute('raiding.absences.index');
         $this->assertDatabaseHas('planned_absences', [
             'character_id' => $character->id,
             'start_date' => $startDate->format('Y-m-d').' 00:00:00',
@@ -552,13 +552,13 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create(['name' => 'Aragorn']);
 
-        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raiding.absences.store'), [
             'character' => 'Aragorn',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Scouting the Misty Mountains.',
         ]);
 
-        $response->assertRedirectToRoute('raids.absences.index');
+        $response->assertRedirectToRoute('raiding.absences.index');
         $this->assertDatabaseHas('planned_absences', ['character_id' => $character->id]);
     }
 
@@ -568,13 +568,13 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create(['name' => 'Déo']);
 
-        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raiding.absences.store'), [
             'character' => 'Deo',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
 
-        $response->assertRedirectToRoute('raids.absences.index');
+        $response->assertRedirectToRoute('raiding.absences.index');
         $this->assertDatabaseHas('planned_absences', ['character_id' => $character->id]);
     }
 
@@ -584,13 +584,13 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raiding.absences.store'), [
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Indefinite absence.',
         ]);
 
-        $response->assertRedirectToRoute('raids.absences.index');
+        $response->assertRedirectToRoute('raiding.absences.index');
         $this->assertDatabaseHas('planned_absences', [
             'character_id' => $character->id,
             'end_date' => null,
@@ -611,7 +611,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raiding.absences.store'), [
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
@@ -630,7 +630,7 @@ class PlannedAbsenceControllerTest extends TestCase
         Character::factory()->main()->create(['name' => 'Déo']);
         Character::factory()->main()->create(['name' => 'Deò']);
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => 'Deo',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
@@ -652,7 +652,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'character_id' => $mainCharacter->id,
         ]);
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => 'Altchar',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
@@ -669,7 +669,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->create(['name' => 'Altchar', 'is_main' => false]);
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
@@ -686,7 +686,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
         ]);
@@ -701,7 +701,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => $character->id,
             'reason' => 'Away for a week.',
         ]);
@@ -716,7 +716,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => $character->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
         ]);
@@ -731,7 +731,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => $character->id,
             'start_date' => now()->addDays(7)->format('Y-m-d'),
             'end_date' => now()->addDay()->format('Y-m-d'),
@@ -747,7 +747,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => 'TwelveCharsX',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
@@ -762,7 +762,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => 'Two Words',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
@@ -777,7 +777,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->postJson(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->postJson(route('raiding.absences.store'), [
             'character' => 'Char1',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for a week.',
@@ -794,7 +794,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->patchJson(route('raids.absences.update', $absence));
+        $response = $this->patchJson(route('raiding.absences.update', $absence));
 
         $response->assertUnauthorized();
     }
@@ -805,7 +805,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $member = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($member)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($member)->patchJson(route('raiding.absences.update', $absence), [
             'reason' => 'Updated reason.',
         ]);
 
@@ -819,7 +819,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $newCharacter = Character::factory()->main()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $owner->id]);
 
-        $response = $this->actingAs($owner)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($owner)->patchJson(route('raiding.absences.update', $absence), [
             'character' => $newCharacter->id,
         ]);
 
@@ -836,7 +836,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $newStartDate = now()->addDays(7);
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'start_date' => $newStartDate->format('Y-m-d'),
         ]);
 
@@ -858,7 +858,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
         $newEndDate = now()->addDays(14);
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'end_date' => $newEndDate->format('Y-m-d'),
         ]);
 
@@ -875,7 +875,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create(['reason' => 'Old reason.']);
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'reason' => 'New reason.',
         ]);
 
@@ -897,7 +897,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'character' => $newCharacter->id,
         ]);
 
@@ -917,7 +917,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'end_date' => now()->addDays(7),
         ]);
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'end_date' => null,
         ]);
 
@@ -937,7 +937,7 @@ class PlannedAbsenceControllerTest extends TestCase
             'reason' => 'Old reason.',
         ]);
 
-        $response = $this->actingAs($owner)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($owner)->patchJson(route('raiding.absences.update', $absence), [
             'reason' => 'Updated reason.',
         ]);
 
@@ -957,7 +957,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $altCharacter = Character::factory()->create(['is_main' => false]);
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'character' => $altCharacter->id,
         ]);
 
@@ -973,7 +973,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create(['start_date' => now()->addDays(7)]);
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'end_date' => now()->addDay()->format('Y-m-d'),
         ]);
 
@@ -987,7 +987,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($user)->patchJson(route('raiding.absences.update', $absence), [
             'character' => 99999,
         ]);
 
@@ -1002,7 +1002,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->deleteJson(route('raids.absences.destroy', $absence));
+        $response = $this->deleteJson(route('raiding.absences.destroy', $absence));
 
         $response->assertUnauthorized();
     }
@@ -1013,7 +1013,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $member = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($member)->deleteJson(route('raids.absences.destroy', $absence));
+        $response = $this->actingAs($member)->deleteJson(route('raiding.absences.destroy', $absence));
 
         $response->assertForbidden();
     }
@@ -1026,7 +1026,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->officer()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($user)->deleteJson(route('raids.absences.destroy', $absence));
+        $response = $this->actingAs($user)->deleteJson(route('raiding.absences.destroy', $absence));
 
         $response->assertRedirect();
         $this->assertSoftDeleted('planned_absences', ['id' => $absence->id]);
@@ -1038,7 +1038,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $owner = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $owner->id]);
 
-        $response = $this->actingAs($owner)->deleteJson(route('raids.absences.destroy', $absence));
+        $response = $this->actingAs($owner)->deleteJson(route('raiding.absences.destroy', $absence));
 
         $response->assertRedirect();
         $this->assertSoftDeleted('planned_absences', ['id' => $absence->id]);
@@ -1051,7 +1051,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $other = User::factory()->member()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create(['created_by' => $other->id]);
 
-        $response = $this->actingAs($owner)->deleteJson(route('raids.absences.destroy', $absence));
+        $response = $this->actingAs($owner)->deleteJson(route('raiding.absences.destroy', $absence));
 
         $response->assertForbidden();
         $this->assertDatabaseHas('planned_absences', ['id' => $absence->id]);
@@ -1071,7 +1071,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $user = User::factory()->create(['nickname' => null]);
         $user->discordRoles()->sync([$role->id]);
 
-        $response = $this->actingAs($user)->get(route('raids.absences.create'));
+        $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('resolved_character', null)
@@ -1085,7 +1085,7 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($user)->post(route('raiding.absences.store'), [
             'character' => 'Zzyzx',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Gone.',
@@ -1103,14 +1103,14 @@ class PlannedAbsenceControllerTest extends TestCase
         $targetUser = User::factory()->create();
         $character = Character::factory()->main()->create();
 
-        $response = $this->actingAs($officer)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($officer)->post(route('raiding.absences.store'), [
             'character' => $character->id,
             'user' => $targetUser->id,
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away for work.',
         ]);
 
-        $response->assertRedirectToRoute('raids.absences.index');
+        $response->assertRedirectToRoute('raiding.absences.index');
         $this->assertDatabaseHas('planned_absences', [
             'character_id' => $character->id,
             'user_id' => $targetUser->id,
@@ -1124,7 +1124,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $newUser = User::factory()->create();
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
-        $response = $this->actingAs($officer)->patchJson(route('raids.absences.update', $absence), [
+        $response = $this->actingAs($officer)->patchJson(route('raiding.absences.update', $absence), [
             'user' => $newUser->id,
         ]);
 
@@ -1152,14 +1152,14 @@ class PlannedAbsenceControllerTest extends TestCase
         $character = Character::factory()->main()->create();
         $unknownUserId = '999999999999999999';
 
-        $response = $this->actingAs($officer)->post(route('raids.absences.store'), [
+        $response = $this->actingAs($officer)->post(route('raiding.absences.store'), [
             'character' => $character->id,
             'user' => $unknownUserId,
             'start_date' => now()->addDay()->format('Y-m-d'),
             'reason' => 'Away.',
         ]);
 
-        $response->assertRedirectToRoute('raids.absences.index');
+        $response->assertRedirectToRoute('raiding.absences.index');
         $this->assertDatabaseHas('users', ['id' => $unknownUserId, 'username' => 'discorduser']);
         $this->assertDatabaseHas('planned_absences', [
             'character_id' => $character->id,

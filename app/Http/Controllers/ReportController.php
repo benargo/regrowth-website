@@ -100,7 +100,7 @@ class ReportController extends Controller
             $this->attachLootCouncillors($report, $request->loot_councillor_ids);
         }
 
-        return redirect()->route('raids.reports.show', $report)->with('success', 'New report created');
+        return redirect()->route('raiding.reports.show', $report)->with('success', 'New report created');
     }
 
     /**
@@ -304,7 +304,7 @@ class ReportController extends Controller
         $perPage = 5;
 
         $reportTimes = Report::hydrate(
-            Cache::tags(['raids', 'warcraftlogs'])->remember(
+            Cache::tags(['raiding', 'warcraftlogs'])->remember(
                 'reports:select:id,start_time',
                 now()->addMinutes(5),
                 fn () => Report::select('id', 'start_time')->get()->toArray()
@@ -312,7 +312,7 @@ class ReportController extends Controller
         )->pluck('start_time', 'id');
 
         $links = ReportLink::hydrate(
-            Cache::tags(['raids', 'warcraftlogs'])->remember(
+            Cache::tags(['raiding', 'warcraftlogs'])->remember(
                 'reports:links:all_edges',
                 now()->addMinutes(5),
                 fn () => DB::table('raid_report_links')->select('report_1', 'report_2')->get()->toArray()
