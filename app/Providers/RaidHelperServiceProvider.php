@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\RaidHelperClient;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
 class RaidHelperServiceProvider extends ServiceProvider
@@ -19,7 +20,7 @@ class RaidHelperServiceProvider extends ServiceProvider
         });
 
         // Main RaidHelper service
-        $this->app->singleton(RaidHelper::class, function ($app) {
+        $this->app->singleton(RaidHelper::class, function (Application $app) {
             return new RaidHelper($app->make(RaidHelperClient::class), config('services.raidhelper'));
         });
     }

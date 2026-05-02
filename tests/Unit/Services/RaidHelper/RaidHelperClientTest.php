@@ -39,7 +39,7 @@ class RaidHelperClientTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             return $request->method() === 'GET'
-                && $request->url() === 'https://raidhelper.xyz/api/v4/servers/123/events';
+                && $request->url() === 'https://raid-helper.xyz/api/v4/servers/123/events';
         });
     }
 
@@ -70,7 +70,7 @@ class RaidHelperClientTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             return $request->method() === 'POST'
-                && $request->url() === 'https://raidhelper.xyz/api/v4/servers/123/events';
+                && $request->url() === 'https://raid-helper.xyz/api/v4/servers/123/events';
         });
     }
 
@@ -119,7 +119,7 @@ class RaidHelperClientTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             return $request->method() === 'PATCH'
-                && $request->url() === 'https://raidhelper.xyz/api/v4/events/456';
+                && $request->url() === 'https://raid-helper.xyz/api/v4/events/456';
         });
     }
 
@@ -158,7 +158,7 @@ class RaidHelperClientTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             return $request->method() === 'DELETE'
-                && $request->url() === 'https://raidhelper.xyz/api/v4/events/456';
+                && $request->url() === 'https://raid-helper.xyz/api/v4/events/456';
         });
     }
 
@@ -168,7 +168,7 @@ class RaidHelperClientTest extends TestCase
         $this->client->get('servers/123/events');
 
         Http::assertSent(function (Request $request) {
-            return $request->url() === 'https://raidhelper.xyz/api/v4/servers/123/events';
+            return $request->url() === 'https://raid-helper.xyz/api/v4/servers/123/events';
         });
     }
 

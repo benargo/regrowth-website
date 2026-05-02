@@ -6,7 +6,7 @@ use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
 use App\Services\RaidHelper\Resources\Comp;
 use App\Services\RaidHelper\Resources\Event;
 use Carbon\CarbonInterface;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Arr;
 
 class RaidHelper
@@ -68,10 +68,12 @@ class RaidHelper
         ?string $channelId = null,
         ?CarbonInterface $startTimeFilter = null,
         ?CarbonInterface $endTimeFilter = null
-    ): LengthAwarePaginator {
-        $headers = [
-            'Page' => $page,
-        ];
+    ): Paginator {
+        $headers = [];
+
+        if ($page !== null) {
+            $headers['Page'] = $page;
+        }
 
         if ($includeSignUps) {
             $headers['IncludeSignUps'] = 'true';
@@ -91,21 +93,20 @@ class RaidHelper
 
         $response = $this->client->get("/servers/{$this->serverId}/events", $headers)->json();
 
-        if (Arr::get($response, 'eventCountTransmitted', 0) === 0) {
+        if (Arr::get($response, 'eventsTransmitted', 0) === 0) {
             throw new NoEventsFoundException;
         }
 
         $rawEvents = Arr::get($response, 'postedEvents', []);
         $events = Event::collect($rawEvents);
-        $perPage = min(Arr::get($response, 'eventCountTransmitted', count($rawEvents)), 1000);
+        $eventsTransmitted = Arr::get($response, 'eventsTransmitted', count($rawEvents));
 
-        return new LengthAwarePaginator(
+        return (new Paginator(
             items: $events,
-            total: Arr::get($response, 'eventCountOverall', count($rawEvents)),
-            perPage: $perPage,
+            perPage: 1000,
             currentPage: Arr::get($response, 'currentPage', 1),
-            options: ['path' => LengthAwarePaginator::resolveCurrentPath()],
-        );
+            options: ['path' => Paginator::resolveCurrentPath()],
+        ))->hasMorePagesWhen($eventsTransmitted >= 1000);
     }
 
     /**

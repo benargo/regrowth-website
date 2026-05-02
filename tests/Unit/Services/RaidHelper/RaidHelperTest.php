@@ -9,7 +9,7 @@ use App\Services\RaidHelper\Resources\Comp;
 use App\Services\RaidHelper\Resources\Event;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -190,7 +190,8 @@ class RaidHelperTest extends TestCase
         $payload = $this->minimalCompPayload();
 
         $response = Mockery::mock(Response::class);
-        $response->expects('status')->withNoArgs()->andReturn(200);
+        $response->allows('status')->withNoArgs()->andReturn(200);
+        $response->allows('body')->withNoArgs()->andReturn('');
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
@@ -207,7 +208,8 @@ class RaidHelperTest extends TestCase
     public function get_comp_uses_the_configured_server_id_in_the_api_path(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->expects('status')->withNoArgs()->andReturn(200);
+        $response->allows('status')->withNoArgs()->andReturn(200);
+        $response->allows('body')->withNoArgs()->andReturn('');
         $response->expects('json')->withNoArgs()->andReturn($this->minimalCompPayload());
 
         $this->client->expects('get')
@@ -223,7 +225,8 @@ class RaidHelperTest extends TestCase
         $payload = $this->minimalCompPayload(['title' => 'Molten Core Comp']);
 
         $response = Mockery::mock(Response::class);
-        $response->expects('status')->withNoArgs()->andReturn(200);
+        $response->allows('status')->withNoArgs()->andReturn(200);
+        $response->allows('body')->withNoArgs()->andReturn('');
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
@@ -239,7 +242,8 @@ class RaidHelperTest extends TestCase
     public function get_comp_returns_null_when_the_api_returns_a_404(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->expects('status')->withNoArgs()->andReturn(404);
+        $response->allows('status')->withNoArgs()->andReturn(404);
+        $response->allows('body')->withNoArgs()->andReturn('');
 
         $this->client->expects('get')
             ->with('/servers/111222333444555666/comps/12345')
@@ -255,7 +259,7 @@ class RaidHelperTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function it_returns_a_length_aware_paginator_of_posted_events(): void
+    public function it_returns_a_paginator_of_posted_events(): void
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
@@ -263,8 +267,8 @@ class RaidHelperTest extends TestCase
                 $this->minimalListingEventPayload(['id' => '999000000000000001']),
                 $this->minimalListingEventPayload(['id' => '999000000000000002']),
             ],
-            'eventCountOverall' => 2,
-            'eventCountTransmitted' => 2,
+            'eventsOverall' => 2,
+            'eventsTransmitted' => 2,
             'currentPage' => 1,
         ]);
 
@@ -274,7 +278,7 @@ class RaidHelperTest extends TestCase
 
         $result = $this->raidHelper->getEvents();
 
-        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertInstanceOf(Paginator::class, $result);
         $this->assertCount(2, $result->items());
         $this->assertInstanceOf(Event::class, $result->items()[0]);
     }
@@ -285,8 +289,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -303,8 +307,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 3,
         ]);
 
@@ -321,8 +325,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -339,8 +343,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -357,8 +361,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -375,8 +379,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -393,8 +397,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -413,8 +417,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -431,8 +435,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -451,8 +455,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -469,8 +473,8 @@ class RaidHelperTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 1,
-            'eventCountTransmitted' => 1,
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
             'currentPage' => 1,
         ]);
 
@@ -482,53 +486,13 @@ class RaidHelperTest extends TestCase
     }
 
     #[Test]
-    public function it_sets_the_paginator_total_from_event_count_overall(): void
-    {
-        $response = Mockery::mock(Response::class);
-        $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 50,
-            'eventCountTransmitted' => 10,
-            'currentPage' => 1,
-        ]);
-
-        $this->client->expects('get')
-            ->with('/servers/111222333444555666/events', Mockery::any())
-            ->andReturn($response);
-
-        $result = $this->raidHelper->getEvents();
-
-        $this->assertSame(50, $result->total());
-    }
-
-    #[Test]
-    public function it_sets_the_paginator_per_page_from_event_count_transmitted(): void
-    {
-        $response = Mockery::mock(Response::class);
-        $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 50,
-            'eventCountTransmitted' => 10,
-            'currentPage' => 1,
-        ]);
-
-        $this->client->expects('get')
-            ->with('/servers/111222333444555666/events', Mockery::any())
-            ->andReturn($response);
-
-        $result = $this->raidHelper->getEvents();
-
-        $this->assertSame(10, $result->perPage());
-    }
-
-    #[Test]
     public function it_sets_the_paginator_current_page_from_the_response(): void
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [],
-            'eventCountOverall' => 50,
-            'eventCountTransmitted' => 10,
+            'eventsOverall' => 50,
+            'eventsTransmitted' => 10,
             'currentPage' => 4,
         ]);
 
@@ -542,16 +506,14 @@ class RaidHelperTest extends TestCase
     }
 
     #[Test]
-    public function it_falls_back_to_the_count_of_raw_events_when_response_counts_are_absent(): void
+    public function it_has_no_more_pages_when_events_transmitted_is_below_1000(): void
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
-            'postedEvents' => [
-                $this->minimalListingEventPayload(['id' => '999000000000000001']),
-                $this->minimalListingEventPayload(['id' => '999000000000000002']),
-                $this->minimalListingEventPayload(['id' => '999000000000000003']),
-            ],
-            'eventCountTransmitted' => 3,
+            'postedEvents' => [$this->minimalListingEventPayload()],
+            'eventsOverall' => 999,
+            'eventsTransmitted' => 999,
+            'currentPage' => 1,
         ]);
 
         $this->client->expects('get')
@@ -560,18 +522,77 @@ class RaidHelperTest extends TestCase
 
         $result = $this->raidHelper->getEvents();
 
-        $this->assertSame(3, $result->total());
-        $this->assertSame(3, $result->perPage());
+        $this->assertFalse($result->hasMorePages());
     }
 
     #[Test]
-    public function it_throws_no_events_found_exception_when_event_count_transmitted_is_zero(): void
+    public function it_has_more_pages_when_events_transmitted_reaches_1000(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([
+            'postedEvents' => array_fill(0, 1000, $this->minimalListingEventPayload()),
+            'eventsOverall' => 2000,
+            'eventsTransmitted' => 1000,
+            'currentPage' => 1,
+        ]);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/events', Mockery::any())
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getEvents();
+
+        $this->assertTrue($result->hasMorePages());
+    }
+
+    #[Test]
+    public function it_has_more_pages_when_channel_filter_is_active_and_events_transmitted_reaches_1000(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([
+            'postedEvents' => array_fill(0, 1000, $this->minimalListingEventPayload()),
+            'eventsOverall' => 26,
+            'eventsTransmitted' => 1000,
+            'currentPage' => 1,
+        ]);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/events', Mockery::any())
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getEvents(channelId: '100000000000000001');
+
+        $this->assertTrue($result->hasMorePages());
+    }
+
+    #[Test]
+    public function it_has_no_more_pages_when_channel_filter_is_active_and_events_transmitted_is_below_1000(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([
+            'postedEvents' => [$this->minimalListingEventPayload()],
+            'eventsOverall' => 26,
+            'eventsTransmitted' => 1,
+            'currentPage' => 1,
+        ]);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/events', Mockery::any())
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getEvents(channelId: '100000000000000001');
+
+        $this->assertFalse($result->hasMorePages());
+    }
+
+    #[Test]
+    public function it_throws_no_events_found_exception_when_events_transmitted_is_zero(): void
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [],
-            'eventCountOverall' => 0,
-            'eventCountTransmitted' => 0,
+            'eventsOverall' => 0,
+            'eventsTransmitted' => 0,
             'currentPage' => 1,
         ]);
 
@@ -585,13 +606,13 @@ class RaidHelperTest extends TestCase
     }
 
     #[Test]
-    public function it_caps_per_page_at_1000(): void
+    public function it_always_uses_1000_as_per_page(): void
     {
         $response = Mockery::mock(Response::class);
         $response->expects('json')->withNoArgs()->andReturn([
             'postedEvents' => [$this->minimalListingEventPayload()],
-            'eventCountOverall' => 5000,
-            'eventCountTransmitted' => 2000,
+            'eventsOverall' => 5000,
+            'eventsTransmitted' => 500,
             'currentPage' => 1,
         ]);
 

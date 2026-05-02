@@ -11,7 +11,7 @@ class RaidHelperClient
     /**
      * The base URL for the Raid Helper API.
      */
-    protected const BASE_URL = 'https://raidhelper.xyz/api/v4/';
+    protected const BASE_URL = 'https://raid-helper.xyz/api/v4/';
 
     /**
      * Create a new instance of the RaidHelper service.
