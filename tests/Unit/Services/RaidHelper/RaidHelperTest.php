@@ -190,6 +190,7 @@ class RaidHelperTest extends TestCase
         $payload = $this->minimalCompPayload();
 
         $response = Mockery::mock(Response::class);
+        $response->expects('status')->withNoArgs()->andReturn(200);
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
@@ -206,6 +207,7 @@ class RaidHelperTest extends TestCase
     public function get_comp_uses_the_configured_server_id_in_the_api_path(): void
     {
         $response = Mockery::mock(Response::class);
+        $response->expects('status')->withNoArgs()->andReturn(200);
         $response->expects('json')->withNoArgs()->andReturn($this->minimalCompPayload());
 
         $this->client->expects('get')
@@ -221,6 +223,7 @@ class RaidHelperTest extends TestCase
         $payload = $this->minimalCompPayload(['title' => 'Molten Core Comp']);
 
         $response = Mockery::mock(Response::class);
+        $response->expects('status')->withNoArgs()->andReturn(200);
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
@@ -230,6 +233,21 @@ class RaidHelperTest extends TestCase
         $result = $this->raidHelper->getComp(12345);
 
         $this->assertSame('Molten Core Comp', $result->title);
+    }
+
+    #[Test]
+    public function get_comp_returns_null_when_the_api_returns_a_404(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('status')->withNoArgs()->andReturn(404);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/comps/12345')
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getComp(12345);
+
+        $this->assertNull($result);
     }
 
     // -------------------------------------------------------------------------
