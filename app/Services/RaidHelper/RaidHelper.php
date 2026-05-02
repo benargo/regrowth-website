@@ -19,12 +19,12 @@ class RaidHelper
     /**
      * The Discord server ID for the Raid Helper service.
      */
-    protected string $server_id;
+    protected string $serverId;
 
     /**
      * The Discord channel IDs for the Raid Helper service.
      */
-    protected array $channel_ids = [];
+    protected array $channelIds = [];
 
     /**
      * Create a new instance of the RaidHelper service.
@@ -35,8 +35,8 @@ class RaidHelper
     public function __construct(RaidHelperClient $client, array $config = [])
     {
         $this->client = $client;
-        $this->server_id = Arr::get($config, 'server_id', '');
-        $this->channel_ids = array_merge($this->channel_ids, Arr::map(Arr::get($config, 'channel_ids', []), fn ($id) => (string) $id));
+        $this->serverId = Arr::get($config, 'server_id', '');
+        $this->channelIds = array_merge($this->channelIds, Arr::map(Arr::get($config, 'channel_ids', []), fn ($id) => (string) $id));
     }
 
     /**
@@ -46,7 +46,7 @@ class RaidHelper
      */
     public function getEvent(int $eventId): Event
     {
-        $response = $this->client->get("/servers/{$this->server_id}/events/{$eventId}");
+        $response = $this->client->get("/servers/{$this->serverId}/events/{$eventId}");
 
         return Event::from($response->json());
     }
@@ -89,7 +89,7 @@ class RaidHelper
             $headers['EndTimeFilter'] = $endTimeFilter->unix();
         }
 
-        $response = $this->client->get("/servers/{$this->server_id}/events", $headers)->json();
+        $response = $this->client->get("/servers/{$this->serverId}/events", $headers)->json();
 
         if (Arr::get($response, 'eventCountTransmitted', 0) === 0) {
             throw new NoEventsFoundException;
@@ -115,8 +115,29 @@ class RaidHelper
      */
     public function getComp(int $eventId): Comp
     {
-        $response = $this->client->get("/servers/{$this->server_id}/comps/{$eventId}");
+        $response = $this->client->get("/servers/{$this->serverId}/comps/{$eventId}");
 
         return Comp::from($response->json());
+    }
+
+    /**
+     * Get the Discord server ID associated with this Raid Helper instance.
+     */
+    public function getServerId(): string
+    {
+        return $this->serverId;
+    }
+
+    /**
+     * Set the Discord server ID for this Raid Helper instance. Useful for overriding the server ID after instantiation,
+     * such as when using the service in a context where the server ID is not known at the time of construction.
+     *
+     * @param  string  $serverId  The Discord server ID.
+     */
+    public function withServer(string $serverId): self
+    {
+        $this->serverId = $serverId;
+
+        return $this;
     }
 }

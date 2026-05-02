@@ -45,7 +45,7 @@ class RaidHelperTest extends TestCase
         ]);
 
         $reflection = new \ReflectionClass($raidHelper);
-        $property = $reflection->getProperty('channel_ids');
+        $property = $reflection->getProperty('channelIds');
         $property->setAccessible(true);
 
         $channelIds = $property->getValue($raidHelper);
@@ -59,7 +59,7 @@ class RaidHelperTest extends TestCase
         $raidHelper = new RaidHelper($this->client, []);
 
         $reflection = new \ReflectionClass($raidHelper);
-        $property = $reflection->getProperty('server_id');
+        $property = $reflection->getProperty('serverId');
         $property->setAccessible(true);
 
         $this->assertSame('', $property->getValue($raidHelper));
@@ -71,10 +71,61 @@ class RaidHelperTest extends TestCase
         $raidHelper = new RaidHelper($this->client, []);
 
         $reflection = new \ReflectionClass($raidHelper);
-        $property = $reflection->getProperty('channel_ids');
+        $property = $reflection->getProperty('channelIds');
         $property->setAccessible(true);
 
         $this->assertSame([], $property->getValue($raidHelper));
+    }
+
+    // -------------------------------------------------------------------------
+    // getServerId
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_returns_the_configured_server_id(): void
+    {
+        $this->assertSame('111222333444555666', $this->raidHelper->getServerId());
+    }
+
+    #[Test]
+    public function get_server_id_returns_empty_string_when_not_configured(): void
+    {
+        $raidHelper = new RaidHelper($this->client, []);
+
+        $this->assertSame('', $raidHelper->getServerId());
+    }
+
+    // -------------------------------------------------------------------------
+    // withServer
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function with_server_overrides_the_server_id(): void
+    {
+        $this->raidHelper->withServer('999888777666555444');
+
+        $this->assertSame('999888777666555444', $this->raidHelper->getServerId());
+    }
+
+    #[Test]
+    public function with_server_returns_the_same_instance(): void
+    {
+        $result = $this->raidHelper->withServer('999888777666555444');
+
+        $this->assertSame($this->raidHelper, $result);
+    }
+
+    #[Test]
+    public function with_server_affects_subsequent_api_calls(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($this->minimalEventPayload());
+
+        $this->client->expects('get')
+            ->with('/servers/999888777666555444/events/12345')
+            ->andReturn($response);
+
+        $this->raidHelper->withServer('999888777666555444')->getEvent(12345);
     }
 
     // -------------------------------------------------------------------------
