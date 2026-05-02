@@ -1,0 +1,427 @@
+<?php
+
+namespace Tests\Feature\Jobs\RaidHelper;
+
+use App\Jobs\RaidHelper\FetchEvents;
+use App\Models\Character;
+use App\Models\Raids\Event;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\Channel;
+use App\Services\RaidHelper\RaidHelper;
+use App\Services\RaidHelper\Resources\Comp;
+use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
+use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
+use Mockery;
+use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class FetchEventsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Discord&MockInterface $discord;
+
+    private RaidHelper&MockInterface $raidHelper;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->discord = Mockery::mock(Discord::class);
+        $this->raidHelper = Mockery::mock(RaidHelper::class);
+
+        $this->app->instance(Discord::class, $this->discord);
+        $this->app->instance(RaidHelper::class, $this->raidHelper);
+    }
+
+    // -------------------------------------------------------------------------
+    // Channel validation
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_only_processes_channel_ids_that_belong_to_the_server(): void
+    {
+        $serverId = '111222333444555666';
+        $validChannelId = '100000000000000001';
+        $invalidChannelId = '999999999999999999';
+
+        $this->raidHelper->shouldReceive('getServerId')->andReturn($serverId);
+        $this->discord->shouldReceive('getGuildChannels')
+            ->with($serverId)
+            ->andReturn(Collection::make([Channel::from(['id' => $validChannelId])]));
+
+        $this->raidHelper->shouldReceive('getEvents')
+            ->once()
+            ->andReturn($this->singlePagePaginator([]));
+
+        $job = new FetchEvents([$validChannelId, $invalidChannelId]);
+        $job->handle($this->discord, $this->raidHelper);
+    }
+
+    #[Test]
+    public function it_skips_all_channels_when_none_belong_to_the_server(): void
+    {
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([]));
+
+        $this->raidHelper->shouldNotReceive('getEvents');
+
+        $job = new FetchEvents(['999999999999999999']);
+        $job->handle($this->discord, $this->raidHelper);
+    }
+
+    // -------------------------------------------------------------------------
+    // Event fetching & pagination
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_fetches_events_for_each_valid_channel(): void
+    {
+        $channelOneId = '100000000000000001';
+        $channelTwoId = '100000000000000002';
+
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([
+                Channel::from(['id' => $channelOneId]),
+                Channel::from(['id' => $channelTwoId]),
+            ]));
+
+        $this->raidHelper->shouldReceive('getEvents')
+            ->twice()
+            ->andReturn($this->singlePagePaginator([]));
+
+        $job = new FetchEvents([$channelOneId, $channelTwoId]);
+        $job->handle($this->discord, $this->raidHelper);
+    }
+
+    #[Test]
+    public function it_passes_the_time_filters_to_get_events(): void
+    {
+        $channelId = '100000000000000001';
+        $start = Carbon::parse('2024-01-01 06:00:00', 'UTC');
+        $end = Carbon::parse('2024-01-08 05:59:59', 'UTC');
+
+        $capturedChannelId = null;
+        $capturedStart = null;
+        $capturedEnd = null;
+
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
+
+        $this->raidHelper->shouldReceive('getEvents')
+            ->withArgs(function ($page, $includeSignUps, $channelIdArg, $startFilter, $endFilter) use (&$capturedChannelId, &$capturedStart, &$capturedEnd) {
+                $capturedChannelId = $channelIdArg;
+                $capturedStart = $startFilter;
+                $capturedEnd = $endFilter;
+
+                return true;
+            })
+            ->andReturn($this->singlePagePaginator([]));
+
+        $job = new FetchEvents([$channelId], $start, $end);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $this->assertSame($channelId, $capturedChannelId);
+        $this->assertTrue($capturedStart->eq($start));
+        $this->assertTrue($capturedEnd->eq($end));
+    }
+
+    #[Test]
+    public function it_collects_events_across_multiple_pages(): void
+    {
+        $channelId = '100000000000000001';
+        $payloadOne = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $payloadTwo = $this->minimalListingEventPayload(['id' => '999000000000000002']);
+
+        $pageOne = (new Paginator(
+            items: RaidHelperEvent::collect([$payloadOne]),
+            perPage: 1,
+            currentPage: 1,
+            options: [],
+        ))->hasMorePagesWhen(true);
+
+        $pageTwo = (new Paginator(
+            items: RaidHelperEvent::collect([$payloadTwo]),
+            perPage: 1,
+            currentPage: 2,
+            options: [],
+        ))->hasMorePagesWhen(false);
+
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
+
+        $this->raidHelper->shouldReceive('getEvents')
+            ->once()
+            ->withArgs(fn ($page, $includeSignUps, $channelIdArg) => $channelIdArg === $channelId && $page !== 2)
+            ->andReturn($pageOne);
+
+        $this->raidHelper->shouldReceive('getEvents')
+            ->once()
+            ->withArgs(fn ($page, $includeSignUps, $channelIdArg) => $channelIdArg === $channelId && $page === 2)
+            ->andReturn($pageTwo);
+
+        $this->raidHelper->shouldReceive('getComp')->with('999000000000000001')->andReturn(null);
+        $this->raidHelper->shouldReceive('getComp')->with('999000000000000002')->andReturn(null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $this->assertDatabaseHas('raid_events', ['raid_helper_event_id' => '999000000000000001']);
+        $this->assertDatabaseHas('raid_events', ['raid_helper_event_id' => '999000000000000002']);
+    }
+
+    // -------------------------------------------------------------------------
+    // Event upsert
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_creates_a_new_event_when_it_does_not_exist(): void
+    {
+        $channelId = '100000000000000001';
+        $payload = $this->minimalListingEventPayload([
+            'id' => '999000000000000001',
+            'title' => 'Molten Core',
+            'channelId' => $channelId,
+        ]);
+
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $this->assertDatabaseHas('raid_events', [
+            'raid_helper_event_id' => '999000000000000001',
+            'title' => 'Molten Core',
+        ]);
+    }
+
+    #[Test]
+    public function it_updates_an_existing_event_when_it_already_exists(): void
+    {
+        $channelId = '100000000000000001';
+        $existingEvent = Event::factory()->create([
+            'raid_helper_event_id' => '999000000000000001',
+            'title' => 'Old Title',
+        ]);
+
+        $payload = $this->minimalListingEventPayload([
+            'id' => '999000000000000001',
+            'title' => 'New Title',
+        ]);
+
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $this->assertDatabaseHas('raid_events', [
+            'id' => $existingEvent->id,
+            'raid_helper_event_id' => '999000000000000001',
+            'title' => 'New Title',
+        ]);
+        $this->assertDatabaseCount('raid_events', 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // Comp sync
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_syncs_characters_from_the_comp_slots_to_the_event(): void
+    {
+        $channelId = '100000000000000001';
+        $character = Character::factory()->create(['name' => 'Arthas']);
+
+        $comp = Comp::from($this->minimalCompPayload([
+            'slots' => [
+                $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1, 'isConfirmed' => 'confirmed']),
+            ],
+        ]));
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, $comp);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertTrue($event->characters->contains($character));
+
+        $pivot = $event->characters->find($character->id)->pivot;
+        $this->assertSame(1, $pivot->slot_number);
+        $this->assertSame(1, $pivot->group_number);
+        $this->assertTrue((bool) $pivot->is_confirmed);
+    }
+
+    #[Test]
+    public function it_skips_comp_slots_where_the_character_does_not_exist(): void
+    {
+        $channelId = '100000000000000001';
+
+        $comp = Comp::from($this->minimalCompPayload([
+            'slots' => [
+                $this->minimalSlotPayload(['name' => 'UnknownCharacter']),
+            ],
+        ]));
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, $comp);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(0, $event->characters);
+    }
+
+    #[Test]
+    public function it_skips_comp_sync_when_no_comp_exists_for_the_event(): void
+    {
+        $channelId = '100000000000000001';
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertNotNull($event);
+        $this->assertCount(0, $event->characters);
+    }
+
+    #[Test]
+    public function it_syncs_multiple_characters_from_comp_slots(): void
+    {
+        $channelId = '100000000000000001';
+        $arthas = Character::factory()->create(['name' => 'Arthas']);
+        $sylvanas = Character::factory()->create(['name' => 'Sylvanas']);
+
+        $comp = Comp::from($this->minimalCompPayload([
+            'slots' => [
+                $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
+                $this->minimalSlotPayload(['id' => 'slot-2', 'name' => 'Sylvanas', 'slotNumber' => 2, 'groupNumber' => 1]),
+            ],
+        ]));
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, $comp);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(2, $event->characters);
+        $this->assertTrue($event->characters->contains($arthas));
+        $this->assertTrue($event->characters->contains($sylvanas));
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Wire up mocks for a single-event, single-channel run.
+     *
+     * @param  array<string, mixed>  $eventPayload
+     */
+    private function setupSingleEventRun(string $channelId, array $eventPayload, ?Comp $comp): void
+    {
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
+
+        $this->raidHelper->shouldReceive('getEvents')
+            ->once()
+            ->andReturn($this->singlePagePaginator([$eventPayload]));
+
+        $this->raidHelper->shouldReceive('getComp')
+            ->with($eventPayload['id'])
+            ->andReturn($comp);
+    }
+
+    /**
+     * Build a single-page LengthAwarePaginator from an array of raw event payloads.
+     *
+     * @param  array<int, array<string, mixed>>  $payloads
+     */
+    private function singlePagePaginator(array $payloads): Paginator
+    {
+        return (new Paginator(
+            items: RaidHelperEvent::collect($payloads),
+            perPage: max(count($payloads), 1),
+            currentPage: 1,
+            options: [],
+        ))->hasMorePagesWhen(false);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function minimalListingEventPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => '999000000000000001',
+            'channelId' => '100000000000000001',
+            'leaderId' => '200000000000000001',
+            'leaderName' => 'Raid Leader',
+            'title' => 'Weekly Raid',
+            'description' => '',
+            'startTime' => 1700000000,
+            'endTime' => 1700007200,
+            'closingTime' => 1699999800,
+            'lastUpdated' => 1699999000,
+            'color' => '0,0,0',
+        ], $overrides);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function minimalCompPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => '999000000000000001',
+            'title' => 'Weekly Comp',
+            'editPermissions' => 'managers',
+            'showRoles' => true,
+            'showClasses' => true,
+            'groupCount' => 0,
+            'slotCount' => 0,
+            'groups' => [],
+            'dividers' => [],
+            'classes' => [],
+            'slots' => [],
+        ], $overrides);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function minimalSlotPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => 'slot-1',
+            'name' => 'SomeCharacter',
+            'groupNumber' => 1,
+            'slotNumber' => 1,
+            'className' => 'Warrior',
+            'classEmoteId' => '0',
+            'specName' => 'Arms',
+            'specEmoteId' => '0',
+            'isConfirmed' => 'unconfirmed',
+            'color' => '0,0,0',
+        ], $overrides);
+    }
+}
