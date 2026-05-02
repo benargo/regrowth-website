@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\RaidHelper;
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
 use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\RaidHelperClient;
+use App\Services\RaidHelper\Resources\Comp;
 use App\Services\RaidHelper\Resources\Event;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
@@ -126,6 +127,58 @@ class RaidHelperTest extends TestCase
         $result = $this->raidHelper->getEvent(12345);
 
         $this->assertSame('Molten Core', $result->title);
+    }
+
+    // -------------------------------------------------------------------------
+    // getComp
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_returns_a_comp_for_the_given_event_id(): void
+    {
+        $payload = $this->minimalCompPayload();
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($payload);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/comps/12345')
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getComp(12345);
+
+        $this->assertInstanceOf(Comp::class, $result);
+        $this->assertSame('999000000000000001', $result->id);
+    }
+
+    #[Test]
+    public function get_comp_uses_the_configured_server_id_in_the_api_path(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($this->minimalCompPayload());
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/comps/12345')
+            ->andReturn($response);
+
+        $this->raidHelper->getComp(12345);
+    }
+
+    #[Test]
+    public function get_comp_maps_the_response_to_a_comp_value_object(): void
+    {
+        $payload = $this->minimalCompPayload(['title' => 'Molten Core Comp']);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($payload);
+
+        $this->client->expects('get')
+            ->with('/servers/111222333444555666/comps/12345')
+            ->andReturn($response);
+
+        $result = $this->raidHelper->getComp(12345);
+
+        $this->assertSame('Molten Core Comp', $result->title);
     }
 
     // -------------------------------------------------------------------------
@@ -517,6 +570,29 @@ class RaidHelperTest extends TestCase
             'signUps' => [],
             'lastUpdated' => 1699999000,
             'color' => '0,0,0',
+        ], $overrides);
+    }
+
+    /**
+     * Minimal payload for a comp as returned by the comp endpoint.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function minimalCompPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => '999000000000000001',
+            'title' => 'Weekly Comp',
+            'editPermissions' => 'managers',
+            'showRoles' => true,
+            'showClasses' => true,
+            'groupCount' => 0,
+            'slotCount' => 0,
+            'groups' => [],
+            'dividers' => [],
+            'classes' => [],
+            'slots' => [],
         ], $overrides);
     }
 

@@ -3,6 +3,7 @@
 namespace App\Services\RaidHelper;
 
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
+use App\Services\RaidHelper\Resources\Comp;
 use App\Services\RaidHelper\Resources\Event;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -105,5 +106,17 @@ class RaidHelper
             currentPage: Arr::get($response, 'currentPage', 1),
             options: ['path' => LengthAwarePaginator::resolveCurrentPath()],
         );
+    }
+
+    /**
+     * Get a single comp from the Raid Helper API.
+     *
+     * @param  int  $eventId  The ID of the event to retrieve the comp for.
+     */
+    public function getComp(int $eventId): Comp
+    {
+        $response = $this->client->get("/servers/{$this->server_id}/comps/{$eventId}");
+
+        return Comp::from($response->json());
     }
 }
