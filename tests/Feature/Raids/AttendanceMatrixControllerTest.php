@@ -116,7 +116,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Attendance/Matrix')
+            ->component('Raiding/Attendance/Matrix')
             ->missing('matrix')
         );
     }
@@ -135,7 +135,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Attendance/Matrix')
+            ->component('Raiding/Attendance/Matrix')
             ->missing('matrix')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('matrix')
@@ -175,7 +175,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.attendance.matrix'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Attendance/Matrix')
+            ->component('Raiding/Attendance/Matrix')
             ->has('ranks')
             ->has('zones')
             ->has('guildTags')

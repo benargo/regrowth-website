@@ -106,7 +106,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Reports/Index')
+            ->component('Raiding/Reports/Index')
             ->missing('reports')
         );
     }
@@ -122,7 +122,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Reports/Index')
+            ->component('Raiding/Reports/Index')
             ->missing('reports')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('reports')
@@ -184,7 +184,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.reports.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Reports/Index')
+            ->component('Raiding/Reports/Index')
             ->has('zones')
             ->has('guildTags')
             ->has('filters')
@@ -617,7 +617,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.reports.show', $report));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Reports/Show')
+            ->component('Raiding/Reports/Show')
         );
     }
 
@@ -1244,7 +1244,7 @@ class ReportControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raids.reports.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raids/Reports/Create')
+            ->component('Raiding/Reports/Create')
         );
     }
 

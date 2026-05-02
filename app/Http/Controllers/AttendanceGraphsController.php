@@ -19,7 +19,7 @@ class AttendanceGraphsController extends Controller
 
     public function index(Request $request): Response
     {
-        return Inertia::render('Raids/Attendance/Graphs', [
+        return Inertia::render('Raiding/Attendance/Graphs', [
             'scatterPoints' => Inertia::defer(
                 fn () => $this->scatterPoints()->toResponse($request)->getData(true)['data'],
             ),

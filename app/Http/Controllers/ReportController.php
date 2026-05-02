@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Raid\ReportsIndexRequest;
 use App\Http\Requests\Raid\StoreReportRequest;
 use App\Http\Requests\Raid\UpdateReportRequest;
@@ -46,7 +45,7 @@ class ReportController extends Controller
             ->values()
             ->all();
 
-        return Inertia::render('Raids/Reports/Create', [
+        return Inertia::render('Raiding/Reports/Create', [
             'expansions' => $expansions,
             'defaultExpansionId' => config('services.warcraftlogs.expansion_id'),
             'guildTags' => GuildTag::orderBy('name')->get(),
@@ -128,7 +127,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('before_date'), $timezone)->endOfDay()->utc()
             : null;
 
-        return Inertia::render('Raids/Reports/Index', [
+        return Inertia::render('Raiding/Reports/Index', [
             'zones' => $zones,
             'guildTags' => $guildTags,
             'filters' => [
@@ -172,7 +171,7 @@ class ReportController extends Controller
     {
         $report->load(['guildTag', 'zone', 'characters.rank', 'linkedReports']);
 
-        return Inertia::render('Raids/Reports/Show', [
+        return Inertia::render('Raiding/Reports/Show', [
             'report' => new ReportResource($report),
             'canManageLinks' => $request->user()->can('update', $report),
             'lootCouncillorCandidates' => Inertia::optional(function () use ($report) {

@@ -39,7 +39,7 @@ class PlannedAbsenceController extends Controller
      */
     public function index(Request $request): Response
     {
-        return Inertia::render('Raids/PlannedAbsences/Index', [
+        return Inertia::render('Raiding/PlannedAbsences/Index', [
             'planned_absences' => Inertia::defer(function () use ($request) {
                 return Cache::tags(['attendance'])->remember('planned_absences:with_trashed', now()->addDay(), function () use ($request) {
                     return PlannedAbsenceResource::collection(
@@ -71,7 +71,7 @@ class PlannedAbsenceController extends Controller
             ? $this->resolveCharacterFromUserNickname($request->user())
             : null;
 
-        return Inertia::render('Raids/PlannedAbsences/Form', [
+        return Inertia::render('Raiding/PlannedAbsences/Form', [
             'characters' => $characters,
             'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
             'action' => route('raids.absences.store'),
@@ -147,7 +147,7 @@ class PlannedAbsenceController extends Controller
             ? $this->resolveCharacterFromUserNickname($request->user())
             : null;
 
-        return Inertia::render('Raids/PlannedAbsences/Form', [
+        return Inertia::render('Raiding/PlannedAbsences/Form', [
             'characters' => $characters,
             'planned_absence' => new PlannedAbsenceResource($plannedAbsence)->resolve($request),
             'resolved_character' => $resolvedCharacter ? new CharacterResource($resolvedCharacter)->resolve($request) : null,
