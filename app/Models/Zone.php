@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\WarcraftLogs;
+namespace App\Models;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;

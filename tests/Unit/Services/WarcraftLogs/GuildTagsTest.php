@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\WarcraftLogs;
 
 use App\Events\AddonSettingsProcessed;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Foundation\Testing\RefreshDatabase;

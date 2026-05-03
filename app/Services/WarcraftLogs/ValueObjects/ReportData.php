@@ -2,7 +2,7 @@
 
 namespace App\Services\WarcraftLogs\ValueObjects;
 
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Spatie\LaravelData\Data;

@@ -4,6 +4,7 @@ namespace App\Models\TBC;
 
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\Raids\Event;
 use Database\Factories\TBC\RaidFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -46,6 +47,8 @@ class Raid extends Model
      */
     protected $hidden = ['created_at', 'updated_at'];
 
+    // ============ Custom attributes ============
+
     /**
      * Get the slug attribute for the raid, which is a URL-friendly version of the raid name.
      *
@@ -58,15 +61,7 @@ class Raid extends Model
         );
     }
 
-    /**
-     * Get the phase that this raid belongs to.
-     *
-     * @return BelongsTo<Phase, $this>
-     */
-    public function phase(): BelongsTo
-    {
-        return $this->belongsTo(Phase::class);
-    }
+    // ============ Dataset relationships ============
 
     /**
      * Get the bosses in this raid.
@@ -77,6 +72,18 @@ class Raid extends Model
     {
         return $this->hasMany(Boss::class);
     }
+
+    /**
+     * Get the phase that this raid belongs to.
+     *
+     * @return BelongsTo<Phase, $this>
+     */
+    public function phase(): BelongsTo
+    {
+        return $this->belongsTo(Phase::class);
+    }
+
+    // ========== Loot bias relationships ==========
 
     /**
      * Get the items that drop from this raid.
@@ -106,5 +113,17 @@ class Raid extends Model
     public function comments(): HasManyThrough
     {
         return $this->hasManyThrough(Comment::class, Item::class, 'raid_id', 'item_id');
+    }
+
+    // ========== Raid event relationships ==========
+
+    /**
+     * Get the raid events that belong to this raid.
+     *
+     * @return HasMany<Event>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class, 'raid_id', 'id');
     }
 }

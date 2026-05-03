@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\WarcraftLogs;
+namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
 use App\Models\Raids\Report;

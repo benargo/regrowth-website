@@ -5,7 +5,7 @@ namespace App\Models\TBC;
 use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
 use App\Helpers\Database\Eloquent\Traits\HasManyKeyBy;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Database\Factories\TBC\PhaseFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,27 +26,6 @@ class Phase extends Model implements DatasetModel
     protected $table = 'tbc_phases';
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'start_date' => 'datetime',
-        ];
-    }
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'updated' => AddonSettingsProcessed::class,
-    ];
-
-    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -63,6 +42,24 @@ class Phase extends Model implements DatasetModel
      * @var array<string>
      */
     protected $hidden = ['created_at', 'updated_at'];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'start_date' => 'datetime',
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => AddonSettingsProcessed::class,
+    ];
 
     /**
      * Get the phase number attribute.

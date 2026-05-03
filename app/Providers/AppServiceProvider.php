@@ -9,7 +9,7 @@ use App\Models\LootCouncil\Item;
 use App\Models\Raids\Report;
 use App\Models\TBC\Phase;
 use App\Models\User;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Policies\CommentPolicy;
 use App\Policies\DatasetPolicy;
 use App\Policies\ItemPolicy;

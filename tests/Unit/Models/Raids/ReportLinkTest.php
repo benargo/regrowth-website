@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Models\WarcraftLogs;
+namespace Tests\Unit\Models\Raids;
 
 use App\Events\ReportLinkDeleted;
 use App\Events\ReportLinkSaved;

@@ -5,8 +5,10 @@ namespace Tests\Unit\Models\Raids;
 use App\Models\Character;
 use App\Models\Raids\Event;
 use App\Models\Raids\EventCharacter;
+use App\Models\TBC\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -33,6 +35,7 @@ class EventTest extends ModelTestCase
 
         $this->assertFillable($model, [
             'id',
+            'raid_id',
             'raid_helper_event_id',
             'title',
             'start_time',
@@ -58,6 +61,20 @@ class EventTest extends ModelTestCase
             'start_time' => 'datetime',
             'end_time' => 'datetime',
         ]);
+    }
+
+    #[Test]
+    public function duration_returns_difference_in_seconds(): void
+    {
+        $startTime = now();
+        $endTime = $startTime->copy()->addHours(2);
+
+        $event = Event::factory()->make([
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+        ]);
+
+        $this->assertEquals(7200, $event->duration);
     }
 
     #[Test]
@@ -122,6 +139,25 @@ class EventTest extends ModelTestCase
         $this->create(['raid_helper_event_id' => 'unique-123']);
 
         $this->assertUniqueConstraint(fn () => $this->create(['raid_helper_event_id' => 'unique-123']));
+    }
+
+    // raid
+
+    #[Test]
+    public function raid_returns_belongs_to_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsTo::class, $model->raid());
+    }
+
+    #[Test]
+    public function it_belongs_to_a_raid(): void
+    {
+        $raid = Raid::factory()->create();
+        $event = $this->create(['raid_id' => $raid->id]);
+
+        $this->assertTrue($event->raid->is($raid));
     }
 
     // characters

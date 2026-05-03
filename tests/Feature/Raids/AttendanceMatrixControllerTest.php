@@ -9,7 +9,7 @@ use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\User;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\Blizzard\BlizzardService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

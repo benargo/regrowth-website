@@ -4,6 +4,7 @@ namespace Database\Factories\Raids;
 
 use App\Models\Character;
 use App\Models\Raids\Event;
+use App\Models\TBC\Raid;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,7 @@ class EventFactory extends Factory
         $endTime = Carbon::instance($startTime)->addHours(rand(2, 5));
 
         return [
+            'raid_id' => Raid::factory(),
             'raid_helper_event_id' => fake()->unique()->numerify('##########'),
             'title' => fake()->words(3, true),
             'start_time' => $startTime,

@@ -4,7 +4,7 @@ namespace App\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\Raids\Report;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;

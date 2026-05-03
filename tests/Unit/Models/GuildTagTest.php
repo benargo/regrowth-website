@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Unit\Models\WarcraftLogs;
+namespace Tests\Unit\Models;
 
 use App\Models\Raids\Report;
 use App\Models\TBC\Phase;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Observers\GuildTagObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

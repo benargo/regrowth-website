@@ -6,7 +6,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;

@@ -2,14 +2,19 @@
 
 namespace App\Models\Raids;
 
+use App\Http\Resources\EventCollection;
 use App\Models\Character;
+use App\Models\TBC\Raid;
 use App\Services\Discord\Discord;
+use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+#[UseResourceCollection(EventCollection::class)]
 class Event extends Model
 {
     use HasFactory, HasUuids;
@@ -28,6 +33,7 @@ class Event extends Model
      */
     protected $fillable = [
         'id',
+        'raid_id',
         'raid_helper_event_id',
         'title',
         'start_time',
@@ -55,6 +61,16 @@ class Event extends Model
     ];
 
     /**
+     * Get the Discord channel associated with the event.
+     */
+    protected function channel(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => app(Discord::class)->getChannel($this->channel_id),
+        )->shouldCache();
+    }
+
+    /**
      * The characters that are associated with the event.
      */
     public function characters(): BelongsToMany
@@ -63,6 +79,16 @@ class Event extends Model
             ->using(EventCharacter::class)
             ->withPivot(['slot_number', 'group_number', 'is_confirmed', 'is_leader', 'is_loot_councillor', 'is_loot_master'])
             ->withTimestamps();
+    }
+
+    /**
+     * Get the duration of the event in seconds.
+     */
+    protected function duration(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->start_time->diffInSeconds($this->end_time),
+        );
     }
 
     /**
@@ -82,12 +108,12 @@ class Event extends Model
     }
 
     /**
-     * Get the Discord channel associated with the event.
+     * The raid that the event belongs to.
+     *
+     * This helps with determining the comp fields to show.
      */
-    protected function channel(): Attribute
+    public function raid(): BelongsTo
     {
-        return Attribute::make(
-            get: fn () => app(Discord::class)->getChannel($this->channel_id),
-        )->shouldCache();
+        return $this->belongsTo(Raid::class, 'raid_id', 'id');
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Models\WarcraftLogs;
+namespace Tests\Unit\Models\Raids;
 
 use App\Events\AddonSettingsProcessed;
 use App\Events\ReportCreated;
@@ -8,8 +8,8 @@ use App\Events\ReportUpdated;
 use App\Models\Character;
 use App\Models\Raids\Report;
 use App\Models\User;
-use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Zone;
+use App\Models\GuildTag;
+use App\Models\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -102,6 +102,32 @@ class ReportTest extends ModelTestCase
 
         $this->assertInstanceOf(Carbon::class, $report->start_time);
         $this->assertInstanceOf(Carbon::class, $report->end_time);
+    }
+
+    #[Test]
+    public function duration_returns_seconds_between_start_and_end_time(): void
+    {
+        $report = $this->create([
+            'start_time' => '2026-01-15 20:00:00',
+            'end_time' => '2026-01-15 23:30:00',
+        ]);
+
+        $report->refresh();
+
+        $this->assertSame(12600.0, $report->duration);
+    }
+
+    #[Test]
+    public function duration_returns_zero_when_start_and_end_time_are_equal(): void
+    {
+        $report = $this->create([
+            'start_time' => '2026-01-15 20:00:00',
+            'end_time' => '2026-01-15 20:00:00',
+        ]);
+
+        $report->refresh();
+
+        $this->assertSame(0.0, $report->duration);
     }
 
     #[Test]

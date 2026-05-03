@@ -4,7 +4,7 @@ namespace App\Http\Controllers\WarcraftLogs;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\ToggleGuildTagAttendanceRequest;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Illuminate\Http\RedirectResponse;
 
 class GuildTagController extends Controller

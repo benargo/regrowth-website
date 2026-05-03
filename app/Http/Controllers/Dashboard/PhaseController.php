@@ -8,7 +8,7 @@ use App\Http\Requests\Dashboard\UpdatePhaseStartDateRequest;
 use App\Http\Resources\TBC\PhaseResource;
 use App\Http\Resources\WarcraftLogs\GuildTagResource;
 use App\Models\TBC\Phase;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\WarcraftLogs\GuildTags as WarcraftLogsGuildTagsService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;

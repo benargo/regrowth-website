@@ -6,7 +6,7 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\Raids\Report;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;

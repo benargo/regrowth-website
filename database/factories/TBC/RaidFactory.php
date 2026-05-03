@@ -4,6 +4,7 @@ namespace Database\Factories\TBC;
 
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\Raids\Event;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -102,5 +103,13 @@ class RaidFactory extends Factory
             Item::factory()->has(Comment::factory()->count($count), 'comments'),
             'items'
         );
+    }
+
+    /**
+     * Create the raid with events attached.
+     */
+    public function withEvents(int $count = 3): static
+    {
+        return $this->has(Event::factory()->count($count), 'events');
     }
 }

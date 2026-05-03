@@ -10,7 +10,7 @@ use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\TBC\Phase;
 use App\Models\User;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;

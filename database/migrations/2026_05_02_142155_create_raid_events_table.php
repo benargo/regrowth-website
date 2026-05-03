@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Character;
+use App\Models\Raids\Event;
+use App\Models\TBC\Raid;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,6 +16,7 @@ return new class extends Migration
     {
         Schema::create('raid_events', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->foreignIdFor(Raid::class)->nullable()->constrained()->cascadeOnDelete();
             $table->string('raid_helper_event_id')->unique();
             $table->string('title');
             $table->dateTime('start_time');
@@ -22,8 +26,8 @@ return new class extends Migration
         });
 
         Schema::create('pivot_raid_events_characters', function (Blueprint $table) {
-            $table->foreignUuid('event_id');
-            $table->foreignId('character_id');
+            $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Character::class)->constrained()->cascadeOnDelete();
             $table->tinyInteger('slot_number')->nullable();
             $table->tinyInteger('group_number')->nullable();
             $table->boolean('is_confirmed')->default(false);
@@ -32,8 +36,6 @@ return new class extends Migration
             $table->boolean('is_loot_master')->default(false);
             $table->timestamps();
             $table->primary(['event_id', 'character_id']);
-            $table->foreign('event_id')->references('id')->on('raid_events')->onDelete('cascade');
-            $table->foreign('character_id')->references('id')->on('characters')->onDelete('cascade');
         });
     }
 

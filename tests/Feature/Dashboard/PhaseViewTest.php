@@ -3,7 +3,7 @@
 namespace Tests\Feature\Dashboard;
 
 use App\Models\TBC\Phase;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 

@@ -4,10 +4,12 @@ namespace App\Models\Raids;
 
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
+use App\Http\Resources\ReportCollection;
 use App\Models\Character;
 use App\Models\CharacterReport;
-use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Zone;
+use App\Models\GuildTag;
+use App\Models\Zone;
+use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+#[UseResourceCollection(ReportCollection::class)]
 class Report extends Model
 {
     use HasFactory;
@@ -85,6 +88,20 @@ class Report extends Model
         'updated_at',
         'zone_id',
     ];
+
+    // ============ Custom attributes ============
+
+    /**
+     * Get the duration of the report in seconds.
+     */
+    public function duration(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->start_time->diffInSeconds($this->end_time),
+        );
+    }
+
+    // ============ Relationships ============
 
     /**
      * Get the characters that participated in this report.

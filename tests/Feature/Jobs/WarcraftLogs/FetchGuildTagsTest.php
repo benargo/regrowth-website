@@ -3,7 +3,7 @@
 namespace Tests\Feature\Jobs\WarcraftLogs;
 
 use App\Jobs\WarcraftLogs\FetchGuildTags;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;

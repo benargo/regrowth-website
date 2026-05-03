@@ -6,7 +6,7 @@ use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\WarcraftLogs\ValueObjects\ReportData;
 use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Carbon\Carbon;
