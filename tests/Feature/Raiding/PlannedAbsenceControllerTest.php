@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Raids;
+namespace Tests\Feature\Raiding;
 
 use App\Models\Character;
 use App\Models\DiscordRole;
