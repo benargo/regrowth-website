@@ -36,6 +36,25 @@ class RaidingPagesTest extends TestCase
     }
 
     #[Test]
+    public function raiding_index_loads(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.index'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function raiding_index_redirects_unauthenticated_users(): void
+    {
+        $response = $this->get(route('raiding.index'));
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
     public function attendance_dashboard_loads(): void
     {
         $user = User::factory()->officer()->create();

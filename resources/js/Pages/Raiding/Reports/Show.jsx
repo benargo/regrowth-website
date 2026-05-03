@@ -4,19 +4,11 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
 import formatDate from "@/Helpers/FormatDate";
+import formatDuration from "@/Helpers/FormatDuration";
 import GuildRankLabel from "@/Components/GuildRankLabel";
 import LinkedRaidReports from "@/Components/LinkedRaidReports";
 import RaidReportLootCouncillors from "@/Components/RaidReportLootCouncillors";
 import usePermission from "@/Hooks/Permissions";
-
-function formatDuration(startTime, endTime) {
-    const minutes = Math.floor((new Date(endTime) - new Date(startTime)) / 60000);
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    if (h === 0) return `${m}m`;
-    if (m === 0) return `${h}h`;
-    return `${h}h ${m}m`;
-}
 
 function ViewOnWarcraftLogsLink({ code, children }) {
     return (
@@ -132,7 +124,7 @@ export default function Show({ report, nearbyReports, impactedReports, canManage
     const startDate = new Date(data.start_time);
     const dayOfWeek = startDate.toLocaleString("en-GB", { weekday: "long" });
     const formattedDate = formatDate(data.start_time);
-    const duration = formatDuration(data.start_time, data.end_time);
+    const duration = formatDuration({ seconds: data.duration });
     const presentCharacters = (data.characters ?? []).filter((c) => c.pivot?.presence === 1);
 
     return (

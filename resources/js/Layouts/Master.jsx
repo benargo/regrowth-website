@@ -96,7 +96,7 @@ export default function Master({ title, children }) {
                             </Link>
                             {canViewReports ? (
                                 <Link
-                                    href={route("raiding.reports.index")}
+                                    href={route("raiding.index")}
                                     className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
                                 >
                                     <Icon icon="dragon" style="solid" className="mr-2 h-6" />
@@ -227,7 +227,7 @@ export default function Master({ title, children }) {
                         </Link>
                         {canViewReports ? (
                             <Link
-                                href={route("raiding.reports.index")}
+                                href={route("raiding.index")}
                                 className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
                             >
                                 <Icon icon="dragon" style="solid" className="mr-2 h-6" />
