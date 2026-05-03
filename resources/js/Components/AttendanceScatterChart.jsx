@@ -59,7 +59,7 @@ function PointShape({ cx, cy, payload }) {
         >
             <div ref={divRef} className={`bg-${colorClass} inline-flex rounded-sm`}>
                 <Link
-                    href={route("raids.attendance.matrix", { character: point.id })}
+                    href={route("raiding.attendance.matrix", { character: point.id })}
                     className="inline-flex items-center gap-1 p-1"
                 >
                     {point.playable_class?.icon_url && (

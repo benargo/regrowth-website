@@ -69,7 +69,7 @@ export default function RaidReportLootCouncillors({ reportId, characters, onChan
 
         addToProcessing(characterId);
         router.patch(
-            route("raids.reports.update", { report: reportId }),
+            route("raiding.reports.update", { report: reportId }),
             { loot_councillors: { action: "create", character_ids: [characterId] } },
             {
                 preserveScroll: true,
@@ -96,7 +96,7 @@ export default function RaidReportLootCouncillors({ reportId, characters, onChan
 
         addToProcessing(characterId);
         router.patch(
-            route("raids.reports.update", { report: reportId }),
+            route("raiding.reports.update", { report: reportId }),
             { loot_councillors: { action: "delete", character_ids: [characterId] } },
             {
                 preserveScroll: true,

@@ -112,7 +112,7 @@ function CharactersTable({ characters }) {
                             {usePermission("view-attendance") && (
                                 <td className="px-4 py-3">
                                     <Link
-                                        href={route("raids.attendance.matrix", { character: character.id })}
+                                        href={route("raiding.attendance.matrix", { character: character.id })}
                                         className="text-sm text-amber-400 hover:text-amber-300 hover:underline"
                                     >
                                         View attendance

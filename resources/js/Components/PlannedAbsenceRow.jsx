@@ -8,7 +8,7 @@ import FormattedMarkdown from "@/Components/FormattedMarkdown";
 function RestoreButton({ userCanRestore = false, absence }) {
     const restoreAbsence = () => {
         userCanRestore &&
-            router.post(route("raids.absences.restore", absence.id), {
+            router.post(route("raiding.absences.restore", absence.id), {
                 preserveScroll: true,
             });
     };
@@ -31,7 +31,7 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const deleteAbsence = () => {
-        router.delete(route("raids.absences.destroy", absence.id), {
+        router.delete(route("raiding.absences.destroy", absence.id), {
             preserveScroll: true,
             onSuccess: () => setConfirmingDelete(false),
         });
@@ -71,7 +71,7 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
 
                 <div className="flex shrink-0 gap-4">
                     <Link
-                        href={route("raids.absences.edit", absence.id)}
+                        href={route("raiding.absences.edit", absence.id)}
                         className="flex items-center text-sm text-amber-400 hover:text-amber-300"
                     >
                         <Icon icon="pen" style="regular" className="mr-1.5 h-4" />

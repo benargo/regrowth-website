@@ -401,7 +401,7 @@ export default function LinkedRaidReports({
     const handleShowModeSubmit = (identifiers) => {
         setIsSubmitting(true);
         router.patch(
-            route("raids.reports.update", { report: currentReport.id }),
+            route("raiding.reports.update", { report: currentReport.id }),
             { links: { action: "create", link_ids: identifiers } },
             {
                 preserveScroll: true,
@@ -431,7 +431,7 @@ export default function LinkedRaidReports({
     const handleConfirmDelete = () => {
         setIsDeletingLink(true);
         router.patch(
-            route("raids.reports.update", { report: currentReport.id }),
+            route("raiding.reports.update", { report: currentReport.id }),
             { links: { action: "delete", link_ids: [] } },
             {
                 preserveScroll: true,
@@ -466,7 +466,7 @@ export default function LinkedRaidReports({
                                         <span className="font-medium text-amber-400">{linked.title}</span>
                                     ) : (
                                         <Link
-                                            href={route("raids.reports.show", { report: linked.id })}
+                                            href={route("raiding.reports.show", { report: linked.id })}
                                             className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                         >
                                             {linked.title}
