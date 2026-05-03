@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Raid;
 
 use App\Models\Raids\Report;
-use App\Traits\ParsesFilterParam;
 use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,8 +10,6 @@ use Illuminate\Support\Facades\Cache;
 
 class ReportsIndexRequest extends FormRequest
 {
-    use ParsesFilterParam;
-
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -40,35 +37,20 @@ class ReportsIndexRequest extends FormRequest
         $sinceDateRules = $dateRules;
         $beforeDateRules = $dateRules;
 
-        if ($this->filled('before_date')) {
-            $sinceDateRules[] = 'before_or_equal:before_date';
+        if ($this->filled('filter.before_date')) {
+            $sinceDateRules[] = 'before_or_equal:filter.before_date';
         }
-        if ($this->filled('since_date')) {
-            $beforeDateRules[] = 'after_or_equal:since_date';
+        if ($this->filled('filter.since_date')) {
+            $beforeDateRules[] = 'after_or_equal:filter.since_date';
         }
 
         return [
-            'zone_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
-            'guild_tag_ids' => ['nullable', 'string', 'regex:/^(all|none|\d+(,\d+)*)$/'],
-            'days' => ['nullable', 'string', 'regex:/^(all|none|[0-6](,[0-6])*)$/'],
-            'since_date' => $sinceDateRules,
-            'before_date' => $beforeDateRules,
+            'filter.zone_ids' => ['nullable', 'string', 'regex:/^(\d+(,\d+)*)$/'],
+            'filter.guild_tag_ids' => ['nullable', 'string', 'regex:/^(\d+(,\d+)*)$/'],
+            'filter.days' => ['nullable', 'string', 'regex:/^([0-6](,[0-6])*)$/'],
+            'filter.since_date' => $sinceDateRules,
+            'filter.before_date' => $beforeDateRules,
         ];
-    }
-
-    public function zoneIds(): ?array
-    {
-        return $this->parseFilterParam('zone_ids');
-    }
-
-    public function guildTagIds(): ?array
-    {
-        return $this->parseFilterParam('guild_tag_ids');
-    }
-
-    public function days(): ?array
-    {
-        return $this->parseFilterParam('days');
     }
 
     /**

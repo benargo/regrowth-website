@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Filters\Reports\FiltersDaysOfWeek;
+use App\Http\Filters\Reports\FiltersZoneIds;
 use App\Http\Requests\Raid\ReportsIndexRequest;
 use App\Http\Requests\Raid\StoreReportRequest;
 use App\Http\Requests\Raid\UpdateReportRequest;
+use App\Http\Resources\ReportCollection;
+use App\Http\Resources\ReportResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Http\Resources\WarcraftLogs\ReportClusterResource;
-use App\Http\Resources\WarcraftLogs\ReportResource;
 use App\Models\Character;
 use App\Models\GuildTag;
 use App\Models\Raids\Report;
@@ -15,6 +18,7 @@ use App\Models\Raids\ReportLink;
 use App\Models\User;
 use App\Models\Zone;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -22,6 +26,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ReportController extends Controller
 {
@@ -35,51 +41,38 @@ class ReportController extends Controller
         $timezone = config('app.timezone');
         $zones = Zone::whereIn('id', Report::select('zone_id')->whereNotNull('zone_id')->distinct())
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->push((object) ['id' => 0, 'name' => 'No zone']);
 
         $guildTags = GuildTag::orderBy('name')->get();
-
-        $zoneIds = $request->zoneIds();
-        $guildTagIds = $request->guildTagIds();
-        $days = $request->days();
-
-        $sinceDate = $request->filled('since_date')
-            ? Carbon::parse($request->input('since_date'), $timezone)->startOfDay()->utc()
-            : null;
-
-        $beforeDate = $request->filled('before_date')
-            ? Carbon::parse($request->input('before_date'), $timezone)->endOfDay()->utc()
-            : null;
 
         return Inertia::render('Raiding/Reports/Index', [
             'zones' => $zones,
             'guildTags' => $guildTags,
             'filters' => [
-                'zone_ids' => $request->input('zone_ids'),
-                'guild_tag_ids' => $request->input('guild_tag_ids'),
-                'days' => $request->input('days'),
-                'since_date' => $request->input('since_date'),
-                'before_date' => $request->input('before_date'),
+                'zone_ids' => $request->input('filter.zone_ids'),
+                'guild_tag_ids' => $request->input('filter.guild_tag_ids'),
+                'days' => $request->input('filter.days'),
+                'since_date' => $request->input('filter.since_date'),
+                'before_date' => $request->input('filter.before_date'),
             ],
             'earliestDate' => $request->resolveMinDate(),
-            'reports' => Inertia::defer(function () use ($zoneIds, $guildTagIds, $days, $sinceDate, $beforeDate) {
-                return ReportResource::collection(
-                    Report::query()
+            'reports' => Inertia::defer(function () use ($timezone) {
+                return new ReportCollection(
+                    QueryBuilder::for(Report::class)
                         ->with(['guildTag', 'zone'])
                         ->withCount('linkedReports')
-                        ->when($zoneIds !== null, fn ($q) => $q->whereIn('zone_id', $zoneIds))
-                        ->when($guildTagIds !== null, fn ($q) => $q->whereIn('guild_tag_id', $guildTagIds))
-                        ->when($days !== null, function ($q) use ($days) {
-                            if (DB::connection()->getDriverName() === 'sqlite') {
-                                // SQLite: strftime('%w') returns 0=Sun, 1=Mon, ..., 6=Sat (same as Carbon)
-                                $q->whereIn(DB::raw("CAST(strftime('%w', datetime(start_time)) AS INTEGER)"), $days);
-                            } else {
-                                // MySQL: DAYOFWEEK returns 1=Sun, 2=Mon, ..., 7=Sat
-                                $q->whereIn(DB::raw('DAYOFWEEK(start_time)'), array_map(fn ($d) => $d + 1, $days));
-                            }
-                        })
-                        ->when($sinceDate, fn ($q) => $q->where('start_time', '>=', $sinceDate))
-                        ->when($beforeDate, fn ($q) => $q->where('start_time', '<=', $beforeDate))
+                        ->allowedFilters(
+                            AllowedFilter::custom('zone_ids', new FiltersZoneIds),
+                            AllowedFilter::exact('guild_tag_ids', 'guild_tag_id'),
+                            AllowedFilter::custom('days', new FiltersDaysOfWeek),
+                            AllowedFilter::callback('since_date', function (Builder $query, string $value) use ($timezone) {
+                                $query->where('start_time', '>=', Carbon::parse($value, $timezone)->startOfDay()->utc());
+                            })->delimiter(''),
+                            AllowedFilter::callback('before_date', function (Builder $query, string $value) use ($timezone) {
+                                $query->where('start_time', '<=', Carbon::parse($value, $timezone)->endOfDay()->utc());
+                            })->delimiter(''),
+                        )
                         ->orderBy('start_time', 'desc')
                         ->paginate(25)
                         ->withQueryString()

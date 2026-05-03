@@ -29,100 +29,6 @@ class ReportsIndexRequestTest extends TestCase
         Cache::shouldReceive('tags')->with(['reports'])->andReturn($taggedCache);
     }
 
-    // ==================== zoneIds ====================
-
-    #[Test]
-    public function zone_ids_returns_null_when_absent(): void
-    {
-        $request = $this->makeRequest();
-
-        $this->assertNull($request->zoneIds());
-    }
-
-    #[Test]
-    public function zone_ids_returns_null_for_all(): void
-    {
-        $request = $this->makeRequest(['zone_ids' => 'all']);
-
-        $this->assertNull($request->zoneIds());
-    }
-
-    #[Test]
-    public function zone_ids_returns_empty_array_for_none(): void
-    {
-        $request = $this->makeRequest(['zone_ids' => 'none']);
-
-        $this->assertSame([], $request->zoneIds());
-    }
-
-    #[Test]
-    public function zone_ids_returns_array_of_integers(): void
-    {
-        $request = $this->makeRequest(['zone_ids' => '1,2,3']);
-
-        $this->assertSame([1, 2, 3], $request->zoneIds());
-    }
-
-    // ==================== guildTagIds ====================
-
-    #[Test]
-    public function guild_tag_ids_returns_null_when_absent(): void
-    {
-        $request = $this->makeRequest();
-
-        $this->assertNull($request->guildTagIds());
-    }
-
-    #[Test]
-    public function guild_tag_ids_returns_empty_array_for_none(): void
-    {
-        $request = $this->makeRequest(['guild_tag_ids' => 'none']);
-
-        $this->assertSame([], $request->guildTagIds());
-    }
-
-    #[Test]
-    public function guild_tag_ids_returns_array_of_integers(): void
-    {
-        $request = $this->makeRequest(['guild_tag_ids' => '4,5']);
-
-        $this->assertSame([4, 5], $request->guildTagIds());
-    }
-
-    // ==================== days ====================
-
-    #[Test]
-    public function days_returns_null_when_absent(): void
-    {
-        $request = $this->makeRequest();
-
-        $this->assertNull($request->days());
-    }
-
-    #[Test]
-    public function days_returns_null_for_all(): void
-    {
-        $request = $this->makeRequest(['days' => 'all']);
-
-        $this->assertNull($request->days());
-    }
-
-    #[Test]
-    public function days_returns_empty_array_for_none(): void
-    {
-        $request = $this->makeRequest(['days' => 'none']);
-
-        $this->assertSame([], $request->days());
-    }
-
-    #[Test]
-    public function days_returns_array_of_integers(): void
-    {
-        $request = $this->makeRequest(['days' => '0,1,5']);
-
-        $this->assertSame([0, 1, 5], $request->days());
-    }
-
     // ==================== rules: structure ====================
 
     #[Test]
@@ -132,11 +38,11 @@ class ReportsIndexRequestTest extends TestCase
 
         $rules = $this->makeRequest()->rules();
 
-        $this->assertArrayHasKey('zone_ids', $rules);
-        $this->assertArrayHasKey('guild_tag_ids', $rules);
-        $this->assertArrayHasKey('days', $rules);
-        $this->assertArrayHasKey('since_date', $rules);
-        $this->assertArrayHasKey('before_date', $rules);
+        $this->assertArrayHasKey('filter.zone_ids', $rules);
+        $this->assertArrayHasKey('filter.guild_tag_ids', $rules);
+        $this->assertArrayHasKey('filter.days', $rules);
+        $this->assertArrayHasKey('filter.since_date', $rules);
+        $this->assertArrayHasKey('filter.before_date', $rules);
     }
 
     // ==================== rules: date ordering ====================
@@ -146,9 +52,9 @@ class ReportsIndexRequestTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = $this->makeRequest(['before_date' => '2025-06-01'])->rules();
+        $rules = $this->makeRequest(['filter' => ['before_date' => '2025-06-01']])->rules();
 
-        $this->assertContains('before_or_equal:before_date', $rules['since_date']);
+        $this->assertContains('before_or_equal:filter.before_date', $rules['filter.since_date']);
     }
 
     #[Test]
@@ -158,7 +64,7 @@ class ReportsIndexRequestTest extends TestCase
 
         $rules = $this->makeRequest()->rules();
 
-        $this->assertNotContains('before_or_equal:before_date', $rules['since_date']);
+        $this->assertNotContains('before_or_equal:filter.before_date', $rules['filter.since_date']);
     }
 
     #[Test]
@@ -166,9 +72,9 @@ class ReportsIndexRequestTest extends TestCase
     {
         $this->mockNoMinDate();
 
-        $rules = $this->makeRequest(['since_date' => '2025-01-01'])->rules();
+        $rules = $this->makeRequest(['filter' => ['since_date' => '2025-01-01']])->rules();
 
-        $this->assertContains('after_or_equal:since_date', $rules['before_date']);
+        $this->assertContains('after_or_equal:filter.since_date', $rules['filter.before_date']);
     }
 
     #[Test]
@@ -178,7 +84,7 @@ class ReportsIndexRequestTest extends TestCase
 
         $rules = $this->makeRequest()->rules();
 
-        $this->assertNotContains('after_or_equal:since_date', $rules['before_date']);
+        $this->assertNotContains('after_or_equal:filter.since_date', $rules['filter.before_date']);
     }
 
     // ==================== rules: min date ====================
@@ -196,8 +102,8 @@ class ReportsIndexRequestTest extends TestCase
 
         $rules = $this->makeRequest()->rules();
 
-        $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['since_date']);
-        $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['before_date']);
+        $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['filter.since_date']);
+        $this->assertContains('after_or_equal:'.$expectedMinDate, $rules['filter.before_date']);
     }
 
     #[Test]
@@ -207,8 +113,8 @@ class ReportsIndexRequestTest extends TestCase
 
         $rules = $this->makeRequest()->rules();
 
-        $sinceHasMinDate = collect($rules['since_date'])->contains(fn ($r) => str_starts_with((string) $r, 'after_or_equal:20'));
-        $beforeHasMinDate = collect($rules['before_date'])->contains(fn ($r) => str_starts_with((string) $r, 'after_or_equal:20'));
+        $sinceHasMinDate = collect($rules['filter.since_date'])->contains(fn ($r) => str_starts_with((string) $r, 'after_or_equal:20'));
+        $beforeHasMinDate = collect($rules['filter.before_date'])->contains(fn ($r) => str_starts_with((string) $r, 'after_or_equal:20'));
 
         $this->assertFalse($sinceHasMinDate);
         $this->assertFalse($beforeHasMinDate);
@@ -225,7 +131,7 @@ class ReportsIndexRequestTest extends TestCase
 
         $rules = $this->makeRequest()->rules();
 
-        $this->assertContains('before_or_equal:'.$today, $rules['since_date']);
-        $this->assertContains('before_or_equal:'.$today, $rules['before_date']);
+        $this->assertContains('before_or_equal:'.$today, $rules['filter.since_date']);
+        $this->assertContains('before_or_equal:'.$today, $rules['filter.before_date']);
     }
 }

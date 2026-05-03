@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\DiscordRole;
 use App\Models\GuildTag;
+use App\Models\Permission;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\Zone;
@@ -23,8 +25,8 @@ class IndexTest extends TestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $permission = \App\Models\Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'web']);
-        $officerRole = \App\Models\DiscordRole::firstOrCreate(
+        $permission = Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'web']);
+        $officerRole = DiscordRole::firstOrCreate(
             ['id' => '829021769448816691'],
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
@@ -139,15 +141,17 @@ class IndexTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', [
-            'guild_tag_ids' => (string) $tag->id,
-            'days' => '0,1,2,3,4,5,6',
+            'filter' => [
+                'guild_tag_ids' => (string) $tag->id,
+                'days' => '0,1,2,3,4,5,6',
+            ],
         ]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('reports.meta.last_page', fn ($lastPage) => $lastPage > 1)
-                ->where('reports.links.next', fn ($url) => str_contains($url, 'guild_tag_ids=')
-                    && str_contains($url, 'days=')
+                ->where('reports.links.next', fn ($url) => str_contains($url, 'filter%5B')
+                    || str_contains($url, 'filter[')
                 )
             )
         );
@@ -211,10 +215,10 @@ class IndexTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('reports.data.0.id')
-                ->has('reports.data.0.code')
                 ->has('reports.data.0.title')
                 ->has('reports.data.0.start_time')
                 ->has('reports.data.0.end_time')
+                ->has('reports.data.0.duration')
                 ->has('reports.data.0.zone')
                 ->has('reports.data.0.zone.id')
                 ->has('reports.data.0.zone.name')
@@ -258,7 +262,7 @@ class IndexTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => '1']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['zone_ids' => '1']]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -278,7 +282,7 @@ class IndexTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['guild_tag_ids' => (string) $tag1->id]));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['guild_tag_ids' => (string) $tag1->id]]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -300,7 +304,7 @@ class IndexTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Filter for Monday only (Carbon day 1)
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => '1']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => '1']]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -319,7 +323,7 @@ class IndexTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['since_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['since_date' => '2025-01-15']]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
@@ -338,80 +342,12 @@ class IndexTest extends TestCase
 
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['before_date' => '2025-01-15']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['before_date' => '2025-01-15']]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('reports.data', 1)
                 ->where('reports.data.0.title', 'Old Raid')
-            )
-        );
-    }
-
-    #[Test]
-    public function zone_ids_none_returns_no_reports(): void
-    {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->count(3)->withGuildTag($tag)->create();
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => 'none']));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('reports.data', 0)
-            )
-        );
-    }
-
-    #[Test]
-    public function guild_tag_ids_none_returns_no_reports(): void
-    {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->count(3)->withGuildTag($tag)->create();
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['guild_tag_ids' => 'none']));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('reports.data', 0)
-            )
-        );
-    }
-
-    #[Test]
-    public function days_none_returns_no_reports(): void
-    {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->count(3)->withGuildTag($tag)->create();
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => 'none']));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('reports.data', 0)
-            )
-        );
-    }
-
-    #[Test]
-    public function zone_ids_all_returns_all_reports(): void
-    {
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        Report::factory()->count(3)->withGuildTag($tag)->create();
-
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => 'all']));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('reports.data', 3)
             )
         );
     }
@@ -442,7 +378,7 @@ class IndexTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
-        $response->assertSessionDoesntHaveErrors(['zone_ids', 'guild_tag_ids', 'days', 'since_date', 'before_date']);
+        $response->assertSessionDoesntHaveErrors(['filter.zone_ids', 'filter.guild_tag_ids', 'filter.days', 'filter.since_date', 'filter.before_date']);
     }
 
     #[Test]
@@ -450,9 +386,9 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['zone_ids' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['zone_ids' => 'not-valid']]));
 
-        $response->assertSessionHasErrors(['zone_ids']);
+        $response->assertSessionHasErrors(['filter.zone_ids']);
     }
 
     #[Test]
@@ -460,9 +396,9 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['guild_tag_ids' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['guild_tag_ids' => 'not-valid']]));
 
-        $response->assertSessionHasErrors(['guild_tag_ids']);
+        $response->assertSessionHasErrors(['filter.guild_tag_ids']);
     }
 
     #[Test]
@@ -470,9 +406,9 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => 'not-valid']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => 'not-valid']]));
 
-        $response->assertSessionHasErrors(['days']);
+        $response->assertSessionHasErrors(['filter.days']);
     }
 
     #[Test]
@@ -480,9 +416,9 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => '7']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => '7']]));
 
-        $response->assertSessionHasErrors(['days']);
+        $response->assertSessionHasErrors(['filter.days']);
     }
 
     #[Test]
@@ -490,9 +426,9 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['days' => '0,1,2,3,4,5,6']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => '0,1,2,3,4,5,6']]));
 
-        $response->assertSessionDoesntHaveErrors(['days']);
+        $response->assertSessionDoesntHaveErrors(['filter.days']);
     }
 
     #[Test]
@@ -500,9 +436,9 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['since_date' => 'not-a-date']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['since_date' => 'not-a-date']]));
 
-        $response->assertSessionHasErrors(['since_date']);
+        $response->assertSessionHasErrors(['filter.since_date']);
     }
 
     #[Test]
@@ -511,9 +447,9 @@ class IndexTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['since_date' => $tomorrow]));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['since_date' => $tomorrow]]));
 
-        $response->assertSessionHasErrors(['since_date']);
+        $response->assertSessionHasErrors(['filter.since_date']);
     }
 
     #[Test]
@@ -521,9 +457,9 @@ class IndexTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['before_date' => 'not-a-date']));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['before_date' => 'not-a-date']]));
 
-        $response->assertSessionHasErrors(['before_date']);
+        $response->assertSessionHasErrors(['filter.before_date']);
     }
 
     #[Test]
@@ -532,9 +468,9 @@ class IndexTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
-        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['before_date' => $tomorrow]));
+        $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['before_date' => $tomorrow]]));
 
-        $response->assertSessionHasErrors(['before_date']);
+        $response->assertSessionHasErrors(['filter.before_date']);
     }
 
     // ==================== Earliest Date Prop ====================

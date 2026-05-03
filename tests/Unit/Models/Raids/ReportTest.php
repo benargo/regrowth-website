@@ -6,9 +6,9 @@ use App\Events\AddonSettingsProcessed;
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
 use App\Models\Character;
+use App\Models\GuildTag;
 use App\Models\Raids\Report;
 use App\Models\User;
-use App\Models\GuildTag;
 use App\Models\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -163,13 +163,26 @@ class ReportTest extends ModelTestCase
     }
 
     #[Test]
-    public function zone_relationship_returns_null_when_no_zone(): void
+    public function zone_relationship_returns_default_when_no_zone(): void
     {
         $report = $this->factory()->withoutZone()->create();
 
         $report->refresh();
 
-        $this->assertNull($report->zone);
+        $this->assertNotNull($report->zone);
+        $this->assertSame(0, $report->zone->id);
+        $this->assertSame('No zone', $report->zone->name);
+        $this->assertCount(0, $report->zone->difficulties);
+    }
+
+    #[Test]
+    public function zone_default_returns_model_instance(): void
+    {
+        $report = $this->factory()->withoutZone()->create();
+
+        $report->refresh();
+
+        $this->assertInstanceOf(Zone::class, $report->zone);
     }
 
     #[Test]
@@ -186,7 +199,7 @@ class ReportTest extends ModelTestCase
     }
 
     #[Test]
-    public function expansion_accessor_returns_null_when_no_zone(): void
+    public function expansion_accessor_returns_null_when_zone_is_default(): void
     {
         $report = $this->factory()->withoutZone()->create();
 

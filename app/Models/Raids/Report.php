@@ -141,7 +141,11 @@ class Report extends Model
      */
     public function zone(): BelongsTo
     {
-        return $this->belongsTo(Zone::class);
+        return $this->belongsTo(Zone::class)->withDefault([
+            'id' => 0,
+            'name' => 'No zone',
+            'difficulties' => [],
+        ]);
     }
 
     /**
