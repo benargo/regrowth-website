@@ -50,7 +50,9 @@ final class ReportClusterData extends Data
 
     public function zoneName(): ?string
     {
-        return $this->reports->sortBy('start_time')->first()->zone?->name;
+        $zone = $this->reports->sortBy('start_time')->first()->zone;
+
+        return ($zone === null || $zone->id === 0) ? null : $zone->name;
     }
 
     public function isMerged(): bool
