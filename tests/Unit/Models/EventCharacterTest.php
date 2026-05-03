@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Unit\Models\Raids;
+namespace Tests\Unit\Models;
 
 use App\Models\Character;
-use App\Models\Raids\Event;
-use App\Models\Raids\EventCharacter;
+use App\Models\Event;
+use App\Models\EventCharacter;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -35,11 +35,11 @@ class EventCharacterTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_pivot_raid_events_characters_table(): void
+    public function it_uses_pivot_events_characters_table(): void
     {
         $pivot = new EventCharacter;
 
-        $this->assertSame('pivot_raid_events_characters', $pivot->getTable());
+        $this->assertSame('pivot_events_characters', $pivot->getTable());
     }
 
     #[Test]

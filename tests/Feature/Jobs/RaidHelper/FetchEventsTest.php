@@ -4,7 +4,7 @@ namespace Tests\Feature\Jobs\RaidHelper;
 
 use App\Jobs\RaidHelper\FetchEvents;
 use App\Models\Character;
-use App\Models\Raids\Event;
+use App\Models\Event;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use App\Services\RaidHelper\RaidHelper;
@@ -174,8 +174,8 @@ class FetchEventsTest extends TestCase
         $job = new FetchEvents([$channelId]);
         $job->handle($this->discord, $this->raidHelper);
 
-        $this->assertDatabaseHas('raid_events', ['raid_helper_event_id' => '999000000000000001']);
-        $this->assertDatabaseHas('raid_events', ['raid_helper_event_id' => '999000000000000002']);
+        $this->assertDatabaseHas('events', ['raid_helper_event_id' => '999000000000000001']);
+        $this->assertDatabaseHas('events', ['raid_helper_event_id' => '999000000000000002']);
     }
 
     // -------------------------------------------------------------------------
@@ -197,7 +197,7 @@ class FetchEventsTest extends TestCase
         $job = new FetchEvents([$channelId]);
         $job->handle($this->discord, $this->raidHelper);
 
-        $this->assertDatabaseHas('raid_events', [
+        $this->assertDatabaseHas('events', [
             'raid_helper_event_id' => '999000000000000001',
             'title' => 'Molten Core',
         ]);
@@ -222,12 +222,12 @@ class FetchEventsTest extends TestCase
         $job = new FetchEvents([$channelId]);
         $job->handle($this->discord, $this->raidHelper);
 
-        $this->assertDatabaseHas('raid_events', [
+        $this->assertDatabaseHas('events', [
             'id' => $existingEvent->id,
             'raid_helper_event_id' => '999000000000000001',
             'title' => 'New Title',
         ]);
-        $this->assertDatabaseCount('raid_events', 1);
+        $this->assertDatabaseCount('events', 1);
     }
 
     // -------------------------------------------------------------------------

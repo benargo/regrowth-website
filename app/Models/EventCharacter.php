@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Raids;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -11,7 +11,7 @@ class EventCharacter extends Pivot
      *
      * @var string
      */
-    protected $table = 'pivot_raid_events_characters';
+    protected $table = 'pivot_events_characters';
 
     /**
      * The model's default attributes.

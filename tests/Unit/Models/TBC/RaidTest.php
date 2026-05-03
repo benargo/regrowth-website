@@ -4,7 +4,6 @@ namespace Tests\Unit\Models\TBC;
 
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use App\Models\Raids\Event;
 use App\Models\TBC\Boss;
 use App\Models\TBC\Phase;
 use App\Models\TBC\Raid;
@@ -188,17 +187,6 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_has_many_events(): void
-    {
-        $raid = $this->create();
-        Event::factory()->count(2)->create(['raid_id' => $raid->id]);
-
-        $this->assertRelation($raid, 'events', HasMany::class);
-        $this->assertCount(2, $raid->events);
-        $this->assertInstanceOf(Event::class, $raid->events->first());
-    }
-
-    #[Test]
     public function factory_with_bosses_state_creates_bosses(): void
     {
         $raid = $this->factory()->withBosses(3)->create();
@@ -223,14 +211,5 @@ class RaidTest extends ModelTestCase
 
         $this->assertCount(1, $raid->items);
         $this->assertCount(2, $raid->comments);
-    }
-
-    #[Test]
-    public function factory_with_events_state_creates_events(): void
-    {
-        $raid = $this->factory()->withEvents(2)->create();
-
-        $this->assertCount(2, $raid->events);
-        $this->assertTrue($raid->events->every(fn (Event $event) => $event->raid_id === $raid->id));
     }
 }

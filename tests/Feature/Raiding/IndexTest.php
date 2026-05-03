@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
-use App\Models\Raids\Event;
+use App\Models\Event;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Services\Discord\Discord;

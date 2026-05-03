@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\EventCollection;
-use App\Models\Raids\Event;
+use App\Models\Event;
 use App\Models\TBC\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;

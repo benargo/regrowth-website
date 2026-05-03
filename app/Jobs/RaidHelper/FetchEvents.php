@@ -3,7 +3,7 @@
 namespace App\Jobs\RaidHelper;
 
 use App\Models\Character;
-use App\Models\Raids\Event;
+use App\Models\Event;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;

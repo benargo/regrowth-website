@@ -1,14 +1,12 @@
 <?php
 
-namespace Tests\Unit\Models\Raids;
+namespace Tests\Unit\Models;
 
 use App\Models\Character;
-use App\Models\Raids\Event;
-use App\Models\Raids\EventCharacter;
-use App\Models\TBC\Raid;
+use App\Models\Event;
+use App\Models\EventCharacter;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -25,7 +23,7 @@ class EventTest extends ModelTestCase
     {
         $model = new Event;
 
-        $this->assertSame('raid_events', $model->getTable());
+        $this->assertSame('events', $model->getTable());
     }
 
     #[Test]
@@ -35,7 +33,6 @@ class EventTest extends ModelTestCase
 
         $this->assertFillable($model, [
             'id',
-            'raid_id',
             'raid_helper_event_id',
             'title',
             'start_time',
@@ -141,25 +138,6 @@ class EventTest extends ModelTestCase
         $this->assertUniqueConstraint(fn () => $this->create(['raid_helper_event_id' => 'unique-123']));
     }
 
-    // raid
-
-    #[Test]
-    public function raid_returns_belongs_to_relationship(): void
-    {
-        $model = new Event;
-
-        $this->assertInstanceOf(BelongsTo::class, $model->raid());
-    }
-
-    #[Test]
-    public function it_belongs_to_a_raid(): void
-    {
-        $raid = Raid::factory()->create();
-        $event = $this->create(['raid_id' => $raid->id]);
-
-        $this->assertTrue($event->raid->is($raid));
-    }
-
     // characters
 
     #[Test]
@@ -219,7 +197,7 @@ class EventTest extends ModelTestCase
 
         $event->delete();
 
-        $this->assertDatabaseMissing('pivot_raid_events_characters', [
+        $this->assertDatabaseMissing('pivot_events_characters', [
             'event_id' => $event->id,
         ]);
     }

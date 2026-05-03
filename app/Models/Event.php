@@ -1,17 +1,14 @@
 <?php
 
-namespace App\Models\Raids;
+namespace App\Models;
 
 use App\Http\Resources\EventCollection;
-use App\Models\Character;
-use App\Models\TBC\Raid;
 use App\Services\Discord\Discord;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[UseResourceCollection(EventCollection::class)]
@@ -20,20 +17,12 @@ class Event extends Model
     use HasFactory, HasUuids;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'raid_events';
-
-    /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
         'id',
-        'raid_id',
         'raid_helper_event_id',
         'title',
         'start_time',
@@ -75,7 +64,7 @@ class Event extends Model
      */
     public function characters(): BelongsToMany
     {
-        return $this->belongsToMany(Character::class, 'pivot_raid_events_characters', 'event_id', 'character_id')
+        return $this->belongsToMany(Character::class, 'pivot_events_characters', 'event_id', 'character_id')
             ->using(EventCharacter::class)
             ->withPivot(['slot_number', 'group_number', 'is_confirmed', 'is_leader', 'is_loot_councillor', 'is_loot_master'])
             ->withTimestamps();
@@ -105,15 +94,5 @@ class Event extends Model
     public function lootCouncillors(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_loot_councillor', true);
-    }
-
-    /**
-     * The raid that the event belongs to.
-     *
-     * This helps with determining the comp fields to show.
-     */
-    public function raid(): BelongsTo
-    {
-        return $this->belongsTo(Raid::class, 'raid_id', 'id');
     }
 }

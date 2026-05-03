@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Raids\Event;
+use App\Models\Event;
 use App\Models\Raids\Report;
 use Inertia\Inertia;
 

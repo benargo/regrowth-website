@@ -4,7 +4,6 @@ namespace App\Models\TBC;
 
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use App\Models\Raids\Event;
 use Database\Factories\TBC\RaidFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -113,17 +112,5 @@ class Raid extends Model
     public function comments(): HasManyThrough
     {
         return $this->hasManyThrough(Comment::class, Item::class, 'raid_id', 'item_id');
-    }
-
-    // ========== Raid event relationships ==========
-
-    /**
-     * Get the raid events that belong to this raid.
-     *
-     * @return HasMany<Event>
-     */
-    public function events(): HasMany
-    {
-        return $this->hasMany(Event::class, 'raid_id', 'id');
     }
 }
