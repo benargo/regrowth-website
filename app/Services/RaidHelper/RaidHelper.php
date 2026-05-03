@@ -84,11 +84,11 @@ class RaidHelper
         }
 
         if ($startTimeFilter) {
-            $headers['StartTimeFilter'] = $startTimeFilter->unix();
+            $headers['StartTimeFilter'] = $startTimeFilter->utc()->unix();
         }
 
         if ($endTimeFilter) {
-            $headers['EndTimeFilter'] = $endTimeFilter->unix();
+            $headers['EndTimeFilter'] = $endTimeFilter->utc()->unix();
         }
 
         $response = $this->client->get("/servers/{$this->serverId}/events", $headers)->json();

@@ -95,12 +95,13 @@ class FetchEvents implements ShouldQueue
         // Step 4. Upsert the events and their associated comps into the database.
         $events->each(function (RaidHelperEvent $event) use ($comps) {
             // Step 4a. Upsert the event into the database based on the raid_helper_event_id.
+            $appTimezone = config('app.timezone');
             $eventModel = Event::updateOrCreate(
                 ['raid_helper_event_id' => $event->id],
                 [
                     'title' => $event->title,
-                    'start_time' => $event->startTime,
-                    'end_time' => $event->endTime,
+                    'start_time' => $event->startTime->setTimezone($appTimezone),
+                    'end_time' => $event->endTime->setTimezone($appTimezone),
                     'channel_id' => $event->channelId,
                 ]
             );

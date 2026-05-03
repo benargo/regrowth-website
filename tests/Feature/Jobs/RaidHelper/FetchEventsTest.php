@@ -231,6 +231,34 @@ class FetchEventsTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Timezone conversion
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_converts_utc_timestamps_to_the_app_timezone_when_storing_events(): void
+    {
+        $channelId = '100000000000000001';
+        $payload = $this->minimalListingEventPayload([
+            'id' => '999000000000000001',
+            'startTime' => 1700000000, // 2023-11-14 22:13:20 UTC → 2023-11-14 23:13:20 Europe/Paris
+            'endTime' => 1700007200,   // 2023-11-14 24:13:20 UTC → 2023-11-15 01:13:20 Europe/Paris
+        ]);
+
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $appTimezone = config('app.timezone');
+
+        $this->assertSame($appTimezone, $event->start_time->timezoneName);
+        $this->assertSame($appTimezone, $event->end_time->timezoneName);
+        $this->assertSame(1700000000, $event->start_time->unix());
+        $this->assertSame(1700007200, $event->end_time->unix());
+    }
+
+    // -------------------------------------------------------------------------
     // Comp sync
     // -------------------------------------------------------------------------
 
