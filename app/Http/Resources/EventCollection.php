@@ -24,8 +24,8 @@ class EventCollection extends ResourceCollection
                 'channel' => $model->channel->only('id', 'name', 'position'),
             ];
 
-            if ($model->relationLoaded('raid')) {
-                $data['raid'] = $model->raid()->select('id', 'name')->first();
+            if ($model->relationLoaded('raids')) {
+                $data['raids'] = $model->raids()->select('id', 'name')->get();
             }
 
             return $data;

@@ -3,10 +3,10 @@
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Resources\LootCouncil\ItemResource;
+use App\Models\Boss;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Raid;
+use App\Models\Raid;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

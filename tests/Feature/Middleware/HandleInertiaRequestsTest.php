@@ -4,7 +4,7 @@ namespace Tests\Feature\Middleware;
 
 use App\Models\DiscordRole;
 use App\Models\Permission;
-use App\Models\TBC\Phase;
+use App\Models\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;

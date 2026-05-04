@@ -2,9 +2,9 @@
 
 namespace Database\Factories\LootCouncil;
 
+use App\Models\Boss;
 use App\Models\LootCouncil\Item;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Raid;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 

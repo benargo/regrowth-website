@@ -1,8 +1,8 @@
 <?php
 
-namespace Database\Factories\TBC;
+namespace Database\Factories;
 
-use App\Models\TBC\Phase;
+use App\Models\Phase;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 

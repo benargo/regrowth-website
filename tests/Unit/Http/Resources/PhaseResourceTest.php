@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Http\Resources\TBC;
+namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\TBC\PhaseResource;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Http\Resources\PhaseResource;
+use App\Models\Boss;
+use App\Models\Phase;
+use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Test;

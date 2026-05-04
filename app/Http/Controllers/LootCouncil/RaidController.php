@@ -4,10 +4,10 @@ namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LootCouncil\BossItemsResource;
+use App\Models\Boss;
 use App\Models\LootCouncil\Item;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Models\Phase;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

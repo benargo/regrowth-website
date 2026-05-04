@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::dropIfExists('daily_quest_notifications');
+        Schema::dropIfExists('tbc_daily_quest_notifications');
     }
 
     /**

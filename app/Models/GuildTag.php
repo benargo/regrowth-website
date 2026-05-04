@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
 use App\Models\Raids\Report;
-use App\Models\TBC\Phase;
 use App\Observers\GuildTagObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

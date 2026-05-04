@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\TBC;
 
-use App\Models\TBC\Phase;
+use App\Models\Phase;
 use Illuminate\Database\Seeder;
 
 class PhaseSeeder extends Seeder

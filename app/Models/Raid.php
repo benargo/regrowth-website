@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Models\TBC;
+namespace App\Models;
 
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use Database\Factories\TBC\RaidFactory;
+use Database\Factories\RaidFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
@@ -25,7 +26,7 @@ class Raid extends Model
      *
      * @var string
      */
-    protected $table = 'tbc_raids';
+    protected $table = 'raids';
 
     /**
      * The attributes that are mass assignable.
@@ -80,6 +81,17 @@ class Raid extends Model
     public function phase(): BelongsTo
     {
         return $this->belongsTo(Phase::class);
+    }
+
+    // ============ Event relationships ============
+
+    /**
+     * Get the events that are associated with this raid.
+     */
+    public function events(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'pivot_events_raids', 'raid_id', 'event_id')
+            ->withTimestamps();
     }
 
     // ========== Loot bias relationships ==========

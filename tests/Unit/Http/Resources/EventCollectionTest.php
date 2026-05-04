@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\EventCollection;
 use App\Models\Event;
-use App\Models\TBC\Raid;
+use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -84,14 +84,14 @@ class EventCollectionTest extends TestCase
     }
 
     #[Test]
-    public function it_excludes_raid_when_relation_is_not_loaded(): void
+    public function it_excludes_raids_when_relation_is_not_loaded(): void
     {
         $this->mockChannel();
         $event = Event::factory()->create();
 
         $array = (new EventCollection(collect([$event])))->toArray(new Request);
 
-        $this->assertArrayNotHasKey('raid', $array[0]);
+        $this->assertArrayNotHasKey('raids', $array[0]);
     }
 
     #[Test]
@@ -99,14 +99,15 @@ class EventCollectionTest extends TestCase
     {
         $this->mockChannel();
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
-        $event = Event::factory()->for($raid)->create();
-        $event->load('raid');
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid);
+        $event->load('raids');
 
         $array = (new EventCollection(collect([$event])))->toArray(new Request);
 
-        $this->assertArrayHasKey('raid', $array[0]);
-        $this->assertSame($raid->id, $array[0]['raid']->id);
-        $this->assertSame('Karazhan', $array[0]['raid']->name);
+        $this->assertArrayHasKey('raids', $array[0]);
+        $this->assertSame($raid->id, $array[0]['raids'][0]->id);
+        $this->assertSame('Karazhan', $array[0]['raids'][0]->name);
     }
 
     #[Test]

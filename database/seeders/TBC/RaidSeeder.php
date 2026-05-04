@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\TBC;
 
-use App\Models\TBC\Raid;
+use App\Models\Raid;
 use Illuminate\Database\Seeder;
 
 class RaidSeeder extends Seeder

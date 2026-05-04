@@ -18,7 +18,7 @@ class DailyQuest extends Model
      *
      * @var string
      */
-    protected $table = 'tbc_daily_quests';
+    protected $table = 'daily_quests';
 
     /**
      * The attributes that are mass assignable.

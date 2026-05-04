@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Unit\Models\TBC;
+namespace Tests\Unit\Models;
 
 use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Models\Boss;
 use App\Models\GuildTag;
+use App\Models\Phase;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
@@ -21,11 +21,11 @@ class PhaseTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_tbc_phases_table(): void
+    public function it_uses_phases_table(): void
     {
         $model = new Phase;
 
-        $this->assertSame('tbc_phases', $model->getTable());
+        $this->assertSame('phases', $model->getTable());
     }
 
     #[Test]

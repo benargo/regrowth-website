@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Models\TBC;
+namespace App\Models;
 
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use Database\Factories\TBC\BossFactory;
+use Database\Factories\BossFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,7 +21,7 @@ class Boss extends Model
      *
      * @var string
      */
-    protected $table = 'tbc_bosses';
+    protected $table = 'bosses';
 
     /**
      * The attributes that are mass assignable.

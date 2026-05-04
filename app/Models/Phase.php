@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Models\TBC;
+namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
 use App\Helpers\Database\Eloquent\Traits\HasManyKeyBy;
-use App\Models\GuildTag;
-use Database\Factories\TBC\PhaseFactory;
+use Database\Factories\PhaseFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +22,7 @@ class Phase extends Model implements DatasetModel
      *
      * @var string
      */
-    protected $table = 'tbc_phases';
+    protected $table = 'phases';
 
     /**
      * The attributes that are mass assignable.

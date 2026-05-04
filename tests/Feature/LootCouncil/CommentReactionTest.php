@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\LootCouncil;
 
+use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
 use App\Models\LootCouncil\Item;
 use App\Models\Permission;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Models\Phase;
+use App\Models\Raid;
 use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
 use Illuminate\Database\UniqueConstraintViolationException;

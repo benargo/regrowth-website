@@ -49,6 +49,8 @@ class Event extends Model
         'end_time' => 'datetime',
     ];
 
+    // ========== Custom attributes ============
+
     /**
      * Get the Discord channel associated with the event.
      */
@@ -60,6 +62,18 @@ class Event extends Model
     }
 
     /**
+     * Get the duration of the event in seconds.
+     */
+    protected function duration(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->start_time->diffInSeconds($this->end_time),
+        );
+    }
+
+    // ========== Relationships ============
+
+    /**
      * The characters that are associated with the event.
      */
     public function characters(): BelongsToMany
@@ -68,16 +82,6 @@ class Event extends Model
             ->using(EventCharacter::class)
             ->withPivot(['slot_number', 'group_number', 'is_confirmed', 'is_leader', 'is_loot_councillor', 'is_loot_master'])
             ->withTimestamps();
-    }
-
-    /**
-     * Get the duration of the event in seconds.
-     */
-    protected function duration(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->start_time->diffInSeconds($this->end_time),
-        );
     }
 
     /**
@@ -94,5 +98,22 @@ class Event extends Model
     public function lootCouncillors(): BelongsToMany
     {
         return $this->characters()->wherePivot('is_loot_councillor', true);
+    }
+
+    /**
+     * The loot masters that are associated with the event.
+     */
+    public function lootMasters(): BelongsToMany
+    {
+        return $this->characters()->wherePivot('is_loot_master', true);
+    }
+
+    /**
+     * The raids that are associated with the event.
+     */
+    public function raids(): BelongsToMany
+    {
+        return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
+            ->withTimestamps();
     }
 }

@@ -21,31 +21,31 @@ class StoreDailyQuestsRequest extends FormRequest
             'cooking_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('tbc_daily_quests', 'id')->where('type', 'Cooking'),
+                Rule::exists('daily_quests', 'id')->where('type', 'Cooking'),
             ],
             'fishing_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('tbc_daily_quests', 'id')->where('type', 'Fishing'),
+                Rule::exists('daily_quests', 'id')->where('type', 'Fishing'),
             ],
             'dungeon_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('tbc_daily_quests', 'id')
+                Rule::exists('daily_quests', 'id')
                     ->where('type', 'Dungeon')
                     ->where('mode', 'Normal'),
             ],
             'heroic_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('tbc_daily_quests', 'id')
+                Rule::exists('daily_quests', 'id')
                     ->where('type', 'Dungeon')
                     ->where('mode', 'Heroic'),
             ],
             'pvp_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('tbc_daily_quests', 'id')->where('type', 'PvP'),
+                Rule::exists('daily_quests', 'id')->where('type', 'PvP'),
             ],
         ];
     }

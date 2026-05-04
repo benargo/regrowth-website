@@ -1,12 +1,12 @@
 <?php
 
-namespace Database\Factories\TBC;
+namespace Database\Factories;
 
+use App\Models\Boss;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Models\Phase;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 

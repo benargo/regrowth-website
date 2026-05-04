@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\TBC;
 
-use App\Models\TBC\Boss;
+use App\Models\Boss;
 use Illuminate\Database\Seeder;
 
 class BossSeeder extends Seeder

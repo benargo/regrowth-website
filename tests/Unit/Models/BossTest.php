@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Models\TBC;
+namespace Tests\Unit\Models;
 
+use App\Models\Boss;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Raid;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -20,11 +20,11 @@ class BossTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_tbc_bosses_table(): void
+    public function it_uses_bosses_table(): void
     {
         $model = new Boss;
 
-        $this->assertSame('tbc_bosses', $model->getTable());
+        $this->assertSame('bosses', $model->getTable());
     }
 
     #[Test]

@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Unit\Models\TBC;
+namespace Tests\Unit\Models;
 
+use App\Models\Boss;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Models\Phase;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -21,11 +21,11 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_tbc_raids_table(): void
+    public function it_uses_raids_table(): void
     {
         $model = new Raid;
 
-        $this->assertSame('tbc_raids', $model->getTable());
+        $this->assertSame('raids', $model->getTable());
     }
 
     #[Test]

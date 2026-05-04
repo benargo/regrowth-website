@@ -2,7 +2,6 @@
 
 use App\Models\Character;
 use App\Models\Event;
-use App\Models\TBC\Raid;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -39,7 +38,8 @@ return new class extends Migration
 
         Schema::create('pivot_events_raids', function (Blueprint $table) {
             $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
-            $table->foreignIdFor(Raid::class)->constrained()->cascadeOnDelete();
+            $table->foreignId('raid_id')->constrained('tbc_raids')->cascadeOnDelete();
+            $table->timestamps();
             $table->primary(['event_id', 'raid_id']);
         });
     }

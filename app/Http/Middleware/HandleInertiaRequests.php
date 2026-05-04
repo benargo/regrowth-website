@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Resources\TBC\PhaseResource;
+use App\Http\Resources\PhaseResource;
 use App\Http\Resources\UserPermissionResource;
 use App\Http\Resources\UserResource;
-use App\Models\TBC\Phase;
+use App\Models\Phase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
