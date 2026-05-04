@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\EventCollection;
+use App\Http\Resources\EventResource;
 use App\Models\Event;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class EventCollectionTest extends TestCase
+class EventResourceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -33,14 +33,14 @@ class EventCollectionTest extends TestCase
         $this->mockChannel();
         $event = Event::factory()->create();
 
-        $array = (new EventCollection(collect([$event])))->toArray(new Request);
+        $array = (new EventResource($event))->toArray(new Request);
 
-        $this->assertArrayHasKey('id', $array[0]);
-        $this->assertArrayHasKey('title', $array[0]);
-        $this->assertArrayHasKey('start_time', $array[0]);
-        $this->assertArrayHasKey('end_time', $array[0]);
-        $this->assertArrayHasKey('duration', $array[0]);
-        $this->assertArrayHasKey('channel', $array[0]);
+        $this->assertArrayHasKey('id', $array);
+        $this->assertArrayHasKey('title', $array);
+        $this->assertArrayHasKey('start_time', $array);
+        $this->assertArrayHasKey('end_time', $array);
+        $this->assertArrayHasKey('duration', $array);
+        $this->assertArrayHasKey('channel', $array);
     }
 
     #[Test]
@@ -49,12 +49,12 @@ class EventCollectionTest extends TestCase
         $this->mockChannel();
         $event = Event::factory()->create();
 
-        $array = (new EventCollection(collect([$event])))->toArray(new Request);
+        $array = (new EventResource($event))->toArray(new Request);
 
-        $this->assertSame($event->id, $array[0]['id']);
-        $this->assertSame($event->title, $array[0]['title']);
-        $this->assertEquals($event->start_time, $array[0]['start_time']);
-        $this->assertEquals($event->end_time, $array[0]['end_time']);
+        $this->assertSame($event->id, $array['id']);
+        $this->assertSame($event->title, $array['title']);
+        $this->assertEquals($event->start_time, $array['start_time']);
+        $this->assertEquals($event->end_time, $array['end_time']);
     }
 
     #[Test]
@@ -63,10 +63,10 @@ class EventCollectionTest extends TestCase
         $this->mockChannel();
         $event = Event::factory()->create();
 
-        $array = (new EventCollection(collect([$event])))->toArray(new Request);
+        $array = (new EventResource($event))->toArray(new Request);
 
         $expected = $event->start_time->diffInSeconds($event->end_time);
-        $this->assertSame($expected, $array[0]['duration']);
+        $this->assertSame($expected, $array['duration']);
     }
 
     #[Test]
@@ -75,12 +75,12 @@ class EventCollectionTest extends TestCase
         $this->mockChannel(id: '999888777', name: 'raid-chat', position: 3);
         $event = Event::factory()->create();
 
-        $array = (new EventCollection(collect([$event])))->toArray(new Request);
+        $array = (new EventResource($event))->toArray(new Request);
 
-        $this->assertInstanceOf(Channel::class, $array[0]['channel']);
-        $this->assertSame('999888777', $array[0]['channel']->id);
-        $this->assertSame('raid-chat', $array[0]['channel']->name);
-        $this->assertSame(3, $array[0]['channel']->position);
+        $this->assertInstanceOf(Channel::class, $array['channel']);
+        $this->assertSame('999888777', $array['channel']->id);
+        $this->assertSame('raid-chat', $array['channel']->name);
+        $this->assertSame(3, $array['channel']->position);
     }
 
     #[Test]
@@ -89,9 +89,9 @@ class EventCollectionTest extends TestCase
         $this->mockChannel();
         $event = Event::factory()->create();
 
-        $array = (new EventCollection(collect([$event])))->toArray(new Request);
+        $array = (new EventResource($event))->toArray(new Request);
 
-        $this->assertArrayNotHasKey('raids', $array[0]);
+        $this->assertArrayNotHasKey('raids', $array);
     }
 
     #[Test]
@@ -103,21 +103,10 @@ class EventCollectionTest extends TestCase
         $event->raids()->attach($raid);
         $event->load('raids');
 
-        $array = (new EventCollection(collect([$event])))->toArray(new Request);
+        $array = (new EventResource($event))->toArray(new Request);
 
-        $this->assertArrayHasKey('raids', $array[0]);
-        $this->assertSame($raid->id, $array[0]['raids'][0]->id);
-        $this->assertSame('Karazhan', $array[0]['raids'][0]->name);
-    }
-
-    #[Test]
-    public function it_returns_multiple_events(): void
-    {
-        $this->mockChannel();
-        $events = Event::factory()->count(3)->create();
-
-        $array = (new EventCollection($events))->toArray(new Request);
-
-        $this->assertCount(3, $array);
+        $this->assertArrayHasKey('raids', $array);
+        $this->assertSame($raid->id, $array['raids'][0]['id']);
+        $this->assertSame('Karazhan', $array['raids'][0]['name']);
     }
 }
