@@ -58,29 +58,32 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], fu
 /**
  * Raid planning and attendance
  */
-Route::group(['prefix' => 'raiding', 'as' => 'raiding.', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/', [RaidingController::class, 'index'])->name('index');
 
     // Planned absences routes
-    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->can('viewAny', 'App\Models\PlannedAbsence')->name('absences.index');
-    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->can('create', 'App\Models\PlannedAbsence')->name('absences.create');
-    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->can('create', 'App\Models\PlannedAbsence')->name('absences.store');
-    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->can('update', 'plannedAbsence')->name('absences.edit');
-    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->can('update', 'plannedAbsence')->name('absences.update');
-    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->can('delete', 'plannedAbsence')->name('absences.destroy');
-    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->can('restore', 'plannedAbsence')->name('absences.restore');
+    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->middleware(['auth', 'can:viewAny,App\Models\PlannedAbsence'])->name('absences.index');
+    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->middleware(['auth', 'can:create,App\Models\PlannedAbsence'])->name('absences.create');
+    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->middleware(['auth', 'can:create,App\Models\PlannedAbsence'])->name('absences.store');
+    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->middleware(['auth', 'can:update,plannedAbsence'])->name('absences.edit');
+    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->middleware(['auth', 'can:update,plannedAbsence'])->name('absences.update');
+    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->middleware(['auth', 'can:delete,plannedAbsence'])->name('absences.destroy');
+    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->middleware(['auth', 'can:restore,plannedAbsence'])->name('absences.restore');
 
     // Attendance routes
-    Route::get('/attendance', AttendanceDashboardController::class)->middleware('can:view-attendance')->name('attendance.dashboard');
-    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->middleware('can:view-attendance')->name('attendance.graphs.index');
-    Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware('can:view-attendance')->name('attendance.matrix');
+    Route::get('/attendance', AttendanceDashboardController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.dashboard');
+    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->middleware(['auth', 'can:view-attendance'])->name('attendance.graphs.index');
+    Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.matrix');
+
+    // Upcoming events comps and plans routes
+    Route::get('/plans/{event}', [RaidingController::class, 'show'])->middleware(['auth', 'can:view,App\Models\Event'])->name('plans.show');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/create', [ReportController::class, 'create'])->can('create', 'App\Models\Raids\Report')->name('reports.create');
-    Route::post('/reports', [ReportController::class, 'store'])->can('create', 'App\Models\Raids\Report')->name('reports.store');
-    Route::get('/reports/{report}', [ReportController::class, 'show'])->can('view', 'report')->name('reports.show');
-    Route::patch('/reports/{report}', [ReportController::class, 'update'])->can('update', 'report')->name('reports.update');
+    Route::get('/reports/create', [ReportController::class, 'create'])->middleware(['auth', 'can:create,App\Models\Raids\Report'])->name('reports.create');
+    Route::post('/reports', [ReportController::class, 'store'])->middleware(['auth', 'can:create,App\Models\Raids\Report'])->name('reports.store');
+    Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
+    Route::patch('/reports/{report}', [ReportController::class, 'update'])->middleware(['auth', 'can:update,report'])->name('reports.update');
 });
 
 /*

@@ -92,7 +92,6 @@ class ReportController extends Controller
 
         return Inertia::render('Raiding/Reports/Show', [
             'report' => new ReportResource($report),
-            'canManageLinks' => $request->user()->can('update', $report),
             'lootCouncillorCandidates' => Inertia::optional(function () use ($report) {
                 $linkedReportIds = $report->linkedReports->pluck('id');
 

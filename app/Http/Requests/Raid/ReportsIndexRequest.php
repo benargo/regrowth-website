@@ -11,14 +11,6 @@ use Illuminate\Support\Facades\Cache;
 class ReportsIndexRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return $this->user()?->can('viewAny', Report::class) ?? false;
-    }
-
-    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>

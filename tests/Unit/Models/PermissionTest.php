@@ -36,34 +36,34 @@ class PermissionTest extends ModelTestCase
     #[Test]
     public function it_can_create_a_permission_without_a_group(): void
     {
-        $permission = $this->create(['name' => 'view-reports']);
+        $permission = $this->create(['name' => 'manage-reports']);
 
-        $this->assertTableHas(['name' => 'view-reports', 'group' => null]);
+        $this->assertTableHas(['name' => 'manage-reports', 'group' => null]);
         $this->assertModelExists($permission);
     }
 
     #[Test]
     public function it_can_create_a_permission_with_a_group(): void
     {
-        $permission = $this->create(['name' => 'view-reports', 'group' => 'raids']);
+        $permission = $this->create(['name' => 'manage-reports', 'group' => 'raids']);
 
-        $this->assertTableHas(['name' => 'view-reports', 'group' => 'raids']);
+        $this->assertTableHas(['name' => 'manage-reports', 'group' => 'raids']);
         $this->assertModelExists($permission);
     }
 
     #[Test]
     public function group_is_converted_to_slug_on_set(): void
     {
-        $permission = $this->create(['name' => 'view-reports', 'group' => 'My Group']);
+        $permission = $this->create(['name' => 'manage-reports', 'group' => 'My Group']);
 
         $this->assertSame('my-group', $permission->group);
-        $this->assertTableHas(['name' => 'view-reports', 'group' => 'my-group']);
+        $this->assertTableHas(['name' => 'manage-reports', 'group' => 'my-group']);
     }
 
     #[Test]
     public function group_converts_mixed_case_to_slug(): void
     {
-        $permission = $this->create(['name' => 'view-reports', 'group' => 'LootCouncil']);
+        $permission = $this->create(['name' => 'manage-reports', 'group' => 'LootCouncil']);
 
         $this->assertSame('lootcouncil', $permission->group);
     }
@@ -71,7 +71,7 @@ class PermissionTest extends ModelTestCase
     #[Test]
     public function group_leaves_kebab_case_unchanged(): void
     {
-        $permission = $this->create(['name' => 'view-reports', 'group' => 'loot-council']);
+        $permission = $this->create(['name' => 'manage-reports', 'group' => 'loot-council']);
 
         $this->assertSame('loot-council', $permission->group);
     }
@@ -79,7 +79,7 @@ class PermissionTest extends ModelTestCase
     #[Test]
     public function group_handles_null(): void
     {
-        $permission = $this->create(['name' => 'view-reports', 'group' => null]);
+        $permission = $this->create(['name' => 'manage-reports', 'group' => null]);
 
         $this->assertNull($permission->group);
     }
@@ -87,7 +87,7 @@ class PermissionTest extends ModelTestCase
     #[Test]
     public function factory_in_group_state_sets_group(): void
     {
-        $permission = Permission::factory()->inGroup('Raids')->create(['name' => 'view-reports']);
+        $permission = Permission::factory()->inGroup('Raids')->create(['name' => 'manage-reports']);
 
         $this->assertSame('raids', $permission->group);
     }
@@ -105,7 +105,7 @@ class PermissionTest extends ModelTestCase
     #[Test]
     public function discord_roles_returns_associated_discord_roles(): void
     {
-        $permission = $this->create(['name' => 'view-reports']);
+        $permission = $this->create(['name' => 'manage-reports']);
 
         $role1 = DiscordRole::factory()->create();
         $role2 = DiscordRole::factory()->create();
@@ -119,7 +119,7 @@ class PermissionTest extends ModelTestCase
     #[Test]
     public function discord_roles_returns_empty_collection_when_no_roles_exist(): void
     {
-        $permission = $this->create(['name' => 'view-reports']);
+        $permission = $this->create(['name' => 'manage-reports']);
 
         $this->assertCount(0, $permission->discordRoles);
     }
@@ -129,7 +129,7 @@ class PermissionTest extends ModelTestCase
     #[Test]
     public function it_dispatches_permission_updated_event_on_update(): void
     {
-        $permission = $this->create(['name' => 'view-reports']);
+        $permission = $this->create(['name' => 'manage-reports']);
         Event::fake();
 
         $permission->update(['group' => 'raids']);

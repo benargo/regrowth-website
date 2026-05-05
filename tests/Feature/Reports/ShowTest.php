@@ -3,9 +3,7 @@
 namespace Tests\Feature\Reports;
 
 use App\Models\Character;
-use App\Models\DiscordRole;
 use App\Models\GuildTag;
-use App\Models\Permission;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\Zone;
@@ -14,62 +12,29 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class ShowTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
-
-        $permission = Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'web']);
-        $officerRole = DiscordRole::firstOrCreate(
-            ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
-        );
-        $officerRole->givePermissionTo($permission);
-    }
-
-    private function grantManageReports(): void
-    {
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true]);
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-reports', 'guard_name' => 'web']));
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
-    }
-
     // ==================== Access Control ====================
 
     #[Test]
-    public function show_requires_authentication(): void
+    public function show_is_publicly_accessible(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
 
         $response = $this->get(route('raiding.reports.show', $report));
 
-        $response->assertRedirect('/login');
+        $response->assertOk();
     }
 
     #[Test]
-    public function show_forbids_users_without_view_reports_permission(): void
+    public function show_allows_authenticated_users(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->member()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function show_allows_officers(): void
-    {
-        $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -82,7 +47,7 @@ class ShowTest extends TestCase
     public function show_renders_correct_inertia_component(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -101,7 +66,7 @@ class ShowTest extends TestCase
             'start_time' => Carbon::parse('2025-01-05 20:00', 'UTC'),
             'end_time' => Carbon::parse('2025-01-05 23:30', 'UTC'),
         ]);
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -129,7 +94,7 @@ class ShowTest extends TestCase
         $character = Character::factory()->create(['name' => 'Thrall']);
         $report->characters()->attach($character->id, ['presence' => 75]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -153,7 +118,7 @@ class ShowTest extends TestCase
             $bob->id => ['presence' => 1],
         ]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -172,7 +137,7 @@ class ShowTest extends TestCase
         $report2 = Report::factory()->withoutGuildTag()->create(['title' => 'Linked Report']);
         $report1->linkedReports()->attach($report2->id, ['created_by' => null]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report1));
 
@@ -185,7 +150,7 @@ class ShowTest extends TestCase
     #[Test]
     public function show_returns_404_for_nonexistent_report(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', 'nonexistent-code'));
 
@@ -196,7 +161,7 @@ class ShowTest extends TestCase
     public function show_report_characters_include_pivot_is_loot_councillor(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
         $report->characters()->attach($character->id, ['presence' => 1, 'is_loot_councillor' => true]);
@@ -209,42 +174,13 @@ class ShowTest extends TestCase
         );
     }
 
-    // ==================== canManageLinks ====================
-
-    #[Test]
-    public function show_can_manage_links_is_true_for_users_with_manage_reports(): void
-    {
-        $report = Report::factory()->withoutGuildTag()->create();
-        $this->grantManageReports();
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('canManageLinks', true)
-        );
-    }
-
-    #[Test]
-    public function show_can_manage_links_is_false_for_users_without_manage_reports(): void
-    {
-        $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('canManageLinks', false)
-        );
-    }
-
     // ==================== nearbyReports optional prop ====================
 
     #[Test]
     public function show_nearby_reports_is_absent_on_initial_load(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -258,7 +194,7 @@ class ShowTest extends TestCase
     {
         $tag = GuildTag::factory()->withoutPhase()->create();
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-06-01 20:00', 'UTC')]);
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user)
             ->get(route('raiding.reports.show', $report))
@@ -288,7 +224,7 @@ class ShowTest extends TestCase
         }
 
         $current = $reports->get(9);
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user)
             ->get(route('raiding.reports.show', $current))
@@ -321,7 +257,7 @@ class ShowTest extends TestCase
             ['report_1' => $c->id, 'report_2' => $b->id],
         ]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user)
             ->get(route('raiding.reports.show', $a))
@@ -341,7 +277,7 @@ class ShowTest extends TestCase
     public function show_impacted_reports_is_absent_on_initial_load(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -355,7 +291,7 @@ class ShowTest extends TestCase
     {
         $report = Report::factory()->withoutGuildTag()->create();
         $other = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $report->linkedReports()->attach($other->id, ['created_by' => $user->id]);
 
@@ -375,7 +311,7 @@ class ShowTest extends TestCase
         $report = Report::factory()->withoutGuildTag()->create();
         $autoLinked = Report::factory()->withoutGuildTag()->create();
         $manualLinked = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $report->linkedReports()->attach($autoLinked->id, ['created_by' => null]);
         $report->linkedReports()->attach($manualLinked->id, ['created_by' => $user->id]);
@@ -396,7 +332,7 @@ class ShowTest extends TestCase
     public function show_loot_councillor_candidates_is_absent_on_initial_load(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
 
@@ -409,7 +345,7 @@ class ShowTest extends TestCase
     public function show_loot_councillor_candidates_returned_on_partial_reload(): void
     {
         $report = Report::factory()->withoutGuildTag()->create();
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
         Character::factory()->lootCouncillor()->create();
 
         $this->actingAs($user)

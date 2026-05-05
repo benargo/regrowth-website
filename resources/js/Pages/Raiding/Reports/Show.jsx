@@ -119,7 +119,7 @@ function CharactersTable({ characters }) {
     );
 }
 
-export default function Show({ report, nearbyReports, impactedReports, canManageLinks }) {
+export default function Show({ report, nearbyReports, impactedReports }) {
     const data = report.data;
     const startDate = new Date(data.start_time);
     const dayOfWeek = startDate.toLocaleString("en-GB", { weekday: "long" });
@@ -186,7 +186,6 @@ export default function Show({ report, nearbyReports, impactedReports, canManage
                     {/* Linked reports */}
                     <LinkedRaidReports
                         currentReport={data}
-                        canManageLinks={canManageLinks}
                         nearbyReports={nearbyReports}
                         impactedReports={impactedReports}
                         referenceDate={data.start_time}

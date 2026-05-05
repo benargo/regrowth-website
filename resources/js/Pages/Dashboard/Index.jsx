@@ -57,12 +57,10 @@ export default function Index({ discordRoles }) {
                             <h3 className="text-md">Manage raid teams</h3>
                             <p className="text-sm mb-1">Create and modify raid team compositions and assignments.</p>
                         </DashboardCard> */}
-                        {usePermission("view-reports") && (
-                            <DashboardCard href={route("raiding.reports.index")} icon="file-chart-line">
-                                <h3 className="text-md">Raid reports</h3>
-                                <p className="mb-1 text-sm">View and manage raid reports.</p>
-                            </DashboardCard>
-                        )}
+                        <DashboardCard href={route("raiding.reports.index")} icon="file-chart-line">
+                            <h3 className="text-md">Raid reports</h3>
+                            <p className="mb-1 text-sm">View and manage raid reports.</p>
+                        </DashboardCard>
                         {usePermission("view-planned-absences") && (
                             <DashboardCard href={route("raiding.absences.index")} icon="umbrella-beach">
                                 <h3 className="text-md">Planned absences</h3>

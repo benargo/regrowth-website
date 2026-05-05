@@ -29,7 +29,7 @@ class RaidingPagesTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
 
-        foreach (['view-attendance', 'view-reports', 'view-planned-absences', 'create-planned-absences', 'update-planned-absences'] as $permissionName) {
+        foreach (['view-attendance', 'view-planned-absences', 'create-planned-absences', 'update-planned-absences'] as $permissionName) {
             $permission = Permission::firstOrCreate(['name' => $permissionName, 'guard_name' => 'web']);
             $officerRole->givePermissionTo($permission);
         }
@@ -47,11 +47,11 @@ class RaidingPagesTest extends TestCase
     }
 
     #[Test]
-    public function raiding_index_redirects_unauthenticated_users(): void
+    public function raiding_index_loads_for_unauthenticated_users(): void
     {
         $response = $this->get(route('raiding.index'));
 
-        $response->assertRedirect('/login');
+        $response->assertOk();
     }
 
     #[Test]

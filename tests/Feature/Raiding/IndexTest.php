@@ -27,11 +27,11 @@ class IndexTest extends TestCase
     }
 
     #[Test]
-    public function guests_are_redirected_to_login(): void
+    public function guests_can_view_the_raiding_index(): void
     {
         $response = $this->get(route('raiding.index'));
 
-        $response->assertRedirectToRoute('login');
+        $response->assertOk();
     }
 
     #[Test]

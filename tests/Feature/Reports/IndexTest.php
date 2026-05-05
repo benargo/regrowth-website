@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\Reports;
 
-use App\Models\DiscordRole;
 use App\Models\GuildTag;
-use App\Models\Permission;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\Zone;
@@ -12,81 +10,26 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class IndexTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
-
-        $permission = Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'web']);
-        $officerRole = DiscordRole::firstOrCreate(
-            ['id' => '829021769448816691'],
-            ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
-        );
-        $officerRole->givePermissionTo($permission);
-    }
-
     // ==================== Access Control ====================
 
     #[Test]
-    public function index_requires_authentication(): void
+    public function index_is_publicly_accessible(): void
     {
         $response = $this->get(route('raiding.reports.index'));
 
-        $response->assertRedirect('/login');
+        $response->assertOk();
     }
 
     #[Test]
-    public function index_forbids_guest_users(): void
+    public function index_allows_authenticated_users(): void
     {
-        $user = User::factory()->guest()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function index_forbids_member_users(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function index_forbids_raider_users(): void
-    {
-        $user = User::factory()->raider()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function index_forbids_loot_councillor_users(): void
-    {
-        $user = User::factory()->lootCouncillor()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.reports.index'));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function index_allows_officer_users(): void
-    {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -98,7 +41,7 @@ class IndexTest extends TestCase
     #[Test]
     public function reports_prop_is_deferred_and_not_in_initial_response(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -114,7 +57,7 @@ class IndexTest extends TestCase
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -138,7 +81,7 @@ class IndexTest extends TestCase
             'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC'),
         ]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', [
             'filter' => [
@@ -160,7 +103,7 @@ class IndexTest extends TestCase
     #[Test]
     public function reports_deferred_prop_returns_empty_when_no_data(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -178,7 +121,7 @@ class IndexTest extends TestCase
     {
         GuildTag::factory()->withoutPhase()->create();
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -208,7 +151,7 @@ class IndexTest extends TestCase
             'end_time' => Carbon::parse('2025-01-06 23:30', 'UTC'),
         ]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -237,7 +180,7 @@ class IndexTest extends TestCase
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-03-01 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -260,7 +203,7 @@ class IndexTest extends TestCase
         Report::factory()->withGuildTag($tag)->withZone($zoneA)->create(['title' => 'Zone A Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->withZone($zoneB)->create(['title' => 'Zone B Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['zone_ids' => '1']]));
 
@@ -280,7 +223,7 @@ class IndexTest extends TestCase
         Report::factory()->withGuildTag($tag1)->create(['title' => 'Tag 1 Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag2)->create(['title' => 'Tag 2 Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['guild_tag_ids' => (string) $tag1->id]]));
 
@@ -301,7 +244,7 @@ class IndexTest extends TestCase
         // 2025-01-08 is a Wednesday (Carbon day 3)
         Report::factory()->withGuildTag($tag)->create(['title' => 'Wednesday Raid', 'start_time' => Carbon::parse('2025-01-08 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         // Filter for Monday only (Carbon day 1)
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => '1']]));
@@ -321,7 +264,7 @@ class IndexTest extends TestCase
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['since_date' => '2025-01-15']]));
 
@@ -340,7 +283,7 @@ class IndexTest extends TestCase
         Report::factory()->withGuildTag($tag)->create(['title' => 'Old Raid', 'start_time' => Carbon::parse('2025-01-01 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['title' => 'New Raid', 'start_time' => Carbon::parse('2025-02-01 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['before_date' => '2025-01-15']]));
 
@@ -358,7 +301,7 @@ class IndexTest extends TestCase
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
         Report::factory()->count(3)->withGuildTag($tag)->create();
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -374,7 +317,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_accepts_omitted_optional_fields(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -384,7 +327,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_zone_ids_with_invalid_format(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['zone_ids' => 'not-valid']]));
 
@@ -394,7 +337,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_guild_tag_ids_with_invalid_format(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['guild_tag_ids' => 'not-valid']]));
 
@@ -404,7 +347,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_days_with_invalid_format(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => 'not-valid']]));
 
@@ -414,7 +357,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_days_outside_valid_range(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => '7']]));
 
@@ -424,7 +367,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_accepts_valid_days_range(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['days' => '0,1,2,3,4,5,6']]));
 
@@ -434,7 +377,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_invalid_since_date(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['since_date' => 'not-a-date']]));
 
@@ -444,7 +387,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_since_date_in_the_future(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['since_date' => $tomorrow]]));
@@ -455,7 +398,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_invalid_before_date(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['before_date' => 'not-a-date']]));
 
@@ -465,7 +408,7 @@ class IndexTest extends TestCase
     #[Test]
     public function index_rejects_before_date_in_the_future(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $tomorrow = Carbon::tomorrow(config('app.timezone'))->toDateString();
         $response = $this->actingAs($user)->get(route('raiding.reports.index', ['filter' => ['before_date' => $tomorrow]]));
@@ -478,7 +421,7 @@ class IndexTest extends TestCase
     #[Test]
     public function earliest_date_is_null_when_no_reports_exist(): void
     {
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 
@@ -494,7 +437,7 @@ class IndexTest extends TestCase
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-03-10 20:00', 'UTC')]);
         Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-05 20:00', 'UTC')]);
 
-        $user = User::factory()->officer()->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('raiding.reports.index'));
 

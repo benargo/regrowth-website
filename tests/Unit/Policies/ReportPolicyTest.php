@@ -47,31 +47,6 @@ class ReportPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_view_any_with_permission(): void
-    {
-        $user = $this->userWithPermission('view-reports');
-
-        $this->assertTrue($this->policy->viewAny($user));
-    }
-
-    #[Test]
-    public function it_denies_view_any_without_permission(): void
-    {
-        $user = $this->userWithoutPermission();
-
-        $this->assertFalse($this->policy->viewAny($user));
-    }
-
-    #[Test]
-    public function it_allows_view_with_permission(): void
-    {
-        $user = $this->userWithPermission('view-reports');
-        $report = Report::factory()->create();
-
-        $this->assertTrue($this->policy->view($user, $report));
-    }
-
-    #[Test]
     public function it_allows_create_with_manage_reports_permission(): void
     {
         $user = $this->userWithPermission('manage-reports');
