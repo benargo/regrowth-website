@@ -5,6 +5,7 @@ namespace Tests\Unit\Models;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventCharacter;
+use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -19,7 +20,7 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_raid_events_table(): void
+    public function it_uses_events_table(): void
     {
         $model = new Event;
 
@@ -260,5 +261,49 @@ class EventTest extends ModelTestCase
         $event = $this->create();
 
         $this->assertCount(0, $event->lootCouncillors);
+    }
+
+    // raids
+
+    #[Test]
+    public function raids_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Event;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->raids());
+    }
+
+    #[Test]
+    public function it_can_attach_raids(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+
+        $event->raids()->attach($raid->id);
+
+        $this->assertCount(1, $event->raids);
+        $this->assertSame($raid->id, $event->raids->first()->id);
+    }
+
+    #[Test]
+    public function raids_returns_empty_collection_when_none_attached(): void
+    {
+        $event = $this->create();
+
+        $this->assertCount(0, $event->raids);
+    }
+
+    #[Test]
+    public function deleting_event_cascades_to_raids_pivot(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $event->delete();
+
+        $this->assertDatabaseMissing('pivot_events_raids', [
+            'event_id' => $event->id,
+        ]);
     }
 }

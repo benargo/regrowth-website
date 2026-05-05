@@ -3,11 +3,13 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Boss;
+use App\Models\Event;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use PHPUnit\Framework\Attributes\Test;
@@ -211,5 +213,35 @@ class RaidTest extends ModelTestCase
 
         $this->assertCount(1, $raid->items);
         $this->assertCount(2, $raid->comments);
+    }
+
+    // events
+
+    #[Test]
+    public function events_returns_belongs_to_many_relationship(): void
+    {
+        $model = new Raid;
+
+        $this->assertInstanceOf(BelongsToMany::class, $model->events());
+    }
+
+    #[Test]
+    public function it_can_attach_events(): void
+    {
+        $raid = $this->create();
+        $event = Event::factory()->create();
+
+        $raid->events()->attach($event->id);
+
+        $this->assertCount(1, $raid->events);
+        $this->assertSame($event->id, $raid->events->first()->id);
+    }
+
+    #[Test]
+    public function events_returns_empty_collection_when_none_attached(): void
+    {
+        $raid = $this->create();
+
+        $this->assertCount(0, $raid->events);
     }
 }
