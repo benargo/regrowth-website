@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Http\Resources\PermissionGroupsResource;
 use App\Models\GuildRank;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
@@ -14,7 +13,6 @@ use App\Policies\CommentPolicy;
 use App\Policies\DatasetPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\ReportPolicy;
-use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,12 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        /**
-         * Permission groups
-         */
-        $this->app->bind(PermissionGroupsResource::class, function () {
-            return new PermissionGroupsResource(collect(PermissionSeeder::groups()));
-        });
+        //
     }
 
     /**
