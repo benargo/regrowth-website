@@ -54,10 +54,20 @@ class Raid extends Model
      *
      * This is not stored in the database, but is generated on the fly when accessed. It is used for creating SEO-friendly URLs for raids.
      */
-    public function slug(): Attribute
+    protected function slug(): Attribute
     {
         return Attribute::make(
             get: fn () => Str::slug($this->name),
+        );
+    }
+
+    /**
+     * Get the max_groups attribute for the raid, which is the maximum number of groups that can be formed based on the max_players attribute.
+     */
+    protected function maxGroups(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => (int) ceil($this->max_players / 5),
         );
     }
 

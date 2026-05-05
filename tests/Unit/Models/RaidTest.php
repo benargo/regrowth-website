@@ -215,6 +215,49 @@ class RaidTest extends ModelTestCase
         $this->assertCount(2, $raid->comments);
     }
 
+    // max_groups
+
+    #[Test]
+    public function it_calculates_max_groups_from_max_players(): void
+    {
+        $raid = $this->create(['max_players' => 20]);
+
+        $this->assertSame(4, $raid->max_groups);
+    }
+
+    #[Test]
+    public function ten_player_raid_has_two_max_groups(): void
+    {
+        $raid = $this->factory()->tenPlayer()->create();
+
+        $this->assertSame(2, $raid->max_groups);
+    }
+
+    #[Test]
+    public function twenty_five_player_raid_has_five_max_groups(): void
+    {
+        $raid = $this->factory()->twentyFivePlayer()->create();
+
+        $this->assertSame(5, $raid->max_groups);
+    }
+
+    #[Test]
+    public function max_groups_rounds_up_for_non_divisible_player_counts(): void
+    {
+        $raid = $this->create(['max_players' => 11]);
+
+        $this->assertSame(3, $raid->max_groups);
+    }
+
+    #[Test]
+    public function max_groups_is_not_persisted_to_the_database(): void
+    {
+        $raid = $this->create(['max_players' => 10]);
+
+        $this->assertArrayNotHasKey('max_groups', $raid->getAttributes());
+        $this->assertSame(2, $raid->max_groups);
+    }
+
     // events
 
     #[Test]
