@@ -31,7 +31,6 @@ class CharacterResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('is_main', $array);
         $this->assertArrayHasKey('is_loot_councillor', $array);
-        $this->assertArrayHasKey('reached_level_cap_at', $array);
         $this->assertArrayHasKey('planned_absences', $array);
         $this->assertArrayHasKey('playable_class', $array);
         $this->assertArrayHasKey('playable_race', $array);
@@ -50,7 +49,16 @@ class CharacterResourceTest extends TestCase
         $this->assertSame('Arthas', $array['name']);
         $this->assertTrue($array['is_main']);
         $this->assertFalse($array['is_loot_councillor']);
-        $this->assertNull($array['reached_level_cap_at']);
+    }
+
+    #[Test]
+    public function it_omits_reached_level_cap_at(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertFalse(array_key_exists('reached_level_cap_at', $array));
     }
 
     #[Test]
