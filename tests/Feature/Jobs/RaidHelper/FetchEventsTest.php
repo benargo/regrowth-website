@@ -5,6 +5,7 @@ namespace Tests\Feature\Jobs\RaidHelper;
 use App\Jobs\RaidHelper\FetchEvents;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use App\Services\RaidHelper\RaidHelper;
@@ -14,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -350,6 +352,145 @@ class FetchEventsTest extends TestCase
         $this->assertCount(2, $event->characters);
         $this->assertTrue($event->characters->contains($arthas));
         $this->assertTrue($event->characters->contains($sylvanas));
+    }
+
+    // -------------------------------------------------------------------------
+    // Raid sync
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_syncs_raids_from_valid_json_in_the_event_description(): void
+    {
+        $channelId = '100000000000000001';
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+
+        $description = "-# Do not edit below this line...\n".json_encode([['id' => $raid->id, 'name' => $raid->name]]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(1, $event->raids);
+        $this->assertTrue($event->raids->contains($raid));
+    }
+
+    #[Test]
+    public function it_syncs_multiple_raids_from_the_event_description(): void
+    {
+        $channelId = '100000000000000001';
+        $raidOne = Raid::factory()->create(['name' => 'Molten Core']);
+        $raidTwo = Raid::factory()->create(['name' => 'Blackwing Lair']);
+
+        $description = "-# Do not edit below this line...\n".json_encode([
+            ['id' => $raidOne->id, 'name' => $raidOne->name],
+            ['id' => $raidTwo->id, 'name' => $raidTwo->name],
+        ]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(2, $event->raids);
+        $this->assertTrue($event->raids->contains($raidOne));
+        $this->assertTrue($event->raids->contains($raidTwo));
+    }
+
+    #[Test]
+    public function it_replaces_existing_raid_associations_when_syncing(): void
+    {
+        $channelId = '100000000000000001';
+        $oldRaid = Raid::factory()->create(['name' => 'Old Raid']);
+        $newRaid = Raid::factory()->create(['name' => 'New Raid']);
+
+        $existingEvent = Event::factory()->create(['raid_helper_event_id' => '999000000000000001']);
+        $existingEvent->raids()->sync([$oldRaid->id]);
+
+        $description = "-# Do not edit below this line...\n".json_encode([['id' => $newRaid->id, 'name' => $newRaid->name]]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(1, $event->raids);
+        $this->assertTrue($event->raids->contains($newRaid));
+        $this->assertFalse($event->raids->contains($oldRaid));
+    }
+
+    #[Test]
+    public function it_skips_a_raid_row_where_the_id_does_not_match(): void
+    {
+        $channelId = '100000000000000001';
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+
+        $description = "-# Do not edit below this line...\n".json_encode([
+            ['id' => 99999, 'name' => $raid->name],
+        ]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(0, $event->raids);
+    }
+
+    #[Test]
+    public function it_skips_a_raid_row_where_the_name_does_not_match(): void
+    {
+        $channelId = '100000000000000001';
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+
+        $description = "-# Do not edit below this line...\n".json_encode([
+            ['id' => $raid->id, 'name' => 'Wrong Name'],
+        ]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(0, $event->raids);
+    }
+
+    #[Test]
+    public function it_logs_an_error_when_a_raid_row_is_missing_required_keys(): void
+    {
+        $channelId = '100000000000000001';
+        $description = "-# Do not edit below this line...\n".json_encode([['id' => 1]]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        Log::shouldReceive('error')
+            ->once()
+            ->withArgs(fn (string $msg) => str_contains($msg, 'missing required keys'));
+        Log::shouldReceive('debug')->once();
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+    }
+
+    #[Test]
+    public function it_silently_skips_raid_sync_when_the_description_json_is_invalid(): void
+    {
+        $channelId = '100000000000000001';
+        $description = "-# Do not edit below this line...\nnot valid json";
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertNotNull($event);
+        $this->assertCount(0, $event->raids);
     }
 
     // -------------------------------------------------------------------------

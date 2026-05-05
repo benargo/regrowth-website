@@ -4,6 +4,7 @@ namespace App\Jobs\RaidHelper;
 
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
@@ -12,6 +13,7 @@ use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -122,6 +124,25 @@ class FetchEvents implements ShouldQueue
                     }
                 }
                 $eventModel->characters()->syncWithoutDetaching($characterSync);
+            }
+
+            // Step 4c. Sync the raids associated with each event.
+            $raidsString = str($event->description)
+                ->after("-# Do not edit below this line...\n")
+                ->trim();
+
+            if ($raidsString->isJson()) {
+                $raidIds = collect(json_decode(stripslashes($raidsString), true))->filter(function (array $row) {
+                    if (! Arr::hasAll($row, ['id', 'name'])) {
+                        Log::error("Skipping raid row due to missing required keys. Expected keys: 'id', 'name'.");
+                        Log::debug('Row data: '.json_encode($row));
+
+                        return false;
+                    }
+
+                    return Raid::where('id', $row['id'])->where('name', $row['name'])->exists();
+                })->pluck('id');
+                $eventModel->raids()->sync($raidIds);
             }
         });
     }
