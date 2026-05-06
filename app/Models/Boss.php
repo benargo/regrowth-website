@@ -34,6 +34,7 @@ class Boss extends Model implements HasMedia
         'name',
         'raid_id',
         'encounter_order',
+        'notes',
     ];
 
     /**

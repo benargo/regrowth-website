@@ -74,6 +74,8 @@ class RaidBossesCollectionTest extends TestCase
         $this->assertIsArray($array['data'][$raid->id][0]);
         $this->assertArrayHasKey('id', $array['data'][$raid->id][0]);
         $this->assertArrayHasKey('name', $array['data'][$raid->id][0]);
+        $this->assertArrayHasKey('notes', $array['data'][$raid->id][0]);
+        $this->assertArrayHasKey('images', $array['data'][$raid->id][0]);
     }
 
     #[Test]

@@ -46,6 +46,7 @@ class BossTest extends ModelTestCase
             'name',
             'raid_id',
             'encounter_order',
+            'notes',
         ]);
     }
 
@@ -62,6 +63,23 @@ class BossTest extends ModelTestCase
 
         $this->assertTableHas(['name' => 'Prince Malchezaar']);
         $this->assertModelExists($boss);
+    }
+
+    #[Test]
+    public function it_can_be_created_with_notes(): void
+    {
+        $raid = Raid::factory()->create();
+        $notes = 'Remember to use all cooldowns on this boss';
+
+        $boss = $this->create([
+            'name' => 'Prince Malchezaar',
+            'raid_id' => $raid->id,
+            'encounter_order' => 1,
+            'notes' => $notes,
+        ]);
+
+        $this->assertTableHas(['notes' => $notes]);
+        $this->assertSame($notes, $boss->notes);
     }
 
     #[Test]

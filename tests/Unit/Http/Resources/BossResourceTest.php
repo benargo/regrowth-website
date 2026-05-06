@@ -112,6 +112,38 @@ class BossResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_notes(): void
+    {
+        $boss = Boss::factory()->create(['notes' => 'Interrupt the cast.']);
+
+        $array = (new BossResource($boss))->toArray(new Request);
+
+        $this->assertSame('Interrupt the cast.', $array['notes']);
+    }
+
+    #[Test]
+    public function it_returns_null_notes_when_not_set(): void
+    {
+        $boss = Boss::factory()->create(['notes' => null]);
+
+        $array = (new BossResource($boss))->toArray(new Request);
+
+        $this->assertNull($array['notes']);
+    }
+
+    #[Test]
+    public function it_returns_images_array(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $array = (new BossResource($boss))->toArray(new Request);
+
+        $this->assertArrayHasKey('images', $array);
+        $this->assertIsArray($array['images']);
+        $this->assertEmpty($array['images']);
+    }
+
+    #[Test]
     public function it_returns_all_expected_keys(): void
     {
         $boss = Boss::factory()->create();
@@ -120,6 +152,8 @@ class BossResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('notes', $array);
+        $this->assertArrayHasKey('images', $array);
         $this->assertArrayHasKey('encounter_order', $array);
     }
 }

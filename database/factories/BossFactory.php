@@ -32,6 +32,7 @@ class BossFactory extends Factory
             'name' => fake()->randomElement(['Attumen the Huntsman', 'Moroes', 'Maiden of Virtue', 'Opera Event', 'The Curator', 'Shade of Aran', 'Netherspite', 'Prince Malchezaar', 'Illidan Stormrage', 'Kil\'jaeden']),
             'raid_id' => Raid::factory(),
             'encounter_order' => fake()->numberBetween(1, 12),
+            'notes' => fake()->optional()->paragraph(),
         ];
     }
 
