@@ -8,12 +8,11 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Support\DashboardTestCase;
 
-class BossStrategiesControllerTest extends DashboardTestCase
+class BossStrategyControllerTest extends DashboardTestCase
 {
     #[Test]
     public function index_returns_bosses_and_phases(): void
@@ -81,7 +80,7 @@ class BossStrategiesControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function update_saves_notes_as_html(): void
+    public function update_saves_notes_as_markdown(): void
     {
         $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
         $boss = Boss::factory()->for(Raid::factory())->create();
@@ -94,7 +93,7 @@ class BossStrategiesControllerTest extends DashboardTestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('bosses', [
             'id' => $boss->id,
-            'notes' => Str::markdown('**bold text**'),
+            'notes' => '**bold text**',
         ]);
     }
 
@@ -102,7 +101,7 @@ class BossStrategiesControllerTest extends DashboardTestCase
     public function update_saves_null_notes(): void
     {
         $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
-        $boss = Boss::factory()->for(Raid::factory())->create(['notes' => '<p>existing notes</p>']);
+        $boss = Boss::factory()->for(Raid::factory())->create(['notes' => '## Existing notes']);
 
         $response = $this->actingAs($user)->patch(
             route('dashboard.boss-strategies.update', ['boss' => $boss]),
