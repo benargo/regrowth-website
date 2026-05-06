@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\BossResource;
+use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,7 +46,7 @@ class BossResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_raid_when_loaded(): void
+    public function it_includes_raid_resource_when_loaded(): void
     {
         $boss = Boss::factory()->create();
         $boss->load('raid');
@@ -53,7 +54,7 @@ class BossResourceTest extends TestCase
         $array = (new BossResource($boss))->toArray(new Request);
 
         $this->assertArrayHasKey('raid', $array);
-        $this->assertInstanceOf(Raid::class, $array['raid']);
+        $this->assertInstanceOf(RaidResource::class, $array['raid']);
     }
 
     #[Test]

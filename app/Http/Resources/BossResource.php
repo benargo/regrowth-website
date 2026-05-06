@@ -23,7 +23,7 @@ class BossResource extends JsonResource
             'encounter_order' => $this->encounter_order,
             'raid' => $this->when(
                 $this->relationLoaded('raid'),
-                fn () => $this->raid,
+                fn () => new RaidResource($this->raid),
                 fn () => $this->raid_id,
             ),
             'items' => $this->whenLoaded('items'),
