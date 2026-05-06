@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders\TBC;
+namespace Database\Seeders;
 
 use App\Models\Raid;
 use Illuminate\Database\Seeder;

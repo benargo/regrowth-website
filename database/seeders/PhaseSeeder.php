@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders\TBC;
+namespace Database\Seeders;
 
 use App\Models\Phase;
 use Illuminate\Database\Seeder;
