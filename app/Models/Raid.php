@@ -61,6 +61,16 @@ class Raid extends Model
     // ============ Custom attributes ============
 
     /**
+     * Get the max_groups attribute for the raid, which is the maximum number of groups that can be formed based on the max_players attribute.
+     */
+    protected function maxGroups(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => (int) ceil($this->max_players / 5),
+        );
+    }
+
+    /**
      * Get the slug attribute for the raid, which is a URL-friendly version of the raid name.
      *
      * This is not stored in the database, but is generated on the fly when accessed. It is used for creating SEO-friendly URLs for raids.
@@ -69,16 +79,6 @@ class Raid extends Model
     {
         return Attribute::make(
             get: fn () => Str::slug($this->name),
-        );
-    }
-
-    /**
-     * Get the max_groups attribute for the raid, which is the maximum number of groups that can be formed based on the max_players attribute.
-     */
-    protected function maxGroups(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => (int) ceil($this->max_players / 5),
         );
     }
 
