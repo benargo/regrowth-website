@@ -14,7 +14,6 @@ use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class FetchEvents implements ShouldQueue
@@ -89,14 +88,9 @@ class FetchEvents implements ShouldQueue
             }
         });
 
-        // Step 3. Get the comps for each event and associate them with the events in the $events collection.
-        $comps = $events->mapWithKeys(function (RaidHelperEvent $event) use ($raidHelper) {
-            return [$event->id => $raidHelper->getComp($event->id)];
-        });
-
-        // Step 4. Upsert the events and their associated comps into the database.
-        $events->each(function (RaidHelperEvent $event) use ($comps) {
-            // Step 4a. Upsert the event into the database based on the raid_helper_event_id.
+        // Step 3. Upsert the events and their associated comps into the database.
+        $events->each(function (RaidHelperEvent $event) use ($raidHelper) {
+            // Step 3a. Upsert the event into the database based on the raid_helper_event_id.
             $appTimezone = config('app.timezone');
             $eventModel = Event::updateOrCreate(
                 ['raid_helper_event_id' => $event->id],
@@ -108,25 +102,7 @@ class FetchEvents implements ShouldQueue
                 ]
             );
 
-            // Step 4b. Sync the associated comps for the event in the database.
-            $comp = $comps->get($event->id);
-
-            if ($comp) {
-                $characterSync = [];
-                foreach ($comp->slots as $slot) {
-                    $character = Character::where('name', $slot->name)->first();
-                    if ($character) {
-                        $characterSync[$character->id] = [
-                            'slot_number' => $slot->slotNumber,
-                            'group_number' => $slot->groupNumber,
-                            'is_confirmed' => $slot->isConfirmed,
-                        ];
-                    }
-                }
-                $eventModel->characters()->syncWithoutDetaching($characterSync);
-            }
-
-            // Step 4c. Sync the raids associated with each event.
+            // Step 3b. Sync the raids associated with each event.
             $raidsString = str($event->description)
                 ->after("-# Do not edit below this line...\n")
                 ->trim();
@@ -143,6 +119,28 @@ class FetchEvents implements ShouldQueue
                     return Raid::where('id', $row['id'])->where('name', $row['name'])->exists();
                 })->pluck('id');
                 $eventModel->raids()->sync($raidIds);
+            }
+
+            // Step 3c. Sync the associated comps for the event in the database.
+            Log::debug("Syncing comp data for event ID {$event->id} in the database.");
+            $comp = $raidHelper->getComp($event->id);
+
+            if ($comp) {
+                Log::debug("Syncing characters for event ID {$event->id} based on comp data from Raid Helper API.");
+                $characterSync = [];
+                foreach ($comp->slots as $slot) {
+                    $character = Character::where('name', $slot->name)->first();
+                    if ($character) {
+                        $characterSync[$character->id] = [
+                            'slot_number' => $slot->slotNumber,
+                            'group_number' => $slot->groupNumber,
+                            'is_confirmed' => $slot->isConfirmed,
+                        ];
+                    }
+                }
+                $eventModel->characters()->syncWithoutDetaching($characterSync);
+            } else {
+                Log::warning("No comp data found for event ID {$event->id} from Raid Helper API. Skipping character sync for this event.");
             }
         });
     }

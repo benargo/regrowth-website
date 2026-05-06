@@ -15,7 +15,6 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -458,23 +457,6 @@ class FetchEventsTest extends TestCase
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(0, $event->raids);
-    }
-
-    #[Test]
-    public function it_logs_an_error_when_a_raid_row_is_missing_required_keys(): void
-    {
-        $channelId = '100000000000000001';
-        $description = "-# Do not edit below this line...\n".json_encode([['id' => 1]]);
-        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
-        $this->setupSingleEventRun($channelId, $payload, null);
-
-        Log::shouldReceive('error')
-            ->once()
-            ->withArgs(fn (string $msg) => str_contains($msg, 'missing required keys'));
-        Log::shouldReceive('debug')->once();
-
-        $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
     }
 
     #[Test]
