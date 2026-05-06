@@ -38,6 +38,7 @@ class Raid extends Model
         'difficulty',
         'phase_id',
         'max_players',
+        'max_loot_councillors',
     ];
 
     /**
@@ -46,6 +47,16 @@ class Raid extends Model
      * @var array<string>
      */
     protected $hidden = ['created_at', 'updated_at'];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'max_players' => 'integer',
+        'max_loot_councillors' => 'integer',
+    ];
 
     // ============ Custom attributes ============
 

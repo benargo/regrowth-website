@@ -33,7 +33,8 @@ class RaidFactory extends Factory
             'name' => fake()->randomElement(['Karazhan', 'Gruul\'s Lair', 'Magtheridon\'s Lair', 'Serpentshrine Cavern', 'Tempest Keep', 'Black Temple', 'Sunwell Plateau']),
             'difficulty' => fake()->randomElement(['Normal', 'Heroic']),
             'phase_id' => Phase::factory(),
-            'max_players' => fake()->randomElement([10, 25]),
+            'max_players' => fake()->randomElement([10, 25, null]),
+            'max_loot_councillors' => null,
         ];
     }
 
@@ -54,6 +55,16 @@ class RaidFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'max_players' => 25,
+        ]);
+    }
+
+    /**
+     * Set the maximum number of loot councillors for the raid.
+     */
+    public function withLootCouncillors(int $count): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'max_loot_councillors' => $count,
         ]);
     }
 

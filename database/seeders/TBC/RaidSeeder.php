@@ -19,6 +19,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 1,
                 'max_players' => 10,
+                'max_loot_councillors' => 3,
             ],
             [
                 'id' => 2,
@@ -26,6 +27,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 1,
                 'max_players' => 25,
+                'max_loot_councillors' => 5,
             ],
             [
                 'id' => 3,
@@ -33,6 +35,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 1,
                 'max_players' => 25,
+                'max_loot_councillors' => 5,
             ],
             [
                 'id' => 4,
@@ -40,6 +43,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 2,
                 'max_players' => 25,
+                'max_loot_councillors' => 5,
             ],
             [
                 'id' => 5,
@@ -47,6 +51,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 2,
                 'max_players' => 25,
+                'max_loot_councillors' => 5,
             ],
             [
                 'id' => 6,
@@ -54,6 +59,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 3,
                 'max_players' => 25,
+                'max_loot_councillors' => 5,
             ],
             [
                 'id' => 7,
@@ -61,6 +67,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 3,
                 'max_players' => 25,
+                'max_loot_councillors' => 5,
             ],
             [
                 'id' => 8,
@@ -68,6 +75,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 4,
                 'max_players' => 10,
+                'max_loot_councillors' => 3,
             ],
             [
                 'id' => 9,
@@ -75,6 +83,7 @@ class RaidSeeder extends Seeder
                 'difficulty' => 'Normal',
                 'phase_id' => 5,
                 'max_players' => 25,
+                'max_loot_councillors' => 5,
             ],
         ];
 

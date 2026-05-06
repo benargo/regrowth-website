@@ -143,6 +143,37 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_slug(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Karazhan']);
+
+        $array = (new RaidResource($raid))->toArray(new Request);
+
+        $this->assertArrayHasKey('slug', $array);
+        $this->assertSame($raid->slug, $array['slug']);
+    }
+
+    #[Test]
+    public function it_returns_max_loot_councillors_when_set(): void
+    {
+        $raid = Raid::factory()->withLootCouncillors(3)->create();
+
+        $array = (new RaidResource($raid))->toArray(new Request);
+
+        $this->assertSame(3, $array['max_loot_councillors']);
+    }
+
+    #[Test]
+    public function it_returns_null_for_max_loot_councillors_when_not_set(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $array = (new RaidResource($raid))->toArray(new Request);
+
+        $this->assertNull($array['max_loot_councillors']);
+    }
+
+    #[Test]
     public function it_returns_all_expected_keys(): void
     {
         $raid = Raid::factory()->create();
@@ -151,7 +182,9 @@ class RaidResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('difficulty', $array);
         $this->assertArrayHasKey('max_players', $array);
+        $this->assertArrayHasKey('max_loot_councillors', $array);
     }
 }

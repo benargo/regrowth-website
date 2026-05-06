@@ -49,6 +49,7 @@ class RaidTest extends ModelTestCase
             'difficulty',
             'phase_id',
             'max_players',
+            'max_loot_councillors',
         ]);
     }
 
@@ -62,9 +63,28 @@ class RaidTest extends ModelTestCase
             'difficulty' => 'Normal',
             'phase_id' => $phase->id,
             'max_players' => 10,
+            'max_loot_councillors' => 3,
         ]);
 
         $this->assertTableHas(['name' => 'Karazhan']);
+        $this->assertModelExists($raid);
+    }
+
+    #[Test]
+    public function max_players_is_nullable(): void
+    {
+        $raid = $this->create(['max_players' => null]);
+
+        $this->assertNull($raid->max_players);
+        $this->assertModelExists($raid);
+    }
+
+    #[Test]
+    public function max_loot_councillors_is_nullable(): void
+    {
+        $raid = $this->create(['max_loot_councillors' => null]);
+
+        $this->assertNull($raid->max_loot_councillors);
         $this->assertModelExists($raid);
     }
 
@@ -76,8 +96,15 @@ class RaidTest extends ModelTestCase
         $this->assertNotEmpty($raid->name);
         $this->assertNotEmpty($raid->difficulty);
         $this->assertNotNull($raid->phase_id);
-        $this->assertNotNull($raid->max_players);
         $this->assertModelExists($raid);
+    }
+
+    #[Test]
+    public function factory_with_loot_councillors_state_sets_max_loot_councillors(): void
+    {
+        $raid = $this->factory()->withLootCouncillors(5)->create();
+
+        $this->assertSame(5, $raid->max_loot_councillors);
     }
 
     #[Test]

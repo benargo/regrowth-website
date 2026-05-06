@@ -20,6 +20,7 @@ class RaidResource extends JsonResource
             'slug' => $this->slug,
             'difficulty' => $this->difficulty,
             'max_players' => $this->max_players,
+            'max_loot_councillors' => $this->max_loot_councillors,
             'phase' => $this->whenLoaded('phase'),
             'bosses' => $this->whenLoaded('bosses'),
             'items' => $this->whenLoaded('items'),
