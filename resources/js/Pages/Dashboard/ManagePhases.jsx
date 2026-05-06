@@ -1,6 +1,7 @@
 import { Deferred, router, useForm } from "@inertiajs/react";
 import { useState } from "react";
 import Master from "@/Layouts/Master";
+import Collapsible from "@/Components/Collapsible";
 import Icon from "@/Components/FontAwesome/Icon";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
@@ -47,7 +48,6 @@ function GuildTagsList({ allGuildTags, selectedTagIds, onToggleTag }) {
 }
 
 export default function ManagePhases({ phases, current_phase, all_guild_tags }) {
-    const [expanded, setExpanded] = useState({});
     const [editingPhase, setEditingPhase] = useState(null);
     const [editingTagsPhase, setEditingTagsPhase] = useState(null);
 
@@ -65,13 +65,6 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
     } = useForm({
         guild_tag_ids: [],
     });
-
-    const togglePhase = (phaseId) => {
-        setExpanded((prev) => ({
-            ...prev,
-            [phaseId]: !prev[phaseId],
-        }));
-    };
 
     const toParisDatetimeLocal = (isoString) => {
         if (!isoString) {
@@ -177,135 +170,128 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
                     {phases?.map((phase) => (
-                        <div key={phase.id} className="my-4 rounded-md border border-amber-600">
-                            <button
-                                onClick={() => togglePhase(phase.id)}
-                                className="flex w-full flex-row items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-amber-600/10"
-                            >
-                                <span
-                                    className={`flex flex-none items-center justify-items-center transition-transform duration-500 ${expanded[phase.id] ? "-rotate-180" : ""}`}
-                                >
-                                    <Icon icon="chevron-down" style="solid" />
-                                </span>
-                                <h3 className="flex-1 text-lg font-semibold">Phase {phase.id}</h3>
-                                {phase.id === current_phase && (
-                                    <div className="flex-none rounded-md bg-green-600 px-2 py-1 text-xs font-semibold text-white">
+                        <Collapsible
+                            key={phase.id}
+                            title={`Phase ${phase.number}`}
+                            className="my-4 border-amber-600"
+                            headerClassName="hover:bg-amber-600/10"
+                            bodyClassName="border-amber-600"
+                            headerRight={
+                                phase.id === current_phase && (
+                                    <div className="rounded-md bg-green-600 px-2 py-1 text-xs font-semibold text-white">
                                         Current Phase
                                     </div>
-                                )}
-                            </button>
-                            {expanded[phase.id] && (
-                                <div className="grid grid-cols-1 border-t border-amber-600 px-4 py-3 md:grid-cols-4">
-                                    {/* Start date */}
-                                    <div className="text-md my-4 md:mr-8">
-                                        <h3 className="text-lg font-bold">
-                                            {phase.start_date && new Date(phase.start_date) < new Date()
-                                                ? "Phase started on"
-                                                : "Phase starts on"}
-                                        </h3>
-                                        {phase.start_date && (
-                                            <p>
-                                                <span className="font-bold">Server time:</span>&nbsp;
-                                                {formatDate(phase.start_date, { timeZone: "Europe/Paris" })}
-                                            </p>
-                                        )}
-                                        {phase.start_date && isLocalTimezoneDifferent(phase.start_date) && (
-                                            <p>
-                                                <span className="font-bold">Local time:</span>&nbsp;
-                                                {formatDate(phase.start_date)}
-                                            </p>
-                                        )}
-                                        {!phase.start_date && <p>a date yet to be determined.</p>}
-                                        <p className="flex justify-center md:justify-start">
-                                            <button
-                                                onClick={() => openEditModal(phase)}
-                                                className="mt-2 flex items-center gap-4 rounded border border-amber-600 px-2 py-3 transition-colors hover:bg-amber-600/20"
-                                            >
-                                                <div className="mx-1 text-center">
-                                                    <Icon icon="edit" style="regular" className="h-4 w-4" />
-                                                </div>
-                                                <div className="text-md mr-1">Edit phase start date</div>
-                                            </button>
+                                )
+                            }
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-4">
+                                {/* Start date */}
+                                <div className="text-md my-4 md:mr-8">
+                                    <h3 className="text-lg font-bold">
+                                        {phase.start_date && new Date(phase.start_date) < new Date()
+                                            ? "Phase started on"
+                                            : "Phase starts on"}
+                                    </h3>
+                                    {phase.start_date && (
+                                        <p>
+                                            <span className="font-bold">Server time:</span>&nbsp;
+                                            {formatDate(phase.start_date, { timeZone: "Europe/Paris" })}
                                         </p>
-                                    </div>
-                                    {/* Raids */}
-                                    <div className="text-md my-4 md:mr-8">
-                                        <h3 className="text-lg font-bold">Raids in this phase</h3>
-                                        {Object.values(phase.raids).length > 0 ? (
-                                            <ul>
-                                                {Object.values(phase.raids).map((raid) => (
-                                                    <li key={raid.id} className="flex">
-                                                        {raid.name}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="flex">No raids assigned to this phase.</p>
-                                        )}
-                                    </div>
-                                    {/* Bosses */}
-                                    <div className="text-md my-4 md:mr-8">
-                                        <h3 className="text-lg font-bold">Bosses in this phase</h3>
-                                        {phase.bosses.length > 0 ? (
-                                            <ul>
-                                                {phase.bosses.map((boss) => (
-                                                    <li key={boss.id} className="auto">
-                                                        {boss.name}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="auto mb-2">No bosses assigned to this phase.</p>
-                                        )}
-                                    </div>
-                                    {/* Warcraft Logs Tags */}
-                                    <div className="text-md my-4 md:mr-8">
-                                        <h3 className="text-lg font-bold">Warcraft Logs Tags</h3>
-                                        {phase.guild_tags?.length > 0 ? (
-                                            <div className="items-top my-2 flex flex-col flex-wrap gap-2">
-                                                <div className="mb-1 flex flex-row items-end gap-2">
-                                                    <h2 className="flex-auto font-semibold">Tag name</h2>
-                                                    <p className="w-16 flex-initial text-xs font-semibold">
-                                                        Counts toward attendance
-                                                    </p>
-                                                </div>
-                                                {phase.guild_tags.map((tag) => (
-                                                    <div key={tag.id} className="flex flex-row items-center gap-2">
-                                                        <span className="flex-auto">{tag.name}</span>
-                                                        <span
-                                                            className="w-16 flex-initial text-xs text-green-400"
-                                                            title="Counts toward attendance"
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={tag.count_attendance}
-                                                                onChange={() =>
-                                                                    toggleCountAttendance(tag.id, tag.count_attendance)
-                                                                }
-                                                                className="h-4 w-4 rounded border-amber-600 bg-brown-800/50 text-amber-600 focus:ring-amber-500"
-                                                            />
-                                                        </span>
-                                                    </div>
-                                                ))}
+                                    )}
+                                    {phase.start_date && isLocalTimezoneDifferent(phase.start_date) && (
+                                        <p>
+                                            <span className="font-bold">Local time:</span>&nbsp;
+                                            {formatDate(phase.start_date)}
+                                        </p>
+                                    )}
+                                    {!phase.start_date && <p>a date yet to be determined.</p>}
+                                    <p className="flex justify-center md:justify-start">
+                                        <button
+                                            onClick={() => openEditModal(phase)}
+                                            className="mt-2 flex items-center gap-4 rounded border border-amber-600 px-2 py-3 transition-colors hover:bg-amber-600/20"
+                                        >
+                                            <div className="mx-1 text-center">
+                                                <Icon icon="edit" style="regular" className="h-4 w-4" />
                                             </div>
-                                        ) : (
-                                            <p className="auto mb-2">No tags assigned to this phase.</p>
-                                        )}
-                                        <p className="flex justify-center md:justify-start">
-                                            <button
-                                                onClick={() => openTagsModal(phase)}
-                                                className="flex items-center gap-4 rounded border border-amber-600 px-2 py-3 transition-colors hover:bg-amber-600/20"
-                                            >
-                                                <div className="mx-1 text-center">
-                                                    <Icon icon="tags" style="solid" className="h-4 w-4" />
-                                                </div>
-                                                <div className="text-md mr-1">Manage tags</div>
-                                            </button>
-                                        </p>
-                                    </div>
+                                            <div className="text-md mr-1">Edit phase start date</div>
+                                        </button>
+                                    </p>
                                 </div>
-                            )}
-                        </div>
+                                {/* Raids */}
+                                <div className="text-md my-4 md:mr-8">
+                                    <h3 className="text-lg font-bold">Raids in this phase</h3>
+                                    {Object.values(phase.raids).length > 0 ? (
+                                        <ul>
+                                            {Object.values(phase.raids).map((raid) => (
+                                                <li key={raid.id} className="flex">
+                                                    {raid.name}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="flex">No raids assigned to this phase.</p>
+                                    )}
+                                </div>
+                                {/* Bosses */}
+                                <div className="text-md my-4 md:mr-8">
+                                    <h3 className="text-lg font-bold">Bosses in this phase</h3>
+                                    {phase.bosses.length > 0 ? (
+                                        <ul>
+                                            {phase.bosses.map((boss) => (
+                                                <li key={boss.id}>{boss.name}</li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="mb-2">No bosses assigned to this phase.</p>
+                                    )}
+                                </div>
+                                {/* Warcraft Logs Tags */}
+                                <div className="text-md my-4 md:mr-8">
+                                    <h3 className="text-lg font-bold">Warcraft Logs Tags</h3>
+                                    {phase.guild_tags?.length > 0 ? (
+                                        <div className="items-top my-2 flex flex-col flex-wrap gap-2">
+                                            <div className="mb-1 flex flex-row items-end gap-2">
+                                                <h2 className="flex-auto font-semibold">Tag name</h2>
+                                                <p className="w-16 flex-initial text-xs font-semibold">
+                                                    Counts toward attendance
+                                                </p>
+                                            </div>
+                                            {phase.guild_tags.map((tag) => (
+                                                <div key={tag.id} className="flex flex-row items-center gap-2">
+                                                    <span className="flex-auto">{tag.name}</span>
+                                                    <span
+                                                        className="w-16 flex-initial text-xs text-green-400"
+                                                        title="Counts toward attendance"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={tag.count_attendance}
+                                                            onChange={() =>
+                                                                toggleCountAttendance(tag.id, tag.count_attendance)
+                                                            }
+                                                            className="h-4 w-4 rounded border-amber-600 bg-brown-800/50 text-amber-600 focus:ring-amber-500"
+                                                        />
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="mb-2">No tags assigned to this phase.</p>
+                                    )}
+                                    <p className="flex justify-center md:justify-start">
+                                        <button
+                                            onClick={() => openTagsModal(phase)}
+                                            className="flex items-center gap-4 rounded border border-amber-600 px-2 py-3 transition-colors hover:bg-amber-600/20"
+                                        >
+                                            <div className="mx-1 text-center">
+                                                <Icon icon="tags" style="solid" className="h-4 w-4" />
+                                            </div>
+                                            <div className="text-md mr-1">Manage tags</div>
+                                        </button>
+                                    </p>
+                                </div>
+                            </div>
+                        </Collapsible>
                     ))}
                 </div>
             </div>
