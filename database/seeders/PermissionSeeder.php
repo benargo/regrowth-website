@@ -34,6 +34,7 @@ class PermissionSeeder extends Seeder
         ['name' => 'view-attendance', 'group' => 'raid-management', 'guard_name' => 'web'],
         ['name' => 'view-raid-plans', 'group' => 'raid-management', 'guard_name' => 'web'],
         ['name' => 'manage-raid-plans', 'group' => 'raid-management', 'guard_name' => 'web'],
+        ['name' => 'manage-boss-strategies', 'group' => 'raid-management', 'guard_name' => 'web'],
 
         /**
          * Planned absences permissions

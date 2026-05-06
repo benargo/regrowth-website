@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
+use App\Models\Boss;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\LootCouncil\Comment;
@@ -10,6 +11,7 @@ use App\Models\LootCouncil\Item;
 use App\Models\Phase;
 use App\Models\Raids\Report;
 use App\Models\User;
+use App\Policies\BossPolicy;
 use App\Policies\CommentPolicy;
 use App\Policies\DatasetPolicy;
 use App\Policies\ItemPolicy;
@@ -52,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Policies
          */
+        Gate::policy(Boss::class, BossPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
         Gate::policy(GuildRank::class, DatasetPolicy::class);
         Gate::policy(GuildTag::class, DatasetPolicy::class);
