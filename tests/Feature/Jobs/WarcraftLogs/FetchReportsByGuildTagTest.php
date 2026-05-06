@@ -3,9 +3,9 @@
 namespace Tests\Feature\Jobs\WarcraftLogs;
 
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
+use App\Models\GuildTag;
 use App\Models\Raids\Report;
 use App\Models\User;
-use App\Models\GuildTag;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;

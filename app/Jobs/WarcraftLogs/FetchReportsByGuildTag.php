@@ -2,8 +2,8 @@
 
 namespace App\Jobs\WarcraftLogs;
 
-use App\Models\Raids\Report as ReportModel;
 use App\Models\GuildTag;
+use App\Models\Raids\Report as ReportModel;
 use App\Models\Zone;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\ValueObjects\ReportData;

@@ -4,9 +4,9 @@ namespace Tests\Feature\Datasets;
 
 use App\Events\AddonSettingsProcessed;
 use App\Models\DiscordRole;
+use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\User;
-use App\Models\GuildTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;

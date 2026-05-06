@@ -3,8 +3,8 @@
 namespace App\Services\Attendance;
 
 use App\Models\Character;
-use App\Models\Raids\Report;
 use App\Models\GuildTag;
+use App\Models\Raids\Report;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;

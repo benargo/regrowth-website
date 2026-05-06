@@ -4,8 +4,8 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Models\User;
 use App\Models\GuildTag;
+use App\Models\User;
 use App\Services\WarcraftLogs\GuildTags;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;

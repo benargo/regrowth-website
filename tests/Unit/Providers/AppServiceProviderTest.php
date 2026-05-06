@@ -3,7 +3,6 @@
 namespace Tests\Unit\Providers;
 
 use App\Models\Raids\Report;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
