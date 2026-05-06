@@ -116,7 +116,7 @@ class RaidHelper
      */
     public function getComp(int $eventId): ?Comp
     {
-        $response = $this->client->get("/servers/{$this->serverId}/comps/{$eventId}");
+        $response = $this->client->get("/comps/{$eventId}");
 
         // If the API returns a 404 status code, it means that no comp was found for the given event ID, so we return null.
         if ($response->status() === 404) {

@@ -195,7 +195,7 @@ class RaidHelperTest extends TestCase
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
-            ->with('/servers/111222333444555666/comps/12345')
+            ->with('/comps/12345')
             ->andReturn($response);
 
         $result = $this->raidHelper->getComp(12345);
@@ -213,7 +213,7 @@ class RaidHelperTest extends TestCase
         $response->expects('json')->withNoArgs()->andReturn($this->minimalCompPayload());
 
         $this->client->expects('get')
-            ->with('/servers/111222333444555666/comps/12345')
+            ->with('/comps/12345')
             ->andReturn($response);
 
         $this->raidHelper->getComp(12345);
@@ -230,7 +230,7 @@ class RaidHelperTest extends TestCase
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
-            ->with('/servers/111222333444555666/comps/12345')
+            ->with('/comps/12345')
             ->andReturn($response);
 
         $result = $this->raidHelper->getComp(12345);
@@ -246,7 +246,7 @@ class RaidHelperTest extends TestCase
         $response->allows('body')->withNoArgs()->andReturn('');
 
         $this->client->expects('get')
-            ->with('/servers/111222333444555666/comps/12345')
+            ->with('/comps/12345')
             ->andReturn($response);
 
         $result = $this->raidHelper->getComp(12345);
