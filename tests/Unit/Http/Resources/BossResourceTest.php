@@ -57,13 +57,14 @@ class BossResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_excludes_raid_when_not_loaded(): void
+    public function it_returns_raid_id_when_raid_not_loaded(): void
     {
         $boss = Boss::factory()->create();
 
-        $array = (new BossResource($boss))->resolve(new Request);
+        $array = (new BossResource($boss))->toArray(new Request);
 
-        $this->assertArrayNotHasKey('raid', $array);
+        $this->assertArrayHasKey('raid', $array);
+        $this->assertSame($boss->raid_id, $array['raid']);
     }
 
     #[Test]

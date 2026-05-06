@@ -18,7 +18,11 @@ class BossResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'encounter_order' => $this->encounter_order,
-            'raid' => $this->whenLoaded('raid'),
+            'raid' => $this->when(
+                $this->relationLoaded('raid'),
+                fn () => $this->raid,
+                fn () => $this->raid_id,
+            ),
             'items' => $this->whenLoaded('items'),
             'comments' => $this->whenLoaded('comments'),
         ];
