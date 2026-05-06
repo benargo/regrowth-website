@@ -49,7 +49,8 @@ export function ReportsSkeleton() {
 }
 
 export default function ReportsTable({ reports }) {
-    if (reports.data.length === 0) {
+    const rows = reports?.data ?? reports ?? [];
+    if (rows.length === 0) {
         return (
             <div className="py-16 text-center text-gray-400">
                 <Icon icon="scroll" style="solid" className="mb-4 text-4xl" />
@@ -72,7 +73,7 @@ export default function ReportsTable({ reports }) {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-brown-700">
-                    {reports.data.map((report) => {
+                    {rows.map((report) => {
                         const startDate = new Date(report.start_time);
                         const dayOfWeek = startDate.toLocaleString("en-GB", { weekday: "long" });
                         const formattedDate = formatDate(report.start_time);
