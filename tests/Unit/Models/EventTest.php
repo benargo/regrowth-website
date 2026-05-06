@@ -2,12 +2,14 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventCharacter;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -305,5 +307,71 @@ class EventTest extends ModelTestCase
         $this->assertDatabaseMissing('pivot_events_raids', [
             'event_id' => $event->id,
         ]);
+    }
+
+    // bosses
+
+    #[Test]
+    public function bosses_returns_a_builder(): void
+    {
+        $event = $this->create();
+
+        $this->assertInstanceOf(Builder::class, $event->bosses());
+    }
+
+    #[Test]
+    public function bosses_returns_bosses_from_attached_raids(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+        $event->raids()->attach($raid->id);
+
+        $result = $event->bosses()->get();
+
+        $this->assertCount(1, $result);
+        $this->assertTrue($result->first()->is($boss));
+    }
+
+    #[Test]
+    public function bosses_excludes_bosses_from_unattached_raids(): void
+    {
+        $event = $this->create();
+        $otherRaid = Raid::factory()->create();
+        Boss::factory()->create(['raid_id' => $otherRaid->id]);
+
+        $result = $event->bosses()->get();
+
+        $this->assertCount(0, $result);
+    }
+
+    #[Test]
+    public function bosses_returns_empty_when_no_raids_attached(): void
+    {
+        $event = $this->create();
+
+        $this->assertCount(0, $event->bosses()->get());
+    }
+
+    #[Test]
+    public function bosses_are_ordered_by_raid_id_then_encounter_order(): void
+    {
+        $event = $this->create();
+
+        $raid1 = Raid::factory()->create();
+        $raid2 = Raid::factory()->create();
+
+        $boss1a = Boss::factory()->create(['raid_id' => $raid1->id, 'encounter_order' => 2]);
+        $boss1b = Boss::factory()->create(['raid_id' => $raid1->id, 'encounter_order' => 1]);
+        $boss2a = Boss::factory()->create(['raid_id' => $raid2->id, 'encounter_order' => 1]);
+
+        $event->raids()->attach([$raid1->id, $raid2->id]);
+
+        $result = $event->bosses()->get();
+
+        $this->assertCount(3, $result);
+        $this->assertTrue($result[0]->is($boss1b));
+        $this->assertTrue($result[1]->is($boss1a));
+        $this->assertTrue($result[2]->is($boss2a));
     }
 }

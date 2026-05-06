@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\Discord\Discord;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -112,5 +113,18 @@ class Event extends Model
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Get a query for the bosses associated with the event through its raids.
+     *
+     * @return Builder<Boss>
+     */
+    public function bosses(): Builder
+    {
+        return Boss::query()
+            ->whereIn('raid_id', $this->raids()->select('raids.id'))
+            ->orderBy('raid_id')
+            ->orderBy('encounter_order');
     }
 }
