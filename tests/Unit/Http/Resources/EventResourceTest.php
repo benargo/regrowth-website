@@ -109,4 +109,34 @@ class EventResourceTest extends TestCase
         $this->assertSame($raid->id, $array['raids'][0]['id']);
         $this->assertSame('Karazhan', $array['raids'][0]['name']);
     }
+
+    #[Test]
+    public function it_excludes_characters_when_relation_is_not_loaded(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = (new EventResource($event))->toArray(new Request);
+
+        $this->assertArrayNotHasKey('characters', $array);
+    }
+
+    #[Test]
+    public function it_includes_character_id_and_name_when_relation_is_loaded(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+        $event->characters()->createMany([
+            ['name' => 'Warrior'],
+            ['name' => 'Mage'],
+        ]);
+        $event->load('characters');
+
+        $array = (new EventResource($event))->toArray(new Request);
+
+        $this->assertArrayHasKey('characters', $array);
+        $this->assertCount(2, $array['characters']);
+        $this->assertSame('Warrior', $array['characters'][0]['name']);
+        $this->assertSame('Mage', $array['characters'][1]['name']);
+    }
 }

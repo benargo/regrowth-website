@@ -24,7 +24,11 @@ class EventResource extends JsonResource
         ];
 
         if ($this->relationLoaded('raids')) {
-            $data['raids'] = $this->raids->map->only('id', 'name')->values()->toArray();
+            $data['raids'] = $this->raids->map->only('id', 'name')->values()->all();
+        }
+
+        if ($this->relationLoaded('characters')) {
+            $data['characters'] = $this->characters->map->only('id', 'name')->values()->all();
         }
 
         return $data;
