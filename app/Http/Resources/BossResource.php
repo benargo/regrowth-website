@@ -17,6 +17,7 @@ class BossResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
             'notes' => $this->notes,
             'images' => $this->getMedia()->map->getUrl()->values()->all(),
             'encounter_order' => $this->encounter_order,

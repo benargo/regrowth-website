@@ -169,4 +169,12 @@ class BossTest extends ModelTestCase
         $this->assertNotEmpty($boss->getMedia('default'));
         @unlink($testFile);
     }
+
+    #[Test]
+    public function it_generates_slug_from_name(): void
+    {
+        $boss = $this->create(['name' => 'Prince Malchezaar']);
+
+        $this->assertSame('prince-malchezaar', $boss->slug);
+    }
 }

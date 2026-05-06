@@ -132,6 +132,16 @@ class BossResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_slug(): void
+    {
+        $boss = Boss::factory()->create(['name' => 'Prince Malchezaar']);
+
+        $array = (new BossResource($boss))->toArray(new Request);
+
+        $this->assertSame('prince-malchezaar', $array['slug']);
+    }
+
+    #[Test]
     public function it_returns_images_array(): void
     {
         $boss = Boss::factory()->create();
