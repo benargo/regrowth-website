@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
+use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
@@ -76,7 +78,7 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.matrix');
 
     // Upcoming events comps and plans routes
-    Route::get('/plans/{event}', [RaidingController::class, 'show'])->middleware(['auth', 'can:view,App\Models\Event'])->name('plans.show');
+    Route::get('/plans/{event}', [EventController::class, 'show'])->middleware(['auth', 'can:view,event'])->name('plans.show');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -103,28 +105,11 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
 
     /**
-     * Guild ranks management
+     * Boss strategies management
      */
-    Route::get('/ranks', [GuildRankController::class, 'list'])->name('ranks.view');
-    Route::post('/ranks/new', [GuildRankController::class, 'store'])->name('ranks.store');
-    Route::post('/ranks/update-positions', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
-    Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
-    Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
-    Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
-
-    /**
-     * Phases management
-     */
-    Route::get('/phases', [PhaseController::class, 'index'])->name('phases.view');
-    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
-    Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
-
-    /**
-     * GRM data upload
-     */
-    Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
-    Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
-    Route::get('/grm-upload/status', [GrmController::class, 'getUploadStatus'])->name('grm-upload.status');
+    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
+    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'edit'])->can('update', 'boss')->name('boss-strategies.edit');
+    Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->can('update', 'boss')->name('boss-strategies.update');
 
     /**
      * Daily Quests
@@ -136,11 +121,35 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
         ->name('daily-quests.audit');
 
     /**
+     * GRM data upload
+     */
+    Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
+    Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
+    Route::get('/grm-upload/status', [GrmController::class, 'getUploadStatus'])->name('grm-upload.status');
+
+    /**
+     * Phases management
+     */
+    Route::get('/phases', [PhaseController::class, 'index'])->name('phases.view');
+    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
+    Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
+
+    /**
      * Permissions management
      */
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
     Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
+
+    /**
+     * Ranks management
+     */
+    Route::get('/ranks', [GuildRankController::class, 'list'])->name('ranks.view');
+    Route::post('/ranks/new', [GuildRankController::class, 'store'])->name('ranks.store');
+    Route::post('/ranks/update-positions', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
+    Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
+    Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
+    Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
 });
 
 /**

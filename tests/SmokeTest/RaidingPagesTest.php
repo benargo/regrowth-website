@@ -7,6 +7,8 @@ use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\User;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,10 +31,18 @@ class RaidingPagesTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
 
-        foreach (['view-attendance', 'view-planned-absences', 'create-planned-absences', 'update-planned-absences'] as $permissionName) {
+        foreach (['view-attendance', 'view-planned-absences', 'create-planned-absences', 'update-planned-absences', 'view-raid-plans'] as $permissionName) {
             $permission = Permission::firstOrCreate(['name' => $permissionName, 'guard_name' => 'web']);
             $officerRole->givePermissionTo($permission);
         }
+
+        $this->mock(Discord::class, function ($mock) {
+            $mock->shouldReceive('getChannel')->andReturn(new Channel(
+                id: '123456789',
+                name: 'raid-planning',
+                position: 1,
+            ));
+        });
     }
 
     #[Test]
@@ -175,6 +185,39 @@ class RaidingPagesTest extends TestCase
         $absence = PlannedAbsence::factory()->withCharacter()->create();
 
         $response = $this->actingAs($member)->get(route('raiding.absences.edit', $absence));
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function event_show_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+        $event = \App\Models\Event::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function event_show_redirects_unauthenticated_users(): void
+    {
+        $event = \App\Models\Event::factory()->create();
+
+        $response = $this->get(route('raiding.plans.show', $event));
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function event_show_returns_403_for_users_without_permission(): void
+    {
+        $member = User::factory()->member()->create();
+        $event = \App\Models\Event::factory()->create();
+
+        $response = $this->actingAs($member)->get(route('raiding.plans.show', $event));
 
         $response->assertForbidden();
     }

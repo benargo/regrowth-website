@@ -37,7 +37,7 @@ export default function Index({ discordRoles }) {
                     {/* Loot Council */}
                     <h2 className="text-2xl font-semibold">Loot Council</h2>
                     <p className="text-md text-gray-400">Manage loot distribution priorities and addon settings.</p>
-                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
                         <DashboardCard href={route("dashboard.addon.export")} icon="file-export">
                             <h3 className="text-md">Export addon data</h3>
                             <p className="mb-1 text-sm">Generate data files for in-game addons.</p>
@@ -52,7 +52,7 @@ export default function Index({ discordRoles }) {
                     <p className="text-md text-gray-400">
                         Manage raid team compositions, planned absences, and attendance tracking.
                     </p>
-                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
                         {/* <DashboardCard href={route('dashboard.raids.view')} icon="users-class">
                             <h3 className="text-md">Manage raid teams</h3>
                             <p className="text-sm mb-1">Create and modify raid team compositions and assignments.</p>
@@ -73,11 +73,17 @@ export default function Index({ discordRoles }) {
                                 <p className="mb-1 text-sm">Review raid attendance records.</p>
                             </DashboardCard>
                         )}
+                        {usePermission("manage-boss-strategies") && (
+                            <DashboardCard href={route("dashboard.boss-strategies.index")} icon="book">
+                                <h3 className="text-md">Boss strategies</h3>
+                                <p className="mb-1 text-sm">Create and manage boss strategies for raids.</p>
+                            </DashboardCard>
+                        )}
                     </div>
                     {/* Daily Quests */}
                     <h2 className="mt-12 text-2xl font-semibold">Daily Quests</h2>
                     <p className="text-md text-gray-400">Manage TBC daily quest selections.</p>
-                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
                         <DashboardCard href={route("dashboard.daily-quests.form")} icon="scroll">
                             <h3 className="text-md">Set daily quests</h3>
                             <p className="mb-1 text-sm">Choose today&rsquo;s daily quests and post them to Discord.</p>

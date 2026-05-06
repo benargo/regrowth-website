@@ -2,14 +2,14 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\CharacterResource;
 use App\Http\Resources\EventGroupsResource;
+use App\Http\Resources\GuildRankResource;
 use App\Models\Character;
+use App\Models\Event;
+use App\Models\GuildRank;
 use App\Models\Raid;
-use App\Services\RaidHelper\Resources\Comp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -17,195 +17,200 @@ class EventGroupsResourceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeComp(array $groups = [], array $slots = []): Comp
+    #[Test]
+    public function it_returns_empty_array_when_no_characters_attached(): void
     {
-        return Comp::from([
-            'id' => 'comp-1',
-            'title' => 'Test Comp',
-            'editPermissions' => 'managers',
-            'showRoles' => true,
-            'showClasses' => true,
-            'groupCount' => count($groups),
-            'slotCount' => count($slots),
-            'groups' => $groups,
-            'dividers' => [],
-            'classes' => [],
-            'slots' => $slots,
+        $event = Event::factory()->create();
+
+        $array = (new EventGroupsResource($event))->toArray(new Request);
+
+        $this->assertSame([], $array);
+    }
+
+    #[Test]
+    public function it_returns_correct_group_number(): void
+    {
+        $event = Event::factory()->create();
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event->raids()->attach($raid);
+
+        $character = Character::factory()->withRank()->create();
+        $event->characters()->attach($character->id, [
+            'group_number' => 1,
+            'slot_number' => 1,
+            'is_confirmed' => true,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
         ]);
-    }
 
-    private function makeGroup(int $position, string $name = 'Group'): array
-    {
-        return ['name' => $name.' '.$position, 'position' => $position];
-    }
-
-    private function makeSlot(string $id, string $name, int $groupNumber, int $slotNumber): array
-    {
-        return [
-            'id' => $id,
-            'name' => $name,
-            'groupNumber' => $groupNumber,
-            'slotNumber' => $slotNumber,
-            'className' => 'Warrior',
-            'classEmoteId' => '111',
-            'specName' => 'Arms',
-            'specEmoteId' => '222',
-            'isConfirmed' => 'confirmed',
-            'color' => '#C69B3D',
-        ];
-    }
-
-    #[Test]
-    public function it_throws_an_exception_when_not_given_a_comp(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('EventGroupsResource can only be created from a Comp data object.');
-
-        new EventGroupsResource('not-a-comp');
-    }
-
-    #[Test]
-    public function it_returns_an_empty_array_when_comp_has_no_groups(): void
-    {
-        $comp = $this->makeComp();
-
-        $array = (new EventGroupsResource($comp))->toArray(new Request);
-
-        $this->assertEmpty($array);
-    }
-
-    #[Test]
-    public function it_returns_one_key_per_group_zero_indexed(): void
-    {
-        $comp = $this->makeComp(
-            groups: [$this->makeGroup(1), $this->makeGroup(2)],
-            slots: [
-                $this->makeSlot('s1', 'Alice', 1, 1),
-                $this->makeSlot('s2', 'Bob', 2, 1),
-            ],
-        );
-
-        $array = (new EventGroupsResource($comp))->toArray(new Request);
-
-        $this->assertArrayHasKey(0, $array);
-        $this->assertArrayHasKey(1, $array);
-        $this->assertCount(2, $array);
-    }
-
-    #[Test]
-    public function it_maps_slot_positions_correctly_within_a_group(): void
-    {
-        $comp = $this->makeComp(
-            groups: [$this->makeGroup(1)],
-            slots: [
-                $this->makeSlot('s1', 'Alice', 1, 1),
-                $this->makeSlot('s2', 'Bob', 1, 2),
-            ],
-        );
-
-        $array = (new EventGroupsResource($comp))->toArray(new Request);
-
-        $groupSlots = $array[0];
-        $this->assertArrayHasKey(0, $groupSlots); // group 1, slot 1 → position 0
-        $this->assertArrayHasKey(1, $groupSlots); // group 1, slot 2 → position 1
-    }
-
-    #[Test]
-    public function it_calculates_slot_position_across_multiple_groups(): void
-    {
-        $comp = $this->makeComp(
-            groups: [$this->makeGroup(1), $this->makeGroup(2)],
-            slots: [
-                $this->makeSlot('s1', 'Alice', 1, 1),
-                $this->makeSlot('s2', 'Bob', 2, 3),
-            ],
-        );
-
-        $array = (new EventGroupsResource($comp))->toArray(new Request);
-
-        $this->assertArrayHasKey(0, $array[0]); // group 1, slot 1 → (1-1)*5 + 1-1 = 0
-        $this->assertArrayHasKey(7, $array[1]); // group 2, slot 3 → (2-1)*5 + 3-1 = 7
-    }
-
-    #[Test]
-    public function it_returns_null_for_slots_with_no_matching_character(): void
-    {
-        $comp = $this->makeComp(
-            groups: [$this->makeGroup(1)],
-            slots: [$this->makeSlot('s1', 'UnknownPlayer', 1, 1)],
-        );
-
-        $array = (new EventGroupsResource($comp))->toArray(new Request);
-
-        $this->assertNull($array[0][0]);
-    }
-
-    #[Test]
-    public function it_returns_a_character_resource_for_slots_with_a_matching_character(): void
-    {
-        Character::factory()->create(['name' => 'Shiniko']);
-
-        $comp = $this->makeComp(
-            groups: [$this->makeGroup(1)],
-            slots: [$this->makeSlot('s1', 'Shiniko', 1, 1)],
-        );
-
-        $array = (new EventGroupsResource($comp))->toArray(new Request);
-
-        $this->assertInstanceOf(CharacterResource::class, $array[0][0]);
-        $this->assertSame('Shiniko', $array[0][0]->resource->name);
-    }
-
-    #[Test]
-    public function it_restricts_groups_and_slots_when_for_raid_is_called(): void
-    {
-        $raid = Raid::factory()->create(['max_players' => 10]); // maxGroups = 2
-
-        $comp = $this->makeComp(
-            groups: [$this->makeGroup(1), $this->makeGroup(2), $this->makeGroup(3)],
-            slots: [
-                $this->makeSlot('s1', 'Alice', 1, 1),
-                $this->makeSlot('s2', 'Bob', 2, 1),
-                $this->makeSlot('s3', 'Charlie', 3, 1),
-            ],
-        );
-
-        $array = (new EventGroupsResource($comp))->forRaid($raid)->toArray(new Request);
-
-        $this->assertCount(2, $array);
-        $this->assertArrayHasKey(0, $array);
-        $this->assertArrayHasKey(1, $array);
-        $this->assertArrayNotHasKey(2, $array);
-    }
-
-    #[Test]
-    public function it_excludes_slots_outside_raid_max_groups_when_for_raid_is_called(): void
-    {
-        $raid = Raid::factory()->create(['max_players' => 5]); // maxGroups = 1
-
-        $comp = $this->makeComp(
-            groups: [$this->makeGroup(1), $this->makeGroup(2)],
-            slots: [
-                $this->makeSlot('s1', 'Alice', 1, 1),
-                $this->makeSlot('s2', 'Bob', 2, 1),
-            ],
-        );
-
-        $array = (new EventGroupsResource($comp))->forRaid($raid)->toArray(new Request);
+        $array = (new EventGroupsResource($event))->toArray(new Request);
 
         $this->assertCount(1, $array);
-        $this->assertArrayHasKey(0, $array);
-        $this->assertCount(1, $array[0]);
+        $this->assertSame(1, $array[0]['group_number']);
     }
 
     #[Test]
-    public function it_returns_self_from_for_raid_for_chaining(): void
+    public function it_returns_characters_sorted_by_slot_number_within_a_group(): void
     {
+        $event = Event::factory()->create();
         $raid = Raid::factory()->create(['max_players' => 10]);
-        $comp = $this->makeComp();
+        $event->raids()->attach($raid);
 
-        $resource = new EventGroupsResource($comp);
+        $charA = Character::factory()->withRank()->create(['name' => 'Alpha']);
+        $charB = Character::factory()->withRank()->create(['name' => 'Beta']);
 
-        $this->assertSame($resource, $resource->forRaid($raid));
+        $event->characters()->attach($charA->id, [
+            'group_number' => 1,
+            'slot_number' => 3,
+            'is_confirmed' => true,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
+        ]);
+        $event->characters()->attach($charB->id, [
+            'group_number' => 1,
+            'slot_number' => 1,
+            'is_confirmed' => true,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
+        ]);
+
+        $array = (new EventGroupsResource($event))->toArray(new Request);
+
+        $characters = $array[0]['characters'];
+        $this->assertSame(1, $characters[0]['slot_number']);
+        $this->assertSame(3, $characters[1]['slot_number']);
+    }
+
+    #[Test]
+    public function it_returns_is_team_false_when_max_slot_is_five_or_fewer(): void
+    {
+        $event = Event::factory()->create();
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event->raids()->attach($raid);
+
+        $character = Character::factory()->withRank()->create();
+        $event->characters()->attach($character->id, [
+            'group_number' => 1,
+            'slot_number' => 5,
+            'is_confirmed' => true,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
+        ]);
+
+        $array = (new EventGroupsResource($event))->toArray(new Request);
+
+        $this->assertFalse($array[0]['is_team']);
+    }
+
+    #[Test]
+    public function it_returns_is_team_true_when_max_slot_exceeds_five(): void
+    {
+        $event = Event::factory()->create();
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event->raids()->attach($raid);
+
+        $character = Character::factory()->withRank()->create();
+        $event->characters()->attach($character->id, [
+            'group_number' => 1,
+            'slot_number' => 6,
+            'is_confirmed' => true,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
+        ]);
+
+        $array = (new EventGroupsResource($event))->toArray(new Request);
+
+        $this->assertTrue($array[0]['is_team']);
+    }
+
+    #[Test]
+    public function it_excludes_groups_beyond_max_groups_capacity(): void
+    {
+        $event = Event::factory()->create();
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event->raids()->attach($raid);
+
+        // 10 max_players / 5 max_slot = 2 groups max
+        foreach (range(1, 3) as $groupNumber) {
+            $character = Character::factory()->withRank()->create();
+            $event->characters()->attach($character->id, [
+                'group_number' => $groupNumber,
+                'slot_number' => 5,
+                'is_confirmed' => true,
+                'is_leader' => false,
+                'is_loot_councillor' => false,
+                'is_loot_master' => false,
+            ]);
+        }
+
+        $array = (new EventGroupsResource($event))->toArray(new Request);
+
+        $this->assertCount(2, $array);
+        $this->assertSame(1, $array[0]['group_number']);
+        $this->assertSame(2, $array[1]['group_number']);
+    }
+
+    #[Test]
+    public function it_returns_correct_character_shape(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $event = Event::factory()->create();
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event->raids()->attach($raid);
+
+        $character = Character::factory()->for($rank, 'rank')->create(['name' => 'Thrall']);
+        $event->characters()->attach($character->id, [
+            'group_number' => 1,
+            'slot_number' => 2,
+            'is_confirmed' => true,
+            'is_leader' => true,
+            'is_loot_councillor' => false,
+            'is_loot_master' => true,
+        ]);
+
+        $array = (new EventGroupsResource($event))->toArray(new Request);
+        $char = $array[0]['characters'][0];
+
+        $this->assertSame($character->id, $char['id']);
+        $this->assertSame('Thrall', $char['name']);
+        $this->assertArrayHasKey('playable_class', $char);
+        $this->assertArrayHasKey('playable_race', $char);
+        $this->assertInstanceOf(GuildRankResource::class, $char['rank']);
+        $this->assertSame(2, $char['slot_number']);
+        $this->assertTrue($char['is_confirmed']);
+        $this->assertTrue($char['is_leader']);
+        $this->assertFalse($char['is_loot_councillor']);
+        $this->assertTrue($char['is_loot_master']);
+    }
+
+    #[Test]
+    public function it_does_not_include_slot_number_or_role_keys_in_group_shape(): void
+    {
+        $event = Event::factory()->create();
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event->raids()->attach($raid);
+
+        $character = Character::factory()->withRank()->create();
+        $event->characters()->attach($character->id, [
+            'group_number' => 1,
+            'slot_number' => 1,
+            'is_confirmed' => true,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
+        ]);
+
+        $array = (new EventGroupsResource($event))->toArray(new Request);
+        $group = $array[0];
+
+        $this->assertArrayHasKey('group_number', $group);
+        $this->assertArrayHasKey('characters', $group);
+        $this->assertArrayHasKey('is_team', $group);
+        $this->assertArrayNotHasKey('slot_number', $group);
     }
 }
