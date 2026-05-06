@@ -1,5 +1,7 @@
 import Icon from "@/Components/FontAwesome/Icon";
 import formatDate from "@/Helpers/FormatDate";
+import usePermission from "@/Hooks/Permissions";
+import { Link } from "@inertiajs/react";
 
 export function EventsSkeleton() {
     const fakeRows = Array.from({ length: 5 });
@@ -38,6 +40,7 @@ export function EventsSkeleton() {
 
 export default function EventsTable({ events }) {
     const rows = events?.data ?? events ?? [];
+    const canViewPlans = usePermission("view-raid-plans");
 
     if (rows.length === 0) {
         return (
@@ -50,15 +53,15 @@ export default function EventsTable({ events }) {
 
     return (
         <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-                <thead className="border-b border-amber-600">
-                    <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Title</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Timings</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-brown-700">
+            <div className="w-full">
+                <div className="flex border-b border-amber-600">
+                    <div className="w-40 shrink-0 px-4 py-3 text-left text-sm font-semibold text-amber-500">Date</div>
+                    <div className="min-w-0 flex-1 px-4 py-3 text-left text-sm font-semibold text-amber-500">Title</div>
+                    <div className="w-36 shrink-0 px-4 py-3 text-left text-sm font-semibold text-amber-500">
+                        Timings
+                    </div>
+                </div>
+                <div className="divide-y divide-brown-700">
                     {rows.map((event) => {
                         const startDate = new Date(event.start_time);
                         const endDate = new Date(event.end_time);
@@ -67,26 +70,41 @@ export default function EventsTable({ events }) {
                         const formatTime = (date) =>
                             date.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-                        return (
-                            // TODO: Update href to the event page route once implemented
-                            <tr key={event.id} className="transition-colors hover:bg-brown-800/50">
-                                <td className="whitespace-nowrap px-4 py-3">
+                        const rowClassName =
+                            "flex items-center transition-colors hover:bg-brown-800/50" +
+                            (canViewPlans ? " cursor-pointer" : "");
+
+                        const rowContent = (
+                            <>
+                                <div className="w-40 shrink-0 whitespace-nowrap px-4 py-3">
                                     <p className="text-xs text-gray-500">{dayOfWeek}</p>
                                     <p className="text-sm text-gray-300">
                                         <span className="md:hidden">{formattedDate.short}</span>
                                         <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                         <span className="hidden lg:inline">{formattedDate.long}</span>
                                     </p>
-                                </td>
-                                <td className="px-4 py-3 text-sm font-medium text-white">{event.title}</td>
-                                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-300">
+                                </div>
+                                <div className="min-w-0 flex-1 px-4 py-3 text-sm font-medium text-white">
+                                    {event.title}
+                                </div>
+                                <div className="w-36 shrink-0 whitespace-nowrap px-4 py-3 text-sm text-gray-300">
                                     {formatTime(startDate)}–{formatTime(endDate)}
-                                </td>
-                            </tr>
+                                </div>
+                            </>
+                        );
+
+                        return canViewPlans ? (
+                            <Link key={event.id} className={rowClassName} href={route("raiding.plans.show", event.id)}>
+                                {rowContent}
+                            </Link>
+                        ) : (
+                            <div key={event.id} className={rowClassName}>
+                                {rowContent}
+                            </div>
                         );
                     })}
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
     );
 }

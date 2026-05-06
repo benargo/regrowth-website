@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,6 +17,14 @@ use Tests\TestCase;
 class IndexTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::tags(['raiding', 'events'])->flush();
+        Cache::tags(['raiding', 'reports'])->flush();
+    }
 
     protected function mockDiscordChannel(): void
     {
@@ -76,9 +85,9 @@ class IndexTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('upcomingEvents', fn ($events) => collect($events['data'])->pluck('id')->contains($upcomingEvent->id))
-                ->where('upcomingEvents', fn ($events) => ! collect($events['data'])->pluck('id')->contains($pastEvent->id))
-                ->where('upcomingEvents', fn ($events) => ! collect($events['data'])->pluck('id')->contains($tooFarFutureEvent->id))
+                ->where('upcomingEvents', fn ($events) => collect($events)->pluck('id')->contains($upcomingEvent->id))
+                ->where('upcomingEvents', fn ($events) => ! collect($events)->pluck('id')->contains($pastEvent->id))
+                ->where('upcomingEvents', fn ($events) => ! collect($events)->pluck('id')->contains($tooFarFutureEvent->id))
             )
         );
     }
@@ -99,7 +108,7 @@ class IndexTest extends TestCase
             ->component('Raiding/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('upcomingEvents', function ($events) use ($earlierEvent, $laterEvent) {
-                    $ids = collect($events['data'])->pluck('id')->values();
+                    $ids = collect($events)->pluck('id')->values();
 
                     return $ids->search($earlierEvent->id) < $ids->search($laterEvent->id);
                 })
@@ -121,7 +130,7 @@ class IndexTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('reports', fn ($reports) => count($reports['data']) === 10)
+                ->where('reports', fn ($reports) => count($reports) === 10)
             )
         );
     }
@@ -140,7 +149,7 @@ class IndexTest extends TestCase
             ->component('Raiding/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('reports', function ($reports) use ($newerReport, $olderReport) {
-                    $ids = collect($reports['data'])->pluck('id')->values();
+                    $ids = collect($reports)->pluck('id')->values();
 
                     return $ids->search($newerReport->id) < $ids->search($olderReport->id);
                 })

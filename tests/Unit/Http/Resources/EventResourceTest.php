@@ -53,8 +53,8 @@ class EventResourceTest extends TestCase
 
         $this->assertSame($event->id, $array['id']);
         $this->assertSame($event->title, $array['title']);
-        $this->assertEquals($event->start_time, $array['start_time']);
-        $this->assertEquals($event->end_time, $array['end_time']);
+        $this->assertSame($event->start_time->toIso8601String(), $array['start_time']);
+        $this->assertSame($event->end_time->toIso8601String(), $array['end_time']);
     }
 
     #[Test]
@@ -70,17 +70,17 @@ class EventResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_channel_as_a_channel_instance(): void
+    public function it_returns_channel_as_an_array(): void
     {
         $this->mockChannel(id: '999888777', name: 'raid-chat', position: 3);
         $event = Event::factory()->create();
 
         $array = (new EventResource($event))->toArray(new Request);
 
-        $this->assertInstanceOf(Channel::class, $array['channel']);
-        $this->assertSame('999888777', $array['channel']->id);
-        $this->assertSame('raid-chat', $array['channel']->name);
-        $this->assertSame(3, $array['channel']->position);
+        $this->assertIsArray($array['channel']);
+        $this->assertSame('999888777', $array['channel']['id']);
+        $this->assertSame('raid-chat', $array['channel']['name']);
+        $this->assertSame(3, $array['channel']['position']);
     }
 
     #[Test]
@@ -95,7 +95,7 @@ class EventResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_raid_id_and_name_when_relation_is_loaded(): void
+    public function it_includes_raid_data_when_relation_is_loaded(): void
     {
         $this->mockChannel();
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
@@ -108,6 +108,9 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('raids', $array);
         $this->assertSame($raid->id, $array['raids'][0]['id']);
         $this->assertSame('Karazhan', $array['raids'][0]['name']);
+        $this->assertSame($raid->slug, $array['raids'][0]['slug']);
+        $this->assertSame($raid->difficulty, $array['raids'][0]['difficulty']);
+        $this->assertSame($raid->max_players, $array['raids'][0]['max_players']);
     }
 
     #[Test]
@@ -122,7 +125,7 @@ class EventResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_character_id_and_name_when_relation_is_loaded(): void
+    public function it_includes_character_data_when_relation_is_loaded(): void
     {
         $this->mockChannel();
         $event = Event::factory()->create();
@@ -138,5 +141,7 @@ class EventResourceTest extends TestCase
         $this->assertCount(2, $array['characters']);
         $this->assertSame('Warrior', $array['characters'][0]['name']);
         $this->assertSame('Mage', $array['characters'][1]['name']);
+        $this->assertArrayHasKey('id', $array['characters'][0]);
+        $this->assertArrayHasKey('id', $array['characters'][1]);
     }
 }
