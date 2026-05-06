@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class BossTest extends ModelTestCase
@@ -128,5 +129,26 @@ class BossTest extends ModelTestCase
 
         $this->assertCount(1, $boss->items);
         $this->assertCount(2, $boss->comments);
+    }
+
+    #[Test]
+    public function it_implements_has_media_interface(): void
+    {
+        $boss = $this->create();
+
+        $this->assertInstanceOf(HasMedia::class, $boss);
+    }
+
+    #[Test]
+    public function it_can_add_media(): void
+    {
+        $boss = $this->create();
+        $testFile = storage_path('app/test-image.png');
+        file_put_contents($testFile, 'fake image content');
+
+        $boss->addMedia($testFile)->toMediaCollection('default');
+
+        $this->assertNotEmpty($boss->getMedia('default'));
+        @unlink($testFile);
     }
 }
