@@ -10,6 +10,22 @@ import SecondaryButton from "@/Components/SecondaryButton";
  * All available format button configurations
  */
 const ALL_FORMATS = {
+    heading2: {
+        label: <span className="text-xs font-bold">H2</span>,
+        title: "Heading 2",
+        prefix: "## ",
+        suffix: "",
+        placeholder: "Heading",
+        hint: "## heading",
+    },
+    heading3: {
+        label: <span className="text-xs font-bold">H3</span>,
+        title: "Heading 3",
+        prefix: "### ",
+        suffix: "",
+        placeholder: "Heading",
+        hint: "### heading",
+    },
     bold: {
         label: <Icon icon="bold" style="solid" />,
         title: "Bold",
