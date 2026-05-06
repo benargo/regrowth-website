@@ -72,4 +72,31 @@ class EventPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->view($user, $event));
     }
+
+    #[Test]
+    public function it_allows_update_with_manage_raid_plans_permission(): void
+    {
+        $user = $this->userWithPermission('manage-raid-plans');
+        $event = Event::factory()->create();
+
+        $this->assertTrue($this->policy->update($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_update_without_permission(): void
+    {
+        $user = $this->userWithoutPermission();
+        $event = Event::factory()->create();
+
+        $this->assertFalse($this->policy->update($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_update_with_unrelated_permission(): void
+    {
+        $user = $this->userWithPermission('view-raid-plans');
+        $event = Event::factory()->create();
+
+        $this->assertFalse($this->policy->update($user, $event));
+    }
 }

@@ -14,4 +14,12 @@ class EventPolicy
     {
         return $user->hasPermissionViaDiscordRoles('view-raid-plans');
     }
+
+    /**
+     * Determine whether the user can update a model.
+     */
+    public function update(User $user, Event $event): bool
+    {
+        return $user->hasPermissionViaDiscordRoles('manage-raid-plans');
+    }
 }
