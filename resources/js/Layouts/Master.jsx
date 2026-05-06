@@ -14,7 +14,6 @@ export default function Master({ title, children }) {
     const canViewLootBiasTool = usePermission("view-loot-bias-tool");
     const canViewAllComments = usePermission("view-all-comments");
     const canViewOfficerDashboard = usePermission("view-officer-dashboard");
-    const canViewReports = usePermission("view-reports");
     const canViewAttendance = usePermission("view-attendance");
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
@@ -94,17 +93,13 @@ export default function Master({ title, children }) {
                                 />
                                 Daily Quests
                             </Link>
-                            {canViewReports ? (
-                                <Link
-                                    href={route("raids.reports.index")}
-                                    className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                                >
-                                    <Icon icon="dragon" style="solid" className="mr-2 h-6" />
-                                    Raiding
-                                </Link>
-                            ) : (
-                                <>{/* Placeholder for raiding page */}</>
-                            )}
+                            <Link
+                                href={route("raiding.index")}
+                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
+                            >
+                                <Icon icon="dragon" style="solid" className="mr-2 h-6" />
+                                Raiding
+                            </Link>
                             {canViewLootBiasTool && (
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -225,17 +220,13 @@ export default function Master({ title, children }) {
                             </span>
                             Daily Quests
                         </Link>
-                        {canViewReports ? (
-                            <Link
-                                href={route("raids.reports.index")}
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
-                                <Icon icon="dragon" style="solid" className="mr-2 h-6" />
-                                Raids
-                            </Link>
-                        ) : (
-                            <>{/* Placeholder for raiding page */}</>
-                        )}
+                        <Link
+                            href={route("raiding.index")}
+                            className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
+                        >
+                            <Icon icon="dragon" style="solid" className="mr-2 h-6" />
+                            Raiding
+                        </Link>
                         {canViewLootBiasTool && (
                             <>
                                 <Link

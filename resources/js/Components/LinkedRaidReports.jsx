@@ -5,6 +5,7 @@ import Modal from "@/Components/Modal";
 import Tooltip from "@/Components/Tooltip";
 import formatDate from "@/Helpers/FormatDate";
 import getDayDifference from "@/Helpers/GetDayDifference";
+import usePermission from "@/Hooks/Permissions";
 
 function ClusterReportRow({ report, dayDiff }) {
     const formattedDate = formatDate(report.start_time);
@@ -374,14 +375,8 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
     );
 }
 
-export default function LinkedRaidReports({
-    currentReport,
-    canManageLinks,
-    nearbyReports,
-    impactedReports,
-    onChange,
-    referenceDate,
-}) {
+export default function LinkedRaidReports({ currentReport, nearbyReports, impactedReports, onChange, referenceDate }) {
+    const canManageReports = usePermission("manage-reports");
     const isCreateMode = currentReport === null;
 
     const [localLinkedReports, setLocalLinkedReports] = useState([]);
@@ -401,7 +396,7 @@ export default function LinkedRaidReports({
     const handleShowModeSubmit = (identifiers) => {
         setIsSubmitting(true);
         router.patch(
-            route("raids.reports.update", { report: currentReport.id }),
+            route("raiding.reports.update", { report: currentReport.id }),
             { links: { action: "create", link_ids: identifiers } },
             {
                 preserveScroll: true,
@@ -431,7 +426,7 @@ export default function LinkedRaidReports({
     const handleConfirmDelete = () => {
         setIsDeletingLink(true);
         router.patch(
-            route("raids.reports.update", { report: currentReport.id }),
+            route("raiding.reports.update", { report: currentReport.id }),
             { links: { action: "delete", link_ids: [] } },
             {
                 preserveScroll: true,
@@ -466,7 +461,7 @@ export default function LinkedRaidReports({
                                         <span className="font-medium text-amber-400">{linked.title}</span>
                                     ) : (
                                         <Link
-                                            href={route("raids.reports.show", { report: linked.id })}
+                                            href={route("raiding.reports.show", { report: linked.id })}
                                             className="font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                         >
                                             {linked.title}
@@ -504,7 +499,7 @@ export default function LinkedRaidReports({
                                             <Icon icon="unlink" style="solid" className="text-xs" />
                                         </button>
                                     ) : (
-                                        canManageLinks && (
+                                        canManageReports && (
                                             <Tooltip
                                                 text={isManualLink ? "Remove link" : "Auto-linked – cannot be removed"}
                                                 position="left"
@@ -526,7 +521,7 @@ export default function LinkedRaidReports({
                 </div>
             )}
 
-            {canManageLinks && (
+            {canManageReports && (
                 <button
                     type="button"
                     onClick={handleAddLink}

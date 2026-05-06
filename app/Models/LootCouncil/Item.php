@@ -4,8 +4,8 @@ namespace App\Models\LootCouncil;
 
 use App\Casts\ItemMediaCast;
 use App\Events\ItemSaved;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Raid;
+use App\Models\Boss;
+use App\Models\Raid;
 use Database\Factories\LootCouncil\ItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

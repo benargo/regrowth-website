@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\LootCouncil;
 
 use App\Http\Controllers\Controller;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Models\Phase;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;

@@ -2,9 +2,6 @@
 
 namespace Tests\Unit\Models;
 
-use App\Events\PlannedAbsenceCreated;
-use App\Events\PlannedAbsenceDeleted;
-use App\Events\PlannedAbsenceUpdated;
 use App\Models\Character;
 use App\Models\PlannedAbsence;
 use App\Models\User;
@@ -13,7 +10,6 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 

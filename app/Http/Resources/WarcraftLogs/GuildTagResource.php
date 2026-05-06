@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\WarcraftLogs;
 
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

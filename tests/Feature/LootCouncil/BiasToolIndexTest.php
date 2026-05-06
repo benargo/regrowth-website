@@ -4,8 +4,8 @@ namespace Tests\Feature\LootCouncil;
 
 use App\Models\DiscordRole;
 use App\Models\Permission;
-use App\Models\TBC\Phase;
-use App\Models\TBC\Raid;
+use App\Models\Phase;
+use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;

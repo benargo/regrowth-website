@@ -3,12 +3,15 @@
         "claude_code",
         "copilot"
     ],
+    "cloud": false,
     "guidelines": true,
     "mcp": true,
     "nightwatch_mcp": false,
     "packages": [
         "spatie/boost-spatie-guidelines",
-        "spatie/laravel-permission"
+        "spatie/laravel-permission",
+        "spatie/laravel-medialibrary",
+        "spatie/laravel-query-builder"
     ],
     "sail": true,
     "skills": [
@@ -17,7 +20,9 @@
         "socialite-development",
         "inertia-react-development",
         "tailwindcss-development",
+        "medialibrary-development",
         "laravel-permission-development",
+        "laravel-query-builder",
         "spatie-laravel-php-standards"
     ]
 }

@@ -2,12 +2,21 @@
 
 use App\Jobs\BuildAddonExportFile;
 use App\Jobs\DeleteStaleDailyQuestsMessage;
+use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
 use Illuminate\Support\Facades\Schedule;
 
 /**
  * Synchronise Discord roles every hour to ensure we have the latest roles and permissions.
  */
 Schedule::command('app:sync-discord')->hourly()->name('sync-discord');
+
+/**
+ * Fetch events from the Raid Helper API every hour to keep our event data up to date.
+ *
+ * This job will run with default parameters, which means it will fetch events from the channels specified in the config file
+ * and with a default time range of 1 week ago to 1 week from now.
+ */
+Schedule::job(new FetchRaidHelperEvents)->hourly()->name('fetch-raid-helper-events')->withoutOverlapping();
 
 /**
  * Refresh the guild roster every 6 hours to ensure we have the latest member information.

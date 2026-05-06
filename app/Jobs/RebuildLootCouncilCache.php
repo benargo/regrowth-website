@@ -3,10 +3,10 @@
 namespace App\Jobs;
 
 use App\Http\Resources\LootCouncil\BossItemsResource;
+use App\Models\Boss;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
-use App\Models\TBC\Boss;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;

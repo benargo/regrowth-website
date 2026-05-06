@@ -4,10 +4,10 @@ namespace Tests\Feature\Database\Seeders;
 
 use App\Models\LootCouncil\Item;
 use App\Services\Blizzard\BlizzardService;
+use Database\Seeders\BossSeeder;
 use Database\Seeders\ItemSeeder;
-use Database\Seeders\TBC\BossSeeder;
-use Database\Seeders\TBC\PhaseSeeder;
-use Database\Seeders\TBC\RaidSeeder;
+use Database\Seeders\PhaseSeeder;
+use Database\Seeders\RaidSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;

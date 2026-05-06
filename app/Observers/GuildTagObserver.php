@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use Illuminate\Support\Facades\Cache;
 
 class GuildTagObserver

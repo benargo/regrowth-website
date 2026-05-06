@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Models\Phase;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
-use App\Models\TBC\Phase;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;
@@ -29,7 +29,7 @@ class AttendanceDashboardController extends Controller
      */
     public function __invoke(Request $request): Response
     {
-        return Inertia::render('Raids/Attendance/Index', [
+        return Inertia::render('Raiding/Attendance/Index', [
             'latestReportDate' => $this->latestReportDate(),
             'stats' => Inertia::defer(fn () => [
                 ...$this->stats(),

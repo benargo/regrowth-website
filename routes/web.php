@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
+use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Dashboard\GrmController;
 use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
@@ -20,6 +22,7 @@ use App\Http\Controllers\LootCouncil\NotesController;
 use App\Http\Controllers\LootCouncil\PrioritiesController;
 use App\Http\Controllers\LootCouncil\RaidController;
 use App\Http\Controllers\PlannedAbsenceController;
+use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
@@ -57,28 +60,32 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], fu
 /**
  * Raid planning and attendance
  */
-Route::group(['prefix' => 'raids', 'as' => 'raids.', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
+    Route::get('/', [RaidingController::class, 'index'])->name('index');
+
     // Planned absences routes
-    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->can('viewAny', 'App\Models\PlannedAbsence')->name('absences.index');
-    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->can('create', 'App\Models\PlannedAbsence')->name('absences.create');
-    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->can('create', 'App\Models\PlannedAbsence')->name('absences.store');
-    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->can('update', 'plannedAbsence')->name('absences.edit');
-    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->can('update', 'plannedAbsence')->name('absences.update');
-    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->can('delete', 'plannedAbsence')->name('absences.destroy');
-    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->can('restore', 'plannedAbsence')->name('absences.restore');
-    // Route::post('/absences/{id}/restore', [PlannedAbsenceController::class, 'restore'])->can('restore', 'App\Models\PlannedAbsence')->name('absences.restore');
+    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->middleware(['auth', 'can:viewAny,App\Models\PlannedAbsence'])->name('absences.index');
+    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->middleware(['auth', 'can:create,App\Models\PlannedAbsence'])->name('absences.create');
+    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->middleware(['auth', 'can:create,App\Models\PlannedAbsence'])->name('absences.store');
+    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->middleware(['auth', 'can:update,plannedAbsence'])->name('absences.edit');
+    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->middleware(['auth', 'can:update,plannedAbsence'])->name('absences.update');
+    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->middleware(['auth', 'can:delete,plannedAbsence'])->name('absences.destroy');
+    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->middleware(['auth', 'can:restore,plannedAbsence'])->name('absences.restore');
 
     // Attendance routes
-    Route::get('/attendance', AttendanceDashboardController::class)->middleware('can:view-attendance')->name('attendance.dashboard');
-    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->middleware('can:view-attendance')->name('attendance.graphs.index');
-    Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware('can:view-attendance')->name('attendance.matrix');
+    Route::get('/attendance', AttendanceDashboardController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.dashboard');
+    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->middleware(['auth', 'can:view-attendance'])->name('attendance.graphs.index');
+    Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.matrix');
+
+    // Upcoming events comps and plans routes
+    Route::get('/plans/{event}', [EventController::class, 'show'])->middleware(['auth', 'can:view,event'])->name('plans.show');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/create', [ReportController::class, 'create'])->can('create', 'App\Models\Raids\Report')->name('reports.create');
-    Route::post('/reports', [ReportController::class, 'store'])->can('create', 'App\Models\Raids\Report')->name('reports.store');
-    Route::get('/reports/{report}', [ReportController::class, 'show'])->can('view', 'report')->name('reports.show');
-    Route::patch('/reports/{report}', [ReportController::class, 'update'])->can('update', 'report')->name('reports.update');
+    Route::get('/reports/create', [ReportController::class, 'create'])->middleware(['auth', 'can:create,App\Models\Raids\Report'])->name('reports.create');
+    Route::post('/reports', [ReportController::class, 'store'])->middleware(['auth', 'can:create,App\Models\Raids\Report'])->name('reports.store');
+    Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
+    Route::patch('/reports/{report}', [ReportController::class, 'update'])->middleware(['auth', 'can:update,report'])->name('reports.update');
 });
 
 /*
@@ -98,28 +105,11 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
 
     /**
-     * Guild ranks management
+     * Boss strategies management
      */
-    Route::get('/ranks', [GuildRankController::class, 'list'])->name('ranks.view');
-    Route::post('/ranks/new', [GuildRankController::class, 'store'])->name('ranks.store');
-    Route::post('/ranks/update-positions', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
-    Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
-    Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
-    Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
-
-    /**
-     * Phases management
-     */
-    Route::get('/phases', [PhaseController::class, 'index'])->name('phases.view');
-    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
-    Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
-
-    /**
-     * GRM data upload
-     */
-    Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
-    Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
-    Route::get('/grm-upload/status', [GrmController::class, 'getUploadStatus'])->name('grm-upload.status');
+    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
+    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'edit'])->can('update', 'boss')->name('boss-strategies.edit');
+    Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->can('update', 'boss')->name('boss-strategies.update');
 
     /**
      * Daily Quests
@@ -131,11 +121,35 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
         ->name('daily-quests.audit');
 
     /**
+     * GRM data upload
+     */
+    Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
+    Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
+    Route::get('/grm-upload/status', [GrmController::class, 'getUploadStatus'])->name('grm-upload.status');
+
+    /**
+     * Phases management
+     */
+    Route::get('/phases', [PhaseController::class, 'index'])->name('phases.view');
+    Route::put('/phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
+    Route::put('/phases/{phase}/guild-tags', [PhaseController::class, 'updateGuildTags'])->name('phases.guild-tags.update');
+
+    /**
      * Permissions management
      */
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/permissions/{group}', [PermissionController::class, 'showGroup'])->name('permissions.group.show');
     Route::patch('/permissions/{group}/{permission}', [PermissionController::class, 'update'])->name('permissions.permission.update');
+
+    /**
+     * Ranks management
+     */
+    Route::get('/ranks', [GuildRankController::class, 'list'])->name('ranks.view');
+    Route::post('/ranks/new', [GuildRankController::class, 'store'])->name('ranks.store');
+    Route::post('/ranks/update-positions', [GuildRankController::class, 'updatePositions'])->name('ranks.update-positions');
+    Route::put('/ranks/{guildRank}', [GuildRankController::class, 'update'])->name('ranks.update');
+    Route::patch('/ranks/{guildRank}/count-attendance', [GuildRankController::class, 'toggleCountAttendance'])->name('ranks.toggle-attendance');
+    Route::delete('/ranks/{guildRank}', [GuildRankController::class, 'destroy'])->name('ranks.destroy');
 });
 
 /**

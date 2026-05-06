@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Database\Seeders\TBC\BossSeeder;
-use Database\Seeders\DailyQuestSeeder;
 use Database\Seeders\TBC\PhaseSeeder;
 use Database\Seeders\TBC\RaidSeeder;
 use Illuminate\Database\Seeder;

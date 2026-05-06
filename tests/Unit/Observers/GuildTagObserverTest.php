@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Observers;
 
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Observers\GuildTagObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Foundation\Testing\RefreshDatabase;

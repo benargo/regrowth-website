@@ -3,10 +3,10 @@
 namespace Tests\Unit\Models\LootCouncil;
 
 use App\Casts\ItemMediaCast;
+use App\Models\Boss;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
-use App\Models\TBC\Boss;
-use App\Models\TBC\Raid;
+use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;

@@ -7,67 +7,91 @@ svg.recharts-surface {
 }
 
 .bg-arcatraz {
-    background-image: url('../images/bg_arcatraz.webp');
+    background-image: url("../images/bg_arcatraz.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-brown-texture {
-    background-image: url('../images/bg_brown_texture_repeat.jpg');
+    background-image: url("../images/bg_brown_texture_repeat.jpg");
     background-position: center -200px;
     background-repeat: repeat;
 }
 
 .bg-dungeons {
-    background-image: url('../images/bg_dungeons.webp');
+    background-image: url("../images/bg_dungeons.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-goldshire {
-    background-image: url('../images/bg_goldshire.webp');
+    background-image: url("../images/bg_goldshire.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-illidan {
-    background-image: url('../images/bg_illidan.webp');
+    background-image: url("../images/bg_illidan.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-ironforge {
-    background-image: url('../images/bg_ironforge.webp');
+    background-image: url("../images/bg_ironforge.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-karazhan {
-    background-image: url('../images/bg_karazhan.webp');
+    background-image: url("../images/bg_karazhan.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-masthead {
-    background-image: url('../images/bg_masthead_mobile.webp');
+    background-image: url("../images/bg_masthead_mobile.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-masthead-desktop {
-    background-image: url('../images/bg_masthead_desktop_1.webp');
+    background-image: url("../images/bg_masthead_desktop_1.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-officer-meeting {
-    background-image: url('../images/bg_officermeeting.webp');
+    background-image: url("../images/bg_officermeeting.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-gruul-magtheridon {
+    background-image: url("../images/bg_gruul_magtheridon.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-karazhan {
+    background-image: url("../images/bg_karazhan_opera.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-serpentshrine-cavern {
+    background-image: url("../images/bg_serpentshrinecavern.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-tempest-keep {
+    background-image: url("../images/bg_tempestkeeptheeye.webp");
     background-position: center;
     background-size: cover;
 }
 
 .bg-ssctk {
-    background-image: url('../images/bg_ssctk.webp');
+    background-image: url("../images/bg_ssctk.webp");
     background-position: center;
     background-size: cover;
 }

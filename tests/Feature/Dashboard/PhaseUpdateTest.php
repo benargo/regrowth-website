@@ -3,7 +3,7 @@
 namespace Tests\Feature\Dashboard;
 
 use App\Events\AddonSettingsProcessed;
-use App\Models\TBC\Phase;
+use App\Models\Phase;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;

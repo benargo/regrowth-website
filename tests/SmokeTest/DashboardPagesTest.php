@@ -2,8 +2,10 @@
 
 namespace Tests\SmokeTest;
 
+use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\Raid;
 use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\WarcraftLogs\GuildTags;
@@ -32,6 +34,7 @@ class DashboardPagesTest extends TestCase
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'audit-daily-quests', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-boss-strategies', 'guard_name' => 'web']));
 
         // Mock GuildTags to prevent WarcraftLogs API calls
         $guildTags = Mockery::mock(GuildTags::class);
@@ -227,6 +230,31 @@ class DashboardPagesTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(route('dashboard.permissions.group.show', ['group' => 'test-group']));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function boss_strategies_index_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard.boss-strategies.index'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function boss_strategies_edit_page_loads(): void
+    {
+        $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
+        $boss = Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->actingAs($user)->get(
+            route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
+        );
 
         $response->assertOk();
         $response->assertSee('Regrowth');

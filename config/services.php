@@ -54,6 +54,12 @@ return [
         ],
     ],
 
+    'raidhelper' => [
+        'token' => env('RAID_HELPER_TOKEN'),
+        'server_id' => env('RAID_HELPER_SERVER_ID'),
+        'channel_ids' => explode(',', env('RAID_HELPER_CHANNEL_IDS', '')),
+    ],
+
     'warcraftlogs' => [
         'client_id' => env('WCL_CLIENT_ID'),
         'client_secret' => env('WCL_CLIENT_SECRET'),

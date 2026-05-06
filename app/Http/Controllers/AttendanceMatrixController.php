@@ -6,10 +6,10 @@ use App\Http\Requests\Raid\AttendanceMatrixRequest;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\GuildTag;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
-use App\Models\WarcraftLogs\GuildTag;
-use App\Models\WarcraftLogs\Zone;
+use App\Models\Zone;
 use App\Services\Attendance\AttendanceMatrixData;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;
@@ -34,7 +34,7 @@ class AttendanceMatrixController extends Controller
     {
         $filters = $request->filters();
 
-        return Inertia::render('Raids/Attendance/Matrix', [
+        return Inertia::render('Raiding/Attendance/Matrix', [
             'ranks' => GuildRank::orderBy('position')->get(),
             'zones' => Zone::whereIn('id', Report::select('zone_id')->whereNotNull('zone_id')->distinct())->orderBy('name')->get(),
             'guildTags' => GuildTag::orderBy('name')->get(),

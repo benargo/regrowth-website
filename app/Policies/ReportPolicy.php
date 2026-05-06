@@ -8,22 +8,6 @@ use App\Models\User;
 class ReportPolicy
 {
     /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
-    {
-        return $user->hasPermissionViaDiscordRoles('view-reports');
-    }
-
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Report $report): bool
-    {
-        return $user->hasPermissionViaDiscordRoles('view-reports');
-    }
-
-    /**
      * Determine whether the user can create models.
      */
     public function create(User $user): bool

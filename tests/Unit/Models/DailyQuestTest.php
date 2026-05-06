@@ -14,11 +14,11 @@ class DailyQuestTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_tbc_daily_quests_table(): void
+    public function it_uses_daily_quests_table(): void
     {
         $model = new DailyQuest;
 
-        $this->assertSame('tbc_daily_quests', $model->getTable());
+        $this->assertSame('daily_quests', $model->getTable());
     }
 
     #[Test]

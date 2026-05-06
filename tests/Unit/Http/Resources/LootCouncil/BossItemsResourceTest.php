@@ -3,10 +3,10 @@
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Resources\LootCouncil\BossItemsResource;
+use App\Models\Boss;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
-use App\Models\TBC\Boss;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Eloquent\Collection;

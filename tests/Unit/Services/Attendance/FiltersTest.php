@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\Attendance;
 
 use App\Models\Character;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Models\GuildTag;
 use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

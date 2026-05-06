@@ -3,19 +3,22 @@
 namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
+use App\Models\Boss;
 use App\Models\GuildRank;
+use App\Models\GuildTag;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
+use App\Models\Phase;
 use App\Models\Raids\Report;
-use App\Models\TBC\Phase;
 use App\Models\User;
-use App\Models\WarcraftLogs\GuildTag;
+use App\Policies\BossPolicy;
 use App\Policies\CommentPolicy;
 use App\Policies\DatasetPolicy;
 use App\Policies\ItemPolicy;
 use App\Policies\ReportPolicy;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
@@ -43,9 +46,15 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+        Builder::macro('whereNone', function (): static {
+            /** @var Builder $this */
+            return $this->whereRaw('1 = 0');
+        });
+
         /**
          * Policies
          */
+        Gate::policy(Boss::class, BossPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
         Gate::policy(GuildRank::class, DatasetPolicy::class);
         Gate::policy(GuildTag::class, DatasetPolicy::class);
