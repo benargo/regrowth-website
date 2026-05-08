@@ -22,8 +22,15 @@ class EventResource extends JsonResource
             'start_time' => $this->start_time->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
             'duration' => $this->duration,
-            'channel' => $this->channel->only('id', 'name', 'position')->toArray(),
         ];
+
+        try {
+            $data['channel'] = $this->channel->only('id', 'name', 'position')->toArray();
+        } catch (\Exception $e) {
+            // If the Discord API call fails for any reason (e.g. invalid channel ID, network issues, etc.),
+            // we can catch the exception and simply omit the channel information from the response.
+            // This way, we avoid breaking the entire event resource just because of an issue with fetching the channel.
+        }
 
         if ($this->relationLoaded('raids')) {
             $data['raids'] = $this->raids->map(function (Raid $raid) {
