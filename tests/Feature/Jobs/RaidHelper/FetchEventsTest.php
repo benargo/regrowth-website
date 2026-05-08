@@ -329,6 +329,24 @@ class FetchEventsTest extends TestCase
     }
 
     #[Test]
+    public function it_detaches_characters_when_no_comp_exists_for_the_event(): void
+    {
+        $channelId = '100000000000000001';
+        $character = Character::factory()->create(['name' => 'Arthas']);
+        $event = Event::factory()->create(['raid_helper_event_id' => '999000000000000001']);
+        $event->characters()->attach($character->id, ['slot_number' => 1, 'group_number' => 1, 'is_confirmed' => false]);
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event->refresh();
+        $this->assertCount(0, $event->characters);
+    }
+
+    #[Test]
     public function it_syncs_multiple_characters_from_comp_slots(): void
     {
         $channelId = '100000000000000001';
