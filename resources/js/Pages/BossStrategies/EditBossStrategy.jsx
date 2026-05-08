@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useForm, Link } from "@inertiajs/react";
+import { useForm, Link, router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import MarkdownEditor from "@/Components/MarkdownEditor";
@@ -7,23 +7,21 @@ import ImageManager from "@/Components/ImageManager";
 import Icon from "@/Components/FontAwesome/Icon";
 
 function SaveIndicator({ saving, saved }) {
-    if (saving) {
-        return (
-            <span className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
+    const visible = saving || saved;
+    const color = saving ? "text-amber-400" : "text-green-400";
+    return (
+        <span
+            className={`flex items-center gap-1.5 text-sm font-medium transition-opacity duration-200 ${color} ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        >
+            <span className={saving ? "" : "hidden"}>
                 <Icon icon="spinner" style="solid" className="fa-spin" />
-                Saving…
             </span>
-        );
-    }
-    if (saved) {
-        return (
-            <span className="flex items-center gap-1.5 text-sm font-medium text-green-400">
+            <span className={saving ? "hidden" : ""}>
                 <Icon icon="check" style="solid" />
-                Saved
             </span>
-        );
-    }
-    return null;
+            {saving ? "Saving…" : "Saved"}
+        </span>
+    );
 }
 
 export default function EditBossStrategy({ boss }) {
@@ -96,17 +94,17 @@ export default function EditBossStrategy({ boss }) {
         };
     }, [isDirty, data.notes]);
 
-    const patchImages = (payload) => {
+    const patchImages = (imageData) => {
         setImagesSaving(true);
-        patch(updateRoute, {
-            ...payload,
+        router.patch(updateRoute, imageData, {
             preserveScroll: true,
             only: ["boss"],
             forceFormData: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
                 setImagesSaving(false);
                 flashImagesSaved();
-                setImageOrder(boss.images || []);
+                const freshBoss = page.props.boss?.data ?? page.props.boss ?? {};
+                setImageOrder(freshBoss.images || []);
             },
             onError: () => setImagesSaving(false),
         });
@@ -117,26 +115,30 @@ export default function EditBossStrategy({ boss }) {
         const previewUrls = files.map((f) => URL.createObjectURL(f));
         setImageOrder((prev) => [...prev, ...previewUrls]);
 
-        patch(updateRoute, {
-            data: { images: files },
-            preserveScroll: true,
-            only: ["boss"],
-            forceFormData: true,
-            onSuccess: () => {
-                setImageOrder(boss.images || []);
-                flashImagesSaved();
+        router.patch(
+            updateRoute,
+            { images: files },
+            {
+                preserveScroll: true,
+                only: ["boss"],
+                forceFormData: true,
+                onSuccess: (page) => {
+                    const freshBoss = page.props.boss?.data ?? page.props.boss ?? {};
+                    setImageOrder(freshBoss.images || []);
+                    flashImagesSaved();
+                },
             },
-        });
+        );
     };
 
     const handleDeleteImage = (url) => {
         setImageOrder((prev) => prev.filter((u) => u !== url));
-        patchImages({ data: { deleted_images: [url] } });
+        patchImages({ deleted_images: [url] });
     };
 
     const handleReorderImages = (newOrder) => {
         setImageOrder(newOrder);
-        patchImages({ data: { image_order: newOrder } });
+        patchImages({ image_order: newOrder });
     };
 
     return (
@@ -180,7 +182,7 @@ export default function EditBossStrategy({ boss }) {
 
                     {/* Image Management Section */}
                     <div>
-                        <h3 className="flex items-center gap-3 text-lg font-bold">
+                        <h3 className="mb-2 flex items-center gap-3 text-lg font-bold">
                             Strategy Images
                             <SaveIndicator saving={imagesSaving} saved={showImagesSaved} />
                         </h3>
