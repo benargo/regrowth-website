@@ -378,20 +378,6 @@ class EventTest extends TestCase
     }
 
     #[Test]
-    public function it_maps_close_time_to_closing_time(): void
-    {
-        $payload = array_merge(
-            array_diff_key($this->listingPayload(), ['closingTime' => null]),
-            ['closeTime' => 1746313200],
-        );
-
-        $event = Event::from($payload);
-
-        $this->assertInstanceOf(CarbonInterface::class, $event->closingTime);
-        $this->assertSame(1746313200, $event->closingTime->unix());
-    }
-
-    #[Test]
     public function it_casts_sign_up_count_string_to_integer(): void
     {
         $event = Event::from($this->listingPayload(['signUpCount' => '16']));

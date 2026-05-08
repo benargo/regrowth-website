@@ -169,7 +169,8 @@ function BenchedTable({ characters }) {
 }
 
 export default function Show({ event, raids, groups, benched }) {
-    event = event.data ?? {}; // Handle Inertia resource wrapping
+    event = event?.data ?? event ?? {}; // Handle Inertia resource wrapping
+    benched = benched?.data ?? benched ?? {}; // Handle inertia resource wrapping
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
     const dayOfWeek = startDate.toLocaleString("en-GB", { weekday: "long" });
@@ -213,7 +214,7 @@ export default function Show({ event, raids, groups, benched }) {
                         }
                     >
                         {groups?.data?.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {groups.data.map((group) => (
                                     <GroupTable key={group.group_number} group={group} />
                                 ))}

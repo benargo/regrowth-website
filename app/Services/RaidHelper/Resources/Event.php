@@ -50,7 +50,6 @@ class Event extends Data
         public readonly CarbonInterface $endTime,
 
         /** @var CarbonInterface The unix timestamp of when this event will close and deny further sign-ups */
-        #[MapInputName('closeTime')]
         #[WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]
         public readonly CarbonInterface $closingTime,
 
