@@ -86,6 +86,6 @@ class BossStrategyController extends Controller
             }
         }
 
-        return redirect()->route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])->with('success', 'Boss strategy updated successfully.');
+        return back();
     }
 }

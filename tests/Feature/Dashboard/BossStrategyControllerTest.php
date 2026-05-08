@@ -200,18 +200,104 @@ class BossStrategyControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function update_redirects_to_edit_page(): void
+    public function update_redirects_back(): void
+    {
+        $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
+        $boss = Boss::factory()->for(Raid::factory())->create();
+        $editUrl = route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug]);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Referer' => $editUrl])
+            ->patch(
+                route('dashboard.boss-strategies.update', ['boss' => $boss]),
+                ['notes' => 'updated notes']
+            );
+
+        $response->assertRedirect($editUrl);
+    }
+
+    #[Test]
+    public function update_notes_only_partial_update(): void
     {
         $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->actingAs($user)->patch(
             route('dashboard.boss-strategies.update', ['boss' => $boss]),
-            ['notes' => 'updated notes']
+            ['notes' => '## Auto-saved notes']
         );
 
-        $response->assertRedirect(
-            route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
+        $response->assertRedirect();
+        $this->assertDatabaseHas('bosses', [
+            'id' => $boss->id,
+            'notes' => '## Auto-saved notes',
+        ]);
+    }
+
+    #[Test]
+    public function update_images_only_partial_update(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
+        $boss = Boss::factory()->for(Raid::factory())->create();
+
+        $file = UploadedFile::fake()->image('instant.png', 800, 600);
+
+        $response = $this->actingAs($user)->patch(
+            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            ['images' => [$file]]
         );
+
+        $response->assertRedirect();
+        $this->assertCount(1, $boss->refresh()->getMedia());
+    }
+
+    #[Test]
+    public function update_deleted_images_partial_update(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
+        $boss = Boss::factory()->for(Raid::factory())->create();
+
+        $file = UploadedFile::fake()->image('to-delete.png', 800, 600);
+        $boss->addMedia($file)->toMediaCollection();
+        $this->assertCount(1, $boss->refresh()->getMedia());
+
+        $mediaUrl = $boss->getFirstMedia()->getUrl();
+
+        $response = $this->actingAs($user)->patch(
+            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            ['deleted_images' => [$mediaUrl]]
+        );
+
+        $response->assertRedirect();
+    }
+
+    #[Test]
+    public function update_image_order_partial_update(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
+        $boss = Boss::factory()->for(Raid::factory())->create();
+
+        $file1 = UploadedFile::fake()->image('alpha.png', 800, 600);
+        $file2 = UploadedFile::fake()->image('beta.png', 800, 600);
+        $boss->addMedia($file1)->toMediaCollection();
+        $boss->addMedia($file2)->toMediaCollection();
+
+        $media = $boss->refresh()->getMedia();
+        $url1 = $media[0]->getUrl();
+        $url2 = $media[1]->getUrl();
+
+        $response = $this->actingAs($user)->patch(
+            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            ['image_order' => [$url2, $url1]]
+        );
+
+        $response->assertRedirect();
+
+        $reordered = $boss->refresh()->getMedia();
+        $this->assertEquals($url2, $reordered[0]->getUrl());
+        $this->assertEquals($url1, $reordered[1]->getUrl());
     }
 }
