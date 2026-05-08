@@ -23,8 +23,9 @@ export default function Index({ upcomingEvents, reports }) {
                         <EventsTable events={upcomingEvents ?? []} />
                     </Deferred>
 
-                    <h2 className="mb-4 mt-12 text-2xl font-bold">Recent reports</h2>
-                    <div className="mb-4 flex justify-end">
+                    <div className="mb-4 mt-12 flex items-center gap-3">
+                        <h2 className="flex-1 text-2xl font-bold">Recent reports</h2>
+
                         <Link
                             href={route("raiding.reports.index")}
                             className="inline-flex items-center gap-2 rounded-md border border-amber-600 px-4 py-2 text-sm font-semibold text-amber-500 transition duration-150 ease-in-out hover:bg-amber-600 hover:text-white"

@@ -4,36 +4,37 @@ import usePermission from "@/Hooks/Permissions";
 import { Link } from "@inertiajs/react";
 
 export function EventsSkeleton() {
-    const fakeRows = Array.from({ length: 5 });
+    const fakeRows = Array.from({ length: 3 });
 
     return (
         <div className="animate-pulse">
-            <table className="w-full border-collapse">
-                <thead className="border-b border-amber-600/30">
-                    <tr>
-                        {["w-32", "w-48", "w-36"].map((w, i) => (
-                            <th key={i} className="px-4 py-3 text-left">
-                                <div className={`h-4 ${w} rounded bg-brown-700`} />
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-brown-700">
-                    {fakeRows.map((_, i) => (
-                        <tr key={i}>
-                            <td className="px-4 py-3">
-                                <div className="h-4 w-28 rounded bg-brown-700" />
-                            </td>
-                            <td className="px-4 py-3">
-                                <div className="h-4 w-44 rounded bg-brown-700" />
-                            </td>
-                            <td className="px-4 py-3">
-                                <div className="h-4 w-32 rounded bg-brown-700" />
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <div className="flex border-b border-amber-600">
+                <div className="w-40 shrink-0 px-4 py-3">
+                    <div className="h-4 w-8 rounded bg-brown-700" />
+                </div>
+                <div className="min-w-0 flex-1 px-4 py-3">
+                    <div className="h-4 w-10 rounded bg-brown-700" />
+                </div>
+                <div className="w-36 shrink-0 px-4 py-3">
+                    <div className="h-4 w-16 rounded bg-brown-700" />
+                </div>
+            </div>
+            <div className="divide-y divide-brown-700">
+                {fakeRows.map((_, i) => (
+                    <div key={i} className="flex items-center">
+                        <div className="w-40 shrink-0 px-4 py-3">
+                            <div className="mb-1 h-3 w-12 rounded bg-brown-700" />
+                            <div className="h-4 w-24 rounded bg-brown-700" />
+                        </div>
+                        <div className="min-w-0 flex-1 px-4 py-3">
+                            <div className="h-4 w-40 rounded bg-brown-700" />
+                        </div>
+                        <div className="w-36 shrink-0 px-4 py-3">
+                            <div className="h-4 w-24 rounded bg-brown-700" />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
