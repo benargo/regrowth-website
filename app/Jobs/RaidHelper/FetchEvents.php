@@ -57,7 +57,12 @@ class FetchEvents implements ShouldQueue
     public function handle(Discord $discord, RaidHelper $raidHelper): void
     {
         // Step 1. Validate the channel IDs to ensure they belong to the correct server.
-        $validChannels = $discord->getGuildChannels($raidHelper->getServerId())->whereIn('id', $this->channelIds)->pluck('id');
+        try {
+            $validChannels = $discord->getGuildChannels($raidHelper->getServerId())->whereIn('id', $this->channelIds)->pluck('id');
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch channels from Discord API for server ID {$raidHelper->getServerId()}. Error: {$e->getMessage()}");
+            $validChannels = collect(); // Proceed with an empty collection of valid channels to avoid breaking the entire job
+        }
 
         $events = collect();
 
