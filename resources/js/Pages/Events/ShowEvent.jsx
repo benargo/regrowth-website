@@ -59,12 +59,12 @@ function LootCouncillorBadge() {
 
 function GroupTable({ group }) {
     return (
-        <div className="mb-8 flex-initial">
+        <div className="flex flex-col">
             <h2 className="mb-4 text-xl font-semibold text-white">
                 {group.is_team ? "Team" : "Group"} {group.group_number}
                 <span className="ml-2 text-base font-normal text-gray-400">({group.characters.length})</span>
             </h2>
-            <div className="rounded border border-amber-600/30">
+            <div className="flex flex-1 flex-col rounded border border-amber-600/30">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead className="border-b border-amber-600">
@@ -213,7 +213,7 @@ export default function Show({ event, raids, groups, benched }) {
                         }
                     >
                         {groups?.data?.length > 0 ? (
-                            <div className="flex flex-col gap-6 lg:flex-row">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {groups.data.map((group) => (
                                     <GroupTable key={group.group_number} group={group} />
                                 ))}

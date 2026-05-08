@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Event extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Prunable;
 
     /**
      * The attributes that are mass assignable.
@@ -46,6 +47,16 @@ class Event extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
     ];
+
+    // ========== Pruning ============
+
+    /**
+     * Get the prunable model query.
+     */
+    public function prunable(): Builder
+    {
+        return static::where('end_time', '>=', now()->addDay());
+    }
 
     // ========== Custom attributes ============
 

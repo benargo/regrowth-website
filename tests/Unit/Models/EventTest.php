@@ -374,4 +374,54 @@ class EventTest extends ModelTestCase
         $this->assertTrue($result[1]->is($boss1a));
         $this->assertTrue($result[2]->is($boss2a));
     }
+
+    // prunable
+
+    #[Test]
+    public function prunable_returns_a_builder(): void
+    {
+        $event = new Event;
+
+        $this->assertInstanceOf(Builder::class, $event->prunable());
+    }
+
+    #[Test]
+    public function prunable_includes_events_ending_at_least_24_hours_from_now(): void
+    {
+        $event = $this->create(['end_time' => now()->addDay()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_includes_events_ending_more_than_24_hours_from_now(): void
+    {
+        $event = $this->create(['end_time' => now()->addDay()->addSecond()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_excludes_events_ending_less_than_24_hours_from_now(): void
+    {
+        $event = $this->create(['end_time' => now()->addDay()->subSecond()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_excludes_events_that_have_already_ended(): void
+    {
+        $event = $this->create(['end_time' => now()->subHour()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($event->id, $ids);
+    }
 }
