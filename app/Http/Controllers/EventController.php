@@ -28,6 +28,8 @@ class EventController extends Controller
      */
     public function show(Event $event, Request $request, RaidHelper $raidHelper): Response
     {
+        $event->load('assignments');
+
         return Inertia::render('Events/ShowEvent', [
             'event' => new EventResource($event),
             'raids' => $event->raids()->get()->toResourceCollection(),

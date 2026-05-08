@@ -6,6 +6,7 @@ use App\Models\Boss;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
@@ -250,6 +251,22 @@ class EventControllerTest extends TestCase
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('groups')
             )
+        );
+    }
+
+    #[Test]
+    public function it_includes_assignments_in_event_resource(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $event = Event::factory()->create();
+        EventAssignment::factory()->for($event)->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('event.data.assignments', 1)
         );
     }
 
