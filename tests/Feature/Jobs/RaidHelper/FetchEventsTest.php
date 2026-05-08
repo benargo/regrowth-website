@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -473,6 +474,25 @@ class FetchEventsTest extends TestCase
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertNotNull($event);
         $this->assertCount(0, $event->raids);
+    }
+
+    // -------------------------------------------------------------------------
+    // Cache flush
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_flushes_the_events_cache_after_syncing(): void
+    {
+        $channelId = '100000000000000001';
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        Cache::spy();
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        Cache::shouldHaveReceived('tags')->with(['events'])->once();
     }
 
     // -------------------------------------------------------------------------

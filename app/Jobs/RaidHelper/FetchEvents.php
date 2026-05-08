@@ -14,6 +14,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class FetchEvents implements ShouldQueue
@@ -143,5 +144,8 @@ class FetchEvents implements ShouldQueue
                 Log::warning("No comp data found for event ID {$event->id} from Raid Helper API. Skipping character sync for this event.");
             }
         });
+
+        // Step 4. Flush the 'events' cache to ensure that any cached event data is updated with the latest information from the database.
+        Cache::tags(['events'])->flush();
     }
 }
