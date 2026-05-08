@@ -55,7 +55,7 @@ class Event extends Model
      */
     public function prunable(): Builder
     {
-        return static::where('end_time', '>=', now()->addDay());
+        return static::where('end_time', '<=', now());
     }
 
     // ========== Custom attributes ============
