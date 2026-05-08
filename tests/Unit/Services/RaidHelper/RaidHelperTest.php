@@ -119,13 +119,18 @@ class RaidHelperTest extends TestCase
     public function with_server_affects_subsequent_api_calls(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->expects('json')->withNoArgs()->andReturn($this->minimalEventPayload());
+        $response->expects('json')->withNoArgs()->andReturn([
+            'postedEvents' => [$this->minimalListingEventPayload()],
+            'eventsOverall' => 1,
+            'eventsTransmitted' => 1,
+            'currentPage' => 1,
+        ]);
 
         $this->client->expects('get')
-            ->with('/servers/999888777666555444/events/12345')
+            ->with('/servers/999888777666555444/events', Mockery::any())
             ->andReturn($response);
 
-        $this->raidHelper->withServer('999888777666555444')->getEvent(12345);
+        $this->raidHelper->withServer('999888777666555444')->getEvents();
     }
 
     // -------------------------------------------------------------------------
@@ -141,7 +146,7 @@ class RaidHelperTest extends TestCase
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
-            ->with('/servers/111222333444555666/events/12345')
+            ->with('/events/12345')
             ->andReturn($response);
 
         $result = $this->raidHelper->getEvent(12345);
@@ -157,7 +162,7 @@ class RaidHelperTest extends TestCase
         $response->expects('json')->withNoArgs()->andReturn($this->minimalEventPayload());
 
         $this->client->expects('get')
-            ->with('/servers/111222333444555666/events/12345')
+            ->with('/events/12345')
             ->andReturn($response);
 
         $this->raidHelper->getEvent(12345);
@@ -172,7 +177,7 @@ class RaidHelperTest extends TestCase
         $response->expects('json')->withNoArgs()->andReturn($payload);
 
         $this->client->expects('get')
-            ->with('/servers/111222333444555666/events/12345')
+            ->with('/events/12345')
             ->andReturn($response);
 
         $result = $this->raidHelper->getEvent(12345);
