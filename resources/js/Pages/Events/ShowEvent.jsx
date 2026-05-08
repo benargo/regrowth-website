@@ -1,4 +1,5 @@
 import { Deferred } from "@inertiajs/react";
+import { useState } from "react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -28,13 +29,9 @@ function GroupsSkeleton() {
 
 function BenchedSkeleton() {
     return (
-        <div className="animate-pulse space-y-0 overflow-hidden rounded border border-amber-600/30">
-            {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 border-b border-brown-700 px-4 py-3 last:border-b-0">
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-32 rounded bg-brown-700" />
-                </div>
+        <div className="flex animate-pulse flex-wrap gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-7 w-24 rounded-full bg-brown-700" />
             ))}
         </div>
     );
@@ -113,56 +110,38 @@ function GroupTable({ group }) {
     );
 }
 
+function BenchedPill({ character }) {
+    const classSlug = character.playable_class?.name?.toLowerCase().replace(/\s+/g, "-");
+    const borderClass = classSlug ? `border-playable-class-${classSlug}` : "border-brown-600";
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full border bg-brown-800/80 px-3 py-1 text-sm font-medium text-white ${borderClass}`}
+        >
+            {character.playable_class?.icon_url && (
+                <img
+                    src={character.playable_class.icon_url}
+                    alt={character.playable_class.name}
+                    className="h-4 w-4 shrink-0"
+                />
+            )}
+            {character.name}
+        </span>
+    );
+}
+
 function BenchedTable({ characters }) {
     return (
-        <div className="rounded border border-amber-600/30">
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                    <thead className="border-b border-amber-600">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Character</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Rank</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Class</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Race</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-brown-700">
-                        {characters.map((character) => (
-                            <tr key={character.id} className={!character.is_confirmed ? "opacity-40" : ""}>
-                                <td className="px-4 py-3">
-                                    <span className="text-sm font-medium text-white">{character.name}</span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-300">
-                                    {character.rank ? <GuildRankLabel rank={character.rank} /> : "—"}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex items-center gap-2 text-sm text-gray-300">
-                                        {character.playable_class?.icon_url && (
-                                            <img
-                                                src={character.playable_class.icon_url}
-                                                alt={character.playable_class.name}
-                                                className="h-4 w-4"
-                                            />
-                                        )}
-                                        {character.playable_class?.name ?? "—"}
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-300">
-                                    <div className="flex items-center gap-2">
-                                        {character.playable_race?.icon_url && (
-                                            <img
-                                                src={character.playable_race.icon_url}
-                                                alt={character.playable_race.name}
-                                                className="h-4 w-4"
-                                            />
-                                        )}
-                                        {character.playable_race?.name ?? "—"}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+        <div className="flex flex-col">
+            <h2 className="mb-4 text-xl font-semibold text-white">
+                Benched
+                <span className="ml-2 text-base font-normal text-gray-400">({characters.length})</span>
+            </h2>
+
+            <div className="flex flex-wrap gap-2 rounded border border-amber-600/30 p-4">
+                {characters.map((character) => (
+                    <BenchedPill key={character.id} character={character} />
+                ))}
             </div>
         </div>
     );
@@ -204,48 +183,38 @@ export default function Show({ event, raids, groups, benched }) {
                     </div>
 
                     {/* Groups */}
-                    <Deferred
-                        data="groups"
-                        fallback={
-                            <>
-                                <h2 className="mb-4 text-xl font-semibold text-white">Groups</h2>
-                                <GroupsSkeleton />
-                            </>
-                        }
-                    >
-                        {groups?.data?.length > 0 ? (
-                            <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {groups.data.map((group) => (
-                                    <GroupTable key={group.group_number} group={group} />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="flex-1 text-center text-sm text-gray-400">
-                                Groups for this raid have not been posted yet.
-                            </p>
-                        )}
-                    </Deferred>
+                    <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <Deferred
+                            data="groups"
+                            fallback={
+                                <>
+                                    <h2 className="mb-4 text-xl font-semibold text-white">Groups</h2>
+                                    <GroupsSkeleton />
+                                </>
+                            }
+                        >
+                            {groups?.data?.length > 0 ? (
+                                groups.data.map((group) => <GroupTable key={group.group_number} group={group} />)
+                            ) : (
+                                <p className="flex-1 text-center text-sm text-gray-400">
+                                    Groups for this raid have not been posted yet.
+                                </p>
+                            )}
+                        </Deferred>
 
-                    {/* Benched */}
-                    <Deferred
-                        data="benched"
-                        fallback={
-                            <>
-                                <h2 className="mb-4 text-xl font-semibold text-white">Benched</h2>
-                                <BenchedSkeleton />
-                            </>
-                        }
-                    >
-                        {(benched ?? []).length > 0 && (
-                            <div>
-                                <h2 className="mb-4 text-xl font-semibold text-white">
-                                    Benched
-                                    <span className="ml-2 text-base font-normal text-gray-400">({benched.length})</span>
-                                </h2>
-                                <BenchedTable characters={benched} />
-                            </div>
-                        )}
-                    </Deferred>
+                        {/* Benched */}
+                        <Deferred
+                            data="benched"
+                            fallback={
+                                <>
+                                    <h2 className="mb-2 text-xl font-semibold text-white">Benched</h2>
+                                    <BenchedSkeleton />
+                                </>
+                            }
+                        >
+                            {(benched ?? []).length > 0 && <BenchedTable characters={benched} />}
+                        </Deferred>
+                    </div>
 
                     {/** General assignments */}
                     {/**
