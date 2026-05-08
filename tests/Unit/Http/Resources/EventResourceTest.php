@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\EventResource;
 use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
@@ -122,6 +123,33 @@ class EventResourceTest extends TestCase
         $array = (new EventResource($event))->toArray(new Request);
 
         $this->assertArrayNotHasKey('characters', $array);
+    }
+
+    #[Test]
+    public function it_excludes_assignments_when_relation_is_not_loaded(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = (new EventResource($event))->toArray(new Request);
+
+        $this->assertArrayNotHasKey('assignments', $array);
+    }
+
+    #[Test]
+    public function it_includes_assignments_when_relation_is_loaded(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+        EventAssignment::factory()->for($event)->count(2)->create();
+        $event->load('assignments');
+
+        $array = (new EventResource($event))->toArray(new Request);
+
+        $this->assertArrayHasKey('assignments', $array);
+        $this->assertCount(2, $array['assignments']);
+        $this->assertArrayHasKey('id', $array['assignments'][0]);
+        $this->assertArrayHasKey('event_id', $array['assignments'][0]);
     }
 
     #[Test]

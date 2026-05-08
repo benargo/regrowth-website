@@ -53,6 +53,10 @@ class EventResource extends JsonResource
             })->values()->all();
         }
 
+        if ($this->relationLoaded('assignments')) {
+            $data['assignments'] = EventAssignmentResource::collection($this->assignments)->resolve($request);
+        }
+
         return $data;
     }
 }
