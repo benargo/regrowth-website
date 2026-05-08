@@ -5,12 +5,14 @@ namespace Tests\Unit\Models;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\EventCharacter;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -424,5 +426,16 @@ class EventTest extends ModelTestCase
         $ids = (new Event)->prunable()->pluck('id')->toArray();
 
         $this->assertNotContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function it_has_many_assignments(): void
+    {
+        $event = $this->create();
+        EventAssignment::factory()->count(2)->create(['event_id' => $event->id]);
+
+        $this->assertInstanceOf(HasMany::class, $event->assignments());
+        $this->assertCount(2, $event->assignments);
+        $this->assertInstanceOf(EventAssignment::class, $event->assignments->first());
     }
 }

@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\TargetMarkerFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TargetMarker extends Model
 {
+    /** @use HasFactory<TargetMarkerFactory> */
+    use HasFactory;
+
     /** @var string */
     protected $primaryKey = 'slug';
 

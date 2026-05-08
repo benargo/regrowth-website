@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
@@ -124,6 +125,16 @@ class Event extends Model
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the assignments associated with the event.
+     *
+     * @return HasMany<EventAssignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(EventAssignment::class);
     }
 
     /**
