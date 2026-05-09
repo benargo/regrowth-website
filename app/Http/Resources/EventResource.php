@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Raid;
@@ -34,6 +35,7 @@ class EventResource extends JsonResource
             'start_time' => $this->start_time->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
             'duration' => $this->duration,
+            'background' => $this->buildBackground(),
             'assignments' => EventAssignmentResource::collection($eventAssignments)->resolve($request),
             'composition' => $this->buildComposition($request),
             'raids' => $this->buildRaids($bossByIdAssignments, $request),
@@ -96,6 +98,17 @@ class EventResource extends JsonResource
             ])
             ->values()
             ->all();
+    }
+
+    private function buildBackground(): ?string
+    {
+        $raidId = $this->raids->pluck('id')->first();
+
+        if (empty($raidId)) {
+            return null;
+        }
+
+        return RaidBackground::fromRaidId($raidId)->value;
     }
 
     /**

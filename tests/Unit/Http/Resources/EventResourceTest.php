@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\RaidBackground;
 use App\Http\Resources\EventResource;
 use App\Models\Boss;
 use App\Models\Character;
@@ -88,9 +89,37 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('end_time', $array);
         $this->assertArrayHasKey('duration', $array);
         $this->assertArrayHasKey('channel', $array);
+        $this->assertArrayHasKey('background', $array);
         $this->assertArrayHasKey('assignments', $array);
         $this->assertArrayHasKey('composition', $array);
         $this->assertArrayHasKey('raids', $array);
+    }
+
+    #[Test]
+    public function it_returns_null_background_when_no_raids_attached(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+        $event = Event::factory()->create();
+
+        $array = $this->makeResource($event);
+
+        $this->assertNull($array['background']);
+    }
+
+    #[Test]
+    public function it_returns_background_string_based_on_first_raid(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+
+        $raid = Raid::factory()->create(['id' => 1]);
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame(RaidBackground::KARAZHAN->value, $array['background']);
     }
 
     #[Test]

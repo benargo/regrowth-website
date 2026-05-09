@@ -133,7 +133,7 @@ export default function Show({ event }) {
 
     return (
         <Master title={event.title}>
-            <SharedHeader title={event.title} backgroundClass="bg-illidan" />
+            <SharedHeader title={event.title} backgroundClass={event.background} />
 
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
@@ -192,25 +192,33 @@ export default function Show({ event }) {
                                                 headerClassName="hover:bg-amber-600/10"
                                                 bodyClassName="border-amber-600"
                                             >
-                                                {boss.images?.length > 0 && (
-                                                    <div className="mb-4 flex items-center justify-center gap-3">
-                                                        {boss.images.map((url, i) => (
-                                                            <img
-                                                                key={i}
-                                                                src={url}
-                                                                alt={`${boss.name} strategy ${i + 1}`}
-                                                                className="rounded-lg border border-amber-600/30"
-                                                            />
-                                                        ))}
+                                                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+                                                    <div className="flex flex-col items-center gap-2 text-center">
+                                                        {/** TODO: Assignments map */}
                                                     </div>
-                                                )}
-                                                {boss.notes ? (
-                                                    <FormattedMarkdown>{boss.notes}</FormattedMarkdown>
-                                                ) : (
-                                                    !boss.images?.length && (
-                                                        <p className="italic text-gray-500">No strategy notes yet.</p>
-                                                    )
-                                                )}
+                                                    <div className="col-span-2 flex flex-col gap-2">
+                                                        {boss.images?.length > 0 &&
+                                                            boss.images.map((url, i) => (
+                                                                <div className="mb-4 flex items-center justify-center gap-3 text-center">
+                                                                    <img
+                                                                        key={i}
+                                                                        src={url}
+                                                                        alt={`${boss.name} strategy ${i + 1}`}
+                                                                        className="rounded-lg border border-amber-600/30"
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        {boss.notes ? (
+                                                            <FormattedMarkdown>{boss.notes}</FormattedMarkdown>
+                                                        ) : (
+                                                            !boss.images?.length && (
+                                                                <p className="text-center italic text-gray-500">
+                                                                    No strategy notes yet.
+                                                                </p>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </Collapsible>
                                         ))}
                                     </div>
