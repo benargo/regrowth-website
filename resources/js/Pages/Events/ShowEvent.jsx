@@ -1,5 +1,3 @@
-import { Deferred } from "@inertiajs/react";
-import { useState } from "react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -10,44 +8,6 @@ import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
 import RoleBadge from "@/Helpers/RoleBadge";
 import Tooltip from "@/Components/Tooltip";
-
-function GroupsSkeleton() {
-    return (
-        <div className="animate-pulse space-y-0 overflow-hidden rounded border border-amber-600/30">
-            {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                    key={i}
-                    className="flex flex-col items-center gap-6 border-b border-brown-700 px-4 py-3 last:border-b-0 lg:flex-row"
-                >
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-32 rounded bg-brown-700" />
-                    <div className="h-4 w-16 rounded bg-brown-700" />
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function BossesSkeleton() {
-    return (
-        <div className="flex animate-pulse flex-col gap-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-14 rounded-md border border-amber-600/30 bg-amber-600/10" />
-            ))}
-        </div>
-    );
-}
-
-function BenchedSkeleton() {
-    return (
-        <div className="flex animate-pulse flex-wrap gap-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-7 w-24 rounded-full bg-brown-700" />
-            ))}
-        </div>
-    );
-}
 
 function MetaItem({ icon, children }) {
     return (
@@ -159,10 +119,7 @@ function BenchedTable({ characters }) {
     );
 }
 
-export default function Show({ event, raids, groups, benched, bosses }) {
-    event = event?.data ?? event ?? {}; // Handle Inertia resource wrapping
-    benched = benched?.data ?? benched ?? {}; // Handle inertia resource wrapping
-    groups = groups?.data ?? groups ?? {}; // Handle Inertia resource wrapping
+export default function Show({ event }) {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
     const dayOfWeek = startDate.toLocaleString("en-GB", { weekday: "long" });
@@ -170,9 +127,13 @@ export default function Show({ event, raids, groups, benched, bosses }) {
     const duration = formatDuration({ seconds: event.duration });
     const formatTime = (date) => date.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
+    const groups = event.composition?.groups ?? [];
+    const bench = event.composition?.bench ?? [];
+    const raids = event.raids ?? [];
+
     return (
         <Master title={event.title}>
-            <SharedHeader title={event.title} backgroundClass={raids.background ?? "bg-illidan"} />
+            <SharedHeader title={event.title} backgroundClass="bg-illidan" />
 
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
@@ -189,40 +150,18 @@ export default function Show({ event, raids, groups, benched, bosses }) {
                             <MetaItem icon="clock">
                                 {formatTime(startDate)}–{formatTime(endDate)} ({duration})
                             </MetaItem>
-                            {(raids.data ?? []).length > 0 && (
-                                <MetaItem icon="shield-alt">{raids.data.map((raid) => raid.name).join(", ")}</MetaItem>
+                            {raids.length > 0 && (
+                                <MetaItem icon="shield-alt">{raids.map((raid) => raid.name).join(", ")}</MetaItem>
                             )}
                         </div>
                     </div>
 
                     {groups.length > 0 ? (
                         <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {/* Groups */}
-                            <Deferred
-                                data="groups"
-                                fallback={
-                                    <>
-                                        <h2 className="mb-4 text-xl font-semibold text-white">Groups</h2>
-                                        <GroupsSkeleton />
-                                    </>
-                                }
-                            >
-                                {groups?.map((group) => (
-                                    <GroupTable key={group.group_number} group={group} />
-                                ))}
-                            </Deferred>
-                            {/* Benched */}
-                            <Deferred
-                                data="benched"
-                                fallback={
-                                    <>
-                                        <h2 className="mb-2 text-xl font-semibold text-white">Benched</h2>
-                                        <BenchedSkeleton />
-                                    </>
-                                }
-                            >
-                                {(benched ?? []).length > 0 && <BenchedTable characters={benched} />}
-                            </Deferred>
+                            {groups.map((group) => (
+                                <GroupTable key={group.group_number} group={group} />
+                            ))}
+                            {bench.length > 0 && <BenchedTable characters={bench} />}
                         </div>
                     ) : (
                         <p className="flex-1 text-center text-sm text-gray-400">
@@ -236,54 +175,47 @@ export default function Show({ event, raids, groups, benched, bosses }) {
                      */}
 
                     {/* Raids and bosses */}
-                    {(raids.data ?? []).length > 0 && (
+                    {raids.length > 0 && (
                         <div className="mt-8 space-y-8">
-                            <Deferred data="bosses" fallback={<BossesSkeleton />}>
-                                {(raids.data ?? []).map((raid) => {
-                                    const raidBosses = bosses?.data?.[String(raid.id)] ?? [];
-                                    return (
-                                        <div key={raid.id}>
-                                            {(raids.data ?? []).length > 1 && (
-                                                <h2 className="mb-4 text-xl font-semibold text-white">{raid.name}</h2>
-                                            )}
-                                            <div className="flex flex-col gap-2">
-                                                {raidBosses.map((boss) => (
-                                                    <Collapsible
-                                                        key={boss.id}
-                                                        title={boss.name}
-                                                        sessionKey={`event_boss_expanded_${raid.id}_${boss.id}`}
-                                                        className="border-amber-600"
-                                                        headerClassName="hover:bg-amber-600/10"
-                                                        bodyClassName="border-amber-600"
-                                                    >
-                                                        {boss.images?.length > 0 && (
-                                                            <div className="mb-4 flex items-center justify-center gap-3">
-                                                                {boss.images.map((url, i) => (
-                                                                    <img
-                                                                        key={i}
-                                                                        src={url}
-                                                                        alt={`${boss.name} strategy ${i + 1}`}
-                                                                        className="rounded-lg border border-amber-600/30"
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        {boss.notes ? (
-                                                            <FormattedMarkdown>{boss.notes}</FormattedMarkdown>
-                                                        ) : (
-                                                            !boss.images?.length && (
-                                                                <p className="italic text-gray-500">
-                                                                    No strategy notes yet.
-                                                                </p>
-                                                            )
-                                                        )}
-                                                    </Collapsible>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </Deferred>
+                            {raids.map((raid) => (
+                                <div key={raid.slug}>
+                                    {raids.length > 1 && (
+                                        <h2 className="mb-4 text-xl font-semibold text-white">{raid.name}</h2>
+                                    )}
+                                    <div className="flex flex-col gap-2">
+                                        {(raid.bosses ?? []).map((boss) => (
+                                            <Collapsible
+                                                key={boss.id}
+                                                title={boss.name}
+                                                sessionKey={`event_boss_expanded_${raid.slug}_${boss.id}`}
+                                                className="border-amber-600"
+                                                headerClassName="hover:bg-amber-600/10"
+                                                bodyClassName="border-amber-600"
+                                            >
+                                                {boss.images?.length > 0 && (
+                                                    <div className="mb-4 flex items-center justify-center gap-3">
+                                                        {boss.images.map((url, i) => (
+                                                            <img
+                                                                key={i}
+                                                                src={url}
+                                                                alt={`${boss.name} strategy ${i + 1}`}
+                                                                className="rounded-lg border border-amber-600/30"
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {boss.notes ? (
+                                                    <FormattedMarkdown>{boss.notes}</FormattedMarkdown>
+                                                ) : (
+                                                    !boss.images?.length && (
+                                                        <p className="italic text-gray-500">No strategy notes yet.</p>
+                                                    )
+                                                )}
+                                            </Collapsible>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

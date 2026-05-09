@@ -27,12 +27,12 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('event_id', $array);
-        $this->assertArrayHasKey('boss_id', $array);
         $this->assertArrayHasKey('label', $array);
         $this->assertArrayHasKey('sort_order', $array);
         $this->assertArrayHasKey('left', $array);
         $this->assertArrayHasKey('right', $array);
+        $this->assertArrayNotHasKey('event_id', $array);
+        $this->assertArrayNotHasKey('boss_id', $array);
     }
 
     #[Test]
@@ -46,8 +46,6 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertSame($assignment->id, $array['id']);
-        $this->assertSame($assignment->event_id, $array['event_id']);
-        $this->assertNull($array['boss_id']);
         $this->assertSame('Role', $array['label']);
         $this->assertSame(5, $array['sort_order']);
     }
@@ -60,17 +58,6 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertNull($array['label']);
-    }
-
-    #[Test]
-    public function it_returns_boss_id_when_scoped_to_boss(): void
-    {
-        $assignment = EventAssignment::factory()->create();
-        $assignment->boss_id = 42;
-
-        $array = (new EventAssignmentResource($assignment))->toArray(new Request);
-
-        $this->assertSame(42, $array['boss_id']);
     }
 
     // ============ Left side resolution ============

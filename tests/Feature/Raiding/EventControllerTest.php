@@ -34,7 +34,7 @@ class EventControllerTest extends TestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Cache::tags(['events'])->flush();
+        Cache::tags(['raiding', 'events'])->flush();
 
         $this->memberRole = DiscordRole::create([
             'id' => '829022020301094922',
@@ -78,7 +78,7 @@ class EventControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_event_resource(): void
+    public function it_returns_a_single_event_prop(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
@@ -89,28 +89,100 @@ class EventControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('event')
+            ->missing('raids')
+            ->missing('benched')
+            ->missing('bosses')
+            ->missing('groups')
         );
     }
 
     #[Test]
-    public function it_returns_raids_collection(): void
+    public function it_returns_event_resource_with_expected_keys(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
 
-        $raids = Raid::factory()->count(2)->create();
         $event = Event::factory()->create();
-        $event->raids()->attach($raids->pluck('id'));
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('raids', 2)
+            ->has('event.id')
+            ->has('event.title')
+            ->has('event.start_time')
+            ->has('event.end_time')
+            ->has('event.duration')
+            ->has('event.assignments')
+            ->has('event.composition')
+            ->has('event.raids')
         );
     }
 
     #[Test]
-    public function it_loads_benched_characters_via_deferred_prop(): void
+    public function it_returns_raids_nested_inside_event(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $raid = Raid::factory()->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('event.raids', 1)
+            ->where('event.raids.0.name', $raid->name)
+            ->where('event.raids.0.slug', $raid->slug)
+            ->where('event.raids.0.max_players', $raid->max_players)
+            ->has('event.raids.0.bosses')
+        );
+    }
+
+    #[Test]
+    public function it_returns_bosses_nested_inside_raids(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $raid = Raid::factory()->create();
+        $bosses = Boss::factory()->count(2)->for($raid)->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('event.raids.0.bosses', 2)
+        );
+    }
+
+    #[Test]
+    public function it_returns_composition_groups_nested_inside_event(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $raid = Raid::factory()->tenPlayer()->create();
+        $event = Event::factory()->hasAttached($raid, [], 'raids')->create();
+        $character = Character::factory()->withRank()->create();
+        $event->characters()->attach($character->id, [
+            'slot_number' => 1,
+            'group_number' => 1,
+            'is_confirmed' => true,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('event.composition.groups', 1)
+            ->where('event.composition.groups.0.group_number', 1)
+            ->has('event.composition.groups.0.characters', 1)
+        );
+    }
+
+    #[Test]
+    public function it_returns_benched_characters_nested_inside_composition(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
@@ -139,15 +211,13 @@ class EventControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('benched')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('benched.data', 1)
-            )
+            ->has('event.composition.bench', 1)
+            ->where('event.composition.bench.0.name', $benched->name)
         );
     }
 
     #[Test]
-    public function it_returns_empty_benched_when_event_has_no_characters_in_comp(): void
+    public function it_returns_empty_bench_when_event_has_no_characters_in_comp(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
@@ -157,15 +227,12 @@ class EventControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('benched')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('benched', 0)
-            )
+            ->has('event.composition.bench', 0)
         );
     }
 
     #[Test]
-    public function it_excludes_characters_in_the_comp_from_benched(): void
+    public function it_excludes_characters_in_the_comp_from_bench(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
@@ -194,80 +261,88 @@ class EventControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('benched')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('benched.data', 1)
-                ->where('benched.data.0.name', $benched->name)
-            )
+            ->has('event.composition.bench', 1)
+            ->where('event.composition.bench.0.name', $benched->name)
         );
     }
 
     #[Test]
-    public function it_loads_bosses_via_deferred_prop(): void
+    public function it_returns_event_level_assignments_nested_inside_event(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $event = Event::factory()->create();
+        EventAssignment::factory()->for($event)->create(['boss_id' => null]);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('event.assignments', 1)
+        );
+    }
+
+    #[Test]
+    public function it_returns_boss_level_assignments_nested_inside_boss(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
 
         $raid = Raid::factory()->create();
-        $bosses = Boss::factory()->count(2)->for($raid)->create();
-
+        $boss = Boss::factory()->for($raid)->create();
         $event = Event::factory()->create();
         $event->raids()->attach($raid->id);
+        EventAssignment::factory()->for($event)->create(['boss_id' => $boss->id]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('bosses')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('bosses', 2)
-            )
+            ->has('event.raids.0.bosses.0.assignments', 1)
         );
     }
 
     #[Test]
-    public function it_loads_groups_via_deferred_prop(): void
+    public function it_does_not_include_boss_assignments_in_event_level_assignments(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
-        $event = Event::factory()
-            ->hasAttached(
-                Raid::factory(),
-                [],
-                'raids'
-            )
-            ->create();
 
-        $character = Character::factory()->create();
-        $event->characters()->attach($character->id, [
-            'slot_number' => 1,
-            'group_number' => 1,
-            'is_confirmed' => true,
-        ]);
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->for($raid)->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+        EventAssignment::factory()->for($event)->create(['boss_id' => $boss->id]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('groups')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('groups')
-            )
+            ->has('event.assignments', 0)
         );
     }
 
     #[Test]
-    public function it_includes_assignments_in_event_resource(): void
+    public function it_caches_the_event_resource(): void
     {
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
 
         $event = Event::factory()->create();
-        EventAssignment::factory()->for($event)->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+        $this->mock(RaidHelper::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getEvent')->once()->andReturn(
+                RaidHelperEvent::from($this->minimalRaidHelperEventPayload([
+                    'signUps' => [],
+                ])),
+            );
+        });
 
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('event.data.assignments', 1)
+        $event->characters()->attach(
+            Character::factory()->withRank()->create()->id,
+            ['slot_number' => 1, 'group_number' => 1, 'is_confirmed' => true]
         );
+
+        $this->actingAs($user)->get(route('raiding.plans.show', $event));
+        $this->actingAs($user)->get(route('raiding.plans.show', $event));
     }
 
     #[Test]
