@@ -3,10 +3,12 @@
 namespace App\Casts;
 
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Contracts\Database\Eloquent\SerializesCastableAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
-class AsNotificationType implements CastsAttributes
+class AsClassName implements CastsAttributes, SerializesCastableAttributes
 {
     /**
      * Cast the given value.
@@ -30,13 +32,23 @@ class AsNotificationType implements CastsAttributes
         }
 
         if (! is_string($value)) {
-            throw new InvalidArgumentException('Notification type must be a fully qualified class name string.');
+            throw new InvalidArgumentException('Class name must be a fully qualified class name string.');
         }
 
         if (! class_exists($value)) {
-            throw new InvalidArgumentException("Notification type class [{$value}] does not exist.");
+            throw new InvalidArgumentException("Class [{$value}] does not exist.");
         }
 
         return $value;
+    }
+
+    /**
+     * Get the serialized representation of the value.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function serialize(Model $model, string $key, mixed $value, array $attributes): ?string
+    {
+        return Str::snake(class_basename($value));
     }
 }

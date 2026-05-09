@@ -6,6 +6,7 @@ use App\Models\Character;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 class EventAssignmentResource extends JsonResource
 {
@@ -20,11 +21,11 @@ class EventAssignmentResource extends JsonResource
             'id' => $this->id,
             'sort_order' => $this->sort_order,
             'left' => [
-                'type' => $this->left_model_key,
+                'type' => $this->left_type ? Str::snake(class_basename($this->left_type)) : null,
                 'data' => $this->resolveAssignment('left', $request),
             ],
             'right' => [
-                'type' => $this->right_model_key,
+                'type' => $this->right_type ? Str::snake(class_basename($this->right_type)) : null,
                 'data' => $this->resolveAssignment('right', $request),
             ],
         ];

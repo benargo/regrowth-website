@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Casts;
 
-use App\Casts\AsNotificationType;
+use App\Casts\AsClassName;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notification;
 use InvalidArgumentException;
@@ -10,12 +10,12 @@ use PHPUnit\Framework\Attributes\Test;
 use stdClass;
 use Tests\TestCase;
 
-class AsNotificationTypeTest extends TestCase
+class AsClassNameTest extends TestCase
 {
     #[Test]
     public function get_returns_the_value_as_is(): void
     {
-        $cast = new AsNotificationType;
+        $cast = new AsClassName;
         $model = $this->createStub(Model::class);
 
         $result = $cast->get($model, 'notification_type', Notification::class, []);
@@ -26,7 +26,7 @@ class AsNotificationTypeTest extends TestCase
     #[Test]
     public function get_returns_null_when_value_is_null(): void
     {
-        $cast = new AsNotificationType;
+        $cast = new AsClassName;
         $model = $this->createStub(Model::class);
 
         $result = $cast->get($model, 'notification_type', null, []);
@@ -37,7 +37,7 @@ class AsNotificationTypeTest extends TestCase
     #[Test]
     public function set_returns_a_valid_class_name_string(): void
     {
-        $cast = new AsNotificationType;
+        $cast = new AsClassName;
         $model = $this->createStub(Model::class);
 
         $result = $cast->set($model, 'notification_type', Notification::class, []);
@@ -48,7 +48,7 @@ class AsNotificationTypeTest extends TestCase
     #[Test]
     public function set_returns_null_when_value_is_null(): void
     {
-        $cast = new AsNotificationType;
+        $cast = new AsClassName;
         $model = $this->createStub(Model::class);
 
         $result = $cast->set($model, 'notification_type', null, []);
@@ -59,11 +59,11 @@ class AsNotificationTypeTest extends TestCase
     #[Test]
     public function set_throws_when_value_is_not_a_string(): void
     {
-        $cast = new AsNotificationType;
+        $cast = new AsClassName;
         $model = $this->createStub(Model::class);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Notification type must be a fully qualified class name string.');
+        $this->expectExceptionMessage('Class name must be a fully qualified class name string.');
 
         $cast->set($model, 'notification_type', new stdClass, []);
     }
@@ -71,11 +71,11 @@ class AsNotificationTypeTest extends TestCase
     #[Test]
     public function set_throws_when_class_does_not_exist(): void
     {
-        $cast = new AsNotificationType;
+        $cast = new AsClassName;
         $model = $this->createStub(Model::class);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Notification type class [App\Notifications\NonExistentNotification] does not exist.');
+        $this->expectExceptionMessage('Class [App\Notifications\NonExistentNotification] does not exist.');
 
         $cast->set($model, 'notification_type', 'App\Notifications\NonExistentNotification', []);
     }

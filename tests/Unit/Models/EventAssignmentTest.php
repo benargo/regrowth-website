@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsClassName;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
@@ -51,9 +52,9 @@ class EventAssignmentTest extends ModelTestCase
             'boss_id',
             'group_id',
             'sort_order',
-            'left_model_key',
+            'left_type',
             'left_value',
-            'right_model_key',
+            'right_type',
             'right_value',
         ]);
     }
@@ -63,7 +64,11 @@ class EventAssignmentTest extends ModelTestCase
     {
         $model = new EventAssignment;
 
-        $this->assertCasts($model, ['sort_order' => 'integer']);
+        $this->assertCasts($model, [
+            'sort_order' => 'integer',
+            'left_type' => AsClassName::class,
+            'right_type' => AsClassName::class,
+        ]);
     }
 
     #[Test]
@@ -83,9 +88,9 @@ class EventAssignmentTest extends ModelTestCase
 
         $this->assertModelExists($assignment);
         $this->assertNotNull($assignment->event_id);
-        $this->assertSame('character', $assignment->left_model_key);
+        $this->assertSame(Character::class, $assignment->left_type);
         $this->assertNotEmpty($assignment->left_value);
-        $this->assertNull($assignment->right_model_key);
+        $this->assertNull($assignment->right_type);
         $this->assertNotEmpty($assignment->right_value);
     }
 
@@ -116,7 +121,7 @@ class EventAssignmentTest extends ModelTestCase
         $character = Character::factory()->create();
         $assignment = $this->factory()->withLeftCharacter($character)->create();
 
-        $this->assertSame('character', $assignment->left_model_key);
+        $this->assertSame(Character::class, $assignment->left_type);
         $this->assertSame((string) $character->id, $assignment->left_value);
     }
 
@@ -126,7 +131,7 @@ class EventAssignmentTest extends ModelTestCase
         $spell = Spell::factory()->create();
         $assignment = $this->factory()->withLeftSpell($spell)->create();
 
-        $this->assertSame('spell', $assignment->left_model_key);
+        $this->assertSame(Spell::class, $assignment->left_type);
         $this->assertSame((string) $spell->id, $assignment->left_value);
     }
 
@@ -135,7 +140,7 @@ class EventAssignmentTest extends ModelTestCase
     {
         $assignment = $this->factory()->withLeftGroupNumber(3)->create();
 
-        $this->assertNull($assignment->left_model_key);
+        $this->assertNull($assignment->left_type);
         $this->assertSame('3', $assignment->left_value);
     }
 
@@ -144,7 +149,7 @@ class EventAssignmentTest extends ModelTestCase
     {
         $assignment = $this->factory()->withLeftCustom('All mages')->create();
 
-        $this->assertNull($assignment->left_model_key);
+        $this->assertNull($assignment->left_type);
         $this->assertSame('All mages', $assignment->left_value);
     }
 
@@ -156,7 +161,7 @@ class EventAssignmentTest extends ModelTestCase
         $character = Character::factory()->create();
         $assignment = $this->factory()->withRightCharacter($character)->create();
 
-        $this->assertSame('character', $assignment->right_model_key);
+        $this->assertSame(Character::class, $assignment->right_type);
         $this->assertSame((string) $character->id, $assignment->right_value);
     }
 
@@ -166,7 +171,7 @@ class EventAssignmentTest extends ModelTestCase
         $marker = TargetMarker::factory()->create();
         $assignment = $this->factory()->withRightTargetMarker($marker)->create();
 
-        $this->assertSame('target_marker', $assignment->right_model_key);
+        $this->assertSame(TargetMarker::class, $assignment->right_type);
         $this->assertSame($marker->slug, $assignment->right_value);
     }
 
@@ -176,7 +181,7 @@ class EventAssignmentTest extends ModelTestCase
         $spell = Spell::factory()->create();
         $assignment = $this->factory()->withRightSpell($spell)->create();
 
-        $this->assertSame('spell', $assignment->right_model_key);
+        $this->assertSame(Spell::class, $assignment->right_type);
         $this->assertSame((string) $spell->id, $assignment->right_value);
     }
 
@@ -185,7 +190,7 @@ class EventAssignmentTest extends ModelTestCase
     {
         $assignment = $this->factory()->withRightGroupRange('Groups 1-3')->create();
 
-        $this->assertNull($assignment->right_model_key);
+        $this->assertNull($assignment->right_type);
         $this->assertSame('Groups 1-3', $assignment->right_value);
     }
 
@@ -194,7 +199,7 @@ class EventAssignmentTest extends ModelTestCase
     {
         $assignment = $this->factory()->withRightCustom('kick rotation A')->create();
 
-        $this->assertNull($assignment->right_model_key);
+        $this->assertNull($assignment->right_type);
         $this->assertSame('kick rotation A', $assignment->right_value);
     }
 

@@ -14,9 +14,9 @@ return new class extends Migration
             $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
             $table->foreignId('boss_id')->nullable()->constrained('bosses')->cascadeOnDelete();
             $table->unsignedSmallInteger('sort_order')->default(0);
-            $table->string('left_model_key', 50)->nullable();
+            $table->string('left_type')->nullable();
             $table->string('left_value');
-            $table->string('right_model_key', 50)->nullable();
+            $table->string('right_type')->nullable();
             $table->string('right_value');
             $table->timestamps();
         });

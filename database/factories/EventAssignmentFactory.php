@@ -36,9 +36,9 @@ class EventAssignmentFactory extends Factory
             'boss_id' => null,
             'group_id' => null,
             'sort_order' => fake()->numberBetween(0, 99),
-            'left_model_key' => 'character',
+            'left_type' => Character::class,
             'left_value' => fn (array $attributes) => (string) Character::factory()->create()->id,
-            'right_model_key' => null,
+            'right_type' => null,
             'right_value' => fake()->randomElement(['Main tank', 'AoE', 'Left side', 'kick rotation A']),
         ];
     }
@@ -76,7 +76,7 @@ class EventAssignmentFactory extends Factory
             $resolved = $character ?? Character::factory()->create();
 
             return [
-                'left_model_key' => 'character',
+                'left_type' => Character::class,
                 'left_value' => (string) $resolved->id,
             ];
         });
@@ -91,7 +91,7 @@ class EventAssignmentFactory extends Factory
             $resolved = $spell ?? Spell::factory()->create();
 
             return [
-                'left_model_key' => 'spell',
+                'left_type' => Spell::class,
                 'left_value' => (string) $resolved->id,
             ];
         });
@@ -103,7 +103,7 @@ class EventAssignmentFactory extends Factory
     public function withLeftGroupNumber(int $group): static
     {
         return $this->state(fn (array $attributes) => [
-            'left_model_key' => null,
+            'left_type' => null,
             'left_value' => (string) $group,
         ]);
     }
@@ -114,7 +114,7 @@ class EventAssignmentFactory extends Factory
     public function withLeftCustom(string $label): static
     {
         return $this->state(fn (array $attributes) => [
-            'left_model_key' => null,
+            'left_type' => null,
             'left_value' => $label,
         ]);
     }
@@ -130,7 +130,7 @@ class EventAssignmentFactory extends Factory
             $resolved = $character ?? Character::factory()->create();
 
             return [
-                'right_model_key' => 'character',
+                'right_type' => Character::class,
                 'right_value' => (string) $resolved->id,
             ];
         });
@@ -145,7 +145,7 @@ class EventAssignmentFactory extends Factory
             $resolved = $marker ?? TargetMarker::factory()->create();
 
             return [
-                'right_model_key' => 'target_marker',
+                'right_type' => TargetMarker::class,
                 'right_value' => $resolved->slug,
             ];
         });
@@ -160,7 +160,7 @@ class EventAssignmentFactory extends Factory
             $resolved = $spell ?? Spell::factory()->create();
 
             return [
-                'right_model_key' => 'spell',
+                'right_type' => Spell::class,
                 'right_value' => (string) $resolved->id,
             ];
         });
@@ -172,7 +172,7 @@ class EventAssignmentFactory extends Factory
     public function withRightGroupRange(string $range): static
     {
         return $this->state(fn (array $attributes) => [
-            'right_model_key' => null,
+            'right_type' => null,
             'right_value' => $range,
         ]);
     }
@@ -183,7 +183,7 @@ class EventAssignmentFactory extends Factory
     public function withRightCustom(string $label): static
     {
         return $this->state(fn (array $attributes) => [
-            'right_model_key' => null,
+            'right_type' => null,
             'right_value' => $label,
         ]);
     }

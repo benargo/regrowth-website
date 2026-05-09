@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AsClassName;
 use Database\Factories\EventAssignmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,9 +21,9 @@ class EventAssignment extends Model
         'boss_id',
         'group_id',
         'sort_order',
-        'left_model_key',
+        'left_type',
         'left_value',
-        'right_model_key',
+        'right_type',
         'right_value',
     ];
 
@@ -31,17 +32,8 @@ class EventAssignment extends Model
      */
     protected $casts = [
         'sort_order' => 'integer',
-    ];
-
-    /**
-     * Maps model_key strings to their Eloquent model classes.
-     *
-     * @var array<string, class-string<Model>>
-     */
-    private const array MODEL_MAP = [
-        'character' => Character::class,
-        'spell' => Spell::class,
-        'target_marker' => TargetMarker::class,
+        'left_type' => AsClassName::class,
+        'right_type' => AsClassName::class,
     ];
 
     // ============ Invariant helpers ============
@@ -61,7 +53,7 @@ class EventAssignment extends Model
      */
     public function resolveLeft(): Model|string|null
     {
-        return $this->resolveSide($this->left_model_key, $this->left_value);
+        return $this->resolveSide($this->left_type, $this->left_value);
     }
 
     /**
@@ -69,22 +61,21 @@ class EventAssignment extends Model
      */
     public function resolveRight(): Model|string|null
     {
-        return $this->resolveSide($this->right_model_key, $this->right_value);
+        return $this->resolveSide($this->right_type, $this->right_value);
     }
 
     /**
-     * @param  class-string<Model>|null  $modelKey
+     * @param  class-string<Model>|null  $type
      */
-    private function resolveSide(?string $modelKey, string $value): Model|string
+    private function resolveSide(?string $type, string $value): Model|string
     {
-        if ($modelKey === null || ! isset(self::MODEL_MAP[$modelKey])) {
+        if ($type === null || ! class_exists($type)) {
             return $value;
         }
 
-        $modelClass = self::MODEL_MAP[$modelKey];
-        $instance = new $modelClass;
+        $instance = new $type;
 
-        return $modelClass::query()->where($instance->getKeyName(), $value)->first() ?? $value;
+        return $type::query()->where($instance->getKeyName(), $value)->first() ?? $value;
     }
 
     // ============ Relationships ============
