@@ -6,6 +6,7 @@ use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\EventAssignmentGroup;
 use App\Models\Spell;
 use App\Models\TargetMarker;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,7 +49,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertFillable($model, [
             'event_id',
             'boss_id',
-            'label',
+            'group_id',
             'sort_order',
             'left_model_key',
             'left_value',
@@ -105,23 +106,6 @@ class EventAssignmentTest extends ModelTestCase
 
         $this->assertModelExists($assignment);
         $this->assertSame($boss->id, $assignment->boss_id);
-    }
-
-    #[Test]
-    public function it_can_be_created_with_a_label(): void
-    {
-        $assignment = $this->create(['label' => 'Tank']);
-
-        $this->assertTableHas(['label' => 'Tank']);
-        $this->assertSame('Tank', $assignment->label);
-    }
-
-    #[Test]
-    public function it_can_be_created_without_a_label(): void
-    {
-        $assignment = $this->create(['label' => null]);
-
-        $this->assertNull($assignment->label);
     }
 
     // ============ Left-side column variants ============
@@ -328,6 +312,25 @@ class EventAssignmentTest extends ModelTestCase
 
         $this->assertInstanceOf(BelongsTo::class, $assignment->boss());
         $this->assertNull($assignment->boss);
+    }
+
+    #[Test]
+    public function it_belongs_to_a_group(): void
+    {
+        $group = EventAssignmentGroup::factory()->create();
+        $assignment = $this->create(['group_id' => $group->id]);
+
+        $this->assertRelation($assignment, 'group', BelongsTo::class);
+        $this->assertTrue($assignment->group->is($group));
+    }
+
+    #[Test]
+    public function group_is_null_when_not_assigned_to_a_group(): void
+    {
+        $assignment = $this->create(['group_id' => null]);
+
+        $this->assertInstanceOf(BelongsTo::class, $assignment->group());
+        $this->assertNull($assignment->group);
     }
 
     // ============ Cascade deletes ============

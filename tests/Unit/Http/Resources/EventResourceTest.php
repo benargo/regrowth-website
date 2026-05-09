@@ -69,7 +69,7 @@ class EventResourceTest extends TestCase
 
     private function makeResource(Event $event): array
     {
-        $event->load('raids.bosses.media', 'assignments', 'characters.rank');
+        $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
         return (new EventResource($event))->toArray(new Request);
     }
@@ -197,7 +197,9 @@ class EventResourceTest extends TestCase
 
         $array = $this->makeResource($event);
 
-        $this->assertCount(1, $array['assignments']);
+        $this->assertArrayHasKey('groups', $array['assignments']);
+        $this->assertArrayHasKey('ungrouped', $array['assignments']);
+        $this->assertCount(1, $array['assignments']['ungrouped']);
     }
 
     #[Test]
@@ -215,7 +217,10 @@ class EventResourceTest extends TestCase
 
         $array = $this->makeResource($event);
 
-        $this->assertCount(1, $array['raids'][0]['bosses'][0]['assignments']);
+        $bossAssignments = $array['raids'][0]['bosses'][0]['assignments'];
+        $this->assertArrayHasKey('groups', $bossAssignments);
+        $this->assertArrayHasKey('ungrouped', $bossAssignments);
+        $this->assertCount(1, $bossAssignments['ungrouped']);
     }
 
     // ============ Raids and bosses ============
@@ -259,7 +264,8 @@ class EventResourceTest extends TestCase
         $this->assertSame($boss->encounter_order, $bossData['encounter_order']);
         $this->assertSame('Kill adds first', $bossData['notes']);
         $this->assertIsArray($bossData['images']);
-        $this->assertIsArray($bossData['assignments']);
+        $this->assertArrayHasKey('groups', $bossData['assignments']);
+        $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
     }
 
     // ============ Composition — groups ============

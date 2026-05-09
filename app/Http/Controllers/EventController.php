@@ -28,7 +28,7 @@ class EventController extends Controller
             "events:{$event->id}:resource",
             now()->addMinutes(10),
             function () use ($event, $request) {
-                $event->load('raids.bosses.media', 'assignments', 'characters.rank');
+                $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
                 return (new EventResource($event))->resolve($request);
             }

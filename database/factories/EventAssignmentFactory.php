@@ -6,6 +6,7 @@ use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\EventAssignmentGroup;
 use App\Models\Spell;
 use App\Models\TargetMarker;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -33,7 +34,7 @@ class EventAssignmentFactory extends Factory
         return [
             'event_id' => Event::factory(),
             'boss_id' => null,
-            'label' => fake()->optional()->randomElement(['Tank', 'Healer', 'Buff', 'Debuff', 'Kick Rotation']),
+            'group_id' => null,
             'sort_order' => fake()->numberBetween(0, 99),
             'left_model_key' => 'character',
             'left_value' => fn (array $attributes) => (string) Character::factory()->create()->id,
@@ -51,6 +52,16 @@ class EventAssignmentFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'boss_id' => $boss->id,
+        ]);
+    }
+
+    /**
+     * Scope the assignment to a specific group.
+     */
+    public function forGroup(EventAssignmentGroup $group): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'group_id' => $group->id,
         ]);
     }
 

@@ -27,10 +27,10 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('label', $array);
         $this->assertArrayHasKey('sort_order', $array);
         $this->assertArrayHasKey('left', $array);
         $this->assertArrayHasKey('right', $array);
+        $this->assertArrayNotHasKey('label', $array);
         $this->assertArrayNotHasKey('event_id', $array);
         $this->assertArrayNotHasKey('boss_id', $array);
     }
@@ -41,23 +41,12 @@ class EventAssignmentResourceTest extends TestCase
         $assignment = EventAssignment::factory()
             ->withLeftCustom('Group 1')
             ->withRightCustom('Tank')
-            ->create(['label' => 'Role', 'sort_order' => 5]);
+            ->create(['sort_order' => 5]);
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertSame($assignment->id, $array['id']);
-        $this->assertSame('Role', $array['label']);
         $this->assertSame(5, $array['sort_order']);
-    }
-
-    #[Test]
-    public function it_returns_null_label_when_not_set(): void
-    {
-        $assignment = EventAssignment::factory()->create(['label' => null]);
-
-        $array = (new EventAssignmentResource($assignment))->toArray(new Request);
-
-        $this->assertNull($array['label']);
     }
 
     // ============ Left side resolution ============

@@ -36,7 +36,7 @@ class EventResource extends JsonResource
             'end_time' => $this->end_time?->toIso8601String(),
             'duration' => $this->duration,
             'background' => $this->buildBackground(),
-            'assignments' => EventAssignmentResource::collection($eventAssignments)->resolve($request),
+            'assignments' => (new EventAssignmentsCollection($eventAssignments))->resolve($request),
             'composition' => $this->buildComposition($request),
             'raids' => $this->buildRaids($bossByIdAssignments, $request),
         ];
@@ -168,9 +168,9 @@ class EventResource extends JsonResource
                 'encounter_order' => $boss->encounter_order,
                 'images' => $boss->getMedia()->map->getUrl()->values()->all(),
                 'notes' => $boss->notes,
-                'assignments' => EventAssignmentResource::collection(
+                'assignments' => (new EventAssignmentsCollection(
                     $bossByIdAssignments->get($boss->id, collect())
-                )->resolve($request),
+                ))->resolve($request),
             ])->values()->all(),
         ])->values()->all();
     }

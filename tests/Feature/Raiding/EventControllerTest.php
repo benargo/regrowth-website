@@ -278,7 +278,8 @@ class EventControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('event.assignments', 1)
+            ->has('event.assignments.groups')
+            ->has('event.assignments.ungrouped', 1)
         );
     }
 
@@ -297,7 +298,8 @@ class EventControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('event.raids.0.bosses.0.assignments', 1)
+            ->has('event.raids.0.bosses.0.assignments.groups')
+            ->has('event.raids.0.bosses.0.assignments.ungrouped', 1)
         );
     }
 
@@ -316,7 +318,7 @@ class EventControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('event.assignments', 0)
+            ->has('event.assignments.ungrouped', 0)
         );
     }
 

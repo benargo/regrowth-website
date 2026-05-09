@@ -18,7 +18,7 @@ class EventAssignment extends Model
     protected $fillable = [
         'event_id',
         'boss_id',
-        'label',
+        'group_id',
         'sort_order',
         'left_model_key',
         'left_value',
@@ -90,6 +90,8 @@ class EventAssignment extends Model
     // ============ Relationships ============
 
     /**
+     * The event this assignment belongs to.
+     *
      * @return BelongsTo<Event, $this>
      */
     public function event(): BelongsTo
@@ -98,10 +100,22 @@ class EventAssignment extends Model
     }
 
     /**
+     * The boss this assignment belongs to, if any.
+     *
      * @return BelongsTo<Boss, $this>
      */
     public function boss(): BelongsTo
     {
         return $this->belongsTo(Boss::class);
+    }
+
+    /**
+     * The group this assignment belongs to, if any.
+     *
+     * @return BelongsTo<EventAssignmentGroup, $this>
+     */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(EventAssignmentGroup::class, 'group_id');
     }
 }
