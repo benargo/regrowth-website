@@ -8,11 +8,14 @@ use App\Services\Blizzard\ValueObjects\PlayableClassData;
 use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Character>
- */
 class CharacterFactory extends Factory
 {
+    private $characterNames = [
+        'Arthas', 'Jaina', 'Thrall', 'Sylvanas', 'Garrosh', 'Tyrande', 'Malfurion', 'Illidan', 'Kael\'thas',
+        'Gul\'dan', 'Anduin', 'Varian', 'Vol\'jin', 'Cenarius', 'Kel\'Thuzad', 'Velen', 'Lor\'themar',
+        'Anub\'arak', 'Genn Greymane', 'Rexxar', 'Valeera Sanguinar', 'Medivh', 'Tichondrius', 'Alleria', 'Vereesa',
+    ];
+
     /**
      * Define the model's default state.
      *
@@ -21,7 +24,7 @@ class CharacterFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->randomElement($this->characterNames),
             'rank_id' => null,
             'is_main' => false,
             'playable_class' => null,

@@ -5,7 +5,6 @@ namespace App\Casts;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\ValueObjects\PlayableClassData;
-use Illuminate\Support\Str;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -28,7 +27,6 @@ class AsPlayableClass implements CastsAttributes
             return [
                 'id' => null,
                 'name' => 'Unknown Class',
-                'slug' => 'unknown-class',
                 'icon_url' => app(MediaService::class)->get('inv_misc_questionmark'),
             ];
         }
@@ -70,7 +68,6 @@ class AsPlayableClass implements CastsAttributes
         return json_encode([
             'id' => $value->id,
             'name' => $value->name,
-            'slug' => Str::slug($value->name),
             'icon_url' => $iconUrl,
         ]);
     }

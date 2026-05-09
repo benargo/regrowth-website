@@ -310,7 +310,6 @@ class CharacterTest extends ModelTestCase
 
         $this->assertNull($playableClass['id']);
         $this->assertSame('Unknown Class', $playableClass['name']);
-        $this->assertSame('unknown-class', $playableClass['slug']);
         $this->assertSame('https://example.com/question.jpg', $playableClass['icon_url']);
     }
 
@@ -325,7 +324,6 @@ class CharacterTest extends ModelTestCase
 
         $this->assertSame(1, $playableClass['id']);
         $this->assertSame('Warrior', $playableClass['name']);
-        $this->assertSame('warrior', $playableClass['slug']);
         $this->assertSame('https://cdn.local/warrior.jpg', $playableClass['icon_url']);
     }
 
@@ -343,7 +341,6 @@ class CharacterTest extends ModelTestCase
             'playable_class' => json_encode([
                 'id' => 7,
                 'name' => 'Shaman',
-                'slug' => 'shaman',
                 'icon_url' => 'https://cdn.local/shaman.jpg',
             ]),
         ]);

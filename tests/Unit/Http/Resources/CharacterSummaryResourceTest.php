@@ -38,8 +38,8 @@ class CharacterSummaryResourceTest extends TestCase
         $this->assertEquals($character->id, $array['id']);
         $this->assertEquals($character->name, $array['name']);
         $this->assertIsArray($array['playable_class']);
-        $this->assertArrayHasKey('id', $array['playable_class']);
         $this->assertArrayHasKey('name', $array['playable_class']);
+        $this->assertArrayHasKey('slug', $array['playable_class']);
         $this->assertArrayHasKey('icon_url', $array['playable_class']);
     }
 
