@@ -322,6 +322,7 @@ class UpdateCharacterFromRosterTest extends TestCase
             'playable_class' => json_encode([
                 'id' => 2,
                 'name' => 'Paladin',
+                'slug' => 'paladin',
                 'icon_url' => 'https://cdn.local/paladin.jpg',
             ]),
         ]);

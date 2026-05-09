@@ -66,6 +66,7 @@ class AsPlayableClassTest extends TestCase
         $this->assertSame([
             'id' => null,
             'name' => 'Unknown Class',
+            'slug' => 'unknown-class',
             'icon_url' => 'https://example.com/question.jpg',
         ], $result);
     }
@@ -75,12 +76,13 @@ class AsPlayableClassTest extends TestCase
     {
         $cast = new AsPlayableClass;
         $model = $this->createStub(Model::class);
-        $stored = json_encode(['id' => 7, 'name' => 'Shaman', 'icon_url' => 'https://example.com/shaman.jpg']);
+        $stored = json_encode(['id' => 7, 'name' => 'Shaman', 'slug' => 'shaman', 'icon_url' => 'https://example.com/shaman.jpg']);
 
         $result = $cast->get($model, 'playable_class', $stored, []);
 
         $this->assertSame(7, $result['id']);
         $this->assertSame('Shaman', $result['name']);
+        $this->assertSame('shaman', $result['slug']);
         $this->assertSame('https://example.com/shaman.jpg', $result['icon_url']);
     }
 
@@ -89,7 +91,7 @@ class AsPlayableClassTest extends TestCase
     {
         $cast = new AsPlayableClass;
         $model = $this->createStub(Model::class);
-        $value = ['id' => 7, 'name' => 'Shaman', 'icon_url' => null];
+        $value = ['id' => 7, 'name' => 'Shaman', 'slug' => 'shaman', 'icon_url' => null];
 
         $result = $cast->get($model, 'playable_class', $value, []);
 
@@ -154,6 +156,7 @@ class AsPlayableClassTest extends TestCase
         $this->assertSame(json_encode([
             'id' => 7,
             'name' => 'Shaman',
+            'slug' => 'shaman',
             'icon_url' => 'https://cdn.local/class_7.jpg',
         ]), $result);
     }
@@ -181,6 +184,7 @@ class AsPlayableClassTest extends TestCase
         $this->assertSame(json_encode([
             'id' => 7,
             'name' => 'Shaman',
+            'slug' => 'shaman',
             'icon_url' => null,
         ]), $result);
     }
@@ -210,6 +214,7 @@ class AsPlayableClassTest extends TestCase
         $this->assertSame(json_encode([
             'id' => 7,
             'name' => 'Shaman',
+            'slug' => 'shaman',
             'icon_url' => null,
         ]), $result);
     }

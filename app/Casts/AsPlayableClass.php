@@ -5,21 +5,22 @@ namespace App\Casts;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\ValueObjects\PlayableClassData;
+use Illuminate\Support\Str;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
 
 /**
- * @implements CastsAttributes<array{id: int|null, name: string, icon_url: string|null}, PlayableClassData>
+ * @implements CastsAttributes<array{id: int|null, name: string, slug: string, icon_url: string|null}, PlayableClassData>
  */
 class AsPlayableClass implements CastsAttributes
 {
     /**
-     * Cast the stored JSON into a plain {id, name, icon_url} array.
+     * Cast the stored JSON into a plain {id, name, slug, icon_url} array.
      *
      * @param  array<string, mixed>  $attributes
-     * @return array{id: int|null, name: string, icon_url: string|null}
+     * @return array{id: int|null, name: string, slug: string, icon_url: string|null}
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): array
     {
@@ -27,6 +28,7 @@ class AsPlayableClass implements CastsAttributes
             return [
                 'id' => null,
                 'name' => 'Unknown Class',
+                'slug' => 'unknown-class',
                 'icon_url' => app(MediaService::class)->get('inv_misc_questionmark'),
             ];
         }
@@ -36,7 +38,7 @@ class AsPlayableClass implements CastsAttributes
 
     /**
      * Accept a PlayableClass value object, resolve its icon URL via MediaService,
-     * and serialize a reduced {id, name, icon_url} payload for storage.
+     * and serialize a reduced {id, name, slug, icon_url} payload for storage.
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -68,6 +70,7 @@ class AsPlayableClass implements CastsAttributes
         return json_encode([
             'id' => $value->id,
             'name' => $value->name,
+            'slug' => Str::slug($value->name),
             'icon_url' => $iconUrl,
         ]);
     }

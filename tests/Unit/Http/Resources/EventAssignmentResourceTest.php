@@ -2,10 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\CharacterResource;
 use App\Http\Resources\EventAssignmentResource;
-use App\Http\Resources\SpellResource;
-use App\Http\Resources\TargetMarkerResource;
 use App\Models\Character;
 use App\Models\EventAssignment;
 use App\Models\Spell;
@@ -61,8 +58,8 @@ class EventAssignmentResourceTest extends TestCase
 
         $this->assertIsArray($array['left']);
         $this->assertSame('character', $array['left']['type']);
-        $this->assertInstanceOf(CharacterResource::class, $array['left']['data']);
-        $this->assertSame($character->id, $array['left']['data']->resource->id);
+        $this->assertIsArray($array['left']['data']);
+        $this->assertSame($character->id, $array['left']['data']['id']);
     }
 
     #[Test]
@@ -75,8 +72,8 @@ class EventAssignmentResourceTest extends TestCase
 
         $this->assertIsArray($array['left']);
         $this->assertSame('spell', $array['left']['type']);
-        $this->assertInstanceOf(SpellResource::class, $array['left']['data']);
-        $this->assertSame($spell->id, $array['left']['data']->resource->id);
+        $this->assertIsArray($array['left']['data']);
+        $this->assertSame($spell->id, $array['left']['data']['id']);
     }
 
     #[Test]
@@ -115,8 +112,8 @@ class EventAssignmentResourceTest extends TestCase
 
         $this->assertIsArray($array['right']);
         $this->assertSame('character', $array['right']['type']);
-        $this->assertInstanceOf(CharacterResource::class, $array['right']['data']);
-        $this->assertSame($character->id, $array['right']['data']->resource->id);
+        $this->assertIsArray($array['right']['data']);
+        $this->assertSame($character->id, $array['right']['data']['id']);
     }
 
     #[Test]
@@ -129,8 +126,8 @@ class EventAssignmentResourceTest extends TestCase
 
         $this->assertIsArray($array['right']);
         $this->assertSame('target_marker', $array['right']['type']);
-        $this->assertInstanceOf(TargetMarkerResource::class, $array['right']['data']);
-        $this->assertSame($marker->slug, $array['right']['data']->resource->slug);
+        $this->assertIsArray($array['right']['data']);
+        $this->assertSame($marker->slug, $array['right']['data']['slug']);
     }
 
     #[Test]
@@ -143,8 +140,8 @@ class EventAssignmentResourceTest extends TestCase
 
         $this->assertIsArray($array['right']);
         $this->assertSame('spell', $array['right']['type']);
-        $this->assertInstanceOf(SpellResource::class, $array['right']['data']);
-        $this->assertSame($spell->id, $array['right']['data']->resource->id);
+        $this->assertIsArray($array['right']['data']);
+        $this->assertSame($spell->id, $array['right']['data']['id']);
     }
 
     #[Test]
