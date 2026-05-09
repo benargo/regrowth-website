@@ -59,8 +59,10 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertInstanceOf(CharacterResource::class, $array['left']);
-        $this->assertSame($character->id, $array['left']->resource->id);
+        $this->assertIsArray($array['left']);
+        $this->assertSame('character', $array['left']['type']);
+        $this->assertInstanceOf(CharacterResource::class, $array['left']['data']);
+        $this->assertSame($character->id, $array['left']['data']->resource->id);
     }
 
     #[Test]
@@ -71,8 +73,10 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertInstanceOf(SpellResource::class, $array['left']);
-        $this->assertSame($spell->id, $array['left']->resource->id);
+        $this->assertIsArray($array['left']);
+        $this->assertSame('spell', $array['left']['type']);
+        $this->assertInstanceOf(SpellResource::class, $array['left']['data']);
+        $this->assertSame($spell->id, $array['left']['data']->resource->id);
     }
 
     #[Test]
@@ -82,7 +86,9 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertSame('Group 1', $array['left']);
+        $this->assertIsArray($array['left']);
+        $this->assertNull($array['left']['type']);
+        $this->assertSame('Group 1', $array['left']['data']);
     }
 
     #[Test]
@@ -92,7 +98,9 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertSame('3', $array['left']);
+        $this->assertIsArray($array['left']);
+        $this->assertNull($array['left']['type']);
+        $this->assertSame('3', $array['left']['data']);
     }
 
     // ============ Right side resolution ============
@@ -105,8 +113,10 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertInstanceOf(CharacterResource::class, $array['right']);
-        $this->assertSame($character->id, $array['right']->resource->id);
+        $this->assertIsArray($array['right']);
+        $this->assertSame('character', $array['right']['type']);
+        $this->assertInstanceOf(CharacterResource::class, $array['right']['data']);
+        $this->assertSame($character->id, $array['right']['data']->resource->id);
     }
 
     #[Test]
@@ -117,8 +127,10 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertInstanceOf(TargetMarkerResource::class, $array['right']);
-        $this->assertSame($marker->slug, $array['right']->resource->slug);
+        $this->assertIsArray($array['right']);
+        $this->assertSame('target_marker', $array['right']['type']);
+        $this->assertInstanceOf(TargetMarkerResource::class, $array['right']['data']);
+        $this->assertSame($marker->slug, $array['right']['data']->resource->slug);
     }
 
     #[Test]
@@ -129,8 +141,10 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertInstanceOf(SpellResource::class, $array['right']);
-        $this->assertSame($spell->id, $array['right']->resource->id);
+        $this->assertIsArray($array['right']);
+        $this->assertSame('spell', $array['right']['type']);
+        $this->assertInstanceOf(SpellResource::class, $array['right']['data']);
+        $this->assertSame($spell->id, $array['right']['data']->resource->id);
     }
 
     #[Test]
@@ -140,7 +154,9 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertSame('kick rotation A', $array['right']);
+        $this->assertIsArray($array['right']);
+        $this->assertNull($array['right']['type']);
+        $this->assertSame('kick rotation A', $array['right']['data']);
     }
 
     #[Test]
@@ -150,6 +166,8 @@ class EventAssignmentResourceTest extends TestCase
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
-        $this->assertSame('1-3', $array['right']);
+        $this->assertIsArray($array['right']);
+        $this->assertNull($array['right']['type']);
+        $this->assertSame('1-3', $array['right']['data']);
     }
 }

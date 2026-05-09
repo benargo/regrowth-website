@@ -21,8 +21,14 @@ class EventAssignmentResource extends JsonResource
         return [
             'id' => $this->id,
             'sort_order' => $this->sort_order,
-            'left' => $left instanceof Model ? $left->toResource() : $left,
-            'right' => $right instanceof Model ? $right->toResource() : $right,
+            'left' => [
+                'type' => $this->left_model_key,
+                'data' => $left instanceof Model ? $left->toResource() : $left,
+            ],
+            'right' => [
+                'type' => $this->right_model_key,
+                'data' => $right instanceof Model ? $right->toResource() : $right,
+            ],
         ];
     }
 }
