@@ -1,12 +1,12 @@
 const MARKERS = {
-    star:     { col: 0, row: 0 },
-    circle:   { col: 1, row: 0 },
-    diamond:  { col: 2, row: 0 },
+    star: { col: 0, row: 0 },
+    circle: { col: 1, row: 0 },
+    diamond: { col: 2, row: 0 },
     triangle: { col: 3, row: 0 },
-    moon:     { col: 0, row: 1 },
-    square:   { col: 1, row: 1 },
-    cross:    { col: 2, row: 1 },
-    skull:    { col: 3, row: 1 },
+    moon: { col: 0, row: 1 },
+    square: { col: 1, row: 1 },
+    cross: { col: 2, row: 1 },
+    skull: { col: 3, row: 1 },
 };
 
 export default function TargetMarker({ marker, size = 24, className }) {
