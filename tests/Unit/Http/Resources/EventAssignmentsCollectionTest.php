@@ -130,4 +130,21 @@ class EventAssignmentsCollectionTest extends TestCase
         $this->assertSame($first->id, $array['groups'][0]['assignments'][0]['id']);
         $this->assertSame($second->id, $array['groups'][0]['assignments'][1]['id']);
     }
+
+    #[Test]
+    public function it_returns_count_of_all_assignments(): void
+    {
+        $event = Event::factory()->create();
+        $group = EventAssignmentGroup::factory()->for($event)->create();
+
+        EventAssignment::factory()->count(2)->for($event)->forGroup($group)->create();
+        EventAssignment::factory()->count(3)->for($event)->create();
+
+        $assignments = EventAssignment::where('event_id', $event->id)->with('group')->get();
+
+        $array = (new EventAssignmentsCollection($assignments))->toArray(new Request);
+
+        $this->assertArrayHasKey('count', $array);
+        $this->assertSame(5, $array['count']);
+    }
 }

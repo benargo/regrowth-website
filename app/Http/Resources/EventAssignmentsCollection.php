@@ -50,6 +50,7 @@ class EventAssignmentsCollection extends ResourceCollection
             'ungrouped' => EventAssignmentResource::collection(
                 $ungrouped->sortBy('sort_order')->values()
             )->resolve($request),
+            'count' => $this->collection->count(),
         ];
     }
 }
