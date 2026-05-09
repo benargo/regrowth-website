@@ -6,7 +6,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
-use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Attributes\WithCast;
@@ -49,9 +48,13 @@ class Event extends Data
         #[WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]
         public readonly CarbonInterface $endTime,
 
-        /** @var CarbonInterface The unix timestamp of when this event will close and deny further sign-ups */
-        #[WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]
-        public readonly CarbonInterface $closingTime,
+        /** @var CarbonInterface|null The unix timestamp of when this event will close and deny further sign-ups */
+        #[Nullable, WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]
+        public readonly ?CarbonInterface $closingTime,
+
+        /** @var CarbonInterface|null The unix timestamp of when this event will close and deny further sign-ups */
+        #[Nullable, WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]
+        public readonly ?CarbonInterface $closeTime,
 
         /** @var CarbonInterface The unix timestamp of when this event was updated last */
         #[WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]
@@ -127,6 +130,14 @@ class Event extends Data
         /** @var array|null The announcements for this event */
         public readonly ?array $announcements = null,
     ) {}
+
+    /**
+     * Get the closing time for this event, which is the time when sign-ups will be closed. This will return the value of `closingTime` if it is set, or `closeTime` if `closingTime` is not set.
+     */
+    public function closingTime(): ?CarbonInterface
+    {
+        return $this->closingTime ?? $this->closeTime;
+    }
 
     /**
      * Get the User model for the leader of this event, or null if the leader cannot be found.
