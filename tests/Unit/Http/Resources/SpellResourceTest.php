@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\AffectType;
 use App\Http\Resources\SpellResource;
 use App\Models\Spell;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,7 +23,8 @@ class SpellResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
-        $this->assertArrayHasKey('icon_url', $array);
+        $this->assertArrayHasKey('type', $array);
+        $this->assertArrayHasKey('icon', $array);
     }
 
     #[Test]
@@ -46,23 +48,24 @@ class SpellResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_icon_url(): void
+    public function it_returns_type(): void
     {
-        $spell = Spell::factory()->create(['icon_url' => 'https://example.com/fireball.png']);
+        $spell = Spell::factory()->create(['type' => AffectType::Poison]);
 
         $array = (new SpellResource($spell))->toArray(new Request);
 
-        $this->assertSame('https://example.com/fireball.png', $array['icon_url']);
+        $this->assertSame(AffectType::Poison, $array['type']);
     }
 
     #[Test]
-    public function it_returns_null_icon_url_when_not_set(): void
+    public function it_returns_icon(): void
     {
-        $spell = Spell::factory()->create(['icon_url' => null]);
+        $spell = Spell::factory()->create();
 
         $array = (new SpellResource($spell))->toArray(new Request);
 
-        $this->assertNull($array['icon_url']);
+        $this->assertArrayHasKey('icon', $array);
+        $this->assertNull($array['icon']);
     }
 
     #[Test]
@@ -72,6 +75,6 @@ class SpellResourceTest extends TestCase
 
         $array = (new SpellResource($spell))->toArray(new Request);
 
-        $this->assertCount(3, $array);
+        $this->assertCount(4, $array);
     }
 }

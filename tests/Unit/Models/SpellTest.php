@@ -2,8 +2,10 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\AffectType;
 use App\Models\Spell;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class SpellTest extends ModelTestCase
@@ -36,7 +38,7 @@ class SpellTest extends ModelTestCase
     {
         $model = new Spell;
 
-        $this->assertFillable($model, ['id', 'name', 'icon_url']);
+        $this->assertFillable($model, ['id', 'name', 'type']);
     }
 
     #[Test]
@@ -48,12 +50,22 @@ class SpellTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_casts_type_to_affect_type_enum(): void
+    {
+        $model = new Spell;
+
+        $this->assertArrayHasKey('type', $model->getCasts());
+        $this->assertSame(AffectType::class, $model->getCasts()['type']);
+    }
+
+    #[Test]
     public function it_can_be_created_with_factory(): void
     {
         $spell = $this->create();
 
         $this->assertModelExists($spell);
         $this->assertNotEmpty($spell->name);
+        $this->assertInstanceOf(AffectType::class, $spell->type);
     }
 
     #[Test]
@@ -63,24 +75,6 @@ class SpellTest extends ModelTestCase
 
         $this->assertTableHas(['name' => 'Fireball']);
         $this->assertSame('Fireball', $spell->name);
-    }
-
-    #[Test]
-    public function it_can_be_created_with_an_icon_url(): void
-    {
-        $spell = $this->create(['name' => 'Frostbolt', 'icon_url' => 'https://example.com/frostbolt.png']);
-
-        $this->assertTableHas(['name' => 'Frostbolt', 'icon_url' => 'https://example.com/frostbolt.png']);
-        $this->assertSame('https://example.com/frostbolt.png', $spell->icon_url);
-    }
-
-    #[Test]
-    public function it_allows_null_icon_url(): void
-    {
-        $spell = $this->create(['name' => 'Shadow Bolt', 'icon_url' => null]);
-
-        $this->assertModelExists($spell);
-        $this->assertNull($spell->icon_url);
     }
 
     #[Test]
@@ -95,11 +89,49 @@ class SpellTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_can_be_created_with_a_type(): void
+    {
+        $spell = $this->create(['type' => AffectType::Magic]);
+
+        $this->assertTableHas(['type' => AffectType::Magic->value]);
+        $this->assertSame(AffectType::Magic, $spell->type);
+    }
+
+    #[Test]
+    public function it_defaults_type_to_physical(): void
+    {
+        $spell = $this->create(['name' => 'Strike', 'type' => AffectType::Physical]);
+
+        $this->assertSame(AffectType::Physical, $spell->type);
+    }
+
+    #[Test]
     public function it_can_be_mass_assigned(): void
     {
-        $spell = Spell::create(['name' => 'Holy Nova', 'icon_url' => null]);
+        $spell = Spell::create(['name' => 'Holy Nova', 'type' => AffectType::Magic]);
 
         $this->assertSame('Holy Nova', $spell->name);
-        $this->assertNull($spell->icon_url);
+        $this->assertSame(AffectType::Magic, $spell->type);
+    }
+
+    #[Test]
+    public function it_implements_has_media_interface(): void
+    {
+        $spell = $this->create();
+
+        $this->assertInstanceOf(HasMedia::class, $spell);
+    }
+
+    #[Test]
+    public function it_can_add_media(): void
+    {
+        $spell = $this->create();
+        $testFile = storage_path('app/test-image.png');
+        file_put_contents($testFile, 'fake image content');
+
+        $spell->addMedia($testFile)->toMediaCollection('default');
+
+        $this->assertNotEmpty($spell->getMedia('default'));
+        @unlink($testFile);
     }
 }

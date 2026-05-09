@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\AffectType;
 use App\Models\Spell;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,7 +28,7 @@ class SpellFactory extends Factory
     {
         return [
             'name' => fake()->words(3, true),
-            'icon_url' => fake()->optional()->imageUrl(64, 64, 'spell'),
+            'type' => fake()->randomElement(AffectType::cases()),
         ];
     }
 }
