@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CharacterSummaryResource extends JsonResource
+class PlayableClassResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,8 +17,8 @@ class CharacterSummaryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'rank' => $this->whenLoaded('rank', fn () => $this->rank?->attributesToArray()),
-            'playable_class' => $this->whenLoaded('playableClass', fn () => $this->playableClass ? (new PlayableClassResource($this->playableClass))->toArray($request) : null),
+            'slug' => $this->slug,
+            'icon_url' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
         ];
     }
 }

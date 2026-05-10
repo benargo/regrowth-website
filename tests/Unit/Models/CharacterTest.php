@@ -2,17 +2,15 @@
 
 namespace Tests\Unit\Models;
 
-use App\Casts\AsPlayableClass;
 use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
-use App\Services\Blizzard\ValueObjects\PlayableClassData;
 use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,11 +44,11 @@ class CharacterTest extends ModelTestCase
         $this->assertFillable($model, [
             'id',
             'name',
+            'rank_id',
+            'playable_class_id',
+            'playable_race',
             'is_main',
             'is_loot_councillor',
-            'reached_level_cap_at',
-            'playable_class',
-            'playable_race',
         ]);
     }
 
@@ -62,8 +60,6 @@ class CharacterTest extends ModelTestCase
         $this->assertCasts($model, [
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
-            'reached_level_cap_at' => 'datetime',
-            'playable_class' => AsPlayableClass::class,
             'playable_race' => AsPlayableRace::class,
         ]);
     }
@@ -254,111 +250,43 @@ class CharacterTest extends ModelTestCase
 
     // playable_class
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function sampleClassApiResponse(int $id = 7, string $name = 'Shaman'): array
+    #[Test]
+    public function playable_class_returns_belongs_to_relationship(): void
     {
-        return [
-            'id' => $id,
-            'name' => $name,
-            'gender_name' => ['male' => $name, 'female' => $name],
-            'power_type' => [],
-            'media' => [],
-            'pvp_talent_slots' => [],
-            'playable_races' => [],
-        ];
-    }
+        $character = new Character;
 
-    private function mockPlayableClassMediaResolution(int $classId, ?string $iconUrl): void
-    {
-        $fileDataId = 1000 + $classId;
-
-        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($classId, $fileDataId) {
-            $mock->shouldReceive('getPlayableClassMedia')
-                ->with($classId)
-                ->andReturn([
-                    'id' => $classId,
-                    'assets' => [
-                        [
-                            'key' => 'icon',
-                            'value' => "https://render.worldofwarcraft.com/eu/icons/56/class_{$classId}.jpg",
-                            'file_data_id' => $fileDataId,
-                        ],
-                    ],
-                ]);
-        });
-
-        $this->mock(MediaService::class, function (MockInterface $mock) use ($fileDataId, $iconUrl) {
-            $mock->shouldReceive('get')->andReturn([$fileDataId => $iconUrl]);
-        });
+        $this->assertInstanceOf(BelongsTo::class, $character->playableClass());
     }
 
     #[Test]
-    public function playable_class_returns_unknown_when_column_is_null(): void
+    public function it_can_be_created_with_playable_class(): void
     {
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('get')
-                ->once()
-                ->with('inv_misc_questionmark')
-                ->andReturn('https://example.com/question.jpg');
-        });
+        $playableClass = PlayableClass::factory()->create();
+        $character = $this->factory()->withPlayableClass($playableClass)->create();
 
+        $this->assertSame($playableClass->id, $character->playable_class_id);
+        $this->assertInstanceOf(PlayableClass::class, $character->playableClass);
+    }
+
+    #[Test]
+    public function playable_class_is_null_by_default(): void
+    {
         $character = $this->create();
 
-        $playableClass = $character->playable_class;
-
-        $this->assertNull($playableClass['id']);
-        $this->assertSame('Unknown Class', $playableClass['name']);
-        $this->assertSame('https://example.com/question.jpg', $playableClass['icon_url']);
+        $this->assertNull($character->playable_class_id);
+        $this->assertNull($character->playableClass);
     }
 
     #[Test]
-    public function playable_class_returns_stored_data_when_set(): void
+    public function playable_class_is_set_to_null_when_playable_class_is_deleted(): void
     {
-        $this->mockPlayableClassMediaResolution(1, 'https://cdn.local/warrior.jpg');
+        $playableClass = PlayableClass::factory()->create();
+        $character = $this->factory()->withPlayableClass($playableClass)->create();
 
-        $character = $this->factory()->withPlayableClass(1, 'Warrior')->create();
+        $playableClass->delete();
 
-        $playableClass = $character->fresh()->playable_class;
-
-        $this->assertSame(1, $playableClass['id']);
-        $this->assertSame('Warrior', $playableClass['name']);
-        $this->assertSame('https://cdn.local/warrior.jpg', $playableClass['icon_url']);
-    }
-
-    #[Test]
-    public function assigning_playable_class_vo_persists_reduced_shape_via_cast(): void
-    {
-        $this->mockPlayableClassMediaResolution(7, 'https://cdn.local/shaman.jpg');
-
-        $character = $this->create();
-        $character->playable_class = PlayableClassData::from($this->sampleClassApiResponse(7, 'Shaman'));
-        $character->save();
-
-        $this->assertDatabaseHas('characters', [
-            'id' => $character->id,
-            'playable_class' => json_encode([
-                'id' => 7,
-                'name' => 'Shaman',
-                'icon_url' => 'https://cdn.local/shaman.jpg',
-            ]),
-        ]);
-    }
-
-    #[Test]
-    public function playable_class_setter_accepts_null_and_clears_column(): void
-    {
-        $this->mockPlayableClassMediaResolution(1, 'https://cdn.local/warrior.jpg');
-
-        $character = $this->factory()->withPlayableClass(1, 'Warrior')->create();
-        $character->playable_class = null;
-        $character->save();
-
-        $this->assertDatabaseHas('characters', [
-            'id' => $character->id,
-            'playable_class' => null,
-        ]);
+        $character->refresh();
+        $this->assertNull($character->playable_class_id);
     }
 
     // playable_race
@@ -635,24 +563,6 @@ class CharacterTest extends ModelTestCase
 
         $character->refresh();
         $this->assertNull($character->rank_id);
-    }
-
-    // reached_level_cap_at
-
-    // #[Test]
-    // public function it_can_be_created_with_reached_level_cap(): void
-    // {
-    //     $character = $this->factory()->reachedLevelCap()->create();
-    //
-    //     $this->assertNotNull($character->reached_level_cap_at);
-    // }
-
-    #[Test]
-    public function reached_level_cap_at_is_null_by_default(): void
-    {
-        $character = $this->create();
-
-        $this->assertNull($character->reached_level_cap_at);
     }
 
     // warcraft_logs_reports

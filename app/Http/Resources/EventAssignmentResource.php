@@ -21,14 +21,26 @@ class EventAssignmentResource extends JsonResource
             'id' => $this->id,
             'sort_order' => $this->sort_order,
             'left' => [
-                'type' => $this->left_type ? Str::snake(class_basename($this->left_type)) : null,
+                'type' => $this->resolveType('left'),
                 'data' => $this->resolveAssignment('left', $request),
             ],
             'right' => [
-                'type' => $this->right_type ? Str::snake(class_basename($this->right_type)) : null,
+                'type' => $this->resolveType('right'),
                 'data' => $this->resolveAssignment('right', $request),
             ],
         ];
+    }
+
+    /**
+     * Resolves the left or right side of the assignment to a type string for frontend rendering logic.
+     */
+    private function resolveType(string $side): ?string
+    {
+        if (class_exists($this->{"{$side}_type"})) {
+            return Str::snake(class_basename($this->{"{$side}_type"}));
+        }
+
+        return gettype($this->{"{$side}_value"});
     }
 
     /**
@@ -43,7 +55,9 @@ class EventAssignmentResource extends JsonResource
         };
 
         if ($assignment instanceof Character) {
-            return $assignment->toResource(CharacterSummaryResource::class)->resolve($request);
+            return $assignment->loadMissing('playableClass')
+                ->toResource(CharacterSummaryResource::class)
+                ->resolve($request);
         }
 
         if ($assignment instanceof Model) {

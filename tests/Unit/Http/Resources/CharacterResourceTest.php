@@ -3,11 +3,11 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\CharacterResource;
-use App\Http\Resources\GuildRankResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -52,13 +52,28 @@ class CharacterResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_omits_reached_level_cap_at(): void
+    public function it_omits_playable_class_when_not_loaded(): void
     {
         $character = Character::factory()->create();
 
         $array = (new CharacterResource($character))->toArray(new Request);
 
-        $this->assertFalse(array_key_exists('reached_level_cap_at', $array));
+        $this->assertInstanceOf(MissingValue::class, $array['playable_class']);
+    }
+
+    #[Test]
+    public function it_includes_playable_class_attributes_when_loaded(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
+        $character = Character::factory()->withPlayableClass($playableClass)->create();
+
+        $array = (new CharacterResource($character->load('playableClass')))->toArray(new Request);
+
+        $this->assertSame($playableClass->id, $array['playable_class']['id']);
+        $this->assertSame('Warrior', $array['playable_class']['name']);
+        $this->assertSame('warrior', $array['playable_class']['slug']);
+        $this->assertArrayHasKey('icon_url', $array['playable_class']);
+        $this->assertNull($array['playable_class']['icon_url']);
     }
 
     #[Test]
@@ -105,15 +120,16 @@ class CharacterResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_rank_as_guild_rank_resource_when_loaded(): void
+    public function it_includes_guild_rank_attributes_when_loaded(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->for($rank, 'rank')->create();
 
         $array = (new CharacterResource($character->load('rank')))->toArray(new Request);
 
-        $this->assertInstanceOf(GuildRankResource::class, $array['rank']);
-        $this->assertSame($rank->id, $array['rank']->resource->id);
+        $this->assertIsArray($array['rank']);
+        $this->assertArrayHasKey('id', $array['rank']);
+        $this->assertSame($rank->id, $array['rank']['id']);
     }
 
     #[Test]

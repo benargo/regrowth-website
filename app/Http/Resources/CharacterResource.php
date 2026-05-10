@@ -28,13 +28,13 @@ class CharacterResource extends JsonResource
             'is_main' => $this->is_main,
             'is_loot_councillor' => $this->is_loot_councillor,
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
-            'playable_class' => $this->playable_class,
+            'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
             'playable_race' => $this->playable_race,
             'pivot' => $this->whenPivotLoaded('pivot_characters_raid_reports', fn () => [
                 'presence' => $this->pivot->presence,
                 'is_loot_councillor' => $this->pivot->is_loot_councillor,
             ]),
-            'rank' => $this->whenLoaded('rank', fn () => new GuildRankResource($this->rank)),
+            'rank' => $this->whenLoaded('rank', fn () => (new GuildRankResource($this->rank))->resolve($request)),
         ];
     }
 }

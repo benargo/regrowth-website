@@ -317,13 +317,14 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $job->handle();
 
+        $this->assertDatabaseHas('playable_classes', [
+            'id' => 2,
+            'name' => 'Paladin',
+        ]);
+
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_class' => json_encode([
-                'id' => 2,
-                'name' => 'Paladin',
-                'icon_url' => 'https://cdn.local/paladin.jpg',
-            ]),
+            'playable_class_id' => 2,
         ]);
     }
 
@@ -391,7 +392,7 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_class' => null,
+            'playable_class_id' => null,
         ]);
     }
 

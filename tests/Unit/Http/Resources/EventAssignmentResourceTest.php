@@ -84,7 +84,7 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertIsArray($array['left']);
-        $this->assertNull($array['left']['type']);
+        $this->assertSame('string', $array['left']['type']);
         $this->assertSame('Group 1', $array['left']['data']);
     }
 
@@ -96,7 +96,7 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertIsArray($array['left']);
-        $this->assertNull($array['left']['type']);
+        $this->assertSame('string', $array['left']['type']);
         $this->assertSame('3', $array['left']['data']);
     }
 
@@ -152,7 +152,7 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertIsArray($array['right']);
-        $this->assertNull($array['right']['type']);
+        $this->assertSame('string', $array['right']['type']);
         $this->assertSame('kick rotation A', $array['right']['data']);
     }
 
@@ -164,7 +164,7 @@ class EventAssignmentResourceTest extends TestCase
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 
         $this->assertIsArray($array['right']);
-        $this->assertNull($array['right']['type']);
+        $this->assertSame('string', $array['right']['type']);
         $this->assertSame('1-3', $array['right']['data']);
     }
 }
