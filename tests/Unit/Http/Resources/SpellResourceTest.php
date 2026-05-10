@@ -23,7 +23,7 @@ class SpellResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
-        $this->assertArrayHasKey('type', $array);
+        $this->assertArrayHasKey('color', $array);
         $this->assertArrayHasKey('icon', $array);
     }
 
@@ -48,13 +48,13 @@ class SpellResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_type(): void
+    public function it_returns_color(): void
     {
-        $spell = Spell::factory()->create(['type' => AffectType::Poison]);
+        $spell = Spell::factory()->create(['type' => AffectType::Physical]);
 
         $array = (new SpellResource($spell))->toArray(new Request);
 
-        $this->assertSame(AffectType::Poison, $array['type']);
+        $this->assertSame('affect-physical', $array['color']);
     }
 
     #[Test]

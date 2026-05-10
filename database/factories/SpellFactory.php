@@ -12,6 +12,29 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SpellFactory extends Factory
 {
+    private $spellNames = [
+        'Fireball',
+        'Frostbolt',
+        'Arcane Missiles',
+        'Shadow Bolt',
+        'Healing Touch',
+        'Rejuvenation',
+        'Power Word: Shield',
+        'Smite',
+        'Wrath',
+        'Starfire',
+        'Moonfire',
+        'Entangling Roots',
+        'Insect Swarm',
+        'Hurricane',
+        'Living Bomb',
+        'Pyroblast',
+        'Ice Lance',
+        'Flamestrike',
+        'Blizzard',
+        'Cone of Cold',
+    ];
+
     /**
      * The name of the factory's corresponding model.
      *
@@ -27,7 +50,7 @@ class SpellFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->words(3, true),
+            'name' => fake()->randomElement($this->spellNames),
             'type' => fake()->randomElement(AffectType::cases()),
         ];
     }

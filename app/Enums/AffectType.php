@@ -16,11 +16,12 @@ enum AffectType: string
     public function color(): string
     {
         return match ($this) {
-            self::Curse => 'bg-affect-curse',
-            self::Disease => 'bg-affect-disease',
-            self::Magic => 'bg-affect-magic',
-            self::Poison => 'bg-affect-poison',
-            self::Physical => 'bg-affect-physical',
+            self::Curse => 'affect-curse',
+            self::Disease => 'affect-disease',
+            self::Magic => 'affect-magic',
+            self::Poison => 'affect-poison',
+            self::Physical => 'affect-physical',
+            default => 'gray-700',
         };
     }
 }

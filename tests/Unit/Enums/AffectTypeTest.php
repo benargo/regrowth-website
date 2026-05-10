@@ -39,31 +39,31 @@ class AffectTypeTest extends TestCase
     #[Test]
     public function curse_has_correct_color(): void
     {
-        $this->assertSame('bg-affect-curse', AffectType::Curse->color());
+        $this->assertSame('affect-curse', AffectType::Curse->color());
     }
 
     #[Test]
     public function disease_has_correct_color(): void
     {
-        $this->assertSame('bg-affect-disease', AffectType::Disease->color());
+        $this->assertSame('affect-disease', AffectType::Disease->color());
     }
 
     #[Test]
     public function magic_has_correct_color(): void
     {
-        $this->assertSame('bg-affect-magic', AffectType::Magic->color());
+        $this->assertSame('affect-magic', AffectType::Magic->color());
     }
 
     #[Test]
     public function poison_has_correct_color(): void
     {
-        $this->assertSame('bg-affect-poison', AffectType::Poison->color());
+        $this->assertSame('affect-poison', AffectType::Poison->color());
     }
 
     #[Test]
     public function physical_has_correct_color(): void
     {
-        $this->assertSame('bg-affect-physical', AffectType::Physical->color());
+        $this->assertSame('affect-physical', AffectType::Physical->color());
     }
 
     #[Test]
@@ -71,7 +71,7 @@ class AffectTypeTest extends TestCase
     {
         foreach (AffectType::cases() as $case) {
             $this->assertIsString($case->color());
-            $this->assertStringStartsWith('bg-affect-', $case->color());
+            $this->assertStringStartsWith('affect-', $case->color());
         }
     }
 }

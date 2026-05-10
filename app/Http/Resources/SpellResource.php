@@ -17,7 +17,7 @@ class SpellResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'type' => $this->type,
+            'color' => $this->type->color(),
             'icon' => $this->getMedia()->map->getUrl()->values()->first(),
         ];
     }
