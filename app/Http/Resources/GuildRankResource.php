@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\GuildRank;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 class GuildRankResource extends JsonResource
 {
@@ -26,6 +27,7 @@ class GuildRankResource extends JsonResource
             'id' => $this->id,
             'position' => $this->position,
             'name' => $this->name,
+            'slug' => Str::slug($this->name),
             'count_attendance' => $this->count_attendance,
         ];
     }
