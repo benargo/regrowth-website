@@ -12,6 +12,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 import { Deferred, Link, useForm } from "@inertiajs/react";
+import AutoSaved from "@/Components/AutoSaved";
 import Icon from "@/Components/FontAwesome/Icon";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
@@ -486,12 +487,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                             Saving...
                         </span>
                     )}
-                    {!processing && showSaved && (
-                        <span className="text-sm font-medium text-green-400">
-                            <Icon icon="check" style="solid" className="mr-2" />
-                            Saved
-                        </span>
-                    )}
+                    {!processing && showSaved && <AutoSaved />}
                 </div>
             </ToolNav>
             {/* Content */}
