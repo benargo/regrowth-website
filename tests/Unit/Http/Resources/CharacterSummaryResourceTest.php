@@ -23,6 +23,7 @@ class CharacterSummaryResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('level', $array);
         $this->assertArrayHasKey('rank', $array);
         $this->assertArrayHasKey('playable_class', $array);
     }
@@ -37,6 +38,7 @@ class CharacterSummaryResourceTest extends TestCase
 
         $this->assertEquals($character->id, $array['id']);
         $this->assertEquals($character->name, $array['name']);
+        $this->assertEquals($character->level, $array['level']);
         $this->assertIsArray($array['playable_class']);
         $this->assertArrayHasKey('id', $array['playable_class']);
         $this->assertArrayHasKey('name', $array['playable_class']);

@@ -59,6 +59,7 @@ class UpdateCharacterFromRoster implements ShouldQueue
 
         $this->character->fill([
             'name' => Arr::get($this->characterData, 'character.name'),
+            'level' => Arr::get($this->characterData, 'character.level'),
             'playable_race' => $raceId !== null
                 ? PlayableRaceData::from($blizzard->findPlayableRace($raceId))
                 : null,

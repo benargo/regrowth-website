@@ -17,7 +17,8 @@ class CharacterSummaryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'rank' => $this->whenLoaded('rank', fn () => $this->rank?->attributesToArray()),
+            'level' => $this->level,
+            'rank' => $this->whenLoaded('rank', fn () => new GuildRankResource($this->rank)->toArray($request)),
             'playable_class' => $this->whenLoaded('playableClass', fn () => $this->playableClass ? (new PlayableClassResource($this->playableClass))->toArray($request) : null),
         ];
     }

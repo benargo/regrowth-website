@@ -38,6 +38,7 @@ class Character extends Model
     protected $fillable = [
         'id',
         'name',
+        'level',
         'rank_id',
         'playable_class_id',
         'playable_race',

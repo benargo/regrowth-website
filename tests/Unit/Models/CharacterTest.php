@@ -44,6 +44,7 @@ class CharacterTest extends ModelTestCase
         $this->assertFillable($model, [
             'id',
             'name',
+            'level',
             'rank_id',
             'playable_class_id',
             'playable_race',

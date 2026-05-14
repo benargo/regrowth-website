@@ -17,6 +17,7 @@ return new class extends Migration
         });
 
         Schema::table('characters', function (Blueprint $table) {
+            $table->unsignedTinyInteger('level')->after('name')->nullable();
             $table->foreignId('playable_class_id')->after('rank_id')->nullable()->constrained('playable_classes')->nullOnDelete();
             $table->dropColumn('playable_class');
         });
@@ -28,6 +29,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('characters', function (Blueprint $table) {
+            $table->dropColumn('level');
             $table->dropForeign(['playable_class_id']);
             $table->dropColumn('playable_class_id');
             $table->json('playable_class')->after('rank_id')->nullable();

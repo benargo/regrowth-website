@@ -56,7 +56,7 @@ class EventResource extends JsonResource
     private function buildComposition(Request $request): array
     {
         return [
-            'groups' => $this->buildGroups(),
+            'groups' => $this->buildGroups($request),
             'bench' => $this->buildBench($request),
         ];
     }
@@ -64,7 +64,7 @@ class EventResource extends JsonResource
     /**
      * @return array<int, mixed>
      */
-    private function buildGroups(): array
+    private function buildGroups(Request $request): array
     {
         $maxPlayers = $this->raids->max('max_players') ?? 0;
         $maxSlot = $this->characters->max(fn (Character $c) => $c->pivot->slot_number) ?? 0;
@@ -84,7 +84,7 @@ class EventResource extends JsonResource
                 'characters' => $groupCharacters->map(fn (Character $character) => [
                     'id' => $character->id,
                     'name' => $character->name,
-                    'playable_class' => $character->playable_class,
+                    'playable_class' => $character->playableClass()->first()?->toResource()->resolve($request),
                     'rank' => [
                         'name' => $character->rank?->name,
                         'position' => $character->rank?->position,
@@ -130,7 +130,9 @@ class EventResource extends JsonResource
                     $raidHelper = app(RaidHelper::class);
                     $rhEvent = $raidHelper->getEvent((int) $this->raid_helper_event_id);
 
-                    $signUpNames = collect($rhEvent->signUps)->pluck('name');
+                    $signUpNames = collect($rhEvent->signUps)
+                        ->whereNotIn('cClassName', ['Absence', 'Late', 'Tentative'])
+                        ->pluck('name');
                     $benchedNames = $signUpNames->diff($compNames);
 
                     return Character::whereIn('name', $benchedNames)
@@ -140,15 +142,17 @@ class EventResource extends JsonResource
             )
         )->load('rank');
 
-        return $benchedCharacters->map(fn (Character $character) => [
-            'id' => $character->id,
-            'name' => $character->name,
-            'playable_class' => $character->playable_class,
-            'rank' => [
-                'name' => $character->rank?->name,
-                'position' => $character->rank?->position,
-            ],
-        ])->values()->all();
+        return $benchedCharacters->map(function (Character $character) use ($request) {
+            return [
+                'id' => $character->id,
+                'name' => $character->name,
+                'playable_class' => $character->playableClass()->first()?->toResource()->resolve($request),
+                'rank' => [
+                    'name' => $character->rank?->name,
+                    'position' => $character->rank?->position,
+                ],
+            ];
+        })->values()->all();
     }
 
     /**

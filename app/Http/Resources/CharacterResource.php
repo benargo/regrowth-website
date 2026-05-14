@@ -25,6 +25,7 @@ class CharacterResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'level' => $this->level,
             'is_main' => $this->is_main,
             'is_loot_councillor' => $this->is_loot_councillor,
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),

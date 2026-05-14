@@ -29,6 +29,7 @@ class CharacterResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('level', $array);
         $this->assertArrayHasKey('is_main', $array);
         $this->assertArrayHasKey('is_loot_councillor', $array);
         $this->assertArrayHasKey('planned_absences', $array);
@@ -47,6 +48,7 @@ class CharacterResourceTest extends TestCase
 
         $this->assertSame($character->id, $array['id']);
         $this->assertSame('Arthas', $array['name']);
+        $this->assertSame($character->level, $array['level']);
         $this->assertTrue($array['is_main']);
         $this->assertFalse($array['is_loot_councillor']);
     }

@@ -25,6 +25,7 @@ class CharacterFactory extends Factory
     {
         return [
             'name' => fake()->randomElement($this->characterNames),
+            'level' => fake()->numberBetween(1, 80),
             'rank_id' => null,
             'playable_class_id' => null,
             'is_main' => false,
