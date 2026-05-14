@@ -320,7 +320,7 @@ class BlizzardService
     /**
      * Allowed media tags for retrieval.
      */
-    private const VALID_MEDIA_TAGS = ['item', 'spell', 'playable-class'];
+    public const VALID_MEDIA_TAGS = ['item', 'spell', 'playable-class'];
 
     /**
      * Find media (icon URLs) by tag and media ID.
@@ -376,7 +376,7 @@ class BlizzardService
         $query = [];
 
         if (isset($params['tags']) && is_array($params['tags'])) {
-            $query['_tags'] = implode(',', $params['tags']);
+            $query['tags'] = implode(',', $params['tags']);
         }
 
         if (isset($params['itemId'])) {
@@ -391,12 +391,12 @@ class BlizzardService
             $query['orderby'] = $params['orderby'];
         }
 
-        if (isset($params['page'])) {
-            $query['_page'] = $params['page'];
+        if (isset($params['_page'])) {
+            $query['_page'] = $params['_page'];
         }
 
-        if (isset($params['pageSize'])) {
-            $query['_pageSize'] = min((int) $params['pageSize'], 1000);
+        if (isset($params['_pageSize'])) {
+            $query['_pageSize'] = min((int) $params['_pageSize'], 1000);
         }
 
         return $query;
