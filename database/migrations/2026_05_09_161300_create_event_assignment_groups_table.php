@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('event_assignment_groups', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
-            $table->string('title');
+            $table->string('name');
             $table->longText('notes')->nullable();
             $table->unsignedTinyInteger('sort_order')->default(0);
             $table->timestamps();

@@ -22,7 +22,7 @@ class EventAssignmentGroup extends Model
      */
     protected $fillable = [
         'event_id',
-        'title',
+        'name',
         'notes',
         'sort_order',
     ];

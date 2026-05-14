@@ -20,7 +20,7 @@ class EventAssignmentGroupFactory extends Factory
     {
         return [
             'event_id' => Event::factory(),
-            'title' => fake()->words(3, true),
+            'name' => fake()->words(3, true),
             'notes' => fake()->optional()->paragraph(),
             'sort_order' => fake()->numberBetween(0, 255),
         ];

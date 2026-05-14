@@ -34,7 +34,7 @@ class EventAssignmentsCollection extends ResourceCollection
 
                 return [
                     'id' => $group->id,
-                    'name' => $group->title,
+                    'name' => $group->name,
                     'sort_order' => $group->sort_order,
                     'assignments' => EventAssignmentResource::collection(
                         $groupAssignments->sortBy('sort_order')->values()

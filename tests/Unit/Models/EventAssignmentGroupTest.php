@@ -44,7 +44,7 @@ class EventAssignmentGroupTest extends ModelTestCase
 
         $this->assertFillable($model, [
             'event_id',
-            'title',
+            'name',
             'notes',
             'sort_order',
         ]);
@@ -79,7 +79,7 @@ class EventAssignmentGroupTest extends ModelTestCase
 
         $this->assertModelExists($group);
         $this->assertNotNull($group->event_id);
-        $this->assertNotEmpty($group->title);
+        $this->assertNotEmpty($group->name);
     }
 
     #[Test]

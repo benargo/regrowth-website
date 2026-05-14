@@ -65,7 +65,7 @@ class EventAssignmentsCollectionTest extends TestCase
     public function it_returns_correct_group_shape(): void
     {
         $event = Event::factory()->create();
-        $group = EventAssignmentGroup::factory()->for($event)->create(['title' => 'Healers', 'sort_order' => 3]);
+        $group = EventAssignmentGroup::factory()->for($event)->create(['name' => 'Healers', 'sort_order' => 3]);
         $assignments = EventAssignment::factory()->for($event)->forGroup($group)->create();
         $assignments = EventAssignment::whereKey($assignments->id)->with('group')->get();
 
