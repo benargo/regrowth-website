@@ -24,6 +24,7 @@ use App\Http\Controllers\LootCouncil\RaidController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SpellController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -79,6 +80,8 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
 
     // Upcoming events comps and plans routes
     Route::get('/plans/{event}', [EventController::class, 'show'])->middleware(['auth', 'can:view,event'])->name('plans.show');
+    Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->middleware(['auth', 'can:update,event'])->name('plans.edit');
+    Route::patch('/plans/{event}', [EventController::class, 'update'])->middleware(['auth', 'can:update,event'])->name('plans.update');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -167,6 +170,12 @@ Route::group(['prefix' => 'daily-quests', 'as' => 'daily-quests.'], function () 
 Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
     ->middleware('auth')
     ->name('wcl.guild-tags.toggle-attendance');
+
+/**
+ * Spells
+ */
+Route::get('/spells/media', [SpellController::class, 'media'])->middleware('auth')->name('spells.media');
+Route::post('/spells', [SpellController::class, 'store'])->middleware(['auth', 'can:create,App\Models\Spell'])->name('spells.store');
 
 /**
  * Comps spreadsheet redirect
