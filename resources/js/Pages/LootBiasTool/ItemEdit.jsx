@@ -1,11 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Deferred, Link, useForm } from "@inertiajs/react";
-import Master from "@/Layouts/Master";
-import CommentsSection from "@/Components/Loot/CommentsSection";
-import Icon from "@/Components/FontAwesome/Icon";
-import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
-import Notes from "@/Components/Loot/Notes";
-import SharedHeader from "@/Components/SharedHeader";
 import {
     DndContext,
     DragOverlay,
@@ -18,6 +11,14 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
+import { Deferred, Link, useForm } from "@inertiajs/react";
+import Icon from "@/Components/FontAwesome/Icon";
+import CommentsSection from "@/Components/Loot/CommentsSection";
+import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
+import Notes from "@/Components/Loot/Notes";
+import SharedHeader from "@/Components/SharedHeader";
+import ToolNav from "@/Components/ToolNav";
+import Master from "@/Layouts/Master";
 
 function DraggablePriorityItem({ priority, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: priority.id });
@@ -468,35 +469,31 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
         <Master title={`Editing ${item.data.name}`}>
             <SharedHeader backgroundClass="bg-ssctk" title="Edit Loot Biases" />
             {/* Tool navigation */}
-            <nav className="bg-brown-900 shadow">
-                <div className="container mx-auto px-4">
-                    <div className="flex min-h-12 flex-col items-center justify-between md:flex-row">
-                        <div className="flex-initial space-x-4">
-                            <Link
-                                href={route("loot.items.show", { item: item.data.id, name: item.data.slug })}
-                                className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
-                            >
-                                <Icon icon="arrow-left" style="solid" className="mr-2" />
-                                <span>Finish editing {item.data.name}</span>
-                            </Link>
-                        </div>
-                        <div className="flex space-x-4">
-                            {processing && (
-                                <span className="text-sm font-medium text-amber-400">
-                                    <Icon icon="spinner" style="solid" className="fa-spin mr-2" />
-                                    Saving...
-                                </span>
-                            )}
-                            {!processing && showSaved && (
-                                <span className="text-sm font-medium text-green-400">
-                                    <Icon icon="check" style="solid" className="mr-2" />
-                                    Saved
-                                </span>
-                            )}
-                        </div>
-                    </div>
+            <ToolNav>
+                <div className="flex-initial space-x-4">
+                    <Link
+                        href={route("loot.items.show", { item: item.data.id, name: item.data.slug })}
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                    >
+                        <Icon icon="arrow-left" style="solid" className="mr-2" />
+                        <span>Finish editing {item.data.name}</span>
+                    </Link>
                 </div>
-            </nav>
+                <div className="flex space-x-4">
+                    {processing && (
+                        <span className="text-sm font-medium text-amber-400">
+                            <Icon icon="spinner" style="solid" className="fa-spin mr-2" />
+                            Saving...
+                        </span>
+                    )}
+                    {!processing && showSaved && (
+                        <span className="text-sm font-medium text-green-400">
+                            <Icon icon="check" style="solid" className="mr-2" />
+                            Saved
+                        </span>
+                    )}
+                </div>
+            </ToolNav>
             {/* Content */}
             <main className="container mx-auto px-4 py-8">
                 <ItemDetailsCard item={item.data} />
