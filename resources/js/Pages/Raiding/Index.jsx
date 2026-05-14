@@ -3,7 +3,7 @@ import { Deferred } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
-import EventsTable, { EventsSkeleton } from "@/Components/EventsTable";
+import EventsTable, { EventsSkeleton } from "@/Components/Events/EventsTable";
 import ReportsTable, { ReportsSkeleton } from "@/Components/ReportsTable";
 
 export default function Index({ upcomingEvents, reports }) {
