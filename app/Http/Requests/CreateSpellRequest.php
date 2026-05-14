@@ -22,7 +22,6 @@ class CreateSpellRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', new Enum(AffectType::class)],
-            'icon_url' => ['required', 'url'],
         ];
     }
 }

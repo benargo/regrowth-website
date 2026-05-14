@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Http\Requests;
 
-use App\Enums\AffectType;
 use App\Http\Requests\CreateSpellRequest;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -80,15 +79,5 @@ class CreateSpellRequestTest extends TestCase
 
         $enumRule = collect($rules['type'])->first(fn ($rule) => $rule instanceof Enum);
         $this->assertNotNull($enumRule, 'Type rules should contain an Enum rule.');
-    }
-
-    #[Test]
-    public function rules_icon_url_is_required_url(): void
-    {
-        $rules = $this->makeRequest()->rules();
-
-        $this->assertArrayHasKey('icon_url', $rules);
-        $this->assertContains('required', $rules['icon_url']);
-        $this->assertContains('url', $rules['icon_url']);
     }
 }
