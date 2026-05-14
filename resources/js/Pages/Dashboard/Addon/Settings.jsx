@@ -2,6 +2,7 @@ import { useState } from "react";
 import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import Alert from "@/Components/Alert";
+import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Checkbox from "@/Components/Checkbox";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
@@ -13,7 +14,6 @@ export default function AddonSettings({ settings, characters }) {
     const [tags, setTags] = useState(settings.tags || []);
     const [newCouncillorName, setNewCouncillorName] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
-    const [showSaved, setShowSaved] = useState(false);
 
     const handleAddCouncillor = () => {
         if (!newCouncillorName.trim() || isProcessing) return;
@@ -29,8 +29,6 @@ export default function AddonSettings({ settings, characters }) {
                     setCouncillors(page.props.settings.councillors);
                     setNewCouncillorName("");
                     setIsProcessing(false);
-                    setShowSaved(true);
-                    setTimeout(() => setShowSaved(false), 2000);
                 },
                 onError: () => {
                     setIsProcessing(false);
@@ -103,18 +101,7 @@ export default function AddonSettings({ settings, characters }) {
                             This page allows you to configure various settings for the addon. Changes you make will be
                             saved automatically.
                         </p>
-                        {isProcessing && (
-                            <div className="flex-none text-sm font-medium text-amber-400">
-                                <Icon icon="spinner" style="solid" className="fa-spin mr-2" />
-                                Saving...
-                            </div>
-                        )}
-                        {!isProcessing && showSaved && (
-                            <div className="flex-none text-sm font-medium text-green-400">
-                                <Icon icon="check" style="solid" className="mr-2" />
-                                Saved
-                            </div>
-                        )}
+                        <AutoSaveLabel processing={isProcessing} />
                     </div>
                     <div className="my-6 md:mx-20">
                         <Alert type="info">

@@ -12,7 +12,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 import { Deferred, Link, useForm } from "@inertiajs/react";
-import AutoSaved from "@/Components/AutoSaved";
+import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
@@ -420,32 +420,22 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
 
     const isFirstRender = useRef(true);
     const debounceTimer = useRef(null);
-    const [showSaved, setShowSaved] = useState(false);
-
     // Auto-save when priorities change
     useEffect(() => {
-        // Skip initial render
         if (isFirstRender.current) {
             isFirstRender.current = false;
             return;
         }
 
-        // Clear existing timer
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
         }
 
-        // Don't save if no changes
         if (!isDirty) return;
 
-        // Debounced save
         debounceTimer.current = setTimeout(() => {
             put(route("loot.items.priorities.update", { item: item.data.id }), {
                 preserveScroll: true,
-                onSuccess: () => {
-                    setShowSaved(true);
-                    setTimeout(() => setShowSaved(false), 2000);
-                },
             });
         }, 1000);
 
@@ -481,13 +471,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                     </Link>
                 </div>
                 <div className="flex space-x-4">
-                    {processing && (
-                        <span className="text-sm font-medium text-amber-400">
-                            <Icon icon="spinner" style="solid" className="fa-spin mr-2" />
-                            Saving...
-                        </span>
-                    )}
-                    {!processing && showSaved && <AutoSaved />}
+                    <AutoSaveLabel processing={processing} />
                 </div>
             </ToolNav>
             {/* Content */}
