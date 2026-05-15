@@ -16,14 +16,14 @@ return new class extends Migration
         Schema::create('event_assignment_groups', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
-            $table->string('name');
+            $table->string('name')->default('New group');
             $table->longText('notes')->nullable();
             $table->unsignedTinyInteger('sort_order')->default(0);
             $table->timestamps();
         });
 
         Schema::table('event_assignments', function (Blueprint $table) {
-            $table->foreignIdFor(EventAssignmentGroup::class, 'group_id')->nullable()->after('boss_id')->constrained()->nullOnDelete();
+            $table->foreignIdFor(EventAssignmentGroup::class, 'group_id')->nullable()->after('boss_id')->constrained()->cascadeOnDelete();
         });
     }
 

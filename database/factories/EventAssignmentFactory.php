@@ -35,11 +35,11 @@ class EventAssignmentFactory extends Factory
             'event_id' => Event::factory(),
             'boss_id' => null,
             'group_id' => null,
-            'sort_order' => fake()->numberBetween(0, 99),
-            'left_type' => Character::class,
-            'left_value' => fn (array $attributes) => (string) Character::factory()->create()->id,
+            'sort_order' => null,
+            'left_type' => null,
+            'left_value' => null,
             'right_type' => null,
-            'right_value' => fake()->randomElement(['Main tank', 'AoE', 'Left side', 'kick rotation A']),
+            'right_value' => null,
         ];
     }
 

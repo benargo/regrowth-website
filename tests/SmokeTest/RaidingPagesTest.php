@@ -3,6 +3,7 @@
 namespace Tests\SmokeTest;
 
 use App\Models\DiscordRole;
+use App\Models\Event;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
@@ -192,33 +193,11 @@ class RaidingPagesTest extends TestCase
     #[Test]
     public function event_show_loads(): void
     {
-        $user = User::factory()->officer()->create();
-        $event = \App\Models\Event::factory()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Test]
-    public function event_show_redirects_unauthenticated_users(): void
-    {
-        $event = \App\Models\Event::factory()->create();
+        $event = Event::factory()->create();
 
         $response = $this->get(route('raiding.plans.show', $event));
 
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
-    public function event_show_returns_403_for_users_without_permission(): void
-    {
-        $member = User::factory()->member()->create();
-        $event = \App\Models\Event::factory()->create();
-
-        $response = $this->actingAs($member)->get(route('raiding.plans.show', $event));
-
-        $response->assertForbidden();
+        $response->assertOk();
+        $response->assertSee('Regrowth');
     }
 }

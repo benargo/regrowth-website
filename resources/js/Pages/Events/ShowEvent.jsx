@@ -129,9 +129,23 @@ export default function Show({ event }) {
                                                     </div>
                                                     {boss.images?.length > 0 || boss.notes ? (
                                                         <div className="col-span-2 flex flex-col gap-4">
-                                                            <h2 className="text-lg font-semibold text-white">
-                                                                Strategy
-                                                            </h2>
+                                                            <div className="flex flex-row items-start gap-2">
+                                                                <h2 className="flex-1 text-lg font-semibold text-white">
+                                                                    Strategy
+                                                                </h2>
+                                                                {usePermission("manage-boss-strategies") && (
+                                                                    <Link
+                                                                        href={route("dashboard.boss-strategies.edit", {
+                                                                            boss: boss.id,
+                                                                            slug: boss.slug,
+                                                                        })}
+                                                                        className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
+                                                                    >
+                                                                        <Icon icon="pencil" className="text-sm" />
+                                                                        Edit boss strategy
+                                                                    </Link>
+                                                                )}
+                                                            </div>
                                                             {boss.images?.length > 0 &&
                                                                 boss.images.map((url, i) => (
                                                                     <div

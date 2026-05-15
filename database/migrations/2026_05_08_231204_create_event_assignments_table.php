@@ -13,11 +13,11 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
             $table->foreignId('boss_id')->nullable()->constrained('bosses')->cascadeOnDelete();
-            $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->unsignedSmallInteger('sort_order')->nullable();
             $table->string('left_type')->nullable();
-            $table->text('left_value');
+            $table->text('left_value')->nullable();
             $table->string('right_type')->nullable();
-            $table->text('right_value');
+            $table->text('right_value')->nullable();
             $table->timestamps();
         });
     }

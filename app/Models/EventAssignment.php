@@ -67,8 +67,12 @@ class EventAssignment extends Model
     /**
      * @param  class-string<Model>|null  $type
      */
-    private function resolveSide(?string $type, string $value): Model|string
+    private function resolveSide(?string $type, ?string $value): Model|string|null
     {
+        if ($value === null) {
+            return null;
+        }
+
         if ($type === null || ! class_exists($type)) {
             return $value;
         }

@@ -70,6 +70,16 @@ class EventAssignmentGroupTest extends ModelTestCase
         $this->assertTrue($model->usesTimestamps());
     }
 
+    // ============ Default attributes ============
+
+    #[Test]
+    public function it_defaults_name_to_new_group(): void
+    {
+        $model = new EventAssignmentGroup;
+
+        $this->assertSame('New group', $model->name);
+    }
+
     // ============ Factory / persistence ============
 
     #[Test]
@@ -176,7 +186,7 @@ class EventAssignmentGroupTest extends ModelTestCase
     }
 
     #[Test]
-    public function deleting_group_nullifies_assignment_group_id(): void
+    public function deleting_group_cascades_to_assignments(): void
     {
         $group = $this->create();
         $assignment = EventAssignment::factory()->create([
@@ -186,9 +196,6 @@ class EventAssignmentGroupTest extends ModelTestCase
 
         $group->delete();
 
-        $this->assertDatabaseHas('event_assignments', [
-            'id' => $assignment->id,
-            'group_id' => null,
-        ]);
+        $this->assertDatabaseMissing('event_assignments', ['id' => $assignment->id]);
     }
 }

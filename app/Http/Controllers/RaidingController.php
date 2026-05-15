@@ -5,16 +5,32 @@ namespace App\Http\Controllers;
 use App\Http\Resources\EventSummaryResource;
 use App\Models\Event;
 use App\Models\Raids\Report;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class RaidingController extends Controller
 {
     /**
+     * Redirect to the next event.
+     */
+    public function comps(): RedirectResponse
+    {
+        $nextEvent = Event::where('start_time', '>=', now())->orderBy('start_time')->first();
+
+        if ($nextEvent) {
+            return redirect(route('raiding.plans.show', $nextEvent), 303);
+        }
+
+        return redirect(route('raiding.index'), 303);
+    }
+
+    /**
      * Display the main raiding dashboard, showing upcoming events and recent reports.
      */
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         return Inertia::render('Raiding/Index', [
             'upcomingEvents' => Inertia::defer(function () use ($request) {

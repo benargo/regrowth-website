@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\Permission;
 use App\Models\Raid;
+use App\Models\TargetMarker;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
@@ -43,6 +44,7 @@ class EventControllerTest extends TestCase
             'is_visible' => true,
         ]);
         $this->memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-raid-plans', 'guard_name' => 'web']));
+        $this->memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));
 
         $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getChannel')->andReturn(
@@ -347,25 +349,63 @@ class EventControllerTest extends TestCase
         $this->actingAs($user)->get(route('raiding.plans.show', $event));
     }
 
+    // ─── edit() ───────────────────────────────────────────────────────────────
+
     #[Test]
-    public function it_returns_401_when_unauthenticated(): void
+    public function it_renders_event_edit_page(): void
     {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
         $event = Event::factory()->create();
 
-        $response = $this->get(route('raiding.plans.show', $event));
+        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
 
-        $response->assertRedirect(route('login'));
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Events/EditEvent')
+        );
     }
 
     #[Test]
-    public function it_returns_403_when_user_cannot_view_event(): void
+    public function it_passes_target_markers_to_edit_page(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $event = Event::factory()->create();
+        TargetMarker::create(['slug' => 'star', 'name' => 'Star']);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Events/EditEvent')
+            ->has('event')
+            ->has('targetMarkers', 1)
+            ->where('targetMarkers.0.slug', 'star')
+            ->where('targetMarkers.0.name', 'Star')
+        );
+    }
+
+    #[Test]
+    public function it_returns_403_on_edit_when_user_cannot_update_event(): void
     {
         $user = User::factory()->create();
         $event = Event::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
 
         $response->assertForbidden();
+    }
+
+    #[Test]
+    public function it_returns_401_on_edit_when_unauthenticated(): void
+    {
+        $event = Event::factory()->create();
+
+        $response = $this->get(route('raiding.plans.edit', $event));
+
+        $response->assertRedirect(route('login'));
     }
 
     /**

@@ -88,10 +88,11 @@ class EventAssignmentTest extends ModelTestCase
 
         $this->assertModelExists($assignment);
         $this->assertNotNull($assignment->event_id);
-        $this->assertSame(Character::class, $assignment->left_type);
-        $this->assertNotEmpty($assignment->left_value);
+        $this->assertNull($assignment->sort_order);
+        $this->assertNull($assignment->left_type);
+        $this->assertNull($assignment->left_value);
         $this->assertNull($assignment->right_type);
-        $this->assertNotEmpty($assignment->right_value);
+        $this->assertNull($assignment->right_value);
     }
 
     #[Test]
@@ -266,7 +267,7 @@ class EventAssignmentTest extends ModelTestCase
     #[Test]
     public function is_valid_returns_true_when_both_values_are_present(): void
     {
-        $assignment = $this->create();
+        $assignment = $this->factory()->withLeftCustom('All mages')->withRightCustom('Main tank')->create();
 
         $this->assertTrue($assignment->isValid());
     }
