@@ -1,14 +1,13 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Deferred, Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import Alert from "@/Components/Alert";
-import FlashMessage from "@/Components/FlashMessage";
+import CopyButton from "@/Components/CopyButton";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
 
 export default function AddonExport({ exportedData, grmFreshness }) {
-    const [flashSuccess, setFlashSuccess] = useState(null);
     const dataRef = useRef(null);
 
     function selectAllContent() {
@@ -19,12 +18,6 @@ export default function AddonExport({ exportedData, grmFreshness }) {
             selection.removeAllRanges();
             selection.addRange(range);
         }
-    }
-
-    function exportAddonData() {
-        navigator.clipboard.writeText(exportedData).then(() => {
-            setFlashSuccess("Addon data copied to clipboard!");
-        });
     }
 
     function grmDataIsOutdated() {
@@ -108,13 +101,12 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                                 addon data to your clipboard.
                             </p>
                         </div>
-                        <button
+                        <CopyButton
+                            getValue={() => exportedData}
+                            label="Copy Addon Data"
+                            successMessage="Addon data copied to clipboard!"
                             className="flex flex-none items-center justify-center rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-800"
-                            onClick={exportAddonData}
-                        >
-                            <Icon icon="copy" style="solid" className="mr-2" />
-                            <span>Copy Addon Data</span>
-                        </button>
+                        />
                     </div>
                     <Deferred
                         data="exportedData"
@@ -141,7 +133,6 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                     </Deferred>
                 </div>
             </div>
-            <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
         </Master>
     );
 }

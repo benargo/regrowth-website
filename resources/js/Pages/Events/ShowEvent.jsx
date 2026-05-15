@@ -108,7 +108,7 @@ export default function Show({ event }) {
                                                     <div className="flex flex-col items-center gap-2 text-center">
                                                         {boss.assignments?.count > 0 ? (
                                                             <div className="flex w-full flex-col items-start gap-4">
-                                                                <h2 className="text-lg font-semibold text-white">
+                                                                <h2 className="flex-1 text-lg font-semibold text-amber-500">
                                                                     Assignments
                                                                 </h2>
                                                                 {boss.assignments.groups.length > 0 &&
@@ -130,7 +130,7 @@ export default function Show({ event }) {
                                                     {boss.images?.length > 0 || boss.notes ? (
                                                         <div className="col-span-2 flex flex-col gap-4">
                                                             <div className="flex flex-row items-start gap-2">
-                                                                <h2 className="flex-1 text-lg font-semibold text-white">
+                                                                <h2 className="flex-1 text-lg font-semibold text-amber-500">
                                                                     Strategy
                                                                 </h2>
                                                                 {usePermission("manage-boss-strategies") && (

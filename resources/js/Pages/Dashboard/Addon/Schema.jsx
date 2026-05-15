@@ -1,13 +1,11 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Master from "@/Layouts/Master";
-import FlashMessage from "@/Components/FlashMessage";
+import CopyButton from "@/Components/CopyButton";
 import Pill from "@/Components/Pill";
-import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
 
 export default function AddonExportSchema({ schema }) {
-    const [flashSuccess, setFlashSuccess] = useState(null);
     const dataRef = useRef(null);
     const schemaJson = JSON.stringify(schema, null, 2);
 
@@ -19,12 +17,6 @@ export default function AddonExportSchema({ schema }) {
             selection.removeAllRanges();
             selection.addRange(range);
         }
-    }
-
-    function copySchema() {
-        navigator.clipboard.writeText(schemaJson).then(() => {
-            setFlashSuccess("Schema copied to clipboard!");
-        });
     }
 
     return (
@@ -43,13 +35,12 @@ export default function AddonExportSchema({ schema }) {
                     />
                     <div className="flex flex-row items-baseline space-x-4">
                         <p className="flex-1">This is the JSON schema for the addon export data format.</p>
-                        <button
+                        <CopyButton
+                            getValue={() => schemaJson}
+                            label="Copy Schema"
+                            successMessage="Schema copied to clipboard!"
                             className="flex flex-none items-center justify-center rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-800"
-                            onClick={copySchema}
-                        >
-                            <Icon icon="copy" style="solid" className="mr-2" />
-                            <span>Copy Schema</span>
-                        </button>
+                        />
                     </div>
                     <div className="mt-6">
                         <pre
@@ -109,7 +100,6 @@ export default function AddonExportSchema({ schema }) {
                     </div>
                 </div>
             </div>
-            <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
         </Master>
     );
 }
