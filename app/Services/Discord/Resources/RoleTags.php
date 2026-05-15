@@ -17,17 +17,17 @@ class RoleTags extends Data
         #[Nullable, StringType]
         public readonly ?string $integration_id = null,
 
-        /** @var bool Whether this is the guild's Booster role (field present = true, absent = false) */
-        public readonly bool $premium_subscriber = false,
+        /** @var bool|null Whether this is the guild's Booster role (field present = true, absent = false) */
+        public readonly ?bool $premium_subscriber = null,
 
         /** @var string|null The ID of this role's subscription SKU and listing (snowflake) */
         #[Nullable, StringType]
         public readonly ?string $subscription_listing_id = null,
 
-        /** @var bool Whether this role is available for purchase (field present = true, absent = false) */
-        public readonly bool $available_for_purchase = false,
+        /** @var bool|null Whether this role is available for purchase (field present = true, absent = false) */
+        public readonly ?bool $available_for_purchase = null,
 
-        /** @var bool Whether this role is a guild's linked role (field present = true, absent = false) */
-        public readonly bool $guild_connections = false,
+        /** @var bool|null Whether this role is a guild's linked role (field present = true, absent = false) */
+        public readonly ?bool $guild_connections = null,
     ) {}
 }
