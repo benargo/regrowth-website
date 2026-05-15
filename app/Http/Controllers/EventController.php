@@ -34,7 +34,7 @@ class EventController extends Controller
     {
         $eventData = Cache::tags(['raiding', 'events'])->remember(
             "events:{$event->id}:resource",
-            now()->addMinutes(10),
+            now(),
             function () use ($event, $request) {
                 $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
