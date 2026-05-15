@@ -71,6 +71,16 @@ class Boss extends Model implements HasMedia
     }
 
     /**
+     * Get the assignments associated with this boss.
+     *
+     * @return HasMany<EventAssignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(EventAssignment::class);
+    }
+
+    /**
      * Get the items that drop from this boss.
      *
      * @return HasMany<Item>

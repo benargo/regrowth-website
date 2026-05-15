@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Casts\AsNotificationType;
+use App\Casts\AsClassName;
 use App\Casts\AsRelationshipIndex;
 use App\Services\Discord\Payloads\MessagePayload;
 use Database\Factories\DiscordNotificationFactory;
@@ -24,7 +24,7 @@ class DiscordNotification extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'type' => AsNotificationType::class,
+        'type' => AsClassName::class,
         'payload' => MessagePayload::class,
         'related_models' => AsRelationshipIndex::class,
     ];

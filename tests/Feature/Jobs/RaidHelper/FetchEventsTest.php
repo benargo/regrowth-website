@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -328,6 +329,24 @@ class FetchEventsTest extends TestCase
     }
 
     #[Test]
+    public function it_detaches_characters_when_no_comp_exists_for_the_event(): void
+    {
+        $channelId = '100000000000000001';
+        $character = Character::factory()->create(['name' => 'Arthas']);
+        $event = Event::factory()->create(['raid_helper_event_id' => '999000000000000001']);
+        $event->characters()->attach($character->id, ['slot_number' => 1, 'group_number' => 1, 'is_confirmed' => false]);
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event->refresh();
+        $this->assertCount(0, $event->characters);
+    }
+
+    #[Test]
     public function it_syncs_multiple_characters_from_comp_slots(): void
     {
         $channelId = '100000000000000001';
@@ -473,6 +492,25 @@ class FetchEventsTest extends TestCase
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertNotNull($event);
         $this->assertCount(0, $event->raids);
+    }
+
+    // -------------------------------------------------------------------------
+    // Cache flush
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_flushes_the_events_cache_after_syncing(): void
+    {
+        $channelId = '100000000000000001';
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        Cache::spy();
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        Cache::shouldHaveReceived('tags')->with(['events'])->once();
     }
 
     // -------------------------------------------------------------------------

@@ -78,7 +78,8 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.matrix');
 
     // Upcoming events comps and plans routes
-    Route::get('/plans/{event}', [EventController::class, 'show'])->middleware(['auth', 'can:view,event'])->name('plans.show');
+    Route::get('/plans/{event}', [EventController::class, 'show'])->name('plans.show');
+    Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->middleware(['auth', 'can:update,event'])->name('plans.edit');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -87,6 +88,11 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
     Route::patch('/reports/{report}', [ReportController::class, 'update'])->middleware(['auth', 'can:update,report'])->name('reports.update');
 });
+
+/**
+ * Comps spreadsheet redirect
+ */
+Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.next');
 
 /*
  * Officers' Dashboard
@@ -167,13 +173,6 @@ Route::group(['prefix' => 'daily-quests', 'as' => 'daily-quests.'], function () 
 Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
     ->middleware('auth')
     ->name('wcl.guild-tags.toggle-attendance');
-
-/**
- * Comps spreadsheet redirect
- */
-Route::get('/comps', function () {
-    return redirect('https://docs.google.com/spreadsheets/d/1SYaMOFDtXxdRm7gQz6nG7c_B-N7rsf7P7QIRipkJkwg/view?pli=1&gid=934701754#gid=934701754', 303);
-});
 
 /**
  * Static infoformation pages

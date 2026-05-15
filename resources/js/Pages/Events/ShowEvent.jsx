@@ -1,175 +1,17 @@
-import { Deferred } from "@inertiajs/react";
-import Master from "@/Layouts/Master";
-import SharedHeader from "@/Components/SharedHeader";
+import { Link } from "@inertiajs/react";
+import Collapsible from "@/Components/Collapsible";
 import Icon from "@/Components/FontAwesome/Icon";
-import GuildRankLabel from "@/Components/GuildRankLabel";
+import AssignmentGroup from "@/Components/Events/Assignments";
+import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
+import MetaCard, { MetaItem } from "@/Components/MetaCard";
+import FormattedMarkdown from "@/Components/FormattedMarkdown";
+import SharedHeader from "@/Components/SharedHeader";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
-import RoleBadge from "@/Helpers/RoleBadge";
-import Tooltip from "@/Components/Tooltip";
+import usePermission from "@/Hooks/Permissions.jsx";
+import Master from "@/Layouts/Master";
 
-function GroupsSkeleton() {
-    return (
-        <div className="animate-pulse space-y-0 overflow-hidden rounded border border-amber-600/30">
-            {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                    key={i}
-                    className="flex flex-col items-center gap-6 border-b border-brown-700 px-4 py-3 last:border-b-0 lg:flex-row"
-                >
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-32 rounded bg-brown-700" />
-                    <div className="h-4 w-16 rounded bg-brown-700" />
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function BenchedSkeleton() {
-    return (
-        <div className="animate-pulse space-y-0 overflow-hidden rounded border border-amber-600/30">
-            {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 border-b border-brown-700 px-4 py-3 last:border-b-0">
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-4 rounded bg-brown-700" />
-                    <div className="h-4 w-32 rounded bg-brown-700" />
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function MetaItem({ icon, children }) {
-    return (
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-            <Icon icon={icon} style="solid" className="w-4 text-amber-500" />
-            {children}
-        </div>
-    );
-}
-
-function LootCouncillorBadge() {
-    return (
-        <Tooltip text="Loot Councillor">
-            <span className="rounded bg-discord-lootcouncillor px-1 py-0.5 text-xs text-white">LC</span>
-        </Tooltip>
-    );
-}
-
-function GroupTable({ group }) {
-    return (
-        <div className="mb-8 flex-initial">
-            <h2 className="mb-4 text-xl font-semibold text-white">
-                {group.is_team ? "Team" : "Group"} {group.group_number}
-                <span className="ml-2 text-base font-normal text-gray-400">({group.characters.length})</span>
-            </h2>
-            <div className="rounded border border-amber-600/30">
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                        <thead className="border-b border-amber-600">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Character</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Rank</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Class</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-brown-700">
-                            {group.characters.map((character) => (
-                                <tr
-                                    key={character.id}
-                                    className={`transition-colors hover:bg-brown-800/50${!character.is_confirmed ? " opacity-40" : ""}`}
-                                >
-                                    <td className="px-4 py-3">
-                                        <span className="inline-flex items-center gap-1">
-                                            <span className="text-sm font-medium text-white">{character.name}</span>
-                                            {character.is_loot_councillor && <LootCouncillorBadge />}
-                                            {character.is_loot_master && <RoleBadge role="loot_master" />}
-                                            {character.is_leader && <RoleBadge role="leader" />}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-300">
-                                        {character.rank ? <GuildRankLabel rank={character.rank} /> : "—"}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2 text-sm text-gray-300">
-                                            {character.playable_class?.icon_url && (
-                                                <img
-                                                    src={character.playable_class.icon_url}
-                                                    alt={character.playable_class.name}
-                                                    className="h-4 w-4"
-                                                />
-                                            )}
-                                            {character.playable_class?.name ?? "—"}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function BenchedTable({ characters }) {
-    return (
-        <div className="rounded border border-amber-600/30">
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                    <thead className="border-b border-amber-600">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Character</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Rank</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Class</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Race</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-brown-700">
-                        {characters.map((character) => (
-                            <tr key={character.id} className={!character.is_confirmed ? "opacity-40" : ""}>
-                                <td className="px-4 py-3">
-                                    <span className="text-sm font-medium text-white">{character.name}</span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-300">
-                                    {character.rank ? <GuildRankLabel rank={character.rank} /> : "—"}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex items-center gap-2 text-sm text-gray-300">
-                                        {character.playable_class?.icon_url && (
-                                            <img
-                                                src={character.playable_class.icon_url}
-                                                alt={character.playable_class.name}
-                                                className="h-4 w-4"
-                                            />
-                                        )}
-                                        {character.playable_class?.name ?? "—"}
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-300">
-                                    <div className="flex items-center gap-2">
-                                        {character.playable_race?.icon_url && (
-                                            <img
-                                                src={character.playable_race.icon_url}
-                                                alt={character.playable_race.name}
-                                                className="h-4 w-4"
-                                            />
-                                        )}
-                                        {character.playable_race?.name ?? "—"}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-}
-
-export default function Show({ event, raids, groups, benched }) {
-    event = event.data ?? {}; // Handle Inertia resource wrapping
+export default function Show({ event }) {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
     const dayOfWeek = startDate.toLocaleString("en-GB", { weekday: "long" });
@@ -177,89 +19,166 @@ export default function Show({ event, raids, groups, benched }) {
     const duration = formatDuration({ seconds: event.duration });
     const formatTime = (date) => date.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
+    const groups = event.composition?.groups ?? [];
+    const bench = event.composition?.bench ?? [];
+
     return (
         <Master title={event.title}>
-            <SharedHeader title={event.title} backgroundClass={raids.background ?? "bg-illidan"} />
+            <SharedHeader title={event.title} backgroundClass={event.background} />
 
             <div className="py-12 text-white">
                 <div className="container mx-auto px-4">
                     {/* Event metadata card */}
-                    <div className="mb-8 rounded border border-amber-600/30 bg-brown-800/50 p-4">
-                        <div className="flex flex-wrap gap-x-8 gap-y-3">
-                            <MetaItem icon="calendar">
-                                <span>
-                                    {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
-                                    <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
-                                    <span className="hidden lg:inline">{formattedDate.long}</span>
-                                </span>
-                            </MetaItem>
-                            <MetaItem icon="clock">
-                                {formatTime(startDate)}–{formatTime(endDate)} ({duration})
-                            </MetaItem>
-                            {(raids.data ?? []).length > 0 && (
-                                <MetaItem icon="shield-alt">{raids.data.map((raid) => raid.name).join(", ")}</MetaItem>
-                            )}
+                    <MetaCard>
+                        <MetaItem icon="calendar">
+                            <span>
+                                {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
+                                <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
+                                <span className="hidden lg:inline">{formattedDate.long}</span>
+                            </span>
+                        </MetaItem>
+                        <MetaItem icon="clock">
+                            {formatTime(startDate)}–{formatTime(endDate)} ({duration})
+                        </MetaItem>
+                        {event.raids.length > 0 && (
+                            <MetaItem icon="shield-alt">{event.raids.map((raid) => raid.name).join(", ")}</MetaItem>
+                        )}
+                        <div className="grow" />
+                        {usePermission("manage-raid-plans") && (
+                            <Link
+                                href={route("raiding.plans.edit", event.id)}
+                                className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
+                            >
+                                <Icon icon="pencil" />
+                                Edit
+                            </Link>
+                        )}
+                    </MetaCard>
+
+                    {groups.length > 0 ? (
+                        <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {groups.map((group) => (
+                                <GroupTable key={group.group_number} group={group} />
+                            ))}
+                            {bench.length > 0 && <BenchedTable characters={bench} />}
                         </div>
-                    </div>
-
-                    {/* Groups */}
-                    <Deferred
-                        data="groups"
-                        fallback={
-                            <>
-                                <h2 className="mb-4 text-xl font-semibold text-white">Groups</h2>
-                                <GroupsSkeleton />
-                            </>
-                        }
-                    >
-                        {groups?.data?.length > 0 ? (
-                            <div className="flex flex-col gap-6 lg:flex-row">
-                                {groups.data.map((group) => (
-                                    <GroupTable key={group.group_number} group={group} />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="flex-1 text-center text-sm text-gray-400">
-                                Groups for this raid have not been posted yet.
-                            </p>
-                        )}
-                    </Deferred>
-
-                    {/* Benched */}
-                    <Deferred
-                        data="benched"
-                        fallback={
-                            <>
-                                <h2 className="mb-4 text-xl font-semibold text-white">Benched</h2>
-                                <BenchedSkeleton />
-                            </>
-                        }
-                    >
-                        {(benched ?? []).length > 0 && (
-                            <div>
-                                <h2 className="mb-4 text-xl font-semibold text-white">
-                                    Benched
-                                    <span className="ml-2 text-base font-normal text-gray-400">({benched.length})</span>
-                                </h2>
-                                <BenchedTable characters={benched} />
-                            </div>
-                        )}
-                    </Deferred>
+                    ) : (
+                        <p className="flex-1 text-center text-sm text-gray-400">
+                            Groups for this raid have not been posted yet.
+                        </p>
+                    )}
 
                     {/** General assignments */}
-                    {/**
-                     * TODO:
-                     */}
+                    {event.assignments.count > 0 && (
+                        <div className="mb-8">
+                            <h2 className="text-md mb-2 font-semibold uppercase tracking-wider text-amber-500/80">
+                                General Assignments
+                            </h2>
+                            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+                                {event.assignments.groups.length > 0 &&
+                                    event.assignments.groups.map((group) => (
+                                        <AssignmentGroup key={group.id} group={group} />
+                                    ))}
+                                {event.assignments.ungrouped.length > 0 && (
+                                    <AssignmentGroup assignments={event.assignments.ungrouped} />
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Raids and bosses */}
-                    {/**
-                     * TODO: Loop over `raids.data` to display each raid and its bosses. If there is only one raid, then we don't need to show it's name.
-                     * Once inside each raid, you can get the the raid's bosses by accessing the `bosses` prop, using the `id` of the raid as the key,
-                     * e.g. `bosses.data.${raid_id}`. Loop through each of the bosses and create dropdowns, similar to the ones in
-                     * @app/Pages/LootBiasTool/Raid.jsx. Each boss dropdown should show the boss name, but leave a visible 'TODO' inside the dropdown
-                     * content for now.
-                     * (This is because we are going to be adding in images and notes at a later date).
-                     */}
+                    {event.raids.length > 0 && (
+                        <div className="mt-8 space-y-8">
+                            {event.raids.map((raid) => (
+                                <div key={raid.slug}>
+                                    {event.raids.length > 1 && (
+                                        <h2 className="mb-4 text-xl font-semibold text-white">{raid.name}</h2>
+                                    )}
+                                    <div className="flex flex-col gap-2">
+                                        {(raid.bosses ?? []).map((boss) => (
+                                            <Collapsible
+                                                key={boss.id}
+                                                title={boss.name}
+                                                sessionKey={`event_boss_expanded_${raid.slug}_${boss.id}`}
+                                                className="border-amber-600"
+                                                headerClassName="hover:bg-amber-600/10"
+                                                bodyClassName="border-amber-600"
+                                            >
+                                                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+                                                    <div className="flex flex-col items-center gap-2 text-center">
+                                                        {boss.assignments?.count > 0 ? (
+                                                            <div className="flex w-full flex-col items-start gap-4">
+                                                                <h2 className="text-lg font-semibold text-white">
+                                                                    Assignments
+                                                                </h2>
+                                                                {boss.assignments.groups.length > 0 &&
+                                                                    boss.assignments.groups.map((group) => (
+                                                                        <AssignmentGroup key={group.id} group={group} />
+                                                                    ))}
+                                                                {boss.assignments.ungrouped.length > 0 && (
+                                                                    <AssignmentGroup
+                                                                        assignments={boss.assignments.ungrouped}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-center text-sm text-gray-500">
+                                                                No assignments for this boss yet.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    {boss.images?.length > 0 || boss.notes ? (
+                                                        <div className="col-span-2 flex flex-col gap-4">
+                                                            <div className="flex flex-row items-start gap-2">
+                                                                <h2 className="flex-1 text-lg font-semibold text-white">
+                                                                    Strategy
+                                                                </h2>
+                                                                {usePermission("manage-boss-strategies") && (
+                                                                    <Link
+                                                                        href={route("dashboard.boss-strategies.edit", {
+                                                                            boss: boss.id,
+                                                                            slug: boss.slug,
+                                                                        })}
+                                                                        className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
+                                                                    >
+                                                                        <Icon icon="pencil" className="text-sm" />
+                                                                        Edit boss strategy
+                                                                    </Link>
+                                                                )}
+                                                            </div>
+                                                            {boss.images?.length > 0 &&
+                                                                boss.images.map((url, i) => (
+                                                                    <div
+                                                                        key={`${boss.id}_image_${i}`}
+                                                                        className="flex items-center justify-center gap-4 text-center"
+                                                                    >
+                                                                        <img
+                                                                            key={i}
+                                                                            src={url}
+                                                                            alt={`${boss.name} strategy ${i + 1}`}
+                                                                            className="rounded-lg border border-amber-600/30"
+                                                                        />
+                                                                    </div>
+                                                                ))}
+                                                            {boss.notes && (
+                                                                <FormattedMarkdown>{boss.notes}</FormattedMarkdown>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="col-span-2 flex items-center justify-center gap-4 text-center">
+                                                            <p className="text-center text-sm text-gray-500">
+                                                                No strategy notes or images for this boss yet.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </Collapsible>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </Master>

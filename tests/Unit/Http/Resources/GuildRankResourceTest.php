@@ -39,6 +39,7 @@ class GuildRankResourceTest extends TestCase
         $this->assertSame($rank->id, $array['id']);
         $this->assertSame(3, $array['position']);
         $this->assertSame('Officer', $array['name']);
+        $this->assertSame('officer', $array['slug']);
         $this->assertTrue($array['count_attendance']);
     }
 

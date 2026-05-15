@@ -13,7 +13,7 @@ class GuildRankSeeder extends Seeder
     public function run(): void
     {
         $ranks = [
-            ['position' => 0, 'name' => 'Guild Master'],
+            ['position' => 0, 'name' => 'Officer'],
             ['position' => 1, 'name' => 'Officer'],
             ['position' => 2, 'name' => 'Raider'],
             ['position' => 3, 'name' => 'Trial Raider'],

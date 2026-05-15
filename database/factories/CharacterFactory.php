@@ -4,15 +4,18 @@ namespace Database\Factories;
 
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Services\Blizzard\ValueObjects\PlayableClassData;
+use App\Models\PlayableClass;
 use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Character>
- */
 class CharacterFactory extends Factory
 {
+    private $characterNames = [
+        'Arthas', 'Jaina', 'Thrall', 'Sylvanas', 'Garrosh', 'Tyrande', 'Malfurion', 'Illidan', 'Kael\'thas',
+        'Gul\'dan', 'Anduin', 'Varian', 'Vol\'jin', 'Cenarius', 'Kel\'Thuzad', 'Velen', 'Lor\'themar',
+        'Anub\'arak', 'Genn Greymane', 'Rexxar', 'Valeera Sanguinar', 'Medivh', 'Tichondrius', 'Alleria', 'Vereesa',
+    ];
+
     /**
      * Define the model's default state.
      *
@@ -21,10 +24,11 @@ class CharacterFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->randomElement($this->characterNames),
+            'level' => fake()->numberBetween(1, 80),
             'rank_id' => null,
+            'playable_class_id' => null,
             'is_main' => false,
-            'playable_class' => null,
             'playable_race' => null,
         ];
     }
@@ -71,23 +75,11 @@ class CharacterFactory extends Factory
 
     /**
      * Indicate that the character has a playable class.
-     *
-     * Builds a PlayableClass value object from a minimal fake API response so
-     * the AsPlayableClass cast's set() path runs. Tests using this state must
-     * mock BlizzardService::getPlayableClassMedia and MediaService::get.
      */
-    public function withPlayableClass(int $classId = 1, string $name = 'Warrior'): static
+    public function withPlayableClass(?PlayableClass $playableClass = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'playable_class' => PlayableClassData::from([
-                'id' => $classId,
-                'name' => $name,
-                'gender_name' => ['male' => $name, 'female' => $name],
-                'power_type' => [],
-                'media' => [],
-                'pvp_talent_slots' => [],
-                'playable_races' => [],
-            ]),
+            'playable_class_id' => $playableClass ?? PlayableClass::factory(),
         ]);
     }
 

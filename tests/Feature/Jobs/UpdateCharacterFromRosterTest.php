@@ -48,6 +48,7 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
             'name' => 'TestCharacter',
+            'level' => 80,
             'rank_id' => $guildRank->id,
         ]);
     }
@@ -75,7 +76,31 @@ class UpdateCharacterFromRosterTest extends TestCase
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
             'name' => 'NewName',
+            'level' => 80,
             'rank_id' => $guildRank->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_updates_character_level_when_changed(): void
+    {
+        $guildRank = GuildRank::factory()->create(['position' => 1]);
+        Character::factory()->create(['id' => 12345, 'level' => 70]);
+
+        $job = new UpdateCharacterFromRoster([
+            'character' => [
+                'id' => 12345,
+                'name' => 'TestCharacter',
+                'level' => 80,
+            ],
+            'rank' => 1,
+        ]);
+
+        $job->handle();
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'level' => 80,
         ]);
     }
 
@@ -317,13 +342,14 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $job->handle();
 
+        $this->assertDatabaseHas('playable_classes', [
+            'id' => 2,
+            'name' => 'Paladin',
+        ]);
+
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_class' => json_encode([
-                'id' => 2,
-                'name' => 'Paladin',
-                'icon_url' => 'https://cdn.local/paladin.jpg',
-            ]),
+            'playable_class_id' => 2,
         ]);
     }
 
@@ -391,7 +417,7 @@ class UpdateCharacterFromRosterTest extends TestCase
 
         $this->assertDatabaseHas('characters', [
             'id' => 12345,
-            'playable_class' => null,
+            'playable_class_id' => null,
         ]);
     }
 

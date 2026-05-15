@@ -2,13 +2,21 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\RaidBackground;
 use App\Http\Resources\EventResource;
+use App\Models\Boss;
+use App\Models\Character;
 use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
+use App\Services\RaidHelper\RaidHelper;
+use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -27,13 +35,53 @@ class EventResourceTest extends TestCase
         return $channel;
     }
 
+    private function mockRaidHelper(array $signUps = []): void
+    {
+        $this->mock(RaidHelper::class, function (MockInterface $mock) use ($signUps) {
+            $mock->shouldReceive('getEvent')->andReturn(
+                RaidHelperEvent::from([
+                    'id' => '999000000000000001',
+                    'serverId' => '111222333444555666',
+                    'leaderId' => '200000000000000001',
+                    'leaderName' => 'Raid Leader',
+                    'channelId' => '100000000000000001',
+                    'channelName' => 'raid-signups',
+                    'channelType' => 'GUILD_TEXT',
+                    'templateId' => 'wowclassic',
+                    'templateEmoteId' => '0',
+                    'title' => 'Weekly Raid',
+                    'description' => '',
+                    'startTime' => 1700000000,
+                    'endTime' => 1700007200,
+                    'closingTime' => 1699999800,
+                    'date' => '2023-11-14',
+                    'time' => '20:00',
+                    'advancedSettings' => [],
+                    'classes' => [],
+                    'roles' => [],
+                    'signUps' => $signUps,
+                    'lastUpdated' => 1699999000,
+                    'color' => '0,0,0',
+                ])
+            )->byDefault();
+        });
+    }
+
+    private function makeResource(Event $event): array
+    {
+        $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
+
+        return (new EventResource($event))->toArray(new Request);
+    }
+
     #[Test]
-    public function it_returns_all_expected_keys_for_each_event(): void
+    public function it_returns_all_expected_top_level_keys(): void
     {
         $this->mockChannel();
+        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('title', $array);
@@ -41,15 +89,47 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('end_time', $array);
         $this->assertArrayHasKey('duration', $array);
         $this->assertArrayHasKey('channel', $array);
+        $this->assertArrayHasKey('background', $array);
+        $this->assertArrayHasKey('assignments', $array);
+        $this->assertArrayHasKey('composition', $array);
+        $this->assertArrayHasKey('raids', $array);
+    }
+
+    #[Test]
+    public function it_returns_null_background_when_no_raids_attached(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+        $event = Event::factory()->create();
+
+        $array = $this->makeResource($event);
+
+        $this->assertNull($array['background']);
+    }
+
+    #[Test]
+    public function it_returns_background_string_based_on_first_raid(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+
+        $raid = Raid::factory()->create(['id' => 1]);
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame(RaidBackground::KARAZHAN->value, $array['background']);
     }
 
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
         $this->mockChannel();
+        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
         $this->assertSame($event->id, $array['id']);
         $this->assertSame($event->title, $array['title']);
@@ -61,21 +141,22 @@ class EventResourceTest extends TestCase
     public function it_returns_duration_as_seconds_between_start_and_end(): void
     {
         $this->mockChannel();
+        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
-        $expected = $event->start_time->diffInSeconds($event->end_time);
-        $this->assertSame($expected, $array['duration']);
+        $this->assertSame($event->start_time->diffInSeconds($event->end_time), $array['duration']);
     }
 
     #[Test]
     public function it_returns_channel_as_an_array(): void
     {
         $this->mockChannel(id: '999888777', name: 'raid-chat', position: 3);
+        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
         $this->assertIsArray($array['channel']);
         $this->assertSame('999888777', $array['channel']['id']);
@@ -84,64 +165,249 @@ class EventResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_excludes_raids_when_relation_is_not_loaded(): void
+    public function it_omits_channel_when_discord_api_fails(): void
     {
-        $this->mockChannel();
+        $discord = $this->createStub(Discord::class);
+        $discord->method('getChannel')->willThrowException(new \Exception('Discord unavailable'));
+        $this->app->instance(Discord::class, $discord);
+        $this->mockRaidHelper();
+
         $event = Event::factory()->create();
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
-        $this->assertArrayNotHasKey('raids', $array);
+        $this->assertArrayNotHasKey('channel', $array);
+    }
+
+    // ============ Assignments ============
+
+    #[Test]
+    public function it_returns_event_level_assignments_excluding_boss_scoped_ones(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->for($raid)->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        EventAssignment::factory()->for($event)->create(['boss_id' => null]);
+        EventAssignment::factory()->for($event)->create(['boss_id' => $boss->id]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertArrayHasKey('groups', $array['assignments']);
+        $this->assertArrayHasKey('ungrouped', $array['assignments']);
+        $this->assertCount(1, $array['assignments']['ungrouped']);
     }
 
     #[Test]
-    public function it_includes_raid_data_when_relation_is_loaded(): void
+    public function it_returns_boss_level_assignments_inside_the_boss(): void
     {
         $this->mockChannel();
+        $this->mockRaidHelper();
+
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->for($raid)->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        EventAssignment::factory()->for($event)->create(['boss_id' => $boss->id]);
+
+        $array = $this->makeResource($event);
+
+        $bossAssignments = $array['raids'][0]['bosses'][0]['assignments'];
+        $this->assertArrayHasKey('groups', $bossAssignments);
+        $this->assertArrayHasKey('ungrouped', $bossAssignments);
+        $this->assertCount(1, $bossAssignments['ungrouped']);
+    }
+
+    // ============ Raids and bosses ============
+
+    #[Test]
+    public function it_returns_raids_with_expected_shape(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
         $event = Event::factory()->create();
-        $event->raids()->attach($raid);
-        $event->load('raids');
+        $event->raids()->attach($raid->id);
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
-        $this->assertArrayHasKey('raids', $array);
-        $this->assertSame($raid->id, $array['raids'][0]['id']);
+        $this->assertCount(1, $array['raids']);
         $this->assertSame('Karazhan', $array['raids'][0]['name']);
         $this->assertSame($raid->slug, $array['raids'][0]['slug']);
-        $this->assertSame($raid->difficulty, $array['raids'][0]['difficulty']);
         $this->assertSame($raid->max_players, $array['raids'][0]['max_players']);
+        $this->assertArrayHasKey('bosses', $array['raids'][0]);
     }
 
     #[Test]
-    public function it_excludes_characters_when_relation_is_not_loaded(): void
+    public function it_returns_bosses_with_expected_shape(): void
     {
         $this->mockChannel();
+        $this->mockRaidHelper();
+
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->for($raid)->create(['name' => 'Attumen', 'notes' => 'Kill adds first']);
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $array = $this->makeResource($event);
+
+        $bossData = $array['raids'][0]['bosses'][0];
+        $this->assertSame($boss->id, $bossData['id']);
+        $this->assertSame('Attumen', $bossData['name']);
+        $this->assertSame($boss->slug, $bossData['slug']);
+        $this->assertSame($boss->encounter_order, $bossData['encounter_order']);
+        $this->assertSame('Kill adds first', $bossData['notes']);
+        $this->assertIsArray($bossData['images']);
+        $this->assertArrayHasKey('groups', $bossData['assignments']);
+        $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
+    }
+
+    // ============ Composition — groups ============
+
+    #[Test]
+    public function it_returns_composition_with_groups_and_bench_keys(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
-        $this->assertArrayNotHasKey('characters', $array);
+        $this->assertArrayHasKey('groups', $array['composition']);
+        $this->assertArrayHasKey('bench', $array['composition']);
     }
 
     #[Test]
-    public function it_includes_character_data_when_relation_is_loaded(): void
+    public function it_returns_groups_with_correct_character_shape(): void
     {
         $this->mockChannel();
-        $event = Event::factory()->create();
-        $event->characters()->createMany([
-            ['name' => 'Warrior'],
-            ['name' => 'Mage'],
+        $this->mockRaidHelper();
+
+        $raid = Raid::factory()->create(['max_players' => 10]);
+        $event = Event::factory()->hasAttached($raid, [], 'raids')->create();
+        $character = Character::factory()->withRank()->create();
+        $event->characters()->attach($character->id, [
+            'slot_number' => 1,
+            'group_number' => 1,
+            'is_confirmed' => true,
+            'is_leader' => false,
+            'is_loot_councillor' => false,
+            'is_loot_master' => false,
         ]);
-        $event->load('characters');
 
-        $array = (new EventResource($event))->toArray(new Request);
+        $array = $this->makeResource($event);
 
-        $this->assertArrayHasKey('characters', $array);
-        $this->assertCount(2, $array['characters']);
-        $this->assertSame('Warrior', $array['characters'][0]['name']);
-        $this->assertSame('Mage', $array['characters'][1]['name']);
-        $this->assertArrayHasKey('id', $array['characters'][0]);
-        $this->assertArrayHasKey('id', $array['characters'][1]);
+        $this->assertCount(1, $array['composition']['groups']);
+        $group = $array['composition']['groups'][0];
+        $this->assertSame(1, $group['group_number']);
+        $this->assertArrayHasKey('is_team', $group);
+
+        $char = $group['characters'][0];
+        $this->assertSame($character->id, $char['id']);
+        $this->assertSame($character->name, $char['name']);
+        $this->assertArrayHasKey('playable_class', $char);
+        $this->assertArrayHasKey('rank', $char);
+        $this->assertArrayHasKey('name', $char['rank']);
+        $this->assertArrayHasKey('position', $char['rank']);
+        $this->assertArrayNotHasKey('id', $char['rank']);
+        $this->assertArrayNotHasKey('count_attendance', $char['rank']);
+        $this->assertSame(1, $char['slot_number']);
+        $this->assertTrue($char['is_confirmed']);
+        $this->assertArrayHasKey('is_leader', $char);
+        $this->assertArrayHasKey('is_loot_councillor', $char);
+        $this->assertArrayHasKey('is_loot_master', $char);
+    }
+
+    #[Test]
+    public function it_returns_empty_groups_when_no_characters(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+        $event = Event::factory()->create();
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([], $array['composition']['groups']);
+    }
+
+    // ============ Composition — bench ============
+
+    #[Test]
+    public function it_returns_empty_bench_when_no_characters_in_comp(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+        $event = Event::factory()->create();
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([], $array['composition']['bench']);
+    }
+
+    #[Test]
+    public function it_returns_benched_characters_not_in_comp(): void
+    {
+        Cache::tags(['events'])->flush();
+        $this->mockChannel();
+
+        $inComp = Character::factory()->withRank()->create(['name' => 'Jaina']);
+        $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
+
+        $this->mockRaidHelper(signUps: [
+            ['id' => 1, 'name' => 'Jaina', 'userId' => '111', 'entryTime' => 1700000000],
+            ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001],
+        ]);
+
+        $event = Event::factory()->create();
+        $event->characters()->attach($inComp->id, [
+            'slot_number' => 1,
+            'group_number' => 1,
+            'is_confirmed' => true,
+        ]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertCount(1, $array['composition']['bench']);
+        $this->assertSame($benchedChar->name, $array['composition']['bench'][0]['name']);
+    }
+
+    #[Test]
+    public function it_returns_bench_characters_with_expected_shape(): void
+    {
+        Cache::tags(['events'])->flush();
+        $this->mockChannel();
+
+        $inComp = Character::factory()->withRank()->create(['name' => 'Jaina']);
+        $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
+
+        $this->mockRaidHelper(signUps: [
+            ['id' => 1, 'name' => 'Jaina', 'userId' => '111', 'entryTime' => 1700000000],
+            ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001],
+        ]);
+
+        $event = Event::factory()->create();
+        $event->characters()->attach($inComp->id, [
+            'slot_number' => 1,
+            'group_number' => 1,
+            'is_confirmed' => true,
+        ]);
+
+        $array = $this->makeResource($event);
+
+        $bench = $array['composition']['bench'][0];
+        $this->assertArrayHasKey('id', $bench);
+        $this->assertArrayHasKey('name', $bench);
+        $this->assertArrayHasKey('playable_class', $bench);
+        $this->assertArrayHasKey('rank', $bench);
+        $this->assertArrayHasKey('name', $bench['rank']);
+        $this->assertArrayHasKey('position', $bench['rank']);
+        $this->assertArrayNotHasKey('slot_number', $bench);
+        $this->assertArrayNotHasKey('is_confirmed', $bench);
     }
 }

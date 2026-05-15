@@ -14,6 +14,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class FetchEvents implements ShouldQueue
@@ -56,7 +57,12 @@ class FetchEvents implements ShouldQueue
     public function handle(Discord $discord, RaidHelper $raidHelper): void
     {
         // Step 1. Validate the channel IDs to ensure they belong to the correct server.
-        $validChannels = $discord->getGuildChannels($raidHelper->getServerId())->whereIn('id', $this->channelIds)->pluck('id');
+        try {
+            $validChannels = $discord->getGuildChannels($raidHelper->getServerId())->whereIn('id', $this->channelIds)->pluck('id');
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch channels from Discord API for server ID {$raidHelper->getServerId()}. Error: {$e->getMessage()}");
+            $validChannels = collect(); // Proceed with an empty collection of valid channels to avoid breaking the entire job
+        }
 
         $events = collect();
 
@@ -125,9 +131,9 @@ class FetchEvents implements ShouldQueue
             Log::debug("Syncing comp data for event ID {$event->id} in the database.");
             $comp = $raidHelper->getComp($event->id);
 
+            $characterSync = [];
             if ($comp) {
                 Log::debug("Syncing characters for event ID {$event->id} based on comp data from Raid Helper API.");
-                $characterSync = [];
                 foreach ($comp->slots as $slot) {
                     $character = Character::where('name', $slot->name)->first();
                     if ($character) {
@@ -138,10 +144,13 @@ class FetchEvents implements ShouldQueue
                         ];
                     }
                 }
-                $eventModel->characters()->syncWithoutDetaching($characterSync);
             } else {
-                Log::warning("No comp data found for event ID {$event->id} from Raid Helper API. Skipping character sync for this event.");
+                Log::warning("No comp data found for event ID {$event->id} from Raid Helper API. Detaching all characters.");
             }
+            $eventModel->characters()->sync($characterSync);
         });
+
+        // Step 4. Flush the 'events' cache to ensure that any cached event data is updated with the latest information from the database.
+        Cache::tags(['events'])->flush();
     }
 }

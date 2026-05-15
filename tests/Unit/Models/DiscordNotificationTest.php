@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Models;
 
-use App\Casts\AsNotificationType;
+use App\Casts\AsClassName;
 use App\Casts\AsRelationshipIndex;
 use App\Models\DiscordNotification;
 use App\Models\User;
@@ -54,7 +54,7 @@ class DiscordNotificationTest extends ModelTestCase
         $model = new DiscordNotification;
 
         $this->assertCasts($model, [
-            'type' => AsNotificationType::class,
+            'type' => AsClassName::class,
             'payload' => MessagePayload::class,
             'related_models' => AsRelationshipIndex::class,
         ]);

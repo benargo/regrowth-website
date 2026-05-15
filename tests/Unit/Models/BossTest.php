@@ -3,6 +3,8 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Boss;
+use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\Raid;
@@ -176,5 +178,17 @@ class BossTest extends ModelTestCase
         $boss = $this->create(['name' => 'Prince Malchezaar']);
 
         $this->assertSame('prince-malchezaar', $boss->slug);
+    }
+
+    #[Test]
+    public function it_has_many_assignments(): void
+    {
+        $boss = $this->create();
+        $event = Event::factory()->create();
+        EventAssignment::factory()->count(2)->create(['event_id' => $event->id, 'boss_id' => $boss->id]);
+
+        $this->assertInstanceOf(HasMany::class, $boss->assignments());
+        $this->assertCount(2, $boss->assignments);
+        $this->assertInstanceOf(EventAssignment::class, $boss->assignments->first());
     }
 }

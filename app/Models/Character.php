@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Casts\AsPlayableClass;
 use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
@@ -23,42 +22,12 @@ class Character extends Model
     use HasFactory, Prunable;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'characters';
-
-    /**
      * The attributes that are the model's default values.
      *
      * @var array
      */
     protected $attributes = [
         'is_loot_councillor' => false,
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'is_main' => 'boolean',
-        'is_loot_councillor' => 'boolean',
-        'reached_level_cap_at' => 'datetime',
-        'playable_class' => AsPlayableClass::class,
-        'playable_race' => AsPlayableRace::class,
-    ];
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'updated' => CharacterUpdated::class,
-        'deleted' => CharacterDeleted::class,
     ];
 
     /**
@@ -69,11 +38,23 @@ class Character extends Model
     protected $fillable = [
         'id',
         'name',
+        'level',
+        'rank_id',
+        'playable_class_id',
+        'playable_race',
         'is_main',
         'is_loot_councillor',
-        'reached_level_cap_at',
-        'playable_class',
-        'playable_race',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'is_main' => 'boolean',
+        'is_loot_councillor' => 'boolean',
+        'playable_race' => AsPlayableRace::class,
     ];
 
     /**
@@ -87,11 +68,35 @@ class Character extends Model
     ];
 
     /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => CharacterUpdated::class,
+        'deleted' => CharacterDeleted::class,
+    ];
+
+    /**
      * All of the relationships to be touched.
      *
      * @var array
      */
     protected $touches = ['linkedCharacters'];
+
+    // ============ Custom attributes ============
+
+    /**
+     * Get the main character from the linked characters.
+     */
+    protected function mainCharacter(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->linkedCharacters()->where('is_main', true)->first(),
+        );
+    }
+
+    // ========== Relationships ============
 
     /**
      * Get the guild rank associated with the character.
@@ -102,13 +107,11 @@ class Character extends Model
     }
 
     /**
-     * Get the main character from the linked characters.
+     * Get the playable class associated with the character.
      */
-    protected function mainCharacter(): Attribute
+    public function playableClass(): BelongsTo
     {
-        return Attribute::make(
-            get: fn () => $this->linkedCharacters()->where('is_main', true)->first(),
-        );
+        return $this->belongsTo(PlayableClass::class, 'playable_class_id');
     }
 
     /**
@@ -138,6 +141,8 @@ class Character extends Model
             ->using(CharacterReport::class)
             ->withPivot('presence', 'is_loot_councillor');
     }
+
+    // ========== Prunable configuration ============
 
     /**
      * Get the prunable model query.

@@ -9,7 +9,6 @@ use App\Models\Boss;
 use App\Models\Phase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -45,7 +44,7 @@ class BossStrategyController extends Controller
     {
         $notes = $request->input('notes');
         if ($notes) {
-            $boss->update(['notes' => Str::markdown($notes)]);
+            $boss->update(['notes' => $notes]);
         } elseif ($boss->notes !== null) {
             $boss->update(['notes' => null]);
         }
@@ -87,6 +86,6 @@ class BossStrategyController extends Controller
             }
         }
 
-        return redirect()->route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])->with('success', 'Boss strategy updated successfully.');
+        return back();
     }
 }

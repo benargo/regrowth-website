@@ -4,8 +4,9 @@ namespace App\Jobs;
 
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlayableClass;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\ValueObjects\PlayableClassData;
+use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -58,13 +59,32 @@ class UpdateCharacterFromRoster implements ShouldQueue
 
         $this->character->fill([
             'name' => Arr::get($this->characterData, 'character.name'),
-            'playable_class' => $classId !== null
-                ? PlayableClassData::from($blizzard->findPlayableClass($classId))
-                : null,
+            'level' => Arr::get($this->characterData, 'character.level'),
             'playable_race' => $raceId !== null
                 ? PlayableRaceData::from($blizzard->findPlayableRace($raceId))
                 : null,
         ]);
+
+        if ($classId !== null) {
+            $media = app(MediaService::class);
+            $classData = $blizzard->findPlayableClass($classId);
+            $assets = Arr::get($blizzard->getPlayableClassMedia($classId), 'assets', []);
+            $iconUrl = ! empty($assets)
+                ? Arr::get($media->get($assets), Arr::get($assets, '0.file_data_id'))
+                : null;
+
+            $playableClass = PlayableClass::updateOrCreate(
+                ['id' => $classId],
+                [
+                    'name' => Arr::get($classData, 'name'),
+                    'icon_url' => $iconUrl,
+                ]
+            );
+
+            $this->character->playableClass()->associate($playableClass);
+        } else {
+            $this->character->playableClass()->dissociate();
+        }
 
         $guildRank = GuildRank::where('position', Arr::get($this->characterData, 'rank'))->firstOrFail();
         $this->character->rank()->associate($guildRank);

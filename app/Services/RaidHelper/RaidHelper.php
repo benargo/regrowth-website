@@ -46,7 +46,7 @@ class RaidHelper
      */
     public function getEvent(int $eventId): Event
     {
-        $response = $this->client->get("/servers/{$this->serverId}/events/{$eventId}");
+        $response = $this->client->get("/events/{$eventId}");
 
         return Event::from($response->json());
     }

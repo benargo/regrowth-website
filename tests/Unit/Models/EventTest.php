@@ -5,12 +5,14 @@ namespace Tests\Unit\Models;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\EventAssignment;
 use App\Models\EventCharacter;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -373,5 +375,67 @@ class EventTest extends ModelTestCase
         $this->assertTrue($result[0]->is($boss1b));
         $this->assertTrue($result[1]->is($boss1a));
         $this->assertTrue($result[2]->is($boss2a));
+    }
+
+    // prunable
+
+    #[Test]
+    public function prunable_returns_a_builder(): void
+    {
+        $event = new Event;
+
+        $this->assertInstanceOf(Builder::class, $event->prunable());
+    }
+
+    #[Test]
+    public function prunable_includes_events_that_ended_in_the_past(): void
+    {
+        $event = $this->create(['end_time' => now()->subSecond()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_includes_events_that_ended_long_ago(): void
+    {
+        $event = $this->create(['end_time' => now()->subDay()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_includes_events_whose_end_time_is_exactly_now(): void
+    {
+        $now = now();
+        $event = $this->create(['end_time' => $now]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_excludes_events_that_have_not_yet_ended(): void
+    {
+        $event = $this->create(['end_time' => now()->addSecond()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function it_has_many_assignments(): void
+    {
+        $event = $this->create();
+        EventAssignment::factory()->count(2)->create(['event_id' => $event->id]);
+
+        $this->assertInstanceOf(HasMany::class, $event->assignments());
+        $this->assertCount(2, $event->assignments);
+        $this->assertInstanceOf(EventAssignment::class, $event->assignments->first());
     }
 }

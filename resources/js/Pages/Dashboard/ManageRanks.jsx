@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
+import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import {
@@ -233,7 +234,6 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingName, setIsSavingName] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
-    const [showSaved, setShowSaved] = useState(false);
     const isFirstRender = useRef(true);
     const debounceTimer = useRef(null);
 
@@ -274,8 +274,6 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                     preserveScroll: true,
                     onSuccess: () => {
                         setIsSaving(false);
-                        setShowSaved(true);
-                        setTimeout(() => setShowSaved(false), 2000);
                     },
                     onError: () => {
                         setIsSaving(false);
@@ -321,8 +319,6 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
             onSuccess: () => {
                 setRanks((prev) => prev.filter((r) => r.id !== rankId));
                 setIsSaving(false);
-                setShowSaved(true);
-                setTimeout(() => setShowSaved(false), 2000);
             },
             onError: () => {
                 setIsSaving(false);
@@ -332,6 +328,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
 
     const handleCreate = (name) => {
         setIsCreating(true);
+        setIsSaving(true);
         router.post(
             route("dashboard.ranks.store"),
             { name },
@@ -339,12 +336,12 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                 preserveScroll: true,
                 onSuccess: (page) => {
                     setIsCreating(false);
+                    setIsSaving(false);
                     setRanks(page.props.guildRanks);
-                    setShowSaved(true);
-                    setTimeout(() => setShowSaved(false), 2000);
                 },
                 onError: () => {
                     setIsCreating(false);
+                    setIsSaving(false);
                 },
             },
         );
@@ -352,6 +349,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
 
     const handleNameChange = (rankId, newName) => {
         setIsSavingName(rankId);
+        setIsSaving(true);
         router.put(
             route("dashboard.ranks.update", rankId),
             { name: newName },
@@ -360,12 +358,12 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                 preserveState: true,
                 onSuccess: () => {
                     setIsSavingName(null);
+                    setIsSaving(false);
                     setRanks((prev) => prev.map((r) => (r.id === rankId ? { ...r, name: newName } : r)));
-                    setShowSaved(true);
-                    setTimeout(() => setShowSaved(false), 2000);
                 },
                 onError: () => {
                     setIsSavingName(null);
+                    setIsSaving(false);
                 },
             },
         );
@@ -380,18 +378,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                 <div className="container mx-auto px-4">
                     <div className="flex items-center gap-4">
                         <p className="text-grey-200">Drag and drop to reorder guild ranks.</p>
-                        {isSaving && (
-                            <span className="text-sm font-medium text-amber-400">
-                                <Icon icon="spinner" style="solid" className="fa-spin mr-2" />
-                                Saving...
-                            </span>
-                        )}
-                        {!isSaving && showSaved && (
-                            <span className="text-sm font-medium text-green-400">
-                                <Icon icon="check" style="solid" className="mr-2" />
-                                Saved
-                            </span>
-                        )}
+                        <AutoSaveLabel processing={isSaving} />
                     </div>
                     <div className="mt-6 w-64">
                         {ranks.length === 0 ? (

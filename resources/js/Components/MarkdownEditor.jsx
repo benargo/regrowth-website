@@ -10,6 +10,22 @@ import SecondaryButton from "@/Components/SecondaryButton";
  * All available format button configurations
  */
 const ALL_FORMATS = {
+    heading2: {
+        label: <span className="text-xs font-bold">H2</span>,
+        title: "Heading 2",
+        prefix: "## ",
+        suffix: "",
+        placeholder: "Heading",
+        hint: "## heading",
+    },
+    heading3: {
+        label: <span className="text-xs font-bold">H3</span>,
+        title: "Heading 3",
+        prefix: "### ",
+        suffix: "",
+        placeholder: "Heading",
+        hint: "### heading",
+    },
     bold: {
         label: <Icon icon="bold" style="solid" />,
         title: "Bold",
@@ -349,29 +365,62 @@ export default function MarkdownEditor({
         onChange(newValue);
     }
 
+    const BUTTON_GROUPS = [
+        ["heading2", "heading3"],
+        ["bold", "italic", "underline"],
+        ["bulletList", "numberedList"],
+        ["link", "wowheadLink"],
+    ];
+
+    const groupedButtons = BUTTON_GROUPS.map((keys) =>
+        keys.map((key) => formatButtons.find((f) => f.key === key)).filter(Boolean),
+    ).filter((group) => group.length > 0);
+
+    const ungroupedButtons = formatButtons.filter((f) => !BUTTON_GROUPS.flat().includes(f.key));
+
     return (
         <div className={className}>
-            {formatButtons.length > 0 && (
-                <div className="mb-2 flex items-center gap-1">
-                    {formatButtons.map((format) => (
-                        <FormatButton
-                            key={format.key}
-                            title={format.title}
-                            onClick={() => applyFormat(format)}
-                            label={format.label}
-                        />
-                    ))}
-                </div>
-            )}
-            <div>
+            <div className="overflow-hidden rounded-md border border-brown-600 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-amber-600">
+                {formatButtons.length > 0 && (
+                    <div className="flex items-center gap-0.5 border-b border-brown-600 bg-brown-700 px-2 py-1.5">
+                        {groupedButtons.map((group, groupIndex) => (
+                            <div key={groupIndex} className="flex items-center gap-0.5">
+                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-brown-500" />}
+                                {group.map((format) => (
+                                    <FormatButton
+                                        key={format.key}
+                                        title={format.title}
+                                        onClick={() => applyFormat(format)}
+                                        label={format.label}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                        {ungroupedButtons.length > 0 && (
+                            <div className="flex items-center gap-0.5">
+                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-brown-500" />}
+                                {ungroupedButtons.map((format) => (
+                                    <FormatButton
+                                        key={format.key}
+                                        title={format.title}
+                                        onClick={() => applyFormat(format)}
+                                        label={format.label}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
                 <textarea
                     ref={textareaRef}
                     value={value}
                     onChange={handleChange}
                     placeholder={computedPlaceholder}
                     rows={rows}
-                    className="w-full rounded-md border-brown-600 bg-brown-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
+                    className="w-full resize-none border-none bg-brown p-2 text-white placeholder-gray-500 focus:outline-none focus:ring-0"
                 />
+            </div>
+            <div>
                 <InputError message={validationError || error} className="mt-2" />
             </div>
 

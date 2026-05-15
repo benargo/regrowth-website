@@ -28,6 +28,14 @@ export default {
                     800: '#4a3d32',
                     900: '#372d22',
                 },
+                /*-- Affect type colors --*/
+                affect: {
+                    curse: '#9600ff',
+                    disease: '#966400',
+                    magic: '#3296ff',
+                    poison: '#009600',
+                    physical: '#c80000',
+                },
                 /*-- Discord branding and role colors --*/
                 discord: {
                     DEFAULT: '#5865F2',
@@ -87,6 +95,7 @@ export default {
     plugins: [forms],
 
     safelist: [
+        { pattern: /(bg|text|border)-affect-(curse|disease|magic|poison|physical)/, },
         { pattern: /(bg|text|border)-discord-(officer|raider|member|lootcouncillor|guest)/, },
         { pattern: /(bg|text|border)-guild-rank-(guild-master|officer|raider|trial-raider|warden|champion|veteran|member|initiate|inactive)/, },
         { pattern: /(bg|text|border)-playable-class-(death-knight|druid|hunter|mage|paladin|priest|rogue|shaman|warlock|warrior)/, },
