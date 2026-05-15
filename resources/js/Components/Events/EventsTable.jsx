@@ -1,6 +1,5 @@
 import Icon from "@/Components/FontAwesome/Icon";
 import formatDate from "@/Helpers/FormatDate";
-import usePermission from "@/Hooks/Permissions";
 import { Link } from "@inertiajs/react";
 
 export function EventsSkeleton() {
@@ -41,7 +40,6 @@ export function EventsSkeleton() {
 
 export default function EventsTable({ events }) {
     const rows = events?.data ?? events ?? [];
-    const canViewPlans = usePermission("view-raid-plans");
 
     if (rows.length === 0) {
         return (
@@ -71,12 +69,12 @@ export default function EventsTable({ events }) {
                         const formatTime = (date) =>
                             date.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-                        const rowClassName =
-                            "flex items-center transition-colors hover:bg-brown-800/50" +
-                            (canViewPlans ? " cursor-pointer" : "");
-
-                        const rowContent = (
-                            <>
+                        return (
+                            <Link
+                                key={event.id}
+                                className="flex cursor-pointer items-center transition-colors hover:bg-brown-800/50"
+                                href={route("raiding.plans.show", event.id)}
+                            >
                                 <div className="w-40 shrink-0 whitespace-nowrap px-4 py-3">
                                     <p className="text-xs text-gray-500">{dayOfWeek}</p>
                                     <p className="text-sm text-gray-300">
@@ -85,23 +83,11 @@ export default function EventsTable({ events }) {
                                         <span className="hidden lg:inline">{formattedDate.long}</span>
                                     </p>
                                 </div>
-                                <div className="min-w-0 flex-1 px-4 py-3 text-sm font-medium text-white">
-                                    {event.title}
-                                </div>
+                                <div className="min-w-0 flex-1 px-4 py-3 text-sm font-medium text-white">{event.title}</div>
                                 <div className="w-36 shrink-0 whitespace-nowrap px-4 py-3 text-sm text-gray-300">
                                     {formatTime(startDate)}–{formatTime(endDate)}
                                 </div>
-                            </>
-                        );
-
-                        return canViewPlans ? (
-                            <Link key={event.id} className={rowClassName} href={route("raiding.plans.show", event.id)}>
-                                {rowContent}
                             </Link>
-                        ) : (
-                            <div key={event.id} className={rowClassName}>
-                                {rowContent}
-                            </div>
                         );
                     })}
                 </div>
