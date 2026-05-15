@@ -274,7 +274,7 @@ class Calculator
         $rows = CharacterReport::query()
             ->where('presence', 2)
             ->whereHas('report', fn ($q) => $q->where('start_time', '>=', now()->subDays(7)))
-            ->with(['character:id,name,playable_class', 'report:id,guild_tag_id', 'report.guildTag:id,name'])
+            ->with(['character:id,name,playable_class_id', 'character.playableClass', 'report:id,guild_tag_id', 'report.guildTag:id,name'])
             ->get();
 
         return $rows
@@ -286,7 +286,7 @@ class Calculator
                 ->sortBy('name')
                 ->map(fn (Character $c) => [
                     'name' => $c->name,
-                    'playable_class' => $c->playable_class,
+                    'playable_class' => $c->playableClass,
                 ])
                 ->values()
                 ->all())
