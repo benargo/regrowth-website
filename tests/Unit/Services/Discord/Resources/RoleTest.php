@@ -82,10 +82,10 @@ class RoleTest extends TestCase
 
         $this->assertNull($tags->bot_id);
         $this->assertNull($tags->integration_id);
-        $this->assertFalse($tags->premium_subscriber);
+        $this->assertNull($tags->premium_subscriber);
         $this->assertNull($tags->subscription_listing_id);
-        $this->assertFalse($tags->available_for_purchase);
-        $this->assertFalse($tags->guild_connections);
+        $this->assertNull($tags->available_for_purchase);
+        $this->assertNull($tags->guild_connections);
     }
 
     #[Test]
@@ -109,9 +109,9 @@ class RoleTest extends TestCase
     #[Test]
     public function role_tags_constructs_for_a_booster_role(): void
     {
-        $tags = RoleTags::from(['premium_subscriber' => true]);
+        $tags = RoleTags::from(['premium_subscriber' => null]);
 
-        $this->assertTrue($tags->premium_subscriber);
+        $this->assertNull($tags->premium_subscriber);
     }
 
     #[Test]
@@ -119,19 +119,19 @@ class RoleTest extends TestCase
     {
         $tags = RoleTags::from([
             'subscription_listing_id' => '111222333',
-            'available_for_purchase' => true,
+            'available_for_purchase' => null,
         ]);
 
         $this->assertSame('111222333', $tags->subscription_listing_id);
-        $this->assertTrue($tags->available_for_purchase);
+        $this->assertNull($tags->available_for_purchase);
     }
 
     #[Test]
     public function role_tags_constructs_for_a_linked_role(): void
     {
-        $tags = RoleTags::from(['guild_connections' => true]);
+        $tags = RoleTags::from(['guild_connections' => null]);
 
-        $this->assertTrue($tags->guild_connections);
+        $this->assertNull($tags->guild_connections);
     }
 
     #[Test]
@@ -253,12 +253,12 @@ class RoleTest extends TestCase
             'managed' => true,
             'mentionable' => false,
             'flags' => 0,
-            'tags' => ['premium_subscriber' => true],
+            'tags' => ['premium_subscriber' => null],
         ]);
 
         $this->assertTrue($role->managed);
         $this->assertInstanceOf(RoleTags::class, $role->tags);
-        $this->assertTrue($role->tags->premium_subscriber);
+        $this->assertNull($role->tags->premium_subscriber);
     }
 
     #[Test]
