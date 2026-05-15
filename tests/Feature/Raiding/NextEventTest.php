@@ -42,7 +42,7 @@ class NextEventTest extends TestCase
     {
         $user = User::factory()->create();
 
-        Event::factory()->create(['start_time' => now()->subDay()]);
+        Event::factory()->create(['start_time' => now()->subDay(), 'end_time' => now()->subHour()]);
 
         $this->actingAs($user)
             ->get(route('raiding.plans.next'))

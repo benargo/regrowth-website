@@ -18,7 +18,7 @@ class RaidingController extends Controller
      */
     public function comps(): RedirectResponse
     {
-        $nextEvent = Event::where('start_time', '>=', now())->orderBy('start_time')->first();
+        $nextEvent = Event::where('end_time', '>=', now())->orderBy('start_time')->first();
 
         if ($nextEvent) {
             return redirect(route('raiding.plans.show', $nextEvent), 303);
