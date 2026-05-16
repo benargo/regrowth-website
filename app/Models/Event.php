@@ -7,14 +7,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Event extends Model
+class Event extends PrunableModel
 {
-    use HasFactory, HasUuids, Prunable;
+    use HasFactory, HasUuids;
 
     /**
      * The attributes that are mass assignable.
@@ -56,7 +54,7 @@ class Event extends Model
      */
     public function prunable(): Builder
     {
-        return static::where('end_time', '<=', now());
+        return static::where('end_time', '<=', now()->subMonth());
     }
 
     // ========== Custom attributes ============

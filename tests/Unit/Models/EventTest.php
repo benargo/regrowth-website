@@ -388,9 +388,9 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
-    public function prunable_includes_events_that_ended_in_the_past(): void
+    public function prunable_includes_events_that_ended_more_than_one_month_ago(): void
     {
-        $event = $this->create(['end_time' => now()->subSecond()]);
+        $event = $this->create(['end_time' => now()->subMonth()->subSecond()]);
 
         $ids = (new Event)->prunable()->pluck('id')->toArray();
 
@@ -400,7 +400,7 @@ class EventTest extends ModelTestCase
     #[Test]
     public function prunable_includes_events_that_ended_long_ago(): void
     {
-        $event = $this->create(['end_time' => now()->subDay()]);
+        $event = $this->create(['end_time' => now()->subYear()]);
 
         $ids = (new Event)->prunable()->pluck('id')->toArray();
 
@@ -408,14 +408,23 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
-    public function prunable_includes_events_whose_end_time_is_exactly_now(): void
+    public function prunable_includes_events_whose_end_time_is_exactly_one_month_ago(): void
     {
-        $now = now();
-        $event = $this->create(['end_time' => $now]);
+        $event = $this->create(['end_time' => now()->subMonth()]);
 
         $ids = (new Event)->prunable()->pluck('id')->toArray();
 
         $this->assertContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_excludes_events_that_ended_less_than_one_month_ago(): void
+    {
+        $event = $this->create(['end_time' => now()->subMonth()->addSecond()]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($event->id, $ids);
     }
 
     #[Test]

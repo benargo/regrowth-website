@@ -1,9 +1,12 @@
 *.log
+.claude
 .DS_Store
+.engram
 .env
 .env.backup
 .env.dusk.local
 .env.production
+.github
 .phpactor.json
 .phpunit.result.cache
 .prettierrc
@@ -14,6 +17,7 @@
 /.vscode
 /.zed
 /auth.json
+/docs/superpowers
 /node_modules
 /public/build
 /public/hot
@@ -24,6 +28,3 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-.claude
-.engram
-.github

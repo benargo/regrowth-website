@@ -78,7 +78,7 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.matrix');
 
     // Upcoming events comps and plans routes
-    Route::get('/plans/{event}', [EventController::class, 'show'])->name('plans.show');
+    Route::get('/plans/{event}', [EventController::class, 'show'])->can('view', 'event')->name('plans.show');
     Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->middleware(['auth', 'can:update,event'])->name('plans.edit');
 
     // Reports routes
