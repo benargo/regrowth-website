@@ -88,7 +88,7 @@ class ReportController extends Controller
      */
     public function show(Request $request, Report $report): Response
     {
-        $report->load(['guildTag', 'zone', 'characters.rank', 'linkedReports']);
+        $report->load(['guildTag', 'zone', 'characters.rank', 'characters.playableClass', 'linkedReports']);
 
         return Inertia::render('Raiding/Reports/Show', [
             'report' => new ReportResource($report),
@@ -101,7 +101,8 @@ class ReportController extends Controller
                     ->whereIn('pivot_characters_raid_reports.raid_report_id', $linkedReportIds->push($report->id))
                     ->pluck('characters.id');
 
-                return Character::select('id', 'name', 'playable_class', 'is_main')
+                return Character::select('id', 'name', 'playable_class_id', 'is_main')
+                    ->with('playableClass')
                     ->where('is_loot_councillor', true)
                     ->whereNotIn('id', $excludedIds)
                     ->orderBy('name')
@@ -144,21 +145,13 @@ class ReportController extends Controller
             'expansions' => $expansions,
             'defaultExpansionId' => config('services.warcraftlogs.expansion_id'),
             'guildTags' => GuildTag::orderBy('name')->get(),
-            'characters' => Character::select('id', 'name', 'playable_class', 'is_main')->orderBy('name')->get(),
+            'characters' => Character::select('id', 'name', 'playable_class_id', 'is_main')->with('playableClass')->orderBy('name')->get(),
             'lootCouncillorCandidates' => Inertia::optional(function () {
-                return Character::hydrate(
-                    Cache::tags('characters')->remember(
-                        'characters:loot_councillors',
-                        now()->addDay(),
-                        function () {
-                            return Character::select('id', 'name', 'playable_class', 'is_main')
-                                ->where('is_loot_councillor', true)
-                                ->orderBy('name')
-                                ->get()
-                                ->toArray();
-                        }
-                    )
-                );
+                return Character::select('id', 'name', 'playable_class_id', 'is_main')
+                    ->with('playableClass')
+                    ->where('is_loot_councillor', true)
+                    ->orderBy('name')
+                    ->get();
             }),
             'nearbyReports' => Inertia::optional(
                 fn () => ReportClusterResource::collection($this->buildNearbyReportClusters($request))

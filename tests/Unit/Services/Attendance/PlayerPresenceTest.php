@@ -4,6 +4,7 @@ namespace Tests\Unit\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlayableClass;
 use App\Services\Attendance\PlayerPresenceData;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,5 +64,32 @@ class PlayerPresenceTest extends TestCase
         $presence = new PlayerPresenceData($character, 0);
 
         $this->assertSame($presence->toArray(), $presence->jsonSerialize());
+    }
+
+    #[Test]
+    public function to_array_includes_playable_class_relationship(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        $rank = GuildRank::factory()->create();
+        $character = Character::factory()->withPlayableClass($playableClass)->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $character->load('playableClass');
+
+        $array = (new PlayerPresenceData($character, 1))->toArray();
+
+        $this->assertInstanceOf(PlayableClass::class, $array['playable_class']);
+        $this->assertSame(1, $array['playable_class']->id);
+        $this->assertSame('Warrior', $array['playable_class']->name);
+    }
+
+    #[Test]
+    public function to_array_includes_null_playable_class_when_not_set(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $character = Character::factory()->create(['name' => 'Thrall', 'rank_id' => $rank->id, 'playable_class_id' => null]);
+        $character->load('playableClass');
+
+        $array = (new PlayerPresenceData($character, 1))->toArray();
+
+        $this->assertNull($array['playable_class']);
     }
 }

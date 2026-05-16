@@ -60,7 +60,7 @@ class AttendanceGraphsController extends Controller
         return [
             'id' => $row->character->id,
             'name' => $row->character->name,
-            'playable_class' => $row->character->playable_class,
+            'playable_class' => $row->character->playableClass,
             'percentage' => $row->percentage,
             'raidsTotal' => count(array_filter($attendance, fn ($v) => $v !== null)),
             'raidsAttended' => count(array_filter($attendance, fn ($v) => $v === 1)),

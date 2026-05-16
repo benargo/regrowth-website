@@ -36,7 +36,12 @@ class ReportResource extends JsonResource
                     'id' => $character->id,
                     'name' => $character->name,
                     'is_main' => $character->is_main,
-                    'playable_class' => $character->playable_class,
+                    'playable_class' => $character->relationLoaded('playableClass')
+                        ? ($character->playableClass ? [
+                            'id' => $character->playableClass->id,
+                            'name' => $character->playableClass->name,
+                        ] : null)
+                        : null,
                     'playable_race' => $character->playable_race,
                     'pivot' => [
                         'presence' => $character->pivot->presence,

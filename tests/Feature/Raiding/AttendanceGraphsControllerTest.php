@@ -8,6 +8,7 @@ use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -198,6 +199,28 @@ class AttendanceGraphsControllerTest extends TestCase
                 ->where('scatterPoints.0.raidsTotal', 2)
             )
         );
+    }
+
+    #[Test]
+    public function index_scatter_points_include_playable_class(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        $character = Character::factory()->main()->withPlayableClass($playableClass)->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(3)]);
+        $report->characters()->attach($character->id, ['presence' => 1]);
+        $user = User::factory()->officer()->create();
+
+        $this->actingAs($user)
+            ->get(route('raiding.attendance.graphs.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('scatterPoints.0.playable_class')
+                    ->where('scatterPoints.0.playable_class.id', 1)
+                    ->where('scatterPoints.0.playable_class.name', 'Warrior')
+                )
+            );
     }
 
     #[Test]

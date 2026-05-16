@@ -150,7 +150,7 @@ class AttendanceDashboardController extends Controller
     private function upcomingAbsences(): Collection
     {
         return PlannedAbsence::query()
-            ->with('character:id,name,playable_class')
+            ->with(['character:id,name,playable_class_id', 'character.playableClass'])
             ->where('start_date', '>=', now()->startOfDay())
             ->orderBy('start_date')
             ->limit(4)
@@ -166,7 +166,7 @@ class AttendanceDashboardController extends Controller
     {
         return [
             'name' => $row->character->name,
-            'playable_class' => $row->character->playable_class,
+            'playable_class' => $row->character->playableClass,
         ];
     }
 }

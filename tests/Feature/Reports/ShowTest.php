@@ -4,6 +4,7 @@ namespace Tests\Feature\Reports;
 
 use App\Models\Character;
 use App\Models\GuildTag;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\Zone;
@@ -353,6 +354,45 @@ class ShowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
                     ->has('lootCouncillorCandidates', 1)
+                )
+            );
+    }
+
+    #[Test]
+    public function show_includes_character_playable_class(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        $character = Character::factory()->withPlayableClass($playableClass)->create(['name' => 'Thrall']);
+        $report->characters()->attach($character->id, ['presence' => 1]);
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.reports.show', $report));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('report.data.characters', 1)
+            ->where('report.data.characters.0.name', 'Thrall')
+            ->where('report.data.characters.0.playable_class.id', 1)
+            ->where('report.data.characters.0.playable_class.name', 'Warrior')
+        );
+    }
+
+    #[Test]
+    public function show_loot_councillor_candidates_include_playable_class(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $user = User::factory()->create();
+        $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        Character::factory()->lootCouncillor()->withPlayableClass($playableClass)->create(['name' => 'Alice']);
+
+        $this->actingAs($user)
+            ->get(route('raiding.reports.show', $report))
+            ->assertInertia(fn (Assert $page) => $page
+                ->reloadOnly('lootCouncillorCandidates', fn (Assert $reload) => $reload
+                    ->has('lootCouncillorCandidates', 1)
+                    ->has('lootCouncillorCandidates.0.playable_class')
+                    ->where('lootCouncillorCandidates.0.playable_class.id', 1)
+                    ->where('lootCouncillorCandidates.0.playable_class.name', 'Warrior')
                 )
             );
     }
