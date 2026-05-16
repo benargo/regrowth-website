@@ -473,9 +473,9 @@ class AttendanceDashboardControllerTest extends TestCase
         $rank = GuildRank::factory()->create();
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
 
-        $main1 = Character::factory()->main()->create(['rank_id' => $rank->id]);
-        $main2 = Character::factory()->main()->create(['rank_id' => $rank->id]);
-        $linked = Character::factory()->create(['is_main' => false, 'rank_id' => $rank->id]);
+        $main1 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
+        $main2 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
+        $linked = Character::factory()->withUniqueName()->create(['is_main' => false, 'rank_id' => $rank->id]);
 
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(1)]);
         $report->characters()->attach($main1->id, ['presence' => 1]);

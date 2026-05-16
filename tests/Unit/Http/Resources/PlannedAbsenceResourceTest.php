@@ -243,6 +243,20 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertSame('2026-06-20', $array['end_date']);
     }
 
+    #[Test]
+    public function it_includes_icon_url_in_playable_class(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
+        $character = Character::factory()->for($playableClass, 'playableClass')->create();
+        $absence = PlannedAbsence::factory()->for($character)->create();
+        $absence->load('character.playableClass');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertArrayHasKey('icon_url', $array['character']['playable_class']);
+        $this->assertArrayHasKey('slug', $array['character']['playable_class']);
+    }
+
     /**
      * Helper method to mock the request user for testing authorization logic in the resource.
      *

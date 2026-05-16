@@ -128,8 +128,8 @@ class AttendanceGraphsControllerTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('scatterPoints', 1)
-                ->where('scatterPoints.0.id', $character->id)
-                ->where('scatterPoints.0.name', 'Illidan')
+                ->where('scatterPoints.0.character.id', $character->id)
+                ->where('scatterPoints.0.character.name', 'Illidan')
                 ->where('scatterPoints.0.percentage', 100)
                 ->where('scatterPoints.0.raidsTotal', 1)
                 ->where('scatterPoints.0.raidsAttended', 1)
@@ -216,9 +216,9 @@ class AttendanceGraphsControllerTest extends TestCase
             ->get(route('raiding.attendance.graphs.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->has('scatterPoints.0.playable_class')
-                    ->where('scatterPoints.0.playable_class.id', 1)
-                    ->where('scatterPoints.0.playable_class.name', 'Warrior')
+                    ->has('scatterPoints.0.character.playable_class')
+                    ->where('scatterPoints.0.character.playable_class.id', 1)
+                    ->where('scatterPoints.0.character.playable_class.name', 'Warrior')
                 )
             );
     }

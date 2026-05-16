@@ -6,7 +6,6 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -66,19 +65,11 @@ class UpdateCharacterFromRoster implements ShouldQueue
         ]);
 
         if ($classId !== null) {
-            $media = app(MediaService::class);
             $classData = $blizzard->findPlayableClass($classId);
-            $assets = Arr::get($blizzard->getPlayableClassMedia($classId), 'assets', []);
-            $iconUrl = ! empty($assets)
-                ? Arr::get($media->get($assets), Arr::get($assets, '0.file_data_id'))
-                : null;
 
             $playableClass = PlayableClass::updateOrCreate(
                 ['id' => $classId],
-                [
-                    'name' => Arr::get($classData, 'name'),
-                    'icon_url' => $iconUrl,
-                ]
+                ['name' => Arr::get($classData, 'name')]
             );
 
             $this->character->playableClass()->associate($playableClass);

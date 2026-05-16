@@ -164,7 +164,7 @@ function RosterRow({ member }) {
             <td className="px-4 py-3 text-gray-300">{playableRace?.name || "Unknown"}</td>
             <td className="px-4 py-3">
                 <span className="inline-flex items-center gap-2">
-                    <img src={playableClass?.media} alt="" className="h-5 w-5 rounded" />
+                    {playableClass?.icon_url && <img src={playableClass.icon_url} alt={playableClass.name} className="h-5 w-5 rounded" />}
                     <span className="text-gray-300">{playableClass?.name || "Unknown"}</span>
                 </span>
             </td>
@@ -181,7 +181,7 @@ function MemberCard({ member }) {
     return (
         <div className="rounded-lg border border-brown-700 bg-brown-800/50 p-4">
             <div className="mb-3 flex items-center gap-3">
-                <img src={playableClass?.media} alt="" className="h-10 w-10 rounded" />
+                {playableClass?.icon_url && <img src={playableClass.icon_url} alt={playableClass.name} className="h-10 w-10 rounded" />}
                 <div>
                     <h3 className="font-bold text-white">{character.name}</h3>
                     <p className="text-sm text-gray-400">

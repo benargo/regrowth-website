@@ -252,6 +252,22 @@ class ReportResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_icon_url_in_character_playable_class(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['name' => 'Druid']);
+        $character = Character::factory()->for($playableClass, 'playableClass')->create();
+        $report = Report::factory()->create();
+        $report->characters()->attach($character, ['presence' => 'present', 'is_loot_councillor' => false]);
+        $report->load('characters.playableClass');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $characterData = $array['characters'][0];
+        $this->assertArrayHasKey('icon_url', $characterData['playable_class']);
+        $this->assertArrayHasKey('slug', $characterData['playable_class']);
+    }
+
+    #[Test]
     public function it_returns_linked_report_pivot_with_creator(): void
     {
         $user = User::factory()->create(['nickname' => 'Raiderix', 'username' => 'raiderix#1234']);

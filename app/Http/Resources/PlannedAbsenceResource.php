@@ -17,16 +17,21 @@ class PlannedAbsenceResource extends JsonResource
     {
         $resource = [
             'id' => $this->id,
-            'character' => $this->whenLoaded('character', fn () => [
-                'id' => $this->character->id,
-                'name' => $this->character->name,
-                'playable_class' => $this->character->relationLoaded('playableClass')
-                    ? ($this->character->playableClass ? [
-                        'id' => $this->character->playableClass->id,
-                        'name' => $this->character->playableClass->name,
-                    ] : null)
-                    : null,
-            ]),
+            'character' => $this->whenLoaded('character', function () use ($request) {
+                $character = [
+                    'id' => $this->character->id,
+                    'name' => $this->character->name,
+                    'playable_class' => null,
+                ];
+
+                if ($this->character->relationLoaded('playableClass')) {
+                    $character['playable_class'] = $this->character->playableClass
+                        ? (new PlayableClassResource($this->character->playableClass))->toArray($request)
+                        : null;
+                }
+
+                return $character;
+            }),
             'user' => $this->whenLoaded('user', fn () => $this->user ? new UserResource($this->user)->toArray($request) : null),
             'start_date' => $this->start_date->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
