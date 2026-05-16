@@ -23,7 +23,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
-class EventControllerTest extends TestCase
+class ShowEventTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -349,63 +349,53 @@ class EventControllerTest extends TestCase
         $this->actingAs($user)->get(route('raiding.plans.show', $event));
     }
 
-    // ─── edit() ───────────────────────────────────────────────────────────────
-
     #[Test]
-    public function it_renders_event_edit_page(): void
+    public function it_allows_guest_to_view_a_recent_event(): void
     {
-        $user = User::factory()->create();
-        $user->discordRoles()->attach($this->memberRole->id);
+        $event = Event::factory()->create(['end_time' => now()->subHour()]);
 
-        $event = Event::factory()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
+        $response = $this->get(route('raiding.plans.show', $event));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Events/EditEvent')
-        );
     }
 
     #[Test]
-    public function it_passes_target_markers_to_edit_page(): void
+    public function it_denies_guest_access_to_an_old_event(): void
     {
-        $user = User::factory()->create();
-        $user->discordRoles()->attach($this->memberRole->id);
+        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
 
-        $event = Event::factory()->create();
-        TargetMarker::create(['slug' => 'star', 'name' => 'Star']);
-
-        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Events/EditEvent')
-            ->has('event')
-            ->has('targetMarkers', 1)
-            ->where('targetMarkers.0.slug', 'star')
-            ->where('targetMarkers.0.name', 'Star')
-        );
-    }
-
-    #[Test]
-    public function it_returns_403_on_edit_when_user_cannot_update_event(): void
-    {
-        $user = User::factory()->create();
-        $event = Event::factory()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
+        $response = $this->get(route('raiding.plans.show', $event));
 
         $response->assertForbidden();
     }
 
     #[Test]
-    public function it_returns_401_on_edit_when_unauthenticated(): void
+    public function it_denies_authenticated_user_without_permission_access_to_old_event(): void
     {
-        $event = Event::factory()->create();
+        $user = User::factory()->create();
+        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
 
-        $response = $this->get(route('raiding.plans.edit', $event));
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
-        $response->assertRedirect(route('login'));
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function it_allows_user_with_view_old_raid_plans_permission_to_view_old_event(): void
+    {
+        Permission::firstOrCreate(['name' => 'view-old-raid-plans', 'guard_name' => 'web']);
+
+        $role = DiscordRole::factory()->create();
+        $role->givePermissionTo('view-old-raid-plans');
+
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($role->id);
+
+        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
+
+        $response->assertOk();
     }
 
     /**

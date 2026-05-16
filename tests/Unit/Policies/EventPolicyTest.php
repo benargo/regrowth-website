@@ -92,6 +92,22 @@ class EventPolicyTest extends TestCase
     }
 
     #[Test]
+    public function it_allows_view_for_guest_on_recent_event(): void
+    {
+        $event = Event::factory()->create(['end_time' => now()->subHour()]);
+
+        $this->assertTrue($this->policy->view(null, $event));
+    }
+
+    #[Test]
+    public function it_denies_view_for_guest_on_old_event(): void
+    {
+        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+
+        $this->assertFalse($this->policy->view(null, $event));
+    }
+
+    #[Test]
     public function it_allows_update_with_manage_raid_plans_permission(): void
     {
         $user = $this->userWithPermission('manage-raid-plans');
