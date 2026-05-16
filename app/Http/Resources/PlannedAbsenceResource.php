@@ -18,26 +18,21 @@ class PlannedAbsenceResource extends JsonResource
         $resource = [
             'id' => $this->id,
             'character' => $this->whenLoaded('character', function () use ($request) {
-                $character = [
-                    'id' => $this->character->id,
-                    'name' => $this->character->name,
-                    'playable_class' => null,
-                ];
-
-                if ($this->character->relationLoaded('playableClass')) {
-                    $character['playable_class'] = $this->character->playableClass
-                        ? (new PlayableClassResource($this->character->playableClass))->toArray($request)
-                        : null;
-                }
-
-                return $character;
+                return $this->character
+                    ->load('playableClass')
+                    ->toResource(CharacterSummaryResource::class)
+                    ->resolve($request);
             }),
-            'user' => $this->whenLoaded('user', fn () => $this->user ? new UserResource($this->user)->toArray($request) : null),
+            'user' => $this->whenLoaded('user', function () use ($request) {
+                return $this->user->toResource()->resolve($request);
+            }),
             'start_date' => $this->start_date->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
             'reason' => $this->reason,
             'discord_message_id' => $this->discord_message_id,
-            'created_by' => $this->whenLoaded('createdBy', fn () => new UserResource($this->createdBy)->toArray($request)),
+            'created_by' => $this->whenLoaded('createdBy', function () use ($request) {
+                return $this->createdBy->toResource()->resolve($request);
+            }),
             'created_at' => $this->created_at->toDateTimeString(),
         ];
 
