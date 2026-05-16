@@ -4,7 +4,6 @@ namespace App\Services\Attendance;
 
 use App\Models\Character;
 use App\Models\PlannedAbsence;
-use App\Models\PlayableClass;
 use Spatie\LaravelData\Data;
 
 final class CharacterAttendanceRowData extends Data
@@ -19,37 +18,4 @@ final class CharacterAttendanceRowData extends Data
         /** @var array<int, array<int, string>>|null */
         public readonly ?array $attendanceNames = null,
     ) {}
-
-    /**
-     * @return array{id: int, name: string, rank_id: int|null, playable_class: PlayableClass|null, percentage: float, attendance: array<int, int|null>, planned_absences: array<int, string|null>, attendance_names?: array<int, array<int, string>>}
-     */
-    public function toArray(): array
-    {
-        $base = [
-            'id' => $this->character->id,
-            'name' => $this->character->name,
-            'rank_id' => $this->character->rank_id,
-            'playable_class' => $this->character->playableClass,
-            'percentage' => $this->percentage,
-            'attendance' => $this->attendance,
-            'planned_absences' => array_map(
-                fn (?PlannedAbsence $absence) => $absence?->id,
-                $this->plannedAbsences,
-            ),
-        ];
-
-        if ($this->attendanceNames !== null) {
-            $base['attendance_names'] = $this->attendanceNames;
-        }
-
-        return $base;
-    }
-
-    /**
-     * @return array{id: int, name: string, rank_id: int|null, playable_class: PlayableClass|null, percentage: float, attendance: array<int, int|null>, planned_absences: array<int, string|null>, attendance_names?: array<int, array<int, string>>}
-     */
-    public function jsonSerialize(): array
-    {
-        return $this->toArray();
-    }
 }

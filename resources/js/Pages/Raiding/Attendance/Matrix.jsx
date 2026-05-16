@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
@@ -207,13 +207,11 @@ function AttendanceCell({ value, names, plannedAbsence }) {
 
     if (value === 1) {
         icon = <Icon icon="check" style="solid" className="text-green-500" />;
-        if (icon && names?.length > 0) {
-            return (
-                <Tooltip text={names.join(", ")} position="bottom">
-                    {icon}
-                </Tooltip>
-            );
-        }
+        return (
+            <Tooltip text={names?.length > 0 ? names.join(", ") : undefined} position="bottom">
+                {icon}
+            </Tooltip>
+        );
     } else if (value === 2) {
         icon = <Icon icon="couch" style="regular" className="text-amber-500" />;
     } else if (value === 0) {
@@ -223,7 +221,7 @@ function AttendanceCell({ value, names, plannedAbsence }) {
     return icon;
 }
 
-function MatrixTable({ raids, rows, ranks, plannedAbsences }) {
+function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames, attendanceNamesCache }) {
     const rankMap = Object.fromEntries(ranks.map((r) => [r.id, r]));
     const absenceMap = useMemo(
         () => Object.fromEntries((plannedAbsences ?? []).map((a) => [a.id, a])),
@@ -266,42 +264,49 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences }) {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-brown-700">
-                    {rows.map((row) => (
-                        <tr key={row.name} className="transition-colors hover:bg-brown-800/50">
-                            <td className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
-                                <div className="flex flex-col gap-1 lg:flex-row lg:gap-2">
-                                    <p className="flex flex-grow-0 flex-row items-center font-semibold">
-                                        {row.playable_class && (
-                                            <img
-                                                src={row.playable_class.icon_url}
-                                                alt={row.playable_class.name}
-                                                className="mr-2 inline-block hidden h-4 w-4 rounded-sm md:inline-flex"
-                                            />
-                                        )}
-                                        {row.name}
-                                    </p>
-                                </div>
-                            </td>
-                            <td className="hidden whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 md:table-cell lg:sticky lg:z-10">
-                                <GuildRankLabel rank={rankMap[row.rank_id]} />
-                            </td>
-                            <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:z-10">
-                                <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
-                                <span className="inline md:hidden">{row.percentage.toFixed(0)}%</span>
-                            </td>
-                            {row.attendance.map((value, idx) => (
-                                <td key={idx} className="px-3 py-2 text-center">
-                                    <AttendanceCell
-                                        value={value}
-                                        names={row.attendance_names?.[idx]}
-                                        plannedAbsence={
-                                            row.planned_absences?.[idx] ? absenceMap[row.planned_absences[idx]] : null
-                                        }
-                                    />
+                    {rows.map((row) => {
+                        const cachedNames = attendanceNamesCache.current[row.id];
+                        return (
+                            <tr
+                                key={row.name}
+                                className="transition-colors hover:bg-brown-800/50"
+                                onMouseEnter={() => fetchAttendanceNames(row.id)}
+                            >
+                                <td className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
+                                    <div className="flex flex-col gap-1 lg:flex-row lg:gap-2">
+                                        <p className="flex flex-grow-0 flex-row items-center font-semibold">
+                                            {row.playable_class && (
+                                                <img
+                                                    src={row.playable_class.icon_url}
+                                                    alt={row.playable_class.name}
+                                                    className="mr-2 inline-block hidden h-4 w-4 rounded-sm md:inline-flex"
+                                                />
+                                            )}
+                                            {row.name}
+                                        </p>
+                                    </div>
                                 </td>
-                            ))}
-                        </tr>
-                    ))}
+                                <td className="hidden whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 md:table-cell lg:sticky lg:z-10">
+                                    <GuildRankLabel rank={rankMap[row.rank_id]} />
+                                </td>
+                                <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:z-10">
+                                    <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
+                                    <span className="inline md:hidden">{row.percentage.toFixed(0)}%</span>
+                                </td>
+                                {row.attendance.map((value, idx) => (
+                                    <td key={idx} className="px-3 py-2 text-center">
+                                        <AttendanceCell
+                                            value={value}
+                                            names={cachedNames?.[idx] ?? []}
+                                            plannedAbsence={
+                                                row.planned_absences?.[idx] ? absenceMap[row.planned_absences[idx]] : null
+                                            }
+                                        />
+                                    </td>
+                                ))}
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>
@@ -356,6 +361,29 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     const [includeLinkedCharacters, setIncludeLinkedCharacters] = useState(filters.combine_linked_characters);
 
     const [isReloading, setIsReloading] = useState(false);
+
+    // Keyed by character id → array<array<string>>|null (null = pending fetch)
+    const attendanceNamesCache = useRef({});
+    const [, forceUpdate] = useState(0);
+
+    const fetchAttendanceNames = useCallback(
+        (characterId) => {
+            if (attendanceNamesCache.current[characterId] !== undefined) return;
+            attendanceNamesCache.current[characterId] = null; // mark pending
+
+            router.reload({
+                only: ['attendance_names'],
+                data: { ...buildServerFilters(), character_id: characterId },
+                preserveState: true,
+                onSuccess: (page) => {
+                    attendanceNamesCache.current[characterId] = page.props.attendance_names ?? null;
+                    forceUpdate((n) => n + 1);
+                },
+            });
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [selectedZoneIds, selectedGuildTagIds, selectedRankIds, sinceDate, beforeDate, includeLinkedCharacters],
+    );
 
     // ── Server-side reload ───────────────────────────────────────────────────
     const buildServerFilters = () => ({
@@ -486,6 +514,8 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                             rows={filteredRows}
                             ranks={ranks}
                             plannedAbsences={matrix?.planned_absences}
+                            fetchAttendanceNames={fetchAttendanceNames}
+                            attendanceNamesCache={attendanceNamesCache}
                         />
                     )}
                 </div>

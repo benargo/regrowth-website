@@ -3,19 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Raid\AttendanceMatrixRequest;
+use App\Http\Resources\AttendanceMatrixRowResource;
+use App\Http\Resources\GuildRankResource;
+use App\Http\Resources\GuildTagResource;
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Http\Resources\ZoneResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\PlannedAbsence;
 use App\Models\Raids\Report;
 use App\Models\Zone;
-use App\Services\Attendance\AttendanceMatrixData;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;
-use App\Services\Attendance\FiltersData;
-use App\Services\Attendance\Matrix;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -35,20 +36,33 @@ class AttendanceMatrixController extends Controller
         $filters = $request->filters();
 
         return Inertia::render('Raiding/Attendance/Matrix', [
-            'ranks' => GuildRank::orderBy('position')->get(),
-            'zones' => Zone::whereIn('id', Report::select('zone_id')->whereNotNull('zone_id')->distinct())->orderBy('name')->get(),
-            'guildTags' => GuildTag::orderBy('name')->get(),
+            'ranks' => GuildRankResource::collection(GuildRank::orderBy('position')->get())->resolve($request),
+            'zones' => ZoneResource::collection(
+                Zone::whereIn('id', Report::select('zone_id')->whereNotNull('zone_id')->distinct())->orderBy('name')->get()
+            )->resolve($request),
+            'guildTags' => GuildTagResource::collection(GuildTag::orderBy('name')->get())->resolve($request),
             'filters' => $filters,
             'earliestDate' => $request->resolveMinDate(),
             'matrix' => Inertia::defer(fn () => Cache::tags(['attendance'])->remember(
                 $filters->cacheKey('attendance:matrix:'),
                 now()->addHours(24),
-                function () use ($filters) {
-                    $matrixData = $this->matrixWithFilters($filters);
+                function () use ($filters, $request) {
+                    $table = new DataTable($this->calculator, $filters);
+                    $raids = $table->columns();
+                    $rows = $table->rows();
+
+                    if ($filters->includeLinkedCharacters && $rows->isNotEmpty()) {
+                        $rows = $this->mergeLinkedCharacters($rows, $table->resolvedRankIds(), $raids->count());
+                    }
+
+                    if ($filters->character !== null) {
+                        $characterId = $filters->character->id;
+                        $rows = $rows->filter(fn (CharacterAttendanceRowData $row) => $row->character->id === $characterId)->values();
+                    }
+
                     $referencedAbsences = new Collection;
 
-                    foreach ($matrixData->rows as $row) {
-                        /** @var CharacterAttendanceRowData $row */
+                    foreach ($rows as $row) {
                         foreach ($row->plannedAbsences as $absence) {
                             if ($absence instanceof PlannedAbsence) {
                                 $referencedAbsences->put($absence->id, $absence);
@@ -56,33 +70,32 @@ class AttendanceMatrixController extends Controller
                         }
                     }
 
-                    return array_merge($matrixData->toArray(), [
+                    return [
+                        'raids' => $raids->values()->all(),
+                        'rows' => AttendanceMatrixRowResource::collection($rows)->resolve($request),
                         'planned_absences' => PlannedAbsenceResource::collection($referencedAbsences->values())->resolve(),
-                    ]);
+                    ];
                 },
             )),
+            'attendance_names' => Inertia::optional(function () use ($request, $filters) {
+                $characterId = (int) $request->query('character_id');
+
+                if (! $characterId) {
+                    return null;
+                }
+
+                $table = new DataTable($this->calculator, $filters);
+                $rows = $table->rows();
+
+                if ($filters->includeLinkedCharacters && $rows->isNotEmpty()) {
+                    $rows = $this->mergeLinkedCharacters($rows, $table->resolvedRankIds(), $table->columns()->count());
+                }
+
+                $row = $rows->first(fn (CharacterAttendanceRowData $row) => $row->character->id === $characterId);
+
+                return $row?->attendanceNames;
+            }),
         ]);
-    }
-
-    /**
-     * Build the attendance matrix with the given server-side filters applied.
-     */
-    private function matrixWithFilters(FiltersData $filters): AttendanceMatrixData
-    {
-        $table = new DataTable($this->calculator, $filters);
-        $raids = $table->columns();
-        $rows = $table->rows();
-
-        if ($filters->includeLinkedCharacters && $rows->isNotEmpty()) {
-            $rows = $this->mergeLinkedCharacters($rows, $table->resolvedRankIds(), $raids->count());
-        }
-
-        if ($filters->character !== null) {
-            $characterId = $filters->character->id;
-            $rows = $rows->filter(fn (CharacterAttendanceRowData $row) => $row->character->id === $characterId)->values();
-        }
-
-        return new AttendanceMatrixData($raids, $rows);
     }
 
     /**

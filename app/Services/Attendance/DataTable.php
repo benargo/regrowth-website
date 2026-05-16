@@ -84,7 +84,7 @@ class DataTable
         $characterIds = array_map(fn (array $info) => $info['characterId'], $characterInfo);
 
         $characters = Character::whereIn('id', $characterIds)
-            ->with(['rank', 'linkedCharacters'])
+            ->with(['rank', 'linkedCharacters', 'playableClass'])
             ->get()
             ->keyBy('id');
 

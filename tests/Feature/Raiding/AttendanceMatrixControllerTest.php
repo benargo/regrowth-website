@@ -8,6 +8,7 @@ use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
@@ -145,6 +146,90 @@ class AttendanceMatrixControllerTest extends TestCase
                 ->where('matrix.rows.0.attendance.0', 1)
             )
         );
+    }
+
+    #[Test]
+    public function invoke_deferred_prop_rows_include_playable_class_with_icon_url(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
+        $character = Character::factory()->main()->create([
+            'name' => 'Thrall',
+            'rank_id' => $rank->id,
+            'playable_class_id' => $playableClass->id,
+        ]);
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('matrix.rows', 1)
+                ->where('matrix.rows.0.name', 'Thrall')
+                ->has('matrix.rows.0.playable_class')
+                ->where('matrix.rows.0.playable_class.name', 'Warrior')
+                ->has('matrix.rows.0.playable_class.icon_url')
+            )
+        );
+    }
+
+    #[Test]
+    public function invoke_optional_attendance_names_is_absent_without_character_id(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('attendance_names')
+        );
+    }
+
+    #[Test]
+    public function invoke_optional_attendance_names_returns_names_for_merged_row(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
+        $alt = Character::factory()->create(['name' => 'ThrallAlt', 'is_main' => false, 'rank_id' => $rank->id]);
+
+        \DB::table('character_links')->insert([
+            ['character_id' => $main->id, 'linked_character_id' => $alt->id, 'created_at' => now(), 'updated_at' => now()],
+            ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
+        $report->characters()->attach($main->id, ['presence' => 1]);
+        $report->characters()->attach($alt->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+
+        // First, do a normal request to obtain the Inertia asset version.
+        $initial = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+        $initial->assertOk();
+        $pageData = $initial->viewData('page');
+
+        $response = $this->actingAs($user)->get(
+            route('raiding.attendance.matrix', [
+                'character_id' => $main->id,
+                'combine_linked_characters' => 1,
+            ]),
+            [
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => $pageData['version'],
+                'X-Inertia-Partial-Component' => 'Raiding/Attendance/Matrix',
+                'X-Inertia-Partial-Data' => 'attendance_names',
+            ]
+        );
+
+        $response->assertOk();
+        $data = $response->json();
+        $this->assertArrayHasKey('attendance_names', $data['props']);
+        $this->assertNotNull($data['props']['attendance_names']);
     }
 
     #[Test]
