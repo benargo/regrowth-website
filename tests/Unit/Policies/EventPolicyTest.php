@@ -47,28 +47,46 @@ class EventPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_view_with_view_raid_plans_permission(): void
+    public function it_allows_view_for_recent_event_without_permission(): void
     {
-        $user = $this->userWithPermission('view-raid-plans');
-        $event = Event::factory()->create();
+        $user = $this->userWithoutPermission();
+        $event = Event::factory()->create(['end_time' => now()->subHour()]);
 
         $this->assertTrue($this->policy->view($user, $event));
     }
 
     #[Test]
-    public function it_denies_view_without_permission(): void
+    public function it_allows_view_for_recent_event_at_two_hour_boundary(): void
     {
         $user = $this->userWithoutPermission();
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['end_time' => now()->subHours(2)->addSecond()]);
+
+        $this->assertTrue($this->policy->view($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_view_for_old_event_without_permission(): void
+    {
+        $user = $this->userWithoutPermission();
+        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
 
         $this->assertFalse($this->policy->view($user, $event));
     }
 
     #[Test]
-    public function it_denies_view_with_unrelated_permission(): void
+    public function it_allows_view_for_old_event_with_view_old_raid_plans_permission(): void
+    {
+        $user = $this->userWithPermission('view-old-raid-plans');
+        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+
+        $this->assertTrue($this->policy->view($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_view_for_old_event_with_unrelated_permission(): void
     {
         $user = $this->userWithPermission('manage-reports');
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
 
         $this->assertFalse($this->policy->view($user, $event));
     }
