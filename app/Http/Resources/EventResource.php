@@ -6,11 +6,9 @@ use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Raid;
-use App\Services\RaidHelper\RaidHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Requires raids.bosses.media, assignments, and characters.rank to be eager-loaded
@@ -116,34 +114,9 @@ class EventResource extends JsonResource
      */
     private function buildBench(Request $request): array
     {
-        if (! $this->raid_helper_event_id || $this->characters->isEmpty()) {
-            return [];
-        }
-
-        $compNames = $this->characters->pluck('name');
-
-        $benchedCharacters = Character::hydrate(
-            Cache::tags(['events'])->remember(
-                "events:{$this->raid_helper_event_id}:benched",
-                now()->addMinutes(10),
-                function () use ($compNames) {
-                    $raidHelper = app(RaidHelper::class);
-                    $rhEvent = $raidHelper->getEvent((int) $this->raid_helper_event_id);
-
-                    $signUpNames = collect($rhEvent->signUps)
-                        ->whereNotIn('cClassName', ['Absence', 'Late', 'Tentative'])
-                        ->pluck('name');
-                    $benchedNames = $signUpNames->diff($compNames);
-
-                    return Character::whereIn('name', $benchedNames)
-                        ->get()
-                        ->toArray();
-                }
-            )
-        )->load('rank');
-
-        return $benchedCharacters->map(function (Character $character) use ($request) {
-            return [
+        return $this->characters
+            ->filter(fn (Character $c) => $c->pivot->is_benched)
+            ->map(fn (Character $character) => [
                 'id' => $character->id,
                 'name' => $character->name,
                 'playable_class' => $character->playableClass()->first()?->toResource()->resolve($request),
@@ -151,8 +124,9 @@ class EventResource extends JsonResource
                     'name' => $character->rank?->name,
                     'position' => $character->rank?->position,
                 ],
-            ];
-        })->values()->all();
+            ])
+            ->values()
+            ->all();
     }
 
     /**

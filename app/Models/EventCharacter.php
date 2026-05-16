@@ -23,6 +23,7 @@ class EventCharacter extends Pivot
         'is_leader' => false,
         'is_loot_councillor' => false,
         'is_loot_master' => false,
+        'is_benched' => false,
     ];
 
     /**
@@ -39,6 +40,7 @@ class EventCharacter extends Pivot
         'is_leader',
         'is_loot_councillor',
         'is_loot_master',
+        'is_benched',
     ];
 
     /**
@@ -53,5 +55,6 @@ class EventCharacter extends Pivot
         'is_leader' => 'boolean',
         'is_loot_councillor' => 'boolean',
         'is_loot_master' => 'boolean',
+        'is_benched' => 'boolean',
     ];
 }

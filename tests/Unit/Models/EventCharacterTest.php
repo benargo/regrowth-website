@@ -52,6 +52,7 @@ class EventCharacterTest extends ModelTestCase
             'character_id',
             'slot_number',
             'group_number',
+            'is_benched',
             'is_confirmed',
             'is_leader',
             'is_loot_councillor',

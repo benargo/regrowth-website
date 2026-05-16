@@ -141,8 +141,32 @@ class FetchEvents implements ShouldQueue
                             'slot_number' => $slot->slotNumber,
                             'group_number' => $slot->groupNumber,
                             'is_confirmed' => $slot->isConfirmed,
+                            'is_benched' => false,
                         ];
                     }
+                }
+
+                // Step 3d. Sync benched characters: sign-ups not in the comp.
+                try {
+                    $rhEvent = $raidHelper->getEvent((int) $event->id);
+                    $compNames = collect($comp->slots)->pluck('name');
+                    $benchedNames = collect($rhEvent->signUps)
+                        ->whereNotIn('cClassName', ['Absence', 'Late', 'Tentative'])
+                        ->pluck('name')
+                        ->diff($compNames);
+
+                    Character::whereIn('name', $benchedNames)->get()->each(function (Character $character) use (&$characterSync) {
+                        if (! isset($characterSync[$character->id])) {
+                            $characterSync[$character->id] = [
+                                'slot_number' => null,
+                                'group_number' => null,
+                                'is_confirmed' => false,
+                                'is_benched' => true,
+                            ];
+                        }
+                    });
+                } catch (\Exception $e) {
+                    Log::warning("Could not fetch sign-ups for event ID {$event->id} to sync benched characters: {$e->getMessage()}");
                 }
             } else {
                 Log::warning("No comp data found for event ID {$event->id} from Raid Helper API. Detaching all characters.");

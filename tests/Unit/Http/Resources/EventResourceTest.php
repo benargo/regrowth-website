@@ -15,7 +15,6 @@ use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -353,22 +352,24 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_benched_characters_not_in_comp(): void
     {
-        Cache::tags(['events'])->flush();
         $this->mockChannel();
+        $this->mockRaidHelper();
 
         $inComp = Character::factory()->withRank()->create(['name' => 'Jaina']);
         $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
-
-        $this->mockRaidHelper(signUps: [
-            ['id' => 1, 'name' => 'Jaina', 'userId' => '111', 'entryTime' => 1700000000],
-            ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001],
-        ]);
 
         $event = Event::factory()->create();
         $event->characters()->attach($inComp->id, [
             'slot_number' => 1,
             'group_number' => 1,
             'is_confirmed' => true,
+            'is_benched' => false,
+        ]);
+        $event->characters()->attach($benchedChar->id, [
+            'slot_number' => null,
+            'group_number' => null,
+            'is_confirmed' => false,
+            'is_benched' => true,
         ]);
 
         $array = $this->makeResource($event);
@@ -380,22 +381,17 @@ class EventResourceTest extends TestCase
     #[Test]
     public function it_returns_bench_characters_with_expected_shape(): void
     {
-        Cache::tags(['events'])->flush();
         $this->mockChannel();
+        $this->mockRaidHelper();
 
-        $inComp = Character::factory()->withRank()->create(['name' => 'Jaina']);
         $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
 
-        $this->mockRaidHelper(signUps: [
-            ['id' => 1, 'name' => 'Jaina', 'userId' => '111', 'entryTime' => 1700000000],
-            ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001],
-        ]);
-
         $event = Event::factory()->create();
-        $event->characters()->attach($inComp->id, [
-            'slot_number' => 1,
-            'group_number' => 1,
-            'is_confirmed' => true,
+        $event->characters()->attach($benchedChar->id, [
+            'slot_number' => null,
+            'group_number' => null,
+            'is_confirmed' => false,
+            'is_benched' => true,
         ]);
 
         $array = $this->makeResource($event);
