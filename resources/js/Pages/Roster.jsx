@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Master from "@/Layouts/Master";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
+import FilterDropdown from "@/Components/FilterDropdown";
 
 function SortableHeader({ column, label, currentColumn, currentDirection, onSort }) {
     const isActive = currentColumn === column;
@@ -29,105 +30,6 @@ function SortableHeader({ column, label, currentColumn, currentDirection, onSort
     );
 }
 
-function ButtonLabelText({ label, count, total }) {
-    if (count === 0 || count === total) {
-        return <span>All {label.plural}</span>;
-    }
-    if (count === 1) {
-        return <span>1 {label.singular}</span>;
-    }
-    return (
-        <span>
-            {count} {label.plural}
-        </span>
-    );
-}
-
-function FilterDropdown({ label, options, selected, onChange, showIcon = false }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const toggleOption = (id) => {
-        if (selected.includes(id)) {
-            onChange(selected.filter((s) => s !== id));
-        } else {
-            onChange([...selected, id]);
-        }
-    };
-
-    const selectAll = () => onChange(options.map((o) => o.id));
-    const selectNone = () => onChange([]);
-
-    const selectedCount = selected.length;
-    const buttonLabel = <ButtonLabelText label={label} count={selectedCount} total={options.length} />;
-
-    return (
-        <div className="relative" ref={dropdownRef}>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between rounded border border-amber-600 bg-brown-800 px-4 py-2 text-left text-white transition-colors hover:bg-brown-700"
-            >
-                <span>{buttonLabel}</span>
-                <Icon
-                    icon="chevron-down"
-                    className={`text-amber-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                />
-            </button>
-
-            {isOpen && (
-                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded border border-amber-600 bg-brown-800 shadow-lg">
-                    {/* All / None buttons */}
-                    <div className="flex border-b border-brown-700">
-                        <button
-                            onClick={selectAll}
-                            className="flex-1 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
-                        >
-                            All
-                        </button>
-                        <button
-                            onClick={selectNone}
-                            className="flex-1 border-l border-brown-700 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
-                        >
-                            None
-                        </button>
-                    </div>
-
-                    {/* Options */}
-                    <div className="py-1">
-                        {options.map((option) => (
-                            <label
-                                key={option.id}
-                                className="flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-brown-700"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selected.includes(option.id)}
-                                    onChange={() => toggleOption(option.id)}
-                                    className="h-4 w-4 rounded border-amber-600 bg-brown-900 text-amber-600 focus:ring-amber-500 focus:ring-offset-brown-800"
-                                />
-                                {showIcon && option.media?.assets?.[0]?.value && (
-                                    <img src={option.media.assets[0].value} alt="" className="h-5 w-5 rounded" />
-                                )}
-                                <span className="text-sm text-white">{option.name}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
 
 function SearchInput({ value, onChange, placeholder = "Search by name..." }) {
     return (
@@ -326,7 +228,7 @@ export default function Roster({ members, classes, races, ranks }) {
                                     options={classes}
                                     selected={selectedClasses}
                                     onChange={setSelectedClasses}
-                                    showIcon={true}
+                                    showIcon
                                 />
                                 <FilterDropdown
                                     label={{ singular: "Race", plural: "Races" }}

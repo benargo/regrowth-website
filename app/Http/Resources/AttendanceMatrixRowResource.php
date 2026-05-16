@@ -25,7 +25,7 @@ class AttendanceMatrixRowResource extends JsonResource
         ];
 
         if ($this->character->relationLoaded('playableClass')) {
-            $data['playable_class'] = (new PlayableClassResource($this->character->playableClass))->resolve($request);
+            $data['playable_class'] = $this->character->playableClass()->first()?->toResource()->resolve($request);
         }
 
         return $data;

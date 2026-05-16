@@ -9,6 +9,7 @@ import Tooltip from "@/Components/Tooltip";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 import GuildRankLabel from "@/Components/GuildRankLabel";
+import FilterDropdown from "@/Components/FilterDropdown";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
@@ -36,91 +37,6 @@ function SearchInput({ value, onChange, placeholder = "Search by name...", dusk 
     );
 }
 
-function FilterDropdown({ label, options, selected, onChange, dusk }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const toggleOption = (id) => {
-        onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
-    };
-
-    const selectAll = () => onChange(options.map((o) => o.id));
-    const selectNone = () => onChange([]);
-
-    const allButtonDusk = dusk ? `${dusk}-all` : undefined;
-    const noneButtonDusk = dusk ? `${dusk}-none` : undefined;
-
-    const count = selected.length;
-    const total = options.length;
-    let buttonText;
-    if (count === 0) buttonText = `No ${label}`;
-    else if (count === total) buttonText = `All ${label}`;
-    else if (count === 1) buttonText = `1 ${label.slice(0, -1)}`;
-    else buttonText = `${count} ${label}`;
-
-    return (
-        <div className="relative" ref={dropdownRef}>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                dusk={dusk}
-                className="flex w-full items-center justify-between rounded border border-amber-600 bg-brown-800 px-4 py-2 text-left text-white transition-colors hover:bg-brown-700"
-            >
-                <span className="truncate text-sm">{buttonText}</span>
-                <Icon
-                    icon="chevron-down"
-                    className={`ml-2 shrink-0 text-amber-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                />
-            </button>
-
-            {isOpen && (
-                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded border border-amber-600 bg-brown-800 shadow-lg">
-                    <div className="flex border-b border-brown-700">
-                        <button
-                            onClick={selectAll}
-                            dusk={allButtonDusk}
-                            className="flex-1 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
-                        >
-                            All
-                        </button>
-                        <button
-                            onClick={selectNone}
-                            dusk={noneButtonDusk}
-                            className="flex-1 border-l border-brown-700 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
-                        >
-                            None
-                        </button>
-                    </div>
-                    <div className="py-1">
-                        {options.map((option) => (
-                            <label
-                                key={option.id}
-                                className="flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-brown-700"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selected.includes(option.id)}
-                                    onChange={() => toggleOption(option.id)}
-                                    className="h-4 w-4 rounded border-amber-600 bg-brown-900 text-amber-600 focus:ring-amber-500 focus:ring-offset-brown-800"
-                                />
-                                <span className="text-sm text-white">{option.name}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
 
 function ToggleFilter({ label, value, onChange, dusk }) {
     return (
@@ -371,15 +287,30 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
             if (attendanceNamesCache.current[characterId] !== undefined) return;
             attendanceNamesCache.current[characterId] = null; // mark pending
 
-            router.reload({
-                only: ['attendance_names'],
-                data: { ...buildServerFilters(), character_id: characterId },
-                preserveState: true,
-                onSuccess: (page) => {
-                    attendanceNamesCache.current[characterId] = page.props.attendance_names ?? null;
-                    forceUpdate((n) => n + 1);
+            const params = new URLSearchParams(
+                Object.fromEntries(
+                    Object.entries({ ...buildServerFilters(), character_id: characterId }).filter(
+                        ([, v]) => v !== undefined,
+                    ),
+                ),
+            );
+
+            fetch(`${route('api.attendance.names')}?${params}`, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            });
+            })
+                .then((r) => (r.ok ? r.json() : null))
+                .then((data) => {
+                    attendanceNamesCache.current[characterId] = data ?? null;
+                    forceUpdate((n) => n + 1);
+                })
+                .catch(() => {
+                    attendanceNamesCache.current[characterId] = null;
+                    forceUpdate((n) => n + 1);
+                });
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [selectedZoneIds, selectedGuildTagIds, selectedRankIds, sinceDate, beforeDate, includeLinkedCharacters],
@@ -453,13 +384,13 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                                 placeholder="Search by name…"
                             />
                             <FilterDropdown
-                                label="Ranks"
+                                label={{ singular: "Rank", plural: "Ranks" }}
                                 options={ranks}
                                 selected={selectedRankIds}
                                 onChange={setSelectedRankIds}
                             />
                             <FilterDropdown
-                                label="Classes"
+                                label={{ singular: "Class", plural: "Classes" }}
                                 options={availableClasses}
                                 selected={effectiveClassIds}
                                 onChange={(ids) =>
@@ -471,13 +402,13 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                         {/* Row 2: Server-side filters */}
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                             <FilterDropdown
-                                label="Zones"
+                                label={{ singular: "Zone", plural: "Zones" }}
                                 options={zones}
                                 selected={selectedZoneIds}
                                 onChange={setSelectedZoneIds}
                             />
                             <FilterDropdown
-                                label="Guild Tags"
+                                label={{ singular: "Guild Tag", plural: "Guild Tags" }}
                                 options={guildTags}
                                 selected={selectedGuildTagIds}
                                 onChange={setSelectedGuildTagIds}

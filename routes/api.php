@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AttendanceNamesController;
 use App\Http\Controllers\Api\BlizzardMediaController;
 use App\Http\Controllers\Api\Discord\GuildResourceController;
 use App\Http\Controllers\Api\EventAssignmentController;
@@ -7,6 +8,10 @@ use App\Http\Controllers\Api\EventGroupController;
 use App\Http\Controllers\Api\LootCouncil\CommentController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/attendance/names', AttendanceNamesController::class)
+    ->middleware(['auth:sanctum', 'can:view-attendance'])
+    ->name('api.attendance.names');
 
 Route::middleware('auth:sanctum')->get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzard.media');
 

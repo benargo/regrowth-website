@@ -178,61 +178,6 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
-    public function invoke_optional_attendance_names_is_absent_without_character_id(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('attendance_names')
-        );
-    }
-
-    #[Test]
-    public function invoke_optional_attendance_names_returns_names_for_merged_row(): void
-    {
-        $rank = GuildRank::factory()->create();
-        $main = Character::factory()->main()->create(['name' => 'Thrall', 'rank_id' => $rank->id]);
-        $alt = Character::factory()->create(['name' => 'ThrallAlt', 'is_main' => false, 'rank_id' => $rank->id]);
-
-        \DB::table('character_links')->insert([
-            ['character_id' => $main->id, 'linked_character_id' => $alt->id, 'created_at' => now(), 'updated_at' => now()],
-            ['character_id' => $alt->id, 'linked_character_id' => $main->id, 'created_at' => now(), 'updated_at' => now()],
-        ]);
-
-        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
-        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-15 20:00', 'UTC')]);
-        $report->characters()->attach($main->id, ['presence' => 1]);
-        $report->characters()->attach($alt->id, ['presence' => 1]);
-
-        $user = User::factory()->officer()->create();
-
-        // First, do a normal request to obtain the Inertia asset version.
-        $initial = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
-        $initial->assertOk();
-        $pageData = $initial->viewData('page');
-
-        $response = $this->actingAs($user)->get(
-            route('raiding.attendance.matrix', [
-                'character_id' => $main->id,
-                'combine_linked_characters' => 1,
-            ]),
-            [
-                'X-Inertia' => 'true',
-                'X-Inertia-Version' => $pageData['version'],
-                'X-Inertia-Partial-Component' => 'Raiding/Attendance/Matrix',
-                'X-Inertia-Partial-Data' => 'attendance_names',
-            ]
-        );
-
-        $response->assertOk();
-        $data = $response->json();
-        $this->assertArrayHasKey('attendance_names', $data['props']);
-        $this->assertNotNull($data['props']['attendance_names']);
-    }
-
-    #[Test]
     public function invoke_deferred_prop_returns_empty_when_no_data(): void
     {
         $user = User::factory()->officer()->create();
@@ -328,6 +273,21 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.guild_tag_ids', [$countingTag->id])
+        );
+    }
+
+    #[Test]
+    public function invoke_default_rank_ids_include_only_attendance_counting_ranks(): void
+    {
+        $countingRank = GuildRank::factory()->create();
+        GuildRank::factory()->doesNotCountAttendance()->create();
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('filters.rank_ids', [$countingRank->id])
         );
     }
 
