@@ -36,8 +36,8 @@ class RaidingController extends Controller
             'upcomingEvents' => Inertia::defer(function () use ($request) {
                 return Cache::tags('raiding', 'events')->remember('events:upcoming', now()->addMinutes(10), function () use ($request) {
                     return EventSummaryResource::collection(
-                        Event::where('start_time', '>=', now())
-                            ->where('start_time', '<=', now()->addWeek()->endOfDay())
+                        Event::where('end_time', '>=', now()->subHours(2))
+                            ->where('end_time', '<=', now()->addWeek()->endOfDay())
                             ->orderBy('start_time')
                             ->get()
                     )->resolve($request);

@@ -76,9 +76,9 @@ class IndexTest extends TestCase
 
         $user = User::factory()->create();
 
-        $upcomingEvent = Event::factory()->create(['start_time' => now()->addDays(3)]);
-        $pastEvent = Event::factory()->create(['start_time' => now()->subDay()]);
-        $tooFarFutureEvent = Event::factory()->create(['start_time' => now()->addWeek()->addDays(2)]);
+        $upcomingEvent = Event::factory()->create(['end_time' => now()->addDays(3)]);
+        $pastEvent = Event::factory()->create(['end_time' => now()->subDay()->subHours(3)]);
+        $tooFarFutureEvent = Event::factory()->create(['end_time' => now()->addWeek()->addDays(2)]);
 
         $response = $this->actingAs($user)->get(route('raiding.index'));
 
@@ -99,8 +99,8 @@ class IndexTest extends TestCase
 
         $user = User::factory()->create();
 
-        $laterEvent = Event::factory()->create(['start_time' => now()->addDays(5)]);
-        $earlierEvent = Event::factory()->create(['start_time' => now()->addDays(2)]);
+        $laterEvent = Event::factory()->create(['start_time' => now()->addDays(5), 'end_time' => now()->addDays(5)->addHours(4)]);
+        $earlierEvent = Event::factory()->create(['start_time' => now()->addDays(2), 'end_time' => now()->addDays(2)->addHours(4)]);
 
         $response = $this->actingAs($user)->get(route('raiding.index'));
 
