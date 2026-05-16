@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Phase;
 use App\Models\PlannedAbsence;
@@ -19,6 +20,8 @@ use Inertia\Response;
 
 class AttendanceDashboardController extends Controller
 {
+    private Request $request;
+
     public function __construct(
         private readonly Calculator $calculator,
         private DataTable $table,
@@ -29,12 +32,14 @@ class AttendanceDashboardController extends Controller
      */
     public function __invoke(Request $request): Response
     {
+        $this->request = $request;
+
         return Inertia::render('Raiding/Attendance/Index', [
             'latestReportDate' => $this->latestReportDate(),
             'stats' => Inertia::defer(fn () => [
                 ...$this->stats(),
                 'upcomingAbsences' => PlannedAbsenceResource::collection($this->upcomingAbsences())
-                    ->toResponse($request)
+                    ->toResponse($this->request)
                     ->getData(true)['data'],
             ]),
         ]);
@@ -150,7 +155,7 @@ class AttendanceDashboardController extends Controller
     private function upcomingAbsences(): Collection
     {
         return PlannedAbsence::query()
-            ->with('character:id,name,playable_class')
+            ->with(['character:id,name,playable_class_id', 'character.playableClass'])
             ->where('start_date', '>=', now()->startOfDay())
             ->orderBy('start_date')
             ->limit(4)
@@ -164,9 +169,6 @@ class AttendanceDashboardController extends Controller
      */
     private function toPlayer(CharacterAttendanceRowData $row): array
     {
-        return [
-            'name' => $row->character->name,
-            'playable_class' => $row->character->playable_class,
-        ];
+        return $row->character?->load('playableClass')->toResource(CharacterSummaryResource::class)->resolve($this->request);
     }
 }

@@ -54,6 +54,17 @@ class CharacterFactory extends Factory
     }
 
     /**
+     * Use a unique randomly-generated name instead of the fixed pool, preventing
+     * collisions when creating multiple characters in the same test.
+     */
+    public function withUniqueName(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => fake()->unique()->firstName(),
+        ]);
+    }
+
+    /**
      * Indicate that the character has a guild rank.
      */
     public function withRank(): static

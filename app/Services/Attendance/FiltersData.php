@@ -3,6 +3,7 @@
 namespace App\Services\Attendance;
 
 use App\Models\Character;
+use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Raids\Report;
 use Carbon\Carbon;
@@ -73,7 +74,9 @@ class FiltersData extends Data
     {
         $character = ! empty($input['character']) ? Character::find($input['character']) : null;
 
-        $rankIds = self::parseCsv($input, 'rank_ids') ?? [];
+        $rankIds = self::parseCsv($input, 'rank_ids')
+            ?? GuildRank::where('count_attendance', true)->pluck('id')->toArray();
+
         $zoneIds = self::parseCsv($input, 'zone_ids');
 
         $guildTagIds = self::parseCsv($input, 'guild_tag_ids')

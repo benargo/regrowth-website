@@ -3,6 +3,7 @@
 namespace App\Services\Attendance;
 
 use App\Models\Character;
+use App\Models\PlayableClass;
 use Spatie\LaravelData\Data;
 
 final class PlayerPresenceData extends Data
@@ -13,7 +14,7 @@ final class PlayerPresenceData extends Data
     ) {}
 
     /**
-     * @return array{id: int, name: string, rank_id: int|null, playable_class: mixed, presence: int}
+     * @return array{id: int, name: string, rank_id: int|null, playable_class: PlayableClass|null, presence: int}
      */
     public function toArray(): array
     {
@@ -21,13 +22,13 @@ final class PlayerPresenceData extends Data
             'id' => $this->character->id,
             'name' => $this->character->name,
             'rank_id' => $this->character->rank_id,
-            'playable_class' => $this->character->playable_class,
+            'playable_class' => $this->character->playableClass,
             'presence' => $this->presence,
         ];
     }
 
     /**
-     * @return array{id: int, name: string, rank_id: int|null, playable_class: mixed, presence: int}
+     * @return array{id: int, name: string, rank_id: int|null, playable_class: PlayableClass|null, presence: int}
      */
     public function jsonSerialize(): array
     {

@@ -8,6 +8,7 @@ use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
@@ -148,6 +149,35 @@ class AttendanceMatrixControllerTest extends TestCase
     }
 
     #[Test]
+    public function invoke_deferred_prop_rows_include_playable_class_with_icon_url(): void
+    {
+        $rank = GuildRank::factory()->create();
+        $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
+        $character = Character::factory()->main()->create([
+            'name' => 'Thrall',
+            'rank_id' => $rank->id,
+            'playable_class_id' => $playableClass->id,
+        ]);
+        $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
+        $report = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-01 20:00', 'Europe/Paris')]);
+        $report->characters()->attach($character->id, ['presence' => 1]);
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('matrix.rows', 1)
+                ->where('matrix.rows.0.name', 'Thrall')
+                ->has('matrix.rows.0.playable_class')
+                ->where('matrix.rows.0.playable_class.name', 'Warrior')
+                ->has('matrix.rows.0.playable_class.icon_url')
+            )
+        );
+    }
+
+    #[Test]
     public function invoke_deferred_prop_returns_empty_when_no_data(): void
     {
         $user = User::factory()->officer()->create();
@@ -243,6 +273,21 @@ class AttendanceMatrixControllerTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('filters.guild_tag_ids', [$countingTag->id])
+        );
+    }
+
+    #[Test]
+    public function invoke_default_rank_ids_include_only_attendance_counting_ranks(): void
+    {
+        $countingRank = GuildRank::factory()->create();
+        GuildRank::factory()->doesNotCountAttendance()->create();
+
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('raiding.attendance.matrix'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('filters.rank_ids', [$countingRank->id])
         );
     }
 

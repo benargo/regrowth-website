@@ -4,33 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Enums\AllianceRaces;
 use App\Models\GuildRank;
+use App\Models\PlayableClass;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class GuildRosterController extends Controller
 {
-    private $classes;
-
     private $races;
 
     private $ranks;
 
     public function __construct(
         protected BlizzardService $blizzard,
-        protected MediaService $media,
     ) {
-        $this->classes = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable_classes:index', now()->addDays(30), function () {
-            return collect(Arr::get($this->blizzard->getPlayableClasses(), 'classes'))->map(function (array $playableClass) {
-                $media = $this->blizzard->getPlayableClassMedia(Arr::get($playableClass, 'id'));
-                $assets = array_values($this->media->get(Arr::get($media, 'assets')));
-
-                return array_merge($playableClass, ['media' => $assets[0] ?? null]);
-            })->all();
-        }));
-
+        // Load from DB keyed by ID; icons are managed by PlayableClassSeeder via the media library.
+        // Keyed by ID so buildMemberCollection can look up by class ID in O(1).
         $this->races = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable_races:alliance_races', now()->addDays(30), function () {
             return collect(Arr::get($this->blizzard->getPlayableRaces(), 'races', []))
                 ->filter(fn (array $race) => in_array($race['id'], AllianceRaces::ids()))
@@ -41,10 +32,10 @@ class GuildRosterController extends Controller
         $this->ranks = GuildRank::select('id', 'position', 'name')->orderBy('position')->get();
     }
 
-    public function index()
+    public function index(Request $request)
     {
         return Inertia::render('Roster', [
-            'classes' => $this->classes->toArray(),
+            'classes' => PlayableClass::all()->toResourceCollection()->toArray($request),
             'races' => $this->races->toArray(),
             'ranks' => $this->ranks,
             'level_cap' => 70,
@@ -57,9 +48,12 @@ class GuildRosterController extends Controller
         return Cache::tags(['blizzard', 'mapped-response'])->remember('guild_roster', now()->addHours(6), function () {
             $roster = $this->blizzard->getGuildRoster();
 
-            return Arr::map(Arr::get($roster, 'members'), function (array $member, string $key) {
-                data_set($member, 'character.playable_class', $this->classes->firstWhere('id', Arr::get($member, 'character.playable_class.id')));
-                data_set($member, 'character.playable_race', $this->races->firstWhere('id', Arr::get($member, 'character.playable_race.id')));
+            return Arr::map(Arr::get($roster, 'members'), function (array $member) {
+                $classId = Arr::get($member, 'character.playable_class.id');
+                $raceId = Arr::get($member, 'character.playable_race.id');
+
+                data_set($member, 'character.playable_class', $classId ? PlayableClass::find($classId) : null);
+                data_set($member, 'character.playable_race', $this->races->firstWhere('id', $raceId));
                 data_set($member, 'rank', $this->ranks->firstWhere('position', Arr::get($member, 'rank'))?->toArray());
 
                 return $member;

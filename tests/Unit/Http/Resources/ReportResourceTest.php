@@ -6,6 +6,7 @@ use App\Http\Resources\ReportResource;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\Zone;
@@ -215,6 +216,55 @@ class ReportResourceTest extends TestCase
         $this->assertArrayHasKey('start_time', $linked);
         $this->assertArrayHasKey('zone', $linked);
         $this->assertArrayHasKey('pivot', $linked);
+    }
+
+    #[Test]
+    public function it_returns_playable_class_for_characters_when_loaded(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        $character = Character::factory()->withPlayableClass($playableClass)->create(['name' => 'Thrall']);
+        $report->characters()->attach($character, ['presence' => 1]);
+        $report->load('characters.playableClass');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $characterData = $array['characters'][0];
+        $this->assertArrayHasKey('playable_class', $characterData);
+        $this->assertIsArray($characterData['playable_class']);
+        $this->assertSame(1, $characterData['playable_class']['id']);
+        $this->assertSame('Warrior', $characterData['playable_class']['name']);
+    }
+
+    #[Test]
+    public function it_returns_null_playable_class_for_characters_without_one(): void
+    {
+        $report = Report::factory()->withoutGuildTag()->create();
+        $character = Character::factory()->create(['name' => 'Thrall']);
+        $report->characters()->attach($character, ['presence' => 1]);
+        $report->load('characters.playableClass');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $characterData = $array['characters'][0];
+        $this->assertArrayHasKey('playable_class', $characterData);
+        $this->assertNull($characterData['playable_class']);
+    }
+
+    #[Test]
+    public function it_includes_icon_url_in_character_playable_class(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['name' => 'Druid']);
+        $character = Character::factory()->for($playableClass, 'playableClass')->create();
+        $report = Report::factory()->create();
+        $report->characters()->attach($character, ['presence' => 'present', 'is_loot_councillor' => false]);
+        $report->load('characters.playableClass');
+
+        $array = (new ReportResource($report))->toArray(new Request);
+
+        $characterData = $array['characters'][0];
+        $this->assertArrayHasKey('icon_url', $characterData['playable_class']);
+        $this->assertArrayHasKey('slug', $characterData['playable_class']);
     }
 
     #[Test]

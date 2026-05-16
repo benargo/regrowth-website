@@ -5,7 +5,7 @@ import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAx
 function TooltipBody({ point }) {
     return (
         <div className="flex flex-col gap-0.5 text-left">
-            <h3 className="whitespace-nowrap text-sm font-semibold text-amber-300">{point.name}</h3>
+            <h3 className="whitespace-nowrap text-sm font-semibold text-amber-300">{point.character.name}</h3>
             <p className="whitespace-nowrap font-bold">{point.percentage.toFixed(2)}% attendance</p>
             <p className="whitespace-nowrap">
                 <span className="font-bold">Raids:</span> {point.raidsTotal}
@@ -33,7 +33,7 @@ function PointShape({ cx, cy, payload }) {
     const iconSize = 20;
     const divRef = useRef(null);
     const [size, setSize] = useState({ width: 200, height: 40 });
-    const colorClass = `playable-class-${point.playable_class.name.toLowerCase().replace(/\s+/g, "-")}`;
+    const colorClass = `playable-class-${point.character.playable_class.name.toLowerCase().replace(/\s+/g, "-")}`;
 
     useEffect(() => {
         if (!divRef.current) return;
@@ -59,17 +59,19 @@ function PointShape({ cx, cy, payload }) {
         >
             <div ref={divRef} className={`bg-${colorClass} inline-flex rounded-sm`}>
                 <Link
-                    href={route("raiding.attendance.matrix", { character: point.id })}
+                    href={route("raiding.attendance.matrix", { character: point.character.id })}
                     className="inline-flex items-center gap-1 p-1"
                 >
-                    {point.playable_class?.icon_url && (
+                    {point.character.playable_class?.icon_url && (
                         <img
-                            src={point.playable_class.icon_url}
-                            alt={point.playable_class.name}
+                            src={point.character.playable_class.icon_url}
+                            alt={point.character.playable_class.name}
                             className="inline-block h-4 w-4 rounded-sm"
                         />
                     )}
-                    <span className="hidden whitespace-nowrap text-sm text-gray-900 lg:inline">{point.name}</span>
+                    <span className="hidden whitespace-nowrap text-sm text-gray-900 lg:inline">
+                        {point.character.name}
+                    </span>
                 </Link>
             </div>
         </foreignObject>

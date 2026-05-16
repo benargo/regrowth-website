@@ -32,25 +32,37 @@ class ReportResource extends JsonResource
             'characters' => $this->whenLoaded('characters', fn ($characters) => $characters
                 ->sortBy('name')
                 ->values()
-                ->map(fn ($character) => [
-                    'id' => $character->id,
-                    'name' => $character->name,
-                    'is_main' => $character->is_main,
-                    'playable_class' => $character->playable_class,
-                    'playable_race' => $character->playable_race,
-                    'pivot' => [
-                        'presence' => $character->pivot->presence,
-                        'is_loot_councillor' => $character->pivot->is_loot_councillor,
-                    ],
-                    'rank' => $character->relationLoaded('rank')
-                        ? ($character->rank ? [
+                ->map(function ($character) use ($request) {
+                    $data = [
+                        'id' => $character->id,
+                        'name' => $character->name,
+                        'is_main' => $character->is_main,
+                        'playable_class' => null,
+                        'playable_race' => $character->playable_race,
+                        'pivot' => [
+                            'presence' => $character->pivot->presence,
+                            'is_loot_councillor' => $character->pivot->is_loot_councillor,
+                        ],
+                        'rank' => null,
+                    ];
+
+                    if ($character->relationLoaded('playableClass')) {
+                        $data['playable_class'] = $character->playableClass
+                            ? (new PlayableClassResource($character->playableClass))->toArray($request)
+                            : null;
+                    }
+
+                    if ($character->relationLoaded('rank')) {
+                        $data['rank'] = $character->rank ? [
                             'id' => $character->rank->id,
                             'position' => $character->rank->position,
                             'name' => $character->rank->name,
                             'count_attendance' => $character->rank->count_attendance,
-                        ] : null)
-                        : null,
-                ])
+                        ] : null;
+                    }
+
+                    return $data;
+                })
                 ->values()
                 ->all()
             ),

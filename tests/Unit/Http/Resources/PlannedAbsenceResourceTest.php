@@ -3,7 +3,9 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\PlannedAbsenceResource;
+use App\Models\Character;
 use App\Models\PlannedAbsence;
+use App\Models\PlayableClass;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -78,6 +80,40 @@ class PlannedAbsenceResourceTest extends TestCase
 
         $this->assertIsArray($array['character']);
         $this->assertSame($absence->character_id, $array['character']['id']);
+    }
+
+    #[Test]
+    public function it_includes_character_playable_class_when_loaded(): void
+    {
+        $this->mockRequestUser();
+
+        $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        $character = Character::factory()->withPlayableClass($playableClass)->create(['name' => 'Thrall']);
+        $absence = PlannedAbsence::factory()->create(['character_id' => $character->id]);
+        $absence->load('character.playableClass');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertIsArray($array['character']);
+        $this->assertArrayHasKey('playable_class', $array['character']);
+        $this->assertSame(1, $array['character']['playable_class']['id']);
+        $this->assertSame('Warrior', $array['character']['playable_class']['name']);
+    }
+
+    #[Test]
+    public function it_returns_null_playable_class_when_character_has_none(): void
+    {
+        $this->mockRequestUser();
+
+        $character = Character::factory()->create(['name' => 'Thrall']);
+        $absence = PlannedAbsence::factory()->create(['character_id' => $character->id]);
+        $absence->load('character.playableClass');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertIsArray($array['character']);
+        $this->assertArrayHasKey('playable_class', $array['character']);
+        $this->assertNull($array['character']['playable_class']);
     }
 
     #[Test]
@@ -205,6 +241,20 @@ class PlannedAbsenceResourceTest extends TestCase
         $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
 
         $this->assertSame('2026-06-20', $array['end_date']);
+    }
+
+    #[Test]
+    public function it_includes_icon_url_in_playable_class(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
+        $character = Character::factory()->for($playableClass, 'playableClass')->create();
+        $absence = PlannedAbsence::factory()->for($character)->create();
+        $absence->load('character.playableClass');
+
+        $array = (new PlannedAbsenceResource($absence))->toArray(new Request);
+
+        $this->assertArrayHasKey('icon_url', $array['character']['playable_class']);
+        $this->assertArrayHasKey('slug', $array['character']['playable_class']);
     }
 
     /**

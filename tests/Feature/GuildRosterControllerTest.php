@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\PlayableClass;
 use App\Services\Blizzard\BlizzardService;
 use Database\Seeders\GuildRankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,19 +29,6 @@ class GuildRosterControllerTest extends TestCase
             ->andReturnUsing(fn (string $key, $ttl, callable $callback) => $callback());
 
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getPlayableClasses')->andReturn([
-                'classes' => [
-                    ['id' => 7, 'name' => 'Shaman'],
-                    ['id' => 1, 'name' => 'Warrior'],
-                ],
-            ]);
-
-            $mock->shouldReceive('findPlayableClass')
-                ->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Class {$id}"]);
-
-            $mock->shouldReceive('getPlayableClassMedia')
-                ->andReturn(['assets' => [['key' => 'icon', 'value' => 'https://example.com/icon.jpg']]]);
-
             $mock->shouldReceive('getPlayableRaces')->andReturn([
                 'races' => [
                     ['id' => 1, 'name' => 'Human'],
@@ -74,12 +62,22 @@ class GuildRosterControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_passes_classes_with_icon_url_to_the_view(): void
+    {
+        PlayableClass::factory()->count(2)->create();
+
+        $response = $this->get(route('roster.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page->component('Roster')
+            ->has('classes', 2, fn (Assert $class) => $class->hasAll(['id', 'name', 'slug', 'icon_url'])
+            )
+        );
+    }
+
+    #[Test]
     public function it_loads_members_via_deferred_prop(): void
     {
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getPlayableClasses')->andReturn(['classes' => []]);
-            $mock->shouldReceive('findPlayableClass')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Class {$id}"]);
-            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
             $mock->shouldReceive('getPlayableRaces')->andReturn(['races' => []]);
             $mock->shouldReceive('findPlayableRace')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Race {$id}"]);
             $mock->shouldReceive('getGuildRoster')->andReturn([
@@ -118,9 +116,6 @@ class GuildRosterControllerTest extends TestCase
     public function it_enriches_members_with_playable_class_and_race(): void
     {
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getPlayableClasses')->andReturn(['classes' => []]);
-            $mock->shouldReceive('findPlayableClass')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Class {$id}"]);
-            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
             $mock->shouldReceive('getPlayableRaces')->andReturn(['races' => []]);
             $mock->shouldReceive('findPlayableRace')->andReturnUsing(fn (int $id) => ['id' => $id, 'name' => "Race {$id}"]);
             $mock->shouldReceive('getGuildRoster')->andReturn([

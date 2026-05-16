@@ -9,6 +9,7 @@ use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\PlannedAbsence;
+use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -349,6 +350,50 @@ class AttendanceDashboardControllerTest extends TestCase
     }
 
     #[Test]
+    public function stats_upcoming_absences_include_character_playable_class(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $playableClass = PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        $character = Character::factory()->withPlayableClass($playableClass)->create(['name' => 'Thrall']);
+        PlannedAbsence::factory()->create([
+            'character_id' => $character->id,
+            'start_date' => now()->addDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('stats.upcomingAbsences.0.character')
+                    ->where('stats.upcomingAbsences.0.character.playable_class.id', 1)
+                    ->where('stats.upcomingAbsences.0.character.playable_class.name', 'Warrior')
+                )
+            );
+    }
+
+    #[Test]
+    public function stats_upcoming_absences_include_null_playable_class_when_character_has_none(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $character = Character::factory()->create(['name' => 'Thrall']);
+        PlannedAbsence::factory()->create([
+            'character_id' => $character->id,
+            'start_date' => now()->addDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('raiding.attendance.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload
+                    ->has('stats.upcomingAbsences.0.character')
+                    ->where('stats.upcomingAbsences.0.character.playable_class', null)
+                )
+            );
+    }
+
+    #[Test]
     public function invoke_classifies_picking_up_correctly(): void
     {
         $rank = GuildRank::factory()->create();
@@ -428,9 +473,9 @@ class AttendanceDashboardControllerTest extends TestCase
         $rank = GuildRank::factory()->create();
         $tag = GuildTag::factory()->countsAttendance()->withoutPhase()->create();
 
-        $main1 = Character::factory()->main()->create(['rank_id' => $rank->id]);
-        $main2 = Character::factory()->main()->create(['rank_id' => $rank->id]);
-        $linked = Character::factory()->create(['is_main' => false, 'rank_id' => $rank->id]);
+        $main1 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
+        $main2 = Character::factory()->main()->withUniqueName()->create(['rank_id' => $rank->id]);
+        $linked = Character::factory()->withUniqueName()->create(['is_main' => false, 'rank_id' => $rank->id]);
 
         $report = Report::factory()->withGuildTag($tag)->create(['start_time' => now()->subDays(1)]);
         $report->characters()->attach($main1->id, ['presence' => 1]);
