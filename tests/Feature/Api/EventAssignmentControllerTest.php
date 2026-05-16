@@ -38,7 +38,6 @@ class EventAssignmentControllerTest extends TestCase
             'position' => 1,
             'is_visible' => true,
         ]);
-        $memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-raid-plans', 'guard_name' => 'web']));
         $memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));
 
         $this->editor = User::factory()->create();

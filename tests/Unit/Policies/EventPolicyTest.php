@@ -128,7 +128,7 @@ class EventPolicyTest extends TestCase
     #[Test]
     public function it_denies_update_with_unrelated_permission(): void
     {
-        $user = $this->userWithPermission('view-raid-plans');
+        $user = $this->userWithPermission('view-attendance');
         $event = Event::factory()->create();
 
         $this->assertFalse($this->policy->update($user, $event));

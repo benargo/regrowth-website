@@ -32,7 +32,7 @@ class RaidingPagesTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
 
-        foreach (['view-attendance', 'view-planned-absences', 'create-planned-absences', 'update-planned-absences', 'view-raid-plans'] as $permissionName) {
+        foreach (['view-attendance', 'view-planned-absences', 'create-planned-absences', 'update-planned-absences'] as $permissionName) {
             $permission = Permission::firstOrCreate(['name' => $permissionName, 'guard_name' => 'web']);
             $officerRole->givePermissionTo($permission);
         }

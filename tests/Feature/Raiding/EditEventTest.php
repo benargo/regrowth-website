@@ -39,7 +39,6 @@ class EditEventTest extends TestCase
             'position' => 1,
             'is_visible' => true,
         ]);
-        $this->memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-raid-plans', 'guard_name' => 'web']));
         $this->memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));
 
         $this->mock(Discord::class, function (MockInterface $mock) {
