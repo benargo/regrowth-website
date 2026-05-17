@@ -33,6 +33,6 @@ class CompositionChanged implements FlushesRaidingCache, ShouldBroadcast
 
     public function broadcastWith(): array
     {
-        return ['composition' => $this->composition];
+        return [];
     }
 }

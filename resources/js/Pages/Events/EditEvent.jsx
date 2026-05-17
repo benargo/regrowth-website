@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Link } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Collapsible from "@/Components/Collapsible";
 import AssignmentCellEditor, { resetAssignmentOptionsFetched } from "@/Components/Events/AssignmentCellEditor";
@@ -611,9 +611,8 @@ export default function EditEvent({ event, targetMarkers }) {
     const duration = formatDuration({ seconds: event.duration });
     const formatTime = (date) => date.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-    // Groups to show in the composition table (lifted to state so FetchEvents broadcasts can update them).
-    const [compGroups, setCompGroups] = useState(event.composition?.groups ?? []);
-    const [compBench, setCompBench] = useState(event.composition?.bench ?? []);
+    const compGroups = event.composition?.groups ?? [];
+    const compBench = event.composition?.bench ?? [];
 
     // Flatten all assignments from the event resource into the editable flat shape.
     // We keep _leftSide / _rightSide as the raw resource {type, data} objects so
@@ -783,10 +782,7 @@ export default function EditEvent({ event, targetMarkers }) {
                     );
                 }
             },
-            onCompositionChanged: ({ composition }) => {
-                setCompGroups(composition.groups ?? []);
-                setCompBench(composition.bench ?? []);
-            },
+            onCompositionChanged: () => router.reload({ preserveScroll: true }),
         },
         draggingKey,
     );

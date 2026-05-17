@@ -377,7 +377,7 @@ class BroadcastEventsTest extends TestCase
     }
 
     #[Test]
-    public function composition_changed_payload_contains_composition(): void
+    public function composition_changed_broadcasts_signal_only(): void
     {
         $event = Event::factory()->create();
         $composition = ['groups' => [['group_number' => 1, 'members' => []]], 'bench' => []];
@@ -385,7 +385,7 @@ class BroadcastEventsTest extends TestCase
         $broadcast = new CompositionChanged($event->id, $composition);
 
         $this->assertEquals('CompositionChanged', $broadcast->broadcastAs());
-        $this->assertEquals(['composition' => $composition], $broadcast->broadcastWith());
+        $this->assertEquals([], $broadcast->broadcastWith());
     }
 
     // ─── Cache invalidation ──────────────────────────────────────────────────
