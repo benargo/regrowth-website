@@ -21,14 +21,17 @@ class DatabaseSeeder extends Seeder
             DailyQuestSeeder::class,
             GuildRankSeeder::class,
 
-            // Then seed the Warcraft Logs data.
+            // Then seed the datasets
             PhaseSeeder::class,
             RaidSeeder::class,
             BossSeeder::class,
             ZoneSeeder::class,
+            PlayableClassSeeder::class,
+            TargetMarkerSeeder::class,
 
             // Then seed the loot bias data
             PrioritySeeder::class,
+            ItemSeeder::class,
         ]);
     }
 }
