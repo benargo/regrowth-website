@@ -2,9 +2,6 @@
 
 namespace Database\Seeders;
 
-use Database\Seeders\TBC\BossSeeder;
-use Database\Seeders\TBC\PhaseSeeder;
-use Database\Seeders\TBC\RaidSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
