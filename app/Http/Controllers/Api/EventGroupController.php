@@ -30,6 +30,7 @@ class EventGroupController extends Controller
 
             return EventAssignmentGroup::create([
                 'event_id' => $event->id,
+                'boss_id' => $request->input('boss_id'),
                 'name' => $request->input('name', 'New group'),
                 'sort_order' => $maxSortOrder + 1,
             ]);
@@ -40,6 +41,7 @@ class EventGroupController extends Controller
         return response()->json([
             'id' => $group->id,
             'name' => $group->name,
+            'boss_id' => $group->boss_id,
             'sort_order' => $group->sort_order,
         ], 201);
     }
@@ -51,7 +53,7 @@ class EventGroupController extends Controller
     {
         abort_if($group->event_id !== $event->id, 404);
 
-        $group->update($request->only(['name', 'sort_order']));
+        $group->update($request->only(['name', 'sort_order', 'boss_id']));
 
         EventGroupUpdated::dispatch($group);
 

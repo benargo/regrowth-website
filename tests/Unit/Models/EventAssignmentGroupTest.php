@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Boss;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
@@ -44,6 +45,7 @@ class EventAssignmentGroupTest extends ModelTestCase
 
         $this->assertFillable($model, [
             'event_id',
+            'boss_id',
             'name',
             'notes',
             'sort_order',
@@ -159,6 +161,35 @@ class EventAssignmentGroupTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_belongs_to_a_boss(): void
+    {
+        $boss = Boss::factory()->create();
+        $group = $this->create(['boss_id' => $boss->id]);
+
+        $this->assertRelation($group, 'boss', BelongsTo::class);
+        $this->assertTrue($group->boss->is($boss));
+    }
+
+    #[Test]
+    public function it_can_be_created_with_a_boss(): void
+    {
+        $boss = Boss::factory()->create();
+        $group = $this->create(['boss_id' => $boss->id]);
+
+        $this->assertModelExists($group);
+        $this->assertSame($boss->id, $group->boss_id);
+    }
+
+    #[Test]
+    public function it_can_be_created_without_a_boss(): void
+    {
+        $group = $this->create(['boss_id' => null]);
+
+        $this->assertModelExists($group);
+        $this->assertNull($group->boss_id);
+    }
+
+    #[Test]
     public function it_has_many_assignments(): void
     {
         $group = $this->create();
@@ -181,6 +212,17 @@ class EventAssignmentGroupTest extends ModelTestCase
         $group = $this->create(['event_id' => $event->id]);
 
         $event->delete();
+
+        $this->assertDatabaseMissing('event_assignment_groups', ['id' => $group->id]);
+    }
+
+    #[Test]
+    public function deleting_boss_cascades_to_groups(): void
+    {
+        $boss = Boss::factory()->create();
+        $group = $this->create(['boss_id' => $boss->id]);
+
+        $boss->delete();
 
         $this->assertDatabaseMissing('event_assignment_groups', ['id' => $group->id]);
     }

@@ -11,6 +11,7 @@ use App\Models\EventAssignmentGroup;
 use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
@@ -130,6 +131,59 @@ class EventAssignmentControllerTest extends TestCase
         $this->postJson(route('api.events.assignments.store', $this->event))->assertUnauthorized();
     }
 
+    #[Test]
+    public function it_returns_422_when_storing_assignment_with_boss_id_mismatching_group(): void
+    {
+        $groupBoss = Boss::factory()->create();
+        $otherBoss = Boss::factory()->create();
+        $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => $groupBoss->id]);
+
+        $this->actingAs($this->editor)
+            ->postJson(route('api.events.assignments.store', $this->event), [
+                'group_id' => $group->id,
+                'boss_id' => $otherBoss->id,
+            ])
+            ->assertUnprocessable();
+    }
+
+    #[Test]
+    public function it_allows_storing_assignment_when_group_and_boss_match(): void
+    {
+        $boss = Boss::factory()->create();
+        $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => $boss->id]);
+
+        $this->actingAs($this->editor)
+            ->postJson(route('api.events.assignments.store', $this->event), [
+                'group_id' => $group->id,
+                'boss_id' => $boss->id,
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('event_assignments', [
+            'event_id' => $this->event->id,
+            'group_id' => $group->id,
+            'boss_id' => $boss->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_allows_storing_assignment_when_group_has_null_boss_and_assignment_has_null_boss(): void
+    {
+        $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => null]);
+
+        $this->actingAs($this->editor)
+            ->postJson(route('api.events.assignments.store', $this->event), [
+                'group_id' => $group->id,
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('event_assignments', [
+            'event_id' => $this->event->id,
+            'group_id' => $group->id,
+            'boss_id' => null,
+        ]);
+    }
+
     // ─── update() ─────────────────────────────────────────────────────────────
 
     #[Test]
@@ -228,6 +282,45 @@ class EventAssignmentControllerTest extends TestCase
         $this->actingAs($this->viewer)
             ->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), ['left_value' => 'X'])
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function it_rejects_at_db_layer_when_factory_bypasses_controller_with_mismatched_boss_id(): void
+    {
+        $groupBoss = Boss::factory()->create();
+        $otherBoss = Boss::factory()->create();
+        $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => $groupBoss->id]);
+
+        try {
+            EventAssignment::factory()->for($this->event)->create([
+                'group_id' => $group->id,
+                'boss_id' => $otherBoss->id,
+            ]);
+            $this->fail('Expected QueryException due to composite FK violation.');
+        } catch (QueryException) {
+            // Expected.
+        }
+
+        $this->assertDatabaseMissing('event_assignments', [
+            'group_id' => $group->id,
+            'boss_id' => $otherBoss->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_returns_422_when_updating_assignment_into_group_with_different_boss(): void
+    {
+        $groupBoss = Boss::factory()->create();
+        $otherBoss = Boss::factory()->create();
+        $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => $groupBoss->id]);
+        $assignment = EventAssignment::factory()->for($this->event)->create(['boss_id' => $otherBoss->id]);
+
+        $this->actingAs($this->editor)
+            ->patchJson(route('api.events.assignments.update', [$this->event, $assignment]), [
+                'group_id' => $group->id,
+                'boss_id' => $otherBoss->id,
+            ])
+            ->assertUnprocessable();
     }
 
     // ─── reorder() ────────────────────────────────────────────────────────────
