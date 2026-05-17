@@ -227,9 +227,11 @@ export default function AssignmentCellEditor({
     const [open, setOpen] = useState(false);
     const [showDefineSpell, setShowDefineSpell] = useState(false);
     const [dataLoading, setDataLoading] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
     const caretRef = useRef(null);
+    const itemRefsRef = useRef([]);
 
     const openDropdown = () => {
         setOpen(true);
@@ -259,6 +261,19 @@ export default function AssignmentCellEditor({
         [characters, playableClasses, targetMarkers, spells, groups, query, defaultIconUrl],
     );
 
+    const flatOptions = useMemo(() => {
+        const items = [
+            ...targetMarkerOptions,
+            ...characterOptions,
+            ...compGroupOptions,
+            ...playableClassOptions,
+            ...spellOptions,
+        ];
+        if (canCreateSpells && query.length > 0) items.push({ type: "__define_spell__" });
+        if (query.length > 0) items.push({ type: "__use_raw__" });
+        return items;
+    }, [targetMarkerOptions, characterOptions, compGroupOptions, playableClassOptions, spellOptions, canCreateSpells, query]);
+
     useEffect(() => {
         const handler = (e) => {
             if (
@@ -272,6 +287,20 @@ export default function AssignmentCellEditor({
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
+    useEffect(() => {
+        setHighlightedIndex(-1);
+    }, [query]);
+
+    useEffect(() => {
+        if (open) setHighlightedIndex(-1);
+    }, [open]);
+
+    useEffect(() => {
+        if (highlightedIndex >= 0) {
+            itemRefsRef.current[highlightedIndex]?.scrollIntoView({ block: "nearest" });
+        }
+    }, [highlightedIndex]);
 
     const handleSelect = (option) => {
         setQuery(option.label);
@@ -297,6 +326,45 @@ export default function AssignmentCellEditor({
         setCommittedIconUrl(null);
         setCommittedSlug(null);
         openDropdown();
+    };
+
+    const handleKeyDown = (e) => {
+        if (!open) {
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                e.preventDefault();
+                openDropdown();
+            }
+            return;
+        }
+        if (showDefineSpell) return;
+        switch (e.key) {
+            case "ArrowDown":
+                e.preventDefault();
+                setHighlightedIndex((prev) => (prev < flatOptions.length - 1 ? prev + 1 : prev));
+                break;
+            case "ArrowUp":
+                e.preventDefault();
+                setHighlightedIndex((prev) => (prev > -1 ? prev - 1 : -1));
+                break;
+            case "Enter":
+                if (highlightedIndex >= 0) {
+                    e.preventDefault();
+                    const opt = flatOptions[highlightedIndex];
+                    if (opt.type === "__define_spell__") {
+                        setOpen(false);
+                        setShowDefineSpell(true);
+                    } else if (opt.type === "__use_raw__") {
+                        handleUseRaw();
+                    } else {
+                        handleSelect(opt);
+                    }
+                }
+                break;
+            case "Escape":
+                e.preventDefault();
+                setOpen(false);
+                break;
+        }
     };
 
     const displayIconUrl = open ? null : committedIconUrl;
@@ -339,6 +407,7 @@ export default function AssignmentCellEditor({
                         openDropdown();
                     }}
                     onFocus={openDropdown}
+                    onKeyDown={handleKeyDown}
                     placeholder="Type to search…"
                     className={`w-full bg-transparent py-2.5 pr-7 text-sm placeholder-brown-600 transition-colors focus:bg-brown-800/60 focus:outline-none ${textClass} ${
                         displayIconUrl || displaySlug ? "pl-10" : "pl-3"
@@ -370,87 +439,106 @@ export default function AssignmentCellEditor({
                 </button>
             </div>
 
-            {open && (
-                <div
-                    ref={dropdownRef}
-                    className="absolute left-0 top-full z-40 max-h-60 w-72 overflow-auto rounded-b border border-t-0 border-brown-600 bg-brown-900 shadow-xl"
-                >
-                    {[
-                        { label: "Target Markers", options: targetMarkerOptions },
-                        { label: "Characters", options: characterOptions },
-                        { label: "Groups", options: compGroupOptions },
-                        { label: "Playable Classes", options: playableClassOptions },
-                        { label: "Spells", options: spellOptions },
-                    ].map(({ label, options: groupOpts }) =>
-                        groupOpts.length > 0 ? (
-                            <div key={label}>
-                                <div className="select-none px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-brown-500">
-                                    {label}
+            {open && (() => {
+                let flatIdx = 0;
+                itemRefsRef.current = [];
+                return (
+                    <div
+                        ref={dropdownRef}
+                        className="absolute left-0 top-full z-40 max-h-60 w-72 overflow-auto rounded-b border border-t-0 border-brown-600 bg-brown-900 shadow-xl"
+                    >
+                        {[
+                            { label: "Target Markers", options: targetMarkerOptions },
+                            { label: "Characters", options: characterOptions },
+                            { label: "Groups", options: compGroupOptions },
+                            { label: "Playable Classes", options: playableClassOptions },
+                            { label: "Spells", options: spellOptions },
+                        ].map(({ label, options: groupOpts }) =>
+                            groupOpts.length > 0 ? (
+                                <div key={label}>
+                                    <div className="select-none px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-brown-500">
+                                        {label}
+                                    </div>
+                                    {groupOpts.map((opt, i) => {
+                                        const myIdx = flatIdx++;
+                                        return (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                ref={(el) => { itemRefsRef.current[myIdx] = el; }}
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    handleSelect(opt);
+                                                }}
+                                                onMouseEnter={() => setHighlightedIndex(myIdx)}
+                                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brown-200 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
+                                            >
+                                                {renderOptionIcon(opt)}
+                                                <span className="flex-1 truncate">{opt.label}</span>
+                                                {opt.sublabel && <span className="text-xs text-brown-500">{opt.sublabel}</span>}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                                {groupOpts.map((opt, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            handleSelect(opt);
-                                        }}
-                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brown-200 hover:bg-brown-700"
-                                    >
-                                        {renderOptionIcon(opt)}
-                                        <span className="flex-1 truncate">{opt.label}</span>
-                                        {opt.sublabel && <span className="text-xs text-brown-500">{opt.sublabel}</span>}
-                                    </button>
-                                ))}
-                            </div>
-                        ) : null,
-                    )}
-
-                    {canCreateSpells && query.length > 0 && (
-                        <button
-                            type="button"
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                setOpen(false);
-                                setShowDefineSpell(true);
-                            }}
-                            className="flex w-full items-center gap-2 border-t border-brown-700 px-3 py-2 text-left text-sm text-amber-400 hover:bg-brown-700"
-                        >
-                            <Icon icon="plus" style="solid" className="text-xs" />
-                            Define a new spell
-                        </button>
-                    )}
-
-                    {query.length > 0 && (
-                        <button
-                            type="button"
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                handleUseRaw();
-                            }}
-                            className="flex w-full items-center gap-2 border-t border-brown-700 px-3 py-2 text-left text-sm text-brown-400 hover:bg-brown-700"
-                        >
-                            <Icon icon="pen" style="solid" className="text-xs" />
-                            Use &ldquo;{query}&rdquo;
-                        </button>
-                    )}
-
-                    {dataLoading && (
-                        <p className="flex items-center gap-2 px-3 py-2 text-sm text-brown-500">
-                            <Icon icon="spinner" style="solid" className="fa-spin text-xs" />
-                            Loading…
-                        </p>
-                    )}
-
-                    {!dataLoading &&
-                        characterOptions.length === 0 &&
-                        targetMarkerOptions.length === 0 &&
-                        spellOptions.length === 0 &&
-                        query.length === 0 && (
-                            <p className="px-3 py-2 text-sm text-brown-500">Start typing to search…</p>
+                            ) : null,
                         )}
-                </div>
-            )}
+
+                        {canCreateSpells && query.length > 0 && (() => {
+                            const myIdx = flatIdx++;
+                            return (
+                                <button
+                                    type="button"
+                                    ref={(el) => { itemRefsRef.current[myIdx] = el; }}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        setOpen(false);
+                                        setShowDefineSpell(true);
+                                    }}
+                                    onMouseEnter={() => setHighlightedIndex(myIdx)}
+                                    className={`flex w-full items-center gap-2 border-t border-brown-700 px-3 py-2 text-left text-sm text-amber-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
+                                >
+                                    <Icon icon="plus" style="solid" className="text-xs" />
+                                    Define a new spell
+                                </button>
+                            );
+                        })()}
+
+                        {query.length > 0 && (() => {
+                            const myIdx = flatIdx++;
+                            return (
+                                <button
+                                    type="button"
+                                    ref={(el) => { itemRefsRef.current[myIdx] = el; }}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        handleUseRaw();
+                                    }}
+                                    onMouseEnter={() => setHighlightedIndex(myIdx)}
+                                    className={`flex w-full items-center gap-2 border-t border-brown-700 px-3 py-2 text-left text-sm text-brown-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
+                                >
+                                    <Icon icon="pen" style="solid" className="text-xs" />
+                                    Use &ldquo;{query}&rdquo;
+                                </button>
+                            );
+                        })()}
+
+                        {dataLoading && (
+                            <p className="flex items-center gap-2 px-3 py-2 text-sm text-brown-500">
+                                <Icon icon="spinner" style="solid" className="fa-spin text-xs" />
+                                Loading…
+                            </p>
+                        )}
+
+                        {!dataLoading &&
+                            characterOptions.length === 0 &&
+                            targetMarkerOptions.length === 0 &&
+                            spellOptions.length === 0 &&
+                            query.length === 0 && (
+                                <p className="px-3 py-2 text-sm text-brown-500">Start typing to search…</p>
+                            )}
+                    </div>
+                );
+            })()}
 
             {showDefineSpell && (
                 <DefineSpellModal
