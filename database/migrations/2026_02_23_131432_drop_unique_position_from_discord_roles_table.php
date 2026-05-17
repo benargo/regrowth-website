@@ -21,11 +21,12 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * Do not re-add the unique constraint on position, as it is not actually unique and this would
+     * cause errors when trying to add new roles with duplicate positions.
      */
     public function down(): void
     {
-        Schema::table('discord_roles', function (Blueprint $table) {
-            $table->unique('position');
-        });
+        //
     }
 };
