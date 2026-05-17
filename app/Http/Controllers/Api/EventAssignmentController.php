@@ -3,10 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\AssignmentType;
-use App\Events\EventAssignmentCreated;
-use App\Events\EventAssignmentDeleted;
-use App\Events\EventAssignmentsReordered;
-use App\Events\EventAssignmentUpdated;
+use App\Events\Broadcasts\AssignmentChanged;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateEventAssignmentRequest;
 use App\Http\Requests\ReorderEventAssignmentsRequest;
@@ -45,8 +42,6 @@ class EventAssignmentController extends Controller
                 'right_value' => null,
             ]);
         });
-
-        EventAssignmentCreated::dispatch($assignment);
 
         return response()->json([
             'id' => $assignment->id,
@@ -95,8 +90,6 @@ class EventAssignmentController extends Controller
 
         $assignment->update($data);
 
-        EventAssignmentUpdated::dispatch($assignment);
-
         return response()->noContent();
     }
 
@@ -120,7 +113,7 @@ class EventAssignmentController extends Controller
             }
         });
 
-        EventAssignmentsReordered::dispatch($event);
+        broadcast(AssignmentChanged::forReorder($event, $order))->toOthers();
 
         return response()->noContent();
     }
@@ -156,10 +149,7 @@ class EventAssignmentController extends Controller
     {
         abort_if($assignment->event_id !== $event->id, 404);
 
-        $assignmentId = $assignment->id;
         $assignment->delete();
-
-        EventAssignmentDeleted::dispatch($assignmentId, $event->id);
 
         return response()->noContent();
     }

@@ -86,6 +86,10 @@ class BossStrategyController extends Controller
             }
         }
 
+        // Touch so the BroadcastsEvents trait fires the `updated` event even when
+        // only image media (not notes) changed.
+        $boss->touch();
+
         return back();
     }
 }

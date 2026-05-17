@@ -2,10 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\EventGroupCreated;
-use App\Events\EventGroupDeleted;
-use App\Events\EventGroupsReordered;
-use App\Events\EventGroupUpdated;
+use App\Events\Broadcasts\GroupChanged;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateEventGroupRequest;
 use App\Http\Requests\ReorderEventGroupsRequest;
@@ -35,8 +32,6 @@ class EventGroupController extends Controller
             ]);
         });
 
-        EventGroupCreated::dispatch($group);
-
         return response()->json([
             'id' => $group->id,
             'name' => $group->name,
@@ -52,8 +47,6 @@ class EventGroupController extends Controller
         abort_if($group->event_id !== $event->id, 404);
 
         $group->update($request->only(['name', 'sort_order']));
-
-        EventGroupUpdated::dispatch($group);
 
         return response()->noContent();
     }
@@ -78,7 +71,7 @@ class EventGroupController extends Controller
             }
         });
 
-        EventGroupsReordered::dispatch($event);
+        broadcast(GroupChanged::forReorder($event, $order))->toOthers();
 
         return response()->noContent();
     }
@@ -90,10 +83,7 @@ class EventGroupController extends Controller
     {
         abort_if($group->event_id !== $event->id, 404);
 
-        $groupId = $group->id;
         $group->delete();
-
-        EventGroupDeleted::dispatch($groupId, $event->id);
 
         return response()->noContent();
     }

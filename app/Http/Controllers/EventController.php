@@ -13,7 +13,6 @@ use App\Models\Spell;
 use App\Models\TargetMarker;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,18 +31,10 @@ class EventController extends Controller
      */
     public function show(Event $event, Request $request, MediaService $mediaService): Response
     {
-        $eventData = Cache::tags(['raiding', 'events'])->remember(
-            "events:{$event->id}:resource",
-            now(),
-            function () use ($event, $request) {
-                $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
-
-                return (new EventResource($event))->resolve($request);
-            }
-        );
+        $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Events/ShowEvent', [
-            'event' => $eventData,
+            'event' => (new EventResource($event))->resolve($request),
             'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
         ]);
     }

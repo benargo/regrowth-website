@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use Database\Factories\EventAssignmentGroupFactory;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
+use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +17,7 @@ use Illuminate\Support\Str;
 class EventAssignmentGroup extends Model
 {
     /** @use HasFactory<EventAssignmentGroupFactory> */
-    use HasFactory;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory;
 
     /**
      * The model's default values.
@@ -44,6 +48,52 @@ class EventAssignmentGroup extends Model
         'created_at',
         'updated_at',
     ];
+
+    // ============ Broadcasting ============
+
+    /**
+     * @return array<int, PrivateChannel>
+     */
+    public function broadcastOn(string $event): array
+    {
+        return [new PrivateChannel("event.{$this->event_id}")];
+    }
+
+    public function broadcastAs(string $event): string
+    {
+        return match ($event) {
+            'created' => 'EventGroupCreated',
+            'updated' => 'EventGroupUpdated',
+            'deleted' => 'EventGroupDeleted',
+            default => 'EventGroup'.ucfirst($event),
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function broadcastWith(string $event): array
+    {
+        if ($event === 'deleted') {
+            return ['id' => $this->id];
+        }
+
+        return [
+            'group' => [
+                'id' => $this->id,
+                'name' => $this->name,
+                'sort_order' => $this->sort_order,
+                'boss_id' => $this->boss_id ?? null,
+            ],
+        ];
+    }
+
+    protected function newBroadcastableEvent(string $event): BroadcastableModelEventOccurred
+    {
+        return tap(new BroadcastableModelEventOccurred($this, $event), function ($broadcastEvent) {
+            $broadcastEvent->dontBroadcastToCurrentUser();
+        });
+    }
 
     /**
      * Format the notes attribute as markdown.

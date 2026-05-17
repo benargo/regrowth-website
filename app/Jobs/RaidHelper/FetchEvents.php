@@ -2,6 +2,8 @@
 
 namespace App\Jobs\RaidHelper;
 
+use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Resources\EventResource;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\Raid;
@@ -172,6 +174,10 @@ class FetchEvents implements ShouldQueue
                 Log::warning("No comp data found for event ID {$event->id} from Raid Helper API. Detaching all characters.");
             }
             $eventModel->characters()->sync($characterSync);
+
+            $eventModel->load(['characters.playableClass', 'characters.rank', 'raids']);
+            $composition = (new EventResource($eventModel))->resolve()['composition'];
+            broadcast(new CompositionChanged($eventModel->id, $composition));
         });
 
         // Step 4. Flush the 'events' cache to ensure that any cached event data is updated with the latest information from the database.
