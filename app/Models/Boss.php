@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Http\Resources\BossResource;
+use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use Database\Factories\BossFactory;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
+use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +23,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Boss extends Model implements HasMedia
 {
     /** @use HasFactory<BossFactory> */
-    use HasFactory, InteractsWithMedia;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia;
 
     /**
      * The table associated with the model.
@@ -45,6 +50,38 @@ class Boss extends Model implements HasMedia
      * @var array<string>
      */
     protected $hidden = ['created_at', 'updated_at'];
+
+    // ============ Broadcasting ============
+
+    /**
+     * Only broadcast on update events — boss creation/deletion is managed in seeders/migrations.
+     *
+     * @return array<int, PrivateChannel>
+     */
+    public function broadcastOn(string $event): array
+    {
+        return $event === 'updated' ? [new PrivateChannel("boss.{$this->id}")] : [];
+    }
+
+    public function broadcastAs(string $event): string
+    {
+        return $event === 'updated' ? 'BossStrategyChanged' : 'Boss'.ucfirst($event);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function broadcastWith(string $event): array
+    {
+        return ['boss' => BossResource::make($this)->resolve()];
+    }
+
+    protected function newBroadcastableEvent(string $event): BroadcastableModelEventOccurred
+    {
+        return tap(new BroadcastableModelEventOccurred($this, $event), function ($broadcastEvent) {
+            $broadcastEvent->dontBroadcastToCurrentUser();
+        });
+    }
 
     // ============ Custom attributes ===========
 

@@ -135,29 +135,16 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
         setSubmitting(true);
         setErrors({});
 
-        fetch(route("api.spells.store"), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content ?? "",
-                "X-Requested-With": "XMLHttpRequest",
-            },
-            body: JSON.stringify(formData),
-        })
-            .then((r) => {
-                if (!r.ok) {
-                    return r.json().then((data) => {
-                        setErrors(data.errors ?? {});
-                        setSubmitting(false);
-                    });
-                }
-                return r.json().then((spell) => {
-                    router.reload({ only: ["spells"] });
-                    onCreated(spell);
-                });
+        window.axios
+            .post(route("api.spells.store"), formData)
+            .then((res) => {
+                router.reload({ only: ["spells"] });
+                onCreated(res.data);
             })
-            .catch(() => setSubmitting(false));
+            .catch((err) => {
+                setErrors(err.response?.data?.errors ?? {});
+                setSubmitting(false);
+            });
     };
 
     return (

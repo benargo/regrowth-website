@@ -3,7 +3,12 @@
 namespace App\Models;
 
 use App\Casts\AsClassName;
+use App\Http\Resources\EventAssignmentResource;
+use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use Database\Factories\EventAssignmentFactory;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
+use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EventAssignment extends Model
 {
     /** @use HasFactory<EventAssignmentFactory> */
-    use HasFactory;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory;
 
     /**
      * @var list<string>
@@ -35,6 +40,57 @@ class EventAssignment extends Model
         'left_type' => AsClassName::class,
         'right_type' => AsClassName::class,
     ];
+
+    // ============ Broadcasting ============
+
+    /**
+     * @return array<int, PrivateChannel>
+     */
+    public function broadcastOn(string $event): array
+    {
+        return [new PrivateChannel("event.{$this->event_id}")];
+    }
+
+    public function broadcastAs(string $event): string
+    {
+        return match ($event) {
+            'created' => 'EventAssignmentCreated',
+            'updated' => 'EventAssignmentUpdated',
+            'deleted' => 'EventAssignmentDeleted',
+            default => 'EventAssignment'.ucfirst($event),
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function broadcastWith(string $event): array
+    {
+        if ($event === 'deleted') {
+            return ['id' => $this->id];
+        }
+
+        return [
+            'assignment' => array_merge(
+                EventAssignmentResource::make($this)->resolve(),
+                [
+                    'boss_id' => $this->boss_id,
+                    'group_id' => $this->group_id,
+                    'left_type' => $this->getRawOriginal('left_type'),
+                    'left_value' => $this->left_value,
+                    'right_type' => $this->getRawOriginal('right_type'),
+                    'right_value' => $this->right_value,
+                ],
+            ),
+        ];
+    }
+
+    protected function newBroadcastableEvent(string $event): BroadcastableModelEventOccurred
+    {
+        return tap(new BroadcastableModelEventOccurred($this, $event), function ($broadcastEvent) {
+            $broadcastEvent->dontBroadcastToCurrentUser();
+        });
+    }
 
     // ============ Invariant helpers ============
 

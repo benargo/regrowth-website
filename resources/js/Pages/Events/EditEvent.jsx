@@ -15,6 +15,7 @@ import { Link } from "@inertiajs/react";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Collapsible from "@/Components/Collapsible";
 import AssignmentCellEditor, { resetAssignmentOptionsFetched } from "@/Components/Events/AssignmentCellEditor";
+import EditorPresence from "@/Components/Events/EditorPresence";
 import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import SharedHeader from "@/Components/SharedHeader";
@@ -24,41 +25,13 @@ import ToolNav from "@/Components/ToolNav";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
 import Master from "@/Layouts/Master";
+import useEventChannel, { useBossStrategyChannel } from "@/Hooks/useEventChannel";
 import {
     labelFromSide,
     storageFromSide,
     colorClassFromSide,
     textClassFromSide,
 } from "@/Helpers/AssignmentCellHelpers";
-
-// ─── API helper ───────────────────────────────────────────────────────────────
-
-function apiCall(url, { method = "GET", body = null } = {}) {
-    const opts = {
-        method,
-        headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content ?? "",
-            "X-Requested-With": "XMLHttpRequest",
-        },
-    };
-    if (body !== null) opts.body = JSON.stringify(body);
-
-    return fetch(url, opts).then((r) => {
-        if (r.ok) return r.status === 204 ? null : r.json();
-        // Retry once after 2 s on any error
-        return new Promise((resolve) =>
-            setTimeout(
-                () =>
-                    fetch(url, opts).then((r2) => {
-                        resolve(r2.ok ? (r2.status === 204 ? null : r2.json()) : null);
-                    }),
-                2000,
-            ),
-        );
-    });
-}
 
 function parseAddNewGroupId(id) {
     const m = String(id).match(/^drop-boss-(.+)-add-new-group$/);
@@ -563,6 +536,66 @@ function GroupContainer({
     );
 }
 
+// ─── Boss strategy section ────────────────────────────────────────────────────
+
+function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId, assignments }) {
+    const [bossNotes, setBossNotes] = useState(boss.notes ?? null);
+    const [bossImages, setBossImages] = useState(boss.images ?? []);
+
+    useBossStrategyChannel(boss.id, (payload) => {
+        setBossNotes(payload.boss?.notes ?? null);
+        setBossImages(payload.boss?.images ?? []);
+    });
+
+    return (
+        <Collapsible
+            key={boss.id}
+            title={boss.name}
+            sessionKey={`event_boss_expanded_${raid.slug}_${boss.id}`}
+            className="border-amber-600/40"
+            headerClassName="hover:bg-amber-600/10"
+            bodyClassName="border-amber-600/40"
+        >
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+                <div className="flex flex-col gap-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-500/80">
+                        Assignments
+                    </h3>
+                    <GroupContainer
+                        bossId={boss.id}
+                        groups={groupsByBossId[boss.id] ?? []}
+                        assignments={assignments}
+                        {...commonContainerProps}
+                    />
+                </div>
+
+                {bossImages.length > 0 || bossNotes ? (
+                    <div className="col-span-2 flex flex-col gap-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-500/80">
+                            Strategy
+                        </h3>
+                        {bossImages.map((url, i) => (
+                            <img
+                                key={i}
+                                src={url}
+                                alt={`${boss.name} strategy ${i + 1}`}
+                                className="rounded-lg border border-amber-600/30"
+                            />
+                        ))}
+                        {bossNotes && <FormattedMarkdown>{bossNotes}</FormattedMarkdown>}
+                    </div>
+                ) : (
+                    <div className="col-span-2 flex items-center justify-center py-8">
+                        <p className="text-center text-sm text-brown-500">
+                            No strategy notes or images for this boss yet.
+                        </p>
+                    </div>
+                )}
+            </div>
+        </Collapsible>
+    );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function EditEvent({ event, targetMarkers }) {
@@ -578,9 +611,9 @@ export default function EditEvent({ event, targetMarkers }) {
     const duration = formatDuration({ seconds: event.duration });
     const formatTime = (date) => date.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-    // Groups to show in the table
-    const compGroups = event.composition?.groups ?? [];
-    const compBench = event.composition?.bench ?? [];
+    // Groups to show in the composition table (lifted to state so FetchEvents broadcasts can update them).
+    const [compGroups, setCompGroups] = useState(event.composition?.groups ?? []);
+    const [compBench, setCompBench] = useState(event.composition?.bench ?? []);
 
     // Flatten all assignments from the event resource into the editable flat shape.
     // We keep _leftSide / _rightSide as the raw resource {type, data} objects so
@@ -661,6 +694,102 @@ export default function EditEvent({ event, targetMarkers }) {
     const [assignments, setAssignments] = useState(() => flattenAssignments(event));
     const [groups, setGroups] = useState(() => flattenGroups(event));
     const [saving, setSaving] = useState(0);
+    const [draggingKey, setDraggingKey] = useState(null);
+
+    useEventChannel(
+        event.id,
+        {
+            onAssignmentChanged: ({ action, assignment, id, order }) => {
+                if (action === "deleted") {
+                    setAssignments((prev) => prev.filter((a) => a.id !== id));
+                } else if (action === "reordered") {
+                    setAssignments((prev) =>
+                        prev.map((a) => {
+                            const idx = order.indexOf(a.id);
+                            return idx !== -1 ? { ...a, sort_order: idx } : a;
+                        }),
+                    );
+                } else if (action === "created") {
+                    setAssignments((prev) => {
+                        if (prev.some((a) => a.id === assignment.id)) return prev;
+                        return [
+                            ...prev,
+                            {
+                                _key: `existing-${assignment.id}`,
+                                id: assignment.id,
+                                _leftSide: assignment.left ?? null,
+                                _rightSide: assignment.right ?? null,
+                                event_id: event.id,
+                                boss_id: assignment.boss_id ?? null,
+                                group_id: assignment.group_id ?? null,
+                                sort_order: assignment.sort_order,
+                                left_type: assignment.left_type ?? null,
+                                left_value: assignment.left_value ?? null,
+                                right_type: assignment.right_type ?? null,
+                                right_value: assignment.right_value ?? null,
+                            },
+                        ];
+                    });
+                } else if (action === "updated") {
+                    setAssignments((prev) =>
+                        prev.map((a) =>
+                            a.id === assignment.id
+                                ? {
+                                      ...a,
+                                      boss_id: assignment.boss_id ?? a.boss_id,
+                                      group_id: assignment.group_id ?? a.group_id,
+                                      sort_order: assignment.sort_order ?? a.sort_order,
+                                      _leftSide: assignment.left ?? a._leftSide,
+                                      _rightSide: assignment.right ?? a._rightSide,
+                                      left_type: assignment.left_type ?? a.left_type,
+                                      left_value: assignment.left_value ?? a.left_value,
+                                      right_type: assignment.right_type ?? a.right_type,
+                                      right_value: assignment.right_value ?? a.right_value,
+                                  }
+                                : a,
+                        ),
+                    );
+                }
+            },
+            onGroupChanged: ({ action, group, id, order }) => {
+                if (action === "deleted") {
+                    setGroups((prev) => prev.filter((g) => g.group_id !== id));
+                } else if (action === "reordered") {
+                    setGroups((prev) =>
+                        prev.map((g) => {
+                            const idx = order.indexOf(g.group_id);
+                            return idx !== -1 ? { ...g, sort_order: idx } : g;
+                        }),
+                    );
+                } else if (action === "created") {
+                    setGroups((prev) => {
+                        if (prev.some((g) => g.group_id === group.id)) return prev;
+                        return [
+                            ...prev,
+                            {
+                                _key: `existing-group-${group.id}`,
+                                group_id: group.id,
+                                boss_id: group.boss_id ?? null,
+                                name: group.name ?? null,
+                                sort_order: group.sort_order,
+                            },
+                        ];
+                    });
+                } else if (action === "updated") {
+                    setGroups((prev) =>
+                        prev.map((g) =>
+                            g.group_id === group.id ? { ...g, name: group.name, sort_order: group.sort_order } : g,
+                        ),
+                    );
+                }
+            },
+            onCompositionChanged: ({ composition }) => {
+                setCompGroups(composition.groups ?? []);
+                setCompBench(composition.bench ?? []);
+            },
+        },
+        draggingKey,
+    );
 
     const beginSave = useCallback(() => setSaving((n) => n + 1), []);
     const endSave = useCallback(() => setSaving((n) => Math.max(0, n - 1)), []);
@@ -669,10 +798,12 @@ export default function EditEvent({ event, targetMarkers }) {
         (group) => {
             if (!group.group_id) return;
             beginSave();
-            apiCall(route("api.events.groups.update", [event.id, group.group_id]), {
-                method: "PATCH",
-                body: { name: group.name, sort_order: group.sort_order },
-            }).finally(endSave);
+            window.axios
+                .patch(route("api.events.groups.update", [event.id, group.group_id]), {
+                    name: group.name,
+                    sort_order: group.sort_order,
+                })
+                .finally(endSave);
         },
         [event.id, beginSave, endSave],
     );
@@ -682,10 +813,9 @@ export default function EditEvent({ event, targetMarkers }) {
             const ids = orderedGroups.filter((g) => g.group_id !== null).map((g) => g.group_id);
             if (ids.length === 0) return;
             beginSave();
-            apiCall(route("api.events.groups.reorder", event.id), {
-                method: "PATCH",
-                body: { order: ids },
-            }).finally(endSave);
+            window.axios
+                .patch(route("api.events.groups.reorder", event.id), { order: ids })
+                .finally(endSave);
         },
         [event.id, beginSave, endSave],
     );
@@ -712,10 +842,9 @@ export default function EditEvent({ event, targetMarkers }) {
                 body.right_value = assignment.right_value;
             }
 
-            apiCall(route("api.events.assignments.update", [event.id, assignment.id]), {
-                method: "PATCH",
-                body,
-            }).finally(endSave);
+            window.axios
+                .patch(route("api.events.assignments.update", [event.id, assignment.id]), body)
+                .finally(endSave);
         },
         [event.id, beginSave, endSave],
     );
@@ -725,10 +854,9 @@ export default function EditEvent({ event, targetMarkers }) {
             const ids = orderedAssignments.filter((a) => a.id).map((a) => a.id);
             if (ids.length === 0) return;
             beginSave();
-            apiCall(route("api.events.assignments.reorder", event.id), {
-                method: "PATCH",
-                body: { order: ids },
-            }).finally(endSave);
+            window.axios
+                .patch(route("api.events.assignments.reorder", event.id), { order: ids })
+                .finally(endSave);
         },
         [event.id, beginSave, endSave],
     );
@@ -736,15 +864,13 @@ export default function EditEvent({ event, targetMarkers }) {
     const createGroup = useCallback(
         (key, bossId, sortOrder) => {
             beginSave();
-            apiCall(route("api.events.groups.store", event.id), {
-                method: "POST",
-                body: { boss_id: bossId, sort_order: sortOrder },
-            })
-                .then((data) =>
+            window.axios
+                .post(route("api.events.groups.store", event.id), { boss_id: bossId, sort_order: sortOrder })
+                .then((res) =>
                     setGroups((prev) =>
                         prev.map((g) =>
                             g._key === key
-                                ? { ...g, group_id: data.id, name: data.name, sort_order: data.sort_order }
+                                ? { ...g, group_id: res.data.id, name: res.data.name, sort_order: res.data.sort_order }
                                 : g,
                         ),
                     ),
@@ -757,7 +883,7 @@ export default function EditEvent({ event, targetMarkers }) {
     const deleteGroup = useCallback(
         (groupId) => {
             beginSave();
-            apiCall(route("api.events.groups.destroy", [event.id, groupId]), { method: "DELETE" }).finally(endSave);
+            window.axios.delete(route("api.events.groups.destroy", [event.id, groupId])).finally(endSave);
         },
         [event.id, beginSave, endSave],
     );
@@ -765,22 +891,20 @@ export default function EditEvent({ event, targetMarkers }) {
     const createAssignment = useCallback(
         (bossId, groupId) => {
             beginSave();
-            apiCall(route("api.events.assignments.store", event.id), {
-                method: "POST",
-                body: { boss_id: bossId, group_id: groupId },
-            })
-                .then((data) =>
+            window.axios
+                .post(route("api.events.assignments.store", event.id), { boss_id: bossId, group_id: groupId })
+                .then((res) =>
                     setAssignments((prev) => [
                         ...prev,
                         {
-                            _key: `existing-${data.id}`,
-                            id: data.id,
+                            _key: `existing-${res.data.id}`,
+                            id: res.data.id,
                             _leftSide: null,
                             _rightSide: null,
                             event_id: event.id,
                             boss_id: bossId ?? null,
                             group_id: groupId ?? null,
-                            sort_order: data.sort_order,
+                            sort_order: res.data.sort_order,
                             left_type: null,
                             left_value: null,
                             right_type: null,
@@ -797,9 +921,9 @@ export default function EditEvent({ event, targetMarkers }) {
         (assignmentId) => {
             setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
             beginSave();
-            apiCall(route("api.events.assignments.destroy", [event.id, assignmentId]), { method: "DELETE" }).finally(
-                endSave,
-            );
+            window.axios
+                .delete(route("api.events.assignments.destroy", [event.id, assignmentId]))
+                .finally(endSave);
         },
         [event.id, beginSave, endSave],
     );
@@ -966,11 +1090,10 @@ export default function EditEvent({ event, targetMarkers }) {
                 ]);
 
                 beginSave();
-                apiCall(route("api.events.groups.store", event.id), {
-                    method: "POST",
-                    body: { sort_order: newGroupSortOrder },
-                })
-                    .then((groupData) => {
+                window.axios
+                    .post(route("api.events.groups.store", event.id), { sort_order: newGroupSortOrder })
+                    .then((res) => {
+                        const groupData = res.data;
                         if (!groupData) return;
 
                         setGroups((prev) =>
@@ -995,9 +1118,9 @@ export default function EditEvent({ event, targetMarkers }) {
                         );
 
                         if (movedAssignment.id) {
-                            return apiCall(route("api.events.assignments.update", [event.id, movedAssignment.id]), {
-                                method: "PATCH",
-                                body: {
+                            return window.axios.patch(
+                                route("api.events.assignments.update", [event.id, movedAssignment.id]),
+                                {
                                     left_type: movedAssignment.left_type,
                                     left_value: movedAssignment.left_value,
                                     right_type: movedAssignment.right_type,
@@ -1006,7 +1129,7 @@ export default function EditEvent({ event, targetMarkers }) {
                                     group_id: groupData.id,
                                     sort_order: 0,
                                 },
-                            });
+                            );
                         }
                     })
                     .finally(endSave);
@@ -1074,9 +1197,8 @@ export default function EditEvent({ event, targetMarkers }) {
 
                 if (movedAssignment.id) {
                     beginSave();
-                    apiCall(route("api.events.assignments.update", [event.id, movedAssignment.id]), {
-                        method: "PATCH",
-                        body: {
+                    window.axios
+                        .patch(route("api.events.assignments.update", [event.id, movedAssignment.id]), {
                             left_type: movedAssignment.left_type,
                             left_value: movedAssignment.left_value,
                             right_type: movedAssignment.right_type,
@@ -1084,8 +1206,7 @@ export default function EditEvent({ event, targetMarkers }) {
                             boss_id: destBossId,
                             group_id: destGroupId,
                             sort_order: insertAtIndex,
-                        },
-                    })
+                        })
                         .then(() => {
                             // Reorder all affected assignments to persist final positions
                             const finalOrder = updated.filter((a) => a.id);
@@ -1189,6 +1310,8 @@ export default function EditEvent({ event, targetMarkers }) {
                         {event.raids?.length > 0 && (
                             <MetaItem icon="shield-alt">{event.raids.map((r) => r.name).join(", ")}</MetaItem>
                         )}
+                        <div className="grow" />
+                        <EditorPresence eventId={event.id} />
                     </MetaCard>
 
                     {compGroups.length > 0 ? (
@@ -1210,12 +1333,17 @@ export default function EditEvent({ event, targetMarkers }) {
                         onDragStart={(e) => {
                             const a = assignments.find((x) => x._key === e.active.id);
                             setActiveAssignment(a ?? null);
+                            setDraggingKey(a?._key ?? null);
                         }}
                         onDragOver={handleDragOver}
-                        onDragEnd={handleDragEnd}
+                        onDragEnd={(e) => {
+                            setDraggingKey(null);
+                            handleDragEnd(e);
+                        }}
                         onDragCancel={() => {
                             setActiveAssignment(null);
                             setDragOverInfo(null);
+                            setDraggingKey(null);
                         }}
                     >
                         {/* General Assignments */}
@@ -1244,53 +1372,14 @@ export default function EditEvent({ event, targetMarkers }) {
                                         )}
                                         <div className="flex flex-col gap-2">
                                             {(raid.bosses ?? []).map((boss) => (
-                                                <Collapsible
+                                                <BossStrategySection
                                                     key={boss.id}
-                                                    title={boss.name}
-                                                    sessionKey={`event_boss_expanded_${raid.slug}_${boss.id}`}
-                                                    className="border-amber-600/40"
-                                                    headerClassName="hover:bg-amber-600/10"
-                                                    bodyClassName="border-amber-600/40"
-                                                >
-                                                    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-                                                        <div className="flex flex-col gap-3">
-                                                            <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-500/80">
-                                                                Assignments
-                                                            </h3>
-                                                            <GroupContainer
-                                                                bossId={boss.id}
-                                                                groups={groupsByBossId[boss.id] ?? []}
-                                                                assignments={assignments}
-                                                                {...commonContainerProps}
-                                                            />
-                                                        </div>
-
-                                                        {boss.images?.length > 0 || boss.notes ? (
-                                                            <div className="col-span-2 flex flex-col gap-4">
-                                                                <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-500/80">
-                                                                    Strategy
-                                                                </h3>
-                                                                {boss.images?.map((url, i) => (
-                                                                    <img
-                                                                        key={i}
-                                                                        src={url}
-                                                                        alt={`${boss.name} strategy ${i + 1}`}
-                                                                        className="rounded-lg border border-amber-600/30"
-                                                                    />
-                                                                ))}
-                                                                {boss.notes && (
-                                                                    <FormattedMarkdown>{boss.notes}</FormattedMarkdown>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="col-span-2 flex items-center justify-center py-8">
-                                                                <p className="text-center text-sm text-brown-500">
-                                                                    No strategy notes or images for this boss yet.
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </Collapsible>
+                                                    boss={boss}
+                                                    raid={raid}
+                                                    commonContainerProps={commonContainerProps}
+                                                    groupsByBossId={groupsByBossId}
+                                                    assignments={assignments}
+                                                />
                                             ))}
                                         </div>
                                     </div>

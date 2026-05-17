@@ -14,6 +14,7 @@
         "laravel-notification-channels/discord": "^1.7",
         "laravel/framework": "^13.0",
         "laravel/horizon": "^5.44",
+        "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^3.0",
