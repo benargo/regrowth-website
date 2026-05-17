@@ -26,6 +26,7 @@ class EventAssignmentController extends Controller
     public function store(Event $event, CreateEventAssignmentRequest $request): JsonResponse
     {
         $this->abortIfGroupNotInEvent($event, $request->input('group_id'));
+        $this->abortIfGroupBossMismatch($request->input('group_id'), $request->input('boss_id'));
 
         $assignment = DB::transaction(function () use ($event, $request): EventAssignment {
             $maxSortOrder = EventAssignment::where('event_id', $event->id)
@@ -68,6 +69,10 @@ class EventAssignmentController extends Controller
         abort_if($assignment->event_id !== $event->id, 404);
 
         $this->abortIfGroupNotInEvent($event, $request->input('group_id'));
+
+        $effectiveGroupId = $request->has('group_id') ? $request->input('group_id') : $assignment->group_id;
+        $effectiveBossId = $request->has('boss_id') ? $request->input('boss_id') : $assignment->boss_id;
+        $this->abortIfGroupBossMismatch($effectiveGroupId, $effectiveBossId);
 
         $data = [];
 
@@ -147,6 +152,21 @@ class EventAssignmentController extends Controller
             ! EventAssignmentGroup::where('id', $groupId)->where('event_id', $event->id)->exists(),
             422,
         );
+    }
+
+    private function abortIfGroupBossMismatch(?int $groupId, ?int $bossId): void
+    {
+        if ($groupId === null) {
+            return;
+        }
+
+        $group = EventAssignmentGroup::find($groupId);
+
+        if ($group === null) {
+            return;
+        }
+
+        abort_if($group->boss_id !== $bossId, 422);
     }
 
     /**

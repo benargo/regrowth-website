@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\EventAssignment;
@@ -103,6 +104,54 @@ class EventGroupControllerTest extends TestCase
     public function it_returns_401_on_store_when_unauthenticated(): void
     {
         $this->postJson(route('api.events.groups.store', $this->event))->assertUnauthorized();
+    }
+
+    #[Test]
+    public function it_persists_boss_id_when_provided_on_store(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $response = $this->actingAs($this->editor)
+            ->postJson(route('api.events.groups.store', $this->event), [
+                'name' => 'Healers',
+                'boss_id' => $boss->id,
+            ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('boss_id', $boss->id);
+
+        $this->assertDatabaseHas('event_assignment_groups', [
+            'event_id' => $this->event->id,
+            'name' => 'Healers',
+            'boss_id' => $boss->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_returns_422_when_boss_id_does_not_exist_on_store(): void
+    {
+        $this->actingAs($this->editor)
+            ->postJson(route('api.events.groups.store', $this->event), [
+                'name' => 'Healers',
+                'boss_id' => 999999,
+            ])
+            ->assertUnprocessable();
+    }
+
+    #[Test]
+    public function it_updates_boss_id(): void
+    {
+        $boss = Boss::factory()->create();
+        $group = EventAssignmentGroup::factory()->for($this->event)->create(['boss_id' => null]);
+
+        $this->actingAs($this->editor)
+            ->patchJson(route('api.events.groups.update', [$this->event, $group]), ['boss_id' => $boss->id])
+            ->assertNoContent();
+
+        $this->assertDatabaseHas('event_assignment_groups', [
+            'id' => $group->id,
+            'boss_id' => $boss->id,
+        ]);
     }
 
     // ─── update() ─────────────────────────────────────────────────────────────

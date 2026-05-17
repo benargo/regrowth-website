@@ -29,6 +29,7 @@ class EventAssignmentGroup extends Model
      */
     protected $fillable = [
         'event_id',
+        'boss_id',
         'name',
         'notes',
         'sort_order',
@@ -63,6 +64,14 @@ class EventAssignmentGroup extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    /**
+     * The boss this group belongs to, if any.
+     */
+    public function boss(): BelongsTo
+    {
+        return $this->belongsTo(Boss::class);
     }
 
     /**

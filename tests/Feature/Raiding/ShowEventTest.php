@@ -9,14 +9,10 @@ use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\Permission;
 use App\Models\Raid;
-use App\Models\TargetMarker;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
-use App\Services\RaidHelper\RaidHelper;
-use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,8 +31,6 @@ class ShowEventTest extends TestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Cache::tags(['raiding', 'events'])->flush();
-
         $this->memberRole = DiscordRole::create([
             'id' => '829022020301094922',
             'name' => 'Member',
@@ -52,12 +46,6 @@ class ShowEventTest extends TestCase
                     name: 'raids',
                     position: 1,
                 ),
-            )->byDefault();
-        });
-
-        $this->mock(RaidHelper::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getEvent')->andReturn(
-                RaidHelperEvent::from($this->minimalRaidHelperEventPayload()),
             )->byDefault();
         });
     }
@@ -196,18 +184,14 @@ class ShowEventTest extends TestCase
             'slot_number' => 1,
             'group_number' => 1,
             'is_confirmed' => true,
+            'is_benched' => false,
         ]);
-
-        $this->mock(RaidHelper::class, function (MockInterface $mock) use ($inComp, $benched) {
-            $mock->shouldReceive('getEvent')->andReturn(
-                RaidHelperEvent::from($this->minimalRaidHelperEventPayload([
-                    'signUps' => [
-                        ['id' => 1, 'name' => $inComp->name, 'userId' => '123456789', 'entryTime' => 1700000000],
-                        ['id' => 2, 'name' => $benched->name, 'userId' => '987654321', 'entryTime' => 1700000001],
-                    ],
-                ])),
-            );
-        });
+        $event->characters()->attach($benched->id, [
+            'slot_number' => null,
+            'group_number' => null,
+            'is_confirmed' => false,
+            'is_benched' => true,
+        ]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
@@ -246,18 +230,14 @@ class ShowEventTest extends TestCase
             'slot_number' => 1,
             'group_number' => 1,
             'is_confirmed' => true,
+            'is_benched' => false,
         ]);
-
-        $this->mock(RaidHelper::class, function (MockInterface $mock) use ($inComp, $benched) {
-            $mock->shouldReceive('getEvent')->andReturn(
-                RaidHelperEvent::from($this->minimalRaidHelperEventPayload([
-                    'signUps' => [
-                        ['id' => 1, 'name' => $inComp->name, 'userId' => '111111111', 'entryTime' => 1700000000],
-                        ['id' => 2, 'name' => $benched->name, 'userId' => '222222222', 'entryTime' => 1700000001],
-                    ],
-                ])),
-            );
-        });
+        $event->characters()->attach($benched->id, [
+            'slot_number' => null,
+            'group_number' => null,
+            'is_confirmed' => false,
+            'is_benched' => true,
+        ]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
@@ -324,31 +304,6 @@ class ShowEventTest extends TestCase
     }
 
     #[Test]
-    public function it_caches_the_event_resource(): void
-    {
-        $user = User::factory()->create();
-        $user->discordRoles()->attach($this->memberRole->id);
-
-        $event = Event::factory()->create();
-
-        $this->mock(RaidHelper::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getEvent')->once()->andReturn(
-                RaidHelperEvent::from($this->minimalRaidHelperEventPayload([
-                    'signUps' => [],
-                ])),
-            );
-        });
-
-        $event->characters()->attach(
-            Character::factory()->withRank()->create()->id,
-            ['slot_number' => 1, 'group_number' => 1, 'is_confirmed' => true]
-        );
-
-        $this->actingAs($user)->get(route('raiding.plans.show', $event));
-        $this->actingAs($user)->get(route('raiding.plans.show', $event));
-    }
-
-    #[Test]
     public function it_allows_guest_to_view_a_recent_event(): void
     {
         $event = Event::factory()->create(['end_time' => now()->subHour()]);
@@ -395,37 +350,5 @@ class ShowEventTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
         $response->assertOk();
-    }
-
-    /**
-     * @param  array<string, mixed>  $overrides
-     * @return array<string, mixed>
-     */
-    private function minimalRaidHelperEventPayload(array $overrides = []): array
-    {
-        return array_merge([
-            'id' => '999000000000000001',
-            'serverId' => '111222333444555666',
-            'leaderId' => '200000000000000001',
-            'leaderName' => 'Raid Leader',
-            'channelId' => '100000000000000001',
-            'channelName' => 'raid-signups',
-            'channelType' => 'GUILD_TEXT',
-            'templateId' => 'wowclassic',
-            'templateEmoteId' => '0',
-            'title' => 'Weekly Raid',
-            'description' => '',
-            'startTime' => 1700000000,
-            'endTime' => 1700007200,
-            'closingTime' => 1699999800,
-            'date' => '2023-11-14',
-            'time' => '20:00',
-            'advancedSettings' => [],
-            'classes' => [],
-            'roles' => [],
-            'signUps' => [],
-            'lastUpdated' => 1699999000,
-            'color' => '0,0,0',
-        ], $overrides);
     }
 }

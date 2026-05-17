@@ -18,6 +18,7 @@ class CreateEventGroupRequest extends FormRequest
     {
         return [
             'name' => ['nullable', 'string', 'max:255'],
+            'boss_id' => ['nullable', 'integer', 'exists:bosses,id'],
         ];
     }
 }

@@ -88,7 +88,7 @@ class Event extends PrunableModel
     {
         return $this->belongsToMany(Character::class, 'pivot_events_characters', 'event_id', 'character_id')
             ->using(EventCharacter::class)
-            ->withPivot(['slot_number', 'group_number', 'is_confirmed', 'is_leader', 'is_loot_councillor', 'is_loot_master'])
+            ->withPivot(['slot_number', 'group_number', 'is_confirmed', 'is_leader', 'is_loot_councillor', 'is_loot_master', 'is_benched'])
             ->withTimestamps();
     }
 

@@ -373,6 +373,133 @@ class FetchEventsTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Bench sync
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_syncs_benched_characters_with_is_benched_true(): void
+    {
+        $channelId = '100000000000000001';
+        $arthas = Character::factory()->create(['name' => 'Arthas']);
+        $thrall = Character::factory()->create(['name' => 'Thrall']);
+
+        $comp = Comp::from($this->minimalCompPayload([
+            'slots' => [
+                $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
+            ],
+        ]));
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
+            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'cClassName' => 'Warrior'],
+            ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001, 'cClassName' => 'Shaman'],
+        ]);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $thrallPivot = $event->characters->find($thrall->id)?->pivot;
+
+        $this->assertNotNull($thrallPivot);
+        $this->assertTrue((bool) $thrallPivot->is_benched);
+        $this->assertNull($thrallPivot->slot_number);
+        $this->assertNull($thrallPivot->group_number);
+    }
+
+    #[Test]
+    public function it_syncs_comp_characters_with_is_benched_false(): void
+    {
+        $channelId = '100000000000000001';
+        $arthas = Character::factory()->create(['name' => 'Arthas']);
+
+        $comp = Comp::from($this->minimalCompPayload([
+            'slots' => [
+                $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
+            ],
+        ]));
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
+            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'cClassName' => 'Warrior'],
+        ]);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $arthasPivot = $event->characters->find($arthas->id)?->pivot;
+
+        $this->assertNotNull($arthasPivot);
+        $this->assertFalse((bool) $arthasPivot->is_benched);
+    }
+
+    #[Test]
+    public function it_excludes_absent_late_and_tentative_signups_from_bench(): void
+    {
+        $channelId = '100000000000000001';
+        $arthas = Character::factory()->create(['name' => 'Arthas']);
+        Character::factory()->create(['name' => 'Jaina']);
+        Character::factory()->create(['name' => 'Sylvanas']);
+        Character::factory()->create(['name' => 'Varian']);
+
+        $comp = Comp::from($this->minimalCompPayload([
+            'slots' => [
+                $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
+            ],
+        ]));
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+        $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
+            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'cClassName' => 'Warrior'],
+            ['id' => 2, 'name' => 'Jaina', 'userId' => '222', 'entryTime' => 1700000001, 'cClassName' => 'Absence'],
+            ['id' => 3, 'name' => 'Sylvanas', 'userId' => '333', 'entryTime' => 1700000002, 'cClassName' => 'Late'],
+            ['id' => 4, 'name' => 'Varian', 'userId' => '444', 'entryTime' => 1700000003, 'cClassName' => 'Tentative'],
+        ]);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertCount(1, $event->characters);
+        $this->assertTrue($event->characters->contains($arthas));
+    }
+
+    #[Test]
+    public function it_skips_bench_sync_gracefully_when_get_event_throws(): void
+    {
+        $channelId = '100000000000000001';
+        $arthas = Character::factory()->create(['name' => 'Arthas']);
+
+        $comp = Comp::from($this->minimalCompPayload([
+            'slots' => [
+                $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
+            ],
+        ]));
+
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
+
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
+        $this->raidHelper->shouldReceive('getEvents')
+            ->once()
+            ->andReturn($this->singlePagePaginator([$payload]));
+        $this->raidHelper->shouldReceive('getComp')
+            ->with($payload['id'])
+            ->andReturn($comp);
+        $this->raidHelper->shouldReceive('getEvent')
+            ->andThrow(new \Exception('API unavailable'));
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertNotNull($event);
+        $this->assertTrue($event->characters->contains($arthas));
+    }
+
+    // -------------------------------------------------------------------------
     // Raid sync
     // -------------------------------------------------------------------------
 
@@ -521,8 +648,9 @@ class FetchEventsTest extends TestCase
      * Wire up mocks for a single-event, single-channel run.
      *
      * @param  array<string, mixed>  $eventPayload
+     * @param  array<int, array<string, mixed>>|null  $signUps  Sign-up payloads for bench sync; null skips getEvent mock (throws by default)
      */
-    private function setupSingleEventRun(string $channelId, array $eventPayload, ?Comp $comp): void
+    private function setupSingleEventRun(string $channelId, array $eventPayload, ?Comp $comp, ?array $signUps = null): void
     {
         $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
@@ -535,6 +663,17 @@ class FetchEventsTest extends TestCase
         $this->raidHelper->shouldReceive('getComp')
             ->with($eventPayload['id'])
             ->andReturn($comp);
+
+        if ($comp !== null) {
+            if ($signUps !== null) {
+                $this->raidHelper->shouldReceive('getEvent')
+                    ->with((int) $eventPayload['id'])
+                    ->andReturn(RaidHelperEvent::from(array_merge($this->minimalListingEventPayload($eventPayload), ['signUps' => $signUps])));
+            } else {
+                $this->raidHelper->shouldReceive('getEvent')
+                    ->andThrow(new \Exception('getEvent not configured for this test'));
+            }
+        }
     }
 
     /**
