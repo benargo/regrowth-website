@@ -70,6 +70,7 @@ class EventResource extends JsonResource
         $isTeam = $maxSlot > 5;
 
         return $this->characters
+            ->reject(fn (Character $c) => $c->pivot->is_benched)
             ->sortBy([
                 fn (Character $a, Character $b) => $a->pivot->group_number <=> $b->pivot->group_number,
                 fn (Character $a, Character $b) => $a->pivot->slot_number <=> $b->pivot->slot_number,
