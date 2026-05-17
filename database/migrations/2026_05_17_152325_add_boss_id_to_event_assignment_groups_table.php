@@ -31,7 +31,7 @@ return new class extends Migration
         }
 
         Schema::table('event_assignment_groups', function (Blueprint $table) {
-            $table->unique(['id', 'event_id', 'boss_id'], 'event_assignment_groups_id_event_boss_unique');
+            $table->unique(['event_id', 'id', 'boss_id'], 'event_assignment_groups_id_event_boss_unique');
         });
     }
 
