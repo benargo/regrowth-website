@@ -43,6 +43,7 @@ class EventTest extends ModelTestCase
             'start_time',
             'end_time',
             'channel_id',
+            'is_template',
         ]);
     }
 
@@ -51,7 +52,7 @@ class EventTest extends ModelTestCase
     {
         $model = new Event;
 
-        $this->assertHidden($model, ['channel_id']);
+        $this->assertHidden($model, ['channel_id', 'is_template']);
     }
 
     #[Test]
@@ -62,7 +63,48 @@ class EventTest extends ModelTestCase
         $this->assertCasts($model, [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
+            'is_template' => 'boolean',
         ]);
+    }
+
+    #[Test]
+    public function is_template_defaults_to_false(): void
+    {
+        $model = new Event;
+
+        $this->assertFalse($model->is_template);
+    }
+
+    #[Test]
+    public function template_factory_state_sets_is_template_true(): void
+    {
+        $event = Event::factory()->template()->make();
+
+        $this->assertTrue($event->is_template);
+    }
+
+    #[Test]
+    public function templates_scope_returns_only_template_events(): void
+    {
+        $template = $this->create(['is_template' => true]);
+        $regular = $this->create(['is_template' => false]);
+
+        $ids = Event::templates()->pluck('id')->toArray();
+
+        $this->assertContains($template->id, $ids);
+        $this->assertNotContains($regular->id, $ids);
+    }
+
+    #[Test]
+    public function live_scope_returns_only_non_template_events(): void
+    {
+        $template = $this->create(['is_template' => true]);
+        $regular = $this->create(['is_template' => false]);
+
+        $ids = Event::live()->pluck('id')->toArray();
+
+        $this->assertNotContains($template->id, $ids);
+        $this->assertContains($regular->id, $ids);
     }
 
     #[Test]
@@ -435,6 +477,32 @@ class EventTest extends ModelTestCase
         $ids = (new Event)->prunable()->pluck('id')->toArray();
 
         $this->assertNotContains($event->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_excludes_template_events(): void
+    {
+        $template = $this->create([
+            'end_time' => now()->subMonth()->subSecond(),
+            'is_template' => true,
+        ]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($template->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_includes_non_template_events_that_ended_more_than_one_month_ago(): void
+    {
+        $event = $this->create([
+            'end_time' => now()->subMonth()->subSecond(),
+            'is_template' => false,
+        ]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($event->id, $ids);
     }
 
     #[Test]

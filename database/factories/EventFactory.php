@@ -40,6 +40,22 @@ class EventFactory extends Factory
     }
 
     /**
+     * Set the event as a live (non-template) event.
+     */
+    public function live(): static
+    {
+        return $this->state(['is_template' => false]);
+    }
+
+    /**
+     * Set the event as a template.
+     */
+    public function template(): static
+    {
+        return $this->state(['is_template' => true]);
+    }
+
+    /**
      * Attach a character as a leader on the event pivot.
      */
     public function withLeader(?Character $character = null): static
