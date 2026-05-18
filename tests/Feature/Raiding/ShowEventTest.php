@@ -316,7 +316,7 @@ class ShowEventTest extends TestCase
     #[Test]
     public function it_denies_guest_access_to_an_old_event(): void
     {
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $response = $this->get(route('raiding.plans.show', $event));
 
@@ -327,7 +327,7 @@ class ShowEventTest extends TestCase
     public function it_denies_authenticated_user_without_permission_access_to_old_event(): void
     {
         $user = User::factory()->create();
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 
@@ -345,7 +345,7 @@ class ShowEventTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($role->id);
 
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
 

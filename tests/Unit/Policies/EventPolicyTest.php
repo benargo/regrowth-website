@@ -56,10 +56,10 @@ class EventPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_view_for_recent_event_at_two_hour_boundary(): void
+    public function it_allows_view_for_recent_event_at_two_week_boundary(): void
     {
         $user = $this->userWithoutPermission();
-        $event = Event::factory()->create(['end_time' => now()->subHours(2)->addSecond()]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->addSecond()]);
 
         $this->assertTrue($this->policy->view($user, $event));
     }
@@ -68,7 +68,7 @@ class EventPolicyTest extends TestCase
     public function it_denies_view_for_old_event_without_permission(): void
     {
         $user = $this->userWithoutPermission();
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertFalse($this->policy->view($user, $event));
     }
@@ -77,7 +77,7 @@ class EventPolicyTest extends TestCase
     public function it_allows_view_for_old_event_with_view_old_raid_plans_permission(): void
     {
         $user = $this->userWithPermission('view-old-raid-plans');
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertTrue($this->policy->view($user, $event));
     }
@@ -86,7 +86,7 @@ class EventPolicyTest extends TestCase
     public function it_denies_view_for_old_event_with_unrelated_permission(): void
     {
         $user = $this->userWithPermission('manage-reports');
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertFalse($this->policy->view($user, $event));
     }
@@ -102,7 +102,7 @@ class EventPolicyTest extends TestCase
     #[Test]
     public function it_denies_view_for_guest_on_old_event(): void
     {
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertFalse($this->policy->view(null, $event));
     }
