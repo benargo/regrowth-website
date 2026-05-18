@@ -98,7 +98,13 @@ class Event extends PrunableModel
     protected function channel(): Attribute
     {
         return Attribute::make(
-            get: fn () => app(Discord::class)->getChannel($this->channel_id),
+            get: function () {
+                if (is_null($this->channel_id)) {
+                    return null;
+                }
+
+                return app(Discord::class)->getChannel($this->channel_id);
+            },
         )->shouldCache();
     }
 
@@ -156,6 +162,16 @@ class Event extends PrunableModel
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the assignment groups associated with the event.
+     *
+     * @return HasMany<EventAssignmentGroup, $this>
+     */
+    public function assignmentGroups(): HasMany
+    {
+        return $this->hasMany(EventAssignmentGroup::class);
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\EventAssignmentGroup;
 use App\Models\EventCharacter;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
@@ -157,6 +158,14 @@ class EventTest extends ModelTestCase
 
         $event->channel;
         $event->channel;
+    }
+
+    #[Test]
+    public function channel_attribute_returns_null_when_channel_id_is_null(): void
+    {
+        $event = Event::factory()->make(['channel_id' => null]);
+
+        $this->assertNull($event->channel);
     }
 
     #[Test]
@@ -514,5 +523,16 @@ class EventTest extends ModelTestCase
         $this->assertInstanceOf(HasMany::class, $event->assignments());
         $this->assertCount(2, $event->assignments);
         $this->assertInstanceOf(EventAssignment::class, $event->assignments->first());
+    }
+
+    #[Test]
+    public function it_has_many_assignment_groups(): void
+    {
+        $event = $this->create();
+        EventAssignmentGroup::factory()->count(2)->create(['event_id' => $event->id]);
+
+        $this->assertInstanceOf(HasMany::class, $event->assignmentGroups());
+        $this->assertCount(2, $event->assignmentGroups);
+        $this->assertInstanceOf(EventAssignmentGroup::class, $event->assignmentGroups->first());
     }
 }
