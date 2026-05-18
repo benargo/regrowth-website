@@ -12,9 +12,10 @@ class EventPolicy
      */
     public function view(?User $user, Event $event): bool
     {
-        if ($event->end_time->isBefore(now()->subHours(2))) {
-            return $user?->hasPermissionViaDiscordRoles('view-old-raid-plans') ?? false;
-        }
+        // Temporary - allow all users
+        // if ($event->end_time->isBefore(now()->subHours(2))) {
+        //     return $user?->hasPermissionViaDiscordRoles('view-old-raid-plans') ?? false;
+        // }
 
         return true;
     }
