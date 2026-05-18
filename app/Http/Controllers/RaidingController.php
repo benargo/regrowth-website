@@ -18,7 +18,7 @@ class RaidingController extends Controller
      */
     public function comps(): RedirectResponse
     {
-        $nextEvent = Event::where('end_time', '>=', now())->orderBy('start_time')->first();
+        $nextEvent = Event::live()->where('end_time', '>=', now())->orderBy('start_time')->first();
 
         if ($nextEvent) {
             return redirect(route('raiding.plans.show', $nextEvent), 303);
@@ -36,7 +36,7 @@ class RaidingController extends Controller
             'upcomingEvents' => Inertia::defer(function () use ($request) {
                 return Cache::tags('raiding', 'events')->remember('events:upcoming', now()->addMinutes(10), function () use ($request) {
                     return EventSummaryResource::collection(
-                        Event::where('end_time', '>=', now()->subHours(2))
+                        Event::live()->where('end_time', '>=', now()->subHours(2))
                             ->where('end_time', '<=', now()->addWeek()->endOfDay())
                             ->orderBy('start_time')
                             ->get()
