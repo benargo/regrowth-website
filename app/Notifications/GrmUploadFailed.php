@@ -2,23 +2,14 @@
 
 namespace App\Notifications;
 
-use App\Contracts\Notifications\DiscordMessage;
-use App\Models\DiscordNotification;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
 use App\Services\Discord\Resources\EmbedField;
 use App\Services\Discord\Resources\EmbedMedia;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
-use Illuminate\Support\Collection;
 
-class GrmUploadFailed extends Notification implements DiscordMessage, ShouldQueue
+class GrmUploadFailed extends Notification
 {
-    use Queueable;
-
     /**
      * @param  array<int, string>  $errors
      */
@@ -28,11 +19,6 @@ class GrmUploadFailed extends Notification implements DiscordMessage, ShouldQueu
         public array $errors = [],
         public ?string $exceptionMessage = null,
     ) {}
-
-    public function via(object $notifiable): string
-    {
-        return DiscordDriver::class;
-    }
 
     public function toMessage(): MessagePayload
     {
@@ -46,21 +32,6 @@ class GrmUploadFailed extends Notification implements DiscordMessage, ShouldQueu
             'channel_id' => $notifiable->channel()->id,
             'payload' => $this->buildPayload()->toArray(),
         ];
-    }
-
-    public function updates(): ?DiscordNotification
-    {
-        return null;
-    }
-
-    public function sender(): ?Authenticatable
-    {
-        return null;
-    }
-
-    public function relationships(): Collection
-    {
-        return collect();
     }
 
     private function buildPayload(): MessagePayload

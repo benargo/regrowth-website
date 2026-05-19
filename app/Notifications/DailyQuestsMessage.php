@@ -2,26 +2,19 @@
 
 namespace App\Notifications;
 
-use App\Contracts\Notifications\DiscordMessage;
 use App\Enums\DailyQuestTypeLabel;
 use App\Models\DailyQuest;
-use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
-use App\Models\User;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Notifications\Concerns\UpdatesExisting;
+use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
 use App\Services\Discord\Resources\EmbedField;
 use App\Services\Discord\Resources\EmbedFooter;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
-use Illuminate\Support\Collection;
 
-class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQueue
+class DailyQuestsMessage extends Notification
 {
-    use Queueable;
+    use UpdatesExisting;
 
     /**
      * The daily quests to include in the notification, keyed by their type label (e.g. 'normal', 'alliance', 'horde')
@@ -31,38 +24,19 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
     public iterable $dailyQuests;
 
     /**
-     * The Discord notification instance this new notification will update
-     */
-    private ?DiscordNotification $updates = null;
-
-    /**
-     * The user who set the daily quests, if available (used for attribution in the message footer)
-     */
-    private readonly ?Authenticatable $sender;
-
-    /**
      * The Discord role to mention in the notification message (e.g. "Daily Quests Subscribers")
      */
     private ?DiscordRole $subscribersRole;
 
     /**
      * @param  iterable<DailyQuestTypeLabel, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their type label
-     * @param  Authenticatable|null  $sender  The user who set the daily quests, if available (used for attribution in the message footer)
-     * @param  DiscordNotification|null  $updates  The Discord notification instance this new notification will update
      */
-    public function __construct(iterable $dailyQuests, ?Authenticatable $sender = null, ?DiscordNotification $updates = null)
+    public function __construct(iterable $dailyQuests)
     {
         $this->dailyQuests = $dailyQuests;
-        $this->sender = $sender;
-        $this->updates = $updates;
 
         // Load the "Daily Quests Subscribers" role from the database to include in the message payload
         $this->subscribersRole = DiscordRole::find(config('services.discord.roles.daily_quest_subscribers'));
-    }
-
-    public function via(object $notifiable): string
-    {
-        return DiscordDriver::class;
     }
 
     public function toMessage(): MessagePayload
@@ -76,15 +50,8 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
             'type' => self::class,
             'channel_id' => $notifiable->channel()->id,
             'payload' => $this->getPayload()->toArray(),
-            'related_models' => $this->relationships()
-                ->map(fn ($model, $name) => [
-                    'name' => $name,
-                    'model' => get_class($model),
-                    'key' => $model->getKey(),
-                ])
-                ->values()
-                ->toArray(),
-            'created_by_user_id' => $this->sender?->id,
+            'related_models' => $this->mapRelatedModels(),
+            'created_by_user_id' => $this->sender()?->id,
         ];
     }
 
@@ -105,10 +72,10 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
         }
 
         // If the notification has a sender, include that in the embed footer
-        if ($this->sender) {
+        if ($this->sender()) {
             $footer = new EmbedFooter(
-                text: 'Posted by '.$this->sender->nickname.'.',
-                icon_url: $this->sender->avatarUrl,
+                text: 'Posted by '.$this->sender()->nickname.'.',
+                icon_url: $this->sender()->avatarUrl,
             );
         }
 
@@ -128,22 +95,5 @@ class DailyQuestsMessage extends Notification implements DiscordMessage, ShouldQ
                 footer: $footer ?? null,
             )],
         ]);
-    }
-
-    public function updates(): ?DiscordNotification
-    {
-        return $this->updates;
-    }
-
-    public function sender(): ?Authenticatable
-    {
-        return $this->sender;
-    }
-
-    public function relationships(): Collection
-    {
-        return collect($this->dailyQuests)
-            ->filter()
-            ->mapWithKeys(fn ($quest, $key) => [strtolower($key) => $quest]);
     }
 }

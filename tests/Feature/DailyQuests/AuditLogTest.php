@@ -2,26 +2,18 @@
 
 namespace Tests\Feature\DailyQuests;
 
-use App\Contracts\Notifications\DiscordMessage;
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
+use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
-class OtherDiscordNotification extends Notification implements DiscordMessage
+class OtherDiscordNotification extends Notification
 {
-    public function via(object $notifiable): string
-    {
-        return '';
-    }
-
     public function toMessage(): MessagePayload
     {
         return MessagePayload::from([]);
@@ -30,21 +22,6 @@ class OtherDiscordNotification extends Notification implements DiscordMessage
     public function toDatabase(object $notifiable): array
     {
         return [];
-    }
-
-    public function updates(): ?DiscordNotification
-    {
-        return null;
-    }
-
-    public function sender(): ?Authenticatable
-    {
-        return null;
-    }
-
-    public function relationships(): Collection
-    {
-        return collect();
     }
 }
 

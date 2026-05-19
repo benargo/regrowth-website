@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services\Discord\Notifications;
 
-use App\Contracts\Notifications\DiscordMessage;
 use App\Models\DiscordNotification;
 use App\Models\User;
 use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
@@ -11,6 +10,7 @@ use App\Services\Discord\Enums\ChannelType;
 use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Notifications\Driver;
 use App\Services\Discord\Notifications\NotifiableChannel;
+use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Channel;
 use App\Services\Discord\Resources\Message;
@@ -69,7 +69,7 @@ class DriverTest extends TestCase
     {
         $payload = MessagePayload::from(['content' => 'Hello!']);
 
-        $notification = Mockery::mock(DiscordMessage::class);
+        $notification = Mockery::mock(Notification::class);
         $notification->expects('updates')->once()->andReturnNull();
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn([
@@ -108,7 +108,7 @@ class DriverTest extends TestCase
 
         $existingDiscordMessage = $this->makeDiscordMessage('222222222222222222');
 
-        $notification = Mockery::mock(DiscordMessage::class);
+        $notification = Mockery::mock(Notification::class);
         $notification->expects('updates')->once()->andReturn($existingNotification);
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
@@ -142,7 +142,7 @@ class DriverTest extends TestCase
 
         $existingDiscordMessage = $this->makeDiscordMessage('333333333333333333');
 
-        $notification = Mockery::mock(DiscordMessage::class);
+        $notification = Mockery::mock(Notification::class);
         $notification->expects('updates')->once()->andReturn($existingNotification);
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturn($user);
@@ -175,7 +175,7 @@ class DriverTest extends TestCase
 
         $existingDiscordMessage = $this->makeDiscordMessage('666666666666666666');
 
-        $notification = Mockery::mock(DiscordMessage::class);
+        $notification = Mockery::mock(Notification::class);
         $notification->expects('updates')->once()->andReturn($existingNotification);
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
@@ -201,7 +201,7 @@ class DriverTest extends TestCase
             'message_id' => '444444444444444444',
         ]);
 
-        $notification = Mockery::mock(DiscordMessage::class);
+        $notification = Mockery::mock(Notification::class);
         $notification->expects('updates')->once()->andReturn($staleNotification);
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn([

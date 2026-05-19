@@ -124,8 +124,8 @@ class GrmUploadFailedTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_empty_array_for_relationships(): void
+    public function it_returns_empty_array_for_related_models(): void
     {
-        $this->assertEmpty((new GrmUploadFailed(processedCount: 0, errorCount: 1))->relationships());
+        $this->assertEmpty((new GrmUploadFailed(processedCount: 0, errorCount: 1))->mapRelatedModels());
     }
 }

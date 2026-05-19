@@ -2,7 +2,6 @@
 
 namespace App\Services\Discord\Notifications;
 
-use App\Contracts\Notifications\DiscordMessage;
 use App\Models\DiscordNotification;
 use App\Services\Discord\Discord;
 use RuntimeException;
@@ -20,9 +19,9 @@ class Driver
      * Send the given notification.
      *
      * @param  object  $notifiable  The notifiable entity (e.g., a user or a channel wrapper)
-     * @param  DiscordMessage  $notification  The notification instance to send
+     * @param  Notification  $notification  The notification instance to send
      */
-    public function send(object $notifiable, DiscordMessage $notification): void
+    public function send(object $notifiable, Notification $notification): void
     {
         $updates = $notification->updates();
 

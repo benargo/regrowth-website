@@ -2,33 +2,19 @@
 
 namespace App\Notifications;
 
-use App\Contracts\Notifications\DiscordMessage;
-use App\Models\DiscordNotification;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
 use App\Services\Discord\Resources\EmbedField;
 use App\Services\Discord\Resources\EmbedMedia;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
-use Illuminate\Support\Collection;
 
-class GrmUploadCompleted extends Notification implements DiscordMessage, ShouldQueue
+class GrmUploadCompleted extends Notification
 {
-    use Queueable;
-
     public function __construct(
         public int $processedCount,
         public int $skippedCount = 0,
         public int $warningCount = 0,
     ) {}
-
-    public function via(object $notifiable): string
-    {
-        return DiscordDriver::class;
-    }
 
     public function toMessage(): MessagePayload
     {
@@ -42,21 +28,6 @@ class GrmUploadCompleted extends Notification implements DiscordMessage, ShouldQ
             'channel_id' => $notifiable->channel()->id,
             'payload' => $this->buildPayload()->toArray(),
         ];
-    }
-
-    public function updates(): ?DiscordNotification
-    {
-        return null;
-    }
-
-    public function sender(): ?Authenticatable
-    {
-        return null;
-    }
-
-    public function relationships(): Collection
-    {
-        return collect();
     }
 
     private function buildPayload(): MessagePayload

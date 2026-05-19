@@ -150,19 +150,7 @@ class NewLootCouncilCommentTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_the_comment_as_a_relationship(): void
-    {
-        $comment = Comment::factory()->create();
-        $notification = new NewLootCouncilComment($comment);
-
-        $relationships = $notification->relationships();
-
-        $this->assertArrayHasKey('comment', $relationships);
-        $this->assertTrue($relationships['comment']->is($comment));
-    }
-
-    #[Test]
-    public function it_includes_the_comment_entry_in_related_models_database_payload(): void
+    public function it_includes_the_comment_in_related_models(): void
     {
         $comment = Comment::factory()->create();
         $notifiable = $this->makeNotifiable();
@@ -174,9 +162,6 @@ class NewLootCouncilCommentTest extends TestCase
         $notification = new NewLootCouncilComment($comment);
         $data = $notification->toDatabase($notifiable);
 
-        $this->assertCount(1, $data['related_models']);
-        $this->assertSame('comment', $data['related_models'][0]['name']);
-        $this->assertSame(Comment::class, $data['related_models'][0]['model']);
-        $this->assertSame($comment->id, $data['related_models'][0]['key']);
+        $this->assertSame([Comment::class => [$comment->id]], $data['related_models']);
     }
 }
