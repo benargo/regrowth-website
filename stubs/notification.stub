@@ -1,0 +1,42 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Services\Discord\Notifications\Concerns\UpdatesExisting;
+use App\Services\Discord\Notifications\Notification;
+use App\Services\Discord\Payloads\MessagePayload;
+
+class {{ class }} extends Notification
+{
+    use UpdatesExisting;
+
+    public function __construct(
+        //
+    ) {}
+
+    /**
+     * Get the payload to send to Discord for this notification.
+     */
+    public function toMessage(): MessagePayload
+    {
+        // Fill this in with the appropriate payload for the notification
+
+        return MessagePayload::from([
+            // 
+        ]);
+    }
+
+    /**
+     * Get the array of data to store in the database for this notification.
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'type' => self::class,
+            'channel_id' => $notifiable->channel()->id,
+            'payload' => $this->toMessage()->toArray(),
+            'related_models' => $this->mapRelatedModels(),
+            'created_by_user_id' => $this->sender()?->id,
+        ];
+    }
+}
