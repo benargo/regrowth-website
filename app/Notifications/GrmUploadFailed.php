@@ -20,21 +20,10 @@ class GrmUploadFailed extends Notification
         public ?string $exceptionMessage = null,
     ) {}
 
+    /**
+     * Get the payload to send to Discord for this notification.
+     */
     public function toMessage(): MessagePayload
-    {
-        return $this->buildPayload();
-    }
-
-    public function toDatabase(object $notifiable): array
-    {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->channel()->id,
-            'payload' => $this->buildPayload()->toArray(),
-        ];
-    }
-
-    private function buildPayload(): MessagePayload
     {
         if ($this->exceptionMessage) {
             return MessagePayload::from([
@@ -66,5 +55,17 @@ class GrmUploadFailed extends Notification
                 timestamp: now()->toIso8601String(),
             )],
         ]);
+    }
+
+    /**
+     * Get the array of data to store in the database for this notification.
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'type' => self::class,
+            'channel_id' => $notifiable->channel()->id,
+            'payload' => $this->toMessage()->toArray(),
+        ];
     }
 }

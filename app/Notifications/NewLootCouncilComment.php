@@ -7,7 +7,6 @@ use App\Services\Blizzard\BlizzardService;
 use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Str;
 
 class NewLootCouncilComment extends Notification
@@ -15,9 +14,13 @@ class NewLootCouncilComment extends Notification
     public function __construct(
         public Comment $comment,
     ) {
-        $this->withRelatedModels([$comment]);
+        $this->withRelatedModels([$comment])
+            ->withSender($comment->user);
     }
 
+    /**
+     * Get the payload to send to Discord for this notification.
+     */
     public function toMessage(): MessagePayload
     {
         $item = $this->comment->item;
@@ -47,6 +50,9 @@ class NewLootCouncilComment extends Notification
         ]);
     }
 
+    /**
+     * Get the array of data to store in the database for this notification.
+     */
     public function toDatabase(object $notifiable): array
     {
         return [
@@ -58,15 +64,10 @@ class NewLootCouncilComment extends Notification
         ];
     }
 
-    public function sender(): ?Authenticatable
-    {
-        return $this->comment->user;
-    }
-
     /**
      * Resolve the item name from the Blizzard API.
      */
-    protected function resolveItemName(int $itemId): string
+    private function resolveItemName(int $itemId): string
     {
         try {
             $data = app(BlizzardService::class)->findItem($itemId);
