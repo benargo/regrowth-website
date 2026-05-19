@@ -93,6 +93,27 @@ class IndexTest extends TestCase
     }
 
     #[Test]
+    public function template_events_are_excluded_from_upcoming_events(): void
+    {
+        $this->mockDiscordChannel();
+
+        $user = User::factory()->create();
+
+        $liveEvent = Event::factory()->create(['end_time' => now()->addDays(3)]);
+        $templateEvent = Event::factory()->template()->create(['end_time' => now()->addDays(3)]);
+
+        $response = $this->actingAs($user)->get(route('raiding.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Raiding/Index')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('upcomingEvents', fn ($events) => collect($events)->pluck('id')->contains($liveEvent->id))
+                ->where('upcomingEvents', fn ($events) => ! collect($events)->pluck('id')->contains($templateEvent->id))
+            )
+        );
+    }
+
+    #[Test]
     public function upcoming_events_are_ordered_by_start_time_ascending(): void
     {
         $this->mockDiscordChannel();

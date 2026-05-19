@@ -56,10 +56,10 @@ class EventPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_view_for_recent_event_at_two_hour_boundary(): void
+    public function it_allows_view_for_recent_event_at_two_week_boundary(): void
     {
         $user = $this->userWithoutPermission();
-        $event = Event::factory()->create(['end_time' => now()->subHours(2)->addSecond()]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->addSecond()]);
 
         $this->assertTrue($this->policy->view($user, $event));
     }
@@ -68,7 +68,7 @@ class EventPolicyTest extends TestCase
     public function it_denies_view_for_old_event_without_permission(): void
     {
         $user = $this->userWithoutPermission();
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertFalse($this->policy->view($user, $event));
     }
@@ -77,7 +77,7 @@ class EventPolicyTest extends TestCase
     public function it_allows_view_for_old_event_with_view_old_raid_plans_permission(): void
     {
         $user = $this->userWithPermission('view-old-raid-plans');
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertTrue($this->policy->view($user, $event));
     }
@@ -86,7 +86,7 @@ class EventPolicyTest extends TestCase
     public function it_denies_view_for_old_event_with_unrelated_permission(): void
     {
         $user = $this->userWithPermission('manage-reports');
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertFalse($this->policy->view($user, $event));
     }
@@ -102,9 +102,67 @@ class EventPolicyTest extends TestCase
     #[Test]
     public function it_denies_view_for_guest_on_old_event(): void
     {
-        $event = Event::factory()->create(['end_time' => now()->subHours(3)]);
+        $event = Event::factory()->create(['end_time' => now()->subWeeks(2)->subSecond()]);
 
         $this->assertFalse($this->policy->view(null, $event));
+    }
+
+    #[Test]
+    public function it_allows_view_templates_with_manage_raid_plans_permission(): void
+    {
+        $user = $this->userWithPermission('manage-raid-plans');
+
+        $this->assertTrue($this->policy->viewTemplates($user));
+    }
+
+    #[Test]
+    public function it_denies_view_templates_without_permission(): void
+    {
+        $user = $this->userWithoutPermission();
+
+        $this->assertFalse($this->policy->viewTemplates($user));
+    }
+
+    #[Test]
+    public function it_allows_view_for_template_event_with_manage_raid_plans_permission(): void
+    {
+        $user = $this->userWithPermission('manage-raid-plans');
+        $event = Event::factory()->template()->create();
+
+        $this->assertTrue($this->policy->view($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_view_for_template_event_without_permission(): void
+    {
+        $user = $this->userWithoutPermission();
+        $event = Event::factory()->template()->create();
+
+        $this->assertFalse($this->policy->view($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_view_for_template_event_as_guest(): void
+    {
+        $event = Event::factory()->template()->create();
+
+        $this->assertFalse($this->policy->view(null, $event));
+    }
+
+    #[Test]
+    public function it_allows_create_with_manage_raid_plans_permission(): void
+    {
+        $user = $this->userWithPermission('manage-raid-plans');
+
+        $this->assertTrue($this->policy->create($user));
+    }
+
+    #[Test]
+    public function it_denies_create_without_permission(): void
+    {
+        $user = $this->userWithoutPermission();
+
+        $this->assertFalse($this->policy->create($user));
     }
 
     #[Test]
@@ -132,5 +190,42 @@ class EventPolicyTest extends TestCase
         $event = Event::factory()->create();
 
         $this->assertFalse($this->policy->update($user, $event));
+    }
+
+    #[Test]
+    public function it_allows_delete_for_template_with_manage_raid_plans_permission(): void
+    {
+        $user = $this->userWithPermission('manage-raid-plans');
+        $event = Event::factory()->template()->create();
+
+        $this->assertTrue($this->policy->delete($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_delete_for_template_without_permission(): void
+    {
+        $user = $this->userWithoutPermission();
+        $event = Event::factory()->template()->create();
+
+        $this->assertFalse($this->policy->delete($user, $event));
+    }
+
+    #[Test]
+    public function it_allows_delete_for_regular_event_as_admin(): void
+    {
+        $user = User::factory()->admin()->create();
+        $user->load('discordRoles.permissions');
+        $event = Event::factory()->create();
+
+        $this->assertTrue($this->policy->delete($user, $event));
+    }
+
+    #[Test]
+    public function it_denies_delete_for_regular_event_as_non_admin(): void
+    {
+        $user = $this->userWithoutPermission();
+        $event = Event::factory()->create();
+
+        $this->assertFalse($this->policy->delete($user, $event));
     }
 }

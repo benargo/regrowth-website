@@ -30,9 +30,9 @@ class EventResource extends JsonResource
         $data = [
             'id' => $this->id,
             'title' => $this->title,
-            'start_time' => $this->start_time->toIso8601String(),
+            'start_time' => $this->start_time?->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
-            'duration' => $this->duration,
+            'duration' => $this->start_time && $this->end_time ? $this->duration : null,
             'background' => $this->buildBackground(),
             'assignments' => (new EventAssignmentsCollection($eventAssignments))->resolve($request),
             'composition' => $this->buildComposition($request),
@@ -40,7 +40,7 @@ class EventResource extends JsonResource
         ];
 
         try {
-            $data['channel'] = $this->channel->only('id', 'name', 'position')->toArray();
+            $data['channel'] = $this->channel?->only('id', 'name', 'position')->toArray();
         } catch (\Exception $e) {
             // Discord API unavailable — omit channel
         }

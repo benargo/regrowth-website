@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\Discord\Discord;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -13,6 +14,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Event extends PrunableModel
 {
     use HasFactory, HasUuids;
+
+    /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_template' => false,
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -26,6 +36,7 @@ class Event extends PrunableModel
         'start_time',
         'end_time',
         'channel_id',
+        'is_template',
     ];
 
     /**
@@ -35,6 +46,7 @@ class Event extends PrunableModel
      */
     protected $hidden = [
         'channel_id',
+        'is_template',
     ];
 
     /**
@@ -45,6 +57,7 @@ class Event extends PrunableModel
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'is_template' => 'boolean',
     ];
 
     // ========== Pruning ============
@@ -54,7 +67,27 @@ class Event extends PrunableModel
      */
     public function prunable(): Builder
     {
-        return static::where('end_time', '<=', now()->subMonth());
+        return static::where('end_time', '<=', now()->subMonth())->where('is_template', false);
+    }
+
+    // ========== Scopes ============
+
+    /**
+     * Scope a query to only include non-template events.
+     */
+    #[Scope]
+    protected function live(Builder $query): void
+    {
+        $query->where('is_template', false);
+    }
+
+    /**
+     * Scope a query to only include template events.
+     */
+    #[Scope]
+    protected function templates(Builder $query): void
+    {
+        $query->where('is_template', true);
     }
 
     // ========== Custom attributes ============
@@ -65,7 +98,13 @@ class Event extends PrunableModel
     protected function channel(): Attribute
     {
         return Attribute::make(
-            get: fn () => app(Discord::class)->getChannel($this->channel_id),
+            get: function () {
+                if (is_null($this->channel_id)) {
+                    return null;
+                }
+
+                return app(Discord::class)->getChannel($this->channel_id);
+            },
         )->shouldCache();
     }
 
@@ -123,6 +162,16 @@ class Event extends PrunableModel
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the assignment groups associated with the event.
+     *
+     * @return HasMany<EventAssignmentGroup, $this>
+     */
+    public function assignmentGroups(): HasMany
+    {
+        return $this->hasMany(EventAssignmentGroup::class);
     }
 
     /**

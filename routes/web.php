@@ -13,6 +13,7 @@ use App\Http\Controllers\Dashboard\GuildRankController;
 use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\LootCouncil\BiasToolController;
 use App\Http\Controllers\LootCouncil\CommentController;
@@ -80,6 +81,7 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     // Upcoming events comps and plans routes
     Route::get('/plans/{event}', [EventController::class, 'show'])->can('view', 'event')->name('plans.show');
     Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->middleware(['auth', 'can:update,event'])->name('plans.edit');
+    Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->middleware(['auth', 'can:update,event'])->name('plans.apply-template');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -125,6 +127,16 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])
         ->can('audit-daily-quests')
         ->name('daily-quests.audit');
+
+    /**
+     * Event templates
+     */
+    Route::get('/event-templates', [EventTemplateController::class, 'index'])->can('viewTemplates', 'App\Models\Event')->name('event-templates.index');
+    Route::get('/event-templates/create', [EventTemplateController::class, 'create'])->can('create', 'App\Models\Event')->name('event-templates.create');
+    Route::post('/event-templates', [EventTemplateController::class, 'store'])->can('create', 'App\Models\Event')->name('event-templates.store');
+    Route::get('/event-templates/{template}/edit', [EventTemplateController::class, 'edit'])->can('update', 'template')->name('event-templates.edit');
+    Route::patch('/event-templates/{template}', [EventTemplateController::class, 'update'])->can('update', 'template')->name('event-templates.update');
+    Route::delete('/event-templates/{template}', [EventTemplateController::class, 'destroy'])->can('delete', 'template')->name('event-templates.destroy');
 
     /**
      * GRM data upload

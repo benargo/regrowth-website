@@ -5,6 +5,7 @@ namespace Tests\Feature\Raiding;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\Permission;
+use App\Models\Raid;
 use App\Models\TargetMarker;
 use App\Models\User;
 use App\Services\Discord\Discord;
@@ -64,7 +65,9 @@ class EditEventTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
 
+        $raid = Raid::factory()->create();
         $event = Event::factory()->create();
+        $event->raids()->attach($raid);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
 
@@ -80,7 +83,9 @@ class EditEventTest extends TestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($this->memberRole->id);
 
+        $raid = Raid::factory()->create();
         $event = Event::factory()->create();
+        $event->raids()->attach($raid);
         TargetMarker::create(['slug' => 'star', 'name' => 'Star']);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
@@ -91,6 +96,51 @@ class EditEventTest extends TestCase
             ->has('targetMarkers', 1)
             ->where('targetMarkers.0.slug', 'star')
             ->where('targetMarkers.0.name', 'Star')
+        );
+    }
+
+    #[Test]
+    public function it_passes_compatible_templates_to_edit_page(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $raid = Raid::factory()->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid);
+
+        // A template attached to the same raid — should appear in the list
+        $matchingTemplate = Event::factory()->template()->create(['title' => 'Matching Template']);
+        $matchingTemplate->raids()->attach($raid);
+
+        // A template with no raids — should not appear
+        Event::factory()->template()->create(['title' => 'Unattached Template']);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Events/EditEvent')
+            ->has('templates', 1)
+            ->where('templates.0.title', 'Matching Template')
+        );
+    }
+
+    #[Test]
+    public function it_passes_empty_templates_array_when_no_templates_match(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $raid = Raid::factory()->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid);
+
+        // No templates exist at all
+        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Events/EditEvent')
+            ->has('templates', 0)
         );
     }
 

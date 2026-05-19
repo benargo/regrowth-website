@@ -178,6 +178,49 @@ class EventResourceTest extends TestCase
         $this->assertArrayNotHasKey('channel', $array);
     }
 
+    #[Test]
+    public function it_returns_null_start_time_when_event_has_no_start_time(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertNull($array['start_time']);
+    }
+
+    #[Test]
+    public function it_returns_null_end_time_when_event_has_no_end_time(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertNull($array['end_time']);
+    }
+
+    #[Test]
+    public function it_returns_null_duration_when_event_has_no_start_or_end_time(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->template()->create(['start_time' => null, 'end_time' => null]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertNull($array['duration']);
+    }
+
+    #[Test]
+    public function it_returns_null_channel_when_channel_id_is_null(): void
+    {
+        $event = Event::factory()->template()->create(['channel_id' => null, 'start_time' => null, 'end_time' => null]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertNull($array['channel']);
+    }
+
     // ============ Assignments ============
 
     #[Test]

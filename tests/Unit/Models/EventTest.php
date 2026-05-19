@@ -6,6 +6,7 @@ use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\EventAssignmentGroup;
 use App\Models\EventCharacter;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
@@ -43,6 +44,7 @@ class EventTest extends ModelTestCase
             'start_time',
             'end_time',
             'channel_id',
+            'is_template',
         ]);
     }
 
@@ -51,7 +53,7 @@ class EventTest extends ModelTestCase
     {
         $model = new Event;
 
-        $this->assertHidden($model, ['channel_id']);
+        $this->assertHidden($model, ['channel_id', 'is_template']);
     }
 
     #[Test]
@@ -62,7 +64,48 @@ class EventTest extends ModelTestCase
         $this->assertCasts($model, [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
+            'is_template' => 'boolean',
         ]);
+    }
+
+    #[Test]
+    public function is_template_defaults_to_false(): void
+    {
+        $model = new Event;
+
+        $this->assertFalse($model->is_template);
+    }
+
+    #[Test]
+    public function template_factory_state_sets_is_template_true(): void
+    {
+        $event = Event::factory()->template()->make();
+
+        $this->assertTrue($event->is_template);
+    }
+
+    #[Test]
+    public function templates_scope_returns_only_template_events(): void
+    {
+        $template = $this->create(['is_template' => true]);
+        $regular = $this->create(['is_template' => false]);
+
+        $ids = Event::templates()->pluck('id')->toArray();
+
+        $this->assertContains($template->id, $ids);
+        $this->assertNotContains($regular->id, $ids);
+    }
+
+    #[Test]
+    public function live_scope_returns_only_non_template_events(): void
+    {
+        $template = $this->create(['is_template' => true]);
+        $regular = $this->create(['is_template' => false]);
+
+        $ids = Event::live()->pluck('id')->toArray();
+
+        $this->assertNotContains($template->id, $ids);
+        $this->assertContains($regular->id, $ids);
     }
 
     #[Test]
@@ -115,6 +158,14 @@ class EventTest extends ModelTestCase
 
         $event->channel;
         $event->channel;
+    }
+
+    #[Test]
+    public function channel_attribute_returns_null_when_channel_id_is_null(): void
+    {
+        $event = Event::factory()->make(['channel_id' => null]);
+
+        $this->assertNull($event->channel);
     }
 
     #[Test]
@@ -438,6 +489,32 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
+    public function prunable_excludes_template_events(): void
+    {
+        $template = $this->create([
+            'end_time' => now()->subMonth()->subSecond(),
+            'is_template' => true,
+        ]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($template->id, $ids);
+    }
+
+    #[Test]
+    public function prunable_includes_non_template_events_that_ended_more_than_one_month_ago(): void
+    {
+        $event = $this->create([
+            'end_time' => now()->subMonth()->subSecond(),
+            'is_template' => false,
+        ]);
+
+        $ids = (new Event)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($event->id, $ids);
+    }
+
+    #[Test]
     public function it_has_many_assignments(): void
     {
         $event = $this->create();
@@ -446,5 +523,16 @@ class EventTest extends ModelTestCase
         $this->assertInstanceOf(HasMany::class, $event->assignments());
         $this->assertCount(2, $event->assignments);
         $this->assertInstanceOf(EventAssignment::class, $event->assignments->first());
+    }
+
+    #[Test]
+    public function it_has_many_assignment_groups(): void
+    {
+        $event = $this->create();
+        EventAssignmentGroup::factory()->count(2)->create(['event_id' => $event->id]);
+
+        $this->assertInstanceOf(HasMany::class, $event->assignmentGroups());
+        $this->assertCount(2, $event->assignmentGroups);
+        $this->assertInstanceOf(EventAssignmentGroup::class, $event->assignmentGroups->first());
     }
 }
