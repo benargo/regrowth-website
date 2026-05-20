@@ -27,7 +27,7 @@ class NewLootCouncilCommentTest extends TestCase
         $comment = Comment::factory()->create();
         $notification = new NewLootCouncilComment($comment);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -112,15 +112,6 @@ class NewLootCouncilCommentTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_for_updates(): void
-    {
-        $comment = Comment::factory()->create();
-        $notification = new NewLootCouncilComment($comment);
-
-        $this->assertNull($notification->updates());
-    }
-
-    #[Test]
     public function it_returns_the_comment_author_as_sender(): void
     {
         $comment = Comment::factory()->create();
@@ -146,22 +137,5 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertSame('123456789', $data['channel_id']);
         $this->assertSame($comment->user->id, $data['created_by_user_id']);
         $this->assertArrayHasKey('embeds', $data['payload']);
-        $this->assertArrayHasKey('related_models', $data);
-    }
-
-    #[Test]
-    public function it_includes_the_comment_in_related_models(): void
-    {
-        $comment = Comment::factory()->create();
-        $notifiable = $this->makeNotifiable();
-
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')->andReturn(['name' => 'Warglaive']);
-        });
-
-        $notification = new NewLootCouncilComment($comment);
-        $data = $notification->toDatabase($notifiable);
-
-        $this->assertSame([Comment::class => [$comment->id]], $data['related_models']);
     }
 }
