@@ -3,7 +3,6 @@
 namespace Tests\Unit\Notifications;
 
 use App\Enums\RaidColor;
-use App\Models\DiscordNotification;
 use App\Models\Event;
 use App\Models\Raid;
 use App\Models\User;
@@ -11,8 +10,9 @@ use App\Notifications\RaidAssignmentsPublished;
 use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -42,7 +42,72 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $notification = new RaidAssignmentsPublished($event);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
+    }
+
+    // -------------------------------------------------------------------------
+    // ShouldBroadcast / broadcasting
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_implements_should_broadcast(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->assertInstanceOf(ShouldBroadcast::class, new RaidAssignmentsPublished($event));
+    }
+
+    #[Test]
+    public function it_includes_broadcast_channel_in_via_when_sender_is_set(): void
+    {
+        $event = Event::factory()->create();
+        $sender = User::factory()->create();
+        $notification = (new RaidAssignmentsPublished($event))->withSender($sender);
+
+        $this->assertContains('broadcast', $notification->via($this->notifiable));
+    }
+
+    #[Test]
+    public function it_does_not_include_broadcast_channel_in_via_without_sender(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->assertNotContains('broadcast', (new RaidAssignmentsPublished($event))->via($this->notifiable));
+    }
+
+    #[Test]
+    public function it_broadcasts_on_the_senders_private_user_channel(): void
+    {
+        $event = Event::factory()->create();
+        $sender = User::factory()->create();
+        $notification = (new RaidAssignmentsPublished($event))->withSender($sender);
+
+        $channels = $notification->broadcastOn();
+
+        $this->assertCount(1, $channels);
+        $this->assertInstanceOf(PrivateChannel::class, $channels[0]);
+        $this->assertEquals("private-App.Models.User.{$sender->id}", $channels[0]->name);
+    }
+
+    #[Test]
+    public function it_broadcasts_with_a_success_message_payload(): void
+    {
+        $event = Event::factory()->create();
+        $sender = User::factory()->create();
+        $notification = (new RaidAssignmentsPublished($event))->withSender($sender);
+
+        $payload = $notification->broadcastWith();
+
+        $this->assertArrayHasKey('message', $payload);
+        $this->assertSame('Assignments published to Discord successfully.', $payload['message']);
+    }
+
+    #[Test]
+    public function it_broadcasts_as_assignments_published(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->assertSame('AssignmentsPublished', (new RaidAssignmentsPublished($event))->broadcastAs());
     }
 
     // -------------------------------------------------------------------------
@@ -188,18 +253,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->assertSame(RaidAssignmentsPublished::class, $data['type']);
         $this->assertSame($this->notifiable->channel()->id, $data['channel_id']);
         $this->assertArrayHasKey('payload', $data);
-        $this->assertArrayHasKey('related_models', $data);
         $this->assertNull($data['created_by_user_id']);
-    }
-
-    #[Test]
-    public function it_stores_the_event_in_the_related_models(): void
-    {
-        $event = Event::factory()->create();
-
-        $data = (new RaidAssignmentsPublished($event))->toDatabase($this->notifiable);
-
-        $this->assertSame([Event::class => [$event->getKey()]], $data['related_models']);
     }
 
     #[Test]
@@ -214,46 +268,44 @@ class RaidAssignmentsPublishedTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // updates() — UpdatesExisting
+    // Serialization (for queue)
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function it_returns_null_for_updates_when_no_existing_notification_matches(): void
+    public function it_can_be_serialized_for_the_queue(): void
     {
         $event = Event::factory()->create();
-
         $notification = new RaidAssignmentsPublished($event);
 
-        $this->assertNull($notification->updates());
+        $serialized = serialize($notification);
+
+        $this->assertIsString($serialized);
+        $this->assertNotEmpty($serialized);
     }
 
     #[Test]
-    public function it_targets_an_existing_notification_for_the_same_event(): void
+    public function it_can_be_unserialized_from_the_queue(): void
     {
         $event = Event::factory()->create();
-        $existing = DiscordNotification::factory()->create(['type' => RaidAssignmentsPublished::class]);
-        DB::table('discord_notifications')
-            ->where('id', $existing->id)
-            ->update(['related_models' => json_encode([Event::class => [$event->getKey()]])]);
+        $original = new RaidAssignmentsPublished($event);
 
-        $notification = new RaidAssignmentsPublished($event);
+        $serialized = serialize($original);
+        /** @var RaidAssignmentsPublished $unserialized */
+        $unserialized = unserialize($serialized);
 
-        $this->assertNotNull($notification->updates());
-        $this->assertSame($existing->id, $notification->updates()->id);
+        $this->assertInstanceOf(RaidAssignmentsPublished::class, $unserialized);
+        $this->assertSame($event->getKey(), $unserialized->event->getKey());
     }
 
     #[Test]
-    public function it_does_not_target_a_notification_for_a_different_event(): void
+    public function it_can_call_to_message_after_being_unserialized(): void
     {
         $event = Event::factory()->create();
-        $otherEvent = Event::factory()->create();
-        $other = DiscordNotification::factory()->create(['type' => RaidAssignmentsPublished::class]);
-        DB::table('discord_notifications')
-            ->where('id', $other->id)
-            ->update(['related_models' => json_encode([Event::class => [$otherEvent->getKey()]])]);
+        $original = new RaidAssignmentsPublished($event);
 
-        $notification = new RaidAssignmentsPublished($event);
+        $unserialized = unserialize(serialize($original));
 
-        $this->assertNull($notification->updates());
+        $this->assertInstanceOf(RaidAssignmentsPublished::class, $unserialized);
+        $this->assertNotNull($unserialized->toMessage());
     }
 }

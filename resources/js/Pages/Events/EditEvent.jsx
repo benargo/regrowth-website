@@ -12,7 +12,9 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Link, router } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
+import { useEcho } from "@laravel/echo-react";
+import FlashMessage from "@/Components/FlashMessage";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Collapsible from "@/Components/Collapsible";
 import AssignmentCellEditor, { resetAssignmentOptionsFetched } from "@/Components/Events/AssignmentCellEditor";
@@ -768,6 +770,24 @@ export default function EditEvent({ event, targetMarkers, templates }) {
     const [saving, setSaving] = useState(0);
     const [draggingKey, setDraggingKey] = useState(null);
     const [showApplyTemplate, setShowApplyTemplate] = useState(false);
+    const [publishing, setPublishing] = useState(false);
+    const [publishSuccess, setPublishSuccess] = useState(null);
+
+    const { auth } = usePage().props;
+
+    useEcho(
+        `App.Models.User.${auth.user.id}`,
+        ".AssignmentsPublished",
+        (payload) => setPublishSuccess(payload.message),
+        [auth.user.id],
+    );
+
+    const handlePublish = useCallback(() => {
+        setPublishing(true);
+        window.axios
+            .post(route('api.events.publish-assignments', event.id))
+            .finally(() => setPublishing(false));
+    }, [event.id]);
 
     useEventChannel(
         event.id,
@@ -1387,6 +1407,15 @@ export default function EditEvent({ event, targetMarkers, templates }) {
                                 Apply template
                             </button>
                         )}
+                        <button
+                            type="button"
+                            onClick={handlePublish}
+                            disabled={publishing}
+                            className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20 disabled:opacity-50"
+                        >
+                            <Icon icon="bullhorn" style="light" />
+                            {publishing ? 'Publishing…' : 'Publish'}
+                        </button>
                         <EditorPresence eventId={event.id} />
                     </MetaCard>
 
@@ -1497,6 +1526,11 @@ export default function EditEvent({ event, targetMarkers, templates }) {
                     onClose={() => setShowApplyTemplate(false)}
                 />
             )}
+            <FlashMessage
+                type="success"
+                message={publishSuccess}
+                onDismiss={() => setPublishSuccess(null)}
+            />
         </Master>
     );
 }
