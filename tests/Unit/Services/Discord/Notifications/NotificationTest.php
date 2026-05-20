@@ -61,7 +61,7 @@ class NotificationTest extends TestCase
     {
         $notification = new ConcreteNotification;
 
-        $this->assertSame(Driver::class, $notification->via($this->notifiable));
+        $this->assertContains(Driver::class, $notification->via($this->notifiable));
     }
 
     // -------------------------------------------------------------------------

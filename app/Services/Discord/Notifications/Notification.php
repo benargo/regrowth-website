@@ -2,7 +2,6 @@
 
 namespace App\Services\Discord\Notifications;
 
-use App\Models\DiscordNotification;
 use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -19,29 +18,21 @@ abstract class Notification extends BaseNotification implements ShouldQueue
      *
      * @var array<string, Model>|null
      */
-    private ?array $relatedModels = null;
+    public ?array $relatedModels = null;
 
     /**
      * The user who sent this notification, if any.
      */
-    private ?Authenticatable $sender = null;
+    public ?Authenticatable $sender = null;
 
     /**
      * Get the notification channels.
      *
-     * @return string The notification channels to send the message through (e.g. a custom DiscordChannel class)
+     * @return array<int, string> The notification channels to send the message through (e.g. a custom DiscordChannel class)
      */
-    public function via(object $notifiable): string
+    public function via(object $notifiable): array
     {
-        return Driver::class;
-    }
-
-    /**
-     * Get the existing Discord notification this notification will update, if any.
-     */
-    public function updates(): ?DiscordNotification
-    {
-        return null;
+        return [Driver::class];
     }
 
     /**

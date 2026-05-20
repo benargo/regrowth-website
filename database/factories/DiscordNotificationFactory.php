@@ -38,12 +38,19 @@ class DiscordNotificationFactory extends Factory
     }
 
     /**
-     * @param  array<int, array{name: string, model: string, key: mixed}>  $entries
+     * @param  array<string, list<int|string>>  $entries  e.g. [User::class => [1, 2]]
      */
     public function withRelatedModels(array $entries): static
     {
-        return $this->state(fn () => [
-            'related_models' => json_encode($entries),
-        ]);
+        return $this->afterCreating(function (DiscordNotification $notification) use ($entries) {
+            foreach ($entries as $modelClass => $ids) {
+                foreach ($ids as $id) {
+                    $notification->relatedModels()->create([
+                        'model_type' => $modelClass,
+                        'model_id' => $id,
+                    ]);
+                }
+            }
+        });
     }
 }

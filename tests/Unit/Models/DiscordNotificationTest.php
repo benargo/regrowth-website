@@ -3,14 +3,13 @@
 namespace Tests\Unit\Models;
 
 use App\Casts\AsClassName;
-use App\Casts\AsRelationshipIndex;
 use App\Models\DiscordNotification;
 use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
@@ -37,7 +36,6 @@ class DiscordNotificationTest extends ModelTestCase
             'channel_id',
             'message_id',
             'payload',
-            'related_models',
             'created_by_user_id',
         ]);
     }
@@ -56,7 +54,6 @@ class DiscordNotificationTest extends ModelTestCase
         $this->assertCasts($model, [
             'type' => AsClassName::class,
             'payload' => MessagePayload::class,
-            'related_models' => AsRelationshipIndex::class,
         ]);
     }
 
@@ -135,6 +132,43 @@ class DiscordNotificationTest extends ModelTestCase
 
     /*
     |--------------------------------------------------------------------------
+    | Test: Relationships — relatedModels
+    |--------------------------------------------------------------------------
+    */
+
+    #[Test]
+    public function related_models_returns_has_many_relationship(): void
+    {
+        $model = new DiscordNotification;
+
+        $this->assertInstanceOf(HasMany::class, $model->relatedModels());
+    }
+
+    #[Test]
+    public function related_models_returns_empty_collection_by_default(): void
+    {
+        $notification = $this->create();
+
+        $this->assertCount(0, $notification->relatedModels);
+    }
+
+    #[Test]
+    public function related_models_returns_pivot_rows_keyed_to_the_notification(): void
+    {
+        $user = User::factory()->create();
+        $notification = DiscordNotification::factory()
+            ->withRelatedModels([User::class => [$user->id]])
+            ->create();
+
+        $rows = $notification->fresh()->relatedModels;
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(User::class, $rows->first()->model_type);
+        $this->assertSame((string) $user->id, $rows->first()->model_id);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Test: Soft deletes
     |--------------------------------------------------------------------------
     */
@@ -198,37 +232,5 @@ class DiscordNotificationTest extends ModelTestCase
 
         $this->assertInstanceOf(MessagePayload::class, $notification->fresh()->payload);
         $this->assertSame('Hello, world!', $notification->fresh()->payload->content);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: related_models cast
-    |--------------------------------------------------------------------------
-    */
-
-    #[Test]
-    public function related_models_returns_empty_collection_by_default(): void
-    {
-        $notification = $this->create();
-
-        $result = $notification->fresh()->relatedModels();
-
-        $this->assertInstanceOf(Collection::class, $result);
-        $this->assertCount(0, $result);
-    }
-
-    #[Test]
-    public function related_models_returns_collection_keyed_by_name(): void
-    {
-        $user = User::factory()->create();
-        $notification = DiscordNotification::factory()->withRelatedModels([
-            ['name' => 'creator', 'model' => User::class, 'key' => $user->id],
-        ])->create();
-
-        $result = $notification->fresh()->relatedModels();
-
-        $this->assertInstanceOf(Collection::class, $result);
-        $this->assertTrue($result->has('creator'));
-        $this->assertTrue($result->get('creator')->is($user));
     }
 }
