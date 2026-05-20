@@ -86,7 +86,6 @@ class DailyQuestsMessage extends Notification
             'type' => self::class,
             'channel_id' => $notifiable->channel()->id,
             'payload' => $this->toMessage()->toArray(),
-            'related_models' => $this->mapRelatedModels(),
             'created_by_user_id' => $this->sender()?->id,
         ];
     }

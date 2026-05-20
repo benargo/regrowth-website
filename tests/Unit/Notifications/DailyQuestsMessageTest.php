@@ -40,7 +40,7 @@ class DailyQuestsMessageTest extends TestCase
     {
         $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
     }
 
     // -------------------------------------------------------------------------
@@ -203,26 +203,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame(DailyQuestsMessage::class, $data['type']);
         $this->assertSame($this->notifiable->channel()->id, $data['channel_id']);
         $this->assertArrayHasKey('payload', $data);
-        $this->assertArrayHasKey('related_models', $data);
         $this->assertNull($data['created_by_user_id']);
-    }
-
-    #[Test]
-    public function it_includes_related_models_in_database_payload(): void
-    {
-        $cooking = DailyQuest::factory()->cooking()->create();
-
-        $notification = (new DailyQuestsMessage([
-            'Cooking' => $cooking,
-            'Fishing' => null,
-            'Dungeon' => null,
-            'Heroic' => null,
-            'PvP' => null,
-        ]))->withRelatedModels([$cooking]);
-
-        $data = $notification->toDatabase($this->notifiable);
-
-        $this->assertSame([DailyQuest::class => [$cooking->id]], $data['related_models']);
     }
 
     #[Test]
