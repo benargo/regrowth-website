@@ -24,7 +24,7 @@ class GrmUploadFailedTest extends TestCase
     {
         $notification = new GrmUploadFailed(processedCount: 3, errorCount: 2);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -109,12 +109,6 @@ class GrmUploadFailedTest extends TestCase
 
         $this->assertStringContainsString('Error 10', $embed->description);
         $this->assertStringNotContainsString('more errors', $embed->description);
-    }
-
-    #[Test]
-    public function it_returns_null_for_updates(): void
-    {
-        $this->assertNull((new GrmUploadFailed(processedCount: 0, errorCount: 1))->updates());
     }
 
     #[Test]

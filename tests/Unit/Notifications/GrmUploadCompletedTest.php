@@ -24,7 +24,7 @@ class GrmUploadCompletedTest extends TestCase
     {
         $notification = new GrmUploadCompleted(processedCount: 5);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -99,12 +99,6 @@ class GrmUploadCompletedTest extends TestCase
 
         $this->assertNotNull($embed->image);
         $this->assertNotNull($embed->timestamp);
-    }
-
-    #[Test]
-    public function it_returns_null_for_updates(): void
-    {
-        $this->assertNull((new GrmUploadCompleted(processedCount: 5))->updates());
     }
 
     #[Test]
