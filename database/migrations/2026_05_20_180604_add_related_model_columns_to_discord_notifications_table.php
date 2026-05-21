@@ -18,6 +18,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('model_type');
             $table->string('model_id');
+            $table->index(['model_type', 'model_id', 'discord_notification_id'], 'dnrm_model_type_model_id_notification_index');
         });
 
         Schema::table('discord_notifications', function (Blueprint $table) {
