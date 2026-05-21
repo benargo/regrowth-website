@@ -4,6 +4,7 @@ import { router, Link, Deferred } from "@inertiajs/react";
 import Collapsible from "@/Components/Collapsible";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import PageContainer from "@/Components/PageContainer";
 
 function BossItemsSkeleton() {
     return (
@@ -484,7 +485,7 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
         <Master title="Loot Bias">
             <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
             {/* Content */}
-            <main className="container mx-auto px-4 py-8">
+            <PageContainer padding="py-8">
                 {/* Mobile navigation */}
                 <MegaMenu
                     phases={phases}
@@ -547,7 +548,7 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
                         getItemsForBoss={getItemsForBoss}
                     />
                 </Deferred>
-            </main>
+            </PageContainer>
         </Master>
     );
 }

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useForm, Link, router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import ImageManager from "@/Components/ImageManager";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -159,44 +160,42 @@ export default function EditBossStrategy({ boss }) {
                     </div>
                 </div>
             </nav>
-            <div className="py-12 text-white">
-                <div className="container mx-auto max-w-4xl space-y-8 px-4">
-                    <p className="text-md mb-6">
-                        Use the editor below to write strategy notes for this boss. You can also upload images to
-                        illustrate the strategy, which will be displayed in the order you arrange them.
-                    </p>
-                    {/* Notes Section */}
-                    <div>
-                        <h3 className="not-sr-only flex items-center gap-3 text-lg font-bold">
-                            Strategy Notes
-                            <SaveIndicator saving={processing} saved={showNotesSaved} />
-                        </h3>
-                        <MarkdownEditor
-                            value={data.notes}
-                            onChange={(value) => setData("notes", value)}
-                            rows={12}
-                            error={errors.notes}
-                            className="mt-2"
-                        />
-                    </div>
-
-                    {/* Image Management Section */}
-                    <div>
-                        <h3 className="mb-2 flex items-center gap-3 text-lg font-bold">
-                            Strategy Images
-                            <SaveIndicator saving={imagesSaving} saved={showImagesSaved} />
-                        </h3>
-                        <ImageManager
-                            images={imageOrder}
-                            saving={imagesSaving}
-                            error={errors.images}
-                            onUpload={handleUploadFiles}
-                            onDelete={handleDeleteImage}
-                            onReorder={handleReorderImages}
-                        />
-                    </div>
+            <PageContainer className="max-w-4xl space-y-8">
+                <p className="text-md mb-6">
+                    Use the editor below to write strategy notes for this boss. You can also upload images to
+                    illustrate the strategy, which will be displayed in the order you arrange them.
+                </p>
+                {/* Notes Section */}
+                <div>
+                    <h3 className="not-sr-only flex items-center gap-3 text-lg font-bold">
+                        Strategy Notes
+                        <SaveIndicator saving={processing} saved={showNotesSaved} />
+                    </h3>
+                    <MarkdownEditor
+                        value={data.notes}
+                        onChange={(value) => setData("notes", value)}
+                        rows={12}
+                        error={errors.notes}
+                        className="mt-2"
+                    />
                 </div>
-            </div>
+
+                {/* Image Management Section */}
+                <div>
+                    <h3 className="mb-2 flex items-center gap-3 text-lg font-bold">
+                        Strategy Images
+                        <SaveIndicator saving={imagesSaving} saved={showImagesSaved} />
+                    </h3>
+                    <ImageManager
+                        images={imageOrder}
+                        saving={imagesSaving}
+                        error={errors.images}
+                        onUpload={handleUploadFiles}
+                        onDelete={handleDeleteImage}
+                        onReorder={handleReorderImages}
+                    />
+                </div>
+            </PageContainer>
         </Master>
     );
 }

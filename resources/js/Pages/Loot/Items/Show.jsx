@@ -6,6 +6,8 @@ import SharedHeader from "@/Components/SharedHeader";
 import Notes from "@/Components/Loot/Notes";
 import usePermission from "@/Hooks/Permissions";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
+import ToolNav from "@/Components/ToolNav";
+import PageContainer from "@/Components/PageContainer";
 
 function PriorityItem({ priority }) {
     return (
@@ -79,34 +81,30 @@ export default function ItemShow({ item, comments }) {
         <Master title={item.data.name}>
             <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
             {/* Tool navigation */}
-            <nav className="bg-brown-900 shadow">
-                <div className="container mx-auto px-4">
-                    <div className="flex min-h-12 flex-col items-center justify-between md:flex-row">
-                        <div className="flex-initial space-x-4">
-                            <Link
-                                href={route("loot.raids.show", { raid: item.data.raid.id, name: item.data.raid.slug })}
-                                className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
-                            >
-                                <Icon icon="arrow-left" style="solid" className="mr-2" />
-                                <span>Back to {item.data.raid.name} loot</span>
-                            </Link>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            {canEditItem && (
-                                <Link
-                                    href={route("loot.items.edit", { item: item.data.id, name: item.data.slug })}
-                                    className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
-                                >
-                                    <Icon icon="edit" style="solid" className="mr-2" />
-                                    <span>Edit this item</span>
-                                </Link>
-                            )}
-                        </div>
-                    </div>
+            <ToolNav>
+                <div className="flex-initial space-x-4">
+                    <Link
+                        href={route("loot.raids.show", { raid: item.data.raid.id, name: item.data.raid.slug })}
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                    >
+                        <Icon icon="arrow-left" style="solid" className="mr-2" />
+                        <span>Back to {item.data.raid.name} loot</span>
+                    </Link>
                 </div>
-            </nav>
+                <div className="flex items-center space-x-4">
+                    {canEditItem && (
+                        <Link
+                            href={route("loot.items.edit", { item: item.data.id, name: item.data.slug })}
+                            className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                        >
+                            <Icon icon="edit" style="solid" className="mr-2" />
+                            <span>Edit this item</span>
+                        </Link>
+                    )}
+                </div>
+            </ToolNav>
             {/* Content */}
-            <main className="container mx-auto px-4 py-8">
+            <PageContainer padding="py-8">
                 <ItemDetailsCard item={item.data} />
 
                 <h2 className="mb-4 mt-8 text-xl font-bold">Loot Biases</h2>
@@ -130,7 +128,7 @@ export default function ItemShow({ item, comments }) {
 
                 {/* Comments Section */}
                 <CommentsSection comments={comments} itemId={item.data.id} canCreate={canCreateComment} />
-            </main>
+            </PageContainer>
         </Master>
     );
 }

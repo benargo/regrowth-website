@@ -4,6 +4,7 @@ import CommentItem from "@/Components/Loot/CommentItem";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 
 export default function Comments({ comments }) {
     // Group comments by item on the client side
@@ -39,7 +40,7 @@ export default function Comments({ comments }) {
             </nav>
 
             {/* Content */}
-            <main className="container mx-auto px-4 py-8">
+            <PageContainer padding="py-8">
                 <h2 className="mb-6 text-xl font-bold">All Comments</h2>
 
                 {comments.data.length > 0 ? (
@@ -77,7 +78,7 @@ export default function Comments({ comments }) {
                 ) : (
                     <p className="py-8 text-center text-gray-400">No comments yet.</p>
                 )}
-            </main>
+            </PageContainer>
         </Master>
     );
 }

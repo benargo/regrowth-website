@@ -17,6 +17,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import Notes from "@/Components/Loot/Notes";
+import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
@@ -475,7 +476,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
             </ToolNav>
             {/* Content */}
-            <main className="container mx-auto px-4 py-8">
+            <PageContainer padding="py-8">
                 <ItemDetailsCard item={item.data} />
 
                 {/* Editable Priorities */}
@@ -497,7 +498,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
 
                 {/* Comments Section */}
                 <CommentsSection comments={comments} itemId={item.data.id} canCreate="true" />
-            </main>
+            </PageContainer>
         </Master>
     );
 }

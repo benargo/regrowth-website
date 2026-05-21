@@ -6,6 +6,7 @@ import CopyButton from "@/Components/CopyButton";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
+import PageContainer from "@/Components/PageContainer";
 
 export default function AddonExportJson({ exportedData, grmFreshness }) {
     const dataRef = useRef(null);
@@ -30,8 +31,7 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
     return (
         <Master title="Export Addon Data">
             <SharedHeader title="Export Addon Data" backgroundClass="bg-officer-meeting" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <TabNav
                         tabs={[
                             { name: "base64", label: "Base64", href: route("dashboard.addon.export") },
@@ -130,8 +130,7 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
                             </pre>
                         </div>
                     </Deferred>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

@@ -3,6 +3,7 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Tooltip from "@/Components/Tooltip";
+import PageContainer from "@/Components/PageContainer";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
 import GuildRankLabel from "@/Components/GuildRankLabel";
@@ -131,67 +132,65 @@ export default function Show({ report, nearbyReports, impactedReports }) {
         <Master title={data.title}>
             <SharedHeader title={data.title} backgroundClass="bg-illidan" />
 
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
-                    {/* Back link */}
-                    <div className="mb-6">
-                        <Link
-                            href={route("raiding.reports.index")}
-                            className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 hover:underline"
-                        >
-                            <Icon icon="arrow-left" style="solid" />
-                            Back to Reports
-                        </Link>
-                    </div>
-
-                    {/* Report metadata card */}
-                    <div className="mb-8 rounded border border-amber-600/30 bg-brown-800/50 p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex flex-1 flex-wrap gap-x-8 gap-y-3">
-                                <MetaItem icon="calendar">
-                                    <span>
-                                        {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
-                                        <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
-                                        <span className="hidden lg:inline">{formattedDate.long}</span>
-                                    </span>
-                                </MetaItem>
-                                <MetaItem icon="clock">{duration}</MetaItem>
-                                {data.zone?.name && <MetaItem icon="map-marker-alt">{data.zone.name}</MetaItem>}
-                                {data.guild_tag?.name && <MetaItem icon="tag">{data.guild_tag.name}</MetaItem>}
-                            </div>
-                            {data.code && (
-                                <div className="flex-shrink-0">
-                                    <ViewOnWarcraftLogsLink code={data.code}>
-                                        View on Warcraft Logs
-                                    </ViewOnWarcraftLogsLink>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Characters */}
-                    <h2 className="mb-4 text-xl font-semibold text-white">
-                        Attendance
-                        {data.characters?.length > 0 && (
-                            <span className="ml-2 text-base font-normal text-gray-400">({data.characters.length})</span>
-                        )}
-                    </h2>
-                    <div className="rounded border border-amber-600/30">
-                        <CharactersTable characters={presentCharacters} />
-                    </div>
-
-                    {/* Loot councillors */}
-                    <RaidReportLootCouncillors reportId={data.id} characters={data.characters} />
-
-                    {/* Linked reports */}
-                    <LinkedRaidReports
-                        currentReport={data}
-                        nearbyReports={nearbyReports}
-                        impactedReports={impactedReports}
-                        referenceDate={data.start_time}
-                    />
+            <PageContainer>
+                {/* Back link */}
+                <div className="mb-6">
+                    <Link
+                        href={route("raiding.reports.index")}
+                        className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 hover:underline"
+                    >
+                        <Icon icon="arrow-left" style="solid" />
+                        Back to Reports
+                    </Link>
                 </div>
-            </div>
+
+                {/* Report metadata card */}
+                <div className="mb-8 rounded border border-amber-600/30 bg-brown-800/50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex flex-1 flex-wrap gap-x-8 gap-y-3">
+                            <MetaItem icon="calendar">
+                                <span>
+                                    {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
+                                    <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
+                                    <span className="hidden lg:inline">{formattedDate.long}</span>
+                                </span>
+                            </MetaItem>
+                            <MetaItem icon="clock">{duration}</MetaItem>
+                            {data.zone?.name && <MetaItem icon="map-marker-alt">{data.zone.name}</MetaItem>}
+                            {data.guild_tag?.name && <MetaItem icon="tag">{data.guild_tag.name}</MetaItem>}
+                        </div>
+                        {data.code && (
+                            <div className="flex-shrink-0">
+                                <ViewOnWarcraftLogsLink code={data.code}>
+                                    View on Warcraft Logs
+                                </ViewOnWarcraftLogsLink>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Characters */}
+                <h2 className="mb-4 text-xl font-semibold text-white">
+                    Attendance
+                    {data.characters?.length > 0 && (
+                        <span className="ml-2 text-base font-normal text-gray-400">({data.characters.length})</span>
+                    )}
+                </h2>
+                <div className="rounded border border-amber-600/30">
+                    <CharactersTable characters={presentCharacters} />
+                </div>
+
+                {/* Loot councillors */}
+                <RaidReportLootCouncillors reportId={data.id} characters={data.characters} />
+
+                {/* Linked reports */}
+                <LinkedRaidReports
+                    currentReport={data}
+                    nearbyReports={nearbyReports}
+                    impactedReports={impactedReports}
+                    referenceDate={data.start_time}
+                />
+            </PageContainer>
         </Master>
     );
 }

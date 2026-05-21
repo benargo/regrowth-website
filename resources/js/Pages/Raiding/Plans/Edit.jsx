@@ -25,6 +25,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import ToolNav from "@/Components/ToolNav";
+import PageContainer from "@/Components/PageContainer";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
 import Master from "@/Layouts/Master";
@@ -1377,10 +1378,9 @@ export default function Edit({ event, targetMarkers, templates }) {
                 </div>
             </ToolNav>
 
-            <div className="py-8 text-white">
-                <div className="container mx-auto px-4">
-                    {/* Event metadata card */}
-                    <MetaCard>
+            <PageContainer padding="py-8">
+                {/* Event metadata card */}
+                <MetaCard>
                         <MetaItem icon="calendar">
                             <span>
                                 {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
@@ -1517,8 +1517,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                             ) : null}
                         </DragOverlay>
                     </DndContext>
-                </div>
-            </div>
+            </PageContainer>
             {showApplyTemplate && (
                 <ApplyTemplateModal
                     eventId={event.id}

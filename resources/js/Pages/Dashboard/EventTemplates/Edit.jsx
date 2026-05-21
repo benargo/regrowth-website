@@ -24,6 +24,7 @@ import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Tooltip from "@/Components/Tooltip";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
+import PageContainer from "@/Components/PageContainer";
 import { labelFromSide, storageFromSide, colorClassFromSide, textClassFromSide } from "@/Helpers/AssignmentCellHelpers";
 
 function parseAddNewGroupId(id) {
@@ -1126,138 +1127,136 @@ export default function Edit({ template, targetMarkers, raids }) {
                 </div>
             </ToolNav>
 
-            <div className="py-8 text-white">
-                <div className="container mx-auto px-4">
-                    {/* Template metadata */}
-                    <form onSubmit={handleSubmit} className="mb-8">
-                        <MetaCard>
-                            <MetaItem icon="tag">
-                                <Tooltip text="Click to edit">
-                                    <label className="sr-only" htmlFor="template-title">
-                                        Template name
+            <PageContainer padding="py-8">
+                {/* Template metadata */}
+                <form onSubmit={handleSubmit} className="mb-8">
+                    <MetaCard>
+                        <MetaItem icon="tag">
+                            <Tooltip text="Click to edit">
+                                <label className="sr-only" htmlFor="template-title">
+                                    Template name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.title}
+                                    onChange={(e) => setData("title", e.target.value)}
+                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-amber-500 focus:outline-none"
+                                    placeholder="Template name"
+                                />
+                            </Tooltip>
+                            {errors.title && <span className="ml-2 text-xs text-red-400">{errors.title}</span>}
+                        </MetaItem>
+                        {raids && raids.length > 0 && (
+                            <MetaItem icon="shield-alt">
+                                <div className="w-64">
+                                    <label className="sr-only" htmlFor="raid-ids">
+                                        Raids included in this template
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={data.title}
-                                        onChange={(e) => setData("title", e.target.value)}
-                                        className="rounded border border-transparent bg-transparent px-1 text-white focus:border-amber-500 focus:outline-none"
-                                        placeholder="Template name"
+                                    <FilterDropdown
+                                        label={{ singular: "raid", plural: "raids" }}
+                                        options={raids}
+                                        selected={data.raid_ids}
+                                        onChange={(ids) => setData("raid_ids", ids)}
                                     />
-                                </Tooltip>
-                                {errors.title && <span className="ml-2 text-xs text-red-400">{errors.title}</span>}
+                                </div>
+                                {errors.raid_ids && (
+                                    <span className="ml-2 text-xs text-red-400">{errors.raid_ids}</span>
+                                )}
                             </MetaItem>
-                            {raids && raids.length > 0 && (
-                                <MetaItem icon="shield-alt">
-                                    <div className="w-64">
-                                        <label className="sr-only" htmlFor="raid-ids">
-                                            Raids included in this template
-                                        </label>
-                                        <FilterDropdown
-                                            label={{ singular: "raid", plural: "raids" }}
-                                            options={raids}
-                                            selected={data.raid_ids}
-                                            onChange={(ids) => setData("raid_ids", ids)}
-                                        />
-                                    </div>
-                                    {errors.raid_ids && (
-                                        <span className="ml-2 text-xs text-red-400">{errors.raid_ids}</span>
-                                    )}
-                                </MetaItem>
-                            )}
-                            <div className="grow" />
-                            <PrimaryButton type="submit" processing={processing}>
-                                {processing ? "Saving…" : "Save"}
-                            </PrimaryButton>
-                        </MetaCard>
-                    </form>
-
-                    <DndContext
-                        sensors={assignmentSensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={(e) => {
-                            const a = assignments.find((x) => x._key === e.active.id);
-                            setActiveAssignment(a ?? null);
-                            setDraggingKey(a?._key ?? null);
-                        }}
-                        onDragOver={handleDragOver}
-                        onDragEnd={(e) => {
-                            setDraggingKey(null);
-                            handleDragEnd(e);
-                        }}
-                        onDragCancel={() => {
-                            setActiveAssignment(null);
-                            setDragOverInfo(null);
-                            setDraggingKey(null);
-                        }}
-                    >
-                        {/* General Assignments */}
-                        <section className="mb-8">
-                            <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
-                                General Assignments
-                            </h2>
-                            <GroupContainer
-                                bossId={null}
-                                groups={generalGroups}
-                                assignments={assignments}
-                                horizontal
-                                {...commonContainerProps}
-                            />
-                        </section>
-
-                        {/* Boss assignments */}
-                        {template.raids?.length > 0 && (
-                            <div className="space-y-6">
-                                {template.raids.map((raid) => (
-                                    <div key={raid.slug}>
-                                        {template.raids.length > 1 && (
-                                            <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
-                                                {raid.name}
-                                            </h2>
-                                        )}
-                                        <div className="flex flex-col gap-2">
-                                            {(raid.bosses ?? []).map((boss) => (
-                                                <BossSection
-                                                    key={boss.id}
-                                                    boss={boss}
-                                                    raid={raid}
-                                                    commonContainerProps={commonContainerProps}
-                                                    groupsByBossId={groupsByBossId}
-                                                    assignments={assignments}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
                         )}
+                        <div className="grow" />
+                        <PrimaryButton type="submit" processing={processing}>
+                            {processing ? "Saving…" : "Save"}
+                        </PrimaryButton>
+                    </MetaCard>
+                </form>
 
-                        <DragOverlay>
-                            {activeAssignment ? (
-                                <table className="w-full table-fixed rounded border border-amber-500/50 bg-brown-800 opacity-90 shadow-xl">
-                                    <tbody>
-                                        <tr className="border-b border-brown-700/50">
-                                            <td className="w-6 px-1 py-2 text-brown-700">
-                                                <Icon icon="grip-vertical" style="solid" className="text-xs" />
-                                            </td>
-                                            <td className="w-1/2 border-r border-brown-700/50 px-3 py-2.5 text-sm text-brown-200">
-                                                {labelFromSide(activeAssignment._leftSide).label || (
-                                                    <span className="italic text-brown-600">empty</span>
-                                                )}
-                                            </td>
-                                            <td className="w-1/2 px-3 py-2.5 text-sm text-brown-200">
-                                                {labelFromSide(activeAssignment._rightSide).label || (
-                                                    <span className="italic text-brown-600">empty</span>
-                                                )}
-                                            </td>
-                                            <td className="w-10" />
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            ) : null}
-                        </DragOverlay>
-                    </DndContext>
-                </div>
-            </div>
+                <DndContext
+                    sensors={assignmentSensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={(e) => {
+                        const a = assignments.find((x) => x._key === e.active.id);
+                        setActiveAssignment(a ?? null);
+                        setDraggingKey(a?._key ?? null);
+                    }}
+                    onDragOver={handleDragOver}
+                    onDragEnd={(e) => {
+                        setDraggingKey(null);
+                        handleDragEnd(e);
+                    }}
+                    onDragCancel={() => {
+                        setActiveAssignment(null);
+                        setDragOverInfo(null);
+                        setDraggingKey(null);
+                    }}
+                >
+                    {/* General Assignments */}
+                    <section className="mb-8">
+                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                            General Assignments
+                        </h2>
+                        <GroupContainer
+                            bossId={null}
+                            groups={generalGroups}
+                            assignments={assignments}
+                            horizontal
+                            {...commonContainerProps}
+                        />
+                    </section>
+
+                    {/* Boss assignments */}
+                    {template.raids?.length > 0 && (
+                        <div className="space-y-6">
+                            {template.raids.map((raid) => (
+                                <div key={raid.slug}>
+                                    {template.raids.length > 1 && (
+                                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                                            {raid.name}
+                                        </h2>
+                                    )}
+                                    <div className="flex flex-col gap-2">
+                                        {(raid.bosses ?? []).map((boss) => (
+                                            <BossSection
+                                                key={boss.id}
+                                                boss={boss}
+                                                raid={raid}
+                                                commonContainerProps={commonContainerProps}
+                                                groupsByBossId={groupsByBossId}
+                                                assignments={assignments}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <DragOverlay>
+                        {activeAssignment ? (
+                            <table className="w-full table-fixed rounded border border-amber-500/50 bg-brown-800 opacity-90 shadow-xl">
+                                <tbody>
+                                    <tr className="border-b border-brown-700/50">
+                                        <td className="w-6 px-1 py-2 text-brown-700">
+                                            <Icon icon="grip-vertical" style="solid" className="text-xs" />
+                                        </td>
+                                        <td className="w-1/2 border-r border-brown-700/50 px-3 py-2.5 text-sm text-brown-200">
+                                            {labelFromSide(activeAssignment._leftSide).label || (
+                                                <span className="italic text-brown-600">empty</span>
+                                            )}
+                                        </td>
+                                        <td className="w-1/2 px-3 py-2.5 text-sm text-brown-200">
+                                            {labelFromSide(activeAssignment._rightSide).label || (
+                                                <span className="italic text-brown-600">empty</span>
+                                            )}
+                                        </td>
+                                        <td className="w-10" />
+                                    </tr>
+                                </tbody>
+                            </table>
+                        ) : null}
+                    </DragOverlay>
+                </DndContext>
+            </PageContainer>
         </Master>
     );
 }

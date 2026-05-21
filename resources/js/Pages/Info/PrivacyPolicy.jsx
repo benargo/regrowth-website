@@ -2,6 +2,7 @@ import Master from "@/Layouts/Master";
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 
 function headerInner() {
     return (
@@ -16,8 +17,7 @@ export default function PrivacyPolicy() {
     return (
         <Master title="Privacy Policy">
             <SharedHeader backgroundClass="bg-ironforge" title={headerInner()} />
-            <div className="py-12 text-white">
-                <main className="container mx-auto">
+            <PageContainer>
                     <p className="font-md mb-2 text-gray-400">
                         This privacy policy will explain how Regrowth uses the personal data we collect from you. While
                         we need to be GDPR compliant, and take data protection seriously, please bear in mind that
@@ -257,8 +257,7 @@ export default function PrivacyPolicy() {
                         </Link>{" "}
                         server and ask an officer.
                     </p>
-                </main>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

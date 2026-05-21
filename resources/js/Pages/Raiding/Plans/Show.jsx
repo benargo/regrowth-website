@@ -6,6 +6,7 @@ import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
 import MetaCard, { MetaItem } from "@/Components/MetaCard";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
 import usePermission from "@/Hooks/Permissions.jsx";
@@ -102,10 +103,9 @@ export default function Show({ event }) {
         <Master title={event.title}>
             <SharedHeader title={event.title} backgroundClass={event.background} />
 
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
-                    {/* Event metadata card */}
-                    <MetaCard>
+            <PageContainer>
+                {/* Event metadata card */}
+                <MetaCard>
                         <MetaItem icon="calendar">
                             <span>
                                 {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
@@ -185,8 +185,7 @@ export default function Show({ event }) {
                             ))}
                         </div>
                     )}
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

@@ -3,6 +3,7 @@ import { Link, usePage } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Collapsible from "@/Components/Collapsible";
 import usePermission from "@/Hooks/Permissions";
+import PageContainer from "@/Components/PageContainer";
 
 function DashboardCard({ href, icon, children }) {
     return (
@@ -32,8 +33,7 @@ export default function Index({ discordRoles }) {
             </div>
 
             {/* Content */}
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     {/* Loot Council */}
                     <h2 className="text-2xl font-semibold">Loot Council</h2>
                     <p className="text-md text-gray-400">Manage loot distribution priorities and addon settings.</p>
@@ -185,8 +185,7 @@ export default function Index({ discordRoles }) {
                             </DashboardCard>
                         </div>
                     </Collapsible>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }
