@@ -2,14 +2,11 @@
 
 namespace {{ namespace }};
 
-use App\Services\Discord\Notifications\Concerns\UpdatesExisting;
 use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 
 class {{ class }} extends Notification
 {
-    use UpdatesExisting;
-
     public function __construct(
         //
     ) {}
@@ -35,7 +32,6 @@ class {{ class }} extends Notification
             'type' => self::class,
             'channel_id' => $notifiable->channel()->id,
             'payload' => $this->toMessage()->toArray(),
-            'related_models' => $this->mapRelatedModels(),
             'created_by_user_id' => $this->sender()?->id,
         ];
     }
