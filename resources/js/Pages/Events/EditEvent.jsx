@@ -13,7 +13,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Link, router, usePage } from "@inertiajs/react";
-import { useEcho } from "@laravel/echo-react";
+import { useEchoNotification } from "@laravel/echo-react";
 import FlashMessage from "@/Components/FlashMessage";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Collapsible from "@/Components/Collapsible";
@@ -775,10 +775,10 @@ export default function EditEvent({ event, targetMarkers, templates }) {
 
     const { auth } = usePage().props;
 
-    useEcho(
+    useEchoNotification(
         `App.Models.User.${auth.user.id}`,
-        ".AssignmentsPublished",
-        (payload) => setPublishSuccess(payload.message),
+        (notification) => setPublishSuccess(notification.message),
+        "AssignmentsPublished",
         [auth.user.id],
     );
 

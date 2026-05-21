@@ -96,18 +96,18 @@ class RaidAssignmentsPublishedTest extends TestCase
         $sender = User::factory()->create();
         $notification = (new RaidAssignmentsPublished($event))->withSender($sender);
 
-        $payload = $notification->broadcastWith();
+        $broadcast = $notification->toBroadcast($this->notifiable);
 
-        $this->assertArrayHasKey('message', $payload);
-        $this->assertSame('Assignments published to Discord successfully.', $payload['message']);
+        $this->assertArrayHasKey('message', $broadcast->data);
+        $this->assertSame('Assignments published to Discord successfully.', $broadcast->data['message']);
     }
 
     #[Test]
-    public function it_broadcasts_as_assignments_published(): void
+    public function it_broadcasts_with_the_assignments_published_type(): void
     {
         $event = Event::factory()->make();
 
-        $this->assertSame('AssignmentsPublished', (new RaidAssignmentsPublished($event))->broadcastAs());
+        $this->assertSame('AssignmentsPublished', (new RaidAssignmentsPublished($event))->broadcastType());
     }
 
     // -------------------------------------------------------------------------

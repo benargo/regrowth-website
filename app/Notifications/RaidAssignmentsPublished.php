@@ -14,6 +14,7 @@ use App\Services\Discord\Resources\EmbedFooter;
 use App\Services\Discord\Resources\EmbedMedia;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Support\Facades\Storage;
 
 class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
@@ -55,17 +56,14 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
         return [new PrivateChannel("App.Models.User.{$this->sender()->id}")];
     }
 
-    public function broadcastAs(): string
+    public function broadcastType(): string
     {
         return 'AssignmentsPublished';
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function broadcastWith(): array
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return ['message' => 'Assignments published to Discord successfully.'];
+        return new BroadcastMessage(['message' => 'Assignments published to Discord successfully.']);
     }
 
     /**
