@@ -4,17 +4,12 @@ import Dropdown from "@/Components/Dropdown";
 import FlashMessage from "@/Components/FlashMessage";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
-import usePermission from "@/Hooks/Permissions";
+import { Can } from "@/Components/Authorizable";
 
 export default function Master({ title, children }) {
     const { auth, flash, phases } = usePage().props;
     const user = auth?.user;
     const impersonating = auth?.impersonating;
-
-    const canViewLootBiasTool = usePermission("view-loot-bias-tool");
-    const canViewAllComments = usePermission("view-all-comments");
-    const canViewOfficerDashboard = usePermission("view-officer-dashboard");
-    const canViewAttendance = usePermission("view-attendance");
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [flashError, setFlashError] = useState(flash?.error);
@@ -100,7 +95,7 @@ export default function Master({ title, children }) {
                                 <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                                 Raiding
                             </Link>
-                            {canViewLootBiasTool && (
+                            <Can permission="view-loot-bias-tool">
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <button className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white">
@@ -118,7 +113,7 @@ export default function Master({ title, children }) {
                                                 {phase.description}
                                             </Dropdown.Link>
                                         ))}
-                                        {canViewAllComments && (
+                                        <Can permission="view-all-comments">
                                             <>
                                                 <div className="my-1 border-t border-amber-700" />
                                                 <Dropdown.Link href={route("loot.comments.index")}>
@@ -126,10 +121,10 @@ export default function Master({ title, children }) {
                                                     All Comments
                                                 </Dropdown.Link>
                                             </>
-                                        )}
+                                        </Can>
                                     </Dropdown.Content>
                                 </Dropdown>
-                            )}
+                            </Can>
                             <a
                                 href="https://discord.gg/pM6haPnQRt"
                                 className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
@@ -172,12 +167,12 @@ export default function Master({ title, children }) {
                                                 Return to my account
                                             </Dropdown.Link>
                                         )}
-                                        {canViewOfficerDashboard && (
+                                        <Can permission="view-officer-dashboard">
                                             <Dropdown.Link href={route("dashboard.index")}>
                                                 <Icon icon="cogs" style="regular" className="mr-2 h-6" />
                                                 Officers&rsquo; Dashboard
                                             </Dropdown.Link>
-                                        )}
+                                        </Can>
                                         <Dropdown.Link href={route("logout")} method="post" as="button">
                                             <Icon icon="sign-out" style="regular" className="mr-2 h-6" />
                                             Logout
@@ -227,7 +222,7 @@ export default function Master({ title, children }) {
                             <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                             Raiding
                         </Link>
-                        {canViewLootBiasTool && (
+                        <Can permission="view-loot-bias-tool">
                             <>
                                 <Link
                                     href={route("loot.index")}
@@ -249,7 +244,7 @@ export default function Master({ title, children }) {
                                             </Link>
                                         ))}
                                     </div>
-                                    {canViewAllComments && (
+                                    <Can permission="view-all-comments">
                                         <Link
                                             href={route("loot.comments.index")}
                                             className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
@@ -257,10 +252,10 @@ export default function Master({ title, children }) {
                                             <Icon icon="comments" style="solid" className="mr-2 h-6" />
                                             All Comments
                                         </Link>
-                                    )}
+                                    </Can>
                                 </div>
                             </>
-                        )}
+                        </Can>
                         <a
                             href="https://discord.gg/pM6haPnQRt"
                             className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
@@ -302,7 +297,7 @@ export default function Master({ title, children }) {
                                         Return to my account
                                     </Link>
                                 )}
-                                {canViewOfficerDashboard && (
+                                <Can permission="view-officer-dashboard">
                                     <Link
                                         href={route("dashboard.index")}
                                         className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
@@ -310,7 +305,7 @@ export default function Master({ title, children }) {
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Officers' Control Panel
                                     </Link>
-                                )}
+                                </Can>
                                 <Link
                                     href={route("logout")}
                                     method="post"

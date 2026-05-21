@@ -5,7 +5,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
 import PlannedAbsenceRow from "@/Components/PlannedAbsenceRow";
 import EmptyState from "@/Components/EmptyState";
-import usePermission from "@/Hooks/Permissions";
+import { Can } from "@/Components/Authorizable";
 import PageContainer from "@/Components/PageContainer";
 
 export default function Index() {
@@ -44,7 +44,7 @@ export default function Index() {
                     <div>
                         <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
                             <h2 className="text-lg font-semibold text-amber-400">Planned Absences</h2>
-                            {usePermission("create-planned-absences") && (
+                            <Can permission="create-planned-absences">
                                 <Link
                                     href={route("raiding.absences.create")}
                                     className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 md:mt-0"
@@ -52,7 +52,7 @@ export default function Index() {
                                     <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
                                     Add Absence
                                 </Link>
-                            )}
+                            </Can>
                         </header>
 
                         {planned_absences.data.length === 0 ? (

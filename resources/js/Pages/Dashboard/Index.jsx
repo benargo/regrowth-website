@@ -2,7 +2,7 @@ import Master from "@/Layouts/Master";
 import { Link, usePage } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Collapsible from "@/Components/Collapsible";
-import usePermission from "@/Hooks/Permissions";
+import { Can } from "@/Components/Authorizable";
 import PageContainer from "@/Components/PageContainer";
 
 function DashboardCard({ href, icon, children }) {
@@ -57,30 +57,30 @@ export default function Index({ discordRoles }) {
                             <h3 className="text-md">Raid reports</h3>
                             <p className="mb-1 text-sm">View and manage raid reports.</p>
                         </DashboardCard>
-                        {usePermission("view-planned-absences") && (
+                        <Can permission="view-planned-absences">
                             <DashboardCard href={route("raiding.absences.index")} icon="umbrella-beach">
                                 <h3 className="text-md">Planned absences</h3>
                                 <p className="mb-1 text-sm">Log and review planned absences.</p>
                             </DashboardCard>
-                        )}
-                        {usePermission("view-attendance") && (
+                        </Can>
+                        <Can permission="view-attendance">
                             <DashboardCard href={route("raiding.attendance.dashboard")} icon="clipboard-list-check">
                                 <h3 className="text-md">Attendance tracker</h3>
                                 <p className="mb-1 text-sm">Review raid attendance records.</p>
                             </DashboardCard>
-                        )}
-                        {usePermission("manage-boss-strategies") && (
+                        </Can>
+                        <Can permission="manage-boss-strategies">
                             <DashboardCard href={route("dashboard.boss-strategies.index")} icon="book">
                                 <h3 className="text-md">Boss strategies</h3>
                                 <p className="mb-1 text-sm">Create and manage boss strategies for raids.</p>
                             </DashboardCard>
-                        )}
-                        {usePermission("manage-raid-plans") && (
+                        </Can>
+                        <Can permission="manage-raid-plans">
                             <DashboardCard href={route("dashboard.event-templates.index")} icon="copy">
                                 <h3 className="text-md">Event templates</h3>
                                 <p className="mb-1 text-sm">Create and manage reusable raid event templates.</p>
                             </DashboardCard>
-                        )}
+                        </Can>
                     </div>
                     {/* Daily Quests */}
                     <h2 className="mt-12 text-2xl font-semibold">Daily Quests</h2>

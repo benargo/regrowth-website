@@ -4,7 +4,7 @@ import CommentsSection from "@/Components/Loot/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import Notes from "@/Components/Loot/Notes";
-import usePermission from "@/Hooks/Permissions";
+import { Can } from "@/Components/Authorizable";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import ToolNav from "@/Components/ToolNav";
 import PageContainer from "@/Components/PageContainer";
@@ -74,9 +74,6 @@ function PriorityDisplay({ priorities }) {
 }
 
 export default function ItemShow({ item, comments }) {
-    const canEditItem = usePermission("edit-items");
-    const canCreateComment = usePermission("comment-on-loot-items");
-
     return (
         <Master title={item.data.name}>
             <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
@@ -92,7 +89,7 @@ export default function ItemShow({ item, comments }) {
                     </Link>
                 </div>
                 <div className="flex items-center space-x-4">
-                    {canEditItem && (
+                    <Can permission="edit-items">
                         <Link
                             href={route("loot.items.edit", { item: item.data.id, name: item.data.slug })}
                             className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
@@ -100,7 +97,7 @@ export default function ItemShow({ item, comments }) {
                             <Icon icon="edit" style="solid" className="mr-2" />
                             <span>Edit this item</span>
                         </Link>
-                    )}
+                    </Can>
                 </div>
             </ToolNav>
             {/* Content */}
@@ -127,7 +124,7 @@ export default function ItemShow({ item, comments }) {
                 <Notes notes={item.data.notes} itemId={item.data.id} canEdit={false} />
 
                 {/* Comments Section */}
-                <CommentsSection comments={comments} itemId={item.data.id} canCreate={canCreateComment} />
+                <CommentsSection comments={comments} itemId={item.data.id} />
             </PageContainer>
         </Master>
     );

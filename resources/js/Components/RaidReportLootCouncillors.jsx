@@ -4,7 +4,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import GuildRankLabel from "@/Components/GuildRankLabel";
 import Autocomplete from "@/Components/Autocomplete";
 import Tooltip from "@/Components/Tooltip";
-import usePermission from "@/Hooks/Permissions";
+import { usePermission } from "@/Components/Authorizable";
 
 export default function RaidReportLootCouncillors({ reportId, characters, onChange }) {
     const isCreateMode = reportId === null;

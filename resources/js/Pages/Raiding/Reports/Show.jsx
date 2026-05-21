@@ -9,7 +9,7 @@ import formatDuration from "@/Helpers/FormatDuration";
 import GuildRankLabel from "@/Components/GuildRankLabel";
 import LinkedRaidReports from "@/Components/LinkedRaidReports";
 import RaidReportLootCouncillors from "@/Components/RaidReportLootCouncillors";
-import usePermission from "@/Hooks/Permissions";
+import { Can } from "@/Components/Authorizable";
 
 function ViewOnWarcraftLogsLink({ code, children }) {
     return (
@@ -74,9 +74,9 @@ function CharactersTable({ characters }) {
                         <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Rank</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Class</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Race</th>
-                        {usePermission("view-attendance") && (
+                        <Can permission="view-attendance">
                             <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Attendance</th>
-                        )}
+                        </Can>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-brown-700">
@@ -102,7 +102,7 @@ function CharactersTable({ characters }) {
                                 {character.playable_class?.name ?? "—"}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-300">{character.playable_race?.name ?? "—"}</td>
-                            {usePermission("view-attendance") && (
+                            <Can permission="view-attendance">
                                 <td className="px-4 py-3">
                                     <Link
                                         href={route("raiding.attendance.matrix", { character: character.id })}
@@ -111,7 +111,7 @@ function CharactersTable({ characters }) {
                                         View attendance
                                     </Link>
                                 </td>
-                            )}
+                            </Can>
                         </tr>
                     ))}
                 </tbody>

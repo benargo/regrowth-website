@@ -6,7 +6,7 @@ import ConfirmationModal from "@/Components/ConfirmationModal";
 import Tooltip from "@/Components/Tooltip";
 import formatDate from "@/Helpers/FormatDate";
 import getDayDifference from "@/Helpers/GetDayDifference";
-import usePermission from "@/Hooks/Permissions";
+import { Can } from "@/Components/Authorizable";
 
 function ClusterReportRow({ report, dayDiff }) {
     const formattedDate = formatDate(report.start_time);
@@ -361,7 +361,6 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
 }
 
 export default function LinkedRaidReports({ currentReport, nearbyReports, impactedReports, onChange, referenceDate }) {
-    const canManageReports = usePermission("manage-reports");
     const isCreateMode = currentReport === null;
 
     const [localLinkedReports, setLocalLinkedReports] = useState([]);
@@ -484,7 +483,7 @@ export default function LinkedRaidReports({ currentReport, nearbyReports, impact
                                             <Icon icon="unlink" style="solid" className="text-xs" />
                                         </button>
                                     ) : (
-                                        canManageReports && (
+                                        <Can permission="manage-reports">
                                             <Tooltip
                                                 text={isManualLink ? "Remove link" : "Auto-linked – cannot be removed"}
                                                 position="left"
@@ -497,7 +496,7 @@ export default function LinkedRaidReports({ currentReport, nearbyReports, impact
                                                     <Icon icon="unlink" style="solid" className="text-xs" />
                                                 </button>
                                             </Tooltip>
-                                        )
+                                        </Can>
                                     )}
                                 </div>
                             </div>
@@ -506,7 +505,7 @@ export default function LinkedRaidReports({ currentReport, nearbyReports, impact
                 </div>
             )}
 
-            {canManageReports && (
+            <Can permission="manage-reports">
                 <button
                     type="button"
                     onClick={handleAddLink}
@@ -515,7 +514,7 @@ export default function LinkedRaidReports({ currentReport, nearbyReports, impact
                     <Icon icon="plus" style="solid" className="text-amber-500" />
                     Add Link
                 </button>
-            )}
+            </Can>
 
             <LinkReportsModal
                 isOpen={isModalOpen}

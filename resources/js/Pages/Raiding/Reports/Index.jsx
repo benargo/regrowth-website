@@ -8,7 +8,7 @@ import DateFilterButton from "@/Components/DateFilterButton";
 import Pagination from "@/Components/Pagination";
 import ReportsTable, { ReportsSkeleton } from "@/Components/ReportsTable";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
-import usePermission from "@/Hooks/Permissions";
+import { Can } from "@/Components/Authorizable";
 import FilterDropdown from "@/Components/FilterDropdown";
 
 // ─── Day options ──────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
             <SharedHeader title="Raid Reports" backgroundClass="bg-illidan" />
             <PageContainer>
                     {/* Actions */}
-                    {usePermission("manage-reports") && (
+                    <Can permission="manage-reports">
                         <div className="mb-4 flex justify-end">
                             <Link
                                 href={route("raiding.reports.create")}
@@ -107,7 +107,7 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                                 Create a manual report
                             </Link>
                         </div>
-                    )}
+                    </Can>
 
                     {/* Filter controls */}
                     <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">

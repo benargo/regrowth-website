@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, router, usePage } from "@inertiajs/react";
-import usePermission from "@/Hooks/Permissions";
+import { usePermission, Can, Cannot } from "@/Components/Authorizable";
 import axios from "axios";
 import Master from "@/Layouts/Master";
 import Alert from "@/Components/Alert";
@@ -118,7 +118,6 @@ export default function Form() {
     } = usePage().props;
 
     const isEditing = plannedAbsence !== null;
-    const canViewAny = usePermission("view-planned-absences");
     const canAssignOtherUser = usePermission("manage-planned-absences");
     const canBackdate = usePermission("manage-planned-absences");
 
@@ -251,7 +250,7 @@ export default function Form() {
 
             <FormContainer maxWidth="lg">
                     <form onSubmit={submit} className="flex flex-col gap-6">
-                        {!canBackdate && (
+                        <Cannot permission="manage-planned-absences">
                             <Alert type="info">
                                 Please{" "}
                                 <Link
@@ -262,7 +261,7 @@ export default function Form() {
                                 </Link>{" "}
                                 if you need to record an absence that started in the past.
                             </Alert>
-                        )}
+                        </Cannot>
 
                         {serverError && (
                             <div className="text-md rounded border border-red-600 bg-red-900/30 px-4 py-3 text-red-300">
@@ -296,11 +295,11 @@ export default function Form() {
                             </div>
                         )}
 
-                        {canAssignOtherUser && (
+                        <Can permission="manage-planned-absences">
                             <FormField label="Discord User">
                                 <DiscordUserSearch value={userId} onSelect={handleUserSelect} error={errors.user} />
                             </FormField>
-                        )}
+                        </Can>
 
                         <FormField label="Character">
                             <CharacterSearch
@@ -373,18 +372,19 @@ export default function Form() {
                                 <Icon icon="calendar-plus" style="solid" />
                                 {processing ? "Saving..." : isEditing ? "Save Changes" : "Log Absence"}
                             </PrimaryButton>
-                            {canViewAny ? (
+                            <Can permission="view-planned-absences">
                                 <Link
                                     href={route("raiding.absences.index")}
                                     className="text-sm text-gray-400 hover:text-white"
                                 >
                                     Cancel
                                 </Link>
-                            ) : (
+                            </Can>
+                            <Cannot permission="view-planned-absences">
                                 <Link href={route("account.index")} className="text-sm text-gray-400 hover:text-white">
                                     Cancel
                                 </Link>
-                            )}
+                            </Cannot>
                         </div>
                     </form>
             </FormContainer>

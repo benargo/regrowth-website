@@ -9,7 +9,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
-import usePermission from "@/Hooks/Permissions.jsx";
+import { Can } from "@/Components/Authorizable";
 import useEventChannel, { useBossStrategyChannel } from "@/Hooks/useEventChannel";
 import Master from "@/Layouts/Master";
 
@@ -45,7 +45,7 @@ function BossSection({ boss, onStrategyChanged }) {
                     <div className="col-span-2 flex flex-col gap-4">
                         <div className="flex flex-row items-start gap-2">
                             <h2 className="flex-1 text-lg font-semibold text-amber-500">Strategy</h2>
-                            {usePermission("manage-boss-strategies") && (
+                            <Can permission="manage-boss-strategies">
                                 <Link
                                     href={route("dashboard.boss-strategies.edit", {
                                         boss: boss.id,
@@ -56,7 +56,7 @@ function BossSection({ boss, onStrategyChanged }) {
                                     <Icon icon="pencil" className="text-sm" />
                                     Edit boss strategy
                                 </Link>
-                            )}
+                            </Can>
                         </div>
                         {boss.images?.length > 0 &&
                             boss.images.map((url, i) => (
@@ -120,7 +120,7 @@ export default function Show({ event }) {
                             <MetaItem icon="shield-alt">{event.raids.map((raid) => raid.name).join(", ")}</MetaItem>
                         )}
                         <div className="grow" />
-                        {usePermission("manage-raid-plans") && (
+                        <Can permission="manage-raid-plans">
                             <Link
                                 href={route("raiding.plans.edit", event.id)}
                                 className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
@@ -128,7 +128,7 @@ export default function Show({ event }) {
                                 <Icon icon="pencil" />
                                 Edit
                             </Link>
-                        )}
+                        </Can>
                     </MetaCard>
 
                     {(event.composition?.groups ?? []).length > 0 ? (
