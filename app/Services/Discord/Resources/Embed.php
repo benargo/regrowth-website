@@ -40,8 +40,8 @@ class Embed extends Data
         /** @var EmbedFooter|Optional|null Footer information */
         public readonly EmbedFooter|Optional|null $footer,
 
-        /** @var EmbedMedia|Optional Image information */
-        public readonly EmbedMedia|Optional $image,
+        /** @var EmbedMedia|Optional|null Image information */
+        public readonly EmbedMedia|Optional|null $image,
 
         /** @var EmbedMedia|Optional Thumbnail information */
         public readonly EmbedMedia|Optional $thumbnail,

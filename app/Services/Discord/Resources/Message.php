@@ -61,9 +61,9 @@ class Message extends Data implements MessageContract
         #[Nullable, StringType]
         public readonly string|Optional $content,
 
-        /** @var string|Optional ISO8601 timestamp; when this message was edited (null if never) */
+        /** @var string|Optional|null ISO8601 timestamp; when this message was edited (null if never) */
         #[Nullable, StringType]
-        public readonly string|Optional $edited_timestamp,
+        public readonly string|Optional|null $edited_timestamp,
 
         /** @var array<User>|Optional Users specifically mentioned in the message */
         #[DataCollectionOf(User::class)]
@@ -80,8 +80,8 @@ class Message extends Data implements MessageContract
         /** @var MessageReference|Optional Data showing the source of a crosspost, follow add, pin, or reply */
         public readonly MessageReference|Optional $message_reference,
 
-        /** @var Message|Optional The message associated with the message_reference */
-        public readonly Message|Optional $referenced_message,
+        /** @var Message|Optional|null The message associated with the message_reference */
+        public readonly Message|Optional|null $referenced_message,
 
         /** @var string|Optional ID of the application if this is an interaction or app-owned webhook (snowflake) */
         #[Nullable, StringType]

@@ -290,6 +290,25 @@ class RoleTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $role = Role::from([
+            'id' => '41771983423143937',
+            'name' => 'WE DEM BOYZZ!!!!!!',
+            'colors' => ['primary_color' => 0],
+            'hoist' => false,
+            'position' => 0,
+            'permissions' => '104324160',
+            'managed' => false,
+            'mentionable' => false,
+            'flags' => 0,
+            'icon' => null,
+        ]);
+
+        $this->assertNull($role->icon);
+    }
+
+    #[Test]
     public function role_constructs_with_unicode_emoji(): void
     {
         $role = Role::from([

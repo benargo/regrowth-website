@@ -153,6 +153,16 @@ class GuildMemberTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $member = GuildMember::from([...$this->minimalPayload(), 'joined_at' => null]);
+        $this->assertNull($member->joined_at);
+
+        $member = GuildMember::from([...$this->minimalPayload(), 'communication_disabled_until' => null]);
+        $this->assertNull($member->communication_disabled_until);
+    }
+
+    #[Test]
     public function all_properties_are_readonly(): void
     {
         $member = GuildMember::from(['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
@@ -168,5 +178,11 @@ class GuildMemberTest extends TestCase
                 "Property \${$property->getName()} should be readonly."
             );
         }
+    }
+
+    /** @return array<string, mixed> */
+    private function minimalPayload(): array
+    {
+        return ['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0];
     }
 }

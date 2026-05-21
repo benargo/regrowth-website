@@ -48,9 +48,9 @@ class Role extends Data
         #[IntegerType, Min(0)]
         public readonly int $flags,
 
-        /** @var string|Optional Role icon hash */
+        /** @var string|Optional|null Role icon hash */
         #[Nullable, StringType]
-        public readonly string|Optional $icon,
+        public readonly string|Optional|null $icon,
 
         /** @var string|Optional|null Role unicode emoji */
         #[Nullable, StringType]

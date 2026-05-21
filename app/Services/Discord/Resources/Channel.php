@@ -39,7 +39,7 @@ class Channel extends Data implements ChannelContract
 
         /** @var string|Optional Channel topic (0–4096 chars for forum/media, 0–1024 for others) */
         #[Nullable, StringType, Max(4096)]
-        public readonly string|Optional $topic,
+        public readonly string|Optional|null $topic,
 
         /** @var bool|Optional Whether the channel is age-restricted */
         #[Nullable, BooleanType]
@@ -47,7 +47,7 @@ class Channel extends Data implements ChannelContract
 
         /** @var string|Optional Snowflake of the last message sent */
         #[Nullable, StringType]
-        public readonly string|Optional $last_message_id,
+        public readonly string|Optional|null $last_message_id,
 
         /** @var int|Optional Voice channel bitrate in bits per second */
         #[Nullable, IntegerType, Min(0)]
@@ -75,15 +75,15 @@ class Channel extends Data implements ChannelContract
 
         /** @var string|Optional Snowflake of the parent category or thread parent (max 50 children per category) */
         #[Nullable, StringType]
-        public readonly string|Optional $parent_id,
+        public readonly string|Optional|null $parent_id,
 
         /** @var string|Optional ISO8601 timestamp of the last pinned message; null in GUILD_CREATE events */
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP')]
-        public readonly string|Optional $last_pin_timestamp,
+        public readonly string|Optional|null $last_pin_timestamp,
 
         /** @var string|Optional Voice region override; null means automatic */
         #[Nullable, StringType]
-        public readonly string|Optional $rtc_region,
+        public readonly string|Optional|null $rtc_region,
 
         /** @var int|Optional Video quality mode: 1 (AUTO) or 2 (FULL/720p) */
         #[Nullable, IntegerType, In(1, 2)]
@@ -119,7 +119,7 @@ class Channel extends Data implements ChannelContract
 
         /** @var int|Optional Forum sort order: 0 (LATEST_ACTIVITY) or 1 (CREATION_DATE) */
         #[Nullable, IntegerType, In(0, 1)]
-        public readonly int|Optional $default_sort_order,
+        public readonly int|Optional|null $default_sort_order,
 
         /** @var int|Optional Forum layout: 0 (NOT_SET), 1 (LIST_VIEW), 2 (GALLERY_VIEW) */
         #[Nullable, IntegerType, In(0, 1, 2)]
@@ -139,7 +139,7 @@ class Channel extends Data implements ChannelContract
 
         /** @var string|Optional Group DM icon hash */
         #[Nullable, StringType]
-        public readonly string|Optional $icon,
+        public readonly string|Optional|null $icon,
 
         /** @var array<int, array<string, mixed>>|Optional Available tags for GUILD_FORUM/GUILD_MEDIA channels (max 20) */
         #[Nullable, ArrayType]

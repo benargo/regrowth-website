@@ -221,6 +221,31 @@ class ChannelTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $channel = Channel::from([...$this->minimalPayload(), 'topic' => null]);
+        $this->assertNull($channel->topic);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'last_message_id' => null]);
+        $this->assertNull($channel->last_message_id);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'last_pin_timestamp' => null]);
+        $this->assertNull($channel->last_pin_timestamp);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'rtc_region' => null]);
+        $this->assertNull($channel->rtc_region);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'parent_id' => null]);
+        $this->assertNull($channel->parent_id);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'default_sort_order' => null]);
+        $this->assertNull($channel->default_sort_order);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'icon' => null]);
+        $this->assertNull($channel->icon);
+    }
+
+    #[Test]
     public function it_stores_array_fields(): void
     {
         $tags = [['id' => '1', 'name' => 'bug'], ['id' => '2', 'name' => 'help']];

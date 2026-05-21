@@ -501,6 +501,13 @@ class EmbedTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $embed = Embed::from(['image' => null]);
+        $this->assertNull($embed->image);
+    }
+
+    #[Test]
     public function embed_rules_caps_fields_at_twenty_five(): void
     {
         $rules = Embed::rules();

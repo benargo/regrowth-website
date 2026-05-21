@@ -35,9 +35,9 @@ class GuildMember extends Data
         #[ArrayType]
         public readonly array $roles,
 
-        /** @var string|Optional ISO8601 timestamp of when the user joined the guild */
+        /** @var string|Optional|null ISO8601 timestamp of when the user joined the guild */
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
-        public readonly string|Optional $joined_at,
+        public readonly string|Optional|null $joined_at,
 
         /** @var string|Optional ISO8601 timestamp of when the user started boosting the guild */
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
@@ -63,9 +63,9 @@ class GuildMember extends Data
         #[Nullable, StringType]
         public readonly string|Optional $permissions,
 
-        /** @var string|Optional ISO8601 timestamp of when the user's timeout expires; null if not timed out */
+        /** @var string|Optional|null ISO8601 timestamp of when the user's timeout expires; null if not timed out */
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
-        public readonly string|Optional $communication_disabled_until,
+        public readonly string|Optional|null $communication_disabled_until,
 
         /** @var array<string, mixed>|Optional Data for the member's guild avatar decoration */
         #[Nullable, ArrayType]

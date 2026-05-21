@@ -223,6 +223,16 @@ class MessageTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $message = Message::from([...$this->minimalPayload(), 'edited_timestamp' => null]);
+        $this->assertNull($message->edited_timestamp);
+
+        $message = Message::from([...$this->minimalPayload(), 'referenced_message' => null]);
+        $this->assertNull($message->referenced_message);
+    }
+
+    #[Test]
     public function message_stores_nonce_as_integer(): void
     {
         $message = Message::from([...$this->minimalPayload(), 'nonce' => 42]);
