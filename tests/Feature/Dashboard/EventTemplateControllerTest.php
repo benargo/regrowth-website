@@ -58,7 +58,7 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page->component('EventTemplates/Index'));
+        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/EventTemplates/Index'));
     }
 
     #[Test]
@@ -123,7 +123,7 @@ class EventTemplateControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('EventTemplates/Create')
+            ->component('Dashboard/EventTemplates/Create')
             ->has('raids', 1)
             ->where('raids.0.id', $raid->id)
         );
@@ -184,7 +184,7 @@ class EventTemplateControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('EventTemplates/Edit')
+            ->component('Dashboard/EventTemplates/Edit')
             ->has('template')
             ->has('raids')
         );

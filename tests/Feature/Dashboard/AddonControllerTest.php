@@ -215,7 +215,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Base64')
+            ->component('Dashboard/Addon/Export')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('exportedData')
@@ -232,7 +232,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Base64')
+            ->component('Dashboard/Addon/Export')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('exportedData')
@@ -318,7 +318,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/JSON')
+            ->component('Dashboard/Addon/ExportJson')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('exportedData')
@@ -335,7 +335,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/JSON')
+            ->component('Dashboard/Addon/ExportJson')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('exportedData', fn ($data) => is_array(json_decode($data, true)))
@@ -352,7 +352,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/JSON')
+            ->component('Dashboard/Addon/ExportJson')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('exportedData', fn ($data) => str_contains($data, "\n"))
@@ -369,7 +369,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/JSON')
+            ->component('Dashboard/Addon/ExportJson')
             ->missing('exportedData')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('exportedData', function ($exportedData) {
@@ -409,7 +409,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Schema')
+            ->component('Dashboard/Addon/ExportSchema')
             ->has('schema')
         );
     }
@@ -532,7 +532,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Base64')
+            ->component('Dashboard/Addon/Export')
             ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('grmFreshness')
@@ -555,7 +555,7 @@ class AddonControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/JSON')
+            ->component('Dashboard/Addon/ExportJson')
             ->missing('grmFreshness')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('grmFreshness')

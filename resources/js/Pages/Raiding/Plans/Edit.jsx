@@ -443,7 +443,7 @@ function GroupContainer({
     return (
         <SortableContext items={sortedGroups.map((g) => g._key)} strategy={verticalListSortingStrategy}>
             {horizontal ? (
-                /* General assignments: 3-column grid matching ShowEvent layout */
+                /* General assignments: 3-column grid matching Show layout */
                 <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                     {sortedGroups.map((group) => (
                         <SortableGroupCard
@@ -673,7 +673,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function EditEvent({ event, targetMarkers, templates }) {
+export default function Edit({ event, targetMarkers, templates }) {
     useEffect(() => {
         resetAssignmentOptionsFetched();
     }, []);

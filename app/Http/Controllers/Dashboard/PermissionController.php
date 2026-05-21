@@ -74,7 +74,7 @@ class PermissionController extends Controller
         // Do not cache these as they are managed through the dashboard and may change frequently.
         $permissions = Permission::where('group', $group)->get()->toArray();
 
-        return Inertia::render('Dashboard/ManagePermissions', [
+        return Inertia::render('Dashboard/Permissions/Show', [
             'discordRoles' => $discordRoles,
             'groups' => $permissionGroups,
             'permissions' => $permissions,

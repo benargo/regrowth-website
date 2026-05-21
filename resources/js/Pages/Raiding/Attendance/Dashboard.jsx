@@ -281,7 +281,7 @@ function PlayerListRows({ stats }) {
     );
 }
 
-export default function Index({ latestReportDate, stats }) {
+export default function Dashboard({ latestReportDate, stats }) {
     return (
         <Master title="Attendance Dashboard">
             <SharedHeader title="Attendance Dashboard" backgroundClass="bg-illidan" />

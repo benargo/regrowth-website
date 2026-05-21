@@ -29,7 +29,7 @@ class EventTemplateController extends Controller
     {
         $templates = Event::templates()->with('raids')->orderBy('title')->get();
 
-        return Inertia::render('EventTemplates/Index', (new EventTemplateCollection($templates))->toArray(request()));
+        return Inertia::render('Dashboard/EventTemplates/Index', (new EventTemplateCollection($templates))->toArray(request()));
     }
 
     /**
@@ -37,7 +37,7 @@ class EventTemplateController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('EventTemplates/Create', [
+        return Inertia::render('Dashboard/EventTemplates/Create', [
             'raids' => Raid::orderBy('id')->get(),
         ]);
     }
@@ -70,7 +70,7 @@ class EventTemplateController extends Controller
     {
         $template->load('raids.bosses.media', 'assignments.group');
 
-        return Inertia::render('EventTemplates/Edit', [
+        return Inertia::render('Dashboard/EventTemplates/Edit', [
             'template' => (new EventResource($template))->resolve($request),
             'raids' => RaidResource::collection(Raid::orderBy('id')->get())->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),

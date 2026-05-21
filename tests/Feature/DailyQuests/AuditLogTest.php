@@ -63,7 +63,7 @@ class AuditLogTest extends DashboardTestCase
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/DailyQuestsAuditLog')
+            ->component('Dashboard/DailyQuests/Audit')
             ->has('entries.data', 3)
         );
     }

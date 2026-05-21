@@ -41,7 +41,7 @@ class GrmController extends Controller
             $lastModified = null;
         }
 
-        return Inertia::render('Dashboard/GRM', [
+        return Inertia::render('Dashboard/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
             'memberCount' => Inertia::defer(fn () => count(Arr::get($this->blizzard->getGuildRoster(), 'members', []))),
         ]);
