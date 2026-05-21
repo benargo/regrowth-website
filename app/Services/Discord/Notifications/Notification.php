@@ -67,7 +67,7 @@ abstract class Notification extends BaseNotification implements ShouldQueue
      */
     public function withRelatedModels(iterable $related): self
     {
-        $this->relatedModels = (array) $related;
+        $this->relatedModels = collect($related)->all();
 
         return $this;
     }
