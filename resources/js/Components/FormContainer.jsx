@@ -4,10 +4,10 @@ const maxWidthClasses = {
     "2xl": "max-w-2xl",
 };
 
-export default function FormContainer({ maxWidth = "xl", padding = "py-12", className = "", children }) {
+export default function FormContainer({ maxWidth = "xl", children }) {
     return (
-        <div className={`${padding} text-white`}>
-            <main className={`container mx-auto ${maxWidthClasses[maxWidth] ?? "max-w-xl"} px-4 ${className}`}>
+        <div className="py-12 text-white">
+            <main className={`container mx-auto ${maxWidthClasses[maxWidth] ?? "max-w-xl"} px-4`}>
                 {children}
             </main>
         </div>

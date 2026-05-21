@@ -17,7 +17,7 @@ export default function Index() {
             {/* TODO: bg-arcatraz is a temporary header image */}
             <SharedHeader title="My Account" backgroundClass="bg-arcatraz" />
 
-            <PageContainer padding="py-8">
+            <PageContainer>
                     {/* User profile section */}
                     <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                         <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />

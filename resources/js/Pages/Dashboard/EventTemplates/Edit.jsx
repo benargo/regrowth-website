@@ -1127,7 +1127,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                 </div>
             </ToolNav>
 
-            <PageContainer padding="py-8">
+            <PageContainer>
                 {/* Template metadata */}
                 <form onSubmit={handleSubmit} className="mb-8">
                     <MetaCard>

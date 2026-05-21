@@ -40,7 +40,7 @@ export default function Comments({ comments }) {
             </nav>
 
             {/* Content */}
-            <PageContainer padding="py-8">
+            <PageContainer>
                 <h2 className="mb-6 text-xl font-bold">All Comments</h2>
 
                 {comments.data.length > 0 ? (

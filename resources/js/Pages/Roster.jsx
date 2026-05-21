@@ -213,7 +213,7 @@ export default function Roster({ members, classes, races, ranks }) {
         <Master title="Guild Roster">
             <SharedHeader backgroundClass="bg-goldshire" title="Guild Roster" />
 
-            <PageContainer padding="py-8">
+            <PageContainer>
                 {isLoading ? (
                     <RosterSkeleton />
                 ) : (

@@ -249,7 +249,7 @@ export default function Form() {
         <Master title={pageTitle}>
             <SharedHeader title={pageTitle} backgroundClass="bg-illidan" />
 
-            <FormContainer maxWidth="lg" padding="py-8">
+            <FormContainer maxWidth="lg">
                     <form onSubmit={submit} className="flex flex-col gap-6">
                         {!canBackdate && (
                             <Alert type="info">

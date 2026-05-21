@@ -156,7 +156,7 @@ export default function Create() {
         <Master title="Create Report">
             <SharedHeader title="Create Report" backgroundClass="bg-illidan" />
 
-            <FormContainer maxWidth="2xl" padding="py-8">
+            <FormContainer maxWidth="2xl">
                     <div className="mb-6">
                         <Link
                             href={route("raiding.reports.index")}

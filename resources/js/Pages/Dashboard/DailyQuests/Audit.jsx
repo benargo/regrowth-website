@@ -24,7 +24,7 @@ export default function DailyQuestsAuditLog({ entries }) {
                 title="Daily Quests Audit Log"
                 backgroundClass="bg-dungeons"
             />
-            <PageContainer padding="py-8">
+            <PageContainer>
                 {entries.data.length === 0 ? (
                     <p className="text-center text-gray-400">No audit log entries found.</p>
                 ) : (

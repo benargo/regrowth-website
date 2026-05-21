@@ -23,24 +23,26 @@ export default function Gone() {
         <Master title="Raid Plan Gone">
             <SharedHeader title={headerInner()} />
 
-            <PageContainer padding="py-16" className="max-w-2xl text-center">
-                <div className="border border-amber-600/30 rounded-lg p-8 mb-8 bg-black/20">
-                    <p className="text-gray-300 text-lg leading-relaxed mb-4">
-                        This raid plan existed once, but has since been removed from our records.
-                        Old raid plans are pruned automatically after one month.
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                        If you're looking for active plans, head back to the raiding schedule.
-                    </p>
-                </div>
+            <PageContainer>
+                <div className="max-w-2xl text-center mx-auto">
+                    <div className="border border-amber-600/30 rounded-lg p-8 mb-8 bg-black/20">
+                        <p className="text-gray-300 text-lg leading-relaxed mb-4">
+                            This raid plan existed once, but has since been removed from our records.
+                            Old raid plans are pruned automatically after one month.
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                            If you're looking for active plans, head back to the raiding schedule.
+                        </p>
+                    </div>
 
-                <Link
-                    href={route("raiding.index")}
-                    className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded transition-colors"
-                >
-                    <Icon icon="dragon" style="solid" />
-                    Back to Raiding
-                </Link>
+                    <Link
+                        href={route("raiding.index")}
+                        className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded transition-colors"
+                    >
+                        <Icon icon="dragon" style="solid" />
+                        Back to Raiding
+                    </Link>
+                </div>
             </PageContainer>
         </Master>
     );

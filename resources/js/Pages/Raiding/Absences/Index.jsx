@@ -42,7 +42,7 @@ export default function Index() {
         <Master title="Planned Absences">
             <SharedHeader title="Planned Absences" backgroundClass="bg-illidan" />
 
-            <PageContainer padding="py-8">
+            <PageContainer>
                     <div className="mb-4 flex flex-row justify-end">
                         {usePermission("manage-planned-absences") && (
                             <Link
