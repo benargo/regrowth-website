@@ -3,7 +3,9 @@ import { Link, Head, usePage } from "@inertiajs/react";
 import Dropdown from "@/Components/Dropdown";
 import FlashMessage from "@/Components/FlashMessage";
 import Icon from "@/Components/FontAwesome/Icon";
+import NavLink from "@/Components/NavLink";
 import Pill from "@/Components/Pill";
+import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import { Can } from "@/Components/Authorizable";
 
 export default function Master({ title, children }) {
@@ -70,31 +72,22 @@ export default function Master({ title, children }) {
                     {/* Desktop menu */}
                     <div className="hidden lg:ml-10 lg:flex lg:flex-1 lg:items-center lg:justify-between">
                         <div className="flex gap-4 space-x-1">
-                            <Link
-                                href={route("roster.index")}
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            <NavLink href={route("roster.index")}>
                                 <Icon icon="users" style="solid" className="mr-2 h-6" />
                                 Roster
-                            </Link>
-                            <Link
-                                href={route("daily-quests.index")}
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            </NavLink>
+                            <NavLink href={route("daily-quests.index")}>
                                 <img
                                     src="/images/icon_quest.webp"
                                     alt="Quest start icon"
                                     className="mr-2 inline-block h-4 px-1"
                                 />
                                 Daily Quests
-                            </Link>
-                            <Link
-                                href={route("raiding.index")}
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            </NavLink>
+                            <NavLink href={route("raiding.index")}>
                                 <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                                 Raiding
-                            </Link>
+                            </NavLink>
                             <Can permission="view-loot-bias-tool">
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -125,13 +118,10 @@ export default function Master({ title, children }) {
                                     </Dropdown.Content>
                                 </Dropdown>
                             </Can>
-                            <a
-                                href="https://discord.gg/pM6haPnQRt"
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            <NavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                                 <Icon icon="discord" style="brands" className="mr-2 h-6" />
                                 Discord
-                            </a>
+                            </NavLink>
                         </div>
 
                         <div className="flex items-center">
@@ -195,17 +185,11 @@ export default function Master({ title, children }) {
                 {/* Mobile menu */}
                 <div className={`${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`} id="mobile-menu">
                     <div className="space-y-1 px-2 pb-3 pt-2">
-                        <Link
-                            href={route("roster.index")}
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
+                        <ResponsiveNavLink href={route("roster.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
-                        </Link>
-                        <Link
-                            href={route("daily-quests.index")}
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route("daily-quests.index")}>
                             <span className="mr-2 inline-flex w-[20px] justify-center">
                                 <img
                                     src="/images/icon_quest.webp"
@@ -214,23 +198,17 @@ export default function Master({ title, children }) {
                                 />
                             </span>
                             Daily Quests
-                        </Link>
-                        <Link
-                            href={route("raiding.index")}
-                            className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                        >
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route("raiding.index")}>
                             <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                             Raiding
-                        </Link>
+                        </ResponsiveNavLink>
                         <Can permission="view-loot-bias-tool">
                             <>
-                                <Link
-                                    href={route("loot.index")}
-                                    className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                >
+                                <ResponsiveNavLink href={route("loot.index")}>
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot Bias
-                                </Link>
+                                </ResponsiveNavLink>
                                 <div className="ml-2 border-l-2 border-amber-800 pl-2">
                                     <p className="mb-1 text-sm font-medium text-gray-400">Phases</p>
                                     <div className="mb-2 grid grid-cols-5 gap-1">
@@ -256,13 +234,10 @@ export default function Master({ title, children }) {
                                 </div>
                             </>
                         </Can>
-                        <a
-                            href="https://discord.gg/pM6haPnQRt"
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
+                        <ResponsiveNavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             Discord
-                        </a>
+                        </ResponsiveNavLink>
                     </div>
 
                     <div className="border-t border-amber-700 pb-3 pt-4">
