@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
+import ConfirmationModal from "@/Components/ConfirmationModal";
 import Tooltip from "@/Components/Tooltip";
 import formatDate from "@/Helpers/FormatDate";
 import getDayDifference from "@/Helpers/GetDayDifference";
@@ -293,7 +294,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
             initialLoadDone.current = true;
             setIsLoading(true);
             router.reload({
-                only: ["impactedReports"],
+                only: ['impactedReports'],
                 preserveState: true,
                 onFinish: () => setIsLoading(false),
             });
@@ -309,69 +310,53 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
     const skeletonRows = Array.from({ length: 5 });
 
     return (
-        <Modal show={isOpen} maxWidth="md" onClose={onClose}>
-            <div className="flex items-center justify-between border-b border-amber-600/30 px-6 py-4">
-                <h2 className="text-lg font-semibold text-white">Remove Links</h2>
-                <button onClick={onClose} className="text-gray-400 transition-colors hover:text-white">
-                    <Icon icon="times" style="solid" />
-                </button>
-            </div>
-
-            <div className="px-6 py-4">
-                <p className="mb-4 text-sm text-gray-400">
-                    This will remove <span className="font-medium text-white">{currentReport.title}</span> from all
-                    manually linked reports. The following links will be severed:
-                </p>
-                {isLoading ? (
-                    <ul className="divide-y divide-brown-700 rounded border border-amber-600/30">
-                        {skeletonRows.map((_, i) => (
-                            <li key={i} className="flex animate-pulse items-center gap-3 px-4 py-3">
-                                <div className="flex-1 space-y-1.5">
-                                    <div className="h-3.5 w-48 rounded bg-brown-700" />
-                                    <div className="h-3 w-32 rounded bg-brown-700" />
-                                </div>
+        <ConfirmationModal
+            show={isOpen}
+            onClose={onClose}
+            onConfirm={onConfirm}
+            title="Remove Links"
+            confirmLabel="Confirm"
+            processingLabel="Removing..."
+            processing={isDeleting || isLoading}
+            variant="delete"
+        >
+            <p className="mb-4">
+                This will remove{' '}
+                <span className="font-medium text-white">{currentReport.title}</span>{' '}
+                from all manually linked reports. The following links will be severed:
+            </p>
+            {isLoading ? (
+                <ul className="divide-y divide-brown-700 rounded border border-amber-600/30">
+                    {skeletonRows.map((_, i) => (
+                        <li key={i} className="flex animate-pulse items-center gap-3 px-4 py-3">
+                            <div className="flex-1 space-y-1.5">
+                                <div className="h-3.5 w-48 rounded bg-brown-700" />
+                                <div className="h-3 w-32 rounded bg-brown-700" />
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            ) : !impactedReports?.data || impactedReports.data.length === 0 ? (
+                <p className="text-sm text-gray-500">No manually linked reports found.</p>
+            ) : (
+                <ul className="divide-y divide-brown-700 rounded border border-amber-600/30">
+                    {impactedReports.data.map((report) => {
+                        const formattedDate = formatDate(report.start_time);
+                        return (
+                            <li key={report.id} className="px-4 py-3">
+                                <span className="text-sm font-medium text-white">{report.title}</span>
+                                <p className="mt-0.5 text-xs text-gray-500">
+                                    <span className="md:hidden">{formattedDate.short}</span>
+                                    <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
+                                    <span className="hidden lg:inline">{formattedDate.long}</span>
+                                    {report.zone?.name && <span className="ml-2">&ndash; {report.zone.name}</span>}
+                                </p>
                             </li>
-                        ))}
-                    </ul>
-                ) : !impactedReports?.data || impactedReports.data.length === 0 ? (
-                    <p className="text-sm text-gray-500">No manually linked reports found.</p>
-                ) : (
-                    <ul className="divide-y divide-brown-700 rounded border border-amber-600/30">
-                        {impactedReports.data.map((report) => {
-                            const formattedDate = formatDate(report.start_time);
-                            return (
-                                <li key={report.id} className="px-4 py-3">
-                                    <span className="text-sm font-medium text-white">{report.title}</span>
-                                    <p className="mt-0.5 text-xs text-gray-500">
-                                        <span className="md:hidden">{formattedDate.short}</span>
-                                        <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
-                                        <span className="hidden lg:inline">{formattedDate.long}</span>
-                                        {report.zone?.name && <span className="ml-2">&ndash; {report.zone.name}</span>}
-                                    </p>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-            </div>
-
-            <div className="flex justify-end gap-3 border-t border-amber-600/30 px-6 py-4">
-                <button
-                    onClick={onClose}
-                    disabled={isDeleting}
-                    className="rounded border border-amber-600/30 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-amber-600/10 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={onConfirm}
-                    disabled={isDeleting || isLoading}
-                    className="rounded bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    {isDeleting ? "Removing..." : "Confirm"}
-                </button>
-            </div>
-        </Modal>
+                        );
+                    })}
+                </ul>
+            )}
+        </ConfirmationModal>
     );
 }
 

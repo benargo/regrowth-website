@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import Modal from "@/Components/Modal";
+import ConfirmationModal from "@/Components/ConfirmationModal";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 import PageContainer from "@/Components/PageContainer";
-import DangerButton from "@/Components/DangerButton";
-import SecondaryButton from "@/Components/SecondaryButton";
 
 function RaidBadge({ raid }) {
     return <span className="rounded bg-amber-600/20 px-2 py-0.5 text-xs text-amber-400">{raid.name}</span>;
@@ -52,41 +50,20 @@ function TemplateCard({ template, onDeleteClick }) {
     );
 }
 
-function DeleteModal({ template, onClose }) {
+export default function Index({ templates, raidGroups }) {
+    const [templateToDelete, setTemplateToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
 
     function handleDelete() {
         setDeleting(true);
-        router.delete(route("dashboard.event-templates.destroy", template.id), {
+        router.delete(route("dashboard.event-templates.destroy", templateToDelete.id), {
             preserveScroll: true,
-            onFinish: () => setDeleting(false),
+            onFinish: () => {
+                setDeleting(false);
+                setTemplateToDelete(null);
+            },
         });
     }
-
-    return (
-        <Modal show={!!template} onClose={onClose} maxWidth="md">
-            <div className="p-6 text-white">
-                <h2 className="mb-2 text-lg font-semibold">Delete template</h2>
-                <p className="mb-6 text-gray-400">
-                    Are you sure you want to delete{" "}
-                    <span className="font-semibold text-white">&ldquo;{template?.title}&rdquo;</span>? This cannot be
-                    undone.
-                </p>
-                <div className="flex justify-end gap-3">
-                    <SecondaryButton type="button" onClick={onClose}>
-                        Cancel
-                    </SecondaryButton>
-                    <DangerButton type="button" onClick={handleDelete} disabled={deleting}>
-                        {deleting ? "Deleting…" : "Delete"}
-                    </DangerButton>
-                </div>
-            </div>
-        </Modal>
-    );
-}
-
-export default function Index({ templates, raidGroups }) {
-    const [templateToDelete, setTemplateToDelete] = useState(null);
 
     return (
         <Master title="Event Templates">
@@ -141,7 +118,20 @@ export default function Index({ templates, raidGroups }) {
                     )}
             </PageContainer>
 
-            <DeleteModal template={templateToDelete} onClose={() => setTemplateToDelete(null)} />
+            <ConfirmationModal
+                show={!!templateToDelete}
+                onClose={() => setTemplateToDelete(null)}
+                onConfirm={handleDelete}
+                title="Delete template"
+                confirmLabel="Delete"
+                processingLabel="Deleting…"
+                processing={deleting}
+                variant="delete"
+            >
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-white">&ldquo;{templateToDelete?.title}&rdquo;</span>?{" "}
+                This cannot be undone.
+            </ConfirmationModal>
         </Master>
     );
 }

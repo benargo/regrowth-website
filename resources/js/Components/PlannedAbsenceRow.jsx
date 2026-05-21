@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePage, Link, router } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import Modal from "@/Components/Modal";
+import ConfirmationModal from "@/Components/ConfirmationModal";
 import formatDate from "@/Helpers/FormatDate";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 
@@ -91,28 +91,16 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
                 </div>
             </div>
 
-            <Modal show={confirmingDelete} onClose={() => setConfirmingDelete(false)} maxWidth="md">
-                <div className="p-6">
-                    <h2 className="text-lg font-semibold text-white">Delete Planned Absence</h2>
-                    <p className="mt-2 text-sm text-gray-400">
-                        Are you sure you want to delete this planned absence? This action cannot be undone.
-                    </p>
-                    <div className="mt-6 flex justify-end gap-3">
-                        <button
-                            onClick={() => setConfirmingDelete(false)}
-                            className="rounded px-4 py-2 text-sm text-gray-300 hover:text-white"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={deleteAbsence}
-                            className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+            <ConfirmationModal
+                show={confirmingDelete}
+                onClose={() => setConfirmingDelete(false)}
+                onConfirm={deleteAbsence}
+                title="Delete Planned Absence"
+                confirmLabel="Delete"
+                variant="delete"
+            >
+                Are you sure you want to delete this planned absence? This action cannot be undone.
+            </ConfirmationModal>
         </>
     );
 }
