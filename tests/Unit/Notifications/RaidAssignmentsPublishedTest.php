@@ -38,7 +38,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_routes_through_the_discord_driver(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
 
         $notification = new RaidAssignmentsPublished($event);
 
@@ -52,7 +52,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_implements_should_broadcast(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
 
         $this->assertInstanceOf(ShouldBroadcast::class, new RaidAssignmentsPublished($event));
     }
@@ -60,7 +60,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_includes_broadcast_channel_in_via_when_sender_is_set(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
         $sender = User::factory()->create();
         $notification = (new RaidAssignmentsPublished($event))->withSender($sender);
 
@@ -70,7 +70,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_does_not_include_broadcast_channel_in_via_without_sender(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
 
         $this->assertNotContains('broadcast', (new RaidAssignmentsPublished($event))->via($this->notifiable));
     }
@@ -78,7 +78,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_broadcasts_on_the_senders_private_user_channel(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
         $sender = User::factory()->create();
         $notification = (new RaidAssignmentsPublished($event))->withSender($sender);
 
@@ -92,7 +92,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_broadcasts_with_a_success_message_payload(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
         $sender = User::factory()->create();
         $notification = (new RaidAssignmentsPublished($event))->withSender($sender);
 
@@ -105,7 +105,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_broadcasts_as_assignments_published(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
 
         $this->assertSame('AssignmentsPublished', (new RaidAssignmentsPublished($event))->broadcastAs());
     }
@@ -274,7 +274,7 @@ class RaidAssignmentsPublishedTest extends TestCase
     #[Test]
     public function it_can_be_serialized_for_the_queue(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->make();
         $notification = new RaidAssignmentsPublished($event);
 
         $serialized = serialize($notification);
