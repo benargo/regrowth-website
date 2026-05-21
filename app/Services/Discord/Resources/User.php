@@ -50,9 +50,9 @@ class User extends Data
         #[Nullable, StringType]
         public readonly string|Optional|null $banner,
 
-        /** @var int|Optional The user's banner color as a hexadecimal integer */
+        /** @var int|Optional|null The user's banner color as a hexadecimal integer */
         #[Nullable, IntegerType]
-        public readonly int|Optional $accent_color,
+        public readonly int|Optional|null $accent_color,
 
         /** @var string|Optional The user's chosen language option */
         #[Nullable, StringType]
@@ -78,16 +78,16 @@ class User extends Data
         #[IntegerType, Min(0)]
         public readonly int $public_flags,
 
-        /** @var array<string, mixed>|Optional Data for the user's avatar decoration */
+        /** @var array<string, mixed>|Optional|null Data for the user's avatar decoration */
         #[Nullable, ArrayType]
-        public readonly array|Optional $avatar_decoration_data,
+        public readonly array|Optional|null $avatar_decoration_data,
 
-        /** @var array<string, mixed>|Optional The user's collectibles */
+        /** @var array<string, mixed>|Optional|null The user's collectibles */
         #[Nullable, ArrayType]
-        public readonly array|Optional $collectibles,
+        public readonly array|Optional|null $collectibles,
 
-        /** @var array<string, mixed>|Optional The user's primary guild identity */
+        /** @var array<string, mixed>|Optional|null The user's primary guild identity */
         #[Nullable, ArrayType]
-        public readonly array|Optional $primary_guild,
+        public readonly array|Optional|null $primary_guild,
     ) {}
 }

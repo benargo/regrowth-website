@@ -202,6 +202,40 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    public function it_handles_accent_color_being_null(): void
+    {
+        $user = User::from([
+            'id' => '1234',
+            'username' => 'Thrall',
+            'discriminator' => '0001',
+            'flags' => 0,
+            'public_flags' => 0,
+            'accent_color' => null,
+        ]);
+
+        $this->assertNull($user->accent_color);
+    }
+
+    #[Test]
+    public function it_handles_nullable_array_fields_being_null(): void
+    {
+        $user = User::from([
+            'id' => '1234',
+            'username' => 'Thrall',
+            'discriminator' => '0001',
+            'flags' => 0,
+            'public_flags' => 0,
+            'avatar_decoration_data' => null,
+            'collectibles' => null,
+            'primary_guild' => null,
+        ]);
+
+        $this->assertNull($user->avatar_decoration_data);
+        $this->assertNull($user->collectibles);
+        $this->assertNull($user->primary_guild);
+    }
+
+    #[Test]
     public function it_marks_a_bot_user(): void
     {
         $user = User::from([
