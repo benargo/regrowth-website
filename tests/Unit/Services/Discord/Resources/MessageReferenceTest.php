@@ -7,20 +7,39 @@ use App\Services\Discord\Resources\MessageReference;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class MessageReferenceTest extends TestCase
 {
     #[Test]
+    public function message_reference_can_be_constructed_directly(): void
+    {
+        $ref = new MessageReference(
+            type: Optional::create(),
+            message_id: Optional::create(),
+            channel_id: Optional::create(),
+            guild_id: Optional::create(),
+            fail_if_not_exists: Optional::create(),
+        );
+
+        $this->assertInstanceOf(Optional::class, $ref->type);
+        $this->assertInstanceOf(Optional::class, $ref->message_id);
+        $this->assertInstanceOf(Optional::class, $ref->channel_id);
+        $this->assertInstanceOf(Optional::class, $ref->guild_id);
+        $this->assertInstanceOf(Optional::class, $ref->fail_if_not_exists);
+    }
+
+    #[Test]
     public function message_reference_constructs_with_all_fields_optional(): void
     {
         $ref = MessageReference::from([]);
 
-        $this->assertNull($ref->type);
-        $this->assertNull($ref->message_id);
-        $this->assertNull($ref->channel_id);
-        $this->assertNull($ref->guild_id);
-        $this->assertNull($ref->fail_if_not_exists);
+        $this->assertInstanceOf(Optional::class, $ref->type);
+        $this->assertInstanceOf(Optional::class, $ref->message_id);
+        $this->assertInstanceOf(Optional::class, $ref->channel_id);
+        $this->assertInstanceOf(Optional::class, $ref->guild_id);
+        $this->assertInstanceOf(Optional::class, $ref->fail_if_not_exists);
     }
 
     #[Test]

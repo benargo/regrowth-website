@@ -2,23 +2,14 @@
 
 namespace App\Notifications;
 
-use App\Contracts\Notifications\DiscordMessage;
-use App\Models\DiscordNotification;
-use App\Services\Discord\Notifications\Driver as DiscordDriver;
+use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
 use App\Services\Discord\Resources\EmbedField;
 use App\Services\Discord\Resources\EmbedMedia;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
-use Illuminate\Support\Collection;
 
-class GrmUploadFailed extends Notification implements DiscordMessage, ShouldQueue
+class GrmUploadFailed extends Notification
 {
-    use Queueable;
-
     /**
      * @param  array<int, string>  $errors
      */
@@ -29,50 +20,19 @@ class GrmUploadFailed extends Notification implements DiscordMessage, ShouldQueu
         public ?string $exceptionMessage = null,
     ) {}
 
-    public function via(object $notifiable): string
-    {
-        return DiscordDriver::class;
-    }
-
+    /**
+     * Get the payload to send to Discord for this notification.
+     */
     public function toMessage(): MessagePayload
-    {
-        return $this->buildPayload();
-    }
-
-    public function toDatabase(object $notifiable): array
-    {
-        return [
-            'type' => self::class,
-            'channel_id' => $notifiable->channel()->id,
-            'payload' => $this->buildPayload()->toArray(),
-        ];
-    }
-
-    public function updates(): ?DiscordNotification
-    {
-        return null;
-    }
-
-    public function sender(): ?Authenticatable
-    {
-        return null;
-    }
-
-    public function relationships(): Collection
-    {
-        return collect();
-    }
-
-    private function buildPayload(): MessagePayload
     {
         if ($this->exceptionMessage) {
             return MessagePayload::from([
-                'embeds' => [new Embed(
-                    title: 'GRM Upload Processing Failed',
-                    description: "The GRM upload job failed completely after all retry attempts.\n\n**Error:** {$this->exceptionMessage}",
-                    color: 15158332,
-                    timestamp: now()->toIso8601String(),
-                )],
+                'embeds' => [Embed::from([
+                    'title' => 'GRM Upload Processing Failed',
+                    'description' => "The GRM upload job failed completely after all retry attempts.\n\n**Error:** {$this->exceptionMessage}",
+                    'color' => 15158332,
+                    'timestamp' => now()->toIso8601String(),
+                ])],
             ]);
         }
 
@@ -83,17 +43,29 @@ class GrmUploadFailed extends Notification implements DiscordMessage, ShouldQueu
         }
 
         return MessagePayload::from([
-            'embeds' => [new Embed(
-                title: 'GRM Upload Processing Completed with Errors',
-                description: "**Errors:**\n{$errorText}",
-                color: 15158332,
-                image: new EmbedMedia(config('app.url').'/images/jaina_broken.webp'),
-                fields: [
+            'embeds' => [Embed::from([
+                'title' => 'GRM Upload Processing Completed with Errors',
+                'description' => "**Errors:**\n{$errorText}",
+                'color' => 15158332,
+                'image' => EmbedMedia::from(['url' => config('app.url').'/images/jaina_broken.webp']),
+                'fields' => [
                     new EmbedField('Processed', (string) $this->processedCount, true),
                     new EmbedField('Errors', (string) $this->errorCount, true),
                 ],
-                timestamp: now()->toIso8601String(),
-            )],
+                'timestamp' => now()->toIso8601String(),
+            ])],
         ]);
+    }
+
+    /**
+     * Get the array of data to store in the database for this notification.
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'type' => self::class,
+            'channel_id' => $notifiable->channel()->id,
+            'payload' => $this->toMessage()->toArray(),
+        ];
     }
 }

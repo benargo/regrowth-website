@@ -57,7 +57,7 @@ class PrunedEventTest extends TestCase
     {
         $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getChannel')->andReturn(
-                new Channel(id: '123', name: 'test-channel')
+                Channel::from(['id' => '123', 'name' => 'test-channel'])
             );
         });
 
@@ -83,7 +83,7 @@ class PrunedEventTest extends TestCase
     {
         $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getChannel')->andReturn(
-                new Channel(id: '123', name: 'test-channel')
+                Channel::from(['id' => '123', 'name' => 'test-channel'])
             );
         });
 

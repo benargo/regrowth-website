@@ -1140,11 +1140,14 @@ class PlannedAbsenceControllerTest extends TestCase
     {
         $this->mock(Discord::class, function (MockInterface $mock): void {
             $mock->shouldReceive('getGuildMember')->once()->andReturn(GuildMember::from([
-                'user' => ['id' => '999999999999999999', 'username' => 'discorduser', 'discriminator' => '0', 'avatar' => null],
+                'user' => ['id' => '999999999999999999', 'username' => 'discorduser', 'discriminator' => '0', 'avatar' => null, 'flags' => 0, 'public_flags' => 0],
                 'nick' => 'DiscordNick',
                 'avatar' => null,
                 'banner' => null,
                 'roles' => [],
+                'deaf' => false,
+                'mute' => false,
+                'flags' => 0,
             ]));
         });
 

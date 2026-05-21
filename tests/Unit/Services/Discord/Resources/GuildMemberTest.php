@@ -7,37 +7,76 @@ use App\Services\Discord\Resources\User;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class GuildMemberTest extends TestCase
 {
     #[Test]
-    public function it_constructs_from_empty_payload(): void
+    public function guild_member_can_be_constructed_directly(): void
     {
-        $member = GuildMember::from([]);
+        $member = new GuildMember(
+            user: Optional::create(),
+            nick: Optional::create(),
+            avatar: Optional::create(),
+            banner: Optional::create(),
+            roles: [],
+            joined_at: Optional::create(),
+            premium_since: Optional::create(),
+            deaf: false,
+            mute: false,
+            flags: 0,
+            pending: Optional::create(),
+            permissions: Optional::create(),
+            communication_disabled_until: Optional::create(),
+            avatar_decoration_data: Optional::create(),
+            collectibles: Optional::create(),
+        );
 
-        $this->assertNull($member->user);
-        $this->assertNull($member->nick);
-        $this->assertNull($member->avatar);
-        $this->assertNull($member->banner);
+        $this->assertInstanceOf(Optional::class, $member->user);
+        $this->assertInstanceOf(Optional::class, $member->nick);
+        $this->assertInstanceOf(Optional::class, $member->avatar);
+        $this->assertInstanceOf(Optional::class, $member->banner);
         $this->assertSame([], $member->roles);
-        $this->assertNull($member->joined_at);
-        $this->assertNull($member->premium_since);
+        $this->assertInstanceOf(Optional::class, $member->joined_at);
+        $this->assertInstanceOf(Optional::class, $member->premium_since);
         $this->assertFalse($member->deaf);
         $this->assertFalse($member->mute);
         $this->assertSame(0, $member->flags);
-        $this->assertNull($member->pending);
-        $this->assertNull($member->permissions);
-        $this->assertNull($member->communication_disabled_until);
-        $this->assertNull($member->avatar_decoration_data);
-        $this->assertNull($member->collectibles);
+        $this->assertInstanceOf(Optional::class, $member->pending);
+        $this->assertInstanceOf(Optional::class, $member->permissions);
+        $this->assertInstanceOf(Optional::class, $member->communication_disabled_until);
+        $this->assertInstanceOf(Optional::class, $member->avatar_decoration_data);
+        $this->assertInstanceOf(Optional::class, $member->collectibles);
+    }
+
+    #[Test]
+    public function it_constructs_from_empty_payload(): void
+    {
+        $member = GuildMember::from(['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
+
+        $this->assertInstanceOf(Optional::class, $member->user);
+        $this->assertInstanceOf(Optional::class, $member->nick);
+        $this->assertInstanceOf(Optional::class, $member->avatar);
+        $this->assertInstanceOf(Optional::class, $member->banner);
+        $this->assertSame([], $member->roles);
+        $this->assertInstanceOf(Optional::class, $member->joined_at);
+        $this->assertInstanceOf(Optional::class, $member->premium_since);
+        $this->assertFalse($member->deaf);
+        $this->assertFalse($member->mute);
+        $this->assertSame(0, $member->flags);
+        $this->assertInstanceOf(Optional::class, $member->pending);
+        $this->assertInstanceOf(Optional::class, $member->permissions);
+        $this->assertInstanceOf(Optional::class, $member->communication_disabled_until);
+        $this->assertInstanceOf(Optional::class, $member->avatar_decoration_data);
+        $this->assertInstanceOf(Optional::class, $member->collectibles);
     }
 
     #[Test]
     public function it_constructs_from_the_discord_example_payload(): void
     {
         $member = GuildMember::from([
-            'user' => ['id' => '1', 'username' => 'test', 'discriminator' => '0000'],
+            'user' => ['id' => '1', 'username' => 'test', 'discriminator' => '0000', 'flags' => 0, 'public_flags' => 0],
             'nick' => 'NOT API SUPPORT',
             'avatar' => null,
             'banner' => null,
@@ -45,6 +84,7 @@ class GuildMemberTest extends TestCase
             'joined_at' => '2015-04-26T06:26:56.936000+00:00',
             'deaf' => false,
             'mute' => false,
+            'flags' => 0,
         ]);
 
         $this->assertInstanceOf(User::class, $member->user);
@@ -61,7 +101,7 @@ class GuildMemberTest extends TestCase
     public function it_stores_all_scalar_fields(): void
     {
         $member = GuildMember::from([
-            'user' => ['id' => '123', 'username' => 'Thrall', 'discriminator' => '0001'],
+            'user' => ['id' => '123', 'username' => 'Thrall', 'discriminator' => '0001', 'flags' => 0, 'public_flags' => 0],
             'nick' => 'Warchief',
             'avatar' => 'avatar_hash',
             'banner' => 'banner_hash',
@@ -100,6 +140,10 @@ class GuildMemberTest extends TestCase
         $collectibles = ['nameplate' => ['asset' => 'nameplate_hash', 'label' => 'Gold']];
 
         $member = GuildMember::from([
+            'roles' => [],
+            'deaf' => false,
+            'mute' => false,
+            'flags' => 0,
             'avatar_decoration_data' => $decoration,
             'collectibles' => $collectibles,
         ]);
@@ -109,9 +153,19 @@ class GuildMemberTest extends TestCase
     }
 
     #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $member = GuildMember::from([...$this->minimalPayload(), 'joined_at' => null]);
+        $this->assertNull($member->joined_at);
+
+        $member = GuildMember::from([...$this->minimalPayload(), 'communication_disabled_until' => null]);
+        $this->assertNull($member->communication_disabled_until);
+    }
+
+    #[Test]
     public function all_properties_are_readonly(): void
     {
-        $member = GuildMember::from([]);
+        $member = GuildMember::from(['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
         $reflection = new ReflectionClass($member);
 
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
@@ -124,5 +178,11 @@ class GuildMemberTest extends TestCase
                 "Property \${$property->getName()} should be readonly."
             );
         }
+    }
+
+    /** @return array<string, mixed> */
+    private function minimalPayload(): array
+    {
+        return ['roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0];
     }
 }

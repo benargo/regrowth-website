@@ -103,17 +103,20 @@ class DailyQuestsController extends Controller
      */
     public function store(StoreDailyQuestsRequest $request): RedirectResponse
     {
-        $this->channel()->notify(new DailyQuestsMessage(
-            dailyQuests: [
-                'Cooking' => $request->input('cooking_quest_id') ? DailyQuest::find($request->input('cooking_quest_id')) : null,
-                'Fishing' => $request->input('fishing_quest_id') ? DailyQuest::find($request->input('fishing_quest_id')) : null,
-                'Dungeon' => $request->input('dungeon_quest_id') ? DailyQuest::find($request->input('dungeon_quest_id')) : null,
-                'Heroic' => $request->input('heroic_quest_id') ? DailyQuest::find($request->input('heroic_quest_id')) : null,
-                'PvP' => $request->input('pvp_quest_id') ? DailyQuest::find($request->input('pvp_quest_id')) : null,
-            ],
-            sender: $request->user(),
-            updates: $this->getExistingNotification(),
-        ));
+        $quests = [
+            'Cooking' => $request->input('cooking_quest_id') ? DailyQuest::find($request->input('cooking_quest_id')) : null,
+            'Fishing' => $request->input('fishing_quest_id') ? DailyQuest::find($request->input('fishing_quest_id')) : null,
+            'Dungeon' => $request->input('dungeon_quest_id') ? DailyQuest::find($request->input('dungeon_quest_id')) : null,
+            'Heroic' => $request->input('heroic_quest_id') ? DailyQuest::find($request->input('heroic_quest_id')) : null,
+            'PvP' => $request->input('pvp_quest_id') ? DailyQuest::find($request->input('pvp_quest_id')) : null,
+        ];
+
+        $this->channel()->notify(
+            (new DailyQuestsMessage($quests))
+                ->updatesExisting($this->getExistingNotification())
+                ->withSender($request->user())
+                ->withRelatedModels(array_filter($quests))
+        );
 
         return back()->with('success', 'Daily quests set and posted to Discord!');
     }

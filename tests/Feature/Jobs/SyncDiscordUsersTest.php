@@ -38,6 +38,9 @@ class SyncDiscordUsersTest extends TestCase
                     'avatar' => 'avatar_hash',
                     'banner' => 'banner_hash',
                     'roles' => ['111111111111111111'],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
                 ]));
         });
 
@@ -69,6 +72,9 @@ class SyncDiscordUsersTest extends TestCase
                     'avatar' => 'new_avatar',
                     'banner' => 'new_banner',
                     'roles' => [],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
                 ]));
         });
 
@@ -136,6 +142,9 @@ class SyncDiscordUsersTest extends TestCase
                     'avatar' => null,
                     'banner' => null,
                     'roles' => ['111111111111111111'],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
                 ]));
 
             $mock->shouldReceive('getGuildMember')
@@ -202,6 +211,9 @@ class SyncDiscordUsersTest extends TestCase
                     'avatar' => null,
                     'banner' => null,
                     'roles' => ['111111111111111111', '999999999999999999'],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
                 ]));
         });
 

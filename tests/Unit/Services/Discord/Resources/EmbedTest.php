@@ -13,6 +13,7 @@ use App\Services\Discord\Resources\EmbedVideo;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class EmbedTest extends TestCase
@@ -22,13 +23,27 @@ class EmbedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
+    public function embed_footer_can_be_constructed_directly(): void
+    {
+        $footer = new EmbedFooter(
+            text: 'My Footer',
+            icon_url: Optional::create(),
+            proxy_icon_url: Optional::create(),
+        );
+
+        $this->assertSame('My Footer', $footer->text);
+        $this->assertInstanceOf(Optional::class, $footer->icon_url);
+        $this->assertInstanceOf(Optional::class, $footer->proxy_icon_url);
+    }
+
+    #[Test]
     public function embed_footer_constructs_with_required_text(): void
     {
         $footer = EmbedFooter::from(['text' => 'My Footer']);
 
         $this->assertSame('My Footer', $footer->text);
-        $this->assertNull($footer->icon_url);
-        $this->assertNull($footer->proxy_icon_url);
+        $this->assertInstanceOf(Optional::class, $footer->icon_url);
+        $this->assertInstanceOf(Optional::class, $footer->proxy_icon_url);
     }
 
     #[Test]
@@ -55,19 +70,45 @@ class EmbedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
+    public function embed_media_can_be_constructed_directly(): void
+    {
+        $media = new EmbedMedia(
+            url: 'https://example.com/image.png',
+            proxy_url: Optional::create(),
+            height: Optional::create(),
+            width: Optional::create(),
+            content_type: Optional::create(),
+            placeholder: Optional::create(),
+            placeholder_version: Optional::create(),
+            description: Optional::create(),
+            flags: Optional::create(),
+        );
+
+        $this->assertSame('https://example.com/image.png', $media->url);
+        $this->assertInstanceOf(Optional::class, $media->proxy_url);
+        $this->assertInstanceOf(Optional::class, $media->height);
+        $this->assertInstanceOf(Optional::class, $media->width);
+        $this->assertInstanceOf(Optional::class, $media->content_type);
+        $this->assertInstanceOf(Optional::class, $media->placeholder);
+        $this->assertInstanceOf(Optional::class, $media->placeholder_version);
+        $this->assertInstanceOf(Optional::class, $media->description);
+        $this->assertInstanceOf(Optional::class, $media->flags);
+    }
+
+    #[Test]
     public function embed_media_constructs_with_required_url(): void
     {
         $media = EmbedMedia::from(['url' => 'https://example.com/image.png']);
 
         $this->assertSame('https://example.com/image.png', $media->url);
-        $this->assertNull($media->proxy_url);
-        $this->assertNull($media->height);
-        $this->assertNull($media->width);
-        $this->assertNull($media->content_type);
-        $this->assertNull($media->placeholder);
-        $this->assertNull($media->placeholder_version);
-        $this->assertNull($media->description);
-        $this->assertNull($media->flags);
+        $this->assertInstanceOf(Optional::class, $media->proxy_url);
+        $this->assertInstanceOf(Optional::class, $media->height);
+        $this->assertInstanceOf(Optional::class, $media->width);
+        $this->assertInstanceOf(Optional::class, $media->content_type);
+        $this->assertInstanceOf(Optional::class, $media->placeholder);
+        $this->assertInstanceOf(Optional::class, $media->placeholder_version);
+        $this->assertInstanceOf(Optional::class, $media->description);
+        $this->assertInstanceOf(Optional::class, $media->flags);
     }
 
     #[Test]
@@ -106,19 +147,45 @@ class EmbedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
+    public function embed_video_can_be_constructed_directly(): void
+    {
+        $video = new EmbedVideo(
+            url: Optional::create(),
+            proxy_url: Optional::create(),
+            height: Optional::create(),
+            width: Optional::create(),
+            content_type: Optional::create(),
+            placeholder: Optional::create(),
+            placeholder_version: Optional::create(),
+            description: Optional::create(),
+            flags: Optional::create(),
+        );
+
+        $this->assertInstanceOf(Optional::class, $video->url);
+        $this->assertInstanceOf(Optional::class, $video->proxy_url);
+        $this->assertInstanceOf(Optional::class, $video->height);
+        $this->assertInstanceOf(Optional::class, $video->width);
+        $this->assertInstanceOf(Optional::class, $video->content_type);
+        $this->assertInstanceOf(Optional::class, $video->placeholder);
+        $this->assertInstanceOf(Optional::class, $video->placeholder_version);
+        $this->assertInstanceOf(Optional::class, $video->description);
+        $this->assertInstanceOf(Optional::class, $video->flags);
+    }
+
+    #[Test]
     public function embed_video_constructs_with_all_fields_optional(): void
     {
         $video = EmbedVideo::from([]);
 
-        $this->assertNull($video->url);
-        $this->assertNull($video->proxy_url);
-        $this->assertNull($video->height);
-        $this->assertNull($video->width);
-        $this->assertNull($video->content_type);
-        $this->assertNull($video->placeholder);
-        $this->assertNull($video->placeholder_version);
-        $this->assertNull($video->description);
-        $this->assertNull($video->flags);
+        $this->assertInstanceOf(Optional::class, $video->url);
+        $this->assertInstanceOf(Optional::class, $video->proxy_url);
+        $this->assertInstanceOf(Optional::class, $video->height);
+        $this->assertInstanceOf(Optional::class, $video->width);
+        $this->assertInstanceOf(Optional::class, $video->content_type);
+        $this->assertInstanceOf(Optional::class, $video->placeholder);
+        $this->assertInstanceOf(Optional::class, $video->placeholder_version);
+        $this->assertInstanceOf(Optional::class, $video->description);
+        $this->assertInstanceOf(Optional::class, $video->flags);
     }
 
     #[Test]
@@ -158,12 +225,24 @@ class EmbedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
+    public function embed_provider_can_be_constructed_directly(): void
+    {
+        $provider = new EmbedProvider(
+            name: Optional::create(),
+            url: Optional::create(),
+        );
+
+        $this->assertInstanceOf(Optional::class, $provider->name);
+        $this->assertInstanceOf(Optional::class, $provider->url);
+    }
+
+    #[Test]
     public function embed_provider_constructs_with_all_fields_optional(): void
     {
         $provider = EmbedProvider::from([]);
 
-        $this->assertNull($provider->name);
-        $this->assertNull($provider->url);
+        $this->assertInstanceOf(Optional::class, $provider->name);
+        $this->assertInstanceOf(Optional::class, $provider->url);
     }
 
     #[Test]
@@ -189,14 +268,30 @@ class EmbedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
+    public function embed_author_can_be_constructed_directly(): void
+    {
+        $author = new EmbedAuthor(
+            name: 'John Doe',
+            url: Optional::create(),
+            icon_url: Optional::create(),
+            proxy_icon_url: Optional::create(),
+        );
+
+        $this->assertSame('John Doe', $author->name);
+        $this->assertInstanceOf(Optional::class, $author->url);
+        $this->assertInstanceOf(Optional::class, $author->icon_url);
+        $this->assertInstanceOf(Optional::class, $author->proxy_icon_url);
+    }
+
+    #[Test]
     public function embed_author_constructs_with_required_name(): void
     {
         $author = EmbedAuthor::from(['name' => 'John Doe']);
 
         $this->assertSame('John Doe', $author->name);
-        $this->assertNull($author->url);
-        $this->assertNull($author->icon_url);
-        $this->assertNull($author->proxy_icon_url);
+        $this->assertInstanceOf(Optional::class, $author->url);
+        $this->assertInstanceOf(Optional::class, $author->icon_url);
+        $this->assertInstanceOf(Optional::class, $author->proxy_icon_url);
     }
 
     #[Test]
@@ -225,13 +320,27 @@ class EmbedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
+    public function embed_field_can_be_constructed_directly(): void
+    {
+        $field = new EmbedField(
+            name: 'Level',
+            value: '60',
+            inline: Optional::create(),
+        );
+
+        $this->assertSame('Level', $field->name);
+        $this->assertSame('60', $field->value);
+        $this->assertInstanceOf(Optional::class, $field->inline);
+    }
+
+    #[Test]
     public function embed_field_constructs_with_required_fields(): void
     {
         $field = EmbedField::from(['name' => 'Level', 'value' => '60']);
 
         $this->assertSame('Level', $field->name);
         $this->assertSame('60', $field->value);
-        $this->assertNull($field->inline);
+        $this->assertInstanceOf(Optional::class, $field->inline);
     }
 
     #[Test]
@@ -253,24 +362,60 @@ class EmbedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
+    public function embed_can_be_constructed_directly(): void
+    {
+        $embed = new Embed(
+            title: Optional::create(),
+            type: Optional::create(),
+            description: Optional::create(),
+            url: Optional::create(),
+            timestamp: Optional::create(),
+            color: Optional::create(),
+            footer: Optional::create(),
+            image: Optional::create(),
+            thumbnail: Optional::create(),
+            video: Optional::create(),
+            provider: Optional::create(),
+            author: Optional::create(),
+            fields: Optional::create(),
+            flags: Optional::create(),
+        );
+
+        $this->assertInstanceOf(Optional::class, $embed->title);
+        $this->assertInstanceOf(Optional::class, $embed->type);
+        $this->assertInstanceOf(Optional::class, $embed->description);
+        $this->assertInstanceOf(Optional::class, $embed->url);
+        $this->assertInstanceOf(Optional::class, $embed->timestamp);
+        $this->assertInstanceOf(Optional::class, $embed->color);
+        $this->assertInstanceOf(Optional::class, $embed->footer);
+        $this->assertInstanceOf(Optional::class, $embed->image);
+        $this->assertInstanceOf(Optional::class, $embed->thumbnail);
+        $this->assertInstanceOf(Optional::class, $embed->video);
+        $this->assertInstanceOf(Optional::class, $embed->provider);
+        $this->assertInstanceOf(Optional::class, $embed->author);
+        $this->assertInstanceOf(Optional::class, $embed->fields);
+        $this->assertInstanceOf(Optional::class, $embed->flags);
+    }
+
+    #[Test]
     public function embed_constructs_with_all_fields_optional(): void
     {
         $embed = Embed::from([]);
 
-        $this->assertNull($embed->title);
-        $this->assertNull($embed->type);
-        $this->assertNull($embed->description);
-        $this->assertNull($embed->url);
-        $this->assertNull($embed->timestamp);
-        $this->assertNull($embed->color);
-        $this->assertNull($embed->footer);
-        $this->assertNull($embed->image);
-        $this->assertNull($embed->thumbnail);
-        $this->assertNull($embed->video);
-        $this->assertNull($embed->provider);
-        $this->assertNull($embed->author);
-        $this->assertNull($embed->fields);
-        $this->assertNull($embed->flags);
+        $this->assertInstanceOf(Optional::class, $embed->title);
+        $this->assertInstanceOf(Optional::class, $embed->type);
+        $this->assertInstanceOf(Optional::class, $embed->description);
+        $this->assertInstanceOf(Optional::class, $embed->url);
+        $this->assertInstanceOf(Optional::class, $embed->timestamp);
+        $this->assertInstanceOf(Optional::class, $embed->color);
+        $this->assertInstanceOf(Optional::class, $embed->footer);
+        $this->assertInstanceOf(Optional::class, $embed->image);
+        $this->assertInstanceOf(Optional::class, $embed->thumbnail);
+        $this->assertInstanceOf(Optional::class, $embed->video);
+        $this->assertInstanceOf(Optional::class, $embed->provider);
+        $this->assertInstanceOf(Optional::class, $embed->author);
+        $this->assertInstanceOf(Optional::class, $embed->fields);
+        $this->assertInstanceOf(Optional::class, $embed->flags);
     }
 
     #[Test]
@@ -341,7 +486,7 @@ class EmbedTest extends TestCase
         $this->assertInstanceOf(EmbedField::class, $embed->fields[0]);
         $this->assertSame('Level', $embed->fields[0]->name);
         $this->assertSame('60', $embed->fields[0]->value);
-        $this->assertNull($embed->fields[0]->inline);
+        $this->assertInstanceOf(Optional::class, $embed->fields[0]->inline);
         $this->assertSame('Class', $embed->fields[1]->name);
         $this->assertTrue($embed->fields[1]->inline);
     }
@@ -353,6 +498,13 @@ class EmbedTest extends TestCase
             $embed = Embed::from(['type' => $case->value]);
             $this->assertSame($case, $embed->type);
         }
+    }
+
+    #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $embed = Embed::from(['image' => null]);
+        $this->assertNull($embed->image);
     }
 
     #[Test]

@@ -27,7 +27,7 @@ class NewLootCouncilCommentTest extends TestCase
         $comment = Comment::factory()->create();
         $notification = new NewLootCouncilComment($comment);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -112,15 +112,6 @@ class NewLootCouncilCommentTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_for_updates(): void
-    {
-        $comment = Comment::factory()->create();
-        $notification = new NewLootCouncilComment($comment);
-
-        $this->assertNull($notification->updates());
-    }
-
-    #[Test]
     public function it_returns_the_comment_author_as_sender(): void
     {
         $comment = Comment::factory()->create();
@@ -146,37 +137,5 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertSame('123456789', $data['channel_id']);
         $this->assertSame($comment->user->id, $data['created_by_user_id']);
         $this->assertArrayHasKey('embeds', $data['payload']);
-        $this->assertArrayHasKey('related_models', $data);
-    }
-
-    #[Test]
-    public function it_returns_the_comment_as_a_relationship(): void
-    {
-        $comment = Comment::factory()->create();
-        $notification = new NewLootCouncilComment($comment);
-
-        $relationships = $notification->relationships();
-
-        $this->assertArrayHasKey('comment', $relationships);
-        $this->assertTrue($relationships['comment']->is($comment));
-    }
-
-    #[Test]
-    public function it_includes_the_comment_entry_in_related_models_database_payload(): void
-    {
-        $comment = Comment::factory()->create();
-        $notifiable = $this->makeNotifiable();
-
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')->andReturn(['name' => 'Warglaive']);
-        });
-
-        $notification = new NewLootCouncilComment($comment);
-        $data = $notification->toDatabase($notifiable);
-
-        $this->assertCount(1, $data['related_models']);
-        $this->assertSame('comment', $data['related_models'][0]['name']);
-        $this->assertSame(Comment::class, $data['related_models'][0]['model']);
-        $this->assertSame($comment->id, $data['related_models'][0]['key']);
     }
 }

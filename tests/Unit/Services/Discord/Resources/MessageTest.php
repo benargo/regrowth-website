@@ -12,10 +12,61 @@ use App\Services\Discord\Resources\MessageReference;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class MessageTest extends TestCase
 {
+    #[Test]
+    public function message_can_be_constructed_directly(): void
+    {
+        $message = new Message(
+            id: '334385199974967042',
+            channel_id: '290926798999357250',
+            timestamp: '2017-07-11T17:27:07.299000+00:00',
+            tts: false,
+            mention_everyone: false,
+            mention_roles: [],
+            attachments: [],
+            embeds: [],
+            pinned: false,
+            type: MessageType::Default,
+            author: Optional::create(),
+            content: Optional::create(),
+            edited_timestamp: Optional::create(),
+            mentions: Optional::create(),
+            webhook_id: Optional::create(),
+            flags: Optional::create(),
+            message_reference: Optional::create(),
+            referenced_message: Optional::create(),
+            application_id: Optional::create(),
+            position: Optional::create(),
+            nonce: Optional::create(),
+        );
+
+        $this->assertSame('334385199974967042', $message->id);
+        $this->assertSame('290926798999357250', $message->channel_id);
+        $this->assertSame('2017-07-11T17:27:07.299000+00:00', $message->timestamp);
+        $this->assertFalse($message->tts);
+        $this->assertFalse($message->mention_everyone);
+        $this->assertSame([], $message->mention_roles);
+        $this->assertSame([], $message->attachments);
+        $this->assertSame([], $message->embeds);
+        $this->assertFalse($message->pinned);
+        $this->assertSame(MessageType::Default, $message->type);
+        $this->assertInstanceOf(Optional::class, $message->author);
+        $this->assertInstanceOf(Optional::class, $message->content);
+        $this->assertInstanceOf(Optional::class, $message->edited_timestamp);
+        $this->assertInstanceOf(Optional::class, $message->mentions);
+        $this->assertInstanceOf(Optional::class, $message->webhook_id);
+        $this->assertInstanceOf(Optional::class, $message->flags);
+        $this->assertInstanceOf(Optional::class, $message->message_reference);
+        $this->assertInstanceOf(Optional::class, $message->referenced_message);
+        $this->assertInstanceOf(Optional::class, $message->application_id);
+        $this->assertInstanceOf(Optional::class, $message->position);
+        $this->assertInstanceOf(Optional::class, $message->nonce);
+    }
+
     private function minimalPayload(): array
     {
         return [
@@ -50,21 +101,21 @@ class MessageTest extends TestCase
     }
 
     #[Test]
-    public function message_optional_fields_default_to_null(): void
+    public function message_optional_fields_default_to_optional(): void
     {
         $message = Message::from($this->minimalPayload());
 
-        $this->assertNull($message->author);
-        $this->assertNull($message->content);
-        $this->assertNull($message->edited_timestamp);
-        $this->assertNull($message->mentions);
-        $this->assertNull($message->webhook_id);
-        $this->assertNull($message->flags);
-        $this->assertNull($message->message_reference);
-        $this->assertNull($message->referenced_message);
-        $this->assertNull($message->application_id);
-        $this->assertNull($message->position);
-        $this->assertNull($message->nonce);
+        $this->assertInstanceOf(Optional::class, $message->author);
+        $this->assertInstanceOf(Optional::class, $message->content);
+        $this->assertInstanceOf(Optional::class, $message->edited_timestamp);
+        $this->assertInstanceOf(Optional::class, $message->mentions);
+        $this->assertInstanceOf(Optional::class, $message->webhook_id);
+        $this->assertInstanceOf(Optional::class, $message->flags);
+        $this->assertInstanceOf(Optional::class, $message->message_reference);
+        $this->assertInstanceOf(Optional::class, $message->referenced_message);
+        $this->assertInstanceOf(Optional::class, $message->application_id);
+        $this->assertInstanceOf(Optional::class, $message->position);
+        $this->assertInstanceOf(Optional::class, $message->nonce);
     }
 
     #[Test]
@@ -169,6 +220,16 @@ class MessageTest extends TestCase
         $this->assertCount(1, $message->attachments);
         $this->assertInstanceOf(Attachment::class, $message->attachments[0]);
         $this->assertSame('file.png', $message->attachments[0]->filename);
+    }
+
+    #[Test]
+    public function it_stores_null_for_nullable_optional_fields(): void
+    {
+        $message = Message::from([...$this->minimalPayload(), 'edited_timestamp' => null]);
+        $this->assertNull($message->edited_timestamp);
+
+        $message = Message::from([...$this->minimalPayload(), 'referenced_message' => null]);
+        $this->assertNull($message->referenced_message);
     }
 
     #[Test]

@@ -5,16 +5,17 @@ namespace App\Services\Discord\Resources;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class EmbedProvider extends Data
 {
     public function __construct(
-        /** @var string|null Name of provider */
+        /** @var string|Optional Name of provider */
         #[Nullable, StringType]
-        public readonly ?string $name = null,
+        public readonly string|Optional $name,
 
-        /** @var string|null URL of provider */
+        /** @var string|Optional URL of provider */
         #[Nullable, StringType]
-        public readonly ?string $url = null,
+        public readonly string|Optional $url,
     ) {}
 }

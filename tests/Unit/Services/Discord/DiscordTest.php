@@ -192,6 +192,9 @@ class DiscordTest extends TestCase
         $response->expects('json')->withNoArgs()->andReturn([
             'nick' => 'TestNick',
             'roles' => ['111111111111111111'],
+            'deaf' => false,
+            'mute' => false,
+            'flags' => 0,
         ]);
 
         $this->client->expects('get')
@@ -229,8 +232,8 @@ class DiscordTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
-            ['user' => ['id' => '100000000000000001'], 'nick' => 'Alice', 'roles' => []],
-            ['user' => ['id' => '100000000000000002'], 'nick' => 'Bob', 'roles' => []],
+            ['user' => ['id' => '100000000000000001', 'username' => 'alice', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => 'Alice', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
+            ['user' => ['id' => '100000000000000002', 'username' => 'bob', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => 'Bob', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
         ]);
 
         $this->client->expects('get')
@@ -254,7 +257,7 @@ class DiscordTest extends TestCase
         $response = Mockery::mock(Response::class);
         $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
-            ['nick' => 'Alice', 'roles' => []],
+            ['nick' => 'Alice', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
         ]);
 
         $this->client->expects('get')
@@ -340,7 +343,7 @@ class DiscordTest extends TestCase
     public function it_returns_a_collection_of_messages(): void
     {
         $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
-        $query = new ChannelMessagesQueryString(limit: 10);
+        $query = ChannelMessagesQueryString::from(['limit' => 10]);
 
         $response = Mockery::mock(Response::class);
         $response->allows('failed')->andReturn(false);

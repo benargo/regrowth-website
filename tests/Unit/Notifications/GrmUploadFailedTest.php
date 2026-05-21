@@ -8,6 +8,7 @@ use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel as ChannelResource;
 use App\Services\Discord\Resources\Embed;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class GrmUploadFailedTest extends TestCase
@@ -24,7 +25,7 @@ class GrmUploadFailedTest extends TestCase
     {
         $notification = new GrmUploadFailed(processedCount: 3, errorCount: 2);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->makeNotifiable()));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->makeNotifiable()));
     }
 
     #[Test]
@@ -42,7 +43,7 @@ class GrmUploadFailedTest extends TestCase
         $this->assertSame(15158332, $embed->color);
         $this->assertStringContainsString('Connection timed out', $embed->description);
         $this->assertStringContainsString('failed completely', $embed->description);
-        $this->assertNull($embed->fields);
+        $this->assertInstanceOf(Optional::class, $embed->fields);
     }
 
     #[Test]
@@ -112,20 +113,14 @@ class GrmUploadFailedTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_for_updates(): void
-    {
-        $this->assertNull((new GrmUploadFailed(processedCount: 0, errorCount: 1))->updates());
-    }
-
-    #[Test]
     public function it_returns_null_for_sender(): void
     {
         $this->assertNull((new GrmUploadFailed(processedCount: 0, errorCount: 1))->sender());
     }
 
     #[Test]
-    public function it_returns_empty_array_for_relationships(): void
+    public function it_returns_empty_array_for_related_models(): void
     {
-        $this->assertEmpty((new GrmUploadFailed(processedCount: 0, errorCount: 1))->relationships());
+        $this->assertEmpty((new GrmUploadFailed(processedCount: 0, errorCount: 1))->mapRelatedModels());
     }
 }

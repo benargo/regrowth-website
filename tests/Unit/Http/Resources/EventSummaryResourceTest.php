@@ -17,7 +17,7 @@ class EventSummaryResourceTest extends TestCase
 
     private function mockChannel(string $id = '111222333', ?string $name = 'general', ?int $position = 0): Channel
     {
-        $channel = new Channel(id: $id, name: $name, position: $position);
+        $channel = Channel::from(['id' => $id, 'name' => $name, 'position' => $position]);
 
         $discord = $this->createStub(Discord::class);
         $discord->method('getChannel')->willReturn($channel);

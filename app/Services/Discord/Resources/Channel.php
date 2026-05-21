@@ -14,6 +14,7 @@ use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class Channel extends Data implements ChannelContract
 {
@@ -22,139 +23,139 @@ class Channel extends Data implements ChannelContract
         #[StringType]
         public readonly string $id,
 
-        public readonly ?ChannelType $type = null,
+        public readonly ChannelType|Optional $type,
 
-        /** @var string|null Snowflake of the owning guild; absent in some gateway dispatches */
+        /** @var string|Optional Snowflake of the owning guild; absent in some gateway dispatches */
         #[Nullable, StringType]
-        public readonly ?string $guild_id = null,
+        public readonly string|Optional $guild_id,
 
-        /** @var int|null Sort position; channels at the same position sort by ID */
+        /** @var int|Optional Sort position; channels at the same position sort by ID */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $position = null,
+        public readonly int|Optional $position,
 
-        /** @var string|null 1–100 character channel name */
+        /** @var string|Optional 1–100 character channel name */
         #[Nullable, StringType, Min(1), Max(100)]
-        public readonly ?string $name = null,
+        public readonly string|Optional $name,
 
-        /** @var string|null Channel topic (0–4096 chars for forum/media, 0–1024 for others) */
+        /** @var string|Optional Channel topic (0–4096 chars for forum/media, 0–1024 for others) */
         #[Nullable, StringType, Max(4096)]
-        public readonly ?string $topic = null,
+        public readonly string|Optional|null $topic,
 
-        /** @var bool|null Whether the channel is age-restricted */
+        /** @var bool|Optional Whether the channel is age-restricted */
         #[Nullable, BooleanType]
-        public readonly ?bool $nsfw = null,
+        public readonly bool|Optional $nsfw,
 
-        /** @var string|null Snowflake of the last message sent */
+        /** @var string|Optional Snowflake of the last message sent */
         #[Nullable, StringType]
-        public readonly ?string $last_message_id = null,
+        public readonly string|Optional|null $last_message_id,
 
-        /** @var int|null Voice channel bitrate in bits per second */
+        /** @var int|Optional Voice channel bitrate in bits per second */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $bitrate = null,
+        public readonly int|Optional $bitrate,
 
-        /** @var int|null Maximum users in a voice channel */
+        /** @var int|Optional Maximum users in a voice channel */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $user_limit = null,
+        public readonly int|Optional $user_limit,
 
-        /** @var int|null Slowmode interval in seconds (0–21600) */
+        /** @var int|Optional Slowmode interval in seconds (0–21600) */
         #[Nullable, IntegerType, Min(0), Max(21600)]
-        public readonly ?int $rate_limit_per_user = null,
+        public readonly int|Optional $rate_limit_per_user,
 
-        /** @var string|null Snowflake of the group DM or thread owner */
+        /** @var string|Optional Snowflake of the group DM or thread owner */
         #[Nullable, StringType]
-        public readonly ?string $owner_id = null,
+        public readonly string|Optional $owner_id,
 
-        /** @var string|null Snowflake of the bot app that created a group DM */
+        /** @var string|Optional Snowflake of the bot app that created a group DM */
         #[Nullable, StringType]
-        public readonly ?string $application_id = null,
+        public readonly string|Optional $application_id,
 
-        /** @var bool|null Whether the channel is managed by an application via gdm.join */
+        /** @var bool|Optional Whether the channel is managed by an application via gdm.join */
         #[Nullable, BooleanType]
-        public readonly ?bool $managed = null,
+        public readonly bool|Optional $managed,
 
-        /** @var string|null Snowflake of the parent category or thread parent (max 50 children per category) */
+        /** @var string|Optional Snowflake of the parent category or thread parent (max 50 children per category) */
         #[Nullable, StringType]
-        public readonly ?string $parent_id = null,
+        public readonly string|Optional|null $parent_id,
 
-        /** @var string|null ISO8601 timestamp of the last pinned message; null in GUILD_CREATE events */
+        /** @var string|Optional ISO8601 timestamp of the last pinned message; null in GUILD_CREATE events */
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP')]
-        public readonly ?string $last_pin_timestamp = null,
+        public readonly string|Optional|null $last_pin_timestamp,
 
-        /** @var string|null Voice region override; null means automatic */
+        /** @var string|Optional Voice region override; null means automatic */
         #[Nullable, StringType]
-        public readonly ?string $rtc_region = null,
+        public readonly string|Optional|null $rtc_region,
 
-        /** @var int|null Video quality mode: 1 (AUTO) or 2 (FULL/720p) */
+        /** @var int|Optional Video quality mode: 1 (AUTO) or 2 (FULL/720p) */
         #[Nullable, IntegerType, In(1, 2)]
-        public readonly ?int $video_quality_mode = null,
+        public readonly int|Optional $video_quality_mode,
 
-        /** @var int|null Number of messages in a thread (excludes initial/deleted) */
+        /** @var int|Optional Number of messages in a thread (excludes initial/deleted) */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $message_count = null,
+        public readonly int|Optional $message_count,
 
-        /** @var int|null Approximate member count for a thread; capped at 50 */
+        /** @var int|Optional Approximate member count for a thread; capped at 50 */
         #[Nullable, IntegerType, Min(0), Max(50)]
-        public readonly ?int $member_count = null,
+        public readonly int|Optional $member_count,
 
-        /** @var int|null Default auto-archive duration for threads in minutes */
+        /** @var int|Optional Default auto-archive duration for threads in minutes */
         #[Nullable, IntegerType, In(60, 1440, 4320, 10080)]
-        public readonly ?int $default_auto_archive_duration = null,
+        public readonly int|Optional $default_auto_archive_duration,
 
-        /** @var string|null Computed permissions string; only present in resolved interaction data */
+        /** @var string|Optional Computed permissions string; only present in resolved interaction data */
         #[Nullable, StringType]
-        public readonly ?string $permissions = null,
+        public readonly string|Optional $permissions,
 
-        /** @var int|null Channel flags bitfield */
+        /** @var int|Optional Channel flags bitfield */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $flags = null,
+        public readonly int|Optional $flags,
 
-        /** @var int|null Lifetime count of messages sent in a thread; does not decrement on deletion */
+        /** @var int|Optional Lifetime count of messages sent in a thread; does not decrement on deletion */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $total_message_sent = null,
+        public readonly int|Optional $total_message_sent,
 
-        /** @var array<int, string>|null Applied tag snowflakes for forum/media threads (max 5) */
+        /** @var array<int, string>|Optional Applied tag snowflakes for forum/media threads (max 5) */
         #[Nullable, ArrayType]
-        public readonly ?array $applied_tags = null,
+        public readonly array|Optional $applied_tags,
 
-        /** @var int|null Forum sort order: 0 (LATEST_ACTIVITY) or 1 (CREATION_DATE) */
+        /** @var int|Optional Forum sort order: 0 (LATEST_ACTIVITY) or 1 (CREATION_DATE) */
         #[Nullable, IntegerType, In(0, 1)]
-        public readonly ?int $default_sort_order = null,
+        public readonly int|Optional|null $default_sort_order,
 
-        /** @var int|null Forum layout: 0 (NOT_SET), 1 (LIST_VIEW), 2 (GALLERY_VIEW) */
+        /** @var int|Optional Forum layout: 0 (NOT_SET), 1 (LIST_VIEW), 2 (GALLERY_VIEW) */
         #[Nullable, IntegerType, In(0, 1, 2)]
-        public readonly ?int $default_forum_layout = null,
+        public readonly int|Optional $default_forum_layout,
 
-        /** @var int|null Slowmode applied to newly created threads; does not update existing threads */
+        /** @var int|Optional Slowmode applied to newly created threads; does not update existing threads */
         #[Nullable, IntegerType, Min(0), Max(21600)]
-        public readonly ?int $default_thread_rate_limit_per_user = null,
+        public readonly int|Optional $default_thread_rate_limit_per_user,
 
-        /** @var array<int, array<string, mixed>>|null Explicit permission overwrite objects */
+        /** @var array<int, array<string, mixed>>|Optional Explicit permission overwrite objects */
         #[Nullable, ArrayType]
-        public readonly ?array $permission_overwrites = null,
+        public readonly array|Optional $permission_overwrites,
 
-        /** @var array<int, array<string, mixed>>|null Group DM recipients */
+        /** @var array<int, array<string, mixed>>|Optional Group DM recipients */
         #[Nullable, ArrayType]
-        public readonly ?array $recipients = null,
+        public readonly array|Optional $recipients,
 
-        /** @var string|null Group DM icon hash */
+        /** @var string|Optional Group DM icon hash */
         #[Nullable, StringType]
-        public readonly ?string $icon = null,
+        public readonly string|Optional|null $icon,
 
-        /** @var array<int, array<string, mixed>>|null Available tags for GUILD_FORUM/GUILD_MEDIA channels (max 20) */
+        /** @var array<int, array<string, mixed>>|Optional Available tags for GUILD_FORUM/GUILD_MEDIA channels (max 20) */
         #[Nullable, ArrayType]
-        public readonly ?array $available_tags = null,
+        public readonly array|Optional $available_tags,
 
-        /** @var array<string, mixed>|null Default reaction emoji for forum/media threads */
+        /** @var array<string, mixed>|Optional Default reaction emoji for forum/media threads */
         #[Nullable, ArrayType]
-        public readonly ?array $default_reaction_emoji = null,
+        public readonly array|Optional $default_reaction_emoji,
 
-        /** @var array<string, mixed>|null Thread-specific metadata fields */
+        /** @var array<string, mixed>|Optional Thread-specific metadata fields */
         #[Nullable, ArrayType]
-        public readonly ?array $thread_metadata = null,
+        public readonly array|Optional $thread_metadata,
 
-        /** @var array<string, mixed>|null Current user's thread member object; only on certain endpoints */
+        /** @var array<string, mixed>|Optional Current user's thread member object; only on certain endpoints */
         #[Nullable, ArrayType]
-        public readonly ?array $member = null,
+        public readonly array|Optional $member,
     ) {}
 
     public static function rules(): array

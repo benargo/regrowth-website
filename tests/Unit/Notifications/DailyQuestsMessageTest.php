@@ -40,7 +40,7 @@ class DailyQuestsMessageTest extends TestCase
     {
         $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
 
-        $this->assertSame(DiscordDriver::class, $notification->via($this->notifiable));
+        $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
     }
 
     // -------------------------------------------------------------------------
@@ -180,47 +180,13 @@ class DailyQuestsMessageTest extends TestCase
     public function it_includes_the_sender_nickname_in_the_footer(): void
     {
         $user = User::factory()->create(['nickname' => 'Arthas']);
-        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], $user);
+        $notification = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->withSender($user);
 
         $footer = $notification->toMessage()->embeds[0]->footer;
 
         $this->assertNotNull($footer);
         $this->assertStringContainsString('Arthas', $footer->text);
-    }
-
-    // -------------------------------------------------------------------------
-    // relationships()
-    // -------------------------------------------------------------------------
-
-    #[Test]
-    public function it_returns_empty_array_for_relationships_when_all_quests_are_null(): void
-    {
-        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]);
-
-        $this->assertEmpty($notification->relationships());
-    }
-
-    #[Test]
-    public function it_returns_only_non_null_quests_in_relationships_keyed_by_lowercase_type(): void
-    {
-        $cooking = DailyQuest::factory()->cooking()->create();
-        $pvp = DailyQuest::factory()->pvp()->create();
-
-        $notification = new DailyQuestsMessage([
-            'Cooking' => $cooking,
-            'Fishing' => null,
-            'Dungeon' => null,
-            'Heroic' => null,
-            'PvP' => $pvp,
-        ]);
-
-        $relationships = $notification->relationships();
-
-        $this->assertCount(2, $relationships);
-        $this->assertArrayHasKey('cooking', $relationships);
-        $this->assertArrayHasKey('pvp', $relationships);
-        $this->assertTrue($relationships['cooking']->is($cooking));
-        $this->assertTrue($relationships['pvp']->is($pvp));
     }
 
     // -------------------------------------------------------------------------
@@ -237,36 +203,15 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame(DailyQuestsMessage::class, $data['type']);
         $this->assertSame($this->notifiable->channel()->id, $data['channel_id']);
         $this->assertArrayHasKey('payload', $data);
-        $this->assertArrayHasKey('related_models', $data);
         $this->assertNull($data['created_by_user_id']);
-    }
-
-    #[Test]
-    public function it_includes_related_models_in_database_payload(): void
-    {
-        $cooking = DailyQuest::factory()->cooking()->create();
-
-        $notification = new DailyQuestsMessage([
-            'Cooking' => $cooking,
-            'Fishing' => null,
-            'Dungeon' => null,
-            'Heroic' => null,
-            'PvP' => null,
-        ]);
-
-        $data = $notification->toDatabase($this->notifiable);
-
-        $this->assertCount(1, $data['related_models']);
-        $this->assertSame('cooking', $data['related_models'][0]['name']);
-        $this->assertSame(DailyQuest::class, $data['related_models'][0]['model']);
-        $this->assertSame($cooking->id, $data['related_models'][0]['key']);
     }
 
     #[Test]
     public function it_includes_the_sender_id_in_the_database_payload(): void
     {
         $user = User::factory()->create();
-        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], $user);
+        $notification = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->withSender($user);
 
         $data = $notification->toDatabase($this->notifiable);
 
@@ -289,7 +234,8 @@ class DailyQuestsMessageTest extends TestCase
     public function it_returns_the_discord_notification_instance_to_update(): void
     {
         $existing = DiscordNotification::factory()->create();
-        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], null, $existing);
+        $notification = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->updatesExisting($existing);
 
         $this->assertSame($existing->id, $notification->updates()->id);
     }
@@ -306,7 +252,8 @@ class DailyQuestsMessageTest extends TestCase
     public function it_returns_the_sender_user(): void
     {
         $user = User::factory()->create();
-        $notification = new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null], $user);
+        $notification = (new DailyQuestsMessage(['Cooking' => null, 'Fishing' => null, 'Dungeon' => null, 'Heroic' => null, 'PvP' => null]))
+            ->withSender($user);
 
         $this->assertSame($user->id, $notification->sender()->id);
     }

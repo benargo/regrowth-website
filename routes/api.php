@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AttendanceNamesController;
 use App\Http\Controllers\Api\BlizzardMediaController;
 use App\Http\Controllers\Api\Discord\GuildResourceController;
+use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
 use App\Http\Controllers\Api\LootCouncil\CommentController;
@@ -34,4 +35,6 @@ Route::middleware(['auth:sanctum', 'can:update,event'])->prefix('/events/{event}
     Route::post('/assignments', [EventAssignmentController::class, 'store'])->name('api.events.assignments.store');
     Route::patch('/assignments/{assignment}', [EventAssignmentController::class, 'update'])->name('api.events.assignments.update');
     Route::delete('/assignments/{assignment}', [EventAssignmentController::class, 'destroy'])->name('api.events.assignments.destroy');
+
+    Route::post('/publish-assignments', PublishAssignmentsController::class)->name('api.events.publish-assignments');
 });

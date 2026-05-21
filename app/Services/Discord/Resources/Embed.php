@@ -9,58 +9,59 @@ use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class Embed extends Data
 {
     public function __construct(
-        /** @var string|null Title of embed */
+        /** @var string|Optional Title of embed */
         #[Nullable, StringType]
-        public readonly ?string $title = null,
+        public readonly string|Optional $title,
 
-        /** @var EmbedType|null Type of embed */
-        public readonly ?EmbedType $type = null,
+        /** @var EmbedType|Optional Type of embed */
+        public readonly EmbedType|Optional $type,
 
-        /** @var string|null Description of embed */
+        /** @var string|Optional Description of embed */
         #[Nullable, StringType]
-        public readonly ?string $description = null,
+        public readonly string|Optional $description,
 
-        /** @var string|null URL of embed */
+        /** @var string|Optional URL of embed */
         #[Nullable, StringType]
-        public readonly ?string $url = null,
+        public readonly string|Optional $url,
 
-        /** @var string|null ISO8601 timestamp of embed content */
+        /** @var string|Optional ISO8601 timestamp of embed content */
         #[Nullable, StringType]
-        public readonly ?string $timestamp = null,
+        public readonly string|Optional $timestamp,
 
-        /** @var int|null Color code of the embed */
+        /** @var int|Optional Color code of the embed */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $color = null,
+        public readonly int|Optional $color,
 
-        /** @var EmbedFooter|null Footer information */
-        public readonly ?EmbedFooter $footer = null,
+        /** @var EmbedFooter|Optional|null Footer information */
+        public readonly EmbedFooter|Optional|null $footer,
 
-        /** @var EmbedMedia|null Image information */
-        public readonly ?EmbedMedia $image = null,
+        /** @var EmbedMedia|Optional|null Image information */
+        public readonly EmbedMedia|Optional|null $image,
 
-        /** @var EmbedMedia|null Thumbnail information */
-        public readonly ?EmbedMedia $thumbnail = null,
+        /** @var EmbedMedia|Optional Thumbnail information */
+        public readonly EmbedMedia|Optional $thumbnail,
 
-        /** @var EmbedVideo|null Video information */
-        public readonly ?EmbedVideo $video = null,
+        /** @var EmbedVideo|Optional Video information */
+        public readonly EmbedVideo|Optional $video,
 
-        /** @var EmbedProvider|null Provider information */
-        public readonly ?EmbedProvider $provider = null,
+        /** @var EmbedProvider|Optional Provider information */
+        public readonly EmbedProvider|Optional $provider,
 
-        /** @var EmbedAuthor|null Author information */
-        public readonly ?EmbedAuthor $author = null,
+        /** @var EmbedAuthor|Optional Author information */
+        public readonly EmbedAuthor|Optional $author,
 
-        /** @var array<EmbedField>|null Up to 25 field objects */
+        /** @var array<EmbedField>|Optional Up to 25 field objects */
         #[DataCollectionOf(EmbedField::class)]
-        public readonly ?array $fields = null,
+        public readonly array|Optional $fields,
 
-        /** @var int|null Combined bitfield of embed flags */
+        /** @var int|Optional Combined bitfield of embed flags */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $flags = null,
+        public readonly int|Optional $flags,
     ) {}
 
     public static function rules(): array

@@ -38,11 +38,7 @@ class RaidingPagesTest extends TestCase
         }
 
         $this->mock(Discord::class, function ($mock) {
-            $mock->shouldReceive('getChannel')->andReturn(new Channel(
-                id: '123456789',
-                name: 'raid-planning',
-                position: 1,
-            ));
+            $mock->shouldReceive('getChannel')->andReturn(Channel::from(['id' => '123456789', 'name' => 'raid-planning', 'position' => 1]));
         });
     }
 

@@ -6,6 +6,7 @@ use Spatie\LaravelData\Attributes\Validation\BooleanType;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class EmbedField extends Data
 {
@@ -18,8 +19,8 @@ class EmbedField extends Data
         #[StringType]
         public readonly string $value,
 
-        /** @var bool|null Whether this field should display inline */
+        /** @var bool|Optional Whether this field should display inline */
         #[Nullable, BooleanType]
-        public readonly ?bool $inline = null,
+        public readonly bool|Optional $inline,
     ) {}
 }

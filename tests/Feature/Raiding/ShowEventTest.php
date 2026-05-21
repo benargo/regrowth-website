@@ -41,11 +41,7 @@ class ShowEventTest extends TestCase
 
         $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getChannel')->andReturn(
-                new Channel(
-                    id: '123456789',
-                    name: 'raids',
-                    position: 1,
-                ),
+                Channel::from(['id' => '123456789', 'name' => 'raids', 'position' => 1]),
             )->byDefault();
         });
     }

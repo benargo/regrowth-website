@@ -208,6 +208,9 @@ class DiscordAuthenticationTest extends DashboardTestCase
             'avatar' => 'guild_avatar_hash',
             'banner' => null,
             'roles' => ['829022020301094922'],
+            'deaf' => false,
+            'mute' => false,
+            'flags' => 0,
         ];
 
         $this->mock(Discord::class, function ($mock) use ($defaultData, $overrides) {
