@@ -26,9 +26,12 @@ class GuildResourceControllerTest extends TestCase
     private function fakeGuildMember(string $userId, string $username, ?string $nickname = null): GuildMember
     {
         return GuildMember::from([
-            'user' => ['id' => $userId, 'username' => $username, 'discriminator' => '0'],
+            'user' => ['id' => $userId, 'username' => $username, 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0],
             'nick' => $nickname,
             'roles' => [],
+            'deaf' => false,
+            'mute' => false,
+            'flags' => 0,
         ]);
     }
 

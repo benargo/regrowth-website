@@ -7,10 +7,53 @@ use App\Services\Discord\Resources\Attachment;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class AttachmentTest extends TestCase
 {
+    #[Test]
+    public function attachment_can_be_constructed_directly(): void
+    {
+        $attachment = new Attachment(
+            id: '123456789012345678',
+            filename: 'file.png',
+            size: 1024,
+            url: 'https://cdn.discordapp.com/attachments/file.png',
+            proxy_url: 'https://media.discordapp.net/attachments/file.png',
+            title: Optional::create(),
+            description: Optional::create(),
+            content_type: Optional::create(),
+            height: Optional::create(),
+            width: Optional::create(),
+            placeholder: Optional::create(),
+            placeholder_version: Optional::create(),
+            ephemeral: Optional::create(),
+            duration_secs: Optional::create(),
+            waveform: Optional::create(),
+            flags: Optional::create(),
+            clip_created_at: Optional::create(),
+        );
+
+        $this->assertSame('123456789012345678', $attachment->id);
+        $this->assertSame('file.png', $attachment->filename);
+        $this->assertSame(1024, $attachment->size);
+        $this->assertSame('https://cdn.discordapp.com/attachments/file.png', $attachment->url);
+        $this->assertSame('https://media.discordapp.net/attachments/file.png', $attachment->proxy_url);
+        $this->assertInstanceOf(Optional::class, $attachment->title);
+        $this->assertInstanceOf(Optional::class, $attachment->description);
+        $this->assertInstanceOf(Optional::class, $attachment->content_type);
+        $this->assertInstanceOf(Optional::class, $attachment->height);
+        $this->assertInstanceOf(Optional::class, $attachment->width);
+        $this->assertInstanceOf(Optional::class, $attachment->placeholder);
+        $this->assertInstanceOf(Optional::class, $attachment->placeholder_version);
+        $this->assertInstanceOf(Optional::class, $attachment->ephemeral);
+        $this->assertInstanceOf(Optional::class, $attachment->duration_secs);
+        $this->assertInstanceOf(Optional::class, $attachment->waveform);
+        $this->assertInstanceOf(Optional::class, $attachment->flags);
+        $this->assertInstanceOf(Optional::class, $attachment->clip_created_at);
+    }
+
     private function minimalPayload(): array
     {
         return [
@@ -35,22 +78,22 @@ class AttachmentTest extends TestCase
     }
 
     #[Test]
-    public function attachment_optional_fields_default_to_null(): void
+    public function attachment_optional_fields_default_to_optional(): void
     {
         $attachment = Attachment::from($this->minimalPayload());
 
-        $this->assertNull($attachment->title);
-        $this->assertNull($attachment->description);
-        $this->assertNull($attachment->content_type);
-        $this->assertNull($attachment->height);
-        $this->assertNull($attachment->width);
-        $this->assertNull($attachment->placeholder);
-        $this->assertNull($attachment->placeholder_version);
-        $this->assertNull($attachment->ephemeral);
-        $this->assertNull($attachment->duration_secs);
-        $this->assertNull($attachment->waveform);
-        $this->assertNull($attachment->flags);
-        $this->assertNull($attachment->clip_created_at);
+        $this->assertInstanceOf(Optional::class, $attachment->title);
+        $this->assertInstanceOf(Optional::class, $attachment->description);
+        $this->assertInstanceOf(Optional::class, $attachment->content_type);
+        $this->assertInstanceOf(Optional::class, $attachment->height);
+        $this->assertInstanceOf(Optional::class, $attachment->width);
+        $this->assertInstanceOf(Optional::class, $attachment->placeholder);
+        $this->assertInstanceOf(Optional::class, $attachment->placeholder_version);
+        $this->assertInstanceOf(Optional::class, $attachment->ephemeral);
+        $this->assertInstanceOf(Optional::class, $attachment->duration_secs);
+        $this->assertInstanceOf(Optional::class, $attachment->waveform);
+        $this->assertInstanceOf(Optional::class, $attachment->flags);
+        $this->assertInstanceOf(Optional::class, $attachment->clip_created_at);
     }
 
     #[Test]

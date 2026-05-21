@@ -8,6 +8,7 @@ use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class Role extends Data
 {
@@ -47,15 +48,15 @@ class Role extends Data
         #[IntegerType, Min(0)]
         public readonly int $flags,
 
-        /** @var string|null Role icon hash */
+        /** @var string|Optional Role icon hash */
         #[Nullable, StringType]
-        public readonly ?string $icon = null,
+        public readonly string|Optional $icon,
 
-        /** @var string|null Role unicode emoji */
+        /** @var string|Optional|null Role unicode emoji */
         #[Nullable, StringType]
-        public readonly ?string $unicode_emoji = null,
+        public readonly string|Optional|null $unicode_emoji,
 
-        /** @var RoleTags|null The tags this role has */
-        public readonly ?RoleTags $tags = null,
+        /** @var RoleTags|Optional The tags this role has */
+        public readonly RoleTags|Optional $tags,
     ) {}
 }

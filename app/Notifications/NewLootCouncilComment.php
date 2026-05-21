@@ -40,13 +40,13 @@ class NewLootCouncilComment extends Notification
         ]);
 
         return MessagePayload::from([
-            'embeds' => [new Embed(
-                title: 'New comment received',
-                url: $itemUrl,
-                color: 5814783,
-                description: $description,
-                timestamp: $this->comment->created_at->toIso8601String(),
-            )],
+            'embeds' => [Embed::from([
+                'title' => 'New comment received',
+                'url' => $itemUrl,
+                'color' => 5814783,
+                'description' => $description,
+                'timestamp' => $this->comment->created_at->toIso8601String(),
+            ])],
         ]);
     }
 

@@ -4,13 +4,14 @@ namespace App\Services\Discord\Payloads;
 
 use Illuminate\Validation\Validator;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class ChannelMessagesQueryString extends Data
 {
     public function __construct(
-        public readonly Message|string|null $around = null,
-        public readonly Message|string|null $before = null,
-        public readonly Message|string|null $after = null,
+        public readonly Message|string|Optional $around,
+        public readonly Message|string|Optional $before,
+        public readonly Message|string|Optional $after,
         public readonly int $limit = 50,
     ) {}
 

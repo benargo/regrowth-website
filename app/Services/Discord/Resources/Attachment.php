@@ -7,6 +7,7 @@ use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class Attachment extends Data
 {
@@ -31,50 +32,50 @@ class Attachment extends Data
         #[StringType]
         public readonly string $proxy_url,
 
-        /** @var string|null Title of the file */
+        /** @var string|Optional Title of the file */
         #[Nullable, StringType]
-        public readonly ?string $title = null,
+        public readonly string|Optional $title,
 
-        /** @var string|null Description / alt-text for the file (max 1024 characters) */
+        /** @var string|Optional Description / alt-text for the file (max 1024 characters) */
         #[Nullable, StringType]
-        public readonly ?string $description = null,
+        public readonly string|Optional $description,
 
-        /** @var string|null Media type of the attachment */
+        /** @var string|Optional Media type of the attachment */
         #[Nullable, StringType]
-        public readonly ?string $content_type = null,
+        public readonly string|Optional $content_type,
 
-        /** @var int|null Height of the file if image or video */
+        /** @var int|Optional Height of the file if image or video */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $height = null,
+        public readonly int|Optional $height,
 
-        /** @var int|null Width of the file if image or video */
+        /** @var int|Optional Width of the file if image or video */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $width = null,
+        public readonly int|Optional $width,
 
-        /** @var string|null Thumbhash placeholder if image or video */
+        /** @var string|Optional Thumbhash placeholder if image or video */
         #[Nullable, StringType]
-        public readonly ?string $placeholder = null,
+        public readonly string|Optional $placeholder,
 
-        /** @var int|null Version of the placeholder */
+        /** @var int|Optional Version of the placeholder */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $placeholder_version = null,
+        public readonly int|Optional $placeholder_version,
 
-        /** @var bool|null Whether the attachment is ephemeral */
-        public readonly ?bool $ephemeral = null,
+        /** @var bool|Optional Whether the attachment is ephemeral */
+        public readonly bool|Optional $ephemeral,
 
-        /** @var float|null Duration in seconds for voice messages */
-        public readonly ?float $duration_secs = null,
+        /** @var float|Optional Duration in seconds for voice messages */
+        public readonly float|Optional $duration_secs,
 
-        /** @var string|null Base64-encoded waveform for voice messages */
+        /** @var string|Optional Base64-encoded waveform for voice messages */
         #[Nullable, StringType]
-        public readonly ?string $waveform = null,
+        public readonly string|Optional $waveform,
 
-        /** @var int|null Combined bitfield of AttachmentFlag values */
+        /** @var int|Optional Combined bitfield of AttachmentFlag values */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $flags = null,
+        public readonly int|Optional $flags,
 
-        /** @var string|null ISO8601 timestamp; for Clips, when the clip was created */
+        /** @var string|Optional ISO8601 timestamp; for Clips, when the clip was created */
         #[Nullable, StringType]
-        public readonly ?string $clip_created_at = null,
+        public readonly string|Optional $clip_created_at,
     ) {}
 }

@@ -7,6 +7,7 @@ use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class EmbedMedia extends Data
 {
@@ -15,36 +16,36 @@ class EmbedMedia extends Data
         #[StringType]
         public readonly string $url,
 
-        /** @var string|null Proxied URL of the image */
+        /** @var string|Optional Proxied URL of the image */
         #[Nullable, StringType]
-        public readonly ?string $proxy_url = null,
+        public readonly string|Optional $proxy_url,
 
-        /** @var int|null Height of the image */
+        /** @var int|Optional Height of the image */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $height = null,
+        public readonly int|Optional $height,
 
-        /** @var int|null Width of the image */
+        /** @var int|Optional Width of the image */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $width = null,
+        public readonly int|Optional $width,
 
-        /** @var string|null Media type classification */
+        /** @var string|Optional Media type classification */
         #[Nullable, StringType]
-        public readonly ?string $content_type = null,
+        public readonly string|Optional $content_type,
 
-        /** @var string|null Thumbhash placeholder */
+        /** @var string|Optional Thumbhash placeholder */
         #[Nullable, StringType]
-        public readonly ?string $placeholder = null,
+        public readonly string|Optional $placeholder,
 
-        /** @var int|null Version of the placeholder */
+        /** @var int|Optional Version of the placeholder */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $placeholder_version = null,
+        public readonly int|Optional $placeholder_version,
 
-        /** @var string|null Alternative text for accessibility */
+        /** @var string|Optional Alternative text for accessibility */
         #[Nullable, StringType]
-        public readonly ?string $description = null,
+        public readonly string|Optional $description,
 
-        /** @var int|null Combined bitfield of embed media flags */
+        /** @var int|Optional Combined bitfield of embed media flags */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $flags = null,
+        public readonly int|Optional $flags,
     ) {}
 }

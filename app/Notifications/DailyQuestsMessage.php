@@ -55,25 +55,25 @@ class DailyQuestsMessage extends Notification
         }
 
         if ($this->sender()) {
-            $footer = new EmbedFooter(
-                text: 'Posted by '.$this->sender()->nickname.'.',
-                icon_url: $this->sender()->avatarUrl,
-            );
+            $footer = EmbedFooter::from([
+                'text' => 'Posted by '.$this->sender()->nickname.'.',
+                'icon_url' => $this->sender()->avatarUrl,
+            ]);
         }
 
         $now = now();
 
         return MessagePayload::from([
             'content' => $this->subscribersRole ? "<@&{$this->subscribersRole->id}>" : '',
-            'embeds' => [new Embed(
-                title: '📜 Today\'s Daily Quests',
-                description: 'Here are the daily quests for '.$now->format('l, d F Y').'.',
-                url: route('daily-quests.index'),
-                color: 15844367, // Gold color
-                fields: $embedFields->all(),
-                timestamp: $now->toIso8601String(),
-                footer: $footer ?? null,
-            )],
+            'embeds' => [Embed::from([
+                'title' => '📜 Today\'s Daily Quests',
+                'description' => 'Here are the daily quests for '.$now->format('l, d F Y').'.',
+                'url' => route('daily-quests.index'),
+                'color' => 15844367, // Gold color
+                'fields' => $embedFields->all(),
+                'timestamp' => $now->toIso8601String(),
+                'footer' => $footer ?? null,
+            ])],
         ]);
     }
 

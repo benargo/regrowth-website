@@ -32,15 +32,15 @@ class GrmUploadCompleted extends Notification
         }
 
         return MessagePayload::from([
-            'embeds' => [new Embed(
-                title: 'GRM Upload Processing Completed',
-                description: 'Officers should make sure they update the RegrowthLootTool with new data.',
-                url: route('dashboard.addon.export'),
-                color: 5763719,
-                image: new EmbedMedia(config('app.url').'/images/jaina_thumbsup.webp'),
-                fields: $fields,
-                timestamp: now()->toIso8601String(),
-            )],
+            'embeds' => [Embed::from([
+                'title' => 'GRM Upload Processing Completed',
+                'description' => 'Officers should make sure they update the RegrowthLootTool with new data.',
+                'url' => route('dashboard.addon.export'),
+                'color' => 5763719,
+                'image' => EmbedMedia::from(['url' => config('app.url').'/images/jaina_thumbsup.webp']),
+                'fields' => $fields,
+                'timestamp' => now()->toIso8601String(),
+            ])],
         ]);
     }
 

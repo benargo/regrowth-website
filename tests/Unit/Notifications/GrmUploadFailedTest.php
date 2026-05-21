@@ -8,6 +8,7 @@ use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel as ChannelResource;
 use App\Services\Discord\Resources\Embed;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class GrmUploadFailedTest extends TestCase
@@ -42,7 +43,7 @@ class GrmUploadFailedTest extends TestCase
         $this->assertSame(15158332, $embed->color);
         $this->assertStringContainsString('Connection timed out', $embed->description);
         $this->assertStringContainsString('failed completely', $embed->description);
-        $this->assertNull($embed->fields);
+        $this->assertInstanceOf(Optional::class, $embed->fields);
     }
 
     #[Test]

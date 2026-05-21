@@ -7,10 +7,89 @@ use App\Services\Discord\Resources\Channel;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class ChannelTest extends TestCase
 {
+    #[Test]
+    public function channel_can_be_constructed_directly(): void
+    {
+        $channel = new Channel(
+            id: '123456789012345678',
+            type: Optional::create(),
+            guild_id: Optional::create(),
+            position: Optional::create(),
+            name: Optional::create(),
+            topic: Optional::create(),
+            nsfw: Optional::create(),
+            last_message_id: Optional::create(),
+            bitrate: Optional::create(),
+            user_limit: Optional::create(),
+            rate_limit_per_user: Optional::create(),
+            owner_id: Optional::create(),
+            application_id: Optional::create(),
+            managed: Optional::create(),
+            parent_id: Optional::create(),
+            last_pin_timestamp: Optional::create(),
+            rtc_region: Optional::create(),
+            video_quality_mode: Optional::create(),
+            message_count: Optional::create(),
+            member_count: Optional::create(),
+            default_auto_archive_duration: Optional::create(),
+            permissions: Optional::create(),
+            flags: Optional::create(),
+            total_message_sent: Optional::create(),
+            applied_tags: Optional::create(),
+            default_sort_order: Optional::create(),
+            default_forum_layout: Optional::create(),
+            default_thread_rate_limit_per_user: Optional::create(),
+            permission_overwrites: Optional::create(),
+            recipients: Optional::create(),
+            icon: Optional::create(),
+            available_tags: Optional::create(),
+            default_reaction_emoji: Optional::create(),
+            thread_metadata: Optional::create(),
+            member: Optional::create(),
+        );
+
+        $this->assertSame('123456789012345678', $channel->id);
+        $this->assertInstanceOf(Optional::class, $channel->type);
+        $this->assertInstanceOf(Optional::class, $channel->guild_id);
+        $this->assertInstanceOf(Optional::class, $channel->position);
+        $this->assertInstanceOf(Optional::class, $channel->name);
+        $this->assertInstanceOf(Optional::class, $channel->topic);
+        $this->assertInstanceOf(Optional::class, $channel->nsfw);
+        $this->assertInstanceOf(Optional::class, $channel->last_message_id);
+        $this->assertInstanceOf(Optional::class, $channel->bitrate);
+        $this->assertInstanceOf(Optional::class, $channel->user_limit);
+        $this->assertInstanceOf(Optional::class, $channel->rate_limit_per_user);
+        $this->assertInstanceOf(Optional::class, $channel->owner_id);
+        $this->assertInstanceOf(Optional::class, $channel->application_id);
+        $this->assertInstanceOf(Optional::class, $channel->managed);
+        $this->assertInstanceOf(Optional::class, $channel->parent_id);
+        $this->assertInstanceOf(Optional::class, $channel->last_pin_timestamp);
+        $this->assertInstanceOf(Optional::class, $channel->rtc_region);
+        $this->assertInstanceOf(Optional::class, $channel->video_quality_mode);
+        $this->assertInstanceOf(Optional::class, $channel->message_count);
+        $this->assertInstanceOf(Optional::class, $channel->member_count);
+        $this->assertInstanceOf(Optional::class, $channel->default_auto_archive_duration);
+        $this->assertInstanceOf(Optional::class, $channel->permissions);
+        $this->assertInstanceOf(Optional::class, $channel->flags);
+        $this->assertInstanceOf(Optional::class, $channel->total_message_sent);
+        $this->assertInstanceOf(Optional::class, $channel->applied_tags);
+        $this->assertInstanceOf(Optional::class, $channel->default_sort_order);
+        $this->assertInstanceOf(Optional::class, $channel->default_forum_layout);
+        $this->assertInstanceOf(Optional::class, $channel->default_thread_rate_limit_per_user);
+        $this->assertInstanceOf(Optional::class, $channel->permission_overwrites);
+        $this->assertInstanceOf(Optional::class, $channel->recipients);
+        $this->assertInstanceOf(Optional::class, $channel->icon);
+        $this->assertInstanceOf(Optional::class, $channel->available_tags);
+        $this->assertInstanceOf(Optional::class, $channel->default_reaction_emoji);
+        $this->assertInstanceOf(Optional::class, $channel->thread_metadata);
+        $this->assertInstanceOf(Optional::class, $channel->member);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -32,43 +111,43 @@ class ChannelTest extends TestCase
     }
 
     #[Test]
-    public function all_optional_fields_default_to_null(): void
+    public function all_optional_fields_default_to_optional(): void
     {
         $channel = Channel::from($this->minimalPayload());
 
-        $this->assertNull($channel->guild_id);
-        $this->assertNull($channel->position);
-        $this->assertNull($channel->name);
-        $this->assertNull($channel->topic);
-        $this->assertNull($channel->nsfw);
-        $this->assertNull($channel->last_message_id);
-        $this->assertNull($channel->bitrate);
-        $this->assertNull($channel->user_limit);
-        $this->assertNull($channel->rate_limit_per_user);
-        $this->assertNull($channel->owner_id);
-        $this->assertNull($channel->application_id);
-        $this->assertNull($channel->managed);
-        $this->assertNull($channel->parent_id);
-        $this->assertNull($channel->last_pin_timestamp);
-        $this->assertNull($channel->rtc_region);
-        $this->assertNull($channel->video_quality_mode);
-        $this->assertNull($channel->message_count);
-        $this->assertNull($channel->member_count);
-        $this->assertNull($channel->default_auto_archive_duration);
-        $this->assertNull($channel->permissions);
-        $this->assertNull($channel->flags);
-        $this->assertNull($channel->total_message_sent);
-        $this->assertNull($channel->applied_tags);
-        $this->assertNull($channel->default_sort_order);
-        $this->assertNull($channel->default_forum_layout);
-        $this->assertNull($channel->default_thread_rate_limit_per_user);
-        $this->assertNull($channel->permission_overwrites);
-        $this->assertNull($channel->recipients);
-        $this->assertNull($channel->icon);
-        $this->assertNull($channel->available_tags);
-        $this->assertNull($channel->default_reaction_emoji);
-        $this->assertNull($channel->thread_metadata);
-        $this->assertNull($channel->member);
+        $this->assertInstanceOf(Optional::class, $channel->guild_id);
+        $this->assertInstanceOf(Optional::class, $channel->position);
+        $this->assertInstanceOf(Optional::class, $channel->name);
+        $this->assertInstanceOf(Optional::class, $channel->topic);
+        $this->assertInstanceOf(Optional::class, $channel->nsfw);
+        $this->assertInstanceOf(Optional::class, $channel->last_message_id);
+        $this->assertInstanceOf(Optional::class, $channel->bitrate);
+        $this->assertInstanceOf(Optional::class, $channel->user_limit);
+        $this->assertInstanceOf(Optional::class, $channel->rate_limit_per_user);
+        $this->assertInstanceOf(Optional::class, $channel->owner_id);
+        $this->assertInstanceOf(Optional::class, $channel->application_id);
+        $this->assertInstanceOf(Optional::class, $channel->managed);
+        $this->assertInstanceOf(Optional::class, $channel->parent_id);
+        $this->assertInstanceOf(Optional::class, $channel->last_pin_timestamp);
+        $this->assertInstanceOf(Optional::class, $channel->rtc_region);
+        $this->assertInstanceOf(Optional::class, $channel->video_quality_mode);
+        $this->assertInstanceOf(Optional::class, $channel->message_count);
+        $this->assertInstanceOf(Optional::class, $channel->member_count);
+        $this->assertInstanceOf(Optional::class, $channel->default_auto_archive_duration);
+        $this->assertInstanceOf(Optional::class, $channel->permissions);
+        $this->assertInstanceOf(Optional::class, $channel->flags);
+        $this->assertInstanceOf(Optional::class, $channel->total_message_sent);
+        $this->assertInstanceOf(Optional::class, $channel->applied_tags);
+        $this->assertInstanceOf(Optional::class, $channel->default_sort_order);
+        $this->assertInstanceOf(Optional::class, $channel->default_forum_layout);
+        $this->assertInstanceOf(Optional::class, $channel->default_thread_rate_limit_per_user);
+        $this->assertInstanceOf(Optional::class, $channel->permission_overwrites);
+        $this->assertInstanceOf(Optional::class, $channel->recipients);
+        $this->assertInstanceOf(Optional::class, $channel->icon);
+        $this->assertInstanceOf(Optional::class, $channel->available_tags);
+        $this->assertInstanceOf(Optional::class, $channel->default_reaction_emoji);
+        $this->assertInstanceOf(Optional::class, $channel->thread_metadata);
+        $this->assertInstanceOf(Optional::class, $channel->member);
     }
 
     #[Test]

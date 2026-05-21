@@ -9,25 +9,54 @@ use App\Services\Discord\Resources\MessageReference;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class MessagePayloadTest extends TestCase
 {
     #[Test]
+    public function message_payload_can_be_constructed_directly(): void
+    {
+        $payload = new MessagePayload(
+            content: Optional::create(),
+            nonce: Optional::create(),
+            tts: Optional::create(),
+            embeds: Optional::create(),
+            message_reference: Optional::create(),
+            sticker_ids: Optional::create(),
+            payload_json: Optional::create(),
+            attachments: Optional::create(),
+            flags: Optional::create(),
+            enforce_nonce: Optional::create(),
+        );
+
+        $this->assertInstanceOf(Optional::class, $payload->content);
+        $this->assertInstanceOf(Optional::class, $payload->nonce);
+        $this->assertInstanceOf(Optional::class, $payload->tts);
+        $this->assertInstanceOf(Optional::class, $payload->embeds);
+        $this->assertInstanceOf(Optional::class, $payload->message_reference);
+        $this->assertInstanceOf(Optional::class, $payload->sticker_ids);
+        $this->assertInstanceOf(Optional::class, $payload->payload_json);
+        $this->assertInstanceOf(Optional::class, $payload->attachments);
+        $this->assertInstanceOf(Optional::class, $payload->flags);
+        $this->assertInstanceOf(Optional::class, $payload->enforce_nonce);
+    }
+
+    #[Test]
     public function message_payload_constructs_with_all_fields_optional(): void
     {
         $payload = MessagePayload::from([]);
 
-        $this->assertNull($payload->content);
-        $this->assertNull($payload->nonce);
-        $this->assertNull($payload->tts);
-        $this->assertNull($payload->embeds);
-        $this->assertNull($payload->message_reference);
-        $this->assertNull($payload->sticker_ids);
-        $this->assertNull($payload->payload_json);
-        $this->assertNull($payload->attachments);
-        $this->assertNull($payload->flags);
-        $this->assertNull($payload->enforce_nonce);
+        $this->assertInstanceOf(Optional::class, $payload->content);
+        $this->assertInstanceOf(Optional::class, $payload->nonce);
+        $this->assertInstanceOf(Optional::class, $payload->tts);
+        $this->assertInstanceOf(Optional::class, $payload->embeds);
+        $this->assertInstanceOf(Optional::class, $payload->message_reference);
+        $this->assertInstanceOf(Optional::class, $payload->sticker_ids);
+        $this->assertInstanceOf(Optional::class, $payload->payload_json);
+        $this->assertInstanceOf(Optional::class, $payload->attachments);
+        $this->assertInstanceOf(Optional::class, $payload->flags);
+        $this->assertInstanceOf(Optional::class, $payload->enforce_nonce);
     }
 
     #[Test]

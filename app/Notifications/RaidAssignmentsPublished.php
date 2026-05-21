@@ -77,16 +77,16 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
         $color = RaidColor::fromRaidId($raids);
 
         return MessagePayload::from([
-            'embeds' => [new Embed(
-                title: 'Assignments posted for tonight!',
-                type: EmbedType::Rich,
-                description: 'Assignments for tonight have been posted. Please familiarise yourself with your duties this evening.',
-                url: route('raiding.plans.show', ['event' => $this->event]),
-                color: $color->value,
-                footer: $this->embedFooter(),
-                image: $this->embedMedia(),
-                timestamp: now()->toIso8601String(),
-            )],
+            'embeds' => [Embed::from([
+                'title' => 'Assignments posted for tonight!',
+                'type' => EmbedType::Rich,
+                'description' => 'Assignments for tonight have been posted. Please familiarise yourself with your duties this evening.',
+                'url' => route('raiding.plans.show', ['event' => $this->event]),
+                'color' => $color->value,
+                'footer' => $this->embedFooter(),
+                'image' => $this->embedMedia(),
+                'timestamp' => now()->toIso8601String(),
+            ])],
         ]);
     }
 
@@ -109,10 +109,10 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
     protected function embedFooter(): ?EmbedFooter
     {
         if ($this->sender()) {
-            return new EmbedFooter(
-                text: "Posted by {$this->sender()->nickname}",
-                icon_url: $this->sender()->avatarUrl,
-            );
+            return EmbedFooter::from([
+                'text' => "Posted by {$this->sender()->nickname}",
+                'icon_url' => $this->sender()->avatarUrl,
+            ]);
         }
 
         return null;
@@ -133,10 +133,10 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
             Storage::disk('public')->put($path, file_get_contents(resource_path($path)));
         }
 
-        return new EmbedMedia(
-            url: Storage::disk('public')->url($path),
-            content_type: 'image/webp',
-            description: 'A blueprint for raid assignments with various notes and markings on it.',
-        );
+        return EmbedMedia::from([
+            'url' => Storage::disk('public')->url($path),
+            'content_type' => 'image/webp',
+            'description' => 'A blueprint for raid assignments with various notes and markings on it.',
+        ]);
     }
 }

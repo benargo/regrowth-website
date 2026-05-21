@@ -27,12 +27,12 @@ class GrmUploadFailed extends Notification
     {
         if ($this->exceptionMessage) {
             return MessagePayload::from([
-                'embeds' => [new Embed(
-                    title: 'GRM Upload Processing Failed',
-                    description: "The GRM upload job failed completely after all retry attempts.\n\n**Error:** {$this->exceptionMessage}",
-                    color: 15158332,
-                    timestamp: now()->toIso8601String(),
-                )],
+                'embeds' => [Embed::from([
+                    'title' => 'GRM Upload Processing Failed',
+                    'description' => "The GRM upload job failed completely after all retry attempts.\n\n**Error:** {$this->exceptionMessage}",
+                    'color' => 15158332,
+                    'timestamp' => now()->toIso8601String(),
+                ])],
             ]);
         }
 
@@ -43,17 +43,17 @@ class GrmUploadFailed extends Notification
         }
 
         return MessagePayload::from([
-            'embeds' => [new Embed(
-                title: 'GRM Upload Processing Completed with Errors',
-                description: "**Errors:**\n{$errorText}",
-                color: 15158332,
-                image: new EmbedMedia(config('app.url').'/images/jaina_broken.webp'),
-                fields: [
+            'embeds' => [Embed::from([
+                'title' => 'GRM Upload Processing Completed with Errors',
+                'description' => "**Errors:**\n{$errorText}",
+                'color' => 15158332,
+                'image' => EmbedMedia::from(['url' => config('app.url').'/images/jaina_broken.webp']),
+                'fields' => [
                     new EmbedField('Processed', (string) $this->processedCount, true),
                     new EmbedField('Errors', (string) $this->errorCount, true),
                 ],
-                timestamp: now()->toIso8601String(),
-            )],
+                'timestamp' => now()->toIso8601String(),
+            ])],
         ]);
     }
 

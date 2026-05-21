@@ -22,13 +22,13 @@ class SyncDiscordRolesTest extends TestCase
      */
     private function discordApiRoles(): Collection
     {
-        $colors = new RoleColors(primary_color: 0);
+        $colors = RoleColors::from(['primary_color' => 0]);
 
         return collect([
-            new Role(id: '000000000000000000', name: '@everyone', colors: $colors, hoist: false, position: 0, permissions: '0', managed: false, mentionable: false, flags: 0),
-            new Role(id: '111111111111111111', name: 'Officer', colors: $colors, hoist: false, position: 10, permissions: '0', managed: false, mentionable: false, flags: 0),
-            new Role(id: '222222222222222222', name: 'Raider', colors: $colors, hoist: false, position: 20, permissions: '0', managed: false, mentionable: false, flags: 0),
-            new Role(id: '333333333333333333', name: 'Member', colors: $colors, hoist: false, position: 30, permissions: '0', managed: false, mentionable: false, flags: 0),
+            Role::from(['id' => '000000000000000000', 'name' => '@everyone', 'colors' => $colors, 'hoist' => false, 'position' => 0, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0]),
+            Role::from(['id' => '111111111111111111', 'name' => 'Officer', 'colors' => $colors, 'hoist' => false, 'position' => 10, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0]),
+            Role::from(['id' => '222222222222222222', 'name' => 'Raider', 'colors' => $colors, 'hoist' => false, 'position' => 20, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0]),
+            Role::from(['id' => '333333333333333333', 'name' => 'Member', 'colors' => $colors, 'hoist' => false, 'position' => 30, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0]),
         ]);
     }
 

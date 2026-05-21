@@ -9,6 +9,7 @@ use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class User extends Data
 {
@@ -25,68 +26,68 @@ class User extends Data
         #[StringType]
         public readonly string $discriminator,
 
-        /** @var string|null The user's display name, if set */
+        /** @var string|Optional|null The user's display name, if set */
         #[Nullable, StringType]
-        public readonly ?string $global_name = null,
+        public readonly string|Optional|null $global_name,
 
-        /** @var string|null The user's avatar hash */
+        /** @var string|Optional|null The user's avatar hash */
         #[Nullable, StringType]
-        public readonly ?string $avatar = null,
+        public readonly string|Optional|null $avatar,
 
-        /** @var bool|null Whether the user belongs to an OAuth2 application */
+        /** @var bool|Optional Whether the user belongs to an OAuth2 application */
         #[Nullable, BooleanType]
-        public readonly ?bool $bot = null,
+        public readonly bool|Optional $bot,
 
-        /** @var bool|null Whether the user is an Official Discord System user */
+        /** @var bool|Optional Whether the user is an Official Discord System user */
         #[Nullable, BooleanType]
-        public readonly ?bool $system = null,
+        public readonly bool|Optional $system,
 
-        /** @var bool|null Whether the user has two-factor authentication enabled */
+        /** @var bool|Optional Whether the user has two-factor authentication enabled */
         #[Nullable, BooleanType]
-        public readonly ?bool $mfa_enabled = null,
+        public readonly bool|Optional $mfa_enabled,
 
-        /** @var string|null The user's banner hash */
+        /** @var string|Optional|null The user's banner hash */
         #[Nullable, StringType]
-        public readonly ?string $banner = null,
+        public readonly string|Optional|null $banner,
 
-        /** @var int|null The user's banner color as a hexadecimal integer */
+        /** @var int|Optional The user's banner color as a hexadecimal integer */
         #[Nullable, IntegerType]
-        public readonly ?int $accent_color = null,
+        public readonly int|Optional $accent_color,
 
-        /** @var string|null The user's chosen language option */
+        /** @var string|Optional The user's chosen language option */
         #[Nullable, StringType]
-        public readonly ?string $locale = null,
+        public readonly string|Optional $locale,
 
-        /** @var bool|null Whether the email on this account has been verified */
+        /** @var bool|Optional Whether the email on this account has been verified */
         #[Nullable, BooleanType]
-        public readonly ?bool $verified = null,
+        public readonly bool|Optional $verified,
 
-        /** @var string|null The user's email address */
+        /** @var string|Optional|null The user's email address */
         #[Nullable, StringType]
-        public readonly ?string $email = null,
+        public readonly string|Optional|null $email,
 
         /** @var int Bitfield of the user's account flags */
         #[IntegerType, Min(0)]
-        public readonly int $flags = 0,
+        public readonly int $flags,
 
-        /** @var int|null The type of Nitro subscription on a user's account */
+        /** @var int|Optional The type of Nitro subscription on a user's account */
         #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $premium_type = null,
+        public readonly int|Optional $premium_type,
 
         /** @var int Bitfield of the user's publicly visible account flags */
         #[IntegerType, Min(0)]
-        public readonly int $public_flags = 0,
+        public readonly int $public_flags,
 
-        /** @var array<string, mixed>|null Data for the user's avatar decoration */
+        /** @var array<string, mixed>|Optional Data for the user's avatar decoration */
         #[Nullable, ArrayType]
-        public readonly ?array $avatar_decoration_data = null,
+        public readonly array|Optional $avatar_decoration_data,
 
-        /** @var array<string, mixed>|null The user's collectibles */
+        /** @var array<string, mixed>|Optional The user's collectibles */
         #[Nullable, ArrayType]
-        public readonly ?array $collectibles = null,
+        public readonly array|Optional $collectibles,
 
-        /** @var array<string, mixed>|null The user's primary guild identity */
+        /** @var array<string, mixed>|Optional The user's primary guild identity */
         #[Nullable, ArrayType]
-        public readonly ?array $primary_guild = null,
+        public readonly array|Optional $primary_guild,
     ) {}
 }
