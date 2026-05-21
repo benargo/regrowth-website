@@ -4,6 +4,7 @@ import Master from "@/Layouts/Master";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 import {
     DndContext,
     DragOverlay,
@@ -374,8 +375,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
             {/* Header */}
             <SharedHeader backgroundClass="bg-officer-meeting" title="Manage Guild Ranks" />
             {/* Content */}
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <div className="flex items-center gap-4">
                         <p className="text-grey-200">Drag and drop to reorder guild ranks.</p>
                         <AutoSaveLabel processing={isSaving} />
@@ -419,8 +419,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                             </DndContext>
                         )}
                     </div>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

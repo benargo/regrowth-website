@@ -1,3 +1,4 @@
+import PrimaryButton from "@/Components/PrimaryButton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     DndContext,
@@ -1164,13 +1165,9 @@ export default function Edit({ template, targetMarkers, raids }) {
                                 </MetaItem>
                             )}
                             <div className="grow" />
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="rounded bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
-                            >
+                            <PrimaryButton type="submit" processing={processing}>
                                 {processing ? "Saving…" : "Save"}
-                            </button>
+                            </PrimaryButton>
                         </MetaCard>
                     </form>
 

@@ -1,6 +1,7 @@
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Pagination from "@/Components/Pagination";
+import PageContainer from "@/Components/PageContainer";
 
 function ActionBadge({ action }) {
     const colors = {
@@ -23,7 +24,7 @@ export default function DailyQuestsAuditLog({ entries }) {
                 title="Daily Quests Audit Log"
                 backgroundClass="bg-dungeons"
             />
-            <div className="container mx-auto px-4 py-8">
+            <PageContainer padding="py-8">
                 {entries.data.length === 0 ? (
                     <p className="text-center text-gray-400">No audit log entries found.</p>
                 ) : (
@@ -61,7 +62,7 @@ export default function DailyQuestsAuditLog({ entries }) {
                         />
                     </>
                 )}
-            </div>
+            </PageContainer>
         </Master>
     );
 }

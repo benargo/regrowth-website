@@ -8,6 +8,9 @@ import InputLabel from "@/Components/InputLabel";
 import Modal from "@/Components/Modal";
 import SharedHeader from "@/Components/SharedHeader";
 import TextInput from "@/Components/TextInput";
+import PageContainer from "@/Components/PageContainer";
+import PrimaryButton from "@/Components/PrimaryButton";
+import SecondaryButton from "@/Components/SecondaryButton";
 
 function GuildTagsLoadingSkeleton() {
     return (
@@ -167,8 +170,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
     return (
         <Master title="Manage TBC Phases">
             <SharedHeader title="Manage TBC Phases" backgroundClass="bg-officer-meeting" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     {phases?.map((phase) => (
                         <Collapsible
                             key={phase.id}
@@ -293,8 +295,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                             </div>
                         </Collapsible>
                     ))}
-                </div>
-            </div>
+            </PageContainer>
 
             {/* Edit Start Date Modal */}
             <Modal show={editingPhase !== null} onClose={closeModal} maxWidth="md">
@@ -317,20 +318,12 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                         <InputError message={errors.start_date} className="mt-2" />
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={closeModal}
-                            className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white shadow-sm transition duration-150 ease-in-out hover:bg-brown-600"
-                        >
+                        <SecondaryButton type="button" onClick={closeModal}>
                             Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:border-primary hover:bg-amber-700 ${processing ? "opacity-25" : ""}`}
-                        >
+                        </SecondaryButton>
+                        <PrimaryButton type="submit" processing={processing}>
                             {processing ? "Saving..." : "Save"}
-                        </button>
+                        </PrimaryButton>
                     </div>
                 </form>
             </Modal>
@@ -355,20 +348,12 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                         <InputError message={tagsErrors.guild_tag_ids} className="mt-2" />
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={closeTagsModal}
-                            className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white shadow-sm transition duration-150 ease-in-out hover:bg-brown-600"
-                        >
+                        <SecondaryButton type="button" onClick={closeTagsModal}>
                             Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={tagsProcessing}
-                            className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:border-primary hover:bg-amber-700 ${tagsProcessing ? "opacity-25" : ""}`}
-                        >
+                        </SecondaryButton>
+                        <PrimaryButton type="submit" processing={tagsProcessing}>
                             {tagsProcessing ? "Saving..." : "Save"}
-                        </button>
+                        </PrimaryButton>
                     </div>
                 </form>
             </Modal>

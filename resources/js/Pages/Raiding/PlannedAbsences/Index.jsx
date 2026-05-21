@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { usePage, Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
+import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
 import PlannedAbsenceRow from "@/Components/PlannedAbsenceRow";
 import usePermission from "@/Hooks/Permissions";
@@ -40,8 +42,7 @@ export default function Index() {
         <Master title="Planned Absences">
             <SharedHeader title="Planned Absences" backgroundClass="bg-illidan" />
 
-            <div className="py-8 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer padding="py-8">
                     <div className="mb-4 flex flex-row justify-end">
                         {usePermission("manage-planned-absences") && (
                             <Link
@@ -56,10 +57,7 @@ export default function Index() {
                     {!grouped ? (
                         <PlannedAbsencesSkeleton />
                     ) : isEmpty ? (
-                        <div className="py-12 text-center text-gray-400">
-                            <Icon icon="calendar-times" style="solid" className="mb-4 text-4xl" />
-                            <p>No planned absences on record.</p>
-                        </div>
+                        <EmptyState icon="calendar-times" message="No planned absences on record." />
                     ) : (
                         <div className="flex flex-col gap-6">
                             {Object.entries(grouped).map(([characterName, absences]) => (
@@ -79,8 +77,7 @@ export default function Index() {
                             ))}
                         </div>
                     )}
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

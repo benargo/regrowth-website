@@ -5,6 +5,9 @@ import axios from "axios";
 import Master from "@/Layouts/Master";
 import Alert from "@/Components/Alert";
 import SharedHeader from "@/Components/SharedHeader";
+import FormContainer from "@/Components/FormContainer";
+import FormField from "@/Components/FormField";
+import PrimaryButton from "@/Components/PrimaryButton";
 import DateFilterButton from "@/Components/DateFilterButton";
 import DiscordUserSearch from "@/Components/DiscordUserSearch";
 import MarkdownEditor from "@/Components/MarkdownEditor";
@@ -246,8 +249,7 @@ export default function Form() {
         <Master title={pageTitle}>
             <SharedHeader title={pageTitle} backgroundClass="bg-illidan" />
 
-            <div className="py-8 text-white">
-                <div className="container mx-auto max-w-lg px-4">
+            <FormContainer maxWidth="lg" padding="py-8">
                     <form onSubmit={submit} className="flex flex-col gap-6">
                         {!canBackdate && (
                             <Alert type="info">
@@ -295,14 +297,12 @@ export default function Form() {
                         )}
 
                         {canAssignOtherUser && (
-                            <div>
-                                <label className="text-md mb-1.5 block font-medium text-gray-300">Discord User</label>
+                            <FormField label="Discord User">
                                 <DiscordUserSearch value={userId} onSelect={handleUserSelect} error={errors.user} />
-                            </div>
+                            </FormField>
                         )}
 
-                        <div>
-                            <label className="text-md mb-1.5 block font-medium text-gray-300">Character</label>
+                        <FormField label="Character">
                             <CharacterSearch
                                 characters={characters}
                                 value={characterId}
@@ -315,10 +315,9 @@ export default function Form() {
                                 error={errors.character}
                                 disabled={isCharacterLocked}
                             />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="text-md mb-1.5 block font-medium text-gray-300">Start date</label>
+                        <FormField label="Start date" error={errors.start_date}>
                             <DateFilterButton
                                 label="Start"
                                 value={startDate}
@@ -330,13 +329,9 @@ export default function Form() {
                                 max="2099-12-31"
                                 helpText="This is the first date of the planned absence."
                             />
-                            <InputError message={errors.start_date} className="mt-2" />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="text-md mb-1.5 block font-medium text-gray-300">
-                                End date <span className="text-gray-500">(optional)</span>
-                            </label>
+                        <FormField label="End date" error={errors.end_date}>
                             <DateFilterButton
                                 label="End"
                                 value={endDate}
@@ -356,11 +351,9 @@ export default function Form() {
                                     </>
                                 }
                             />
-                            <InputError message={errors.end_date} className="mt-2" />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="text-md mb-1.5 block font-medium text-gray-300">Reason</label>
+                        <FormField label="Reason">
                             <MarkdownEditor
                                 value={reason}
                                 onChange={(val) => {
@@ -373,17 +366,13 @@ export default function Form() {
                                 rows={5}
                                 error={errors.reason}
                             />
-                        </div>
+                        </FormField>
 
                         <div className="flex items-center gap-3">
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className={`inline-flex items-center gap-2 rounded-md border border-transparent bg-amber-600 px-5 py-2 text-sm font-semibold uppercase tracking-widest text-white transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${processing && "opacity-25"}`}
-                            >
+                            <PrimaryButton type="submit" processing={processing}>
                                 <Icon icon="calendar-plus" style="solid" />
                                 {processing ? "Saving..." : isEditing ? "Save Changes" : "Log Absence"}
-                            </button>
+                            </PrimaryButton>
                             {canViewAny ? (
                                 <Link
                                     href={route("raiding.absences.index")}
@@ -398,8 +387,7 @@ export default function Form() {
                             )}
                         </div>
                     </form>
-                </div>
-            </div>
+            </FormContainer>
         </Master>
     );
 }

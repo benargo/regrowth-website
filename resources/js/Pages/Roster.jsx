@@ -3,6 +3,8 @@ import Master from "@/Layouts/Master";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import FilterDropdown from "@/Components/FilterDropdown";
+import EmptyState from "@/Components/EmptyState";
+import PageContainer from "@/Components/PageContainer";
 
 function SortableHeader({ column, label, currentColumn, currentDirection, onSort }) {
     const isActive = currentColumn === column;
@@ -211,7 +213,7 @@ export default function Roster({ members, classes, races, ranks }) {
         <Master title="Guild Roster">
             <SharedHeader backgroundClass="bg-goldshire" title="Guild Roster" />
 
-            <main className="container mx-auto px-4 py-8">
+            <PageContainer padding="py-8">
                 {isLoading ? (
                     <RosterSkeleton />
                 ) : (
@@ -307,16 +309,12 @@ export default function Roster({ members, classes, races, ranks }) {
                             ))}
                         </div>
 
-                        {/* Empty state */}
                         {filteredAndSortedMembers.length === 0 && (
-                            <div className="py-12 text-center text-gray-400">
-                                <Icon icon="users-slash" style="solid" className="mb-4 text-4xl" />
-                                <p>No members match your filters.</p>
-                            </div>
+                            <EmptyState icon="users-slash" message="No members match your filters." />
                         )}
                     </>
                 )}
-            </main>
+            </PageContainer>
         </Master>
     );
 }

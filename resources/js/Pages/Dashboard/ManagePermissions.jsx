@@ -31,6 +31,7 @@ import { router, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Dropdown from "@/Components/Dropdown";
+import PageContainer from "@/Components/PageContainer";
 
 function PermissionToggle({ enabled, processing, onToggle, disabled }) {
     return (
@@ -96,8 +97,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
     return (
         <Master title="Manage Permissions">
             <SharedHeader title="Manage Permissions" backgroundClass="bg-arcatraz" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <p className="mb-6 text-gray-400">
                         Control which Discord roles have access to specific site features. Changes take effect
                         immediately.
@@ -182,8 +182,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

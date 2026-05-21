@@ -1,6 +1,7 @@
 import { Deferred, Link, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 
 function QuestsSkeleton() {
     return (
@@ -111,7 +112,7 @@ export default function Index({ hasNotification }) {
                 title="Today's Daily Quests"
                 backgroundClass="bg-dungeons"
             />
-            <div className="container mx-auto px-4 py-8">
+            <PageContainer padding="py-8">
                 {hasNotification ? (
                     <Deferred data="quests" fallback={<QuestsSkeleton />}>
                         <QuestsList />
@@ -121,7 +122,7 @@ export default function Index({ hasNotification }) {
                         No daily quests have been posted yet today.
                     </p>
                 )}
-            </div>
+            </PageContainer>
         </Master>
     );
 }

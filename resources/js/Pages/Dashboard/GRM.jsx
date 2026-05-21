@@ -4,6 +4,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
 import Modal from "@/Components/Modal";
 import InputError from "@/Components/InputError";
+import PageContainer from "@/Components/PageContainer";
 import "@/../css/FrizQuadrata.css";
 
 const POLL_INTERVAL_MS = 3000;
@@ -157,8 +158,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
     return (
         <Master title="GRM Data Upload">
             <SharedHeader backgroundClass="bg-officer-meeting" title="GRM Data Upload" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <p className="mb-6 text-xl font-bold">Upload your GRM data here.</p>
                     {lastUploadTimestamp ? (
                         <p className="text-md mb-6 text-gray-400">
@@ -255,8 +255,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                             {processing ? "Uploading..." : "Upload GRM Data"}
                         </button>
                     </form>
-                </div>
-            </div>
+            </PageContainer>
 
             {showModal && (
                 <Modal show={isVisible} maxWidth="lg" closeable={true} onClose={dismiss}>

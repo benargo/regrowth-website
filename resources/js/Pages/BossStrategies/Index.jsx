@@ -2,6 +2,7 @@ import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import Collapsible from "@/Components/Collapsible";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 
 export default function BossStrategiesIndex({ bosses, phases }) {
     bosses = bosses.data ?? bosses ?? [];
@@ -9,8 +10,7 @@ export default function BossStrategiesIndex({ bosses, phases }) {
     return (
         <Master title="Boss Strategies">
             <SharedHeader title="Boss Strategies" backgroundClass="bg-karazhan" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     {phases?.map((phase) => (
                         <Collapsible
                             key={phase.id}
@@ -46,8 +46,7 @@ export default function BossStrategiesIndex({ bosses, phases }) {
                             </div>
                         </Collapsible>
                     ))}
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

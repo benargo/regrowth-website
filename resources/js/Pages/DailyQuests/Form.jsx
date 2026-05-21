@@ -3,6 +3,8 @@ import SharedHeader from "@/Components/SharedHeader";
 import Autocomplete from "@/Components/Autocomplete";
 import { Form } from "@inertiajs/react";
 import { useState } from "react";
+import PageContainer from "@/Components/PageContainer";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function DailyQuestsForm({
     cookingQuests,
@@ -96,8 +98,7 @@ export default function DailyQuestsForm({
             <SharedHeader backgroundClass="bg-dungeons" title="Set Daily Quests" />
 
             {/* Content */}
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <p className="mb-6 text-lg text-gray-300">
                         Use the form below to select the current daily quests for professions, dungeons, and PvP. Once you submit, the selected quests will be posted to the configured Discord channel.
                     </p>
@@ -228,19 +229,14 @@ export default function DailyQuestsForm({
 
                                 {/* Submit Button */}
                                 <div className="flex justify-end gap-4 pt-4">
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="rounded bg-amber-600 px-6 py-3 font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
-                                    >
+                                    <PrimaryButton type="submit" processing={processing}>
                                         {processing ? "Posting..." : "Post to Discord"}
-                                    </button>
+                                    </PrimaryButton>
                                 </div>
                             </>
                         )}
                     </Form>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

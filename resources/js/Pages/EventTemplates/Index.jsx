@@ -5,6 +5,9 @@ import Modal from "@/Components/Modal";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
+import PageContainer from "@/Components/PageContainer";
+import DangerButton from "@/Components/DangerButton";
+import SecondaryButton from "@/Components/SecondaryButton";
 
 function RaidBadge({ raid }) {
     return <span className="rounded bg-amber-600/20 px-2 py-0.5 text-xs text-amber-400">{raid.name}</span>;
@@ -70,21 +73,12 @@ function DeleteModal({ template, onClose }) {
                     undone.
                 </p>
                 <div className="flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded border border-gray-600 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-600/20"
-                    >
+                    <SecondaryButton type="button" onClick={onClose}>
                         Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleDelete}
-                        disabled={deleting}
-                        className="rounded bg-red-700 px-4 py-2 text-sm text-white transition-colors hover:bg-red-600 disabled:opacity-50"
-                    >
+                    </SecondaryButton>
+                    <DangerButton type="button" onClick={handleDelete} disabled={deleting}>
                         {deleting ? "Deleting…" : "Delete"}
-                    </button>
+                    </DangerButton>
                 </div>
             </div>
         </Modal>
@@ -109,8 +103,7 @@ export default function Index({ templates, raidGroups }) {
                 </div>
             </ToolNav>
 
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <div className="mb-8 flex items-center justify-between">
                         <p className="text-gray-400">Create and manage reusable raid event templates.</p>
                         <Link
@@ -146,8 +139,7 @@ export default function Index({ templates, raidGroups }) {
                             ))}
                         </div>
                     )}
-                </div>
-            </div>
+            </PageContainer>
 
             <DeleteModal template={templateToDelete} onClose={() => setTemplateToDelete(null)} />
         </Master>

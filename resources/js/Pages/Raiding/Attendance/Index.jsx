@@ -2,6 +2,7 @@ import { Deferred, Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
+import PageContainer from "@/Components/PageContainer";
 
 function formatAbsenceDate(isoDate) {
     if (!isoDate) return "";
@@ -284,8 +285,7 @@ export default function Index({ latestReportDate, stats }) {
     return (
         <Master title="Attendance Dashboard">
             <SharedHeader title="Attendance Dashboard" backgroundClass="bg-illidan" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <Deferred data="stats" fallback={<HeaderRowSkeleton />}>
                         <StatsHeaderRow stats={stats} latestReportDate={latestReportDate} />
                     </Deferred>
@@ -293,8 +293,7 @@ export default function Index({ latestReportDate, stats }) {
                     <Deferred data="stats" fallback={<PlayerRowsSkeleton />}>
                         <PlayerListRows stats={stats} />
                     </Deferred>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

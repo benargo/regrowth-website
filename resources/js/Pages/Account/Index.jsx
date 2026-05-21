@@ -4,7 +4,9 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
 import PlannedAbsenceRow from "@/Components/PlannedAbsenceRow";
+import EmptyState from "@/Components/EmptyState";
 import usePermission from "@/Hooks/Permissions";
+import PageContainer from "@/Components/PageContainer";
 
 export default function Index() {
     const { auth, roles, planned_absences } = usePage().props;
@@ -15,8 +17,7 @@ export default function Index() {
             {/* TODO: bg-arcatraz is a temporary header image */}
             <SharedHeader title="My Account" backgroundClass="bg-arcatraz" />
 
-            <div className="py-8 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer padding="py-8">
                     {/* User profile section */}
                     <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                         <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
@@ -55,10 +56,7 @@ export default function Index() {
                         </header>
 
                         {planned_absences.data.length === 0 ? (
-                            <div className="py-8 text-center text-gray-400">
-                                <Icon icon="calendar-times" style="solid" className="mb-3 text-3xl" />
-                                <p>You haven&rsquo;t created any planned absences.</p>
-                            </div>
+                            <EmptyState icon="calendar-times" message="You haven't created any planned absences." size="text-3xl" />
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {planned_absences.data.map((absence) => (
@@ -67,8 +65,7 @@ export default function Index() {
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

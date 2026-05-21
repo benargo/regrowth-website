@@ -1,6 +1,10 @@
 import { Link, useForm } from "@inertiajs/react";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
+import FormContainer from "@/Components/FormContainer";
+import FormField from "@/Components/FormField";
+import TextInput from "@/Components/TextInput";
+import PrimaryButton from "@/Components/PrimaryButton";
 
 export default function Create({ raids }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -24,24 +28,19 @@ export default function Create({ raids }) {
         <Master title="Create Event Template">
             <SharedHeader backgroundClass="bg-ssctk" title="Create Event Template" />
 
-            <div className="py-12 text-white">
-                <div className="container mx-auto max-w-xl px-4">
+            <FormContainer>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                         {/* Title */}
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="title" className="text-sm font-semibold text-gray-300">
-                                Template name
-                            </label>
-                            <input
+                        <FormField label="Template name" htmlFor="title" error={errors.title}>
+                            <TextInput
                                 id="title"
                                 type="text"
                                 value={data.title}
                                 onChange={(e) => setData("title", e.target.value)}
                                 placeholder="e.g. SSC Default Setup"
-                                className="rounded border border-gray-600 bg-brown-800/60 px-3 py-2 text-white placeholder-gray-500 focus:border-amber-500 focus:outline-none"
+                                className="w-full"
                             />
-                            {errors.title && <p className="text-sm text-red-400">{errors.title}</p>}
-                        </div>
+                        </FormField>
 
                         {/* Raids */}
                         <div className="flex flex-col gap-2">
@@ -66,18 +65,14 @@ export default function Create({ raids }) {
                                     ))}
                                 </div>
                             )}
-                            {errors.raid_ids && <p className="text-sm text-red-400">{errors.raid_ids}</p>}
+                            {errors.raid_ids && <p className="mt-1 text-sm text-red-400">{errors.raid_ids}</p>}
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center gap-4">
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="rounded bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
-                            >
+                            <PrimaryButton type="submit" processing={processing}>
                                 {processing ? "Creating…" : "Create Template"}
-                            </button>
+                            </PrimaryButton>
                             <Link
                                 href={route("dashboard.event-templates.index")}
                                 className="text-sm text-gray-400 hover:text-gray-200"
@@ -86,8 +81,7 @@ export default function Create({ raids }) {
                             </Link>
                         </div>
                     </form>
-                </div>
-            </div>
+            </FormContainer>
         </Master>
     );
 }
