@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Enums\RaidColor;
 use App\Models\Event;
 use App\Notifications\Concerns\UpdatesExisting;
 use App\Services\Discord\Enums\EmbedType;
@@ -71,16 +70,13 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
      */
     public function toMessage(): MessagePayload
     {
-        $raids = $this->event->raids()->pluck('id')->all();
-        $color = RaidColor::fromRaidId($raids);
-
         return MessagePayload::from([
             'embeds' => [Embed::from([
                 'title' => 'Assignments posted for tonight!',
                 'type' => EmbedType::Rich,
                 'description' => 'Assignments for tonight have been posted. Please familiarise yourself with your duties this evening.',
                 'url' => route('raiding.plans.show', ['event' => $this->event]),
-                'color' => $color->value,
+                'color' => $this->event->color ? hexdec($this->event->color) : 7768390,
                 'footer' => $this->embedFooter(),
                 'image' => $this->embedMedia(),
                 'timestamp' => now()->toIso8601String(),
