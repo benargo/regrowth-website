@@ -83,7 +83,7 @@ class CommentController extends Controller
     /**
      * Delete a comment for a specific loot item.
      */
-    public function destroy(Request $request, Item $item, Comment $comment): RedirectResponse
+    public function destroy(Request $request, Comment $comment): RedirectResponse
     {
         Gate::authorize('delete', $comment);
 

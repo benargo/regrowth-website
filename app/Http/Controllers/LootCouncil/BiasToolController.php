@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\LootCouncil;
 
+use App\Http\Controllers\Concerns\QueriesLootCouncilCache;
 use App\Http\Controllers\Controller;
 use App\Models\Phase;
-use App\Models\Raid;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class BiasToolController extends Controller
 {
+    use QueriesLootCouncilCache;
+
     /**
      * Redirect to the first raid of the current phase.
      */
-    public function index(Request $request)
+    public function index(Request $request): RedirectResponse
     {
         $currentPhase = Phase::where('start_date', '<=', now())->orderBy('start_date', 'desc')->first();
 
@@ -27,7 +28,7 @@ class BiasToolController extends Controller
     /**
      * Redirect to the last visited raid of the specified phase, falling back to the first raid.
      */
-    public function phase(Phase $phase, Request $request)
+    public function phase(Phase $phase, Request $request): RedirectResponse
     {
         $raids = $this->getRaidsForPhase($phase);
 
@@ -36,19 +37,5 @@ class BiasToolController extends Controller
         $raid ??= $raids->first();
 
         return redirect()->route('loot.raids.show', ['raid' => $raid->id, 'name' => Str::slug($raid->name)]);
-    }
-
-    /**
-     * Get raids for a specific phase, with caching.
-     *
-     * @return EloquentCollection<Raid>
-     */
-    private function getRaidsForPhase(Phase $phase): EloquentCollection
-    {
-        return Raid::hydrate(
-            Cache::tags(['db', 'lootcouncil'])->remember("phases:#{$phase->id}:raids", now()->addYear(), function () use ($phase) {
-                return $phase->raids()->get()->toArray();
-            })
-        );
     }
 }
