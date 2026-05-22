@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\AsBinaryColor;
+use App\Enums\RaidBackground;
+use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use Database\Factories\RaidFactory;
@@ -19,14 +22,7 @@ use Illuminate\Support\Str;
 class Raid extends Model
 {
     /** @use HasFactory<RaidFactory> */
-    use HasFactory;
-
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'raids';
+    use FlushesRaidingCacheOnSave, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -36,6 +32,8 @@ class Raid extends Model
     protected $fillable = [
         'name',
         'difficulty',
+        'background_css_class',
+        'color',
         'phase_id',
         'max_players',
         'max_loot_councillors',
@@ -54,6 +52,8 @@ class Raid extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'background_css_class' => RaidBackground::class,
+        'color' => AsBinaryColor::class,
         'max_players' => 'integer',
         'max_loot_councillors' => 'integer',
     ];

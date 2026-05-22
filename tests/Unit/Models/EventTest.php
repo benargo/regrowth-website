@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsBinaryColor;
+use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
@@ -43,6 +45,8 @@ class EventTest extends ModelTestCase
             'title',
             'start_time',
             'end_time',
+            'background_css_class',
+            'color',
             'channel_id',
             'is_template',
         ]);
@@ -64,6 +68,8 @@ class EventTest extends ModelTestCase
         $this->assertCasts($model, [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
+            'background_css_class' => RaidBackground::class,
+            'color' => AsBinaryColor::class,
             'is_template' => 'boolean',
         ]);
     }
@@ -75,6 +81,86 @@ class EventTest extends ModelTestCase
 
         $this->assertFalse($model->is_template);
     }
+
+    // ========== background_css_class ============
+
+    #[Test]
+    public function background_css_class_is_cast_to_raid_background_enum(): void
+    {
+        $event = Event::factory()->make(['background_css_class' => RaidBackground::KARAZHAN]);
+
+        $this->assertInstanceOf(RaidBackground::class, $event->background_css_class);
+        $this->assertSame(RaidBackground::KARAZHAN, $event->background_css_class);
+    }
+
+    #[Test]
+    public function background_css_class_defaults_to_null(): void
+    {
+        $event = Event::factory()->make(['background_css_class' => null]);
+
+        $this->assertNull($event->background_css_class);
+    }
+
+    // ========== color ============
+
+    #[Test]
+    public function color_is_nullable(): void
+    {
+        $event = $this->create(['color' => null]);
+
+        $this->assertNull($event->color);
+        $this->assertModelExists($event);
+    }
+
+    #[Test]
+    public function color_getter_returns_hex_string(): void
+    {
+        $event = $this->create(['color' => '8b7ed0']);
+
+        $this->assertSame('8b7ed0', $event->color);
+    }
+
+    #[Test]
+    public function color_setter_accepts_hex_string_without_hash(): void
+    {
+        $event = $this->create(['color' => '8b7ed0']);
+
+        $this->assertSame('8b7ed0', $event->color);
+    }
+
+    #[Test]
+    public function color_setter_accepts_hex_string_with_hash(): void
+    {
+        $event = $this->create(['color' => '#8b7ed0']);
+
+        $this->assertSame('8b7ed0', $event->color);
+    }
+
+    #[Test]
+    public function color_setter_accepts_integer_hex_literal(): void
+    {
+        $event = $this->create(['color' => 0x8B7ED0]);
+
+        $this->assertSame('8b7ed0', $event->color);
+    }
+
+    #[Test]
+    public function color_setter_accepts_rgb_string(): void
+    {
+        $event = $this->create(['color' => '34,110,115']);
+
+        $this->assertSame('226e73', $event->color);
+    }
+
+    #[Test]
+    public function color_setter_throws_for_invalid_string(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->create(['color' => 'not-a-color']);
+    }
+
+    // ========== is_template ============
 
     #[Test]
     public function template_factory_state_sets_is_template_true(): void

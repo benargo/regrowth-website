@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
@@ -113,5 +114,15 @@ class RaidFactory extends Factory
             Item::factory()->has(Comment::factory()->count($count), 'comments'),
             'items'
         );
+    }
+
+    /**
+     * Indicate that the raid has a background CSS class set.
+     */
+    public function withBackground(?RaidBackground $background = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'background_css_class' => $background ?? fake()->randomElement(RaidBackground::cases()),
+        ]);
     }
 }
