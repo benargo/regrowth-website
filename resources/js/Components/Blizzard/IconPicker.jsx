@@ -11,7 +11,7 @@ function BlizzardIconPickerSkeleton() {
     );
 }
 
-export default function BlizzardIconPicker({ onSelect, maxSelections = 1 }) {
+export default function IconPicker({ onSelect, maxSelections = 1 }) {
     const [query, setQuery] = useState("");
     const [paginatorLinks, setPaginatorLinks] = useState(null);
     const [paginatorMeta, setPaginatorMeta] = useState({ last_page: 1 });

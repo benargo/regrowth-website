@@ -360,7 +360,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
     );
 }
 
-export default function LinkedRaidReports({ currentReport, nearbyReports, impactedReports, onChange, referenceDate }) {
+export default function LinkedReports({ currentReport, nearbyReports, impactedReports, onChange, referenceDate }) {
     const isCreateMode = currentReport === null;
 
     const [localLinkedReports, setLocalLinkedReports] = useState([]);

@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import { router, usePage } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import GuildRankLabel from "@/Components/GuildRankLabel";
+import RankLabel from "@/Components/GuildRanks/RankLabel";
 import Autocomplete from "@/Components/Autocomplete";
 import Tooltip from "@/Components/Tooltip";
 import { usePermission } from "@/Components/Authorizable";
 
-export default function RaidReportLootCouncillors({ reportId, characters, onChange }) {
+export default function LootCouncillors({ reportId, characters, onChange }) {
     const isCreateMode = reportId === null;
     const hasManagePermission = usePermission("manage-reports");
     const canManage = isCreateMode || hasManagePermission;
@@ -152,7 +152,7 @@ export default function RaidReportLootCouncillors({ reportId, characters, onChan
                                     <span className="text-sm font-medium text-white">{character.name}</span>
                                     {character.rank && (
                                         <div className="mt-0.5">
-                                            <GuildRankLabel rank={character.rank} className="text-xs" />
+                                            <RankLabel rank={character.rank} className="text-xs" />
                                         </div>
                                     )}
                                 </div>

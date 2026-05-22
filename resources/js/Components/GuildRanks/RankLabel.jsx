@@ -1,4 +1,4 @@
-export default function GuildRankLabel({ rank, className }) {
+export default function RankLabel({ rank, className }) {
     const slug = rank.name
         .toLowerCase()
         .replace(/\s+/g, "-")

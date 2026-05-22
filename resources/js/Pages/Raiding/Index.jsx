@@ -4,7 +4,7 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import EventsTable, { EventsSkeleton } from "@/Components/Events/EventsTable";
-import ReportsTable, { ReportsSkeleton } from "@/Components/ReportsTable";
+import Table, { Skeleton } from "@/Components/Raiding/Reports/Table";
 import PageContainer from "@/Components/PageContainer";
 
 export default function Index({ upcomingEvents, reports }) {
@@ -34,8 +34,8 @@ export default function Index({ upcomingEvents, reports }) {
                             <Icon icon="arrow-right" style="solid" className="h-4" />
                         </Link>
                     </div>
-                    <Deferred data="reports" fallback={<ReportsSkeleton />}>
-                        <ReportsTable reports={reports ?? { data: [] }} />
+                    <Deferred data="reports" fallback={<Skeleton />}>
+                        <Table reports={reports ?? { data: [] }} />
                     </Deferred>
             </PageContainer>
         </Master>

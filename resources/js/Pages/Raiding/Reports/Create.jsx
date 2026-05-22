@@ -10,8 +10,8 @@ import Icon from "@/Components/FontAwesome/Icon";
 import InputError from "@/Components/InputError";
 import DateFilterButton from "@/Components/DateFilterButton";
 import Autocomplete from "@/Components/Autocomplete";
-import LinkedRaidReports from "@/Components/LinkedRaidReports";
-import RaidReportLootCouncillors from "@/Components/RaidReportLootCouncillors";
+import LinkedReports from "@/Components/Raiding/Reports/LinkedReports";
+import LootCouncillors from "@/Components/Raiding/Reports/LootCouncillors";
 
 function getUtcOffsetMinutes(tz) {
     const now = new Date();
@@ -321,14 +321,14 @@ export default function Create() {
                         </FormField>
 
                         {/* Loot councillors */}
-                        <RaidReportLootCouncillors
+                        <LootCouncillors
                             reportId={null}
                             characters={[]}
                             onChange={(ids) => setLootCouncillorIds(ids)}
                         />
 
                         {/* Linked reports */}
-                        <LinkedRaidReports
+                        <LinkedReports
                             currentReport={null}
                             canManageLinks={true}
                             nearbyReports={nearbyReports}

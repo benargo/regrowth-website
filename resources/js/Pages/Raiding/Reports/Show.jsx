@@ -6,9 +6,9 @@ import Tooltip from "@/Components/Tooltip";
 import PageContainer from "@/Components/PageContainer";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
-import GuildRankLabel from "@/Components/GuildRankLabel";
-import LinkedRaidReports from "@/Components/LinkedRaidReports";
-import RaidReportLootCouncillors from "@/Components/RaidReportLootCouncillors";
+import RankLabel from "@/Components/GuildRanks/RankLabel";
+import LinkedReports from "@/Components/Raiding/Reports/LinkedReports";
+import LootCouncillors from "@/Components/Raiding/Reports/LootCouncillors";
 import { Can } from "@/Components/Authorizable";
 
 function ViewOnWarcraftLogsLink({ code, children }) {
@@ -91,7 +91,7 @@ function CharactersTable({ characters }) {
                                 )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-300">
-                                {character.rank ? <GuildRankLabel rank={character.rank} /> : "—"}
+                                {character.rank ? <RankLabel rank={character.rank} /> : "—"}
                             </td>
                             <td className="flex flex-row items-center gap-2 px-4 py-3 text-sm text-gray-300">
                                 <img
@@ -181,10 +181,10 @@ export default function Show({ report, nearbyReports, impactedReports }) {
                 </div>
 
                 {/* Loot councillors */}
-                <RaidReportLootCouncillors reportId={data.id} characters={data.characters} />
+                <LootCouncillors reportId={data.id} characters={data.characters} />
 
                 {/* Linked reports */}
-                <LinkedRaidReports
+                <LinkedReports
                     currentReport={data}
                     nearbyReports={nearbyReports}
                     impactedReports={impactedReports}

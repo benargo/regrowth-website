@@ -9,7 +9,7 @@ import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
-import GuildRankLabel from "@/Components/GuildRankLabel";
+import RankLabel from "@/Components/GuildRanks/RankLabel";
 import FilterDropdown from "@/Components/FilterDropdown";
 
 // ─── Filter components ────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                     </div>
                                 </td>
                                 <td className="hidden whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 md:table-cell lg:sticky lg:z-10">
-                                    <GuildRankLabel rank={rankMap[row.rank_id]} />
+                                    <RankLabel rank={rankMap[row.rank_id]} />
                                 </td>
                                 <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:z-10">
                                     <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>

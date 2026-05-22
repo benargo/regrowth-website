@@ -6,7 +6,7 @@ import PageContainer from "@/Components/PageContainer";
 import Icon from "@/Components/FontAwesome/Icon";
 import DateFilterButton from "@/Components/DateFilterButton";
 import Pagination from "@/Components/Pagination";
-import ReportsTable, { ReportsSkeleton } from "@/Components/ReportsTable";
+import Table, { Skeleton } from "@/Components/Raiding/Reports/Table";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 import { Can } from "@/Components/Authorizable";
 import FilterDropdown from "@/Components/FilterDropdown";
@@ -150,12 +150,12 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
 
                     {/* Reports */}
                     {showSkeleton ? (
-                        <ReportsSkeleton />
+                        <Skeleton />
                     ) : hasEmptyFilter ? (
-                        <ReportsTable reports={{ data: [] }} />
+                        <Table reports={{ data: [] }} />
                     ) : (
                         <>
-                            <ReportsTable reports={reports} />
+                            <Table reports={reports} />
                             <Pagination links={reports.meta.links} meta={reports.meta} itemName="reports" />
                         </>
                     )}

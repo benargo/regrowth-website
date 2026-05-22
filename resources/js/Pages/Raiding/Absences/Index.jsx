@@ -5,7 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
-import PlannedAbsenceRow from "@/Components/PlannedAbsenceRow";
+import PlannedAbsenceRow from "@/Components/PlannedAbsences/Row";
 import { Can } from "@/Components/Authorizable";
 
 function PlannedAbsencesSkeleton() {

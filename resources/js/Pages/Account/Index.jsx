@@ -3,7 +3,7 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
-import PlannedAbsenceRow from "@/Components/PlannedAbsenceRow";
+import PlannedAbsenceRow from "@/Components/PlannedAbsences/Row";
 import EmptyState from "@/Components/EmptyState";
 import { Can } from "@/Components/Authorizable";
 import PageContainer from "@/Components/PageContainer";

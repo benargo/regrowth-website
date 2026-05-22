@@ -4,7 +4,7 @@ import Tooltip from "@/Components/Tooltip";
 import formatDate from "@/Helpers/FormatDate";
 import formatDuration from "@/Helpers/FormatDuration";
 
-export function ReportsSkeleton() {
+export function Skeleton() {
     const fakeRows = Array.from({ length: 8 });
 
     return (
@@ -48,7 +48,7 @@ export function ReportsSkeleton() {
     );
 }
 
-export default function ReportsTable({ reports }) {
+export default function Table({ reports }) {
     const rows = reports?.data ?? reports ?? [];
     if (rows.length === 0) {
         return (

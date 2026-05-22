@@ -9,7 +9,7 @@ import FormContainer from "@/Components/FormContainer";
 import FormField from "@/Components/FormField";
 import PrimaryButton from "@/Components/PrimaryButton";
 import DateFilterButton from "@/Components/DateFilterButton";
-import DiscordUserSearch from "@/Components/DiscordUserSearch";
+import UserSearch from "@/Components/Discord/UserSearch";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import InputError from "@/Components/InputError";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -297,7 +297,7 @@ export default function Form() {
 
                         <Can permission="manage-planned-absences">
                             <FormField label="Discord User">
-                                <DiscordUserSearch value={userId} onSelect={handleUserSelect} error={errors.user} />
+                                <UserSearch value={userId} onSelect={handleUserSelect} error={errors.user} />
                             </FormField>
                         </Can>
 

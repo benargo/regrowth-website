@@ -3,7 +3,7 @@ import axios from "axios";
 import InputError from "@/Components/InputError";
 import Icon from "@/Components/FontAwesome/Icon";
 
-export default function DiscordUserSearch({ value, onSelect, error }) {
+export default function UserSearch({ value, onSelect, error }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
