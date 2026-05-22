@@ -145,9 +145,9 @@ class Channel extends Data implements ChannelContract
         #[Nullable, ArrayType]
         public readonly array|Optional $available_tags,
 
-        /** @var array<string, mixed>|Optional Default reaction emoji for forum/media threads */
+        /** @var array<string, mixed>|Optional|null Default reaction emoji for forum/media threads */
         #[Nullable, ArrayType]
-        public readonly array|Optional $default_reaction_emoji,
+        public readonly array|Optional|null $default_reaction_emoji,
 
         /** @var array<string, mixed>|Optional Thread-specific metadata fields */
         #[Nullable, ArrayType]
