@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\RaidBackground;
 use App\Models\Character;
 use App\Models\Event;
 use Carbon\Carbon;
@@ -53,6 +54,16 @@ class EventFactory extends Factory
     public function template(): static
     {
         return $this->state(['is_template' => true]);
+    }
+
+    /**
+     * Indicate that the event has a background CSS class set.
+     */
+    public function withBackground(?RaidBackground $background = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'background_css_class' => $background ?? fake()->randomElement(RaidBackground::cases()),
+        ]);
     }
 
     /**
