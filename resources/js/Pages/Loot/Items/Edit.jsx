@@ -476,7 +476,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
             </ToolNav>
             {/* Content */}
-            <PageContainer padding="py-8">
+            <PageContainer>
                 <ItemDetailsCard item={item.data} />
 
                 {/* Editable Priorities */}

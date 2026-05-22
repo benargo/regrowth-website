@@ -101,7 +101,7 @@ export default function ItemShow({ item, comments }) {
                 </div>
             </ToolNav>
             {/* Content */}
-            <PageContainer padding="py-8">
+            <PageContainer>
                 <ItemDetailsCard item={item.data} />
 
                 <h2 className="mb-4 mt-8 text-xl font-bold">Loot Biases</h2>

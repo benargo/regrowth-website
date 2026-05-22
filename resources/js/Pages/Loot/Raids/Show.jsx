@@ -485,7 +485,7 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
         <Master title="Loot Bias">
             <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
             {/* Content */}
-            <PageContainer padding="py-8">
+            <PageContainer>
                 {/* Mobile navigation */}
                 <MegaMenu
                     phases={phases}

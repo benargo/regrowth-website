@@ -1,4 +1,4 @@
-export default function Card({ title, headerRight, className = '', children }) {
+export default function Card({ title, headerRight, className = "", children }) {
     return (
         <div className={`rounded border border-amber-600 ${className}`}>
             {(title || headerRight) && (
@@ -7,9 +7,7 @@ export default function Card({ title, headerRight, className = '', children }) {
                     {headerRight && <div>{headerRight}</div>}
                 </div>
             )}
-            <div className="p-4">
-                {children}
-            </div>
+            <div className="p-4">{children}</div>
         </div>
     );
 }

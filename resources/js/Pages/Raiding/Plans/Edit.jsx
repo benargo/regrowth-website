@@ -785,9 +785,7 @@ export default function Edit({ event, targetMarkers, templates }) {
 
     const handlePublish = useCallback(() => {
         setPublishing(true);
-        window.axios
-            .post(route('api.events.publish-assignments', event.id))
-            .finally(() => setPublishing(false));
+        window.axios.post(route("api.events.publish-assignments", event.id)).finally(() => setPublishing(false));
     }, [event.id]);
 
     useEventChannel(
@@ -1378,145 +1376,145 @@ export default function Edit({ event, targetMarkers, templates }) {
                 </div>
             </ToolNav>
 
-            <PageContainer padding="py-8">
+            <PageContainer>
                 {/* Event metadata card */}
                 <MetaCard>
-                        <MetaItem icon="calendar">
-                            <span>
-                                {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
-                                <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
-                                <span className="hidden lg:inline">{formattedDate.long}</span>
-                            </span>
-                        </MetaItem>
-                        <MetaItem icon="clock">
-                            {formatTime(startDate)}–{formatTime(endDate)} ({duration})
-                        </MetaItem>
-                        {event.raids?.length > 0 && (
-                            <MetaItem icon="shield-alt">{event.raids.map((r) => r.name).join(", ")}</MetaItem>
-                        )}
-                        <div className="grow" />
-                        {templates === undefined ? (
-                            <div className="h-7 w-32 animate-pulse rounded border border-amber-600/20 bg-amber-600/10" />
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => setShowApplyTemplate(true)}
-                                className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20"
-                            >
-                                <Icon icon="copy" style="light" />
-                                Apply template
-                            </button>
-                        )}
+                    <MetaItem icon="calendar">
+                        <span>
+                            {dayOfWeek}, <span className="md:hidden">{formattedDate.short}</span>
+                            <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
+                            <span className="hidden lg:inline">{formattedDate.long}</span>
+                        </span>
+                    </MetaItem>
+                    <MetaItem icon="clock">
+                        {formatTime(startDate)}–{formatTime(endDate)} ({duration})
+                    </MetaItem>
+                    {event.raids?.length > 0 && (
+                        <MetaItem icon="shield-alt">{event.raids.map((r) => r.name).join(", ")}</MetaItem>
+                    )}
+                    <div className="grow" />
+                    {templates === undefined ? (
+                        <div className="h-7 w-32 animate-pulse rounded border border-amber-600/20 bg-amber-600/10" />
+                    ) : (
                         <button
                             type="button"
-                            onClick={handlePublish}
-                            disabled={publishing}
-                            className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20 disabled:opacity-50"
+                            onClick={() => setShowApplyTemplate(true)}
+                            className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20"
                         >
-                            <Icon icon="bullhorn" style="light" />
-                            {publishing ? 'Publishing…' : 'Publish'}
+                            <Icon icon="copy" style="light" />
+                            Apply template
                         </button>
-                        <EditorPresence eventId={event.id} />
-                    </MetaCard>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handlePublish}
+                        disabled={publishing}
+                        className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20 disabled:opacity-50"
+                    >
+                        <Icon icon="bullhorn" style="light" />
+                        {publishing ? "Publishing…" : "Publish"}
+                    </button>
+                    <EditorPresence eventId={event.id} />
+                </MetaCard>
 
-                    {compGroups.length > 0 ? (
-                        <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {compGroups.map((group) => (
-                                <GroupTable key={group.group_number} group={group} />
+                {compGroups.length > 0 ? (
+                    <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {compGroups.map((group) => (
+                            <GroupTable key={group.group_number} group={group} />
+                        ))}
+                        {compBench.length > 0 && <BenchedTable characters={compBench} />}
+                    </div>
+                ) : (
+                    <p className="flex-1 text-center text-sm text-gray-400">
+                        Groups for this raid have not been posted yet.
+                    </p>
+                )}
+
+                <DndContext
+                    sensors={assignmentSensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={(e) => {
+                        const a = assignments.find((x) => x._key === e.active.id);
+                        setActiveAssignment(a ?? null);
+                        setDraggingKey(a?._key ?? null);
+                    }}
+                    onDragOver={handleDragOver}
+                    onDragEnd={(e) => {
+                        setDraggingKey(null);
+                        handleDragEnd(e);
+                    }}
+                    onDragCancel={() => {
+                        setActiveAssignment(null);
+                        setDragOverInfo(null);
+                        setDraggingKey(null);
+                    }}
+                >
+                    {/* General Assignments */}
+                    <section className="mb-8">
+                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                            General Assignments
+                        </h2>
+                        <GroupContainer
+                            bossId={null}
+                            groups={generalGroups}
+                            assignments={assignments}
+                            horizontal
+                            {...commonContainerProps}
+                        />
+                    </section>
+
+                    {/* Raids and bosses */}
+                    {event.raids?.length > 0 && (
+                        <div className="space-y-6">
+                            {event.raids.map((raid) => (
+                                <div key={raid.slug}>
+                                    {event.raids.length > 1 && (
+                                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                                            {raid.name}
+                                        </h2>
+                                    )}
+                                    <div className="flex flex-col gap-2">
+                                        {(raid.bosses ?? []).map((boss) => (
+                                            <BossStrategySection
+                                                key={boss.id}
+                                                boss={boss}
+                                                raid={raid}
+                                                commonContainerProps={commonContainerProps}
+                                                groupsByBossId={groupsByBossId}
+                                                assignments={assignments}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
-                            {compBench.length > 0 && <BenchedTable characters={compBench} />}
                         </div>
-                    ) : (
-                        <p className="flex-1 text-center text-sm text-gray-400">
-                            Groups for this raid have not been posted yet.
-                        </p>
                     )}
 
-                    <DndContext
-                        sensors={assignmentSensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={(e) => {
-                            const a = assignments.find((x) => x._key === e.active.id);
-                            setActiveAssignment(a ?? null);
-                            setDraggingKey(a?._key ?? null);
-                        }}
-                        onDragOver={handleDragOver}
-                        onDragEnd={(e) => {
-                            setDraggingKey(null);
-                            handleDragEnd(e);
-                        }}
-                        onDragCancel={() => {
-                            setActiveAssignment(null);
-                            setDragOverInfo(null);
-                            setDraggingKey(null);
-                        }}
-                    >
-                        {/* General Assignments */}
-                        <section className="mb-8">
-                            <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
-                                General Assignments
-                            </h2>
-                            <GroupContainer
-                                bossId={null}
-                                groups={generalGroups}
-                                assignments={assignments}
-                                horizontal
-                                {...commonContainerProps}
-                            />
-                        </section>
-
-                        {/* Raids and bosses */}
-                        {event.raids?.length > 0 && (
-                            <div className="space-y-6">
-                                {event.raids.map((raid) => (
-                                    <div key={raid.slug}>
-                                        {event.raids.length > 1 && (
-                                            <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
-                                                {raid.name}
-                                            </h2>
-                                        )}
-                                        <div className="flex flex-col gap-2">
-                                            {(raid.bosses ?? []).map((boss) => (
-                                                <BossStrategySection
-                                                    key={boss.id}
-                                                    boss={boss}
-                                                    raid={raid}
-                                                    commonContainerProps={commonContainerProps}
-                                                    groupsByBossId={groupsByBossId}
-                                                    assignments={assignments}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <DragOverlay>
-                            {activeAssignment ? (
-                                <table className="w-full table-fixed rounded border border-amber-500/50 bg-brown-800 opacity-90 shadow-xl">
-                                    <tbody>
-                                        <tr className="border-b border-brown-700/50">
-                                            <td className="w-6 px-1 py-2 text-brown-700">
-                                                <Icon icon="grip-vertical" style="solid" className="text-xs" />
-                                            </td>
-                                            <td className="w-1/2 border-r border-brown-700/50 px-3 py-2.5 text-sm text-brown-200">
-                                                {labelFromSide(activeAssignment._leftSide).label || (
-                                                    <span className="italic text-brown-600">empty</span>
-                                                )}
-                                            </td>
-                                            <td className="w-1/2 px-3 py-2.5 text-sm text-brown-200">
-                                                {labelFromSide(activeAssignment._rightSide).label || (
-                                                    <span className="italic text-brown-600">empty</span>
-                                                )}
-                                            </td>
-                                            <td className="w-10" />
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            ) : null}
-                        </DragOverlay>
-                    </DndContext>
+                    <DragOverlay>
+                        {activeAssignment ? (
+                            <table className="w-full table-fixed rounded border border-amber-500/50 bg-brown-800 opacity-90 shadow-xl">
+                                <tbody>
+                                    <tr className="border-b border-brown-700/50">
+                                        <td className="w-6 px-1 py-2 text-brown-700">
+                                            <Icon icon="grip-vertical" style="solid" className="text-xs" />
+                                        </td>
+                                        <td className="w-1/2 border-r border-brown-700/50 px-3 py-2.5 text-sm text-brown-200">
+                                            {labelFromSide(activeAssignment._leftSide).label || (
+                                                <span className="italic text-brown-600">empty</span>
+                                            )}
+                                        </td>
+                                        <td className="w-1/2 px-3 py-2.5 text-sm text-brown-200">
+                                            {labelFromSide(activeAssignment._rightSide).label || (
+                                                <span className="italic text-brown-600">empty</span>
+                                            )}
+                                        </td>
+                                        <td className="w-10" />
+                                    </tr>
+                                </tbody>
+                            </table>
+                        ) : null}
+                    </DragOverlay>
+                </DndContext>
             </PageContainer>
             {showApplyTemplate && (
                 <ApplyTemplateModal
@@ -1525,11 +1523,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                     onClose={() => setShowApplyTemplate(false)}
                 />
             )}
-            <FlashMessage
-                type="success"
-                message={publishSuccess}
-                onDismiss={() => setPublishSuccess(null)}
-            />
+            <FlashMessage type="success" message={publishSuccess} onDismiss={() => setPublishSuccess(null)} />
         </Master>
     );
 }
