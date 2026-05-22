@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Enums\RaidBackground;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,7 +25,7 @@ class RaidResource extends JsonResource
             'bosses' => $this->whenLoaded('bosses'),
             'items' => $this->whenLoaded('items'),
             'comments' => $this->whenLoaded('comments'),
-            'background' => RaidBackground::fromRaidId($this->id)->value,
+            'background' => $this->background_css_class?->value,
         ];
     }
 }
