@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\LootCouncil;
+namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\DestroyCommentReactionRequest;
@@ -10,7 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
-class CommentReactionController extends Controller
+class ReactionController extends Controller
 {
     /**
      * Store a newly created resource in storage.
