@@ -67,12 +67,12 @@ class GuildMember extends Data
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
         public readonly string|Optional|null $communication_disabled_until,
 
-        /** @var array<string, mixed>|Optional Data for the member's guild avatar decoration */
+        /** @var array<string, mixed>|Optional|null Data for the member's guild avatar decoration */
         #[Nullable, ArrayType]
-        public readonly array|Optional $avatar_decoration_data,
+        public readonly array|Optional|null $avatar_decoration_data,
 
-        /** @var array<string, mixed>|Optional Data for the member's collectibles */
+        /** @var array<string, mixed>|Optional|null Data for the member's collectibles */
         #[Nullable, ArrayType]
-        public readonly array|Optional $collectibles,
+        public readonly array|Optional|null $collectibles,
     ) {}
 }

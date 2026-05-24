@@ -14,12 +14,12 @@ class RoleColors extends Data
         #[IntegerType]
         public readonly int $primary_color,
 
-        /** @var int|Optional The secondary color for the role; makes the role a gradient */
+        /** @var int|Optional|null The secondary color for the role; makes the role a gradient */
         #[Nullable, IntegerType]
-        public readonly int|Optional $secondary_color,
+        public readonly int|Optional|null $secondary_color,
 
-        /** @var int|Optional The tertiary color for the role; turns the gradient into a holographic style */
+        /** @var int|Optional|null The tertiary color for the role; turns the gradient into a holographic style */
         #[Nullable, IntegerType]
-        public readonly int|Optional $tertiary_color,
+        public readonly int|Optional|null $tertiary_color,
     ) {}
 }

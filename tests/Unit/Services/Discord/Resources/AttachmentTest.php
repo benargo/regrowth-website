@@ -156,6 +156,19 @@ class AttachmentTest extends TestCase
     }
 
     #[Test]
+    public function it_accepts_null_for_height_and_width(): void
+    {
+        $attachment = Attachment::from([
+            ...$this->minimalPayload(),
+            'height' => null,
+            'width' => null,
+        ]);
+
+        $this->assertNull($attachment->height);
+        $this->assertNull($attachment->width);
+    }
+
+    #[Test]
     public function attachment_properties_are_readonly(): void
     {
         $attachment = Attachment::from($this->minimalPayload());

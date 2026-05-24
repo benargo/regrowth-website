@@ -153,6 +153,19 @@ class GuildMemberTest extends TestCase
     }
 
     #[Test]
+    public function it_accepts_null_for_avatar_decoration_data_and_collectibles(): void
+    {
+        $member = GuildMember::from([
+            ...$this->minimalPayload(),
+            'avatar_decoration_data' => null,
+            'collectibles' => null,
+        ]);
+
+        $this->assertNull($member->avatar_decoration_data);
+        $this->assertNull($member->collectibles);
+    }
+
+    #[Test]
     public function it_stores_null_for_nullable_optional_fields(): void
     {
         $member = GuildMember::from([...$this->minimalPayload(), 'joined_at' => null]);
