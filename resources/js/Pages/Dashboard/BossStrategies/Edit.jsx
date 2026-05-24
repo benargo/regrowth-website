@@ -160,10 +160,10 @@ export default function EditBossStrategy({ boss }) {
                     </div>
                 </div>
             </nav>
-            <PageContainer className="max-w-4xl space-y-8">
+            <PageContainer>
                 <p className="text-md mb-6">
-                    Use the editor below to write strategy notes for this boss. You can also upload images to
-                    illustrate the strategy, which will be displayed in the order you arrange them.
+                    Use the editor below to write strategy notes for this boss. You can also upload images to illustrate
+                    the strategy, which will be displayed in the order you arrange them.
                 </p>
                 {/* Notes Section */}
                 <div>
