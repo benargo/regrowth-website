@@ -184,14 +184,14 @@ Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', [GuildTagContro
     ->name('wcl.guild-tags.toggle-attendance');
 
 /**
- * Static infoformation pages
+ * Static information pages
  */
 Route::get('/info/battlenet-usage', function () {
-    return Inertia::render('BattlenetUsage');
+    return Inertia::render('Info/BattlenetUsage');
 })->name('battlenet-usage');
 
 Route::get('/info/privacy', function () {
-    return Inertia::render('PrivacyPolicy');
+    return Inertia::render('Info/PrivacyPolicy');
 })->name('privacypolicy');
 
 require __DIR__.'/auth.php';

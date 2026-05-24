@@ -3,6 +3,7 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import AttendanceScatterChart from "@/Components/AttendanceScatterChart";
+import PageContainer from "@/Components/PageContainer";
 
 function BoxLabel({ icon, label }) {
     return (
@@ -26,16 +27,14 @@ export default function Graphs({ scatterPoints }) {
     return (
         <Master title="Attendance Graphs">
             <SharedHeader title="Attendance Graphs" backgroundClass="bg-illidan" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
-                    <Deferred data="scatterPoints" fallback={<ScatterSkeleton />}>
-                        <div className="rounded border border-amber-600 p-4">
-                            <BoxLabel icon="chart-scatter" label="Attendance distribution" />
-                            <AttendanceScatterChart points={scatterPoints} />
-                        </div>
-                    </Deferred>
-                </div>
-            </div>
+            <PageContainer>
+                <Deferred data="scatterPoints" fallback={<ScatterSkeleton />}>
+                    <div className="rounded border border-amber-600 p-4">
+                        <BoxLabel icon="chart-scatter" label="Attendance distribution" />
+                        <AttendanceScatterChart points={scatterPoints} />
+                    </div>
+                </Deferred>
+            </PageContainer>
         </Master>
     );
 }

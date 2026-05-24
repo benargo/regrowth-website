@@ -3,8 +3,10 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
-import PlannedAbsenceRow from "@/Components/PlannedAbsenceRow";
-import usePermission from "@/Hooks/Permissions";
+import PlannedAbsenceRow from "@/Components/PlannedAbsences/Row";
+import EmptyState from "@/Components/EmptyState";
+import { Can } from "@/Components/Authorizable";
+import PageContainer from "@/Components/PageContainer";
 
 export default function Index() {
     const { auth, roles, planned_absences } = usePage().props;
@@ -15,8 +17,7 @@ export default function Index() {
             {/* TODO: bg-arcatraz is a temporary header image */}
             <SharedHeader title="My Account" backgroundClass="bg-arcatraz" />
 
-            <div className="py-8 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     {/* User profile section */}
                     <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                         <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
@@ -43,7 +44,7 @@ export default function Index() {
                     <div>
                         <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
                             <h2 className="text-lg font-semibold text-amber-400">Planned Absences</h2>
-                            {usePermission("create-planned-absences") && (
+                            <Can permission="create-planned-absences">
                                 <Link
                                     href={route("raiding.absences.create")}
                                     className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 md:mt-0"
@@ -51,14 +52,11 @@ export default function Index() {
                                     <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
                                     Add Absence
                                 </Link>
-                            )}
+                            </Can>
                         </header>
 
                         {planned_absences.data.length === 0 ? (
-                            <div className="py-8 text-center text-gray-400">
-                                <Icon icon="calendar-times" style="solid" className="mb-3 text-3xl" />
-                                <p>You haven&rsquo;t created any planned absences.</p>
-                            </div>
+                            <EmptyState icon="calendar-times" message="You haven't created any planned absences." size="text-3xl" />
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {planned_absences.data.map((absence) => (
@@ -67,8 +65,7 @@ export default function Index() {
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

@@ -2,23 +2,25 @@ import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pagination from "@/Components/Pagination";
+import { Can, Cannot } from "@/Components/Authorizable";
 
-export default function CommentsSection({ comments, itemId, canCreate }) {
+export default function CommentsSection({ comments, itemId }) {
     return (
         <section className="mt-12 w-full">
             <h2 className="mb-6 text-xl font-bold">Discussion</h2>
 
             {/* New comment form for raiders+ */}
-            {canCreate ? (
+            <Can permission="comment-on-loot-items">
                 <div className="mb-8">
                     <CommentForm itemId={itemId} />
                 </div>
-            ) : (
+            </Can>
+            <Cannot permission="comment-on-loot-items">
                 <div className="mb-8 flex flex-row items-center rounded-lg border border-gray-700 bg-brown-800/50 p-4 italic text-gray-400">
                     <Icon icon="lock" style="solid" className="mr-2" />
                     <p>You do not have permission to post comments.</p>
                 </div>
-            )}
+            </Cannot>
 
             {/* Comments list */}
             <div className="space-y-4">

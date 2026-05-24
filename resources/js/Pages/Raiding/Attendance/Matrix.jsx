@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 import Icon from "@/Components/FontAwesome/Icon";
 import DateFilterButton from "@/Components/DateFilterButton";
 import normaliseCharacterName from "@/Helpers/NormaliseCharacterName";
 import Tooltip from "@/Components/Tooltip";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
-import GuildRankLabel from "@/Components/GuildRankLabel";
+import RankLabel from "@/Components/GuildRanks/RankLabel";
 import FilterDropdown from "@/Components/FilterDropdown";
 
 // ─── Filter components ────────────────────────────────────────────────────────
@@ -203,7 +204,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                     </div>
                                 </td>
                                 <td className="hidden whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 md:table-cell lg:sticky lg:z-10">
-                                    <GuildRankLabel rank={rankMap[row.rank_id]} />
+                                    <RankLabel rank={rankMap[row.rank_id]} />
                                 </td>
                                 <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:z-10">
                                     <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
@@ -372,85 +373,83 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
     return (
         <Master title="Attendance Matrix">
             <SharedHeader title="Attendance Matrix" backgroundClass="bg-illidan" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
-                    {/* Filter controls */}
-                    <div className="mb-6 space-y-3">
-                        {/* Row 1: Client-side filters */}
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <SearchInput
-                                value={characterName}
-                                onChange={setCharacterName}
-                                placeholder="Search by name…"
-                            />
-                            <FilterDropdown
-                                label={{ singular: "Rank", plural: "Ranks" }}
-                                options={ranks}
-                                selected={selectedRankIds}
-                                onChange={setSelectedRankIds}
-                            />
-                            <FilterDropdown
-                                label={{ singular: "Class", plural: "Classes" }}
-                                options={availableClasses}
-                                selected={effectiveClassIds}
-                                onChange={(ids) =>
-                                    setSelectedClassIds(ids.length === availableClasses.length ? null : ids)
-                                }
-                            />
-                        </div>
-
-                        {/* Row 2: Server-side filters */}
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                            <FilterDropdown
-                                label={{ singular: "Zone", plural: "Zones" }}
-                                options={zones}
-                                selected={selectedZoneIds}
-                                onChange={setSelectedZoneIds}
-                            />
-                            <FilterDropdown
-                                label={{ singular: "Guild Tag", plural: "Guild Tags" }}
-                                options={guildTags}
-                                selected={selectedGuildTagIds}
-                                onChange={setSelectedGuildTagIds}
-                            />
-                            <DateFilterButton
-                                label="Before"
-                                value={beforeDate}
-                                onChange={setBeforeDate}
-                                min={earliestDate}
-                            />
-                            <DateFilterButton
-                                label="After"
-                                value={sinceDate}
-                                onChange={setSinceDate}
-                                min={earliestDate}
-                            />
-                            <ToggleFilter
-                                label="Combine linked characters"
-                                value={includeLinkedCharacters}
-                                onChange={setIncludeLinkedCharacters}
-                            />
-                        </div>
+            <PageContainer>
+                {/* Filter controls */}
+                <div className="mb-6 space-y-3">
+                    {/* Row 1: Client-side filters */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <SearchInput
+                            value={characterName}
+                            onChange={setCharacterName}
+                            placeholder="Search by name…"
+                        />
+                        <FilterDropdown
+                            label={{ singular: "Rank", plural: "Ranks" }}
+                            options={ranks}
+                            selected={selectedRankIds}
+                            onChange={setSelectedRankIds}
+                        />
+                        <FilterDropdown
+                            label={{ singular: "Class", plural: "Classes" }}
+                            options={availableClasses}
+                            selected={effectiveClassIds}
+                            onChange={(ids) =>
+                                setSelectedClassIds(ids.length === availableClasses.length ? null : ids)
+                            }
+                        />
                     </div>
 
-                    {/* Matrix */}
-                    {showSkeleton ? (
-                        <MatrixSkeleton />
-                    ) : hasEmptyFilter ? (
-                        <MatrixTable key="empty" raids={[]} rows={[]} ranks={ranks} />
-                    ) : (
-                        <MatrixTable
-                            key={filteredRows.length === 0 ? "empty" : "data"}
-                            raids={matrix?.raids ?? []}
-                            rows={filteredRows}
-                            ranks={ranks}
-                            plannedAbsences={matrix?.planned_absences}
-                            fetchAttendanceNames={fetchAttendanceNames}
-                            attendanceNamesCache={attendanceNamesCache}
+                    {/* Row 2: Server-side filters */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        <FilterDropdown
+                            label={{ singular: "Zone", plural: "Zones" }}
+                            options={zones}
+                            selected={selectedZoneIds}
+                            onChange={setSelectedZoneIds}
                         />
-                    )}
+                        <FilterDropdown
+                            label={{ singular: "Guild Tag", plural: "Guild Tags" }}
+                            options={guildTags}
+                            selected={selectedGuildTagIds}
+                            onChange={setSelectedGuildTagIds}
+                        />
+                        <DateFilterButton
+                            label="Before"
+                            value={beforeDate}
+                            onChange={setBeforeDate}
+                            min={earliestDate}
+                        />
+                        <DateFilterButton
+                            label="After"
+                            value={sinceDate}
+                            onChange={setSinceDate}
+                            min={earliestDate}
+                        />
+                        <ToggleFilter
+                            label="Combine linked characters"
+                            value={includeLinkedCharacters}
+                            onChange={setIncludeLinkedCharacters}
+                        />
+                    </div>
                 </div>
-            </div>
+
+                {/* Matrix */}
+                {showSkeleton ? (
+                    <MatrixSkeleton />
+                ) : hasEmptyFilter ? (
+                    <MatrixTable key="empty" raids={[]} rows={[]} ranks={ranks} />
+                ) : (
+                    <MatrixTable
+                        key={filteredRows.length === 0 ? "empty" : "data"}
+                        raids={matrix?.raids ?? []}
+                        rows={filteredRows}
+                        ranks={ranks}
+                        plannedAbsences={matrix?.planned_absences}
+                        fetchAttendanceNames={fetchAttendanceNames}
+                        attendanceNamesCache={attendanceNamesCache}
+                    />
+                )}
+            </PageContainer>
         </Master>
     );
 }

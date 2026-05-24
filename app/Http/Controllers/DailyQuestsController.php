@@ -80,7 +80,7 @@ class DailyQuestsController extends Controller
             })
         )->groupBy('type');
 
-        return Inertia::render('DailyQuests/Form', [
+        return Inertia::render('Dashboard/DailyQuests/Form', [
             'cookingQuests' => $quests->get('Cooking', collect())->toArray(),
             'fishingQuests' => $quests->get('Fishing', collect())->toArray(),
             'dungeonQuests' => $quests->get('Dungeon', collect())->where('mode', 'Normal')->values()->toArray(),
@@ -137,7 +137,7 @@ class DailyQuestsController extends Controller
             ->paginate(20)
             ->appends($request->query());
 
-        return Inertia::render('Dashboard/DailyQuestsAuditLog', [
+        return Inertia::render('Dashboard/DailyQuests/Audit', [
             'entries' => $paginator,
         ]);
     }

@@ -82,7 +82,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raiding/PlannedAbsences/Index')
+            ->component('Raiding/Absences/Index')
         );
     }
 
@@ -96,7 +96,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raiding/PlannedAbsences/Index')
+            ->component('Raiding/Absences/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('planned_absences', 0)
             )
@@ -112,7 +112,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.absences.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raiding/PlannedAbsences/Index')
+            ->component('Raiding/Absences/Index')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('planned_absences', 1)
                 ->has('planned_absences.0', fn (Assert $absence) => $absence
@@ -194,7 +194,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raiding/PlannedAbsences/Form')
+            ->component('Raiding/Absences/Form')
         );
     }
 
@@ -209,7 +209,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.absences.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raiding/PlannedAbsences/Form')
+            ->component('Raiding/Absences/Form')
             ->has('characters', 1)
             ->where('characters.0.id', $main->id)
         );
@@ -365,7 +365,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raiding/PlannedAbsences/Form')
+            ->component('Raiding/Absences/Form')
         );
     }
 
@@ -382,7 +382,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.absences.edit', $absence));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Raiding/PlannedAbsences/Form')
+            ->component('Raiding/Absences/Form')
             ->has('planned_absence', fn (Assert $data) => $data
                 ->where('id', $absence->id)
                 ->has('character')

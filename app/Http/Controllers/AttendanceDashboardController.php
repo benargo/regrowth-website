@@ -34,7 +34,7 @@ class AttendanceDashboardController extends Controller
     {
         $this->request = $request;
 
-        return Inertia::render('Raiding/Attendance/Index', [
+        return Inertia::render('Raiding/Attendance/Dashboard', [
             'latestReportDate' => $this->latestReportDate(),
             'stats' => Inertia::defer(fn () => [
                 ...$this->stats(),

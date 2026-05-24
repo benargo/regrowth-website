@@ -1,4 +1,4 @@
-import GuildRankLabel from "@/Components/GuildRankLabel";
+import RankLabel from "@/Components/GuildRanks/RankLabel";
 import LootCouncillorBadge from "@/Components/Events/LootCouncillorBadge";
 import RoleBadge from "@/Components/Events/RoleBadge";
 
@@ -71,7 +71,7 @@ export function GroupTable({ group }) {
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-300">
-                                        {character.rank ? <GuildRankLabel rank={character.rank} /> : "—"}
+                                        {character.rank ? <RankLabel rank={character.rank} /> : "—"}
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2 text-sm text-gray-300">

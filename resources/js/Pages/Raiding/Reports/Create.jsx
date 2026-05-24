@@ -2,12 +2,16 @@ import { useMemo, useState } from "react";
 import { Link, router, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import FormContainer from "@/Components/FormContainer";
+import FormField from "@/Components/FormField";
+import TextInput from "@/Components/TextInput";
+import PrimaryButton from "@/Components/PrimaryButton";
 import Icon from "@/Components/FontAwesome/Icon";
 import InputError from "@/Components/InputError";
 import DateFilterButton from "@/Components/DateFilterButton";
 import Autocomplete from "@/Components/Autocomplete";
-import LinkedRaidReports from "@/Components/LinkedRaidReports";
-import RaidReportLootCouncillors from "@/Components/RaidReportLootCouncillors";
+import LinkedReports from "@/Components/Raiding/Reports/LinkedReports";
+import LootCouncillors from "@/Components/Raiding/Reports/LootCouncillors";
 
 function getUtcOffsetMinutes(tz) {
     const now = new Date();
@@ -152,8 +156,7 @@ export default function Create() {
         <Master title="Create Report">
             <SharedHeader title="Create Report" backgroundClass="bg-illidan" />
 
-            <div className="py-8 text-white">
-                <div className="container mx-auto max-w-2xl px-4">
+            <FormContainer maxWidth="2xl">
                     <div className="mb-6">
                         <Link
                             href={route("raiding.reports.index")}
@@ -166,11 +169,8 @@ export default function Create() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Title */}
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                Title <span className="text-red-400">*</span>
-                            </label>
-                            <input
+                        <FormField label="Title" error={errors.title} required>
+                            <TextInput
                                 type="text"
                                 value={title}
                                 onChange={(e) => {
@@ -178,17 +178,13 @@ export default function Create() {
                                     setErrors((prev) => ({ ...prev, title: null }));
                                 }}
                                 placeholder="e.g. Sunday Karazhan"
-                                className="w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white placeholder-gray-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                className="w-full"
                             />
-                            <InputError message={errors.title} className="mt-2" />
-                        </div>
+                        </FormField>
 
-                        {/* Start time */}
+                        {/* Start time + End time */}
                         <div className="flex flex-col lg:flex-row lg:gap-6">
-                            <div className="flex-1">
-                                <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                    Start time <span className="text-red-400">*</span>
-                                </label>
+                            <FormField label="Start time" error={errors.start_time} required className="flex-1">
                                 <DateFilterButton
                                     label="Start time"
                                     value={startTime}
@@ -200,14 +196,8 @@ export default function Create() {
                                     helpText={timezoneHelp}
                                     max="2099-12-31T23:59"
                                 />
-                                <InputError message={errors.start_time} className="mt-2" />
-                            </div>
-
-                            {/* End time */}
-                            <div className="flex-1">
-                                <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                    End time <span className="text-red-400">*</span>
-                                </label>
+                            </FormField>
+                            <FormField label="End time" error={errors.end_time} required className="flex-1">
                                 <DateFilterButton
                                     label="End time"
                                     value={endTime}
@@ -220,15 +210,11 @@ export default function Create() {
                                     min={startTime || undefined}
                                     max="2099-12-31T23:59"
                                 />
-                                <InputError message={errors.end_time} className="mt-2" />
-                            </div>
+                            </FormField>
                         </div>
 
                         {/* Guild tag */}
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                Warcraft Logs tag <span className="text-red-400">*</span>
-                            </label>
+                        <FormField label="Warcraft Logs tag" error={errors.guild_tag_id} required>
                             <select
                                 value={guildTagId}
                                 onChange={(e) => {
@@ -244,14 +230,10 @@ export default function Create() {
                                     </option>
                                 ))}
                             </select>
-                            <InputError message={errors.guild_tag_id} className="mt-2" />
-                        </div>
+                        </FormField>
 
                         {/* Zone + Expansion */}
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                                Zone <span className="text-red-400">*</span>
-                            </label>
+                        <FormField label="Zone" error={errors.zone_id} required>
                             <div className="flex gap-3">
                                 <select
                                     value={selectedExpansionId}
@@ -276,13 +258,11 @@ export default function Create() {
                                     />
                                 </div>
                             </div>
-                            <InputError message={errors.zone_id} className="mt-2" />
                             <InputError message={errors.expansion_id} className="mt-1" />
-                        </div>
+                        </FormField>
 
                         {/* Characters */}
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-300">Characters</label>
+                        <FormField label="Characters" error={errors.character_ids}>
                             <Autocomplete
                                 value={characterSearch}
                                 onChange={handleCharacterAutocompleteChange}
@@ -308,8 +288,6 @@ export default function Create() {
                                     </span>
                                 )}
                             />
-                            <InputError message={errors.character_ids} className="mt-2" />
-
                             {addedCharacters.length > 0 && (
                                 <ul className="mt-3 divide-y divide-brown-700 rounded border border-amber-600/30">
                                     {addedCharacters.map((character) => (
@@ -340,17 +318,17 @@ export default function Create() {
                                     ))}
                                 </ul>
                             )}
-                        </div>
+                        </FormField>
 
                         {/* Loot councillors */}
-                        <RaidReportLootCouncillors
+                        <LootCouncillors
                             reportId={null}
                             characters={[]}
                             onChange={(ids) => setLootCouncillorIds(ids)}
                         />
 
                         {/* Linked reports */}
-                        <LinkedRaidReports
+                        <LinkedReports
                             currentReport={null}
                             canManageLinks={true}
                             nearbyReports={nearbyReports}
@@ -361,14 +339,10 @@ export default function Create() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-4 border-t border-amber-600/30 pt-4">
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className={`inline-flex items-center gap-2 rounded-md border border-transparent bg-amber-600 px-5 py-2 text-sm font-semibold uppercase tracking-widest text-white transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${processing ? "opacity-25" : ""}`}
-                            >
+                            <PrimaryButton type="submit" processing={processing}>
                                 <Icon icon="plus" style="solid" />
                                 {processing ? "Creating…" : "Create Report"}
-                            </button>
+                            </PrimaryButton>
                             <Link
                                 href={route("raiding.reports.index")}
                                 className="text-sm text-gray-400 hover:text-white"
@@ -377,8 +351,7 @@ export default function Create() {
                             </Link>
                         </div>
                     </form>
-                </div>
-            </div>
+            </FormContainer>
         </Master>
     );
 }

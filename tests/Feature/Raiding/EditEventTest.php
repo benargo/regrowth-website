@@ -69,7 +69,7 @@ class EditEventTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Events/EditEvent')
+            ->component('Raiding/Plans/Edit')
         );
     }
 
@@ -87,7 +87,7 @@ class EditEventTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Events/EditEvent')
+            ->component('Raiding/Plans/Edit')
             ->has('event')
             ->has('targetMarkers', 1)
             ->where('targetMarkers.0.slug', 'star')
@@ -115,7 +115,7 @@ class EditEventTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Events/EditEvent')
+            ->component('Raiding/Plans/Edit')
             ->has('templates', 1)
             ->where('templates.0.title', 'Matching Template')
         );
@@ -135,7 +135,7 @@ class EditEventTest extends TestCase
         $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Events/EditEvent')
+            ->component('Raiding/Plans/Edit')
             ->has('templates', 0)
         );
     }

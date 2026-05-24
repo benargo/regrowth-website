@@ -24,7 +24,7 @@ export default function Pagination({ links, meta, itemName = "items", className 
                         return (
                             <span
                                 key={index}
-                                className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-500"
+                                className="rounded bg-brown-800 px-3 py-1 text-sm text-gray-500"
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />
                         );
@@ -39,7 +39,7 @@ export default function Pagination({ links, meta, itemName = "items", className 
                                 className={`rounded px-3 py-1 text-sm transition-colors ${
                                     link.active
                                         ? "bg-amber-600 text-white"
-                                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                        : "bg-brown-800 text-gray-300 hover:bg-brown-700"
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />
@@ -52,7 +52,7 @@ export default function Pagination({ links, meta, itemName = "items", className 
                             href={link.url}
                             preserveScroll
                             className={`rounded px-3 py-1 text-sm transition-colors ${
-                                link.active ? "bg-amber-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                link.active ? "bg-amber-600 text-white" : "bg-brown-800 text-gray-300 hover:bg-brown-700"
                             }`}
                             dangerouslySetInnerHTML={{ __html: link.label }}
                         />

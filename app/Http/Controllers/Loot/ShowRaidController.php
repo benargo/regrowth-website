@@ -46,7 +46,7 @@ class ShowRaidController extends Controller
             })
         );
 
-        return Inertia::render('LootBiasTool/Raid', [
+        return Inertia::render('Loot/Raids/Show', [
             'phases' => $phases,
             'selected_phase_id' => $raid->phase_id,
             'selected_raid_id' => (int) $raid->id,

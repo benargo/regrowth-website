@@ -33,7 +33,7 @@ class ItemController extends Controller
 
         $this->loadItemWithRelations($item);
 
-        return Inertia::render('LootBiasTool/ItemShow', [
+        return Inertia::render('Loot/Items/Show', [
             'item' => new ItemResource($item),
             'comments' => CommentResource::collection($this->paginateComments($item)),
         ]);
@@ -54,7 +54,7 @@ class ItemController extends Controller
             Cache::tags(['db', 'lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray())
         );
 
-        return Inertia::render('LootBiasTool/ItemEdit', [
+        return Inertia::render('Loot/Items/Edit', [
             'item' => new ItemResource($item),
             'allPriorities' => PriorityResource::collection($allPriorities),
             'comments' => CommentResource::collection($this->paginateComments($item)),

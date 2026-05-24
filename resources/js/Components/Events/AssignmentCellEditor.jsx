@@ -4,7 +4,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Modal from "@/Components/Modal";
 import TargetMarker from "@/Components/TargetMarker";
 import Tooltip from "@/Components/Tooltip";
-import usePermission from "@/Hooks/Permissions";
+import { usePermission, Can } from "@/Components/Authorizable";
 import MODEL_TYPES from "@/Helpers/AssignmentModelTypes";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -483,25 +483,27 @@ export default function AssignmentCellEditor({
                             ) : null,
                         )}
 
-                        {canCreateSpells && query.length > 0 && (() => {
-                            const myIdx = flatIdx++;
-                            return (
-                                <button
-                                    type="button"
-                                    ref={(el) => { itemRefsRef.current[myIdx] = el; }}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        setOpen(false);
-                                        setShowDefineSpell(true);
-                                    }}
-                                    onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                    className={`flex w-full items-center gap-2 border-t border-brown-700 px-3 py-2 text-left text-sm text-amber-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
-                                >
-                                    <Icon icon="plus" style="solid" className="text-xs" />
-                                    Define a new spell
-                                </button>
-                            );
-                        })()}
+                        <Can permission="edit-datasets">
+                            {query.length > 0 && (() => {
+                                const myIdx = flatIdx++;
+                                return (
+                                    <button
+                                        type="button"
+                                        ref={(el) => { itemRefsRef.current[myIdx] = el; }}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            setOpen(false);
+                                            setShowDefineSpell(true);
+                                        }}
+                                        onMouseEnter={() => setHighlightedIndex(myIdx)}
+                                        className={`flex w-full items-center gap-2 border-t border-brown-700 px-3 py-2 text-left text-sm text-amber-400 ${myIdx === highlightedIndex ? "bg-brown-700" : "hover:bg-brown-700"}`}
+                                    >
+                                        <Icon icon="plus" style="solid" className="text-xs" />
+                                        Define a new spell
+                                    </button>
+                                );
+                            })()}
+                        </Can>
 
                         {query.length > 0 && (() => {
                             const myIdx = flatIdx++;

@@ -297,6 +297,16 @@ class ChannelTest extends TestCase
     }
 
     #[Test]
+    public function it_accepts_null_for_permission_overwrites_and_default_reaction_emoji(): void
+    {
+        $channel = Channel::from([...$this->minimalPayload(), 'permission_overwrites' => null]);
+        $this->assertNull($channel->permission_overwrites);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'default_reaction_emoji' => null]);
+        $this->assertNull($channel->default_reaction_emoji);
+    }
+
+    #[Test]
     public function all_properties_are_readonly(): void
     {
         $channel = Channel::from($this->minimalPayload());

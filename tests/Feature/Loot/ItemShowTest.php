@@ -165,7 +165,7 @@ class ItemShowTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('LootBiasTool/ItemShow')
+            ->component('Loot/Items/Show')
             ->has('item.data')
         );
     }

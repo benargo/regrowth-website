@@ -149,7 +149,7 @@ class BiasToolRaidTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('LootBiasTool/Raid')
+            ->component('Loot/Raids/Show')
             ->has('phases')
             ->where('selected_phase_id', $phase->id)
             ->where('selected_raid_id', $raid->id)
@@ -167,7 +167,7 @@ class BiasToolRaidTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('LootBiasTool/Raid')
+            ->component('Loot/Raids/Show')
             ->missing('bosses')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('bosses')
@@ -211,7 +211,7 @@ class BiasToolRaidTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('LootBiasTool/Raid')
+            ->component('Loot/Raids/Show')
             ->missing('boss_items')
         );
     }
@@ -236,7 +236,7 @@ class BiasToolRaidTest extends TestCase
         $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid)."?boss_id={$boss->id}", [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
-            'X-Inertia-Partial-Component' => 'LootBiasTool/Raid',
+            'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
             'X-Inertia-Partial-Data' => 'boss_items',
         ]);
 

@@ -44,7 +44,7 @@ class EventController extends Controller
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
-        return Inertia::render('Events/ShowEvent', [
+        return Inertia::render('Raiding/Plans/Show', [
             'event' => (new EventResource($event))->resolve($request),
             'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
         ]);
@@ -57,7 +57,7 @@ class EventController extends Controller
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
-        return Inertia::render('Events/EditEvent', [
+        return Inertia::render('Raiding/Plans/Edit', [
             'event' => (new EventResource($event))->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),
             'characters' => Inertia::optional(function () use ($request) {
