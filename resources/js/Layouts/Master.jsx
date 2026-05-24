@@ -3,18 +3,16 @@ import { Link, Head, usePage } from "@inertiajs/react";
 import Dropdown from "@/Components/Dropdown";
 import FlashMessage from "@/Components/FlashMessage";
 import Icon from "@/Components/FontAwesome/Icon";
+import NavLink from "@/Components/NavLink";
 import Pill from "@/Components/Pill";
-import usePermission from "@/Hooks/Permissions";
+import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
+import { Can } from "@/Components/Authorizable";
+import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 
 export default function Master({ title, children }) {
     const { auth, flash, phases } = usePage().props;
     const user = auth?.user;
     const impersonating = auth?.impersonating;
-
-    const canViewLootBiasTool = usePermission("view-loot-bias-tool");
-    const canViewAllComments = usePermission("view-all-comments");
-    const canViewOfficerDashboard = usePermission("view-officer-dashboard");
-    const canViewAttendance = usePermission("view-attendance");
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [flashError, setFlashError] = useState(flash?.error);
@@ -75,32 +73,23 @@ export default function Master({ title, children }) {
                     {/* Desktop menu */}
                     <div className="hidden lg:ml-10 lg:flex lg:flex-1 lg:items-center lg:justify-between">
                         <div className="flex gap-4 space-x-1">
-                            <Link
-                                href={route("roster.index")}
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            <NavLink href={route("roster.index")}>
                                 <Icon icon="users" style="solid" className="mr-2 h-6" />
                                 Roster
-                            </Link>
-                            <Link
-                                href={route("daily-quests.index")}
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            </NavLink>
+                            <NavLink href={route("daily-quests.index")}>
                                 <img
                                     src="/images/icon_quest.webp"
                                     alt="Quest start icon"
                                     className="mr-2 inline-block h-4 px-1"
                                 />
                                 Daily Quests
-                            </Link>
-                            <Link
-                                href={route("raiding.index")}
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            </NavLink>
+                            <NavLink href={route("raiding.index")}>
                                 <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                                 Raiding
-                            </Link>
-                            {canViewLootBiasTool && (
+                            </NavLink>
+                            <Can permission="view-loot-bias-tool">
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <button className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white">
@@ -118,7 +107,7 @@ export default function Master({ title, children }) {
                                                 {phase.description}
                                             </Dropdown.Link>
                                         ))}
-                                        {canViewAllComments && (
+                                        <Can permission="view-all-comments">
                                             <>
                                                 <div className="my-1 border-t border-amber-700" />
                                                 <Dropdown.Link href={route("loot.comments.index")}>
@@ -126,17 +115,14 @@ export default function Master({ title, children }) {
                                                     All Comments
                                                 </Dropdown.Link>
                                             </>
-                                        )}
+                                        </Can>
                                     </Dropdown.Content>
                                 </Dropdown>
-                            )}
-                            <a
-                                href="https://discord.gg/pM6haPnQRt"
-                                className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                            >
+                            </Can>
+                            <NavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                                 <Icon icon="discord" style="brands" className="mr-2 h-6" />
                                 Discord
-                            </a>
+                            </NavLink>
                         </div>
 
                         <div className="flex items-center">
@@ -172,12 +158,12 @@ export default function Master({ title, children }) {
                                                 Return to my account
                                             </Dropdown.Link>
                                         )}
-                                        {canViewOfficerDashboard && (
+                                        <Can permission="view-officer-dashboard">
                                             <Dropdown.Link href={route("dashboard.index")}>
                                                 <Icon icon="cogs" style="regular" className="mr-2 h-6" />
                                                 Officers&rsquo; Dashboard
                                             </Dropdown.Link>
-                                        )}
+                                        </Can>
                                         <Dropdown.Link href={route("logout")} method="post" as="button">
                                             <Icon icon="sign-out" style="regular" className="mr-2 h-6" />
                                             Logout
@@ -200,17 +186,11 @@ export default function Master({ title, children }) {
                 {/* Mobile menu */}
                 <div className={`${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`} id="mobile-menu">
                     <div className="space-y-1 px-2 pb-3 pt-2">
-                        <Link
-                            href={route("roster.index")}
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
+                        <ResponsiveNavLink href={route("roster.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
-                        </Link>
-                        <Link
-                            href={route("daily-quests.index")}
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route("daily-quests.index")}>
                             <span className="mr-2 inline-flex w-[20px] justify-center">
                                 <img
                                     src="/images/icon_quest.webp"
@@ -219,23 +199,17 @@ export default function Master({ title, children }) {
                                 />
                             </span>
                             Daily Quests
-                        </Link>
-                        <Link
-                            href={route("raiding.index")}
-                            className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white"
-                        >
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route("raiding.index")}>
                             <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                             Raiding
-                        </Link>
-                        {canViewLootBiasTool && (
+                        </ResponsiveNavLink>
+                        <Can permission="view-loot-bias-tool">
                             <>
-                                <Link
-                                    href={route("loot.index")}
-                                    className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                >
+                                <ResponsiveNavLink href={route("loot.index")}>
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot Bias
-                                </Link>
+                                </ResponsiveNavLink>
                                 <div className="ml-2 border-l-2 border-amber-800 pl-2">
                                     <p className="mb-1 text-sm font-medium text-gray-400">Phases</p>
                                     <div className="mb-2 grid grid-cols-5 gap-1">
@@ -249,7 +223,7 @@ export default function Master({ title, children }) {
                                             </Link>
                                         ))}
                                     </div>
-                                    {canViewAllComments && (
+                                    <Can permission="view-all-comments">
                                         <Link
                                             href={route("loot.comments.index")}
                                             className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
@@ -257,17 +231,14 @@ export default function Master({ title, children }) {
                                             <Icon icon="comments" style="solid" className="mr-2 h-6" />
                                             All Comments
                                         </Link>
-                                    )}
+                                    </Can>
                                 </div>
                             </>
-                        )}
-                        <a
-                            href="https://discord.gg/pM6haPnQRt"
-                            className="flex flex-row items-center rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                        >
+                        </Can>
+                        <ResponsiveNavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             Discord
-                        </a>
+                        </ResponsiveNavLink>
                     </div>
 
                     <div className="border-t border-amber-700 pb-3 pt-4">
@@ -302,7 +273,7 @@ export default function Master({ title, children }) {
                                         Return to my account
                                     </Link>
                                 )}
-                                {canViewOfficerDashboard && (
+                                <Can permission="view-officer-dashboard">
                                     <Link
                                         href={route("dashboard.index")}
                                         className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
@@ -310,7 +281,7 @@ export default function Master({ title, children }) {
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Officers' Control Panel
                                     </Link>
-                                )}
+                                </Can>
                                 <Link
                                     href={route("logout")}
                                     method="post"
@@ -369,52 +340,33 @@ export default function Master({ title, children }) {
                                 </Link>
                                 <a
                                     href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                     rel="noopener noreferrer"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 553 552"
-                                        fill="currentColor"
-                                        className="mr-2 h-[20px] w-[20px]"
-                                        aria-hidden="true"
-                                    >
-                                        <path d="M291.31,249.46l-23.42,15.86-26.02-87.8-44.1,133.45-11.73-38.41h-53.63c-.1-45.61,22.73-88.84,61.02-115.06,45.52-31.17,105.41-34.05,153.82-7.52,45.72,25.05,73.9,73.45,73.47,123.06l-56.6-.45-16.14,46.54-13.65-44.39-26.59,27.54-16.43-52.81Z" />
-                                        <path d="M419.94,291.71c-5.47,56.44-41.11,102.79-94.61,120.37-69.49,22.84-148.69-4.95-179.62-73.49-6.6-15.08-10.71-29.94-12.35-46.82l42.11-.09,22.68,67.48,43.16-131.32,18.33,61.97,23.69-16.54,17.79,56.99,26.07-27.34,18.89,65.49,28.17-76.67,45.69-.03Z" />
-                                        <path d="M393.29,86.56c-71.53-44.07-161.83-44.13-233.19.01l-36.02-39.37C163.11,20.75,206.93,6.28,253.46,1.47c15.63-.73,30.45-.72,46.09-.02,46.59,4.73,90.45,19.24,129.65,45.74l-35.91,39.37Z" />
-                                        <path d="M81.09,427.95l-19.28,19.36C24.79,401.45,4.8,346.01,1.51,287.69c-.46-8.09-.92-15.32.04-23.38,2.86-50.16,17.43-97.88,46.32-140.9l39.45,35.94c-41.3,66.92-44.2,150.44-7.37,220.19-12.79,1.33-24.16,5.33-33,14.23l34.14,34.18Z" />
-                                        <path d="M472.33,428.15l33.89-34.36c-8.6-8.67-19.79-12.68-32.88-14.14,36.51-69.5,34.25-152.68-7.33-220.14l39.29-36.16c27.7,40.89,42.51,87.26,46.18,136.03.77,11.38.8,21.9-.04,33.27-4.11,56.77-24.24,110.4-60.02,154.71l-19.1-19.2Z" />
-                                        <path d="M428.46,471.65l19.47,19.12c-43.25,35.02-95.72,55.01-151.33,59.74-13.72.76-26.49.77-40.2-.01-55.5-4.78-107.77-24.74-151.01-59.65l19.13-19.49,34.16,34.19c9.21-9.01,12.85-20.07,14.27-32.97,65.39,34.49,142.63,34.13,207.4,0,1.25,12.93,5.05,23.8,14.04,33.07l34.05-34Z" />
-                                        <path d="M413.49,196.66c-13.24-23.86-32.99-43.43-57.8-57.39l87.48-95.19,83.7-18.45-18.41,83.74-94.97,87.29Z" />
-                                        <path d="M197.45,139.1c-24.86,13.79-44.14,32.9-57.97,57.26L44.8,109.35,26.38,25.65l83.71,18.41,87.36,95.04Z" />
-                                        <path d="M124.63,460.81l-71.19,71.13-32.83-32.65,71.19-71.27-33.49-33.62c9.65-6.48,20.98-7.82,32.74-7.24l74.07,74.04c1.16,11.16-.45,22.84-6.9,33.12l-33.6-33.52Z" />
-                                        <path d="M500.03,532.15l-71.39-71.34-33.67,33.57c-6.32-10.14-7.66-21.26-7.11-32.84l74.26-74.27c11.62-.66,22.66.8,32.86,7.06l-33.54,33.71,71.29,71.32-32.7,32.8Z" />
-                                        <path d="M159.67,436.81l-43.95-43.95,30.76-33.62c11.29,19.47,27.12,34.89,46.59,46.93l-33.4,30.64Z" />
-                                        <path d="M393.53,436.84l-33.28-30.67c19.2-11.88,34.65-26.96,46.65-46.75l30.65,33.42-44.02,43.99Z" />
-                                    </svg>
-                                    Warcraft Logs
+                                    <WarcraftLogsLogo className="h-5 w-5" />
+                                    <span className="text-nowrap">Warcraft Logs</span>
                                 </a>
                                 <a
                                     href="https://discord.gg/pM6haPnQRt"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
-                                    <Icon icon="discord" style="brands" className="mr-2 h-5 w-5" />
+                                    <Icon icon="discord" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Discord</span>
                                 </a>
                                 <Link
                                     href={route("privacypolicy")}
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
-                                    <Icon icon="user-secret" style="solid" className="mr-2 h-5 w-5" />
+                                    <Icon icon="user-secret" style="solid" className="h-5 w-5" />
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
                                 <Link
                                     href={route("battlenet-usage")}
-                                    className="flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
-                                    <Icon icon="battle-net" style="brands" className="mr-2 h-5 w-5" />
+                                    <Icon icon="battle-net" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Battle.net API Usage</span>
                                 </Link>
 
@@ -423,9 +375,9 @@ export default function Master({ title, children }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title="Ben Argo"
-                                    className="mt-0 flex h-8 flex-row items-center p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="mt-0 flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
                                 >
-                                    <Icon icon="safari" style="brands" className="mr-2 h-5 w-5" />
+                                    <Icon icon="safari" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">A Fizzywigs Production</span>
                                 </a>
                             </nav>

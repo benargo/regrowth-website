@@ -555,7 +555,7 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('LootBiasTool/ItemShow')
+            ->component('Loot/Items/Show')
             ->has('comments.data', 3)
         );
     }
@@ -803,7 +803,7 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('LootBiasTool/Comments')
+            ->component('Loot/Comments/Index')
             ->has('comments.data', 20) // 20 per page
             ->has('comments.links')
             ->has('comments.meta')
@@ -831,7 +831,7 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('LootBiasTool/Comments')
+            ->component('Loot/Comments/Index')
             ->has('comments.data', 5)
             ->has('comments.data.0.item')
             ->has('comments.data.0.user')

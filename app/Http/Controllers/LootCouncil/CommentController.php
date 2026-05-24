@@ -34,7 +34,7 @@ class CommentController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return Inertia::render('LootBiasTool/Comments', [
+        return Inertia::render('Loot/Comments/Index', [
             'comments' => CommentResource::collection($comments),
         ]);
     }

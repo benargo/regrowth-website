@@ -132,7 +132,7 @@ class BiasToolTrashDropsTest extends TestCase
         $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid), [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
-            'X-Inertia-Partial-Component' => 'LootBiasTool/Raid',
+            'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
             'X-Inertia-Partial-Data' => 'boss_items',
         ]);
 
@@ -160,7 +160,7 @@ class BiasToolTrashDropsTest extends TestCase
         $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid)."?boss_id={$negativeBossId}", [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
-            'X-Inertia-Partial-Component' => 'LootBiasTool/Raid',
+            'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
             'X-Inertia-Partial-Data' => 'boss_items',
         ]);
 

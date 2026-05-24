@@ -18,7 +18,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', fn ($value) => $value !== null)
         );
@@ -33,7 +33,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', null)
         );
@@ -52,7 +52,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', fn ($value) => str_contains($value, '2026-03-15'))
         );
@@ -71,7 +71,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', null)
         );
@@ -92,7 +92,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 2)
         );
@@ -113,7 +113,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 0)
         );
@@ -133,7 +133,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 1)
             ->where('phases.0.guild_tags.0.count_attendance', true)
@@ -154,7 +154,7 @@ class PhaseViewTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/ManagePhases')
+            ->component('Dashboard/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 1)
             ->where('phases.0.guild_tags.0.count_attendance', false)

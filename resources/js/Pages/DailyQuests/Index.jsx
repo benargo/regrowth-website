@@ -1,6 +1,7 @@
 import { Deferred, Link, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 
 function QuestsSkeleton() {
     return (
@@ -28,11 +29,7 @@ function QuestReward({ reward }) {
                 rel="noopener noreferrer"
                 className="relative flex-none"
             >
-                <img
-                    src={reward.icon}
-                    alt={reward.name}
-                    className="box-shadow h-10 w-10 rounded"
-                />
+                <img src={reward.icon} alt={reward.name} className="box-shadow h-10 w-10 rounded" />
                 {reward.quantity > 1 && (
                     <span className="absolute bottom-0 right-0 rounded bg-black/75 px-1 text-xs font-bold text-white">
                         {reward.quantity}
@@ -58,21 +55,15 @@ function QuestCard({ quest }) {
     return (
         <div className="mb-8 w-full rounded-lg bg-brown-800/50 p-6">
             <h3 className="mb-1 text-2xl font-bold text-amber-400">
-                {quest.icon && (
-                    <img
-                        src={quest.icon}
-                        alt={quest.label}
-                        className="inline-block h-6 w-6 mr-2"
-                    />
-                )}
+                {quest.icon && <img src={quest.icon} alt={quest.label} className="mr-2 inline-block h-6 w-6" />}
                 {quest.label}
             </h3>
-            <p className="mb-2 text-md text-gray-300">{quest.instance ? `${quest.instance} - ${quest.name}` : quest.name}</p>
+            <p className="text-md mb-2 text-gray-300">
+                {quest.instance ? `${quest.instance} - ${quest.name}` : quest.name}
+            </p>
             <div>
                 {hasMultipleRewards && (
-                    <p className="mb-2 text-xs italic text-gray-400">
-                        A choice from one of the following:
-                    </p>
+                    <p className="mb-2 text-xs italic text-gray-400">A choice from one of the following:</p>
                 )}
                 <div className="flex flex-wrap gap-4">
                     {quest.rewards.map((reward) => (
@@ -88,11 +79,7 @@ function QuestsList() {
     const { quests } = usePage().props;
 
     if (!quests) {
-        return (
-            <p className="text-center text-gray-400">
-                No daily quests have been posted yet today.
-            </p>
-        );
+        return <p className="text-center text-gray-400">No daily quests have been posted yet today.</p>;
     }
 
     return (
@@ -107,21 +94,16 @@ function QuestsList() {
 export default function Index({ hasNotification }) {
     return (
         <Master title="Today's Daily Quests">
-            <SharedHeader
-                title="Today's Daily Quests"
-                backgroundClass="bg-dungeons"
-            />
-            <div className="container mx-auto px-4 py-8">
+            <SharedHeader title="Today's Daily Quests" backgroundClass="bg-dungeons" />
+            <PageContainer>
                 {hasNotification ? (
                     <Deferred data="quests" fallback={<QuestsSkeleton />}>
                         <QuestsList />
                     </Deferred>
                 ) : (
-                    <p className="text-center text-gray-400">
-                        No daily quests have been posted yet today.
-                    </p>
+                    <p className="text-center text-gray-400">No daily quests have been posted yet today.</p>
                 )}
-            </div>
+            </PageContainer>
         </Master>
     );
 }

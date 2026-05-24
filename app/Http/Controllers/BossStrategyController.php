@@ -21,7 +21,7 @@ class BossStrategyController extends Controller
     {
         $phases = Phase::with(['raids'])->orderBy('number')->get();
 
-        return Inertia::render('BossStrategies/Index', [
+        return Inertia::render('Dashboard/BossStrategies/Index', [
             'bosses' => new RaidBossesCollection(Boss::orderBy('raid_id')->orderBy('encounter_order')->get()),
             'phases' => PhaseResource::collection($phases)->resolve($request),
         ]);
@@ -32,7 +32,7 @@ class BossStrategyController extends Controller
      */
     public function edit(Request $request, Boss $boss, string $slug)
     {
-        return Inertia::render('BossStrategies/EditBossStrategy', [
+        return Inertia::render('Dashboard/BossStrategies/Edit', [
             'boss' => $boss->load('raid')->toResource(),
         ]);
     }

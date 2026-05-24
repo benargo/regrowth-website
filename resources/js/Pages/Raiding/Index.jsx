@@ -4,14 +4,14 @@ import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import EventsTable, { EventsSkeleton } from "@/Components/Events/EventsTable";
-import ReportsTable, { ReportsSkeleton } from "@/Components/ReportsTable";
+import Table, { Skeleton } from "@/Components/Raiding/Reports/Table";
+import PageContainer from "@/Components/PageContainer";
 
 export default function Index({ upcomingEvents, reports }) {
     return (
         <Master title="Raiding with Regrowth">
             <SharedHeader title="Raiding with Regrowth" backgroundClass="bg-illidan" />
-            <div className="py-12 text-white">
-                <div className="container mx-auto px-4">
+            <PageContainer>
                     <p className="mb-8 text-lg">
                         Join us for epic raids, thrilling boss battles, and unforgettable moments. Whether you're a
                         seasoned raider or new to the game, our community welcomes you to experience the excitement of
@@ -34,11 +34,10 @@ export default function Index({ upcomingEvents, reports }) {
                             <Icon icon="arrow-right" style="solid" className="h-4" />
                         </Link>
                     </div>
-                    <Deferred data="reports" fallback={<ReportsSkeleton />}>
-                        <ReportsTable reports={reports ?? { data: [] }} />
+                    <Deferred data="reports" fallback={<Skeleton />}>
+                        <Table reports={reports ?? { data: [] }} />
                     </Deferred>
-                </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

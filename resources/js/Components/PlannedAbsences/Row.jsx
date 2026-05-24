@@ -1,0 +1,106 @@
+import { useState } from "react";
+import { usePage, Link, router } from "@inertiajs/react";
+import Icon from "@/Components/FontAwesome/Icon";
+import ConfirmationModal from "@/Components/ConfirmationModal";
+import formatDate from "@/Helpers/FormatDate";
+import FormattedMarkdown from "@/Components/FormattedMarkdown";
+
+function RestoreButton({ userCanRestore = false, absence }) {
+    const restoreAbsence = () => {
+        userCanRestore &&
+            router.post(route("raiding.absences.restore", absence.id), {
+                preserveScroll: true,
+            });
+    };
+
+    if (!userCanRestore) {
+        return <div className="flex items-center text-sm text-red-700">Deleted</div>;
+    }
+
+    return (
+        <button onClick={restoreAbsence} className="flex items-center text-sm text-green-400 hover:text-green-300">
+            <Icon icon="trash-restore" style="regular" className="mr-1.5 h-4" />
+            Restore
+        </button>
+    );
+}
+
+export default function PlannedAbsenceRow({ absence, showCharacter = false, showCreatedBy = false }) {
+    const { auth } = usePage().props;
+    const userCanRestore = auth.user?.admin ?? false; // Only admins can restore absences
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+    const deleteAbsence = () => {
+        router.delete(route("raiding.absences.destroy", absence.id), {
+            preserveScroll: true,
+            onSuccess: () => setConfirmingDelete(false),
+        });
+    };
+
+    return (
+        <>
+            <div className="flex flex-col gap-2 rounded border border-amber-800/50 bg-brown-800/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+                {showCharacter && (
+                    <div className="shrink-0 font-medium text-amber-300">
+                        {absence.character?.name ?? "Unknown Character"}
+                    </div>
+                )}
+
+                <div className="shrink-0 text-sm text-amber-300/70">
+                    <Icon icon="calendar" style="regular" className="mr-1.5 h-4" />
+                    {formatDate(absence.start_date).medium}
+                    {absence.end_date && (
+                        <>
+                            <span className="mx-1 text-gray-500">—</span>
+                            {formatDate(absence.end_date).medium}
+                        </>
+                    )}
+                </div>
+
+                {absence.reason && (
+                    <div className="flex-1 text-sm text-gray-300">
+                        <FormattedMarkdown>{absence.reason}</FormattedMarkdown>
+                    </div>
+                )}
+
+                {showCreatedBy && absence.created_by && absence.created_at && (
+                    <div className="shrink-0 text-xs text-gray-500">
+                        Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
+                    </div>
+                )}
+
+                <div className="flex shrink-0 gap-4">
+                    <Link
+                        href={route("raiding.absences.edit", absence.id)}
+                        className="flex items-center text-sm text-amber-400 hover:text-amber-300"
+                    >
+                        <Icon icon="pen" style="regular" className="mr-1.5 h-4" />
+                        Edit
+                    </Link>
+                    {absence.deleted_at ? (
+                        <RestoreButton userCanRestore={userCanRestore} absence={absence} />
+                    ) : (
+                        <button
+                            onClick={() => setConfirmingDelete(true)}
+                            className="flex items-center text-sm text-red-400 hover:text-red-300"
+                        >
+                            <Icon icon="trash" style="regular" className="mr-1.5 h-4" />
+                            Delete
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <ConfirmationModal
+                show={confirmingDelete}
+                onClose={() => setConfirmingDelete(false)}
+                onConfirm={deleteAbsence}
+                title="Delete Planned Absence"
+                confirmLabel="Delete"
+                variant="delete"
+            >
+                Are you sure you want to delete this planned absence? This action cannot be undone.
+            </ConfirmationModal>
+        </>
+    );
+}

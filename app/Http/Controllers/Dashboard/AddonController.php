@@ -25,7 +25,7 @@ class AddonController extends Controller
 
     public function export(Request $request)
     {
-        return Inertia::render('Dashboard/Addon/Base64', [
+        return Inertia::render('Dashboard/Addon/Export', [
             'exportedData' => Inertia::defer(fn () => $this->getBase64ExportedData($request)),
             'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
         ]);
@@ -33,7 +33,7 @@ class AddonController extends Controller
 
     public function exportJson(Request $request)
     {
-        return Inertia::render('Dashboard/Addon/JSON', [
+        return Inertia::render('Dashboard/Addon/ExportJson', [
             'exportedData' => Inertia::defer(fn () => $this->getJsonExportedData($request, JSON_PRETTY_PRINT)),
             'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
         ]);
@@ -153,7 +153,7 @@ class AddonController extends Controller
 
     public function exportSchema()
     {
-        return Inertia::render('Dashboard/Addon/Schema', [
+        return Inertia::render('Dashboard/Addon/ExportSchema', [
             'schema' => $this->getSchema(),
         ]);
     }

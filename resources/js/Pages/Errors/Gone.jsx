@@ -2,6 +2,7 @@ import Master from "@/Layouts/Master";
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
+import PageContainer from "@/Components/PageContainer";
 
 function headerInner() {
     return (
@@ -22,8 +23,8 @@ export default function Gone() {
         <Master title="Raid Plan Gone">
             <SharedHeader title={headerInner()} />
 
-            <div className="py-16 text-white">
-                <div className="container mx-auto px-4 max-w-2xl text-center">
+            <PageContainer>
+                <div className="max-w-2xl text-center mx-auto">
                     <div className="border border-amber-600/30 rounded-lg p-8 mb-8 bg-black/20">
                         <p className="text-gray-300 text-lg leading-relaxed mb-4">
                             This raid plan existed once, but has since been removed from our records.
@@ -42,7 +43,7 @@ export default function Gone() {
                         Back to Raiding
                     </Link>
                 </div>
-            </div>
+            </PageContainer>
         </Master>
     );
 }

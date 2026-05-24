@@ -58,7 +58,7 @@ class ShowEventTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Events/ShowEvent')
+            ->component('Raiding/Plans/Show')
         );
     }
 
