@@ -17,6 +17,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -62,6 +63,7 @@ class DailyQuestsController extends Controller
     /**
      * Show the form to set or update daily quests, along with the existing quests if they exist.
      */
+    #[Authorize('view-officer-dashboard')]
     public function form(MediaService $media): Response
     {
         // $existingNotification = $this->getExistingNotification();
@@ -101,6 +103,7 @@ class DailyQuestsController extends Controller
     /**
      * Handle the form submission to set or update daily quests.
      */
+    #[Authorize('view-officer-dashboard')]
     public function store(StoreDailyQuestsRequest $request): RedirectResponse
     {
         $quests = [
@@ -130,6 +133,8 @@ class DailyQuestsController extends Controller
     /**
      * Display an audit log of all daily quest notifications.
      */
+    #[Authorize('view-officer-dashboard')]
+    #[Authorize('audit-daily-quests')]
     public function audit(Request $request): Response
     {
         $paginator = DiscordNotification::where('type', DailyQuestsMessage::class)

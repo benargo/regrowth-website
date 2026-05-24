@@ -7,12 +7,16 @@ use App\Http\Requests\CreateSpellRequest;
 use App\Http\Resources\SpellResource;
 use App\Models\Spell;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 
 class SpellController extends Controller
 {
     /**
      * Store a newly created spell.
      */
+    #[Middleware('auth:sanctum')]
+    #[Authorize('create', Spell::class)]
     public function store(CreateSpellRequest $request): JsonResponse
     {
         $spell = Spell::create([

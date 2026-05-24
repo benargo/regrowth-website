@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -124,6 +126,8 @@ class ReportController extends Controller
     /**
      * Display the form to manually create a new raid report.
      */
+    #[Middleware('auth')]
+    #[Authorize('create', Report::class)]
     public function create(Request $request): Response
     {
         $zones = Zone::orderBy('name')->get();
@@ -162,6 +166,8 @@ class ReportController extends Controller
     /**
      * Store a manually created raid report.
      */
+    #[Middleware('auth')]
+    #[Authorize('create', Report::class)]
     public function store(StoreReportRequest $request): RedirectResponse
     {
         $report = Report::create([
@@ -198,6 +204,8 @@ class ReportController extends Controller
      *   - `action: create` → create links between this report and all reports in `link_ids`.
      *   - `action: delete` → remove all manually created links for this report.
      */
+    #[Middleware('auth')]
+    #[Authorize('update', 'report')]
     public function update(UpdateReportRequest $request, Report $report): RedirectResponse
     {
         $linksAction = $request->input('links.action');

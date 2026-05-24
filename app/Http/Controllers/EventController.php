@@ -17,6 +17,8 @@ use App\Services\Blizzard\MediaService;
 use Illuminate\Contracts\Queue\QueueableCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,6 +42,7 @@ class EventController extends Controller
     /**
      * Display the specified resource.
      */
+    #[Authorize('view', 'event')]
     public function show(Event $event, Request $request, MediaService $mediaService): Response
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
@@ -53,6 +56,8 @@ class EventController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+    #[Middleware('auth')]
+    #[Authorize('update', 'event')]
     public function edit(Event $event, Request $request, MediaService $mediaService): Response
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
@@ -101,6 +106,8 @@ class EventController extends Controller
     /**
      * Apply a template's groups and assignments to a live event, appending to any existing ones.
      */
+    #[Middleware('auth')]
+    #[Authorize('update', 'event')]
     public function applyTemplate(Event $event, Request $request): RedirectResponse
     {
         $validated = $request->validate([

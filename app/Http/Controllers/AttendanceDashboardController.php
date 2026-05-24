@@ -14,10 +14,14 @@ use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
+#[Middleware('auth')]
+#[Authorize('view-attendance')]
 class AttendanceDashboardController extends Controller
 {
     private Request $request;

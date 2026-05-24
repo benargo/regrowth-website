@@ -14,6 +14,7 @@ use App\Services\Blizzard\BlizzardService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -23,6 +24,7 @@ use Inertia\Response as InertiaResponse;
 class ItemController extends Controller
 {
     /** Display a specific loot item. */
+    #[Authorize('view', 'item')]
     public function show(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
         $slug = $this->resolveItemSlug($blizzard, $item);
@@ -40,6 +42,7 @@ class ItemController extends Controller
     }
 
     /** Show the form for editing a specific loot item. */
+    #[Authorize('update', 'item')]
     public function edit(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
         $slug = $this->resolveItemSlug($blizzard, $item);
@@ -62,12 +65,14 @@ class ItemController extends Controller
     }
 
     /** Redirect to the edit page for a specific loot item. */
+    #[Authorize('update', 'item')]
     public function redirectToEdit(BlizzardService $blizzard, Item $item): RedirectResponse
     {
         return redirect()->route('loot.items.edit', ['item' => $item->id, 'name' => $this->resolveItemSlug($blizzard, $item)], 303);
     }
 
     /** Update the officers' notes for a specific loot item. */
+    #[Authorize('update', 'item')]
     public function updateNotes(UpdateItemNotesRequest $request, Item $item): RedirectResponse
     {
         $item->notes = $request->validated('notes');
@@ -77,6 +82,7 @@ class ItemController extends Controller
     }
 
     /** Update the priorities for a specific loot item. */
+    #[Authorize('update', 'item')]
     public function updatePriorities(UpdateItemPrioritiesRequest $request, Item $item): RedirectResponse
     {
         $priorities = collect($request->validated('priorities'))

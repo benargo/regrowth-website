@@ -5,13 +5,16 @@ namespace App\Models;
 use App\Contracts\Models\DatasetModel;
 use App\Models\Raids\Report;
 use App\Observers\GuildTagObserver;
+use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[ObservedBy([GuildTagObserver::class])]
+#[UsePolicy(DatasetPolicy::class)]
 class GuildTag extends Model implements DatasetModel
 {
     use HasFactory;

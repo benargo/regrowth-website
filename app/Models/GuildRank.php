@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
+use App\Policies\DatasetPolicy;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+#[UsePolicy(DatasetPolicy::class)]
 class GuildRank extends Model implements DatasetModel
 {
     use HasFactory;

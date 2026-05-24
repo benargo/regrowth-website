@@ -9,11 +9,13 @@ use App\Services\Blizzard\BlizzardService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
+#[Authorize('view-officer-dashboard')]
 class GrmController extends Controller
 {
     protected Filesystem $storage;
@@ -57,6 +59,7 @@ class GrmController extends Controller
         );
     }
 
+    #[Authorize('edit-datasets')]
     public function handleUpload(UploadGrmDataRequest $request)
     {
         $grmData = $request->input('grm_data');

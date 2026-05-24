@@ -11,8 +11,10 @@ use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Cache;
 
+#[Authorize('update', 'event')]
 class PublishAssignmentsController extends Controller
 {
     public function __construct(

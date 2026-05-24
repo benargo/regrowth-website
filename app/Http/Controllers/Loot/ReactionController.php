@@ -8,17 +8,16 @@ use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 class ReactionController extends Controller
 {
     /**
      * Store a newly created resource in storage.
      */
+    #[Authorize('react', 'comment')]
     public function store(Request $request, Comment $comment): RedirectResponse
     {
-        Gate::authorize('react', $comment);
-
         $comment->reactions()->create([
             'user_id' => $request->user()->id,
         ]);
@@ -29,6 +28,7 @@ class ReactionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    #[Authorize('react', 'comment')]
     public function destroy(DestroyReactionRequest $request, Comment $comment, CommentReaction $reaction): RedirectResponse
     {
         $reaction->delete();

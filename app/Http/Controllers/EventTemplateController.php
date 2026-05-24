@@ -17,14 +17,17 @@ use App\Models\TargetMarker;
 use App\Services\Blizzard\MediaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
 
+#[Authorize('view-officer-dashboard')]
 class EventTemplateController extends Controller
 {
     /**
      * Display a listing of event templates.
      */
+    #[Authorize('viewTemplates', Event::class)]
     public function index(): Response
     {
         $templates = Event::templates()->with('raids')->orderBy('title')->get();
@@ -35,6 +38,7 @@ class EventTemplateController extends Controller
     /**
      * Show the form for creating a new event template.
      */
+    #[Authorize('create', Event::class)]
     public function create(): Response
     {
         return Inertia::render('Dashboard/EventTemplates/Create', [
@@ -45,6 +49,7 @@ class EventTemplateController extends Controller
     /**
      * Store a newly created event template in storage.
      */
+    #[Authorize('create', Event::class)]
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -66,6 +71,7 @@ class EventTemplateController extends Controller
     /**
      * Edit the specified event template.
      */
+    #[Authorize('update', 'template')]
     public function edit(Event $template, Request $request, MediaService $mediaService): Response
     {
         $template->load('raids.bosses.media', 'assignments.group');
@@ -95,6 +101,7 @@ class EventTemplateController extends Controller
     /**
      * Update the specified event template.
      */
+    #[Authorize('update', 'template')]
     public function update(Request $request, Event $template): RedirectResponse
     {
         $validated = $request->validate([
@@ -112,6 +119,7 @@ class EventTemplateController extends Controller
     /**
      * Remove the specified event template from storage.
      */
+    #[Authorize('delete', 'template')]
     public function destroy(Event $template): RedirectResponse
     {
         $template->delete();

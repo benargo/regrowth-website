@@ -2,21 +2,12 @@
 
 namespace App\Http\Requests\Raid;
 
-use App\Models\Raids\Report;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreReportRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return $this->user()->can('create', Report::class);
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *

@@ -3,8 +3,6 @@
 namespace Tests\Unit\Http\Requests;
 
 use App\Http\Requests\CreateSpellRequest;
-use App\Models\DiscordRole;
-use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\Rules\Enum;
@@ -23,37 +21,6 @@ class CreateSpellRequestTest extends TestCase
         $request->setUserResolver(fn () => $user);
 
         return $request;
-    }
-
-    // ==================== authorization ====================
-
-    #[Test]
-    public function authorize_denies_access_to_users_without_permission(): void
-    {
-        $request = $this->makeRequest();
-        $authorized = $request->authorize();
-
-        $this->assertFalse($authorized);
-    }
-
-    #[Test]
-    public function authorize_allows_access_to_users_with_edit_datasets_permission(): void
-    {
-        Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']);
-
-        $role = DiscordRole::factory()->create();
-        $role->givePermissionTo('edit-datasets');
-
-        $user = User::factory()->create();
-        $user->discordRoles()->attach($role->id);
-        $user->load('discordRoles.permissions');
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $authorized = $request->authorize();
-
-        $this->assertTrue($authorized);
     }
 
     // ==================== rules ====================

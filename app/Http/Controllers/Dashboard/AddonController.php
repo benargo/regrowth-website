@@ -8,10 +8,12 @@ use App\Services\Blizzard\BlizzardService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
+#[Authorize('view-officer-dashboard')]
 class AddonController extends Controller
 {
     public function __construct(

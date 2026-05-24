@@ -38,21 +38,21 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
  * Loot Bias Tools
  */
 Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], function () {
-    Route::get('/', [LootController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('index');
-    Route::get('/raids/{raid}/{name?}', ShowRaidController::class)->can('viewAny', 'App\Models\LootCouncil\Item')->name('raids.show');
-    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->can('create', 'App\Models\LootCouncil\Comment')->name('items.comments.store');
-    Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->can('update', 'item')->name('items.notes.store');
-    Route::put('/items/{item}/priorities', [ItemController::class, 'updatePriorities'])->can('update', 'item')->name('items.priorities.update');
-    Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit'])->can('update', 'item');
-    Route::get('/items/{item}/{name?}', [ItemController::class, 'show'])->can('view', 'item')->name('items.show');
-    Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('items.edit');
+    Route::get('/', [LootController::class, 'index'])->name('index');
+    Route::get('/raids/{raid}/{name?}', ShowRaidController::class)->name('raids.show');
+    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
+    Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->name('items.notes.store');
+    Route::put('/items/{item}/priorities', [ItemController::class, 'updatePriorities'])->name('items.priorities.update');
+    Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit']);
+    Route::get('/items/{item}/{name?}', [ItemController::class, 'show'])->name('items.show');
+    Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->name('items.edit');
 
     // Comment routes
-    Route::get('/comments', [CommentController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Comment')->name('comments.index');
-    Route::put('/comments/{comment}', [CommentController::class, 'update'])->can('update', 'comment')->name('comments.update');
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->can('delete', 'comment')->name('comments.destroy');
-    Route::post('/comments/{comment}/reactions', [ReactionController::class, 'store'])->can('react', 'comment')->name('comments.reactions.store');
-    Route::delete('/comments/{comment}/reactions/{reaction}', [ReactionController::class, 'destroy'])->can('react', 'comment')->name('comments.reactions.destroy');
+    Route::get('/comments', [CommentController::class, 'index'])->name('comments.index');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::post('/comments/{comment}/reactions', [ReactionController::class, 'store'])->name('comments.reactions.store');
+    Route::delete('/comments/{comment}/reactions/{reaction}', [ReactionController::class, 'destroy'])->name('comments.reactions.destroy');
 });
 
 /**
@@ -62,30 +62,30 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/', [RaidingController::class, 'index'])->name('index');
 
     // Planned absences routes
-    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->middleware(['auth', 'can:viewAny,App\Models\PlannedAbsence'])->name('absences.index');
-    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->middleware(['auth', 'can:create,App\Models\PlannedAbsence'])->name('absences.create');
-    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->middleware(['auth', 'can:create,App\Models\PlannedAbsence'])->name('absences.store');
-    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->middleware(['auth', 'can:update,plannedAbsence'])->name('absences.edit');
-    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->middleware(['auth', 'can:update,plannedAbsence'])->name('absences.update');
-    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->middleware(['auth', 'can:delete,plannedAbsence'])->name('absences.destroy');
-    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->middleware(['auth', 'can:restore,plannedAbsence'])->name('absences.restore');
+    Route::get('/absences', [PlannedAbsenceController::class, 'index'])->name('absences.index');
+    Route::get('/absences/create', [PlannedAbsenceController::class, 'create'])->name('absences.create');
+    Route::post('/absences', [PlannedAbsenceController::class, 'store'])->name('absences.store');
+    Route::get('/absences/{plannedAbsence}/edit', [PlannedAbsenceController::class, 'edit'])->name('absences.edit');
+    Route::patch('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'update'])->name('absences.update');
+    Route::delete('/absences/{plannedAbsence}', [PlannedAbsenceController::class, 'destroy'])->name('absences.destroy');
+    Route::post('/absences/{plannedAbsence}/restore', [PlannedAbsenceController::class, 'restore'])->withTrashed()->name('absences.restore');
 
     // Attendance routes
-    Route::get('/attendance', AttendanceDashboardController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.dashboard');
-    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->middleware(['auth', 'can:view-attendance'])->name('attendance.graphs.index');
-    Route::get('/attendance/matrix', AttendanceMatrixController::class)->middleware(['auth', 'can:view-attendance'])->name('attendance.matrix');
+    Route::get('/attendance', AttendanceDashboardController::class)->name('attendance.dashboard');
+    Route::get('/attendance/graphs', [AttendanceGraphsController::class, 'index'])->name('attendance.graphs.index');
+    Route::get('/attendance/matrix', AttendanceMatrixController::class)->name('attendance.matrix');
 
     // Upcoming events comps and plans routes
-    Route::get('/plans/{event}', [EventController::class, 'show'])->can('view', 'event')->name('plans.show');
-    Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->middleware(['auth', 'can:update,event'])->name('plans.edit');
-    Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->middleware(['auth', 'can:update,event'])->name('plans.apply-template');
+    Route::get('/plans/{event}', [EventController::class, 'show'])->name('plans.show');
+    Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->name('plans.edit');
+    Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->name('plans.apply-template');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/create', [ReportController::class, 'create'])->middleware(['auth', 'can:create,App\Models\Raids\Report'])->name('reports.create');
-    Route::post('/reports', [ReportController::class, 'store'])->middleware(['auth', 'can:create,App\Models\Raids\Report'])->name('reports.store');
+    Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
-    Route::patch('/reports/{report}', [ReportController::class, 'update'])->middleware(['auth', 'can:update,report'])->name('reports.update');
+    Route::patch('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
 });
 
 /**
@@ -96,7 +96,7 @@ Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.n
 /*
  * Officers' Dashboard
  */
-Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth', 'can:view-officer-dashboard']], function () {
+Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('index');
 
     /**
@@ -113,27 +113,25 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      * Boss strategies management
      */
     Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
-    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'edit'])->can('update', 'boss')->name('boss-strategies.edit');
-    Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->can('update', 'boss')->name('boss-strategies.update');
+    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'edit'])->name('boss-strategies.edit');
+    Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->name('boss-strategies.update');
 
     /**
      * Daily Quests
      */
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
-    Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])
-        ->can('audit-daily-quests')
-        ->name('daily-quests.audit');
+    Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])->name('daily-quests.audit');
 
     /**
      * Event templates
      */
-    Route::get('/event-templates', [EventTemplateController::class, 'index'])->can('viewTemplates', 'App\Models\Event')->name('event-templates.index');
-    Route::get('/event-templates/create', [EventTemplateController::class, 'create'])->can('create', 'App\Models\Event')->name('event-templates.create');
-    Route::post('/event-templates', [EventTemplateController::class, 'store'])->can('create', 'App\Models\Event')->name('event-templates.store');
-    Route::get('/event-templates/{template}/edit', [EventTemplateController::class, 'edit'])->can('update', 'template')->name('event-templates.edit');
-    Route::patch('/event-templates/{template}', [EventTemplateController::class, 'update'])->can('update', 'template')->name('event-templates.update');
-    Route::delete('/event-templates/{template}', [EventTemplateController::class, 'destroy'])->can('delete', 'template')->name('event-templates.destroy');
+    Route::get('/event-templates', [EventTemplateController::class, 'index'])->name('event-templates.index');
+    Route::get('/event-templates/create', [EventTemplateController::class, 'create'])->name('event-templates.create');
+    Route::post('/event-templates', [EventTemplateController::class, 'store'])->name('event-templates.store');
+    Route::get('/event-templates/{template}/edit', [EventTemplateController::class, 'edit'])->name('event-templates.edit');
+    Route::patch('/event-templates/{template}', [EventTemplateController::class, 'update'])->name('event-templates.update');
+    Route::delete('/event-templates/{template}', [EventTemplateController::class, 'destroy'])->name('event-templates.destroy');
 
     /**
      * GRM data upload
@@ -180,7 +178,6 @@ Route::group(['prefix' => 'daily-quests', 'as' => 'daily-quests.'], function () 
  * Warcraft Logs Guild Tags Management
  */
 Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', [GuildTagController::class, 'toggleCountAttendance'])
-    ->middleware('auth')
     ->name('wcl.guild-tags.toggle-attendance');
 
 /**

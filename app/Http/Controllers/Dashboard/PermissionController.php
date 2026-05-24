@@ -8,11 +8,13 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
+#[Authorize('view-officer-dashboard')]
 class PermissionController extends Controller
 {
     /**

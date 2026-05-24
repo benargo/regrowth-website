@@ -20,14 +20,6 @@ class UploadGrmDataRequest extends FormRequest
     protected ?string $detectedDelimiter = null;
 
     /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return $this->user()->isOfficer();
-    }
-
-    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>

@@ -3,23 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
-use App\Models\Boss;
-use App\Models\Event;
-use App\Models\GuildRank;
-use App\Models\GuildTag;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
-use App\Models\Phase;
-use App\Models\Raids\Report;
-use App\Models\Spell;
 use App\Models\User;
-use App\Policies\BossPolicy;
-use App\Policies\CommentPolicy;
-use App\Policies\DatasetPolicy;
-use App\Policies\EventPolicy;
-use App\Policies\ItemPolicy;
-use App\Policies\ReportPolicy;
-use App\Policies\SpellPolicy;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
@@ -56,21 +40,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         /**
-         * Policies
-         */
-        Gate::policy(Boss::class, BossPolicy::class);
-        Gate::policy(Comment::class, CommentPolicy::class);
-        Gate::policy(Event::class, EventPolicy::class);
-        Gate::policy(Spell::class, SpellPolicy::class);
-        Gate::policy(GuildRank::class, DatasetPolicy::class);
-        Gate::policy(GuildTag::class, DatasetPolicy::class);
-        Gate::policy(Item::class, ItemPolicy::class);
-        Gate::policy(Phase::class, DatasetPolicy::class);
-        Gate::policy(Report::class, ReportPolicy::class);
-
-        /**
          * Authorization Gates
          */
+        Gate::define('edit-datasets', fn (User $user) => $user->hasPermissionViaDiscordRoles('edit-datasets'));
         Gate::define('impersonate-roles', fn (User $user) => $user->hasPermissionViaDiscordRoles('impersonate-roles'));
         Gate::define('view-attendance', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-officer-dashboard'));

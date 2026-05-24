@@ -13,6 +13,7 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,6 +26,7 @@ class CommentController extends Controller
     /**
      * Display a listing of comments for a specific loot item.
      */
+    #[Authorize('viewAny', Comment::class)]
     public function index(): Response
     {
         $comments = Comment::with(['user', 'item'])
@@ -39,6 +41,7 @@ class CommentController extends Controller
     /**
      * Store a new comment for a specific loot item.
      */
+    #[Authorize('create', Comment::class)]
     public function store(StoreCommentRequest $request, Item $item): RedirectResponse
     {
         $comment = $item->comments()->create([
@@ -58,6 +61,7 @@ class CommentController extends Controller
     /**
      * Update an existing comment for a specific loot item.
      */
+    #[Authorize('update', 'comment')]
     public function update(UpdateCommentRequest $request, Comment $comment): RedirectResponse
     {
         // Create new comment with original timestamp
@@ -80,6 +84,7 @@ class CommentController extends Controller
     /**
      * Delete a comment for a specific loot item.
      */
+    #[Authorize('delete', 'comment')]
     public function destroy(Request $request, Comment $comment): RedirectResponse
     {
         $comment->update(['deleted_by' => $request->user()->id]);

@@ -101,30 +101,4 @@ class UpdateReportRequestTest extends TestCase
         $this->assertContains('array', $rules['loot_councillors.character_ids']);
         $this->assertContains('min:1', $rules['loot_councillors.character_ids']);
     }
-
-    // ==================== authorize ====================
-
-    #[Test]
-    public function authorize_returns_true_when_user_can_update_report(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', \Mockery::any())->andReturn(true);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_false_when_user_cannot_update_report(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', \Mockery::any())->andReturn(false);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertFalse($request->authorize());
-    }
 }

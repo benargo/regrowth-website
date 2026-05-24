@@ -120,30 +120,4 @@ class StorePlannedAbsenceRequestTest extends TestCase
         $this->assertContains('required', $rules['reason']);
         $this->assertContains('string', $rules['reason']);
     }
-
-    // ==================== authorize ====================
-
-    #[Test]
-    public function authorize_returns_true_when_user_can_create_planned_absence(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('create', PlannedAbsence::class)->andReturn(true);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_false_when_user_cannot_create_planned_absence(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('create', PlannedAbsence::class)->andReturn(false);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertFalse($request->authorize());
-    }
 }

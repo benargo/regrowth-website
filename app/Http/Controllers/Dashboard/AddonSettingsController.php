@@ -12,8 +12,10 @@ use App\Models\Phase;
 use App\Services\WarcraftLogs\GuildTags;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 
+#[Authorize('view-officer-dashboard')]
 class AddonSettingsController extends Controller
 {
     public function __construct(
@@ -60,6 +62,7 @@ class AddonSettingsController extends Controller
     /**
      * Add a councillor to the list of loot councillors.
      */
+    #[Authorize('edit-datasets')]
     public function addCouncillor(AddCouncillorRequest $request): RedirectResponse
     {
         $character = Character::where('name', $request->validated('character_name'))->firstOrFail();
@@ -72,6 +75,7 @@ class AddonSettingsController extends Controller
     /**
      * Remove a councillor from the list of loot councillors.
      */
+    #[Authorize('edit-datasets')]
     public function removeCouncillor(RemoveCouncillorRequest $request, Character $character): RedirectResponse
     {
         $character->update(['is_loot_councillor' => false]);
