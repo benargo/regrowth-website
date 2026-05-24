@@ -16,12 +16,15 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 use Normalizer;
 
+#[Middleware('auth')]
 class PlannedAbsenceController extends Controller
 {
     public function __construct(
@@ -37,6 +40,7 @@ class PlannedAbsenceController extends Controller
     /**
      * Display a listing of the resource.
      */
+    #[Authorize('viewAny', PlannedAbsence::class)]
     public function index(Request $request): Response
     {
         return Inertia::render('Raiding/Absences/Index', [
@@ -63,6 +67,7 @@ class PlannedAbsenceController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    #[Authorize('create', PlannedAbsence::class)]
     public function create(Request $request): Response
     {
         $characters = $this->buildCharactersResourceCollection($request);
@@ -84,6 +89,7 @@ class PlannedAbsenceController extends Controller
      * @throws MultipleCharactersFoundException
      * @throws CharacterNotMainException
      */
+    #[Authorize('create', PlannedAbsence::class)]
     public function store(StorePlannedAbsenceRequest $request): RedirectResponse
     {
         $input = $request->input('character');
@@ -137,6 +143,7 @@ class PlannedAbsenceController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+    #[Authorize('update', 'plannedAbsence')]
     public function edit(Request $request, PlannedAbsence $plannedAbsence): Response
     {
         $characters = $this->buildCharactersResourceCollection($request);
@@ -160,6 +167,7 @@ class PlannedAbsenceController extends Controller
      *
      * @throws CharacterNotMainException
      */
+    #[Authorize('update', 'plannedAbsence')]
     public function update(UpdatePlannedAbsenceRequest $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
         $updates = [];
@@ -205,6 +213,7 @@ class PlannedAbsenceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    #[Authorize('delete', 'plannedAbsence')]
     public function destroy(Request $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
         $plannedAbsence->delete();
@@ -215,6 +224,7 @@ class PlannedAbsenceController extends Controller
     /**
      * Restore the specified resource from storage.
      */
+    #[Authorize('restore', 'plannedAbsence')]
     public function restore(Request $request, PlannedAbsence $plannedAbsence): RedirectResponse
     {
         if ($plannedAbsence === null) {

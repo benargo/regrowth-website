@@ -16,11 +16,15 @@ use App\Models\Zone;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
+#[Middleware('auth')]
+#[Authorize('view-attendance')]
 class AttendanceMatrixController extends Controller
 {
     public function __construct(

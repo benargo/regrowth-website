@@ -7,9 +7,13 @@ use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
+#[Middleware('auth')]
+#[Authorize('view-attendance')]
 class AttendanceGraphsController extends Controller
 {
     public function __construct(

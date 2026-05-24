@@ -8,7 +8,11 @@ use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;
 use App\Services\Attendance\DataTable;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 
+#[Middleware('auth:sanctum')]
+#[Authorize('view-attendance')]
 class AttendanceNamesController extends Controller
 {
     public function __construct(

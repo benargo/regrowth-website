@@ -11,10 +11,9 @@ use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/attendance/names', AttendanceNamesController::class)
-    ->middleware(['auth:sanctum', 'can:view-attendance'])
     ->name('api.attendance.names');
 
-Route::middleware('auth:sanctum')->get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzard.media');
+Route::get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzard.media');
 
 Route::get('/discord/guild/members/search', [GuildResourceController::class, 'searchMembers'])
     ->name('api.discord.guild.members.search');
@@ -22,9 +21,9 @@ Route::get('/discord/guild/members/search', [GuildResourceController::class, 'se
 Route::post('/loot/comments/{comment}/resolve', [CommentController::class, 'resolve'])
     ->name('api.loot.comments.resolve');
 
-Route::post('/spells', [SpellController::class, 'store'])->middleware(['auth:sanctum', 'can:create,App\Models\Spell'])->name('api.spells.store');
+Route::post('/spells', [SpellController::class, 'store'])->name('api.spells.store');
 
-Route::middleware(['auth:sanctum', 'can:update,event'])->prefix('/events/{event}')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('/events/{event}')->group(function () {
     // reorder must be registered before {group}/{assignment} to avoid treating "reorder" as a model ID
     Route::patch('/groups/reorder', [EventGroupController::class, 'reorder'])->name('api.events.groups.reorder');
     Route::post('/groups', [EventGroupController::class, 'store'])->name('api.events.groups.store');

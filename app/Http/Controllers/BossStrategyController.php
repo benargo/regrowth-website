@@ -9,9 +9,11 @@ use App\Models\Boss;
 use App\Models\Phase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
+#[Authorize('view-officer-dashboard')]
 class BossStrategyController extends Controller
 {
     /**
@@ -30,6 +32,7 @@ class BossStrategyController extends Controller
     /**
      * Show the form to edit a boss strategy, including the current strategy content.
      */
+    #[Authorize('update', 'boss')]
     public function edit(Request $request, Boss $boss, string $slug)
     {
         return Inertia::render('Dashboard/BossStrategies/Edit', [
@@ -40,6 +43,7 @@ class BossStrategyController extends Controller
     /**
      * Handle the submission of an updated boss strategy, validating the input and saving it to the database.
      */
+    #[Authorize('update', 'boss')]
     public function update(UpdateBossStrategyRequest $request, Boss $boss): RedirectResponse
     {
         $notes = $request->input('notes');

@@ -11,8 +11,10 @@ use App\Models\Event;
 use App\Models\EventAssignmentGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\DB;
 
+#[Authorize('update', 'event')]
 class EventGroupController extends Controller
 {
     /**

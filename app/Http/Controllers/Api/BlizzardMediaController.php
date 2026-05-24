@@ -7,10 +7,12 @@ use App\Http\Requests\BlizzardMediaRequest;
 use App\Services\Blizzard\BlizzardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
+#[Middleware('auth:sanctum')]
 class BlizzardMediaController extends Controller
 {
     private const MEDIA_PER_PAGE = 1000;

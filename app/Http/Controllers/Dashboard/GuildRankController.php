@@ -9,11 +9,13 @@ use App\Http\Requests\Dashboard\UpdateGuildRankPositionsRequest;
 use App\Http\Requests\Dashboard\UpdateGuildRankRequest;
 use App\Models\GuildRank;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
+#[Authorize('view-officer-dashboard')]
 class GuildRankController extends Controller
 {
     /**
@@ -35,6 +37,7 @@ class GuildRankController extends Controller
     /**
      * Store a newly created resource.
      */
+    #[Authorize('edit-datasets')]
     public function store(StoreGuildRankRequest $request): RedirectResponse
     {
         $nextPosition = GuildRank::max('position') + 1;
@@ -50,6 +53,7 @@ class GuildRankController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    #[Authorize('edit-datasets')]
     public function update(UpdateGuildRankRequest $request, GuildRank $guildRank): RedirectResponse
     {
         $guildRank->update($request->validated());
@@ -60,6 +64,7 @@ class GuildRankController extends Controller
     /**
      * Update positions for all ranks.
      */
+    #[Authorize('edit-datasets')]
     public function updatePositions(UpdateGuildRankPositionsRequest $request): RedirectResponse
     {
         $ranks = $request->validated('ranks');
@@ -82,6 +87,7 @@ class GuildRankController extends Controller
     /**
      * Toggle the count_attendance flag for a guild rank.
      */
+    #[Authorize('update', 'guildRank')]
     public function toggleCountAttendance(ToggleGuildRankAttendanceRequest $request, GuildRank $guildRank): RedirectResponse
     {
         $guildRank->count_attendance = $request->validated('count_attendance');
