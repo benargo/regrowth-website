@@ -87,19 +87,8 @@ class LootCouncilPagesTest extends TestCase
 
         $response = $this->actingAs($user)->get('/loot');
 
-        $response->assertRedirect();
-    }
-
-    #[Test]
-    public function loot_phase_page_redirects(): void
-    {
-        $user = User::factory()->member()->create();
-        $phase = Phase::factory()->started()->create();
-        Raid::factory()->create(['phase_id' => $phase->id]);
-
-        $response = $this->actingAs($user)->get(route('loot.phase', ['phase' => $phase->id]));
-
-        $response->assertRedirect();
+        $response->assertOk();
+        $response->assertSee('Regrowth');
     }
 
     #[Test]

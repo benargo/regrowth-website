@@ -15,11 +15,11 @@ use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\GuildRosterController;
-use App\Http\Controllers\LootCouncil\BiasToolController;
-use App\Http\Controllers\LootCouncil\CommentController;
-use App\Http\Controllers\LootCouncil\CommentReactionController;
-use App\Http\Controllers\LootCouncil\ItemController;
-use App\Http\Controllers\LootCouncil\RaidController;
+use App\Http\Controllers\Loot\CommentController;
+use App\Http\Controllers\Loot\ItemController;
+use App\Http\Controllers\Loot\LootController;
+use App\Http\Controllers\Loot\ReactionController;
+use App\Http\Controllers\Loot\ShowRaidController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
@@ -38,12 +38,12 @@ Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.ind
  * Loot Bias Tools
  */
 Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], function () {
-    Route::get('/', [BiasToolController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('index');
-    Route::get('/phases/phase-{phase}', [BiasToolController::class, 'phase'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('phase');
-    Route::get('/raids/{raid}/{name?}', [RaidController::class, 'show'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('raids.show');
+    Route::get('/', [LootController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('index');
+    Route::get('/raids/{raid}/{name?}', ShowRaidController::class)->can('viewAny', 'App\Models\LootCouncil\Item')->name('raids.show');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->can('create', 'App\Models\LootCouncil\Comment')->name('items.comments.store');
     Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->can('update', 'item')->name('items.notes.store');
     Route::put('/items/{item}/priorities', [ItemController::class, 'updatePriorities'])->can('update', 'item')->name('items.priorities.update');
+    Route::get('/items/search', [ItemController::class, 'search'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('items.search');
     Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit'])->can('update', 'item');
     Route::get('/items/{item}/{name?}', [ItemController::class, 'view'])->can('view', 'item')->name('items.show');
     Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('items.edit');
@@ -52,8 +52,8 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], fu
     Route::get('/comments', [CommentController::class, 'index'])->can('viewAny', 'App\Models\LootCouncil\Comment')->name('comments.index');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->can('update', 'comment')->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->can('delete', 'comment')->name('comments.destroy');
-    Route::post('/comments/{comment}/reactions', [CommentReactionController::class, 'store'])->can('react', 'comment')->name('comments.reactions.store');
-    Route::delete('/comments/{comment}/reactions/{reaction}', [CommentReactionController::class, 'destroy'])->can('react', 'comment')->name('comments.reactions.destroy');
+    Route::post('/comments/{comment}/reactions', [ReactionController::class, 'store'])->can('react', 'comment')->name('comments.reactions.store');
+    Route::delete('/comments/{comment}/reactions/{reaction}', [ReactionController::class, 'destroy'])->can('react', 'comment')->name('comments.reactions.destroy');
 });
 
 /**

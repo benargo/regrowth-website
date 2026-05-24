@@ -110,14 +110,10 @@ export default function Master({ title, children }) {
                                         </button>
                                     </Dropdown.Trigger>
                                     <Dropdown.Content align="left">
-                                        {phases?.map((phase) => (
-                                            <Dropdown.Link
-                                                key={phase.id}
-                                                href={route("loot.phase", { phase: phase.id })}
-                                            >
-                                                {phase.description}
-                                            </Dropdown.Link>
-                                        ))}
+                                        <Dropdown.Link href={route("loot.index")}>
+                                            <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                                            Loot Bias
+                                        </Dropdown.Link>
                                         {canViewAllComments && (
                                             <>
                                                 <div className="my-1 border-t border-amber-700" />
@@ -236,29 +232,15 @@ export default function Master({ title, children }) {
                                     <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                                     Loot Bias
                                 </Link>
-                                <div className="ml-2 border-l-2 border-amber-800 pl-2">
-                                    <p className="mb-1 text-sm font-medium text-gray-400">Phases</p>
-                                    <div className="mb-2 grid grid-cols-5 gap-1">
-                                        {phases?.map((phase) => (
-                                            <Link
-                                                key={phase.id}
-                                                href={route("loot.phase", { phase: phase.id })}
-                                                className="rounded border border-amber-800 px-3 py-2 text-center text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                            >
-                                                {phase.number}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                    {canViewAllComments && (
-                                        <Link
-                                            href={route("loot.comments.index")}
-                                            className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                        >
-                                            <Icon icon="comments" style="solid" className="mr-2 h-6" />
-                                            All Comments
-                                        </Link>
-                                    )}
-                                </div>
+                                {canViewAllComments && (
+                                    <Link
+                                        href={route("loot.comments.index")}
+                                        className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                                    >
+                                        <Icon icon="comments" style="solid" className="mr-2 h-6" />
+                                        All Comments
+                                    </Link>
+                                )}
                             </>
                         )}
                         <a
