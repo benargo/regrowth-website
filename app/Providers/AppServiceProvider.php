@@ -3,11 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
-use App\Models\GuildRank;
-use App\Models\GuildTag;
-use App\Models\Phase;
 use App\Models\User;
-use App\Policies\DatasetPolicy;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,13 +38,6 @@ class AppServiceProvider extends ServiceProvider
             /** @var Builder $this */
             return $this->whereRaw('1 = 0');
         });
-
-        /**
-         * Policies
-         */
-        Gate::policy(GuildRank::class, DatasetPolicy::class);
-        Gate::policy(GuildTag::class, DatasetPolicy::class);
-        Gate::policy(Phase::class, DatasetPolicy::class);
 
         /**
          * Authorization Gates
