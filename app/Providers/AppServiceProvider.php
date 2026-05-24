@@ -71,6 +71,7 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Authorization Gates
          */
+        Gate::define('edit-datasets', fn (User $user) => $user->hasPermissionViaDiscordRoles('edit-datasets'));
         Gate::define('impersonate-roles', fn (User $user) => $user->hasPermissionViaDiscordRoles('impersonate-roles'));
         Gate::define('view-attendance', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-officer-dashboard'));
