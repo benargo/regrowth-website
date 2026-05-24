@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsBinaryColor;
+use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Event;
 use App\Models\LootCouncil\Comment;
@@ -47,9 +49,24 @@ class RaidTest extends ModelTestCase
         $this->assertFillable($model, [
             'name',
             'difficulty',
+            'background_css_class',
+            'color',
             'phase_id',
             'max_players',
             'max_loot_councillors',
+        ]);
+    }
+
+    #[Test]
+    public function it_has_expected_casts(): void
+    {
+        $model = new Raid;
+
+        $this->assertCasts($model, [
+            'background_css_class' => RaidBackground::class,
+            'color' => AsBinaryColor::class,
+            'max_players' => 'integer',
+            'max_loot_councillors' => 'integer',
         ]);
     }
 
@@ -70,6 +87,79 @@ class RaidTest extends ModelTestCase
         $this->assertModelExists($raid);
     }
 
+    // ==================== background_css_class ====================
+
+    #[Test]
+    public function background_css_class_is_nullable(): void
+    {
+        $raid = $this->create(['background_css_class' => null]);
+
+        $this->assertNull($raid->background_css_class);
+        $this->assertModelExists($raid);
+    }
+
+    #[Test]
+    public function background_css_class_is_cast_to_raid_background_enum(): void
+    {
+        $raid = $this->create(['background_css_class' => RaidBackground::KARAZHAN]);
+
+        $this->assertInstanceOf(RaidBackground::class, $raid->background_css_class);
+        $this->assertSame(RaidBackground::KARAZHAN, $raid->background_css_class);
+    }
+
+    // ==================== color ====================
+
+    #[Test]
+    public function color_is_nullable(): void
+    {
+        $raid = $this->create(['color' => null]);
+
+        $this->assertNull($raid->color);
+        $this->assertModelExists($raid);
+    }
+
+    #[Test]
+    public function color_getter_returns_hex_string(): void
+    {
+        $raid = $this->create(['color' => '8b7ed0']);
+
+        $this->assertSame('8b7ed0', $raid->color);
+    }
+
+    #[Test]
+    public function color_setter_accepts_hex_string_without_hash(): void
+    {
+        $raid = $this->create(['color' => '8b7ed0']);
+
+        $this->assertSame('8b7ed0', $raid->color);
+    }
+
+    #[Test]
+    public function color_setter_accepts_hex_string_with_hash(): void
+    {
+        $raid = $this->create(['color' => '#8b7ed0']);
+
+        $this->assertSame('8b7ed0', $raid->color);
+    }
+
+    #[Test]
+    public function color_setter_accepts_integer_hex_literal(): void
+    {
+        $raid = $this->create(['color' => 0x8B7ED0]);
+
+        $this->assertSame('8b7ed0', $raid->color);
+    }
+
+    #[Test]
+    public function color_setter_throws_for_invalid_string(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->create(['color' => 'not-a-color']);
+    }
+
+    // ==================== max_players ====================
+
     #[Test]
     public function max_players_is_nullable(): void
     {
@@ -79,6 +169,8 @@ class RaidTest extends ModelTestCase
         $this->assertModelExists($raid);
     }
 
+    // ==================== max_loot_councillors ====================
+
     #[Test]
     public function max_loot_councillors_is_nullable(): void
     {
@@ -87,6 +179,78 @@ class RaidTest extends ModelTestCase
         $this->assertNull($raid->max_loot_councillors);
         $this->assertModelExists($raid);
     }
+
+    // ==================== max_groups ====================
+
+    #[Test]
+    public function it_calculates_max_groups_from_max_players(): void
+    {
+        $raid = $this->create(['max_players' => 20]);
+
+        $this->assertSame(4, $raid->max_groups);
+    }
+
+    #[Test]
+    public function ten_player_raid_has_two_max_groups(): void
+    {
+        $raid = $this->factory()->tenPlayer()->create();
+
+        $this->assertSame(2, $raid->max_groups);
+    }
+
+    #[Test]
+    public function twenty_five_player_raid_has_five_max_groups(): void
+    {
+        $raid = $this->factory()->twentyFivePlayer()->create();
+
+        $this->assertSame(5, $raid->max_groups);
+    }
+
+    #[Test]
+    public function max_groups_rounds_up_for_non_divisible_player_counts(): void
+    {
+        $raid = $this->create(['max_players' => 11]);
+
+        $this->assertSame(3, $raid->max_groups);
+    }
+
+    #[Test]
+    public function max_groups_is_not_persisted_to_the_database(): void
+    {
+        $raid = $this->create(['max_players' => 10]);
+
+        $this->assertArrayNotHasKey('max_groups', $raid->getAttributes());
+        $this->assertSame(2, $raid->max_groups);
+    }
+
+    // ==================== slug ====================
+
+    #[Test]
+    public function it_generates_a_slug_from_the_name(): void
+    {
+        $raid = $this->create(['name' => 'Serpentshrine Cavern']);
+
+        $this->assertSame('serpentshrine-cavern', $raid->slug);
+    }
+
+    #[Test]
+    public function it_generates_a_slug_with_special_characters_removed(): void
+    {
+        $raid = $this->create(['name' => "Magtheridon's Lair"]);
+
+        $this->assertSame('magtheridons-lair', $raid->slug);
+    }
+
+    #[Test]
+    public function slug_is_not_persisted_to_the_database(): void
+    {
+        $raid = $this->create(['name' => 'Karazhan']);
+
+        $this->assertArrayNotHasKey('slug', $raid->getAttributes());
+        $this->assertSame('karazhan', $raid->slug);
+    }
+
+    // ==================== factory ====================
 
     #[Test]
     public function factory_creates_valid_model(): void
@@ -140,82 +304,6 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_generates_a_slug_from_the_name(): void
-    {
-        $raid = $this->create(['name' => 'Serpentshrine Cavern']);
-
-        $this->assertSame('serpentshrine-cavern', $raid->slug);
-    }
-
-    #[Test]
-    public function it_generates_a_slug_with_special_characters_removed(): void
-    {
-        $raid = $this->create(['name' => "Magtheridon's Lair"]);
-
-        $this->assertSame('magtheridons-lair', $raid->slug);
-    }
-
-    #[Test]
-    public function slug_is_not_persisted_to_the_database(): void
-    {
-        $raid = $this->create(['name' => 'Karazhan']);
-
-        $this->assertArrayNotHasKey('slug', $raid->getAttributes());
-        $this->assertSame('karazhan', $raid->slug);
-    }
-
-    #[Test]
-    public function it_belongs_to_a_phase(): void
-    {
-        $phase = Phase::factory()->create();
-        $raid = $this->create(['phase_id' => $phase->id]);
-
-        $this->assertRelation($raid, 'phase', BelongsTo::class);
-        $this->assertTrue($raid->phase->is($phase));
-    }
-
-    #[Test]
-    public function it_has_many_bosses(): void
-    {
-        $raid = $this->create();
-        Boss::factory()->count(3)->create(['raid_id' => $raid->id]);
-
-        $this->assertRelation($raid, 'bosses', HasMany::class);
-        $this->assertCount(3, $raid->bosses);
-    }
-
-    #[Test]
-    public function it_has_many_items(): void
-    {
-        $raid = $this->factory()->withItems(2)->create();
-
-        $this->assertRelation($raid, 'items', HasMany::class);
-        $this->assertCount(2, $raid->items);
-        $this->assertInstanceOf(Item::class, $raid->items->first());
-    }
-
-    #[Test]
-    public function it_has_many_trash_items(): void
-    {
-        $raid = $this->factory()->withItems(2)->create();
-        Item::factory()->fromBoss()->create(['raid_id' => $raid->id]);
-
-        $this->assertRelation($raid, 'trashItems', HasMany::class);
-        $this->assertCount(2, $raid->trashItems);
-        $this->assertTrue($raid->trashItems->every(fn (Item $item) => $item->boss_id === null));
-    }
-
-    #[Test]
-    public function it_has_many_comments_through_items(): void
-    {
-        $raid = $this->factory()->withComments(2)->create();
-
-        $this->assertRelation($raid, 'comments', HasManyThrough::class);
-        $this->assertCount(2, $raid->comments);
-        $this->assertInstanceOf(Comment::class, $raid->comments->first());
-    }
-
-    #[Test]
     public function factory_with_bosses_state_creates_bosses(): void
     {
         $raid = $this->factory()->withBosses(3)->create();
@@ -242,50 +330,66 @@ class RaidTest extends ModelTestCase
         $this->assertCount(2, $raid->comments);
     }
 
-    // max_groups
+    // ==================== phase ====================
 
     #[Test]
-    public function it_calculates_max_groups_from_max_players(): void
+    public function it_belongs_to_a_phase(): void
     {
-        $raid = $this->create(['max_players' => 20]);
+        $phase = Phase::factory()->create();
+        $raid = $this->create(['phase_id' => $phase->id]);
 
-        $this->assertSame(4, $raid->max_groups);
+        $this->assertRelation($raid, 'phase', BelongsTo::class);
+        $this->assertTrue($raid->phase->is($phase));
+    }
+
+    // ==================== bosses ====================
+
+    #[Test]
+    public function it_has_many_bosses(): void
+    {
+        $raid = $this->create();
+        Boss::factory()->count(3)->create(['raid_id' => $raid->id]);
+
+        $this->assertRelation($raid, 'bosses', HasMany::class);
+        $this->assertCount(3, $raid->bosses);
+    }
+
+    // ==================== items ====================
+
+    #[Test]
+    public function it_has_many_items(): void
+    {
+        $raid = $this->factory()->withItems(2)->create();
+
+        $this->assertRelation($raid, 'items', HasMany::class);
+        $this->assertCount(2, $raid->items);
+        $this->assertInstanceOf(Item::class, $raid->items->first());
     }
 
     #[Test]
-    public function ten_player_raid_has_two_max_groups(): void
+    public function it_has_many_trash_items(): void
     {
-        $raid = $this->factory()->tenPlayer()->create();
+        $raid = $this->factory()->withItems(2)->create();
+        Item::factory()->fromBoss()->create(['raid_id' => $raid->id]);
 
-        $this->assertSame(2, $raid->max_groups);
+        $this->assertRelation($raid, 'trashItems', HasMany::class);
+        $this->assertCount(2, $raid->trashItems);
+        $this->assertTrue($raid->trashItems->every(fn (Item $item) => $item->boss_id === null));
     }
+
+    // ==================== comments ====================
 
     #[Test]
-    public function twenty_five_player_raid_has_five_max_groups(): void
+    public function it_has_many_comments_through_items(): void
     {
-        $raid = $this->factory()->twentyFivePlayer()->create();
+        $raid = $this->factory()->withComments(2)->create();
 
-        $this->assertSame(5, $raid->max_groups);
+        $this->assertRelation($raid, 'comments', HasManyThrough::class);
+        $this->assertCount(2, $raid->comments);
+        $this->assertInstanceOf(Comment::class, $raid->comments->first());
     }
 
-    #[Test]
-    public function max_groups_rounds_up_for_non_divisible_player_counts(): void
-    {
-        $raid = $this->create(['max_players' => 11]);
-
-        $this->assertSame(3, $raid->max_groups);
-    }
-
-    #[Test]
-    public function max_groups_is_not_persisted_to_the_database(): void
-    {
-        $raid = $this->create(['max_players' => 10]);
-
-        $this->assertArrayNotHasKey('max_groups', $raid->getAttributes());
-        $this->assertSame(2, $raid->max_groups);
-    }
-
-    // events
+    // ==================== events ====================
 
     #[Test]
     public function events_returns_belongs_to_many_relationship(): void

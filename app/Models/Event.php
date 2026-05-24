@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\AsBinaryColor;
+use App\Enums\RaidBackground;
 use App\Services\Discord\Discord;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +37,8 @@ class Event extends PrunableModel
         'title',
         'start_time',
         'end_time',
+        'background_css_class',
+        'color',
         'channel_id',
         'is_template',
     ];
@@ -57,6 +61,8 @@ class Event extends PrunableModel
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'background_css_class' => RaidBackground::class,
+        'color' => AsBinaryColor::class,
         'is_template' => 'boolean',
     ];
 

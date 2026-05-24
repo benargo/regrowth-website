@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\LootCouncil;
+namespace App\Http\Controllers\Loot;
 
+use App\Http\Controllers\Concerns\QueriesLootCouncilCache;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LootCouncil\BossItemsResource;
 use App\Models\Boss;
@@ -16,12 +17,14 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
-class RaidController extends Controller
+class ShowRaidController extends Controller
 {
+    use QueriesLootCouncilCache;
+
     /**
      * Display the loot council view for a specific raid, including its bosses and items.
      */
-    public function show(Raid $raid, Request $request, ?string $name = null): InertiaResponse|RedirectResponse
+    public function __invoke(Raid $raid, Request $request, ?string $name = null): InertiaResponse|RedirectResponse
     {
         // If no name is provided in the URL, redirect to the URL with the raid name slug for better SEO and user experience.
         if (! $name) {
@@ -56,25 +59,11 @@ class RaidController extends Controller
     }
 
     /**
-     * Get raids for a specific phase, with caching.
-     *
-     * @return EloquentCollection<Raid>
-     */
-    private function getRaidsForPhase(Phase $phase): EloquentCollection
-    {
-        return Raid::hydrate(
-            Cache::tags(['db', 'lootcouncil'])->remember("phases:#{$phase->id}:raids", now()->addYear(), function () use ($phase) {
-                return $phase->raids()->get()->toArray();
-            })
-        );
-    }
-
-    /**
      * Get bosses for a specific raid, with caching.
      *
      * @return EloquentCollection<Boss>
      */
-    private function getBossesForRaid(Raid $raid): EloquentCollection
+    protected function getBossesForRaid(Raid $raid): EloquentCollection
     {
         return Boss::hydrate(
             Cache::tags(['db', 'lootcouncil'])->remember("raids:#{$raid->id}:bosses", now()->addMonth(), function () use ($raid) {
@@ -101,7 +90,7 @@ class RaidController extends Controller
     /**
      * Get items for a specific boss.
      */
-    private function getItemsForBoss(?int $bossId): array
+    protected function getItemsForBoss(?int $bossId): array
     {
         if (! $bossId) {
             return (new BossItemsResource([

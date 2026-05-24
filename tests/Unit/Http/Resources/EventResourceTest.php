@@ -88,6 +88,7 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('end_time', $array);
         $this->assertArrayHasKey('duration', $array);
         $this->assertArrayHasKey('channel', $array);
+        $this->assertArrayHasKey('color', $array);
         $this->assertArrayHasKey('background', $array);
         $this->assertArrayHasKey('assignments', $array);
         $this->assertArrayHasKey('composition', $array);
@@ -107,14 +108,37 @@ class EventResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_background_string_based_on_first_raid(): void
+    public function it_returns_null_color_when_event_has_no_color(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+        $event = Event::factory()->create(['color' => null]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertNull($array['color']);
+    }
+
+    #[Test]
+    public function it_returns_color_as_hex_string(): void
+    {
+        $this->mockChannel();
+        $this->mockRaidHelper();
+        $event = Event::factory()->create(['color' => '34,110,115']);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame($event->color, $array['color']);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{6}$/', $array['color']);
+    }
+
+    #[Test]
+    public function it_returns_background_string_based_on_event_background_css_class(): void
     {
         $this->mockChannel();
         $this->mockRaidHelper();
 
-        $raid = Raid::factory()->create(['id' => 1]);
-        $event = Event::factory()->create();
-        $event->raids()->attach($raid->id);
+        $event = Event::factory()->withBackground(RaidBackground::KARAZHAN)->create();
 
         $array = $this->makeResource($event);
 

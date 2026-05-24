@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Enums\RaidBackground;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -17,17 +16,8 @@ class RaidCollection extends ResourceCollection
     {
         return [
             'data' => $this->collection,
-            'background' => $this->getBackground(),
+            'background' => $this->collection
+                ->firstWhere('background_css_class')?->background_css_class?->value,
         ];
-    }
-
-    /**
-     * Determine the appropriate background based on the raids in the collection.
-     */
-    private function getBackground(): string
-    {
-        $raidId = $this->collection->pluck('id')->first();
-
-        return RaidBackground::fromRaidId($raidId)->value;
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\LootCouncil;
+namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\StoreCommentRequest;
@@ -13,9 +13,8 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CommentController extends Controller
 {
@@ -25,10 +24,8 @@ class CommentController extends Controller
 
     /**
      * Display a listing of comments for a specific loot item.
-     *
-     * @return Response
      */
-    public function index()
+    public function index(): Response
     {
         $comments = Comment::with(['user', 'item'])
             ->orderByDesc('created_at')
@@ -83,10 +80,8 @@ class CommentController extends Controller
     /**
      * Delete a comment for a specific loot item.
      */
-    public function destroy(Request $request, Item $item, Comment $comment): RedirectResponse
+    public function destroy(Request $request, Comment $comment): RedirectResponse
     {
-        Gate::authorize('delete', $comment);
-
         $comment->update(['deleted_by' => $request->user()->id]);
         $comment->delete();
 

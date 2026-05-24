@@ -221,6 +221,13 @@ class ChannelTest extends TestCase
     }
 
     #[Test]
+    public function it_accepts_null_for_default_reaction_emoji(): void
+    {
+        $channel = Channel::from([...$this->minimalPayload(), 'default_reaction_emoji' => null]);
+        $this->assertNull($channel->default_reaction_emoji);
+    }
+
+    #[Test]
     public function it_stores_null_for_nullable_optional_fields(): void
     {
         $channel = Channel::from([...$this->minimalPayload(), 'topic' => null]);

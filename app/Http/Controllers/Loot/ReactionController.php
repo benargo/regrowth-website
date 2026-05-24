@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\LootCouncil;
+namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Comments\DestroyCommentReactionRequest;
+use App\Http\Requests\Comments\DestroyReactionRequest;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
-class CommentReactionController extends Controller
+class ReactionController extends Controller
 {
     /**
      * Store a newly created resource in storage.
@@ -29,7 +29,7 @@ class CommentReactionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DestroyCommentReactionRequest $request, Comment $comment, CommentReaction $reaction): RedirectResponse
+    public function destroy(DestroyReactionRequest $request, Comment $comment, CommentReaction $reaction): RedirectResponse
     {
         $reaction->delete();
 

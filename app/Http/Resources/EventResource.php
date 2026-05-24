@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Raid;
@@ -33,7 +32,8 @@ class EventResource extends JsonResource
             'start_time' => $this->start_time?->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
             'duration' => $this->start_time && $this->end_time ? $this->duration : null,
-            'background' => $this->buildBackground(),
+            'color' => $this->color,
+            'background' => $this->background_css_class?->value,
             'assignments' => (new EventAssignmentsCollection($eventAssignments))->resolve($request),
             'composition' => $this->buildComposition($request),
             'raids' => $this->buildRaids($bossByIdAssignments, $request),
@@ -51,7 +51,7 @@ class EventResource extends JsonResource
     /**
      * @return array{groups: array<int, mixed>, bench: array<int, mixed>}
      */
-    private function buildComposition(Request $request): array
+    protected function buildComposition(Request $request): array
     {
         return [
             'groups' => $this->buildGroups($request),
@@ -62,7 +62,7 @@ class EventResource extends JsonResource
     /**
      * @return array<int, mixed>
      */
-    private function buildGroups(Request $request): array
+    protected function buildGroups(Request $request): array
     {
         $maxPlayers = $this->raids->max('max_players') ?? 0;
         $maxSlot = $this->characters->max(fn (Character $c) => $c->pivot->slot_number) ?? 0;
@@ -99,21 +99,10 @@ class EventResource extends JsonResource
             ->all();
     }
 
-    private function buildBackground(): ?string
-    {
-        $raidId = $this->raids->pluck('id')->first();
-
-        if (empty($raidId)) {
-            return null;
-        }
-
-        return RaidBackground::fromRaidId($raidId)->value;
-    }
-
     /**
      * @return array<int, mixed>
      */
-    private function buildBench(Request $request): array
+    protected function buildBench(Request $request): array
     {
         return $this->characters
             ->filter(fn (Character $c) => $c->pivot->is_benched)
@@ -134,7 +123,7 @@ class EventResource extends JsonResource
      * @param  Collection<int|string, mixed>  $bossByIdAssignments
      * @return array<int, mixed>
      */
-    private function buildRaids(Collection $bossByIdAssignments, Request $request): array
+    protected function buildRaids(Collection $bossByIdAssignments, Request $request): array
     {
         return $this->raids->map(fn (Raid $raid) => [
             'name' => $raid->name,

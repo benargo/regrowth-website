@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\RaidHelper;
 
+use App\Enums\RaidBackground;
 use App\Jobs\RaidHelper\FetchEvents;
 use App\Models\Character;
 use App\Models\Event;
@@ -465,40 +466,6 @@ class FetchEventsTest extends TestCase
         $this->assertTrue($event->characters->contains($arthas));
     }
 
-    #[Test]
-    public function it_skips_bench_sync_gracefully_when_get_event_throws(): void
-    {
-        $channelId = '100000000000000001';
-        $arthas = Character::factory()->create(['name' => 'Arthas']);
-
-        $comp = Comp::from($this->minimalCompPayload([
-            'slots' => [
-                $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
-            ],
-        ]));
-
-        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
-
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
-        $this->discord->shouldReceive('getGuildChannels')
-            ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
-        $this->raidHelper->shouldReceive('getEvents')
-            ->once()
-            ->andReturn($this->singlePagePaginator([$payload]));
-        $this->raidHelper->shouldReceive('getComp')
-            ->with($payload['id'])
-            ->andReturn($comp);
-        $this->raidHelper->shouldReceive('getEvent')
-            ->andThrow(new \Exception('API unavailable'));
-
-        $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
-
-        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
-        $this->assertNotNull($event);
-        $this->assertTrue($event->characters->contains($arthas));
-    }
-
     // -------------------------------------------------------------------------
     // Raid sync
     // -------------------------------------------------------------------------
@@ -622,6 +589,110 @@ class FetchEventsTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // background_css_class sync
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_sets_background_css_class_from_the_first_raid_that_has_one(): void
+    {
+        $channelId = '100000000000000001';
+        $raid = Raid::factory()->withBackground(RaidBackground::KARAZHAN)->create(['name' => 'Molten Core']);
+
+        $description = "-# Do not edit below this line...\n".json_encode([['id' => $raid->id, 'name' => $raid->name]]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertSame(RaidBackground::KARAZHAN, $event->background_css_class);
+    }
+
+    #[Test]
+    public function it_leaves_background_css_class_null_when_no_raid_has_one(): void
+    {
+        $channelId = '100000000000000001';
+        $raid = Raid::factory()->create(['name' => 'Molten Core', 'background_css_class' => null]);
+
+        $description = "-# Do not edit below this line...\n".json_encode([['id' => $raid->id, 'name' => $raid->name]]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertNull($event->background_css_class);
+    }
+
+    #[Test]
+    public function it_uses_the_first_raid_with_a_background_css_class_when_multiple_raids_are_present(): void
+    {
+        $channelId = '100000000000000001';
+        $raidOne = Raid::factory()->create(['name' => 'Molten Core', 'background_css_class' => null]);
+        $raidTwo = Raid::factory()->withBackground(RaidBackground::KARAZHAN)->create(['name' => 'Blackwing Lair']);
+        $raidThree = Raid::factory()->withBackground(RaidBackground::TEMPEST_KEEP)->create(['name' => "Ahn'Qiraj"]);
+
+        $description = "-# Do not edit below this line...\n".json_encode([
+            ['id' => $raidOne->id, 'name' => $raidOne->name],
+            ['id' => $raidTwo->id, 'name' => $raidTwo->name],
+            ['id' => $raidThree->id, 'name' => $raidThree->name],
+        ]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertSame(RaidBackground::KARAZHAN, $event->background_css_class);
+    }
+
+    #[Test]
+    public function it_clears_background_css_class_when_updated_event_has_no_raid_with_one(): void
+    {
+        $channelId = '100000000000000001';
+        $raid = Raid::factory()->create(['name' => 'Molten Core', 'background_css_class' => null]);
+
+        $existingEvent = Event::factory()->withBackground(RaidBackground::KARAZHAN)->create([
+            'raid_helper_event_id' => '999000000000000001',
+        ]);
+
+        $description = "-# Do not edit below this line...\n".json_encode([['id' => $raid->id, 'name' => $raid->name]]);
+        $payload = $this->minimalListingEventPayload(['id' => '999000000000000001', 'description' => $description]);
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $existingEvent->refresh();
+        $this->assertNull($existingEvent->background_css_class);
+    }
+
+    // -------------------------------------------------------------------------
+    // Color sync
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_stores_the_color_from_the_raid_helper_api_as_a_binary_color(): void
+    {
+        $channelId = '100000000000000001';
+        $payload = $this->minimalListingEventPayload([
+            'id' => '999000000000000001',
+            'color' => '34,110,115',
+        ]);
+
+        $this->setupSingleEventRun($channelId, $payload, null);
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
+        $this->assertSame('226e73', $event->color);
+    }
+
+    // -------------------------------------------------------------------------
     // Cache flush
     // -------------------------------------------------------------------------
 
@@ -648,13 +719,17 @@ class FetchEventsTest extends TestCase
      * Wire up mocks for a single-event, single-channel run.
      *
      * @param  array<string, mixed>  $eventPayload
-     * @param  array<int, array<string, mixed>>|null  $signUps  Sign-up payloads for bench sync; null skips getEvent mock (throws by default)
+     * @param  array<int, array<string, mixed>>|null  $signUps  Sign-up payloads embedded in the listing event for bench sync
      */
     private function setupSingleEventRun(string $channelId, array $eventPayload, ?Comp $comp, ?array $signUps = null): void
     {
         $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
+
+        if ($signUps !== null) {
+            $eventPayload = array_merge($eventPayload, ['signUps' => $signUps]);
+        }
 
         $this->raidHelper->shouldReceive('getEvents')
             ->once()
@@ -663,17 +738,6 @@ class FetchEventsTest extends TestCase
         $this->raidHelper->shouldReceive('getComp')
             ->with($eventPayload['id'])
             ->andReturn($comp);
-
-        if ($comp !== null) {
-            if ($signUps !== null) {
-                $this->raidHelper->shouldReceive('getEvent')
-                    ->with((int) $eventPayload['id'])
-                    ->andReturn(RaidHelperEvent::from(array_merge($this->minimalListingEventPayload($eventPayload), ['signUps' => $signUps])));
-            } else {
-                $this->raidHelper->shouldReceive('getEvent')
-                    ->andThrow(new \Exception('getEvent not configured for this test'));
-            }
-        }
     }
 
     /**

@@ -69,6 +69,10 @@ class CommentResourceTest extends TestCase
         Cache::shouldReceive('tags')
             ->with(['db', 'lootcouncil'])
             ->andReturn($cacheStore);
+
+        Cache::shouldReceive('tags')
+            ->with(['raiding', 'events'])
+            ->andReturn($cacheStore);
     }
 
     protected function setUpPermissions(): void

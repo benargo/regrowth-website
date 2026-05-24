@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\RaidBackground;
 use App\Http\Resources\RaidCollection;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,7 +34,7 @@ class RaidCollectionTest extends TestCase
     public function it_returns_background_key(): void
     {
         $raids = collect([
-            Raid::factory()->create(),
+            Raid::factory()->withBackground(RaidBackground::KARAZHAN)->create(),
         ]);
 
         $array = (new RaidCollection($raids))->toArray(new Request);
@@ -68,89 +69,78 @@ class RaidCollectionTest extends TestCase
     // ==================== Background Determination ====================
 
     #[Test]
-    public function it_returns_karazhan_background_for_raid_id_1(): void
+    public function it_returns_karazhan_background_when_first_raid_has_karazhan_background(): void
     {
-        $raid = Raid::factory()->create(['id' => 1]);
+        $raid = Raid::factory()->withBackground(RaidBackground::KARAZHAN)->create();
         $raids = collect([$raid]);
 
         $array = (new RaidCollection($raids))->toArray(new Request);
 
-        $this->assertSame('bg-raid-karazhan', $array['background']);
+        $this->assertSame(RaidBackground::KARAZHAN->value, $array['background']);
     }
 
     #[Test]
-    public function it_returns_gruul_magtheridon_background_for_raid_id_2(): void
+    public function it_returns_gruul_magtheridon_background_when_first_raid_has_gruul_magtheridon_background(): void
     {
-        $raid = Raid::factory()->create(['id' => 2]);
+        $raid = Raid::factory()->withBackground(RaidBackground::GRUUL_MAGTHERIDON)->create();
         $raids = collect([$raid]);
 
         $array = (new RaidCollection($raids))->toArray(new Request);
 
-        $this->assertSame('bg-raid-gruul-magtheridon', $array['background']);
+        $this->assertSame(RaidBackground::GRUUL_MAGTHERIDON->value, $array['background']);
     }
 
     #[Test]
-    public function it_returns_gruul_magtheridon_background_for_raid_id_3(): void
+    public function it_returns_serpentshrine_cavern_background_when_first_raid_has_ssc_background(): void
     {
-        $raid = Raid::factory()->create(['id' => 3]);
+        $raid = Raid::factory()->withBackground(RaidBackground::SERPENTSHRINE_CAVERN)->create();
         $raids = collect([$raid]);
 
         $array = (new RaidCollection($raids))->toArray(new Request);
 
-        $this->assertSame('bg-raid-gruul-magtheridon', $array['background']);
+        $this->assertSame(RaidBackground::SERPENTSHRINE_CAVERN->value, $array['background']);
     }
 
     #[Test]
-    public function it_returns_serpentshrine_cavern_background_for_raid_id_4(): void
+    public function it_returns_tempest_keep_background_when_first_raid_has_tempest_keep_background(): void
     {
-        $raid = Raid::factory()->create(['id' => 4]);
+        $raid = Raid::factory()->withBackground(RaidBackground::TEMPEST_KEEP)->create();
         $raids = collect([$raid]);
 
         $array = (new RaidCollection($raids))->toArray(new Request);
 
-        $this->assertSame('bg-raid-serpentshrine-cavern', $array['background']);
+        $this->assertSame(RaidBackground::TEMPEST_KEEP->value, $array['background']);
     }
 
     #[Test]
-    public function it_returns_tempest_keep_background_for_raid_id_5(): void
+    public function it_uses_background_from_first_raid_when_multiple_raids_in_collection(): void
     {
-        $raid = Raid::factory()->create(['id' => 5]);
-        $raids = collect([$raid]);
-
-        $array = (new RaidCollection($raids))->toArray(new Request);
-
-        $this->assertSame('bg-raid-tempest-keep', $array['background']);
-    }
-
-    #[Test]
-    public function it_uses_first_raid_id_when_multiple_raids_in_collection(): void
-    {
-        $raid1 = Raid::factory()->create(['id' => 2]);
-        $raid2 = Raid::factory()->create(['id' => 4]);
+        $raid1 = Raid::factory()->withBackground(RaidBackground::GRUUL_MAGTHERIDON)->create();
+        $raid2 = Raid::factory()->withBackground(RaidBackground::SERPENTSHRINE_CAVERN)->create();
         $raids = collect([$raid1, $raid2]);
 
         $array = (new RaidCollection($raids))->toArray(new Request);
 
-        $this->assertSame('bg-raid-gruul-magtheridon', $array['background']);
+        $this->assertSame(RaidBackground::GRUUL_MAGTHERIDON->value, $array['background']);
     }
 
     #[Test]
-    public function it_returns_default_background_for_unknown_raid_id(): void
+    public function it_returns_null_background_when_first_raid_has_no_background(): void
     {
-        $raid = Raid::factory()->create(['id' => 999]);
+        $raid = Raid::factory()->create(['background_css_class' => null]);
         $raids = collect([$raid]);
 
         $array = (new RaidCollection($raids))->toArray(new Request);
 
-        $this->assertSame('bg-ssctk', $array['background']);
+        $this->assertNull($array['background']);
     }
 
     #[Test]
-    public function it_returns_default_background_for_empty_collection(): void
+    public function it_returns_null_background_for_empty_collection(): void
     {
         $array = (new RaidCollection(collect()))->toArray(new Request);
 
-        $this->assertSame('bg-ssctk', $array['background']);
+        $this->assertNull($array['background']);
     }
 
     // ==================== Data Structure ====================

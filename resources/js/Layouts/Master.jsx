@@ -10,7 +10,7 @@ import { Can } from "@/Components/Authorizable";
 import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 
 export default function Master({ title, children }) {
-    const { auth, flash, phases } = usePage().props;
+    const { auth, flash } = usePage().props;
     const user = auth?.user;
     const impersonating = auth?.impersonating;
 
@@ -90,34 +90,10 @@ export default function Master({ title, children }) {
                                 Raiding
                             </NavLink>
                             <Can permission="view-loot-bias-tool">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <button className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white">
-                                            <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                            Loot Bias
-                                            <Icon icon="chevron-down" style="regular" className="ml-1 h-6" />
-                                        </button>
-                                    </Dropdown.Trigger>
-                                    <Dropdown.Content align="left">
-                                        {phases?.map((phase) => (
-                                            <Dropdown.Link
-                                                key={phase.id}
-                                                href={route("loot.phase", { phase: phase.id })}
-                                            >
-                                                {phase.description}
-                                            </Dropdown.Link>
-                                        ))}
-                                        <Can permission="view-all-comments">
-                                            <>
-                                                <div className="my-1 border-t border-amber-700" />
-                                                <Dropdown.Link href={route("loot.comments.index")}>
-                                                    <Icon icon="comments" style="solid" className="mr-2 h-6" />
-                                                    All Comments
-                                                </Dropdown.Link>
-                                            </>
-                                        </Can>
-                                    </Dropdown.Content>
-                                </Dropdown>
+                                <NavLink href={route("loot.index")}>
+                                    <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                                    Loot Bias
+                                </NavLink>
                             </Can>
                             <NavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                                 <Icon icon="discord" style="brands" className="mr-2 h-6" />
@@ -205,35 +181,10 @@ export default function Master({ title, children }) {
                             Raiding
                         </ResponsiveNavLink>
                         <Can permission="view-loot-bias-tool">
-                            <>
-                                <ResponsiveNavLink href={route("loot.index")}>
-                                    <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                    Loot Bias
-                                </ResponsiveNavLink>
-                                <div className="ml-2 border-l-2 border-amber-800 pl-2">
-                                    <p className="mb-1 text-sm font-medium text-gray-400">Phases</p>
-                                    <div className="mb-2 grid grid-cols-5 gap-1">
-                                        {phases?.map((phase) => (
-                                            <Link
-                                                key={phase.id}
-                                                href={route("loot.phase", { phase: phase.id })}
-                                                className="rounded border border-amber-800 px-3 py-2 text-center text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                            >
-                                                {phase.number}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                    <Can permission="view-all-comments">
-                                        <Link
-                                            href={route("loot.comments.index")}
-                                            className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                        >
-                                            <Icon icon="comments" style="solid" className="mr-2 h-6" />
-                                            All Comments
-                                        </Link>
-                                    </Can>
-                                </div>
-                            </>
+                            <ResponsiveNavLink href={route("loot.index")}>
+                                <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                                Loot Bias
+                            </ResponsiveNavLink>
                         </Can>
                         <ResponsiveNavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />

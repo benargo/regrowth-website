@@ -2,9 +2,7 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Enums\RaidColor;
 use App\Models\Event;
-use App\Models\Raid;
 use App\Models\User;
 use App\Notifications\RaidAssignmentsPublished;
 use App\Services\Discord\Notifications\Driver as DiscordDriver;
@@ -159,25 +157,23 @@ class RaidAssignmentsPublishedTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function it_uses_the_default_color_when_no_raids_are_attached(): void
+    public function it_uses_the_default_color_when_event_has_no_color(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['color' => null]);
 
         $embed = (new RaidAssignmentsPublished($event))->toMessage()->embeds[0];
 
-        $this->assertSame(RaidColor::DEFAULT->value, $embed->color);
+        $this->assertSame(0x768946, $embed->color);
     }
 
     #[Test]
-    public function it_uses_the_raid_color_based_on_the_first_attached_raid(): void
+    public function it_uses_the_event_color_when_set(): void
     {
-        $event = Event::factory()->create();
-        $raid = Raid::factory()->create(['id' => 1]);
-        $event->raids()->attach($raid->id);
+        $event = Event::factory()->create(['color' => 0x8B7ED0]);
 
         $embed = (new RaidAssignmentsPublished($event))->toMessage()->embeds[0];
 
-        $this->assertSame(RaidColor::KARAZHAN->value, $embed->color);
+        $this->assertSame(0x8B7ED0, $embed->color);
     }
 
     // -------------------------------------------------------------------------
