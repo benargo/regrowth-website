@@ -1,16 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\LootCouncil;
+namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Items\UpdateItemNotesRequest;
 use App\Http\Requests\Items\UpdateItemPrioritiesRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Http\Resources\LootCouncil\ItemResource;
+use App\Http\Resources\LootCouncil\ItemSearchResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use App\Services\Blizzard\BlizzardService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -96,6 +98,28 @@ class ItemController extends Controller
         $item->priorities()->sync($priorities);
 
         return redirect()->back();
+    }
+
+    /**
+     * Search for loot items by name.
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $query = $request->string('query')->trim();
+
+        if ($query->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $items = Item::query()
+            ->where('name', 'like', '%'.$query.'%')
+            ->withCount(['priorities', 'comments'])
+            ->limit(10)
+            ->get();
+
+        return response()->json(
+            ItemSearchResource::collection($items)->resolve($request)
+        );
     }
 
     /**
