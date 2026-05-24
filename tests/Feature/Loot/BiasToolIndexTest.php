@@ -67,7 +67,7 @@ class BiasToolIndexTest extends TestCase
     }
 
     #[Test]
-    public function loot_index_passes_phases_with_raids_as_props(): void
+    public function loot_index_passes_raids_with_phase_number_as_props(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -77,13 +77,12 @@ class BiasToolIndexTest extends TestCase
 
         $response->assertInertia(fn ($page) => $page
             ->component('Loot/Index')
-            ->has('phases', 1, fn ($p) => $p
-                ->has('id')
+            ->has('raids', 2, fn ($r) => $r
                 ->has('name')
-                ->has('raids', 2, fn ($r) => $r
-                    ->has('name')
-                    ->has('slug')
-                    ->has('background')
+                ->has('slug')
+                ->has('background')
+                ->has('phase', fn ($p) => $p
+                    ->has('number')
                     ->etc()
                 )
                 ->etc()
