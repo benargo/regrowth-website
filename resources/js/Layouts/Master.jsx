@@ -90,30 +90,10 @@ export default function Master({ title, children }) {
                                 Raiding
                             </NavLink>
                             <Can permission="view-loot-bias-tool">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <button className="flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white">
-                                            <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                            Loot Bias
-                                            <Icon icon="chevron-down" style="regular" className="ml-1 h-6" />
-                                        </button>
-                                    </Dropdown.Trigger>
-                                    <Dropdown.Content align="left">
-                                        <Dropdown.Link href={route("loot.index")}>
-                                            <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                            Loot Bias
-                                        </Dropdown.Link>
-                                        <Can permission="view-all-comments">
-                                            <>
-                                                <div className="my-1 border-t border-amber-700" />
-                                                <Dropdown.Link href={route("loot.comments.index")}>
-                                                    <Icon icon="comments" style="solid" className="mr-2 h-6" />
-                                                    All Comments
-                                                </Dropdown.Link>
-                                            </>
-                                        </Can>
-                                    </Dropdown.Content>
-                                </Dropdown>
+                                <NavLink href={route("loot.index")}>
+                                    <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                                    Loot Bias
+                                </NavLink>
                             </Can>
                             <NavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                                 <Icon icon="discord" style="brands" className="mr-2 h-6" />
@@ -201,21 +181,10 @@ export default function Master({ title, children }) {
                             Raiding
                         </ResponsiveNavLink>
                         <Can permission="view-loot-bias-tool">
-                            <>
-                                <ResponsiveNavLink href={route("loot.index")}>
-                                    <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                    Loot Bias
-                                </ResponsiveNavLink>
-                                <Can permission="view-all-comments">
-                                    <Link
-                                        href={route("loot.comments.index")}
-                                        className="flex flex-row items-center rounded-md py-2 pl-1 pr-3 text-base font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
-                                    >
-                                        <Icon icon="comments" style="solid" className="mr-2 h-6" />
-                                        All Comments
-                                    </Link>
-                                </Can>
-                            </>
+                            <ResponsiveNavLink href={route("loot.index")}>
+                                <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                                Loot Bias
+                            </ResponsiveNavLink>
                         </Can>
                         <ResponsiveNavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
