@@ -18,7 +18,6 @@ class RaidResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'difficulty' => $this->difficulty,
             'color' => $this->color,
             'background' => $this->background_css_class?->value,
             'max_players' => $this->max_players,

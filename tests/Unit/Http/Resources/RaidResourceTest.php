@@ -36,13 +36,13 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_difficulty(): void
+    public function it_does_not_return_difficulty(): void
     {
         $raid = Raid::factory()->heroic()->create();
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertSame('Heroic', $array['difficulty']);
+        $this->assertArrayNotHasKey('difficulty', $array);
     }
 
     #[Test]
@@ -215,7 +215,6 @@ class RaidResourceTest extends TestCase
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('slug', $array);
-        $this->assertArrayHasKey('difficulty', $array);
         $this->assertArrayHasKey('color', $array);
         $this->assertArrayHasKey('background', $array);
         $this->assertArrayHasKey('max_players', $array);
