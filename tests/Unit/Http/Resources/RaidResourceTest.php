@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\RaidBackground;
 use App\Http\Resources\RaidResource;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -174,6 +175,37 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_color(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $array = (new RaidResource($raid))->toArray(new Request);
+
+        $this->assertArrayHasKey('color', $array);
+        $this->assertSame($raid->color, $array['color']);
+    }
+
+    #[Test]
+    public function it_returns_background_css_class_value(): void
+    {
+        $raid = Raid::factory()->withBackground(RaidBackground::KARAZHAN)->create();
+
+        $array = (new RaidResource($raid))->toArray(new Request);
+
+        $this->assertSame('bg-raid-karazhan', $array['background']);
+    }
+
+    #[Test]
+    public function it_returns_null_for_background_when_not_set(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $array = (new RaidResource($raid))->toArray(new Request);
+
+        $this->assertNull($array['background']);
+    }
+
+    #[Test]
     public function it_returns_all_expected_keys(): void
     {
         $raid = Raid::factory()->create();
@@ -184,6 +216,8 @@ class RaidResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('difficulty', $array);
+        $this->assertArrayHasKey('color', $array);
+        $this->assertArrayHasKey('background', $array);
         $this->assertArrayHasKey('max_players', $array);
         $this->assertArrayHasKey('max_loot_councillors', $array);
     }

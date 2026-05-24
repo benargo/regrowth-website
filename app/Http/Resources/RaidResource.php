@@ -19,13 +19,14 @@ class RaidResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'difficulty' => $this->difficulty,
+            'color' => $this->color,
+            'background' => $this->background_css_class?->value,
             'max_players' => $this->max_players,
             'max_loot_councillors' => $this->max_loot_councillors,
             'phase' => $this->whenLoaded('phase'),
             'bosses' => $this->whenLoaded('bosses'),
             'items' => $this->whenLoaded('items'),
             'comments' => $this->whenLoaded('comments'),
-            'background' => $this->background_css_class?->value,
         ];
     }
 }
