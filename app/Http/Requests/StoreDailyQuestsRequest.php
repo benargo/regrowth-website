@@ -7,11 +7,6 @@ use Illuminate\Validation\Rule;
 
 class StoreDailyQuestsRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return $this->user()->can('view-officer-dashboard');
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */

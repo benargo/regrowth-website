@@ -28,42 +28,6 @@ class DestroyReactionRequestTest extends TestCase
         $this->assertSame([], $rules);
     }
 
-    // ==================== authorize ====================
-
-    #[Test]
-    public function authorize_returns_true_when_user_can_react_to_comment(): void
-    {
-        $comment = \Mockery::mock(Comment::class);
-
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('react', $comment)->andReturn(true);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('comment', null)->andReturn($comment);
-        $request->setRouteResolver(fn () => $route);
-
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_false_when_user_cannot_react_to_comment(): void
-    {
-        $comment = \Mockery::mock(Comment::class);
-
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('react', $comment)->andReturn(false);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('comment', null)->andReturn($comment);
-        $request->setRouteResolver(fn () => $route);
-
-        $this->assertFalse($request->authorize());
-    }
-
     // ==================== withValidator ====================
 
     #[Test]

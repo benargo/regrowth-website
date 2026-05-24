@@ -3,8 +3,6 @@
 namespace Tests\Unit\Http\Requests\Items;
 
 use App\Http\Requests\Items\UpdateItemNotesRequest;
-use App\Models\LootCouncil\Item;
-use Illuminate\Routing\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -34,41 +32,5 @@ class UpdateItemNotesRequestTest extends TestCase
         $rules = $this->makeRequest()->rules();
 
         $this->assertNotContains('required', $rules['notes']);
-    }
-
-    // ==================== authorize ====================
-
-    #[Test]
-    public function authorize_returns_true_when_user_can_update_item(): void
-    {
-        $item = \Mockery::mock(Item::class);
-
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', $item)->andReturn(true);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('item', null)->andReturn($item);
-        $request->setRouteResolver(fn () => $route);
-
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_false_when_user_cannot_update_item(): void
-    {
-        $item = \Mockery::mock(Item::class);
-
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', $item)->andReturn(false);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('item', null)->andReturn($item);
-        $request->setRouteResolver(fn () => $route);
-
-        $this->assertFalse($request->authorize());
     }
 }

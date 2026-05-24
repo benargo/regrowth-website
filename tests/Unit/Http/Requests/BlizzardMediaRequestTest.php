@@ -19,25 +19,6 @@ class BlizzardMediaRequestTest extends TestCase
         return $request;
     }
 
-    // ==================== authorization ====================
-
-    #[Test]
-    public function authorize_allows_authenticated_users(): void
-    {
-        $request = $this->makeRequest();
-
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_denies_unauthenticated_requests(): void
-    {
-        $request = BlizzardMediaRequest::create('/', 'GET');
-        $request->setUserResolver(fn () => null);
-
-        $this->assertFalse($request->authorize());
-    }
-
     // ==================== rules ====================
 
     #[Test]

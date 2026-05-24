@@ -6,11 +6,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEventGroupRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true; // Handled by route middleware: can:update,event
-    }
-
     /**
      * @return array<string, mixed>
      */

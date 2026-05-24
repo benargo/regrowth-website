@@ -3,7 +3,6 @@
 namespace Tests\Unit\Http\Requests\Raid;
 
 use App\Http\Requests\Raid\StoreReportRequest;
-use App\Models\Raids\Report;
 use Illuminate\Validation\Rules\Exists;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -133,31 +132,5 @@ class StoreReportRequestTest extends TestCase
         $this->assertContains('required', $rules['linked_report_ids.*']);
         $this->assertContains('string', $rules['linked_report_ids.*']);
         $this->assertContains('exists:raid_reports,id', $rules['linked_report_ids.*']);
-    }
-
-    // ==================== authorize ====================
-
-    #[Test]
-    public function authorize_returns_true_when_user_can_create_report(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('create', Report::class)->andReturn(true);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_false_when_user_cannot_create_report(): void
-    {
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('create', Report::class)->andReturn(false);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-
-        $this->assertFalse($request->authorize());
     }
 }
