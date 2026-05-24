@@ -187,7 +187,7 @@ Route::patch('/datasets/guild-tags/{guildTag}/count-attendance', [GuildTagContro
     ->name('wcl.guild-tags.toggle-attendance');
 
 /**
- * Static infoformation pages
+ * Static information pages
  */
 Route::get('/info/battlenet-usage', function () {
     return Inertia::render('Info/BattlenetUsage');
