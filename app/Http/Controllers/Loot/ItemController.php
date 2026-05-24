@@ -22,10 +22,8 @@ use Inertia\Response as InertiaResponse;
 
 class ItemController extends Controller
 {
-    /**
-     * Display a specific loot item.
-     */
-    public function view(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
+    /** Display a specific loot item. */
+    public function show(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
         $slug = $this->resolveItemSlug($blizzard, $item);
 
@@ -41,9 +39,7 @@ class ItemController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing a specific loot item.
-     */
+    /** Show the form for editing a specific loot item. */
     public function edit(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
         $slug = $this->resolveItemSlug($blizzard, $item);
@@ -65,17 +61,13 @@ class ItemController extends Controller
         ]);
     }
 
-    /**
-     * Redirect to the edit page for a specific loot item.
-     */
+    /** Redirect to the edit page for a specific loot item. */
     public function redirectToEdit(BlizzardService $blizzard, Item $item): RedirectResponse
     {
         return redirect()->route('loot.items.edit', ['item' => $item->id, 'name' => $this->resolveItemSlug($blizzard, $item)], 303);
     }
 
-    /**
-     * Update the officers' notes for a specific loot item.
-     */
+    /** Update the officers' notes for a specific loot item. */
     public function updateNotes(UpdateItemNotesRequest $request, Item $item): RedirectResponse
     {
         $item->notes = $request->validated('notes');
@@ -84,9 +76,7 @@ class ItemController extends Controller
         return redirect()->back();
     }
 
-    /**
-     * Update the priorities for a specific loot item.
-     */
+    /** Update the priorities for a specific loot item. */
     public function updatePriorities(UpdateItemPrioritiesRequest $request, Item $item): RedirectResponse
     {
         $priorities = collect($request->validated('priorities'))
@@ -98,14 +88,13 @@ class ItemController extends Controller
         return redirect()->back();
     }
 
-    /**
-     * Resolve the slug for a loot item, using the Blizzard API if necessary.
-     */
+    /** Resolve the slug for a loot item, using the Blizzard API if necessary. */
     private function resolveItemSlug(BlizzardService $blizzard, Item $item): string
     {
         return Str::slug(Arr::get($blizzard->findItem($item->id), 'name') ?? "item-{$item->id}");
     }
 
+    /** Load the item's priorities, raid, and boss relationships. */
     private function loadItemWithRelations(Item $item): void
     {
         $item->load([
@@ -115,6 +104,7 @@ class ItemController extends Controller
         ]);
     }
 
+    /** Return a paginated, chronological collection of the item's comments with their authors. */
     private function paginateComments(Item $item): LengthAwarePaginator
     {
         return $item->comments()->with('user')->latest()->paginate(10);
