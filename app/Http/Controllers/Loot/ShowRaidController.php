@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\LootCouncil;
+namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Concerns\QueriesLootCouncilCache;
 use App\Http\Controllers\Controller;
@@ -17,14 +17,14 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
-class RaidController extends Controller
+class ShowRaidController extends Controller
 {
     use QueriesLootCouncilCache;
 
     /**
      * Display the loot council view for a specific raid, including its bosses and items.
      */
-    public function show(Raid $raid, Request $request, ?string $name = null): InertiaResponse|RedirectResponse
+    public function __invoke(Raid $raid, Request $request, ?string $name = null): InertiaResponse|RedirectResponse
     {
         // If no name is provided in the URL, redirect to the URL with the raid name slug for better SEO and user experience.
         if (! $name) {

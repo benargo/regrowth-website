@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\LootCouncil;
+namespace Tests\Feature\Loot;
 
 use App\Models\Boss;
 use App\Models\DiscordRole;

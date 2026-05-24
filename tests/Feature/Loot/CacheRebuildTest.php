@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\LootCouncil;
+namespace Tests\Feature\Loot;
 
 use App\Events\ItemPrioritySaved;
 use App\Jobs\RebuildLootCouncilCache;
