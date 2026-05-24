@@ -43,7 +43,6 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], fu
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->can('create', 'App\Models\LootCouncil\Comment')->name('items.comments.store');
     Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->can('update', 'item')->name('items.notes.store');
     Route::put('/items/{item}/priorities', [ItemController::class, 'updatePriorities'])->can('update', 'item')->name('items.priorities.update');
-    Route::get('/items/search', [ItemController::class, 'search'])->can('viewAny', 'App\Models\LootCouncil\Item')->name('items.search');
     Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit'])->can('update', 'item');
     Route::get('/items/{item}/{name?}', [ItemController::class, 'view'])->can('view', 'item')->name('items.show');
     Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->can('update', 'item')->name('items.edit');
