@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api\LootCouncil;
+namespace Tests\Feature\Api\Loot;
 
 use App\Models\Boss;
 use App\Models\LootCouncil\Comment;

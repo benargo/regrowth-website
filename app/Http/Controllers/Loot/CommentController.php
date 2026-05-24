@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\LootCouncil;
+namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\StoreCommentRequest;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\LootCouncil;
+namespace App\Http\Controllers\Api\Loot;
 
 use App\Http\Controllers\Controller;
 use App\Models\LootCouncil\Comment;

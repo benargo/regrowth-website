@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\Discord\GuildResourceController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
-use App\Http\Controllers\Api\LootCouncil\CommentController;
+use App\Http\Controllers\Api\Loot\CommentController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
 
