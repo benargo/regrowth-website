@@ -114,7 +114,7 @@ class Channel extends Data implements ChannelContract
         public readonly int|Optional $total_message_sent,
 
         /** @var array<int, string>|Optional Applied tag snowflakes for forum/media threads (max 5) */
-        #[Nullable, ArrayType]
+        #[ArrayType]
         public readonly array|Optional $applied_tags,
 
         /** @var int|Optional Forum sort order: 0 (LATEST_ACTIVITY) or 1 (CREATION_DATE) */
@@ -129,12 +129,12 @@ class Channel extends Data implements ChannelContract
         #[Nullable, IntegerType, Min(0), Max(21600)]
         public readonly int|Optional $default_thread_rate_limit_per_user,
 
-        /** @var array<int, array<string, mixed>>|Optional Explicit permission overwrite objects */
+        /** @var array<int, array<string, mixed>>|Optional|null Explicit permission overwrite objects */
         #[Nullable, ArrayType]
-        public readonly array|Optional $permission_overwrites,
+        public readonly array|Optional|null $permission_overwrites,
 
         /** @var array<int, array<string, mixed>>|Optional Group DM recipients */
-        #[Nullable, ArrayType]
+        #[ArrayType]
         public readonly array|Optional $recipients,
 
         /** @var string|Optional Group DM icon hash */
@@ -142,19 +142,19 @@ class Channel extends Data implements ChannelContract
         public readonly string|Optional|null $icon,
 
         /** @var array<int, array<string, mixed>>|Optional Available tags for GUILD_FORUM/GUILD_MEDIA channels (max 20) */
-        #[Nullable, ArrayType]
+        #[ArrayType]
         public readonly array|Optional $available_tags,
 
-        /** @var array<string, mixed>|Optional Default reaction emoji for forum/media threads */
+        /** @var array<string, mixed>|Optional|null Default reaction emoji for forum/media threads */
         #[Nullable, ArrayType]
-        public readonly array|Optional $default_reaction_emoji,
+        public readonly array|Optional|null $default_reaction_emoji,
 
         /** @var array<string, mixed>|Optional Thread-specific metadata fields */
-        #[Nullable, ArrayType]
+        #[ArrayType]
         public readonly array|Optional $thread_metadata,
 
         /** @var array<string, mixed>|Optional Current user's thread member object; only on certain endpoints */
-        #[Nullable, ArrayType]
+        #[ArrayType]
         public readonly array|Optional $member,
     ) {}
 

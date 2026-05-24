@@ -44,13 +44,13 @@ class Attachment extends Data
         #[Nullable, StringType]
         public readonly string|Optional $content_type,
 
-        /** @var int|Optional Height of the file if image or video */
+        /** @var int|Optional|null Height of the file if image or video */
         #[Nullable, IntegerType, Min(0)]
-        public readonly int|Optional $height,
+        public readonly int|Optional|null $height,
 
-        /** @var int|Optional Width of the file if image or video */
+        /** @var int|Optional|null Width of the file if image or video */
         #[Nullable, IntegerType, Min(0)]
-        public readonly int|Optional $width,
+        public readonly int|Optional|null $width,
 
         /** @var string|Optional Thumbhash placeholder if image or video */
         #[Nullable, StringType]
