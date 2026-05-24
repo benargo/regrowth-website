@@ -8,7 +8,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class DestroyCommentReactionRequest extends FormRequest
+class DestroyReactionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

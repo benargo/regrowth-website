@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Http\Requests\Comments;
 
-use App\Http\Requests\Comments\DestroyCommentReactionRequest;
+use App\Http\Requests\Comments\DestroyReactionRequest;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
 use Illuminate\Routing\Route;
@@ -11,11 +11,11 @@ use Illuminate\Validation\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class DestroyCommentReactionRequestTest extends TestCase
+class DestroyReactionRequestTest extends TestCase
 {
-    private function makeRequest(): DestroyCommentReactionRequest
+    private function makeRequest(): DestroyReactionRequest
     {
-        return DestroyCommentReactionRequest::create('/', 'DELETE');
+        return DestroyReactionRequest::create('/', 'DELETE');
     }
 
     // ==================== rules ====================
@@ -123,7 +123,7 @@ class DestroyCommentReactionRequestTest extends TestCase
         $comment = \Mockery::mock(Comment::class);
         $comment->allows('getAttribute')->with('id')->andReturn(1);
 
-        $request = new class extends DestroyCommentReactionRequest
+        $request = new class extends DestroyReactionRequest
         {
             protected function getComment(): Comment
             {
