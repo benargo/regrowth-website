@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\PlayableClassResource;
 use App\Models\PlayableClass;
+use App\Models\PlayableSpecialization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ class PlayableClassResourceTest extends TestCase
     {
         $playableClass = PlayableClass::factory()->create();
 
-        $array = (new PlayableClassResource($playableClass))->toArray(new Request);
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
@@ -33,7 +34,7 @@ class PlayableClassResourceTest extends TestCase
     {
         $playableClass = PlayableClass::factory()->create();
 
-        $array = (new PlayableClassResource($playableClass))->toArray(new Request);
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
 
         $this->assertSame($playableClass->id, $array['id']);
     }
@@ -43,7 +44,7 @@ class PlayableClassResourceTest extends TestCase
     {
         $playableClass = PlayableClass::factory()->create(['name' => 'Warrior']);
 
-        $array = (new PlayableClassResource($playableClass))->toArray(new Request);
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
 
         $this->assertSame('Warrior', $array['name']);
     }
@@ -53,7 +54,7 @@ class PlayableClassResourceTest extends TestCase
     {
         $playableClass = PlayableClass::factory()->create(['name' => 'Death Knight']);
 
-        $array = (new PlayableClassResource($playableClass))->toArray(new Request);
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
 
         $this->assertSame('death-knight', $array['slug']);
     }
@@ -63,7 +64,7 @@ class PlayableClassResourceTest extends TestCase
     {
         $playableClass = PlayableClass::factory()->create();
 
-        $array = (new PlayableClassResource($playableClass))->toArray(new Request);
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
 
         $this->assertNull($array['icon_url']);
     }
@@ -73,7 +74,7 @@ class PlayableClassResourceTest extends TestCase
     {
         $playableClass = PlayableClass::factory()->create();
 
-        $array = (new PlayableClassResource($playableClass))->toArray(new Request);
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
 
         $this->assertCount(4, $array);
     }
@@ -94,5 +95,29 @@ class PlayableClassResourceTest extends TestCase
         $this->assertNotNull($array['icon_url']);
         $this->assertStringContainsString('/icons/56/classicon_7.jpg', $array['icon_url']);
         $this->assertTrue(URL::hasValidSignature(request()->create($array['icon_url'])));
+    }
+
+    #[Test]
+    public function it_omits_specializations_when_not_loaded(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('specializations', $array);
+    }
+
+    #[Test]
+    public function it_includes_specializations_when_loaded(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+        PlayableSpecialization::factory()->count(3)->for($playableClass, 'playableClass')->create();
+
+        $playableClass->load('specializations');
+
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
+
+        $this->assertArrayHasKey('specializations', $array);
+        $this->assertCount(3, $array['specializations']);
     }
 }

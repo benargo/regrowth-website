@@ -19,6 +19,7 @@ class PlayableClassResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'icon_url' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
+            'specializations' => $this->whenLoaded('specializations', fn () => PlayableSpecializationResource::collection($this->specializations)),
         ];
     }
 }
