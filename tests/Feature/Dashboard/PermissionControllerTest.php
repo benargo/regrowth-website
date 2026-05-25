@@ -27,7 +27,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function index_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.permissions.index'));
+        $response = $this->get(route('management.permissions.index'));
 
         $response->assertRedirect('/login');
     }
@@ -37,7 +37,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.permissions.index'));
+        $response = $this->actingAs($user)->get(route('management.permissions.index'));
 
         $response->assertForbidden();
     }
@@ -47,7 +47,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.permissions.index'));
+        $response = $this->actingAs($user)->get(route('management.permissions.index'));
 
         $response->assertForbidden();
     }
@@ -57,7 +57,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.permissions.index'));
+        $response = $this->actingAs($user)->get(route('management.permissions.index'));
 
         $response->assertForbidden();
     }
@@ -65,15 +65,15 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function index_allows_officer_users(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.index'));
+        $response = $this->actingAs($this->officer)->get(route('management.permissions.index'));
 
-        $response->assertRedirect(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response->assertRedirect(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
     }
 
     #[Test]
     public function show_group_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertRedirect('/login');
     }
@@ -83,7 +83,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->actingAs($user)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertForbidden();
     }
@@ -91,7 +91,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function show_group_allows_officer_users(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertOk();
     }
@@ -99,7 +99,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function show_group_returns_discord_roles_groups_and_permissions(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -113,7 +113,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function show_group_saves_group_to_session(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'loot-bias-tool']));
+        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
 
         $response->assertSessionHas('dashboard.permissions.group', 'loot-bias-tool');
     }
@@ -121,7 +121,7 @@ class PermissionControllerTest extends DashboardTestCase
     #[Test]
     public function show_group_returns_404_for_unknown_group(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.permissions.group.show', ['group' => 'nonexistent-group']));
+        $response = $this->actingAs($this->officer)->get(route('management.permissions.group.show', ['group' => 'nonexistent-group']));
 
         $response->assertNotFound();
     }
@@ -136,9 +136,9 @@ class PermissionControllerTest extends DashboardTestCase
 
         $response = $this->actingAs($this->officer)
             ->withSession(['dashboard.permissions.group' => 'roster'])
-            ->get(route('dashboard.permissions.index'));
+            ->get(route('management.permissions.index'));
 
-        $response->assertRedirect(route('dashboard.permissions.group.show', ['group' => 'roster']));
+        $response->assertRedirect(route('management.permissions.group.show', ['group' => 'roster']));
     }
 
     #[Test]
@@ -147,7 +147,7 @@ class PermissionControllerTest extends DashboardTestCase
         $role = DiscordRole::factory()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -165,7 +165,7 @@ class PermissionControllerTest extends DashboardTestCase
         $role = DiscordRole::factory()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($user)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($user)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -184,7 +184,7 @@ class PermissionControllerTest extends DashboardTestCase
 
         $this->assertFalse($role->hasPermissionTo('comment-on-loot-items'));
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -206,7 +206,7 @@ class PermissionControllerTest extends DashboardTestCase
 
         $this->assertTrue($role->hasPermissionTo('comment-on-loot-items'));
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -224,7 +224,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -239,7 +239,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -255,7 +255,7 @@ class PermissionControllerTest extends DashboardTestCase
     {
         $role = DiscordRole::factory()->create();
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => 'loot-bias-tool',
             'permission' => 9999,
         ]), [
@@ -272,7 +272,7 @@ class PermissionControllerTest extends DashboardTestCase
         $role = DiscordRole::factory()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -293,7 +293,7 @@ class PermissionControllerTest extends DashboardTestCase
 
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -320,7 +320,7 @@ class PermissionControllerTest extends DashboardTestCase
         $user = User::factory()->officer()->admin()->create();
         $permission = Permission::findByName('comment-on-loot-items');
 
-        $response = $this->actingAs($user)->patch(route('dashboard.permissions.permission.update', [
+        $response = $this->actingAs($user)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [
@@ -342,7 +342,7 @@ class PermissionControllerTest extends DashboardTestCase
 
         $role2->givePermissionTo('comment-on-loot-items');
 
-        $this->actingAs($this->officer)->patch(route('dashboard.permissions.permission.update', [
+        $this->actingAs($this->officer)->patch(route('management.permissions.permission.update', [
             'group' => $permission->group,
             'permission' => $permission->id,
         ]), [

@@ -264,7 +264,7 @@ class BroadcastEventsTest extends TestCase
         Queue::fake();
 
         $this->actingAs($user)
-            ->patch(route('dashboard.boss-strategies.update', $boss), [
+            ->patch(route('management.boss-strategies.update', $boss), [
                 'notes' => 'Updated notes.',
             ])
             ->assertRedirect();

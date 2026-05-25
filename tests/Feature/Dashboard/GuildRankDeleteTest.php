@@ -15,7 +15,7 @@ class GuildRankDeleteTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->delete(route('dashboard.ranks.destroy', $rank));
+        $response = $this->delete(route('management.ranks.destroy', $rank));
 
         $response->assertRedirect('/login');
     }
@@ -26,7 +26,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         $user = User::factory()->guest()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.ranks.destroy', $rank));
+        $response = $this->actingAs($user)->delete(route('management.ranks.destroy', $rank));
 
         $response->assertForbidden();
     }
@@ -37,7 +37,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         $user = User::factory()->member()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.ranks.destroy', $rank));
+        $response = $this->actingAs($user)->delete(route('management.ranks.destroy', $rank));
 
         $response->assertForbidden();
     }
@@ -48,7 +48,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         $user = User::factory()->raider()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.ranks.destroy', $rank));
+        $response = $this->actingAs($user)->delete(route('management.ranks.destroy', $rank));
 
         $response->assertForbidden();
     }
@@ -58,7 +58,7 @@ class GuildRankDeleteTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($this->officer)->delete(route('dashboard.ranks.destroy', $rank));
+        $response = $this->actingAs($this->officer)->delete(route('management.ranks.destroy', $rank));
 
         $response->assertRedirect();
     }
@@ -69,7 +69,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         $rank = GuildRank::factory()->create();
         $rankId = $rank->id;
 
-        $this->actingAs($this->officer)->delete(route('dashboard.ranks.destroy', $rank));
+        $this->actingAs($this->officer)->delete(route('management.ranks.destroy', $rank));
 
         $this->assertDatabaseMissing('guild_ranks', ['id' => $rankId]);
     }
@@ -78,7 +78,7 @@ class GuildRankDeleteTest extends DashboardTestCase
     public function delete_returns_404_for_nonexistent_rank(): void
     {
 
-        $response = $this->actingAs($this->officer)->delete(route('dashboard.ranks.destroy', 99999));
+        $response = $this->actingAs($this->officer)->delete(route('management.ranks.destroy', 99999));
 
         $response->assertNotFound();
     }
@@ -91,7 +91,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         Cache::put('guild_ranks:index', 'cached-data');
         $this->assertTrue(Cache::has('guild_ranks:index'));
 
-        $this->actingAs($this->officer)->delete(route('dashboard.ranks.destroy', $rank));
+        $this->actingAs($this->officer)->delete(route('management.ranks.destroy', $rank));
 
         $this->assertFalse(Cache::has('guild_ranks:index'));
     }

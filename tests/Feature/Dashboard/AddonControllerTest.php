@@ -66,7 +66,7 @@ class AddonControllerTest extends DashboardTestCase
     #[Test]
     public function export_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.addon.export'));
+        $response = $this->get(route('management.addon.export'));
 
         $response->assertRedirect('/login');
     }
@@ -76,7 +76,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($user)->get(route('management.addon.export'));
 
         $response->assertForbidden();
     }
@@ -86,7 +86,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($user)->get(route('management.addon.export'));
 
         $response->assertForbidden();
     }
@@ -96,7 +96,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($user)->get(route('management.addon.export'));
 
         $response->assertForbidden();
     }
@@ -107,7 +107,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertOk();
     }
@@ -115,7 +115,7 @@ class AddonControllerTest extends DashboardTestCase
     #[Test]
     public function export_json_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.addon.export.json'));
+        $response = $this->get(route('management.addon.export.json'));
 
         $response->assertRedirect('/login');
     }
@@ -125,7 +125,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.json'));
 
         $response->assertForbidden();
     }
@@ -135,7 +135,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.json'));
 
         $response->assertForbidden();
     }
@@ -145,7 +145,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.json'));
 
         $response->assertForbidden();
     }
@@ -156,7 +156,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
         $response->assertOk();
     }
@@ -171,7 +171,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Export')
@@ -188,7 +188,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Export')
@@ -206,7 +206,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
@@ -231,7 +231,7 @@ class AddonControllerTest extends DashboardTestCase
             'councillors' => [['id' => 1, 'name' => 'TestCouncillor', 'rank' => 'Officer']],
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
@@ -254,7 +254,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         Storage::fake('local');
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
@@ -274,7 +274,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/ExportJson')
@@ -291,7 +291,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/ExportJson')
@@ -308,7 +308,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/ExportJson')
@@ -325,7 +325,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/ExportJson')
@@ -348,7 +348,7 @@ class AddonControllerTest extends DashboardTestCase
     {
         Storage::fake('local');
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('exportedData')
@@ -376,7 +376,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/Export')
@@ -403,7 +403,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.json'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard/Addon/ExportJson')
@@ -430,7 +430,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('grmFreshness')
@@ -454,7 +454,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('grmFreshness')
@@ -488,7 +488,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         // 5 raiders in guild, 0 in GRM file = difference of 5 >= 3 = stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -528,7 +528,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         // 3 raiders in both = difference of 0 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -570,7 +570,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         // 5 in CSV, 3 in guild = difference of 2 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -611,7 +611,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         // 2 in CSV, 5 in guild = difference of 3 >= 3 = stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -655,7 +655,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         // 3 raiders in CSV (Player1, Player2, Player3), 3 in guild = difference of 0 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -684,7 +684,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('grmFreshness')
@@ -725,7 +725,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         // 0 raiders in both = difference of 0 < 3 = not stale
         $response->assertInertia(fn (Assert $page) => $page
@@ -763,7 +763,7 @@ class AddonControllerTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
 
         // Note: The current implementation uses str_getcsv which defaults to comma delimiter
         // This test documents the current behavior - semicolon CSV won't parse correctly

@@ -110,143 +110,120 @@ export default function DailyQuestsForm({
 
             {/* Content */}
             <PageContainer>
-                    <p className="mb-6 text-lg text-gray-300">
-                        Use the form below to select the current daily quests for professions, dungeons, and PvP. Once you submit, the selected quests will be posted to the configured Discord channel.
-                    </p>
-                    <Form action={route("dashboard.daily-quests.store")} method="post">
-                        {({ errors, processing, wasSuccessful }) => (
-                            <>
-                                <h2 className="text-2xl font-semibold mb-2">Daily profession quests</h2>
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
-                                    {/* Cooking Quest Selection */}
-                                    <div>
-                                        <Autocomplete
-                                            value={cookingInput}
-                                            onChange={handleCookingChange}
-                                            options={cookingQuests}
-                                            placeholder="Type quest name..."
-                                            icon={icons.cooking}
-                                            iconAlt="Cooking Icon"
-                                            labelText="Cooking"
-                                            error={errors.cooking_quest_id}
-                                        />
-                                        <input
-                                            type="hidden"
-                                            name="cooking_quest_id"
-                                            value={cookingQuestId}
-                                        />
-                                    </div>
-                                    {/* Fishing Quest Selection */}
-                                    <div>
-                                        <Autocomplete
-                                            value={fishingInput}
-                                            onChange={handleFishingChange}
-                                            options={fishingQuests}
-                                            placeholder="Type quest name..."
-                                            icon={icons.fishing}
-                                            iconAlt="Fishing Icon"
-                                            labelText="Fishing"
-                                            error={errors.fishing_quest_id}
-                                        />
-                                        <input
-                                            type="hidden"
-                                            name="fishing_quest_id"
-                                            value={fishingQuestId}
-                                        />
-                                    </div>
+                <p className="mb-6 text-lg text-gray-300">
+                    Use the form below to select the current daily quests for professions, dungeons, and PvP. Once you
+                    submit, the selected quests will be posted to the configured Discord channel.
+                </p>
+                <Form action={route("management.daily-quests.store")} method="post">
+                    {({ errors, processing, wasSuccessful }) => (
+                        <>
+                            <h2 className="mb-2 text-2xl font-semibold">Daily profession quests</h2>
+                            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {/* Cooking Quest Selection */}
+                                <div>
+                                    <Autocomplete
+                                        value={cookingInput}
+                                        onChange={handleCookingChange}
+                                        options={cookingQuests}
+                                        placeholder="Type quest name..."
+                                        icon={icons.cooking}
+                                        iconAlt="Cooking Icon"
+                                        labelText="Cooking"
+                                        error={errors.cooking_quest_id}
+                                    />
+                                    <input type="hidden" name="cooking_quest_id" value={cookingQuestId} />
                                 </div>
+                                {/* Fishing Quest Selection */}
+                                <div>
+                                    <Autocomplete
+                                        value={fishingInput}
+                                        onChange={handleFishingChange}
+                                        options={fishingQuests}
+                                        placeholder="Type quest name..."
+                                        icon={icons.fishing}
+                                        iconAlt="Fishing Icon"
+                                        labelText="Fishing"
+                                        error={errors.fishing_quest_id}
+                                    />
+                                    <input type="hidden" name="fishing_quest_id" value={fishingQuestId} />
+                                </div>
+                            </div>
 
-                                <h2 className="mb-2 block text-2xl font-semibold">Daily dungeon quests</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 mb-8 gap-4">
-                                    {/* Normal difficulty */}
-                                    <div>
-                                        <Autocomplete
-                                            value={dungeonInput}
-                                            onChange={handleDungeonChange}
-                                            options={dungeonQuests}
-                                            placeholder="Type dungeon or quest name..."
-                                            icon={icons.dungeon}
-                                            iconAlt="Dungeon Icon"
-                                            labelText="Normal"
-                                            error={errors.dungeon_quest_id}
-                                            renderOption={(quest) => (
-                                                <div>
-                                                    <div className="font-medium">{quest.name}</div>
-                                                    {quest.instance && (
-                                                        <div className="text-sm text-gray-400">
-                                                            {quest.instance}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        />
-                                        <input
-                                            type="hidden"
-                                            name="dungeon_quest_id"
-                                            value={dungeonQuestId}
-                                        />
-                                    </div>
-                                    {/* Heroic difficulty */}
-                                    <div>
-                                        <Autocomplete
-                                            value={heroicInput}
-                                            onChange={handleHeroicChange}
-                                            options={heroicQuests}
-                                            placeholder="Type dungeon or quest name..."
-                                            icon={icons.heroic}
-                                            iconAlt="Heroic Icon"
-                                            labelText="Heroic"
-                                            error={errors.heroic_quest_id}
-                                            renderOption={(quest) => (
-                                                <div>
-                                                    <div className="font-medium">{quest.name}</div>
-                                                    {quest.instance && (
-                                                        <div className="text-sm text-gray-400">
-                                                            {quest.instance}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        />
-                                        <input
-                                            type="hidden"
-                                            name="heroic_quest_id"
-                                            value={heroicQuestId}
-                                        />
-                                    </div>
+                            <h2 className="mb-2 block text-2xl font-semibold">Daily dungeon quests</h2>
+                            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {/* Normal difficulty */}
+                                <div>
+                                    <Autocomplete
+                                        value={dungeonInput}
+                                        onChange={handleDungeonChange}
+                                        options={dungeonQuests}
+                                        placeholder="Type dungeon or quest name..."
+                                        icon={icons.dungeon}
+                                        iconAlt="Dungeon Icon"
+                                        labelText="Normal"
+                                        error={errors.dungeon_quest_id}
+                                        renderOption={(quest) => (
+                                            <div>
+                                                <div className="font-medium">{quest.name}</div>
+                                                {quest.instance && (
+                                                    <div className="text-sm text-gray-400">{quest.instance}</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    />
+                                    <input type="hidden" name="dungeon_quest_id" value={dungeonQuestId} />
                                 </div>
+                                {/* Heroic difficulty */}
+                                <div>
+                                    <Autocomplete
+                                        value={heroicInput}
+                                        onChange={handleHeroicChange}
+                                        options={heroicQuests}
+                                        placeholder="Type dungeon or quest name..."
+                                        icon={icons.heroic}
+                                        iconAlt="Heroic Icon"
+                                        labelText="Heroic"
+                                        error={errors.heroic_quest_id}
+                                        renderOption={(quest) => (
+                                            <div>
+                                                <div className="font-medium">{quest.name}</div>
+                                                {quest.instance && (
+                                                    <div className="text-sm text-gray-400">{quest.instance}</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    />
+                                    <input type="hidden" name="heroic_quest_id" value={heroicQuestId} />
+                                </div>
+                            </div>
 
-                                <h2 className="mb-2 block text-2xl font-semibold">Daily PvP quests</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 mb-8 gap-4">
-                                    {/* PvP Quest Selection */}
-                                    <div className="mt-8 md:mt-0">
-                                        <Autocomplete
-                                            value={pvpInput}
-                                            onChange={handlePvpChange}
-                                            options={pvpQuests}
-                                            placeholder="Type quest name..."
-                                            icon={icons.pvp}
-                                            iconAlt="PvP Icon"
-                                            labelText="Battleground"
-                                            error={errors.pvp_quest_id}
-                                        />
-                                        <input
-                                            type="hidden"
-                                            name="pvp_quest_id"
-                                            value={pvpQuestId}
-                                        />
-                                    </div>
+                            <h2 className="mb-2 block text-2xl font-semibold">Daily PvP quests</h2>
+                            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {/* PvP Quest Selection */}
+                                <div className="mt-8 md:mt-0">
+                                    <Autocomplete
+                                        value={pvpInput}
+                                        onChange={handlePvpChange}
+                                        options={pvpQuests}
+                                        placeholder="Type quest name..."
+                                        icon={icons.pvp}
+                                        iconAlt="PvP Icon"
+                                        labelText="Battleground"
+                                        error={errors.pvp_quest_id}
+                                    />
+                                    <input type="hidden" name="pvp_quest_id" value={pvpQuestId} />
                                 </div>
+                            </div>
 
-                                {/* Submit Button */}
-                                <div className="flex justify-end gap-4 pt-4">
-                                    <PrimaryButton type="submit" processing={processing}>
-                                        {processing ? "Posting..." : "Post to Discord"}
-                                    </PrimaryButton>
-                                </div>
-                            </>
-                        )}
-                    </Form>
+                            {/* Submit Button */}
+                            <div className="flex justify-end gap-4 pt-4">
+                                <PrimaryButton type="submit" processing={processing}>
+                                    {processing ? "Posting..." : "Post to Discord"}
+                                </PrimaryButton>
+                            </div>
+                        </>
+                    )}
+                </Form>
             </PageContainer>
         </Master>
     );

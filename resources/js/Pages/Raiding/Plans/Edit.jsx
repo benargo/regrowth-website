@@ -619,7 +619,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                     <p className="text-sm text-gray-400">
                         No templates match the raids in this event. Create a template from the{" "}
                         <a
-                            href={route("dashboard.event-templates.index")}
+                            href={route("management.event-templates.index")}
                             className="text-amber-400 underline hover:text-amber-300"
                         >
                             Event Templates

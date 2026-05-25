@@ -23,7 +23,7 @@ export default function Pill({ children, bgColor = "bg-gray-600", textColor = "t
         if (!borderColorClass.startsWith("border-")) {
             borderColorClass = "border-" + borderColorClass;
         }
-        return borderColorClass;
+        return `border border-0.5 ${borderColorClass}`;
     }
 
     return (

@@ -7,11 +7,15 @@ use App\Models\DiscordRole;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
+use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Render the main dashboard page.
+     */
+    public function __invoke(Request $request): Response
     {
         return Inertia::render('Dashboard/Index', [
             'discordRoles' => [

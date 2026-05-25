@@ -39,7 +39,7 @@ class DailyQuestsAuditControllerTest extends DashboardTestCase
     #[Test]
     public function it_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.daily-quests.audit'));
+        $response = $this->get(route('management.daily-quests.audit'));
 
         $response->assertRedirect(route('login'));
     }
@@ -49,7 +49,7 @@ class DailyQuestsAuditControllerTest extends DashboardTestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.audit'));
+        $response = $this->actingAs($user)->get(route('management.daily-quests.audit'));
 
         $response->assertForbidden();
     }
@@ -59,7 +59,7 @@ class DailyQuestsAuditControllerTest extends DashboardTestCase
     {
         DiscordNotification::factory()->count(3)->create(['type' => DailyQuestsMessage::class]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.audit'));
+        $response = $this->actingAs($this->officer)->get(route('management.daily-quests.audit'));
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
@@ -74,7 +74,7 @@ class DailyQuestsAuditControllerTest extends DashboardTestCase
         DiscordNotification::factory()->create(['type' => DailyQuestsMessage::class]);
         DiscordNotification::factory()->create(['type' => OtherDiscordNotification::class]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.audit'));
+        $response = $this->actingAs($this->officer)->get(route('management.daily-quests.audit'));
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
@@ -94,7 +94,7 @@ class DailyQuestsAuditControllerTest extends DashboardTestCase
             'created_at' => now(),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.audit'));
+        $response = $this->actingAs($this->officer)->get(route('management.daily-quests.audit'));
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page

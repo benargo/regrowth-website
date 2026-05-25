@@ -16,7 +16,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     #[Test]
     public function upload_requires_authentication(): void
     {
-        $response = $this->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -28,7 +28,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($user)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -40,7 +40,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($user)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -52,7 +52,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($user)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -64,7 +64,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         Queue::fake();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -76,7 +76,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         Queue::fake();
 
-        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -117,10 +117,10 @@ class GrmUploadValidationTest extends DashboardTestCase
             ], status: 200),
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.grm-upload.form'));
+        $response = $this->actingAs($this->officer)->get(route('management.grm-upload.form'));
         $pageData = $response->viewData('page');
 
-        $partialResponse = $this->actingAs($this->officer)->get(route('dashboard.grm-upload.form'), [
+        $partialResponse = $this->actingAs($this->officer)->get(route('management.grm-upload.form'), [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
             'X-Inertia-Partial-Component' => 'Dashboard/GrmUpload/Form',
@@ -135,7 +135,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     public function upload_validates_grm_data_required(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), []);
+        $response = $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), []);
 
         $response->assertSessionHasErrors(['grm_data']);
     }
@@ -144,7 +144,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     public function upload_validates_csv_has_header_and_data_rows(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => 'Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts',
         ]);
 
@@ -155,7 +155,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     public function upload_validates_required_headers_present(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank\nTestChar,Raider",
         ]);
 
@@ -167,7 +167,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         Queue::fake();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -179,7 +179,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         Queue::fake();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name;Rank;Level;Last Online (Days);Main/Alt;Player Alts\nTestChar;Raider;80;1;Main;",
         ]);
 
@@ -190,7 +190,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     public function upload_rejects_csv_without_valid_delimiter(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $response = $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name|Rank|Level|Last Online (Days)|Main/Alt|Player Alts\nTestChar|Raider|80|1|Main|",
         ]);
 
@@ -202,7 +202,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         Queue::fake();
 
-        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
@@ -216,7 +216,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         Queue::fake();
 
-        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,AltOne;AltTwo",
         ]);
 
@@ -235,7 +235,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     {
         Queue::fake();
 
-        $this->actingAs($this->officer)->post(route('dashboard.grm-upload.upload'), [
+        $this->actingAs($this->officer)->post(route('management.grm-upload.upload'), [
             'grm_data' => "Name;Rank;Level;Last Online (Days);Main/Alt;Player Alts\nTestChar;Raider;80;1;Main;AltOne,AltTwo",
         ]);
 

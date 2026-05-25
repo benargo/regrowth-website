@@ -20,7 +20,7 @@ export default function AddonSettings({ settings, characters }) {
         if (!newCouncillorName.trim() || isProcessing) return;
         setIsProcessing(true);
         router.post(
-            route("dashboard.addon.settings.councillors.add"),
+            route("management.addon.settings.councillors.add"),
             {
                 character_name: newCouncillorName,
             },
@@ -41,7 +41,7 @@ export default function AddonSettings({ settings, characters }) {
     const handleRemoveCouncillor = (characterId) => {
         if (isProcessing) return;
         setIsProcessing(true);
-        router.delete(route("dashboard.addon.settings.councillors.remove", characterId), {
+        router.delete(route("management.addon.settings.councillors.remove", characterId), {
             preserveScroll: true,
             onSuccess: (page) => {
                 setCouncillors(page.props.settings.councillors);
@@ -55,7 +55,7 @@ export default function AddonSettings({ settings, characters }) {
 
     const handleToggleRankAttendance = (rankId, currentValue) => {
         router.patch(
-            route("dashboard.ranks.toggle-attendance", rankId),
+            route("management.ranks.toggle-attendance", rankId),
             {
                 count_attendance: !currentValue,
             },
@@ -89,24 +89,24 @@ export default function AddonSettings({ settings, characters }) {
             <PageContainer>
                 <TabNav
                     tabs={[
-                        { name: "base64", label: "Base64", href: route("dashboard.addon.export") },
-                        { name: "json", label: "JSON", href: route("dashboard.addon.export.json") },
-                        { name: "schema", label: "Schema", href: route("dashboard.addon.export.schema") },
-                        { name: "settings", label: "Settings", href: route("dashboard.addon.settings") },
+                        { name: "base64", label: "Base64", href: route("management.addon.export") },
+                        { name: "json", label: "JSON", href: route("management.addon.export.json") },
+                        { name: "schema", label: "Schema", href: route("management.addon.export.schema") },
+                        { name: "settings", label: "Settings", href: route("management.addon.settings") },
                     ]}
                     currentTab="settings"
                 />
                 <div className="flex items-center justify-between gap-4">
                     <p className="flex-1">
-                        This page allows you to configure various settings for the addon. Changes you make will be
-                        saved automatically.
+                        This page allows you to configure various settings for the addon. Changes you make will be saved
+                        automatically.
                     </p>
                     <AutoSaveLabel processing={isProcessing} />
                 </div>
                 <div className="my-6 md:mx-20">
                     <Alert type="info">
-                        Do not make changes without agreement from the other officers. Any changed settings will
-                        affect attendance calculations and loot council operations.
+                        Do not make changes without agreement from the other officers. Any changed settings will affect
+                        attendance calculations and loot council operations.
                     </Alert>
                 </div>
 
@@ -213,11 +213,7 @@ export default function AddonSettings({ settings, characters }) {
                     </div>
                     <div className="mb-4 rounded-lg border border-amber-600 p-4">
                         <h2 className="mb-2 flex flex-row items-center">
-                            <img
-                                src="/images/logo_warcraftlogs.webp"
-                                alt="Warcraft Logs"
-                                className="mr-2 h-6 w-6"
-                            />
+                            <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Warcraft Logs tags</span>
                         </h2>
                         <p className="text-mb mb-1 text-gray-200">
@@ -233,9 +229,7 @@ export default function AddonSettings({ settings, characters }) {
                                         <div className="mr-2 flex h-12 w-12 items-center justify-center border border-brown-800 bg-brown-800/50 p-2">
                                             <Checkbox
                                                 checked={tag.count_attendance}
-                                                onChange={() =>
-                                                    handleToggleTagAttendance(tag.id, tag.count_attendance)
-                                                }
+                                                onChange={() => handleToggleTagAttendance(tag.id, tag.count_attendance)}
                                                 id={`tag-${tag.id}`}
                                             />
                                         </div>

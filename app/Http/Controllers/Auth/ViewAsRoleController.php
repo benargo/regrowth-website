@@ -53,7 +53,7 @@ class ViewAsRoleController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect()->route('dashboard.index')->with('success', 'You have returned to your original account.');
+            return redirect()->route('management.dashboard')->with('success', 'You have returned to your original account.');
         } catch (ModelNotFoundException $e) {
             Auth::logout();
 

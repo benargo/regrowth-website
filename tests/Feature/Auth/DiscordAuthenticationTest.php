@@ -154,7 +154,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
             'discriminator' => '0',
         ]);
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        $response = $this->actingAs($user)->get(route('management.dashboard'));
 
         $response->assertStatus(200);
     }
@@ -162,7 +162,7 @@ class DiscordAuthenticationTest extends DashboardTestCase
     #[Test]
     public function guest_is_redirected_to_login_when_accessing_dashboard(): void
     {
-        $response = $this->get('/dashboard');
+        $response = $this->get(route('management.dashboard'));
 
         $response->assertRedirect('/login');
     }

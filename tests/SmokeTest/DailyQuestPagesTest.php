@@ -44,7 +44,7 @@ class DailyQuestPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.form'));
+        $response = $this->actingAs($user)->get(route('management.daily-quests.form'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -55,7 +55,7 @@ class DailyQuestPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.audit'));
+        $response = $this->actingAs($user)->get(route('management.daily-quests.audit'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -66,7 +66,7 @@ class DailyQuestPagesTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.audit'));
+        $response = $this->actingAs($user)->get(route('management.daily-quests.audit'));
 
         $response->assertForbidden();
     }

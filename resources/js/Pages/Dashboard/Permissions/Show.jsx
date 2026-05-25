@@ -73,7 +73,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
         setProcessing((prev) => ({ ...prev, [key]: true }));
 
         router.patch(
-            route("dashboard.permissions.permission.update", {
+            route("management.permissions.permission.update", {
                 group: permission.group,
                 permission: permission.id,
             }),
@@ -98,90 +98,84 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
         <Master title="Manage Permissions">
             <SharedHeader title="Manage Permissions" backgroundClass="bg-arcatraz" />
             <PageContainer>
-                    <p className="mb-6 text-gray-400">
-                        Control which Discord roles have access to specific site features. Changes take effect
-                        immediately.
-                    </p>
-                    {/* Group navigation */}
-                    <nav className="mb-6">
-                        <Dropdown>
-                            <Dropdown.Trigger>
-                                <button className="flex items-center justify-between rounded border border-amber-600 px-4 py-2 text-amber-600 transition-colors hover:bg-amber-600/20">
-                                    {groups.find((g) => g.active)?.name ?? "Select Group"}
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M19 9l-7 7-7-7"
-                                        />
-                                    </svg>
-                                </button>
-                            </Dropdown.Trigger>
-                            <Dropdown.Content align="left" width="48">
-                                <div className="rounded-md border border-amber-600 bg-brown shadow-lg">
-                                    {groups.map((group) => (
-                                        <Dropdown.Link
-                                            key={group.slug}
-                                            href={route("dashboard.permissions.group.show", { group: group.slug })}
-                                            className={group.active ? "bg-brown-800" : ""}
-                                        >
-                                            {group.name}
-                                        </Dropdown.Link>
-                                    ))}
-                                </div>
-                            </Dropdown.Content>
-                        </Dropdown>
-                    </nav>
+                <p className="mb-6 text-gray-400">
+                    Control which Discord roles have access to specific site features. Changes take effect immediately.
+                </p>
+                {/* Group navigation */}
+                <nav className="mb-6">
+                    <Dropdown>
+                        <Dropdown.Trigger>
+                            <button className="flex items-center justify-between rounded border border-amber-600 px-4 py-2 text-amber-600 transition-colors hover:bg-amber-600/20">
+                                {groups.find((g) => g.active)?.name ?? "Select Group"}
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </button>
+                        </Dropdown.Trigger>
+                        <Dropdown.Content align="left" width="48">
+                            <div className="rounded-md border border-amber-600 bg-brown shadow-lg">
+                                {groups.map((group) => (
+                                    <Dropdown.Link
+                                        key={group.slug}
+                                        href={route("management.permissions.group.show", { group: group.slug })}
+                                        className={group.active ? "bg-brown-800" : ""}
+                                    >
+                                        {group.name}
+                                    </Dropdown.Link>
+                                ))}
+                            </div>
+                        </Dropdown.Content>
+                    </Dropdown>
+                </nav>
 
-                    {/* Permission table */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="border-b-2 border-amber-600">
-                                    <th className="px-4 py-3 text-left">Discord Role</th>
-                                    {permissions.map((permission) => (
-                                        <th key={permission.id} className="px-4 py-3 text-center">
-                                            <div className="text-sm font-semibold">
-                                                {formatPermissionName(permission.name)}
-                                            </div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {discordRoles.map((role) => {
-                                    const disabled = isRoleDisabled(role);
+                {/* Permission table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b-2 border-amber-600">
+                                <th className="px-4 py-3 text-left">Discord Role</th>
+                                {permissions.map((permission) => (
+                                    <th key={permission.id} className="px-4 py-3 text-center">
+                                        <div className="text-sm font-semibold">
+                                            {formatPermissionName(permission.name)}
+                                        </div>
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {discordRoles.map((role) => {
+                                const disabled = isRoleDisabled(role);
 
-                                    return (
-                                        <tr
-                                            key={role.id}
-                                            className="border-b border-amber-600/30 hover:bg-amber-600/10"
-                                        >
-                                            <td className="px-4 py-3 font-medium">{role.name}</td>
-                                            {permissions.map((permission) => {
-                                                const enabled = hasPermission(role, permission);
-                                                const key = `${role.id}-${permission.id}`;
+                                return (
+                                    <tr key={role.id} className="border-b border-amber-600/30 hover:bg-amber-600/10">
+                                        <td className="px-4 py-3 font-medium">{role.name}</td>
+                                        {permissions.map((permission) => {
+                                            const enabled = hasPermission(role, permission);
+                                            const key = `${role.id}-${permission.id}`;
 
-                                                return (
-                                                    <td key={permission.id} className="px-4 py-3 text-center">
-                                                        <PermissionToggle
-                                                            enabled={enabled}
-                                                            processing={!!processing[key]}
-                                                            onToggle={() =>
-                                                                togglePermission(role.id, permission, enabled)
-                                                            }
-                                                            disabled={disabled}
-                                                        />
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                            return (
+                                                <td key={permission.id} className="px-4 py-3 text-center">
+                                                    <PermissionToggle
+                                                        enabled={enabled}
+                                                        processing={!!processing[key]}
+                                                        onToggle={() => togglePermission(role.id, permission, enabled)}
+                                                        disabled={disabled}
+                                                    />
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </PageContainer>
         </Master>
     );

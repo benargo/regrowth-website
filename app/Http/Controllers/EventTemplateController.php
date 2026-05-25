@@ -66,7 +66,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
 
         $template->raids()->attach($validated['raid_ids']);
 
-        return to_route('dashboard.event-templates.edit', $template);
+        return redirect()->route('management.event-templates.edit', $template);
     }
 
     /**
@@ -128,6 +128,6 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     {
         $template->delete();
 
-        return to_route('dashboard.event-templates.index');
+        return redirect()->route('management.event-templates.index');
     }
 }

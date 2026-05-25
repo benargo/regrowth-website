@@ -24,14 +24,14 @@ class PermissionController extends Controller
     {
         // If a permission group is stored in the session, redirect to that group. Otherwise, redirect to the first available group.
         if ($request->session()->has('dashboard.permissions.group')) {
-            return redirect()->route('dashboard.permissions.group.show', ['group' => $request->session()->get('dashboard.permissions.group')]);
+            return redirect()->route('management.permissions.group.show', ['group' => $request->session()->get('dashboard.permissions.group')]);
         }
 
         $group = Cache::tags(['db', 'permissions'])->remember('permissions:first_group', now()->addMinutes(5), function () {
             return Permission::whereNotNull('group')->orderBy('group')->value('group');
         });
 
-        return redirect()->route('dashboard.permissions.group.show', ['group' => $group]);
+        return redirect()->route('management.permissions.group.show', ['group' => $group]);
     }
 
     /**
