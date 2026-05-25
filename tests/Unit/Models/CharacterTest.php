@@ -134,6 +134,24 @@ class CharacterTest extends ModelTestCase
         $this->assertTrue($character->is_main);
     }
 
+    // slug
+
+    #[Test]
+    public function slug_returns_url_safe_version_of_name(): void
+    {
+        $character = $this->factory()->make(['name' => 'Death Knight Bob']);
+
+        $this->assertSame('death-knight-bob', $character->slug);
+    }
+
+    #[Test]
+    public function slug_strips_apostrophes_and_special_characters(): void
+    {
+        $character = $this->factory()->make(['name' => "Kael'thas"]);
+
+        $this->assertSame('kaelthas', $character->slug);
+    }
+
     // linked_characters
 
     #[Test]

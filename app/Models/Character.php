@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Character extends Model
 {
@@ -76,6 +77,16 @@ class Character extends Model
     ];
 
     // ============ Custom attributes ============
+
+    /**
+     * URL-safe slug derived from the character name; used in route bindings.
+     */
+    protected function slug(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => Str::slug($this->name),
+        );
+    }
 
     /**
      * Get the main character from the linked characters.
