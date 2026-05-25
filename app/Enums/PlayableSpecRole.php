@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum CharacterRole: string
+enum PlayableSpecRole: string
 {
     case tank = 'Tank';
     case healer = 'Healer';
