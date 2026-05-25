@@ -63,7 +63,7 @@ class DailyQuestsAuditControllerTest extends DashboardTestCase
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/DailyQuests/Audit')
+            ->component('Manage/DailyQuests/Audit')
             ->has('entries.data', 3)
         );
     }

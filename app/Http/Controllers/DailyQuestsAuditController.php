@@ -20,7 +20,7 @@ class DailyQuestsAuditController extends Controller
             ->paginate(20)
             ->appends($request->query());
 
-        return Inertia::render('Dashboard/DailyQuests/Audit', [
+        return Inertia::render('Manage/DailyQuests/Audit', [
             'entries' => $paginator,
         ]);
     }

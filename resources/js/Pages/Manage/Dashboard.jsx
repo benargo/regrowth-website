@@ -47,6 +47,7 @@ export default function Index({ discordRoles }) {
                         <p className="mb-1 text-sm">Fine tune the addon to the guild's needs.</p>
                     </DashboardCard>
                 </div>
+
                 {/* Raiding */}
                 <h2 className="mt-12 text-2xl font-semibold">Raiding</h2>
                 <p className="text-md text-gray-400">
@@ -82,6 +83,7 @@ export default function Index({ discordRoles }) {
                         </DashboardCard>
                     </Can>
                 </div>
+
                 {/* Daily Quests */}
                 <h2 className="mt-12 text-2xl font-semibold">Daily Quests</h2>
                 <p className="text-md text-gray-400">Manage TBC daily quest selections.</p>

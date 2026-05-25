@@ -17,7 +17,7 @@ class DashboardController extends Controller
      */
     public function __invoke(Request $request): Response
     {
-        return Inertia::render('Dashboard/Index', [
+        return Inertia::render('Manage/Dashboard', [
             'discordRoles' => [
                 'raider' => DiscordRole::where('name', 'Raider')->value('id'),
                 'member' => DiscordRole::where('name', 'Member')->value('id'),

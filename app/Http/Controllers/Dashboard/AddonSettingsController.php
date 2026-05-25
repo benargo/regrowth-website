@@ -49,7 +49,7 @@ class AddonSettingsController extends Controller
             ->values()
             ->toArray();
 
-        return Inertia::render('Dashboard/Addon/Settings', [
+        return Inertia::render('Manage/Addon/Settings', [
             'settings' => [
                 'councillors' => $councillors,
                 'ranks' => GuildRank::orderBy('position')->get(),

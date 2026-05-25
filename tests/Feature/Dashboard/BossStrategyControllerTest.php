@@ -24,7 +24,7 @@ class BossStrategyControllerTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/BossStrategies/Index')
+            ->component('Manage/BossStrategies/Index')
             ->has('bosses')
             ->has('phases')
         );
@@ -49,7 +49,7 @@ class BossStrategyControllerTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/BossStrategies/Edit')
+            ->component('Manage/BossStrategies/Edit')
             ->has('boss')
         );
     }

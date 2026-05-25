@@ -59,7 +59,7 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/EventTemplates/Index'));
+        $response->assertInertia(fn (Assert $page) => $page->component('Manage/EventTemplates/Index'));
     }
 
     #[Test]
@@ -124,7 +124,7 @@ class EventTemplateControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/EventTemplates/Create')
+            ->component('Manage/EventTemplates/Create')
             ->has('raids', 1)
             ->where('raids.0.id', $raid->id)
         );
@@ -185,7 +185,7 @@ class EventTemplateControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/EventTemplates/Edit')
+            ->component('Manage/EventTemplates/Edit')
             ->has('template')
             ->has('raids')
         );
@@ -210,7 +210,7 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($this->officer)->get(route('management.event-templates.edit', $template));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/EventTemplates/Edit')
+            ->component('Manage/EventTemplates/Edit')
             ->where('questionMarkIconUrl', fn ($url) => str_contains((string) $url, '/icons/56/inv_misc_questionmark.jpg')
                 && URL::hasValidSignature(request()->create((string) $url)))
         );

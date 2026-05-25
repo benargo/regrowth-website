@@ -84,7 +84,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Settings')
+            ->component('Manage/Addon/Settings')
         );
     }
 

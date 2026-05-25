@@ -29,7 +29,7 @@ class GuildRankController extends Controller
             })
         )->sortBy('position');
 
-        return Inertia::render('Dashboard/Ranks/Index', [
+        return Inertia::render('Manage/Ranks/Index', [
             'guildRanks' => $guildRanks,
         ]);
     }

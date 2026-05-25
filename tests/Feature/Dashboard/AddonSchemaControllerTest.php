@@ -69,7 +69,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
         $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/ExportSchema')
+            ->component('Manage/Addon/ExportSchema')
             ->has('schema')
         );
     }

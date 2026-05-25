@@ -123,7 +123,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $partialResponse = $this->actingAs($this->officer)->get(route('management.grm-upload.form'), [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
-            'X-Inertia-Partial-Component' => 'Dashboard/GrmUpload/Form',
+            'X-Inertia-Partial-Component' => 'Manage/GrmUpload/Form',
             'X-Inertia-Partial-Data' => 'memberCount',
         ]);
 

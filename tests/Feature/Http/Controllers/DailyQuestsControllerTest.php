@@ -66,7 +66,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/DailyQuests/Form')
+            ->component('Manage/DailyQuests/Form')
             ->has('cookingQuests', 1)
             ->has('fishingQuests', 1)
             ->has('dungeonQuests', 1)

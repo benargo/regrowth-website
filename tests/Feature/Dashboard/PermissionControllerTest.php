@@ -103,7 +103,7 @@ class PermissionControllerTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Permissions/Show')
+            ->component('Manage/Permissions/Show')
             ->has('discordRoles')
             ->has('groups')
             ->has('permissions')

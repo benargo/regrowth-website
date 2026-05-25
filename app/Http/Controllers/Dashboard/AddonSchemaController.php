@@ -12,7 +12,7 @@ class AddonSchemaController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Dashboard/Addon/ExportSchema', [
+        return Inertia::render('Manage/Addon/ExportSchema', [
             'schema' => [
                 '$schema' => 'https://json-schema.org/draft/2020-12/schema',
                 '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.2.0',
