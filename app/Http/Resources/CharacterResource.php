@@ -36,6 +36,10 @@ class CharacterResource extends JsonResource
                 'is_loot_councillor' => $this->pivot->is_loot_councillor,
             ]),
             'rank' => $this->whenLoaded('rank', fn () => (new GuildRankResource($this->rank))->resolve($request)),
+            'specializations' => $this->whenLoaded('specializations', fn () => PlayableSpecializationResource::collection($this->specializations)),
+            // Recursive self-reference: never eager-load linkedCharacters.linkedCharacters
+            // or this will infinite-loop. Use a separate summary resource for nested cases.
+            'linked_characters' => $this->whenLoaded('linkedCharacters', fn () => CharacterResource::collection($this->linkedCharacters)),
         ];
     }
 }

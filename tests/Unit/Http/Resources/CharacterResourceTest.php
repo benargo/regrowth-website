@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
+use App\Models\PlayableSpecialization;
 use App\Models\Raids\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -147,5 +148,53 @@ class CharacterResourceTest extends TestCase
         $array = (new CharacterResource($loadedCharacter))->toArray(new Request);
 
         $this->assertSame(['presence' => 3, 'is_loot_councillor' => false], $array['pivot']);
+    }
+
+    #[Test]
+    public function it_omits_specializations_when_not_loaded(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['specializations']);
+    }
+
+    #[Test]
+    public function it_includes_specializations_as_resource_collection_when_loaded(): void
+    {
+        $class = PlayableClass::factory()->create();
+        $specs = PlayableSpecialization::factory()->count(2)->for($class, 'playableClass')->create();
+        $character = Character::factory()->withPlayableClass($class)->create();
+        $character->specializations()->attach($specs->first(), ['is_raid_spec' => true]);
+        $character->specializations()->attach($specs->last(), ['is_raid_spec' => false]);
+
+        $array = (new CharacterResource($character->load('specializations')))->toArray(new Request);
+
+        $this->assertInstanceOf(AnonymousResourceCollection::class, $array['specializations']);
+        $this->assertCount(2, $array['specializations']);
+    }
+
+    #[Test]
+    public function it_omits_linked_characters_when_not_loaded(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['linked_characters']);
+    }
+
+    #[Test]
+    public function it_includes_linked_characters_as_resource_collection_when_loaded(): void
+    {
+        $main = Character::factory()->main()->create(['name' => 'MainChar']);
+        $alt = Character::factory()->create(['name' => 'AltChar']);
+        $alt->linkedCharacters()->attach($main->id);
+
+        $array = (new CharacterResource($alt->load('linkedCharacters')))->toArray(new Request);
+
+        $this->assertInstanceOf(AnonymousResourceCollection::class, $array['linked_characters']);
+        $this->assertCount(1, $array['linked_characters']);
     }
 }
