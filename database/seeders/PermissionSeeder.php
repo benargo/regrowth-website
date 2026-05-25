@@ -53,6 +53,13 @@ class PermissionSeeder extends Seeder
         ['name' => 'audit-daily-quests', 'group' => 'daily-quests', 'guard_name' => 'web'],
 
         /**
+         * Character management permissions
+         */
+        ['name' => 'create-characters', 'group' => 'character-management', 'guard_name' => 'web'],
+        ['name' => 'update-characters', 'group' => 'character-management', 'guard_name' => 'web'],
+        ['name' => 'delete-characters', 'group' => 'character-management', 'guard_name' => 'web'],
+
+        /**
          * Hidden permissions (not shown in the dashboard, but still used for access control)
          */
         ['name' => 'edit-datasets', 'guard_name' => 'web'],
