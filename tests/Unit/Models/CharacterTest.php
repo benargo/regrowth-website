@@ -6,6 +6,7 @@ use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Character;
+use App\Models\CharacterSpecialisation;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
@@ -47,6 +48,7 @@ class CharacterTest extends ModelTestCase
             'level',
             'rank_id',
             'playable_class_id',
+            'specialisation_id',
             'playable_race',
             'is_main',
             'is_loot_councillor',
@@ -513,6 +515,47 @@ class CharacterTest extends ModelTestCase
         $character = new Character;
 
         $this->assertCount(0, $character->prunable()->get());
+    }
+
+    // specialisation
+
+    #[Test]
+    public function specialisation_returns_belongs_to_relationship(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsTo::class, $character->specialisation());
+    }
+
+    #[Test]
+    public function it_can_be_created_with_specialisation(): void
+    {
+        $specialisation = CharacterSpecialisation::factory()->create();
+        $character = $this->create(['specialisation_id' => $specialisation->id]);
+
+        $this->assertSame($specialisation->id, $character->specialisation_id);
+        $this->assertInstanceOf(CharacterSpecialisation::class, $character->specialisation);
+    }
+
+    #[Test]
+    public function specialisation_is_null_by_default(): void
+    {
+        $character = $this->create();
+
+        $this->assertNull($character->specialisation_id);
+        $this->assertNull($character->specialisation);
+    }
+
+    #[Test]
+    public function specialisation_is_set_to_null_when_specialisation_is_deleted(): void
+    {
+        $specialisation = CharacterSpecialisation::factory()->create();
+        $character = $this->create(['specialisation_id' => $specialisation->id]);
+
+        $specialisation->delete();
+
+        $character->refresh();
+        $this->assertNull($character->specialisation_id);
     }
 
     // rank
