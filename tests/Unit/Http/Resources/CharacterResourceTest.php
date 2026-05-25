@@ -30,6 +30,7 @@ class CharacterResourceTest extends TestCase
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('level', $array);
         $this->assertArrayHasKey('is_main', $array);
         $this->assertArrayHasKey('is_loot_councillor', $array);
@@ -49,6 +50,7 @@ class CharacterResourceTest extends TestCase
 
         $this->assertSame($character->id, $array['id']);
         $this->assertSame('Arthas', $array['name']);
+        $this->assertSame('arthas', $array['slug']);
         $this->assertSame($character->level, $array['level']);
         $this->assertTrue($array['is_main']);
         $this->assertFalse($array['is_loot_councillor']);
@@ -161,7 +163,7 @@ class CharacterResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_specializations_as_resource_collection_when_loaded(): void
+    public function it_includes_specializations_as_array_when_loaded(): void
     {
         $class = PlayableClass::factory()->create();
         $specs = PlayableSpecialization::factory()->count(2)->for($class, 'playableClass')->create();
@@ -171,7 +173,7 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($character->load('specializations')))->toArray(new Request);
 
-        $this->assertInstanceOf(AnonymousResourceCollection::class, $array['specializations']);
+        $this->assertIsArray($array['specializations']);
         $this->assertCount(2, $array['specializations']);
     }
 
@@ -186,7 +188,7 @@ class CharacterResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_linked_characters_as_resource_collection_when_loaded(): void
+    public function it_includes_linked_characters_as_array_when_loaded(): void
     {
         $main = Character::factory()->main()->create(['name' => 'MainChar']);
         $alt = Character::factory()->create(['name' => 'AltChar']);
@@ -194,7 +196,7 @@ class CharacterResourceTest extends TestCase
 
         $array = (new CharacterResource($alt->load('linkedCharacters')))->toArray(new Request);
 
-        $this->assertInstanceOf(AnonymousResourceCollection::class, $array['linked_characters']);
+        $this->assertIsArray($array['linked_characters']);
         $this->assertCount(1, $array['linked_characters']);
     }
 }
