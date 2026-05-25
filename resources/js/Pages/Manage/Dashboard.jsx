@@ -121,6 +121,14 @@ export default function Dashboard({ discordRoles }) {
                             <h3 className="text-md">Upload GRM data</h3>
                             <p className="mb-1 text-sm">Upload data from GRM to link mains and alts together.</p>
                         </DashboardCard>
+                        <Can permission="update-characters">
+                            <DashboardCard href={route("management.characters.index")} icon="users">
+                                <h3 className="text-md">Manage characters</h3>
+                                <p className="mb-1 text-sm">
+                                    Review and update guild characters, specs, and loot council status.
+                                </p>
+                            </DashboardCard>
+                        </Can>
                     </div>
                 </Collapsible>
 
