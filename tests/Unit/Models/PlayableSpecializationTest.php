@@ -43,7 +43,7 @@ class PlayableSpecializationTest extends ModelTestCase
     #[Test]
     public function it_implements_media_library_contracts(): void
     {
-        $model = new CharacterSpecialisation;
+        $model = new PlayableSpecialization;
 
         $this->assertInstanceOf(HasMedia::class, $model);
         $this->assertInstanceOf(HasBlizzardIcons::class, $model);

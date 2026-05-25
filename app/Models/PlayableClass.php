@@ -56,9 +56,9 @@ class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
     }
 
     /**
-     * A playable class can have many specialisations.
+     * A playable class can have many specializations.
      */
-    public function specialisations(): HasMany
+    public function specializations(): HasMany
     {
         return $this->hasMany(PlayableSpecialization::class);
     }

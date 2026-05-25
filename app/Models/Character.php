@@ -123,7 +123,10 @@ class Character extends Model
         return $this->hasMany(PlannedAbsence::class);
     }
 
-    public function specialisations(): BelongsToMany
+    /**
+     * Get the playable specializations associated with the character.
+     */
+    public function specializations(): BelongsToMany
     {
         return $this->belongsToMany(PlayableSpecialization::class, 'pivot_character_specializations', 'character_id', 'playable_specialization_id')
             ->withPivot('is_raid_spec')
