@@ -3,35 +3,35 @@
 namespace Tests\Unit\Models;
 
 use App\Contracts\HasBlizzardIcons;
-use App\Enums\CharacterRole;
+use App\Enums\PlayableSpecRole;
 use App\Models\Character;
-use App\Models\CharacterSpecialisation;
 use App\Models\PlayableClass;
+use App\Models\PlayableSpecialization;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
-class CharacterSpecialisationTest extends ModelTestCase
+class PlayableSpecializationTest extends ModelTestCase
 {
     protected function modelClass(): string
     {
-        return CharacterSpecialisation::class;
+        return PlayableSpecialization::class;
     }
 
     #[Test]
-    public function it_uses_character_specialisations_table(): void
+    public function it_uses_playable_specializations_table(): void
     {
-        $model = new CharacterSpecialisation;
+        $model = new PlayableSpecialization;
 
-        $this->assertSame('character_specialisations', $model->getTable());
+        $this->assertSame('playable_specializations', $model->getTable());
     }
 
     #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
-        $model = new CharacterSpecialisation;
+        $model = new PlayableSpecialization;
 
         $this->assertFillable($model, [
             'playable_class_id',
@@ -52,10 +52,10 @@ class CharacterSpecialisationTest extends ModelTestCase
     #[Test]
     public function it_casts_role_to_character_role_enum(): void
     {
-        $model = new CharacterSpecialisation;
+        $model = new PlayableSpecialization;
 
         $this->assertCasts($model, [
-            'role' => CharacterRole::class,
+            'role' => PlayableSpecRole::class,
         ]);
     }
 
@@ -66,7 +66,7 @@ class CharacterSpecialisationTest extends ModelTestCase
 
         $this->assertModelExists($specialisation);
         $this->assertNotEmpty($specialisation->name);
-        $this->assertInstanceOf(CharacterRole::class, $specialisation->role);
+        $this->assertInstanceOf(PlayableSpecRole::class, $specialisation->role);
     }
 
     #[Test]
@@ -74,7 +74,7 @@ class CharacterSpecialisationTest extends ModelTestCase
     {
         $specialisation = $this->factory()->tank()->create();
 
-        $this->assertSame(CharacterRole::tank, $specialisation->role);
+        $this->assertSame(PlayableSpecRole::tank, $specialisation->role);
     }
 
     #[Test]
@@ -82,7 +82,7 @@ class CharacterSpecialisationTest extends ModelTestCase
     {
         $specialisation = $this->factory()->healer()->create();
 
-        $this->assertSame(CharacterRole::healer, $specialisation->role);
+        $this->assertSame(PlayableSpecRole::healer, $specialisation->role);
     }
 
     #[Test]
@@ -90,7 +90,7 @@ class CharacterSpecialisationTest extends ModelTestCase
     {
         $specialisation = $this->factory()->damage()->create();
 
-        $this->assertSame(CharacterRole::damage, $specialisation->role);
+        $this->assertSame(PlayableSpecRole::damage, $specialisation->role);
     }
 
     // playableClass
@@ -98,7 +98,7 @@ class CharacterSpecialisationTest extends ModelTestCase
     #[Test]
     public function playable_class_returns_belongs_to_relationship(): void
     {
-        $model = new CharacterSpecialisation;
+        $model = new PlayableSpecialization;
 
         $this->assertInstanceOf(BelongsTo::class, $model->playableClass());
     }
@@ -115,11 +115,11 @@ class CharacterSpecialisationTest extends ModelTestCase
     // characters
 
     #[Test]
-    public function characters_returns_has_many_relationship(): void
+    public function characters_returns_belongs_to_many_relationship(): void
     {
-        $model = new CharacterSpecialisation;
+        $model = new PlayableSpecialization;
 
-        $this->assertInstanceOf(HasMany::class, $model->characters());
+        $this->assertInstanceOf(BelongsToMany::class, $model->characters());
     }
 
     #[Test]
@@ -134,7 +134,8 @@ class CharacterSpecialisationTest extends ModelTestCase
     public function characters_returns_associated_characters(): void
     {
         $specialisation = $this->create();
-        Character::factory()->count(2)->create(['specialisation_id' => $specialisation->id]);
+        $characters = Character::factory()->count(2)->create();
+        $specialisation->characters()->attach($characters->pluck('id'));
 
         $this->assertCount(2, $specialisation->fresh()->characters);
     }

@@ -39,7 +39,6 @@ class Character extends Model
         'level',
         'rank_id',
         'playable_class_id',
-        'specialisation_id',
         'playable_race',
         'is_main',
         'is_loot_councillor',
@@ -124,12 +123,11 @@ class Character extends Model
         return $this->hasMany(PlannedAbsence::class);
     }
 
-    /**
-     * Get the specialisation associated with the character.
-     */
-    public function specialisation(): BelongsTo
+    public function specialisations(): BelongsToMany
     {
-        return $this->belongsTo(CharacterSpecialisation::class, 'specialisation_id');
+        return $this->belongsToMany(PlayableSpecialization::class, 'pivot_character_specializations', 'character_id', 'playable_specialization_id')
+            ->withPivot('is_raid_spec')
+            ->withTimestamps();
     }
 
     /**
