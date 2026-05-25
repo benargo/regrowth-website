@@ -12,7 +12,7 @@ class EventPolicy
      */
     public function viewTemplates(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-raid-plans');
+        return $user->isAuthorizedTo('manage-raid-plans');
     }
 
     /**
@@ -22,12 +22,12 @@ class EventPolicy
     {
         // For templates, require 'manage-raid-plans' permission to view.
         if ($event->is_template) {
-            return $user?->hasPermissionViaDiscordRoles('manage-raid-plans') ?? false;
+            return $user?->isAuthorizedTo('manage-raid-plans') ?? false;
         }
 
         // For regular events, if the event ended more than 2 weeks ago, require 'view-old-raid-plans' permission.
         if ($event->end_time->isBefore(now()->subWeeks(2))) {
-            return $user?->hasPermissionViaDiscordRoles('view-old-raid-plans') ?? false;
+            return $user?->isAuthorizedTo('view-old-raid-plans') ?? false;
         }
 
         // Otherwise, allow viewing for all users (including guests).
@@ -39,7 +39,7 @@ class EventPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-raid-plans');
+        return $user->isAuthorizedTo('manage-raid-plans');
     }
 
     /**
@@ -47,7 +47,7 @@ class EventPolicy
      */
     public function update(User $user, Event $event): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-raid-plans');
+        return $user->isAuthorizedTo('manage-raid-plans');
     }
 
     /**
@@ -57,7 +57,7 @@ class EventPolicy
     {
         // For templates, require 'manage-raid-plans' permission to delete.
         if ($event->is_template) {
-            return $user->hasPermissionViaDiscordRoles('manage-raid-plans');
+            return $user->isAuthorizedTo('manage-raid-plans');
         }
 
         // Otherwise, only allow deletion if the user is an administrator.

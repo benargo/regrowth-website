@@ -12,7 +12,7 @@ class PlannedAbsencePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('view-planned-absences');
+        return $user->isAuthorizedTo('view-planned-absences');
     }
 
     /**
@@ -20,7 +20,7 @@ class PlannedAbsencePolicy
      */
     public function view(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->hasPermissionViaDiscordRoles('view-planned-absences') || $plannedAbsence->createdBy()->is($user);
+        return $user->isAuthorizedTo('view-planned-absences') || $plannedAbsence->createdBy()->is($user);
     }
 
     /**
@@ -28,7 +28,7 @@ class PlannedAbsencePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('create-planned-absences');
+        return $user->isAuthorizedTo('create-planned-absences');
     }
 
     /**
@@ -36,7 +36,7 @@ class PlannedAbsencePolicy
      */
     public function createForOthers(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-planned-absences');
+        return $user->isAuthorizedTo('manage-planned-absences');
     }
 
     /**
@@ -44,7 +44,7 @@ class PlannedAbsencePolicy
      */
     public function createBackdated(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-planned-absences');
+        return $user->isAuthorizedTo('manage-planned-absences');
     }
 
     /**
@@ -52,7 +52,7 @@ class PlannedAbsencePolicy
      */
     public function update(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->hasPermissionViaDiscordRoles('update-planned-absences') || $plannedAbsence->createdBy()->is($user);
+        return $user->isAuthorizedTo('update-planned-absences') || $plannedAbsence->createdBy()->is($user);
     }
 
     /**
@@ -60,7 +60,7 @@ class PlannedAbsencePolicy
      */
     public function delete(User $user, PlannedAbsence $plannedAbsence): bool
     {
-        return $user->hasPermissionViaDiscordRoles('delete-planned-absences') || $plannedAbsence->createdBy()->is($user);
+        return $user->isAuthorizedTo('delete-planned-absences') || $plannedAbsence->createdBy()->is($user);
     }
 
     /**

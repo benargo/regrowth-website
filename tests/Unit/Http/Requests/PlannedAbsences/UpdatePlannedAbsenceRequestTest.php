@@ -4,7 +4,6 @@ namespace Tests\Unit\Http\Requests\PlannedAbsences;
 
 use App\Http\Requests\PlannedAbsences\UpdatePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
-use Illuminate\Routing\Route;
 use Illuminate\Validation\Rules\Exists;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -137,35 +136,12 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
     // ==================== authorize ====================
 
     #[Test]
-    public function authorize_returns_false_when_user_cannot_update_planned_absence(): void
+    public function authorize_returns_true_when_no_character_is_passed(): void
     {
-        $absence = \Mockery::mock(PlannedAbsence::class);
-
         $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', $absence)->andReturn(false);
 
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
-        $request->setRouteResolver(fn () => $route);
-
-        $this->assertFalse($request->authorize());
-    }
-
-    #[Test]
-    public function authorize_returns_true_when_user_can_update_and_no_character_is_passed(): void
-    {
-        $absence = \Mockery::mock(PlannedAbsence::class);
-
-        $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', $absence)->andReturn(true);
-
-        $request = $this->makeRequest();
-        $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
-        $request->setRouteResolver(fn () => $route);
 
         $this->assertTrue($request->authorize());
     }
@@ -173,17 +149,11 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
     #[Test]
     public function authorize_returns_false_when_character_is_passed_and_user_lacks_update_permission(): void
     {
-        $absence = \Mockery::mock(PlannedAbsence::class);
-
         $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', $absence)->andReturn(true);
-        $user->shouldReceive('hasPermissionViaDiscordRoles')->with('update-planned-absences')->andReturn(false);
+        $user->shouldReceive('isAuthorizedTo')->with('update-planned-absences')->andReturn(false);
 
         $request = $this->makeRequest(['character' => '5']);
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
-        $request->setRouteResolver(fn () => $route);
 
         $this->assertFalse($request->authorize());
     }
@@ -191,17 +161,11 @@ class UpdatePlannedAbsenceRequestTest extends TestCase
     #[Test]
     public function authorize_returns_true_when_character_is_passed_and_user_has_update_permission(): void
     {
-        $absence = \Mockery::mock(PlannedAbsence::class);
-
         $user = \Mockery::mock();
-        $user->shouldReceive('can')->with('update', $absence)->andReturn(true);
-        $user->shouldReceive('hasPermissionViaDiscordRoles')->with('update-planned-absences')->andReturn(true);
+        $user->shouldReceive('isAuthorizedTo')->with('update-planned-absences')->andReturn(true);
 
         $request = $this->makeRequest(['character' => '5']);
         $request->setUserResolver(fn () => $user);
-        $route = \Mockery::mock(Route::class);
-        $route->shouldReceive('parameter')->with('plannedAbsence', null)->andReturn($absence);
-        $request->setRouteResolver(fn () => $route);
 
         $this->assertTrue($request->authorize());
     }

@@ -12,7 +12,7 @@ class ItemPolicy extends AuthorizationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('view-loot-bias-tool');
+        return $user->isAuthorizedTo('view-loot-bias-tool');
     }
 
     /**
@@ -20,7 +20,7 @@ class ItemPolicy extends AuthorizationPolicy
      */
     public function view(User $user, Item $item): bool
     {
-        return $user->hasPermissionViaDiscordRoles('view-loot-bias-tool');
+        return $user->isAuthorizedTo('view-loot-bias-tool');
     }
 
     /**
@@ -36,7 +36,7 @@ class ItemPolicy extends AuthorizationPolicy
      */
     public function update(User $user, Item $item): bool
     {
-        return $user->hasPermissionViaDiscordRoles('edit-items');
+        return $user->isAuthorizedTo('edit-items');
     }
 
     /**

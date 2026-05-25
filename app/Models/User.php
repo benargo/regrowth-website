@@ -258,8 +258,13 @@ class User extends Authenticatable
     /**
      * Check if the user has a permission via any of their Discord roles.
      */
-    public function hasPermissionViaDiscordRoles(string $permission): bool
+    public function isAuthorizedTo(string $permission): bool
     {
+        // Admin users have all permissions
+        if ($this->is_admin) {
+            return true;
+        }
+
         return $this->discordRoles->contains(fn (DiscordRole $role) => $role->hasPermissionTo($permission));
     }
 }

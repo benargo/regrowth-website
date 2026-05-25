@@ -15,7 +15,7 @@ class DatasetPolicy extends AuthorizationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('edit-datasets');
+        return $user->isAuthorizedTo('edit-datasets');
     }
 
     /**
@@ -23,7 +23,7 @@ class DatasetPolicy extends AuthorizationPolicy
      */
     public function view(User $user, DatasetModel $model): bool
     {
-        return $user->hasPermissionViaDiscordRoles('edit-datasets');
+        return $user->isAuthorizedTo('edit-datasets');
     }
 
     /**
@@ -31,7 +31,7 @@ class DatasetPolicy extends AuthorizationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('edit-datasets');
+        return $user->isAuthorizedTo('edit-datasets');
     }
 
     /**
@@ -39,7 +39,7 @@ class DatasetPolicy extends AuthorizationPolicy
      */
     public function update(User $user, DatasetModel $model): bool
     {
-        return $user->hasPermissionViaDiscordRoles('edit-datasets');
+        return $user->isAuthorizedTo('edit-datasets');
     }
 
     /**
@@ -47,7 +47,7 @@ class DatasetPolicy extends AuthorizationPolicy
      */
     public function delete(User $user, DatasetModel $model): bool
     {
-        return $user->hasPermissionViaDiscordRoles('edit-datasets');
+        return $user->isAuthorizedTo('edit-datasets');
     }
 
     /**

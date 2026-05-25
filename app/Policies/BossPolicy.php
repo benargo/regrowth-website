@@ -12,6 +12,6 @@ class BossPolicy
      */
     public function update(User $user, Boss $boss): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-boss-strategies');
+        return $user->isAuthorizedTo('manage-boss-strategies');
     }
 }

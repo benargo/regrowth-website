@@ -15,7 +15,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('view-all-comments');
+        return $user->isAuthorizedTo('view-all-comments');
     }
 
     /**
@@ -23,7 +23,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('comment-on-loot-items');
+        return $user->isAuthorizedTo('comment-on-loot-items');
     }
 
     /**
@@ -31,7 +31,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function delete(User $user, Comment $comment): bool
     {
-        if ($user->hasPermissionViaDiscordRoles('delete-any-comment')) {
+        if ($user->isAuthorizedTo('delete-any-comment')) {
             return true;
         }
 
@@ -43,7 +43,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function update(User $user, Comment $comment): bool
     {
-        if ($user->hasPermissionViaDiscordRoles('edit-any-comment')) {
+        if ($user->isAuthorizedTo('edit-any-comment')) {
             return true;
         }
 
@@ -59,7 +59,7 @@ class CommentPolicy extends AuthorizationPolicy
      */
     public function markAsResolved(User $user, Comment $comment): bool
     {
-        return $user->hasPermissionViaDiscordRoles('mark-comment-as-resolved');
+        return $user->isAuthorizedTo('mark-comment-as-resolved');
     }
 
     /**
@@ -71,6 +71,6 @@ class CommentPolicy extends AuthorizationPolicy
             return false; // Users cannot react to their own comments
         }
 
-        return $user->hasPermissionViaDiscordRoles('react-to-comments');
+        return $user->isAuthorizedTo('react-to-comments');
     }
 }

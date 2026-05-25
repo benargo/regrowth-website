@@ -8,6 +8,6 @@ class SpellPolicy
 {
     public function create(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('edit-datasets');
+        return $user->isAuthorizedTo('edit-datasets');
     }
 }

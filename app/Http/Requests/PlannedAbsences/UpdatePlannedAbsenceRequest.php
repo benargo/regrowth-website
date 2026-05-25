@@ -15,10 +15,7 @@ class UpdatePlannedAbsenceRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $plannedAbsence = $this->route('plannedAbsence');
-
-        return $this->user()->can('update', $plannedAbsence)
-            && (! $this->has('character') || $this->user()->hasPermissionViaDiscordRoles('update-planned-absences'));
+        return ! $this->has('character') || $this->user()->isAuthorizedTo('update-planned-absences');
     }
 
     /**
