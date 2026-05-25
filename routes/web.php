@@ -4,6 +4,7 @@ use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossStrategyController;
+use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\DailyQuestsAuditController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
@@ -125,7 +126,15 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->name('boss-strategies.update');
 
     /**
-     * Daily Quests
+     * Characters
+     */
+    Route::get('/characters', [CharacterController::class, 'index'])->name('characters.index');
+    Route::get('/characters/{character}/{slug}', [CharacterController::class, 'show'])->name('characters.show');
+    Route::get('/characters/{character}/{slug}/edit', [CharacterController::class, 'edit'])->name('characters.edit');
+    Route::patch('/characters/{character}', [CharacterController::class, 'update'])->name('characters.update');
+
+    /**
+     * Daily quests
      */
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');

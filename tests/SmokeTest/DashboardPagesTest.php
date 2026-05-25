@@ -5,14 +5,17 @@ namespace Tests\SmokeTest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\Boss;
+use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Permission;
+use App\Models\PlayableClass;
 use App\Models\Raid;
 use App\Models\User;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -39,6 +42,7 @@ class DashboardPagesTest extends TestCase
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-boss-strategies', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'set-daily-quests', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'audit-daily-quests', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'update-characters', 'guard_name' => 'web']));
 
         // Mock GuildTags to prevent WarcraftLogs API calls
         $guildTags = Mockery::mock(GuildTags::class);
@@ -246,5 +250,45 @@ class DashboardPagesTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function characters_index_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('management.characters.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->component('Manage/Characters/Index'));
+    }
+
+    #[Test]
+    public function characters_show_page_loads(): void
+    {
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(
+            route('management.characters.show', ['character' => $character, 'slug' => $character->slug])
+        );
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->component('Manage/Characters/Show'));
+    }
+
+    #[Test]
+    public function characters_edit_page_loads(): void
+    {
+        $class = PlayableClass::factory()->create();
+        $character = Character::factory()->withPlayableClass($class)->create();
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(
+            route('management.characters.edit', ['character' => $character, 'slug' => $character->slug])
+        );
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->component('Manage/Characters/Edit'));
     }
 }
