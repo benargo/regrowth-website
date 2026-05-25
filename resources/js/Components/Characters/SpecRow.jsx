@@ -41,7 +41,8 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
                     disabled={disabled || !isSelected}
                     className="h-3.5 w-3.5 border-amber-600 bg-brown-900 text-amber-500 focus:ring-amber-500 focus:ring-offset-0 disabled:cursor-not-allowed"
                 />
-                <Icon icon="star" style={isRaidSpec ? "solid" : "light"} className="text-[11px]" />
+                <Icon icon="star" style="solid" className={`text-[11px] ${isRaidSpec ? "" : "hidden"}`} />
+                <Icon icon="star" style="light" className={`text-[11px] ${isRaidSpec ? "hidden" : ""}`} />
                 <span className="hidden sm:inline">Raid</span>
             </label>
         </label>
