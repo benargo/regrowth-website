@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\DiscordRole;
 use App\Models\User;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,38 +46,51 @@ class SyncDiscordUsers implements ShouldQueue
         $deleted = 0;
         $errored = 0;
 
-        foreach ($users as $user) {
-            try {
-                $member = $discord->getGuildMember($user->id);
+        try {
+            foreach ($users as $user) {
+                try {
+                    $member = $discord->getGuildMember($user->id);
 
-                $user->update([
-                    'nickname' => $member->nick,
-                    'guild_avatar' => $member->avatar,
-                    'banner' => $member->banner,
-                ]);
+                    $user->update([
+                        'nickname' => $member->nick,
+                        'guild_avatar' => $member->avatar,
+                        'banner' => $member->banner,
+                    ]);
 
-                $incomingRoleIds = $member->roles;
-                $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
-                $user->discordRoles()->sync($recognizedRoleIds);
+                    $incomingRoleIds = $member->roles;
+                    $recognizedRoleIds = DiscordRole::whereIn('id', $incomingRoleIds)->pluck('id')->toArray();
+                    $user->discordRoles()->sync($recognizedRoleIds);
 
-                $synced++;
-            } catch (UserNotInGuildException $e) {
-                $user->delete();
-                $deleted++;
-            } catch (\Throwable $e) {
-                Log::warning('Failed to sync Discord user.', [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage(),
-                ]);
-                $errored++;
+                    $synced++;
+                } catch (UserNotInGuildException $e) {
+                    $user->delete();
+                    $deleted++;
+                } catch (RateLimitedException $e) {
+                    throw $e;
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to sync Discord user.', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $errored++;
+                }
             }
-        }
 
-        Log::info('Synchronising Discord users job completed.', [
-            'synced' => $synced,
-            'deleted' => $deleted,
-            'errored' => $errored,
-        ]);
+            Log::info('Synchronising Discord users job completed.', [
+                'synced' => $synced,
+                'deleted' => $deleted,
+                'errored' => $errored,
+            ]);
+        } catch (RateLimitedException $e) {
+            Log::warning('SyncDiscordUsers: Discord rate limited, releasing job.', [
+                'endpoint' => $e->endpoint,
+                'retry_after' => $e->retryAfter,
+                'scope' => $e->scope,
+            ]);
+            $this->release($e->retryAfter);
+
+            return;
+        }
     }
 
     /**

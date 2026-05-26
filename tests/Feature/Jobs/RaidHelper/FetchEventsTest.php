@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\Event;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Resources\Channel;
 use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\Resources\Comp;
@@ -709,6 +710,37 @@ class FetchEventsTest extends TestCase
         $job->handle($this->discord, $this->raidHelper);
 
         Cache::shouldHaveReceived('tags')->with(['events'])->once();
+    }
+
+    #[Test]
+    public function it_releases_itself_when_discord_is_rate_limited_fetching_channels(): void
+    {
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->once()
+            ->andThrow(new RateLimitedException('guilds/111222333444555666/channels', 15.0, 'global'));
+
+        $this->raidHelper->shouldNotReceive('getEvents');
+
+        $job = new FetchEvents(['100000000000000001']);
+        $job->withFakeQueueInteractions();
+        $job->handle($this->discord, $this->raidHelper);
+
+        $job->assertReleased(15.0);
+    }
+
+    #[Test]
+    public function it_continues_with_empty_channels_on_other_discord_errors(): void
+    {
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->once()
+            ->andThrow(new \RuntimeException('Connection timeout'));
+
+        $this->raidHelper->shouldNotReceive('getEvents');
+
+        $job = new FetchEvents(['100000000000000001']);
+        $job->handle($this->discord, $this->raidHelper);
     }
 
     // -------------------------------------------------------------------------

@@ -5,6 +5,7 @@ namespace Tests\Feature\Jobs;
 use App\Jobs\SyncDiscordRoles;
 use App\Models\DiscordRole;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Resources\Role;
 use App\Services\Discord\Resources\RoleColors;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -118,5 +119,22 @@ class SyncDiscordRolesTest extends TestCase
             'id' => '111111111111111111',
             'is_visible' => true,
         ]);
+    }
+
+    #[Test]
+    public function it_releases_itself_when_discord_is_rate_limited(): void
+    {
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildRoles')
+                ->once()
+                ->andThrow(new RateLimitedException('guilds/123/roles', 30.0, 'user'));
+        });
+
+        $job = new SyncDiscordRoles;
+        $job->withFakeQueueInteractions();
+        $job->handle(app(Discord::class));
+
+        $job->assertReleased(30.0);
+        $this->assertDatabaseCount('discord_roles', 0);
     }
 }

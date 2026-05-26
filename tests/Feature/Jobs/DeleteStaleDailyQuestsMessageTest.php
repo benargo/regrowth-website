@@ -7,6 +7,7 @@ use App\Models\DiscordNotification;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Contracts\Resources\Message as MessageContract;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -89,5 +90,27 @@ class DeleteStaleDailyQuestsMessageTest extends TestCase
         foreach ($stale as $notification) {
             $this->assertSoftDeleted($notification);
         }
+    }
+
+    #[Test]
+    public function it_releases_itself_when_discord_is_rate_limited(): void
+    {
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::yesterday()->setTime(4, 0, 0)->subSecond(),
+        ]);
+
+        $discord = $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('deleteMessage')
+                ->once()
+                ->andThrow(new RateLimitedException('channels/123/messages/456', 5.0, 'user'));
+        });
+
+        $job = new DeleteStaleDailyQuestsMessage;
+        $job->withFakeQueueInteractions();
+        $job->handle($discord);
+
+        $job->assertReleased(5.0);
+        $this->assertDatabaseCount('discord_notifications', 1);
     }
 }
