@@ -260,7 +260,7 @@ class DashboardPagesTest extends TestCase
         $response = $this->actingAs($user)->get(route('management.characters.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page->component('Manage/Characters/Index'));
+        $response->assertInertia(fn (Assert $page) => $page->component('Roster/Index'));
     }
 
     #[Test]
