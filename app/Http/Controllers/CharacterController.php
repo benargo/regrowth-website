@@ -20,14 +20,14 @@ use Inertia\Response;
 class CharacterController extends Controller
 {
     /**
-     * Display the character management index.
+     * Display the guild roster.
      */
     public function index(Request $request): Response
     {
-        return Inertia::render('Manage/Characters/Index', [
+        return Inertia::render('Roster/Index', [
             'classes' => PlayableClassResource::collection(PlayableClass::all())->resolve($request),
             'ranks' => GuildRank::select('id', 'position', 'name')->orderBy('position')->get(),
-            'races' => collect(AllianceRaces::cases())->map(fn ($race) => ['id' => $race->value, 'name' => $race->name]),
+            'races' => AllianceRaces::toArray(),
             'characters' => Inertia::defer(fn () => CharacterResource::collection(
                 Character::with(['playableClass', 'rank', 'specializations'])
                     ->orderBy('name')
