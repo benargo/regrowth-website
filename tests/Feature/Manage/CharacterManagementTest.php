@@ -61,7 +61,7 @@ class CharacterManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Manage/Characters/Index')
+            ->component('Roster/Index')
             ->missing('characters')
             ->has('classes')
             ->has('ranks')
