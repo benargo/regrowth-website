@@ -19,7 +19,10 @@ class DiscordServiceProvider extends ServiceProvider
     {
         /** API client */
         $this->app->singleton(DiscordClient::class, function (Application $app) {
-            return new DiscordClient(config('services.discord.token'));
+            return new DiscordClient(
+                config('services.discord.token'),
+                'DiscordBot ('.config('app.url').', 1.0)',
+            );
         });
 
         /** Main Discord service */

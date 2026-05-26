@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Discord;
 use App\Services\Discord\DiscordClient;
 use App\Services\Discord\Exceptions\DiscordRequestException;
 use App\Services\Discord\Exceptions\MessageNotFoundException;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -21,7 +22,7 @@ class DiscordClientTest extends TestCase
 
         Http::fake();
 
-        $this->client = new DiscordClient('test-bot-token');
+        $this->client = new DiscordClient('test-bot-token', 'DiscordBot (https://regrowth.gg, 1.0)');
     }
 
     #[Test]
@@ -120,6 +121,42 @@ class DiscordClientTest extends TestCase
             return $request->method('DELETE')
                 && $request->url() === 'https://discord.com/api/v10/channels/123';
         });
+    }
+
+    #[Test]
+    public function it_sends_the_discord_bot_user_agent_on_every_request(): void
+    {
+        $this->client->get('/channels/123');
+
+        Http::assertSent(function (Request $request) {
+            $ua = $request->header('User-Agent')[0] ?? '';
+
+            return str_starts_with($ua, 'DiscordBot (https://regrowth.gg');
+        });
+    }
+
+    #[Test]
+    public function it_throws_rate_limited_exception_on_429_without_retrying(): void
+    {
+        Http::swap(new Factory);
+        Http::fake([
+            'discord.com/*' => Http::response(
+                ['retry_after' => 2.5, 'message' => 'You are being rate limited.'],
+                429,
+                ['X-RateLimit-Scope' => 'user'],
+            ),
+        ]);
+
+        try {
+            $this->client->get('/channels/123');
+            $this->fail('Expected RateLimitedException');
+        } catch (RateLimitedException $e) {
+            $this->assertSame('user', $e->scope);
+            $this->assertSame('channels/123', $e->endpoint);
+            $this->assertSame(2.5, $e->retryAfter);
+        }
+
+        Http::assertSentCount(1);
     }
 
     #[Test]

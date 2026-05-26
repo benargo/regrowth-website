@@ -4,6 +4,7 @@ namespace App\Services\Discord;
 
 use App\Services\Discord\Exceptions\DiscordRequestException;
 use App\Services\Discord\Exceptions\MessageNotFoundException;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -12,7 +13,8 @@ class DiscordClient
     private const BASE_URL = 'https://discord.com/api/v10/';
 
     public function __construct(
-        private string $token
+        private string $token,
+        private string $userAgent,
     ) {}
 
     public function get(string $endpoint, array $query = []): Response
@@ -40,7 +42,7 @@ class DiscordClient
         $normalised = ltrim($endpoint, '/');
         $url = self::BASE_URL.$normalised;
 
-        $http = Http::withHeaders($this->getAuthHeaders());
+        $http = Http::withHeaders($this->getDefaultHeaders());
 
         $response = match ($method) {
             'GET' => $http->get($url, $query),
@@ -62,6 +64,17 @@ class DiscordClient
         $code = is_array($body) && isset($body['code']) ? (int) $body['code'] : null;
         $bodyArr = is_array($body) ? $body : null;
 
+        if ($response->status() === 429) {
+            $retryAfter = is_array($body) && isset($body['retry_after'])
+                ? (float) $body['retry_after']
+                : (float) ($response->header('Retry-After') ?: 1.0);
+            $scope = $response->header('X-RateLimit-Scope') ?: 'user';
+
+            // We intentionally do not retry here — callers run in queue jobs and should
+            // reschedule via job->release($retryAfter) rather than blocking the worker thread.
+            throw new RateLimitedException($endpoint, $retryAfter, $scope);
+        }
+
         // 404s on message endpoints get a more specific exception so callers can distinguish
         // a stale message_id from any other failure.
         if ($response->status() === 404 && preg_match('#^channels/[^/]+/messages/[^/]+$#', $endpoint) === 1) {
@@ -71,10 +84,11 @@ class DiscordClient
         throw new DiscordRequestException($method, $endpoint, $response->status(), $code, $bodyArr);
     }
 
-    protected function getAuthHeaders(): array
+    protected function getDefaultHeaders(): array
     {
         return [
             'Authorization' => "Bot {$this->token}",
+            'User-Agent' => $this->userAgent,
         ];
     }
 }
