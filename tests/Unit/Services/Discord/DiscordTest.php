@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services\Discord;
 
-use App\Exceptions\MisconfigurationException;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
 use App\Services\Discord\Enums\ChannelType;
@@ -35,7 +34,7 @@ class DiscordTest extends TestCase
         parent::setUp();
 
         $this->client = Mockery::mock(DiscordClient::class);
-        $this->discord = new Discord($this->client, ['server_id' => '111222333444555666']);
+        $this->discord = new Discord($this->client, '111222333444555666');
     }
 
     // -------------------------------------------------------------------------
@@ -124,60 +123,19 @@ class DiscordTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_a_misconfiguration_exception_when_no_guild_id_is_configured_or_provided(): void
+    public function get_guild_channels_uses_the_default_server_id_when_none_is_passed(): void
     {
-        $discord = new Discord($this->client, []);
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([]);
 
-        $this->expectException(MisconfigurationException::class);
-        $this->expectExceptionMessageMatches('/server_id/');
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/channels')
+            ->andReturn($response);
 
-        $discord->getGuildChannels();
-    }
+        $this->discord->getGuildChannels();
 
-    // -------------------------------------------------------------------------
-    // config()
-    // -------------------------------------------------------------------------
-
-    #[Test]
-    public function it_throws_a_misconfiguration_exception_for_a_missing_required_config_key(): void
-    {
-        $discord = new Discord($this->client, []);
-
-        // getChannel does not use config(), so we need a method that does.
-        // We test the guard indirectly by constructing with an empty config and
-        // asserting the exception message contains the missing key.
-        $this->expectException(MisconfigurationException::class);
-        $this->expectExceptionMessageMatches('/server_id/');
-
-        // Expose via a subclass so we can call the private method.
-        $reflection = new \ReflectionClass($discord);
-        $method = $reflection->getMethod('config');
-        $method->setAccessible(true);
-        $method->invoke($discord, 'server_id');
-    }
-
-    #[Test]
-    public function it_returns_the_config_value_when_the_key_exists(): void
-    {
-        $discord = new Discord($this->client, ['server_id' => '999']);
-
-        $reflection = new \ReflectionClass($discord);
-        $method = $reflection->getMethod('config');
-        $method->setAccessible(true);
-
-        $this->assertSame('999', $method->invoke($discord, 'server_id'));
-    }
-
-    #[Test]
-    public function it_returns_the_default_when_the_key_is_missing_and_a_default_is_supplied(): void
-    {
-        $discord = new Discord($this->client, []);
-
-        $reflection = new \ReflectionClass($discord);
-        $method = $reflection->getMethod('config');
-        $method->setAccessible(true);
-
-        $this->assertSame('fallback', $method->invoke($discord, 'missing_key', 'fallback'));
+        // Assertion is implicit: the client expectation above verifies the correct guild ID is used.
+        $this->assertTrue(true);
     }
 
     // -------------------------------------------------------------------------

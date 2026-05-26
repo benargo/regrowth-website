@@ -2,7 +2,6 @@
 
 namespace App\Services\Discord;
 
-use App\Exceptions\MisconfigurationException;
 use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
 use App\Services\Discord\Contracts\Resources\Message as MessageContract;
 use App\Services\Discord\Exceptions\DiscordRequestException;
@@ -17,36 +16,15 @@ use App\Services\Discord\Resources\Role;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class Discord
 {
-    /**
-     * Create a new instance of the Discord service.
-     *
-     * @param  DiscordClient  $client  The Discord client for making API requests.
-     * @param  array  $config  Optional configuration for the Discord service.
-     */
     public function __construct(
         protected readonly DiscordClient $client,
-        protected array $config = []
+        protected readonly string $serverId,
+        protected readonly array $channels = [],
     ) {}
-
-    /**
-     * Helper method to retrieve configuration values with a default fallback.
-     *
-     * @throws MisconfigurationException if a required configuration key is missing.
-     */
-    private function config(string $key, mixed $default = null): mixed
-    {
-        // If no default is provided and the key is missing, throw an exception
-        if (! $default && ! Arr::has($this->config, $key)) {
-            throw new MisconfigurationException("Missing required Discord configuration key: {$key}");
-        }
-
-        return Arr::get($this->config, $key, $default);
-    }
 
     // ==================== Channels ====================
 
@@ -73,7 +51,7 @@ class Discord
      */
     public function getGuildChannels(?string $guildId = null): Collection
     {
-        $guildId = $guildId ?? $this->config('server_id', null);
+        $guildId = $guildId ?? $this->serverId;
 
         return ChannelResource::collect($this->client->get("guilds/{$guildId}/channels")->json(), Collection::class);
     }
@@ -88,7 +66,7 @@ class Discord
      */
     public function getGuildMember(string $userId): GuildMember
     {
-        $guildId = $this->config('server_id', null);
+        $guildId = $this->serverId;
 
         try {
             $response = $this->client->get("guilds/{$guildId}/members/{$userId}");
@@ -116,7 +94,7 @@ class Discord
      */
     public function getGuildMembers(int $limit = 100, ?Cursor $cursor = null, ?string $guildId = null): CursorPaginator
     {
-        $guildId = $guildId ?? $this->config('server_id', null);
+        $guildId = $guildId ?? $this->serverId;
         $after = $cursor?->parameter('id');
 
         $query = ['limit' => min($limit + 1, 1000)];
@@ -152,7 +130,7 @@ class Discord
      */
     public function searchGuildMembers(string $query, int $limit = 1, ?string $guildId = null): Collection
     {
-        $guildId = $guildId ?? $this->config('server_id', null);
+        $guildId = $guildId ?? $this->serverId;
 
         return GuildMember::collect(
             $this->client->get("guilds/{$guildId}/members/search", [
@@ -173,14 +151,14 @@ class Discord
      */
     public function getGuildRoles(?string $guildId = null): Collection
     {
-        $guildId = $guildId ?? $this->config('server_id', null);
+        $guildId = $guildId ?? $this->serverId;
 
         return Role::collect($this->client->get("guilds/{$guildId}/roles")->json(), Collection::class);
     }
 
     public function getGuildRole(string $roleId, ?string $guildId = null): Role
     {
-        $guildId = $guildId ?? $this->config('server_id', null);
+        $guildId = $guildId ?? $this->serverId;
 
         try {
             $response = $this->client->get("guilds/{$guildId}/roles/{$roleId}");
