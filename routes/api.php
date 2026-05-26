@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\Discord\GuildResourceController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
-use App\Http\Controllers\Api\Loot\CommentController;
+use App\Http\Controllers\Api\Loot\ResolveCommentController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,7 +18,7 @@ Route::get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzar
 Route::get('/discord/guild/members/search', [GuildResourceController::class, 'searchMembers'])
     ->name('api.discord.guild.members.search');
 
-Route::post('/loot/comments/{comment}/resolve', [CommentController::class, 'resolve'])
+Route::post('/loot/comments/{comment}/resolve', ResolveCommentController::class)
     ->name('api.loot.comments.resolve');
 
 Route::post('/spells', [SpellController::class, 'store'])->name('api.spells.store');

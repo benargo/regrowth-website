@@ -5,22 +5,15 @@ namespace App\Http\Controllers\Api\Loot;
 use App\Http\Controllers\Controller;
 use App\Models\LootCouncil\Comment;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 
-class CommentController extends Controller
+#[Middleware('auth:sanctum')]
+#[Authorize('markAsResolved', 'comment')]
+class ResolveCommentController extends Controller
 {
-    /**
-     * Resolve a loot council comment.
-     *
-     * Creates a new resolved comment and soft-deletes the original,
-     * following the existing update pattern for consistency.
-     */
-    public function resolve(Comment $comment): JsonResponse
+    public function __invoke(Comment $comment): JsonResponse
     {
-        abort_unless(
-            request()->bearerToken() === config('services.discord.token'),
-            403,
-        );
-
         $newComment = new Comment([
             'item_id' => $comment->item_id,
             'user_id' => $comment->user_id,
