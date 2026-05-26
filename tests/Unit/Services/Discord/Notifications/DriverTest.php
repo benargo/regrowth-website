@@ -8,6 +8,8 @@ use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Enums\ChannelType;
 use App\Services\Discord\Enums\MessageType;
+use App\Services\Discord\Exceptions\DiscordRequestException;
+use App\Services\Discord\Exceptions\MessageNotFoundException;
 use App\Services\Discord\Notifications\Driver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Notifications\Notification;
@@ -18,7 +20,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
-use RuntimeException;
 use Tests\TestCase;
 
 class DriverTest extends TestCase
@@ -216,7 +217,7 @@ class DriverTest extends TestCase
 
         $this->discord->expects('getChannelMessage')
             ->with($this->channel, '444444444444444444')
-            ->andThrow(new RuntimeException('Message not found'));
+            ->andThrow(new MessageNotFoundException('GET', 'channels/987654321098765432/messages/444444444444444444', 404));
 
         $this->discord->expects('createMessage')
             ->with($this->channel, $payload)
@@ -229,5 +230,83 @@ class DriverTest extends TestCase
             'message_id' => '555555555555555555',
             'channel_id' => $this->channel->id,
         ]);
+    }
+
+    #[Test]
+    public function send_falls_through_to_create_when_edit_message_throws_message_not_found_exception(): void
+    {
+        $payload = MessagePayload::from(['content' => 'Recovered via edit failure!']);
+
+        $staleNotification = DiscordNotification::factory()->create([
+            'channel_id' => $this->channel->id,
+            'message_id' => '777777777777777777',
+        ]);
+
+        $existingDiscordMessage = $this->makeDiscordMessage('777777777777777777');
+
+        $notification = Mockery::mock(Notification::class);
+        $notification->updates = $staleNotification;
+        $notification->expects('toMessage')->twice()->andReturn($payload);
+        $notification->expects('toDatabase')->once()->with($this->notifiable)->andReturn([
+            'type' => 'App\\Notifications\\DailyQuestsMessage',
+            'channel_id' => $this->channel->id,
+            'payload' => $payload->toArray(),
+            'created_by_user_id' => null,
+        ]);
+        $notification->expects('mapRelatedModels')->once()->andReturn([]);
+        $notification->expects('sender')->never();
+
+        $this->discord->expects('getChannelMessage')
+            ->with($this->channel, '777777777777777777')
+            ->andReturn($existingDiscordMessage);
+
+        $this->discord->expects('editMessage')
+            ->with($existingDiscordMessage, $payload)
+            ->andThrow(new MessageNotFoundException('PATCH', 'channels/987654321098765432/messages/777777777777777777', 404));
+
+        $this->discord->expects('createMessage')
+            ->with($this->channel, $payload)
+            ->andReturn($this->makeDiscordMessage('888888888888888888'));
+
+        $this->driver->send($this->notifiable, $notification);
+
+        $this->assertSoftDeleted('discord_notifications', ['id' => $staleNotification->id]);
+        $this->assertDatabaseHas('discord_notifications', [
+            'message_id' => '888888888888888888',
+            'channel_id' => $this->channel->id,
+        ]);
+    }
+
+    #[Test]
+    public function send_propagates_discord_request_exception_without_deleting_the_record(): void
+    {
+        $payload = MessagePayload::from(['content' => 'Will fail on edit']);
+
+        $existingNotification = DiscordNotification::factory()->create([
+            'channel_id' => $this->channel->id,
+            'message_id' => '999999999999999999',
+        ]);
+
+        $existingDiscordMessage = $this->makeDiscordMessage('999999999999999999');
+
+        $notification = Mockery::mock(Notification::class);
+        $notification->updates = $existingNotification;
+        $notification->expects('toMessage')->once()->andReturn($payload);
+
+        $this->discord->expects('getChannelMessage')
+            ->with($this->channel, '999999999999999999')
+            ->andReturn($existingDiscordMessage);
+
+        $this->discord->expects('editMessage')
+            ->with($existingDiscordMessage, $payload)
+            ->andThrow(new DiscordRequestException('PATCH', 'channels/987654321098765432/messages/999999999999999999', 500));
+
+        $this->discord->expects('createMessage')->never();
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->driver->send($this->notifiable, $notification);
+
+        $this->assertDatabaseHas('discord_notifications', ['id' => $existingNotification->id]);
     }
 }

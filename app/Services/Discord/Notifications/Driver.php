@@ -4,7 +4,7 @@ namespace App\Services\Discord\Notifications;
 
 use App\Models\DiscordNotification;
 use App\Services\Discord\Discord;
-use RuntimeException;
+use App\Services\Discord\Exceptions\MessageNotFoundException;
 
 class Driver
 {
@@ -39,7 +39,7 @@ class Driver
                 });
 
                 return;
-            } catch (RuntimeException $e) {
+            } catch (MessageNotFoundException $e) {
                 // Stale message_id (e.g. manually deleted in Discord) — drop the record and fall through to create.
                 $notification->updates->withoutEvents(function () use ($notification) {
                     $notification->updates->delete();
