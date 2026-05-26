@@ -5,6 +5,7 @@ namespace App\Services\Discord;
 use App\Exceptions\MisconfigurationException;
 use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
 use App\Services\Discord\Contracts\Resources\Message as MessageContract;
+use App\Services\Discord\Exceptions\DiscordRequestException;
 use App\Services\Discord\Exceptions\RoleNotFoundException;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use App\Services\Discord\Payloads\ChannelMessagesQueryString;
@@ -18,7 +19,6 @@ use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use RuntimeException;
 
 class Discord
 {
@@ -90,14 +90,14 @@ class Discord
     {
         $guildId = $this->config('server_id', null);
 
-        $response = $this->client->get("guilds/{$guildId}/members/{$userId}");
+        try {
+            $response = $this->client->get("guilds/{$guildId}/members/{$userId}");
+        } catch (DiscordRequestException $e) {
+            if ($e->status === 404) {
+                throw new UserNotInGuildException("User {$userId} is not a member of guild {$guildId}", previous: $e);
+            }
 
-        if ($response->status() === 404) {
-            throw new UserNotInGuildException("User {$userId} is not a member of guild {$guildId}");
-        }
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to fetch guild member data: '.$response->body());
+            throw $e;
         }
 
         return GuildMember::from($response->json());
@@ -125,15 +125,9 @@ class Discord
             $query['after'] = $after;
         }
 
-        $response = $this->client->get("guilds/{$guildId}/members", $query);
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to list guild members: '.$response->body());
-        }
-
         $members = array_map(
             fn (array $member) => ['id' => $member['user']['id']] + $member,
-            $response->json(),
+            $this->client->get("guilds/{$guildId}/members", $query)->json(),
         );
 
         return new CursorPaginator(
@@ -160,16 +154,13 @@ class Discord
     {
         $guildId = $guildId ?? $this->config('server_id', null);
 
-        $response = $this->client->get("guilds/{$guildId}/members/search", [
-            'query' => $query,
-            'limit' => min(max($limit, 1), 1000),
-        ]);
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to search guild members: '.$response->body());
-        }
-
-        return GuildMember::collect($response->json(), Collection::class);
+        return GuildMember::collect(
+            $this->client->get("guilds/{$guildId}/members/search", [
+                'query' => $query,
+                'limit' => min(max($limit, 1), 1000),
+            ])->json(),
+            Collection::class,
+        );
     }
 
     // ==================== Guild Roles ====================
@@ -184,23 +175,21 @@ class Discord
     {
         $guildId = $guildId ?? $this->config('server_id', null);
 
-        $response = $this->client->get("guilds/{$guildId}/roles");
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to fetch guild roles: '.$response->body());
-        }
-
-        return Role::collect($response->json(), Collection::class);
+        return Role::collect($this->client->get("guilds/{$guildId}/roles")->json(), Collection::class);
     }
 
     public function getGuildRole(string $roleId, ?string $guildId = null): Role
     {
         $guildId = $guildId ?? $this->config('server_id', null);
 
-        $response = $this->client->get("guilds/{$guildId}/roles/{$roleId}");
+        try {
+            $response = $this->client->get("guilds/{$guildId}/roles/{$roleId}");
+        } catch (DiscordRequestException $e) {
+            if ($e->status === 404) {
+                throw new RoleNotFoundException("Role {$roleId} not found in guild {$guildId}", previous: $e);
+            }
 
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to fetch guild role: '.$response->body());
+            throw $e;
         }
 
         $data = $response->json();
@@ -223,13 +212,10 @@ class Discord
      */
     public function getChannelMessages(ChannelContract $channel, ChannelMessagesQueryString $query): Collection
     {
-        $response = $this->client->get("channels/{$channel->id}/messages", $query->toArray());
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to fetch channel messages: '.$response->body());
-        }
-
-        return MessageResource::collect($response->json(), Collection::class);
+        return MessageResource::collect(
+            $this->client->get("channels/{$channel->id}/messages", $query->toArray())->json(),
+            Collection::class,
+        );
     }
 
     /**
@@ -241,13 +227,9 @@ class Discord
      */
     public function getChannelMessage(ChannelContract $channel, string $messageId): MessageResource
     {
-        $response = $this->client->get("channels/{$channel->id}/messages/{$messageId}");
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to fetch channel message: '.$response->body());
-        }
-
-        return MessageResource::from($response->json());
+        return MessageResource::from(
+            $this->client->get("channels/{$channel->id}/messages/{$messageId}")->json(),
+        );
     }
 
     /**
@@ -259,13 +241,9 @@ class Discord
      */
     public function createMessage(ChannelContract $channel, MessagePayload $payload): MessageResource
     {
-        $response = $this->client->post("channels/{$channel->id}/messages", $payload->toArray());
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to create message: '.$response->body());
-        }
-
-        return MessageResource::from($response->json());
+        return MessageResource::from(
+            $this->client->post("channels/{$channel->id}/messages", $payload->toArray())->json(),
+        );
     }
 
     /**
@@ -277,13 +255,9 @@ class Discord
      */
     public function editMessage(MessageContract $message, MessagePayload $payload): MessageResource
     {
-        $response = $this->client->patch("channels/{$message->channel_id}/messages/{$message->id}", $payload->toArray());
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to edit message: '.$response->body());
-        }
-
-        return MessageResource::from($response->json());
+        return MessageResource::from(
+            $this->client->patch("channels/{$message->channel_id}/messages/{$message->id}", $payload->toArray())->json(),
+        );
     }
 
     /**
@@ -293,10 +267,6 @@ class Discord
      */
     public function deleteMessage(MessageContract $message): void
     {
-        $response = $this->client->delete("channels/{$message->channel_id}/messages/{$message->id}");
-
-        if ($response->failed()) {
-            throw new RuntimeException('Failed to delete message: '.$response->body());
-        }
+        $this->client->delete("channels/{$message->channel_id}/messages/{$message->id}");
     }
 }

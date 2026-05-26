@@ -2,85 +2,79 @@
 
 namespace App\Services\Discord;
 
+use App\Services\Discord\Exceptions\DiscordRequestException;
+use App\Services\Discord\Exceptions\MessageNotFoundException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 class DiscordClient
 {
-    /**
-     * Base URL for Discord API requests.
-     */
     private const BASE_URL = 'https://discord.com/api/v10/';
 
-    /**
-     * Instantiates a new DiscordClient.
-     *
-     * @param  string  $token  The bot token for authenticating with the Discord API.
-     */
     public function __construct(
         private string $token
     ) {}
 
-    /**
-     * Make a GET request to the Discord API.
-     *
-     * @param  array<string, mixed>  $query
-     */
     public function get(string $endpoint, array $query = []): Response
     {
-        return Http::withHeaders($this->getAuthHeaders())
-            ->get($this->endpoint($endpoint), $query);
+        return $this->request('GET', $endpoint, query: $query);
     }
 
-    /**
-     * Make a POST request to the Discord API.
-     *
-     * @param  array<string, mixed>  $data
-     */
     public function post(string $endpoint, array $data = []): Response
     {
-        return Http::withHeaders($this->getAuthHeaders())
-            ->post($this->endpoint($endpoint), $data);
+        return $this->request('POST', $endpoint, body: $data);
     }
 
-    /**
-     * Make a PATCH request to the Discord API.
-     *
-     * @param  array<string, mixed>  $data
-     */
     public function patch(string $endpoint, array $data = []): Response
     {
-        return Http::withHeaders($this->getAuthHeaders())
-            ->patch($this->endpoint($endpoint), $data);
+        return $this->request('PATCH', $endpoint, body: $data);
     }
 
-    /**
-     * Make a DELETE request to the Discord API.
-     */
     public function delete(string $endpoint): Response
     {
-        return Http::withHeaders($this->getAuthHeaders())
-            ->delete($this->endpoint($endpoint));
+        return $this->request('DELETE', $endpoint);
     }
 
-    /**
-     * Get the authorization headers for Discord API requests.
-     */
+    protected function request(string $method, string $endpoint, array $body = [], array $query = []): Response
+    {
+        $normalised = ltrim($endpoint, '/');
+        $url = self::BASE_URL.$normalised;
+
+        $http = Http::withHeaders($this->getAuthHeaders());
+
+        $response = match ($method) {
+            'GET' => $http->get($url, $query),
+            'POST' => $http->post($url, $body),
+            'PATCH' => $http->patch($url, $body),
+            'DELETE' => $http->delete($url),
+        };
+
+        if ($response->successful()) {
+            return $response;
+        }
+
+        $this->throwForStatus($method, $normalised, $response);
+    }
+
+    protected function throwForStatus(string $method, string $endpoint, Response $response): never
+    {
+        $body = $response->json();
+        $code = is_array($body) && isset($body['code']) ? (int) $body['code'] : null;
+        $bodyArr = is_array($body) ? $body : null;
+
+        // 404s on message endpoints get a more specific exception so callers can distinguish
+        // a stale message_id from any other failure.
+        if ($response->status() === 404 && preg_match('#^channels/[^/]+/messages/[^/]+$#', $endpoint) === 1) {
+            throw new MessageNotFoundException($method, $endpoint, 404, $code, $bodyArr);
+        }
+
+        throw new DiscordRequestException($method, $endpoint, $response->status(), $code, $bodyArr);
+    }
+
     protected function getAuthHeaders(): array
     {
         return [
             'Authorization' => "Bot {$this->token}",
         ];
-    }
-
-    /**
-     * Normalize the endpoint by ensuring it does not start with a slash, as the base URL already ends with one.
-     *
-     * @param  string  $endpoint  The API endpoint to normalize (e.g. '/channels/123/messages' or 'channels/123/messages')
-     * @return string The normalized endpoint (e.g. 'channels/123/messages')
-     */
-    protected function endpoint(string $endpoint): string
-    {
-        return self::BASE_URL.ltrim($endpoint, '/');
     }
 }

@@ -7,6 +7,7 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
 use App\Services\Discord\Enums\ChannelType;
 use App\Services\Discord\Enums\MessageType;
+use App\Services\Discord\Exceptions\DiscordRequestException;
 use App\Services\Discord\Exceptions\RoleNotFoundException;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use App\Services\Discord\Payloads\ChannelMessagesQueryString;
@@ -187,8 +188,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_guild_member_for_a_valid_user_id(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('status')->andReturn(200);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             'nick' => 'TestNick',
             'roles' => ['111111111111111111'],
@@ -210,14 +209,23 @@ class DiscordTest extends TestCase
     #[Test]
     public function it_throws_user_not_in_guild_exception_when_member_returns_404(): void
     {
-        $response = Mockery::mock(Response::class);
-        $response->allows('status')->andReturn(404);
-
         $this->client->expects('get')
             ->with('guilds/111222333444555666/members/999999999')
-            ->andReturn($response);
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members/999999999', 404));
 
         $this->expectException(UserNotInGuildException::class);
+
+        $this->discord->getGuildMember('999999999');
+    }
+
+    #[Test]
+    public function it_propagates_non_404_discord_exceptions_from_get_guild_member(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members/999999999')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members/999999999', 500));
+
+        $this->expectException(DiscordRequestException::class);
 
         $this->discord->getGuildMember('999999999');
     }
@@ -230,7 +238,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_cursor_paginator_of_guild_members(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['user' => ['id' => '100000000000000001', 'username' => 'alice', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => 'Alice', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
             ['user' => ['id' => '100000000000000002', 'username' => 'bob', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => 'Bob', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
@@ -255,7 +262,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_collection_of_guild_members_matching_the_query(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['nick' => 'Alice', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
         ]);
@@ -279,7 +285,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_collection_of_roles(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['id' => '111111111111111111', 'name' => 'Officer', 'colors' => ['primary_color' => 0], 'hoist' => false, 'position' => 10, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0],
         ]);
@@ -304,7 +309,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_single_role_by_id(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '111111111111111111', 'name' => 'Officer', 'colors' => ['primary_color' => 0], 'hoist' => false, 'position' => 10, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0]
         );
@@ -323,7 +327,6 @@ class DiscordTest extends TestCase
     public function it_throws_role_not_found_exception_when_role_response_is_empty(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([]);
 
         $this->client->expects('get')
@@ -331,6 +334,30 @@ class DiscordTest extends TestCase
             ->andReturn($response);
 
         $this->expectException(RoleNotFoundException::class);
+
+        $this->discord->getGuildRole('000000000000000000');
+    }
+
+    #[Test]
+    public function it_throws_role_not_found_exception_when_client_returns_404(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/roles/000000000000000000')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/roles/000000000000000000', 404));
+
+        $this->expectException(RoleNotFoundException::class);
+
+        $this->discord->getGuildRole('000000000000000000');
+    }
+
+    #[Test]
+    public function it_propagates_non_404_discord_exceptions_from_get_guild_role(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/roles/000000000000000000')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/roles/000000000000000000', 500));
+
+        $this->expectException(DiscordRequestException::class);
 
         $this->discord->getGuildRole('000000000000000000');
     }
@@ -346,7 +373,6 @@ class DiscordTest extends TestCase
         $query = ChannelMessagesQueryString::from(['limit' => 10]);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['id' => '111111111111111111', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value],
         ]);
@@ -372,7 +398,6 @@ class DiscordTest extends TestCase
         $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '111111111111111111', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]
         );
@@ -398,7 +423,6 @@ class DiscordTest extends TestCase
         $payload = MessagePayload::from(['content' => 'Hello, world!']);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '222222222222222222', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]
         );
@@ -424,7 +448,6 @@ class DiscordTest extends TestCase
         $payload = MessagePayload::from(['content' => 'Updated content']);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '333333333333333333', 'channel_id' => '987654321098765432', 'content' => 'Updated content', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]
         );
@@ -449,7 +472,6 @@ class DiscordTest extends TestCase
         $message = Message::from(['id' => '444444444444444444', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
 
         $this->client->expects('delete')
             ->with('channels/987654321098765432/messages/444444444444444444')
