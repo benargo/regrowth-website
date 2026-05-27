@@ -5,6 +5,7 @@ namespace App\Services\Discord\Notifications;
 use App\Models\DiscordNotification;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\MessageNotFoundException;
+use Illuminate\Support\Facades\DB;
 
 class Driver
 {
@@ -61,21 +62,41 @@ class Driver
     /**
      * Sync the pivot rows for the given notification's related models.
      *
-     * @param  array<string, list<int|string>>  $relatedModels
+     * @param  list<array{model_id: int|string, model_type: string}>  $relatedModels
      */
     protected function syncRelatedModels(DiscordNotification $record, array $relatedModels): void
     {
-        $record->relatedModels()->delete();
+        $desired = array_map(fn ($entry) => [
+            'discord_notification_id' => $record->id,
+            'model_type' => $entry['model_type'],
+            'model_id' => (string) $entry['model_id'],
+        ], $relatedModels);
 
-        $rows = [];
-        foreach ($relatedModels as $modelClass => $ids) {
-            foreach ($ids as $id) {
-                $rows[] = ['model_type' => $modelClass, 'model_id' => $id];
+        DB::transaction(function () use ($record, $desired) {
+            if ($desired !== []) {
+                $record->relatedModels()->upsert(
+                    $desired,
+                    ['discord_notification_id', 'model_type', 'model_id'],
+                    [],
+                );
             }
-        }
 
-        if ($rows !== []) {
-            $record->relatedModels()->createMany($rows);
-        }
+            // Delete rows no longer in $desired.
+            $query = $record->relatedModels();
+
+            if ($desired === []) {
+                $query->delete();
+
+                return;
+            }
+
+            $pairs = array_map(fn ($row) => [$row['model_type'], $row['model_id']], $desired);
+
+            $query->where(function ($q) use ($pairs) {
+                foreach ($pairs as [$type, $id]) {
+                    $q->where(fn ($inner) => $inner->where('model_type', '!=', $type)->orWhere('model_id', '!=', $id));
+                }
+            })->delete();
+        });
     }
 }

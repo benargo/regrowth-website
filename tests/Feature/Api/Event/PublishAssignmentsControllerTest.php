@@ -82,7 +82,7 @@ class PublishAssignmentsControllerTest extends TestCase
             ->andReturn(Channel::from(['id' => $this->event->channel_id]));
 
         $existing = DiscordNotification::factory()
-            ->withRelatedModels([Event::class => [$this->event->getKey()]])
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => $this->event->getKey()]])
             ->create(['type' => RaidAssignmentsPublished::class]);
 
         $this->actingAs($this->editor)
@@ -108,7 +108,7 @@ class PublishAssignmentsControllerTest extends TestCase
 
         $otherEvent = Event::factory()->create();
         DiscordNotification::factory()
-            ->withRelatedModels([Event::class => [$otherEvent->getKey()]])
+            ->withRelatedModels([['model_type' => Event::class, 'model_id' => $otherEvent->getKey()]])
             ->create(['type' => RaidAssignmentsPublished::class]);
 
         $this->actingAs($this->editor)
