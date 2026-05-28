@@ -17,7 +17,6 @@ use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Channel;
 use App\Services\Discord\Resources\Message;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -322,12 +321,11 @@ class DriverTest extends TestCase
     }
 
     #[Test]
-    public function it_preserves_pivot_primary_keys_when_syncing_related_models(): void
+    public function it_syncs_related_models_for_each_new_notification_independently(): void
     {
         [$userA, $userB, $userC] = User::factory()->count(3)->create();
-        $payload = MessagePayload::from(['content' => 'PK preservation test']);
+        $payload = MessagePayload::from(['content' => 'Related model isolation test']);
 
-        // First send: creates the notification with [A, B].
         $firstNotification = Mockery::mock(Notification::class);
         $firstNotification->updates = null;
         $firstNotification->expects('toMessage')->once()->andReturn($payload);
@@ -348,17 +346,6 @@ class DriverTest extends TestCase
 
         $this->driver->send($this->notifiable, $firstNotification);
 
-        $record = DiscordNotification::where('message_id', '200000000000000001')->first();
-
-        $survivingRowId = DB::table('discord_notification_related_models')->where([
-            'discord_notification_id' => $record->id,
-            'model_type' => User::class,
-            'model_id' => (string) $userB->id,
-        ])->value('id');
-
-        $this->assertNotNull($survivingRowId);
-
-        // Second send via the create path again (simulating a re-sync) with [B, C].
         $secondNotification = Mockery::mock(Notification::class);
         $secondNotification->updates = null;
         $secondNotification->expects('toMessage')->once()->andReturn($payload);
@@ -379,22 +366,25 @@ class DriverTest extends TestCase
 
         $this->driver->send($this->notifiable, $secondNotification);
 
+        $record1 = DiscordNotification::where('message_id', '200000000000000001')->first();
         $record2 = DiscordNotification::where('message_id', '200000000000000002')->first();
 
-        $survivingRowIdAfter = DB::table('discord_notification_related_models')->where([
-            'discord_notification_id' => $record2->id,
+        $this->assertDatabaseHas('discord_notification_related_models', [
+            'discord_notification_id' => $record1->id,
+            'model_type' => User::class,
+            'model_id' => (string) $userA->id,
+        ]);
+        $this->assertDatabaseHas('discord_notification_related_models', [
+            'discord_notification_id' => $record1->id,
             'model_type' => User::class,
             'model_id' => (string) $userB->id,
-        ])->value('id');
+        ]);
 
-        // The upsert should preserve the existing row PK for userB when the same notification record is reused.
-        // Since this is a new record (record2), we just verify both B and C exist and A does not.
         $this->assertDatabaseHas('discord_notification_related_models', [
             'discord_notification_id' => $record2->id,
             'model_type' => User::class,
             'model_id' => (string) $userB->id,
         ]);
-
         $this->assertDatabaseHas('discord_notification_related_models', [
             'discord_notification_id' => $record2->id,
             'model_type' => User::class,
