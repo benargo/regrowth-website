@@ -55,9 +55,9 @@ abstract class Notification extends BaseNotification implements ShouldQueue
         }
 
         return collect($this->relatedModels)
-            ->groupBy(fn ($model) => get_class($model))
-            ->mapWithKeys(fn ($group, $modelClass) => [
-                $modelClass => $group->map(fn ($model) => $model->getKey())->values()->all(),
+            ->map(fn ($model) => [
+                'model_id' => $model->getKey(),
+                'model_type' => $model::class,
             ])
             ->all();
     }

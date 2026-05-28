@@ -137,7 +137,7 @@ class DiscordNotificationTest extends ModelTestCase
     */
 
     #[Test]
-    public function related_models_returns_has_many_relationship(): void
+    public function related_models_returns_morph_to_many_relationship(): void
     {
         $model = new DiscordNotification;
 
@@ -149,7 +149,7 @@ class DiscordNotificationTest extends ModelTestCase
     {
         $notification = $this->create();
 
-        $this->assertCount(0, $notification->relatedModels);
+        $this->assertCount(0, $notification->relatedModels()->get());
     }
 
     #[Test]
@@ -157,14 +157,14 @@ class DiscordNotificationTest extends ModelTestCase
     {
         $user = User::factory()->create();
         $notification = DiscordNotification::factory()
-            ->withRelatedModels([User::class => [$user->id]])
+            ->withRelatedModels([['model_id' => $user->id, 'model_type' => User::class]])
             ->create();
 
-        $rows = $notification->fresh()->relatedModels;
+        $rows = $notification->fresh()->relatedModels()->get();
 
         $this->assertCount(1, $rows);
-        $this->assertSame(User::class, $rows->first()->model_type);
         $this->assertSame((string) $user->id, $rows->first()->model_id);
+        $this->assertSame(User::class, $rows->first()->model_type);
     }
 
     /*

@@ -6,6 +6,7 @@ use App\Jobs\SyncDiscordUsers;
 use App\Models\DiscordRole;
 use App\Models\User;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -222,5 +223,53 @@ class SyncDiscordUsersTest extends TestCase
         $user->refresh();
         $this->assertCount(1, $user->discordRoles);
         $this->assertTrue($user->discordRoles->contains('id', '111111111111111111'));
+    }
+
+    #[Test]
+    public function it_releases_itself_when_discord_is_rate_limited(): void
+    {
+        User::factory()->create(['id' => '100000000000000000']);
+        User::factory()->create(['id' => '200000000000000000']);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andReturn(GuildMember::from([
+                    'nick' => null, 'avatar' => null, 'banner' => null,
+                    'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0,
+                ]));
+
+            $mock->shouldReceive('getGuildMember')
+                ->with('200000000000000000')
+                ->once()
+                ->andThrow(new RateLimitedException('guilds/123/members/200000000000000000', 10.0, 'user'));
+        });
+
+        $job = new SyncDiscordUsers;
+        $job->withFakeQueueInteractions();
+        $job->handle(app(Discord::class));
+
+        $job->assertReleased(10.0);
+    }
+
+    #[Test]
+    public function it_does_not_count_rate_limit_as_a_per_user_error(): void
+    {
+        User::factory()->create(['id' => '100000000000000000']);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andThrow(new RateLimitedException('guilds/123/members/100000000000000000', 2.0, 'user'));
+        });
+
+        $job = new SyncDiscordUsers;
+        $job->withFakeQueueInteractions();
+        $job->handle(app(Discord::class));
+
+        $job->assertReleased(2.0);
+        $this->assertDatabaseHas('users', ['id' => '100000000000000000']);
     }
 }

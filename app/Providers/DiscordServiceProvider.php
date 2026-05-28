@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Discord\Provider as DiscordProvider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -19,16 +18,20 @@ class DiscordServiceProvider extends ServiceProvider
     {
         /** API client */
         $this->app->singleton(DiscordClient::class, function (Application $app) {
-            return new DiscordClient(config('services.discord.token'));
+            return new DiscordClient(
+                config('services.discord.token'),
+                'DiscordBot ('.config('app.url').', 1.0)',
+            );
         });
 
         /** Main Discord service */
         $this->app->singleton(Discord::class, function (Application $app) {
-            $config = Arr::only(config('services.discord'), ['server_id', 'channels']);
-
-            return new Discord($app->make(DiscordClient::class), $config);
+            return new Discord(
+                $app->make(DiscordClient::class),
+                (string) config('services.discord.server_id'),
+                (array) config('services.discord.channels', []),
+            );
         });
-
     }
 
     /**

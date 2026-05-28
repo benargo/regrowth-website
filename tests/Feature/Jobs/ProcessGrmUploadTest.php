@@ -9,6 +9,7 @@ use App\Models\GuildRank;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Enums\MessageType;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Resources\Channel as ChannelResource;
 use App\Services\Discord\Resources\Message as MessageResource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -465,6 +466,31 @@ class ProcessGrmUploadTest extends TestCase
         $job->handle(app(BlizzardService::class), $this->discord);
 
         $this->assertDatabaseCount('characters', 0);
+    }
+
+    #[Test]
+    public function it_releases_itself_when_discord_is_rate_limited_sending_notification(): void
+    {
+        $this->mockCharacterService(['TestChar' => 12345]);
+
+        $rateLimitedDiscord = $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getChannel')
+                ->once()
+                ->andThrow(new RateLimitedException('channels/1407688195386114119', 5.0, 'user'));
+        });
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ]);
+        $job->withFakeQueueInteractions();
+        $job->handle(app(BlizzardService::class), $rateLimitedDiscord);
+
+        $job->assertReleased(5.0);
+        $this->assertDatabaseHas('characters', ['id' => 12345]);
     }
 
     private function makeMessage(): MessageResource

@@ -12,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class CommentControllerTest extends TestCase
+class ResolveCommentControllerTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -30,21 +30,22 @@ class CommentControllerTest extends TestCase
     // ==========================================
 
     #[Test]
-    public function resolve_requires_valid_bearer_token(): void
+    public function resolve_requires_authentication(): void
     {
         $comment = Comment::factory()->create();
 
         $response = $this->postJson(route('api.loot.comments.resolve', $comment));
 
-        $response->assertForbidden();
+        $response->assertUnauthorized();
     }
 
     #[Test]
-    public function resolve_rejects_invalid_bearer_token(): void
+    public function resolve_forbidden_without_mark_as_resolved_permission(): void
     {
+        $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create();
 
-        $response = $this->withHeader('Authorization', 'Bearer invalid-token')
+        $response = $this->actingAs($user)
             ->postJson(route('api.loot.comments.resolve', $comment));
 
         $response->assertForbidden();
@@ -57,32 +58,29 @@ class CommentControllerTest extends TestCase
     #[Test]
     public function resolve_creates_new_resolved_comment_and_soft_deletes_original(): void
     {
-        config(['services.discord.token' => 'test-bot-token']);
-
+        $user = User::factory()->withPermissions('mark-comment-as-resolved')->create();
         $item = $this->createItem();
-        $user = User::factory()->raider()->create();
+        $author = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
             'item_id' => $item->id,
-            'user_id' => $user->id,
+            'user_id' => $author->id,
             'body' => 'Comment to resolve',
             'is_resolved' => false,
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer test-bot-token')
+        $response = $this->actingAs($user)
             ->postJson(route('api.loot.comments.resolve', $comment));
 
         $response->assertOk();
 
-        // Original comment should be soft deleted
         $this->assertSoftDeleted('lootcouncil_comments', [
             'id' => $comment->id,
             'body' => 'Comment to resolve',
         ]);
 
-        // New comment should exist and be resolved
         $this->assertDatabaseHas('lootcouncil_comments', [
             'item_id' => $item->id,
-            'user_id' => $user->id,
+            'user_id' => $author->id,
             'body' => 'Comment to resolve',
             'is_resolved' => true,
         ]);
@@ -91,18 +89,17 @@ class CommentControllerTest extends TestCase
     #[Test]
     public function resolve_preserves_original_created_at(): void
     {
-        config(['services.discord.token' => 'test-bot-token']);
-
+        $user = User::factory()->withPermissions('mark-comment-as-resolved')->create();
         $item = $this->createItem();
-        $user = User::factory()->raider()->create();
+        $author = User::factory()->raider()->create();
         $originalTime = now()->subDays(3);
         $comment = Comment::factory()->create([
             'item_id' => $item->id,
-            'user_id' => $user->id,
+            'user_id' => $author->id,
             'created_at' => $originalTime,
         ]);
 
-        $this->withHeader('Authorization', 'Bearer test-bot-token')
+        $this->actingAs($user)
             ->postJson(route('api.loot.comments.resolve', $comment));
 
         $newComment = Comment::where('item_id', $item->id)
@@ -117,32 +114,59 @@ class CommentControllerTest extends TestCase
     }
 
     #[Test]
-    public function resolve_sets_deleted_by_to_null(): void
+    public function resolve_soft_deletes_original_with_null_deleted_by(): void
     {
-        config(['services.discord.token' => 'test-bot-token']);
-
+        $user = User::factory()->withPermissions('mark-comment-as-resolved')->create();
         $comment = Comment::factory()->create(['is_resolved' => false]);
 
-        $this->withHeader('Authorization', 'Bearer test-bot-token')
-            ->postJson(route('api.loot.comments.resolve', $comment));
+        $this->actingAs($user)
+            ->postJson(route('api.loot.comments.resolve', $comment))
+            ->assertOk();
 
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertSoftDeleted('lootcouncil_comments', [
             'id' => $comment->id,
             'deleted_by' => null,
         ]);
     }
 
     #[Test]
+    public function resolve_rolls_back_when_original_delete_fails(): void
+    {
+        $user = User::factory()->withPermissions('mark-comment-as-resolved')->create();
+        $comment = Comment::factory()->create(['is_resolved' => false]);
+
+        Comment::deleting(function () {
+            throw new \RuntimeException('Simulated delete failure');
+        });
+
+        try {
+            $this->actingAs($user)
+                ->postJson(route('api.loot.comments.resolve', $comment));
+        } catch (\RuntimeException) {
+            // expected
+        }
+
+        $this->assertDatabaseHas('lootcouncil_comments', [
+            'id' => $comment->id,
+            'is_resolved' => false,
+            'deleted_at' => null,
+        ]);
+        $this->assertDatabaseMissing('lootcouncil_comments', [
+            'item_id' => $comment->item_id,
+            'is_resolved' => true,
+        ]);
+    }
+
+    #[Test]
     public function resolve_returns_new_comment_in_response(): void
     {
-        config(['services.discord.token' => 'test-bot-token']);
-
+        $user = User::factory()->withPermissions('mark-comment-as-resolved')->create();
         $comment = Comment::factory()->create([
             'body' => 'Resolve me',
             'is_resolved' => false,
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer test-bot-token')
+        $response = $this->actingAs($user)
             ->postJson(route('api.loot.comments.resolve', $comment));
 
         $response->assertOk();

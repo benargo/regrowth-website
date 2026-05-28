@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\Event;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Resources\Channel;
 use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
 use App\Services\RaidHelper\RaidHelper;
@@ -68,6 +69,15 @@ class FetchEvents implements ShouldQueue
         // Step 1. Validate the channel IDs to ensure they belong to the correct server.
         try {
             $validChannels = $discord->getGuildChannels($raidHelper->getServerId())->whereIn('id', $this->channelIds)->pluck('id');
+        } catch (RateLimitedException $e) {
+            Log::warning('FetchEvents: Discord rate limited fetching guild channels, releasing job.', [
+                'endpoint' => $e->endpoint,
+                'retry_after' => $e->retryAfter,
+                'scope' => $e->scope,
+            ]);
+            $this->release($e->retryAfter);
+
+            return;
         } catch (Exception $e) {
             Log::error("Failed to fetch channels from Discord API for server ID {$raidHelper->getServerId()}. Error: {$e->getMessage()}");
             $validChannels = collect(); // Proceed with an empty collection of valid channels to avoid breaking the entire job

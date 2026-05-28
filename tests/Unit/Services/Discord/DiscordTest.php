@@ -2,11 +2,12 @@
 
 namespace Tests\Unit\Services\Discord;
 
-use App\Exceptions\MisconfigurationException;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
 use App\Services\Discord\Enums\ChannelType;
 use App\Services\Discord\Enums\MessageType;
+use App\Services\Discord\Exceptions\DiscordRequestException;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Exceptions\RoleNotFoundException;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use App\Services\Discord\Payloads\ChannelMessagesQueryString;
@@ -16,6 +17,8 @@ use App\Services\Discord\Resources\GuildMember;
 use App\Services\Discord\Resources\Message;
 use App\Services\Discord\Resources\Role;
 use Illuminate\Http\Client\Response;
+use InvalidArgumentException;
+use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Mockery;
@@ -34,7 +37,19 @@ class DiscordTest extends TestCase
         parent::setUp();
 
         $this->client = Mockery::mock(DiscordClient::class);
-        $this->discord = new Discord($this->client, ['server_id' => '111222333444555666']);
+        $this->discord = new Discord($this->client, '111222333444555666');
+    }
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_throws_an_invalid_argument_exception_when_server_id_is_empty(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Discord($this->client, '');
     }
 
     // -------------------------------------------------------------------------
@@ -123,60 +138,19 @@ class DiscordTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_a_misconfiguration_exception_when_no_guild_id_is_configured_or_provided(): void
+    public function get_guild_channels_uses_the_default_server_id_when_none_is_passed(): void
     {
-        $discord = new Discord($this->client, []);
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([]);
 
-        $this->expectException(MisconfigurationException::class);
-        $this->expectExceptionMessageMatches('/server_id/');
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/channels')
+            ->andReturn($response);
 
-        $discord->getGuildChannels();
-    }
+        $this->discord->getGuildChannels();
 
-    // -------------------------------------------------------------------------
-    // config()
-    // -------------------------------------------------------------------------
-
-    #[Test]
-    public function it_throws_a_misconfiguration_exception_for_a_missing_required_config_key(): void
-    {
-        $discord = new Discord($this->client, []);
-
-        // getChannel does not use config(), so we need a method that does.
-        // We test the guard indirectly by constructing with an empty config and
-        // asserting the exception message contains the missing key.
-        $this->expectException(MisconfigurationException::class);
-        $this->expectExceptionMessageMatches('/server_id/');
-
-        // Expose via a subclass so we can call the private method.
-        $reflection = new \ReflectionClass($discord);
-        $method = $reflection->getMethod('config');
-        $method->setAccessible(true);
-        $method->invoke($discord, 'server_id');
-    }
-
-    #[Test]
-    public function it_returns_the_config_value_when_the_key_exists(): void
-    {
-        $discord = new Discord($this->client, ['server_id' => '999']);
-
-        $reflection = new \ReflectionClass($discord);
-        $method = $reflection->getMethod('config');
-        $method->setAccessible(true);
-
-        $this->assertSame('999', $method->invoke($discord, 'server_id'));
-    }
-
-    #[Test]
-    public function it_returns_the_default_when_the_key_is_missing_and_a_default_is_supplied(): void
-    {
-        $discord = new Discord($this->client, []);
-
-        $reflection = new \ReflectionClass($discord);
-        $method = $reflection->getMethod('config');
-        $method->setAccessible(true);
-
-        $this->assertSame('fallback', $method->invoke($discord, 'missing_key', 'fallback'));
+        // Assertion is implicit: the client expectation above verifies the correct guild ID is used.
+        $this->assertTrue(true);
     }
 
     // -------------------------------------------------------------------------
@@ -187,8 +161,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_guild_member_for_a_valid_user_id(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('status')->andReturn(200);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             'nick' => 'TestNick',
             'roles' => ['111111111111111111'],
@@ -210,14 +182,23 @@ class DiscordTest extends TestCase
     #[Test]
     public function it_throws_user_not_in_guild_exception_when_member_returns_404(): void
     {
-        $response = Mockery::mock(Response::class);
-        $response->allows('status')->andReturn(404);
-
         $this->client->expects('get')
             ->with('guilds/111222333444555666/members/999999999')
-            ->andReturn($response);
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members/999999999', 404));
 
         $this->expectException(UserNotInGuildException::class);
+
+        $this->discord->getGuildMember('999999999');
+    }
+
+    #[Test]
+    public function it_propagates_non_404_discord_exceptions_from_get_guild_member(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members/999999999')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members/999999999', 500));
+
+        $this->expectException(DiscordRequestException::class);
 
         $this->discord->getGuildMember('999999999');
     }
@@ -230,7 +211,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_cursor_paginator_of_guild_members(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['user' => ['id' => '100000000000000001', 'username' => 'alice', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => 'Alice', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
             ['user' => ['id' => '100000000000000002', 'username' => 'bob', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => 'Bob', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
@@ -247,6 +227,73 @@ class DiscordTest extends TestCase
         $this->assertSame('100000000000000001', $paginator->items()[0]['id']);
     }
 
+    #[Test]
+    public function get_guild_members_reports_no_next_page_when_results_equal_limit(): void
+    {
+        $members = array_fill(0, 100, ['user' => ['id' => '100000000000000001', 'username' => 'alice', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => null, 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($members);
+
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::subset(['limit' => 101]))
+            ->andReturn($response);
+
+        $paginator = $this->discord->getGuildMembers(limit: 100);
+
+        $this->assertFalse($paginator->hasMorePages());
+    }
+
+    #[Test]
+    public function get_guild_members_reports_a_next_page_when_results_exceed_limit(): void
+    {
+        $members = array_fill(0, 101, ['user' => ['id' => '100000000000000001', 'username' => 'alice', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => null, 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($members);
+
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::subset(['limit' => 101]))
+            ->andReturn($response);
+
+        $paginator = $this->discord->getGuildMembers(limit: 100);
+
+        $this->assertTrue($paginator->hasMorePages());
+    }
+
+    #[Test]
+    public function get_guild_members_uses_explicit_guild_id_when_provided(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([]);
+
+        $this->client->expects('get')
+            ->with('guilds/999888777666555444/members', Mockery::any())
+            ->andReturn($response);
+
+        $this->discord->getGuildMembers(guildId: '999888777666555444');
+
+        // Assertion is implicit: the client expectation above verifies the correct guild ID is used.
+        $this->assertTrue(true);
+    }
+
+    #[Test]
+    public function get_guild_members_passes_cursor_after_parameter_when_cursor_is_provided(): void
+    {
+        $cursor = new Cursor(['id' => '100000000000000099']);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([]);
+
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::subset(['after' => '100000000000000099']))
+            ->andReturn($response);
+
+        $this->discord->getGuildMembers(cursor: $cursor);
+
+        $this->assertTrue(true);
+    }
+
     // -------------------------------------------------------------------------
     // searchGuildMembers
     // -------------------------------------------------------------------------
@@ -255,7 +302,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_collection_of_guild_members_matching_the_query(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['nick' => 'Alice', 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0],
         ]);
@@ -279,7 +325,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_collection_of_roles(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['id' => '111111111111111111', 'name' => 'Officer', 'colors' => ['primary_color' => 0], 'hoist' => false, 'position' => 10, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0],
         ]);
@@ -304,7 +349,6 @@ class DiscordTest extends TestCase
     public function it_returns_a_single_role_by_id(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '111111111111111111', 'name' => 'Officer', 'colors' => ['primary_color' => 0], 'hoist' => false, 'position' => 10, 'permissions' => '0', 'managed' => false, 'mentionable' => false, 'flags' => 0]
         );
@@ -323,7 +367,6 @@ class DiscordTest extends TestCase
     public function it_throws_role_not_found_exception_when_role_response_is_empty(): void
     {
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([]);
 
         $this->client->expects('get')
@@ -331,6 +374,30 @@ class DiscordTest extends TestCase
             ->andReturn($response);
 
         $this->expectException(RoleNotFoundException::class);
+
+        $this->discord->getGuildRole('000000000000000000');
+    }
+
+    #[Test]
+    public function it_throws_role_not_found_exception_when_client_returns_404(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/roles/000000000000000000')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/roles/000000000000000000', 404));
+
+        $this->expectException(RoleNotFoundException::class);
+
+        $this->discord->getGuildRole('000000000000000000');
+    }
+
+    #[Test]
+    public function it_propagates_non_404_discord_exceptions_from_get_guild_role(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/roles/000000000000000000')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/roles/000000000000000000', 500));
+
+        $this->expectException(DiscordRequestException::class);
 
         $this->discord->getGuildRole('000000000000000000');
     }
@@ -346,7 +413,6 @@ class DiscordTest extends TestCase
         $query = ChannelMessagesQueryString::from(['limit' => 10]);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn([
             ['id' => '111111111111111111', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value],
         ]);
@@ -372,7 +438,6 @@ class DiscordTest extends TestCase
         $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '111111111111111111', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]
         );
@@ -398,7 +463,6 @@ class DiscordTest extends TestCase
         $payload = MessagePayload::from(['content' => 'Hello, world!']);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '222222222222222222', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]
         );
@@ -424,7 +488,6 @@ class DiscordTest extends TestCase
         $payload = MessagePayload::from(['content' => 'Updated content']);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
         $response->expects('json')->withNoArgs()->andReturn(
             ['id' => '333333333333333333', 'channel_id' => '987654321098765432', 'content' => 'Updated content', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]
         );
@@ -449,7 +512,6 @@ class DiscordTest extends TestCase
         $message = Message::from(['id' => '444444444444444444', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
 
         $response = Mockery::mock(Response::class);
-        $response->allows('failed')->andReturn(false);
 
         $this->client->expects('delete')
             ->with('channels/987654321098765432/messages/444444444444444444')
@@ -459,5 +521,158 @@ class DiscordTest extends TestCase
 
         // No exception = pass
         $this->assertTrue(true);
+    }
+
+    // -------------------------------------------------------------------------
+    // Exception propagation — simple-delegation methods
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function get_channel_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('channels/111')
+            ->andThrow(new DiscordRequestException('GET', 'channels/111', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getChannel('111');
+    }
+
+    #[Test]
+    public function get_guild_channels_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/channels')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/channels', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getGuildChannels();
+    }
+
+    #[Test]
+    public function search_guild_members_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members/search', Mockery::any())
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members/search', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->searchGuildMembers('alice');
+    }
+
+    #[Test]
+    public function get_guild_roles_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/roles')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/roles', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getGuildRoles();
+    }
+
+    #[Test]
+    public function get_guild_members_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::any())
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getGuildMembers();
+    }
+
+    #[Test]
+    public function get_channel_messages_propagates_discord_request_exception(): void
+    {
+        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
+        $query = ChannelMessagesQueryString::from(['limit' => 10]);
+
+        $this->client->expects('get')
+            ->with('channels/987654321098765432/messages', Mockery::any())
+            ->andThrow(new DiscordRequestException('GET', 'channels/987654321098765432/messages', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getChannelMessages($channel, $query);
+    }
+
+    #[Test]
+    public function get_channel_message_propagates_discord_request_exception(): void
+    {
+        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
+
+        $this->client->expects('get')
+            ->with('channels/987654321098765432/messages/111111111111111111')
+            ->andThrow(new DiscordRequestException('GET', 'channels/987654321098765432/messages/111111111111111111', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getChannelMessage($channel, '111111111111111111');
+    }
+
+    #[Test]
+    public function create_message_propagates_discord_request_exception(): void
+    {
+        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
+        $payload = MessagePayload::from(['content' => 'Hello']);
+
+        $this->client->expects('post')
+            ->with('channels/987654321098765432/messages', Mockery::any())
+            ->andThrow(new DiscordRequestException('POST', 'channels/987654321098765432/messages', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->createMessage($channel, $payload);
+    }
+
+    #[Test]
+    public function edit_message_propagates_discord_request_exception(): void
+    {
+        $message = Message::from(['id' => '333333333333333333', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
+        $payload = MessagePayload::from(['content' => 'Updated']);
+
+        $this->client->expects('patch')
+            ->with('channels/987654321098765432/messages/333333333333333333', Mockery::any())
+            ->andThrow(new DiscordRequestException('PATCH', 'channels/987654321098765432/messages/333333333333333333', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->editMessage($message, $payload);
+    }
+
+    #[Test]
+    public function delete_message_propagates_discord_request_exception(): void
+    {
+        $message = Message::from(['id' => '444444444444444444', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
+
+        $this->client->expects('delete')
+            ->with('channels/987654321098765432/messages/444444444444444444')
+            ->andThrow(new DiscordRequestException('DELETE', 'channels/987654321098765432/messages/444444444444444444', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->deleteMessage($message);
+    }
+
+    // -------------------------------------------------------------------------
+    // RateLimitedException bubbles through Discord facade
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function rate_limited_exception_bubbles_through_get_channel(): void
+    {
+        $this->client->expects('get')
+            ->with('channels/111')
+            ->andThrow(new RateLimitedException('channels/111', 2.5, 'user'));
+
+        $this->expectException(RateLimitedException::class);
+
+        $this->discord->getChannel('111');
     }
 }

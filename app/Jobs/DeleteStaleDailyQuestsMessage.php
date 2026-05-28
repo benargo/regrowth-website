@@ -5,10 +5,12 @@ namespace App\Jobs;
 use App\Models\DiscordNotification;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Stubs\MessageStub;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 
 class DeleteStaleDailyQuestsMessage implements ShouldQueue
 {
@@ -24,13 +26,24 @@ class DeleteStaleDailyQuestsMessage implements ShouldQueue
             ->where('created_at', '<', Carbon::yesterday()->setTime(4, 0, 0))
             ->get();
 
-        foreach ($stale as $notification) {
-            $discord->deleteMessage(new MessageStub(
-                id: $notification->message_id,
-                channel_id: $notification->channel_id,
-            ));
+        try {
+            foreach ($stale as $notification) {
+                $discord->deleteMessage(new MessageStub(
+                    id: $notification->message_id,
+                    channel_id: $notification->channel_id,
+                ));
 
-            $notification->delete();
+                $notification->delete();
+            }
+        } catch (RateLimitedException $e) {
+            Log::warning('DeleteStaleDailyQuestsMessage: Discord rate limited, releasing job.', [
+                'endpoint' => $e->endpoint,
+                'retry_after' => $e->retryAfter,
+                'scope' => $e->scope,
+            ]);
+            $this->release($e->retryAfter);
+
+            return;
         }
     }
 }

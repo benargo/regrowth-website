@@ -2,9 +2,7 @@
 
 namespace App\Services\Discord\Exceptions;
 
-use Exception;
-
-class UserNotInGuildException extends Exception
+class UserNotInGuildException extends DiscordException
 {
     //
 }

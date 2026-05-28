@@ -2,9 +2,7 @@
 
 namespace App\Services\Discord\Exceptions;
 
-use RuntimeException;
-
-class RoleNotFoundException extends RuntimeException
+class RoleNotFoundException extends DiscordException
 {
     //
 }

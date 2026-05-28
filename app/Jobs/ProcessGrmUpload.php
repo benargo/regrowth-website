@@ -11,6 +11,7 @@ use App\Notifications\GrmUploadFailed;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -157,42 +158,54 @@ class ProcessGrmUpload implements ShouldQueue
         ]);
 
         // --- Step 3: finalise cache, notify Discord, dispatch event ---
-        $channel = NotifiableChannel::fromConfig('officer', $discord);
+        try {
+            $channel = NotifiableChannel::fromConfig('officer', $discord);
 
-        if ($errorCount > 0) {
-            Cache::put(self::PROGRESS_CACHE_KEY, [
-                'status' => 'failed',
-                'step' => 3,
-                'total' => 3,
-                'message' => 'Upload completed with errors.',
-                'processedCount' => $processedCount,
-                'skippedCount' => $skippedCount,
-                'warningCount' => $warningCount,
-                'errorCount' => $errorCount,
-                'errors' => $errors,
-            ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+            if ($errorCount > 0) {
+                Cache::put(self::PROGRESS_CACHE_KEY, [
+                    'status' => 'failed',
+                    'step' => 3,
+                    'total' => 3,
+                    'message' => 'Upload completed with errors.',
+                    'processedCount' => $processedCount,
+                    'skippedCount' => $skippedCount,
+                    'warningCount' => $warningCount,
+                    'errorCount' => $errorCount,
+                    'errors' => $errors,
+                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
 
-            $channel->notify(new GrmUploadFailed($processedCount, $errorCount, $errors));
-        } else {
-            Cache::put(self::PROGRESS_CACHE_KEY, [
-                'status' => 'completed',
-                'step' => 3,
-                'total' => 3,
-                'message' => 'Upload complete!',
-                'processedCount' => $processedCount,
-                'skippedCount' => $skippedCount,
-                'warningCount' => $warningCount,
-                'errorCount' => 0,
-                'errors' => [],
-            ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
+                $channel->notify(new GrmUploadFailed($processedCount, $errorCount, $errors));
+            } else {
+                Cache::put(self::PROGRESS_CACHE_KEY, [
+                    'status' => 'completed',
+                    'step' => 3,
+                    'total' => 3,
+                    'message' => 'Upload complete!',
+                    'processedCount' => $processedCount,
+                    'skippedCount' => $skippedCount,
+                    'warningCount' => $warningCount,
+                    'errorCount' => 0,
+                    'errors' => [],
+                ], now()->addHours(self::PROGRESS_CACHE_TTL_HOURS));
 
-            $channel->notify(new GrmUploadCompleted($processedCount, $skippedCount, $warningCount));
-        }
+                $channel->notify(new GrmUploadCompleted($processedCount, $skippedCount, $warningCount));
+            }
 
-        // Only dispatch the event when something was actually written; avoids
-        // triggering downstream listeners (e.g. Discord embeds) on no-op runs.
-        if ($processedCount > 0) {
-            GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
+            // Only dispatch the event when something was actually written; avoids
+            // triggering downstream listeners (e.g. Discord embeds) on no-op runs.
+            if ($processedCount > 0) {
+                GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
+            }
+        } catch (RateLimitedException $e) {
+            $this->release($e->retryAfter);
+
+            Log::warning('ProcessGrmUpload: Discord rate limited sending notification, releasing job.', [
+                'endpoint' => $e->endpoint,
+                'retry_after' => $e->retryAfter,
+                'scope' => $e->scope,
+            ]);
+
+            return;
         }
     }
 

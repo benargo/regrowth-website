@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\DiscordRole;
 use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -36,25 +37,36 @@ class SyncDiscordRoles implements ShouldQueue
      */
     public function handle(Discord $discord): void
     {
-        $roles = $discord->getGuildRoles()->filter(fn ($role) => $role->position !== 0);
+        try {
+            $roles = $discord->getGuildRoles()->filter(fn ($role) => $role->position !== 0);
 
-        $syncedIds = $roles->map(fn ($role) => (string) $role->id)->values()->all();
+            $syncedIds = $roles->map(fn ($role) => (string) $role->id)->values()->all();
 
-        DB::transaction(function () use ($roles, $syncedIds) {
-            $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
+            DB::transaction(function () use ($roles, $syncedIds) {
+                $deleted = DiscordRole::whereNotIn('id', $syncedIds)->delete();
 
-            foreach ($roles as $role) {
-                DiscordRole::updateOrCreate(
-                    ['id' => (string) $role->id],
-                    ['name' => $role->name, 'position' => $role->position],
-                );
-            }
+                foreach ($roles as $role) {
+                    DiscordRole::updateOrCreate(
+                        ['id' => (string) $role->id],
+                        ['name' => $role->name, 'position' => $role->position],
+                    );
+                }
 
-            Log::info('Synchronising Discord roles job completed.', [
-                'synced' => count($roles),
-                'deleted' => $deleted,
+                Log::info('Synchronising Discord roles job completed.', [
+                    'synced' => count($roles),
+                    'deleted' => $deleted,
+                ]);
+            });
+        } catch (RateLimitedException $e) {
+            Log::warning('SyncDiscordRoles: Discord rate limited, releasing job.', [
+                'endpoint' => $e->endpoint,
+                'retry_after' => $e->retryAfter,
+                'scope' => $e->scope,
             ]);
-        });
+            $this->release($e->retryAfter);
+
+            return;
+        }
     }
 
     /**

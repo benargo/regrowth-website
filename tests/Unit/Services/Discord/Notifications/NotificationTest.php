@@ -124,7 +124,10 @@ class NotificationTest extends TestCase
 
         $result = $notification->mapRelatedModels();
 
-        $this->assertSame([get_class($modelA) => [1, 2]], $result);
+        $this->assertSame([
+            ['model_id' => 1, 'model_type' => get_class($modelA)],
+            ['model_id' => 2, 'model_type' => get_class($modelB)],
+        ], $result);
     }
 
     #[Test]
@@ -142,10 +145,8 @@ class NotificationTest extends TestCase
         $result = $notification->mapRelatedModels();
 
         $this->assertSame([
-            get_class($modelA) => [
-                '550e8400-e29b-41d4-a716-446655440000',
-                '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
-            ],
+            ['model_id' => '550e8400-e29b-41d4-a716-446655440000', 'model_type' => get_class($modelA)],
+            ['model_id' => '6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'model_type' => get_class($modelB)],
         ], $result);
     }
 
@@ -163,10 +164,10 @@ class NotificationTest extends TestCase
 
         $result = $notification->mapRelatedModels();
 
-        $this->assertArrayHasKey(StubModelA::class, $result);
-        $this->assertArrayHasKey(StubModelB::class, $result);
-        $this->assertSame([1], $result[StubModelA::class]);
-        $this->assertSame(['abc-uuid'], $result[StubModelB::class]);
+        $this->assertSame([
+            ['model_id' => 1, 'model_type' => StubModelA::class],
+            ['model_id' => 'abc-uuid', 'model_type' => StubModelB::class],
+        ], $result);
     }
 
     #[Test]
@@ -186,7 +187,11 @@ class NotificationTest extends TestCase
 
         $result = $notification->mapRelatedModels();
 
-        $this->assertSame([StubModelA::class => [10, 20, 30]], $result);
+        $this->assertSame([
+            ['model_id' => 10, 'model_type' => StubModelA::class],
+            ['model_id' => 20, 'model_type' => StubModelA::class],
+            ['model_id' => 30, 'model_type' => StubModelA::class],
+        ], $result);
     }
 
     // -------------------------------------------------------------------------
