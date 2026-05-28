@@ -17,6 +17,7 @@ use App\Services\Discord\Resources\GuildMember;
 use App\Services\Discord\Resources\Message;
 use App\Services\Discord\Resources\Role;
 use Illuminate\Http\Client\Response;
+use InvalidArgumentException;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
@@ -37,6 +38,18 @@ class DiscordTest extends TestCase
 
         $this->client = Mockery::mock(DiscordClient::class);
         $this->discord = new Discord($this->client, '111222333444555666');
+    }
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_throws_an_invalid_argument_exception_when_server_id_is_empty(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Discord($this->client, '');
     }
 
     // -------------------------------------------------------------------------

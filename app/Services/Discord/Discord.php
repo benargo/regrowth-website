@@ -17,6 +17,7 @@ use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 class Discord
 {
@@ -24,7 +25,11 @@ class Discord
         protected readonly DiscordClient $client,
         protected readonly string $serverId,
         protected readonly array $channels = [],
-    ) {}
+    ) {
+        if (empty($serverId)) {
+            throw new InvalidArgumentException('serverId must not be empty');
+        }
+    }
 
     // ==================== Channels ====================
 
