@@ -114,6 +114,7 @@ class DriverTest extends TestCase
         $notification->updates = $existingNotification;
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
+        $notification->expects('mapRelatedModels')->never();
 
         $this->discord->expects('getChannelMessage')
             ->with($this->channel, '222222222222222222')
@@ -148,6 +149,7 @@ class DriverTest extends TestCase
         $notification->updates = $existingNotification;
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturn($user);
+        $notification->expects('mapRelatedModels')->never();
 
         $this->discord->expects('getChannelMessage')
             ->with($this->channel, '333333333333333333')
@@ -181,10 +183,85 @@ class DriverTest extends TestCase
         $notification->updates = $existingNotification;
         $notification->expects('toMessage')->once()->andReturn($payload);
         $notification->expects('sender')->once()->andReturnNull();
+        $notification->expects('mapRelatedModels')->never();
 
         $this->discord->expects('getChannelMessage')->andReturn($existingDiscordMessage);
         $this->discord->expects('editMessage')->andReturn($existingDiscordMessage);
         $this->discord->expects('createMessage')->never();
+
+        $this->driver->send($this->notifiable, $notification);
+    }
+
+    #[Test]
+    public function it_syncs_related_models_when_editing_an_existing_message(): void
+    {
+        [$userA, $userB] = User::factory()->count(2)->create();
+        $payload = MessagePayload::from(['content' => 'Edited with related models']);
+
+        $existingNotification = DiscordNotification::factory()->create([
+            'channel_id' => $this->channel->id,
+            'message_id' => '123456789012345678',
+        ]);
+
+        $existingDiscordMessage = $this->makeDiscordMessage('123456789012345678');
+
+        $notification = Mockery::mock(Notification::class);
+        $notification->updates = $existingNotification;
+        $notification->relatedModels = []; // non-null: sync should run
+        $notification->expects('toMessage')->once()->andReturn($payload);
+        $notification->expects('sender')->once()->andReturnNull();
+        $notification->expects('mapRelatedModels')->once()->andReturn([
+            ['model_id' => $userA->id, 'model_type' => User::class],
+            ['model_id' => $userB->id, 'model_type' => User::class],
+        ]);
+
+        $this->discord->expects('getChannelMessage')
+            ->with($this->channel, '123456789012345678')
+            ->andReturn($existingDiscordMessage);
+
+        $this->discord->expects('editMessage')
+            ->with($existingDiscordMessage, $payload)
+            ->andReturn($existingDiscordMessage);
+
+        $this->driver->send($this->notifiable, $notification);
+
+        $this->assertDatabaseHas('discord_notification_related_models', [
+            'discord_notification_id' => $existingNotification->id,
+            'model_type' => User::class,
+            'model_id' => (string) $userA->id,
+        ]);
+        $this->assertDatabaseHas('discord_notification_related_models', [
+            'discord_notification_id' => $existingNotification->id,
+            'model_type' => User::class,
+            'model_id' => (string) $userB->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_does_not_sync_related_models_when_editing_and_related_models_is_null(): void
+    {
+        $existingNotification = DiscordNotification::factory()->create([
+            'channel_id' => $this->channel->id,
+            'message_id' => '112233445566778899',
+        ]);
+
+        $existingDiscordMessage = $this->makeDiscordMessage('112233445566778899');
+        $payload = MessagePayload::from(['content' => 'Edit, no model change']);
+
+        $notification = Mockery::mock(Notification::class);
+        $notification->updates = $existingNotification;
+        $notification->relatedModels = null; // null: skip sync entirely
+        $notification->expects('toMessage')->once()->andReturn($payload);
+        $notification->expects('sender')->once()->andReturnNull();
+        $notification->expects('mapRelatedModels')->never();
+
+        $this->discord->expects('getChannelMessage')
+            ->with($this->channel, '112233445566778899')
+            ->andReturn($existingDiscordMessage);
+
+        $this->discord->expects('editMessage')
+            ->with($existingDiscordMessage, $payload)
+            ->andReturn($existingDiscordMessage);
 
         $this->driver->send($this->notifiable, $notification);
     }

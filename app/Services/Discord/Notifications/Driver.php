@@ -17,7 +17,7 @@ class Driver
     ) {}
 
     /**
-     * Send the given notification.
+     * Send the given notification, routing to update or create as appropriate.
      *
      * @param  object  $notifiable  The notifiable entity (e.g., a user or a channel wrapper)
      * @param  Notification  $notification  The notification instance to send
@@ -25,29 +25,54 @@ class Driver
     public function send(object $notifiable, Notification $notification): void
     {
         if (property_exists($notification, 'updates') && $notification->updates?->message_id) {
-            try {
-                $existingMessage = $this->discord->getChannelMessage($notifiable->channel(), $notification->updates->message_id);
-                $payload = $notification->toMessage();
+            $this->updateMessage($notifiable, $notification);
 
-                $this->discord->editMessage($existingMessage, $payload);
-
-                // Update without model events to avoid re-triggering observers on a routine payload refresh.
-                $notification->updates->withoutEvents(function () use ($notification, $payload) {
-                    $notification->updates->update([
-                        'payload' => $payload->toArray(),
-                        'created_by_user_id' => $notification->sender()?->id,
-                    ]);
-                });
-
-                return;
-            } catch (MessageNotFoundException $e) {
-                // Stale message_id (e.g. manually deleted in Discord) — drop the record and fall through to create.
-                $notification->updates->withoutEvents(function () use ($notification) {
-                    $notification->updates->delete();
-                });
-            }
+            return;
         }
 
+        $this->createMessage($notifiable, $notification);
+    }
+
+    /**
+     * Edit an existing Discord message and update its database record.
+     * Falls through to createMessage() if the Discord message no longer exists.
+     */
+    private function updateMessage(object $notifiable, Notification $notification): void
+    {
+        try {
+            $existingMessage = $this->discord->getChannelMessage($notifiable->channel(), $notification->updates->message_id);
+            $payload = $notification->toMessage();
+
+            $this->discord->editMessage($existingMessage, $payload);
+
+            // Update without model events to avoid re-triggering observers on a routine payload refresh.
+            $notification->updates->withoutEvents(function () use ($notification, $payload) {
+                $notification->updates->update([
+                    'payload' => $payload->toArray(),
+                    'created_by_user_id' => $notification->sender()?->id,
+                ]);
+            });
+
+            // Only sync related models if the caller explicitly provided them (non-null).
+            // A null relatedModels means "don't change existing pivot rows".
+            if ($notification->relatedModels !== null) {
+                $this->syncRelatedModels($notification->updates, $notification->mapRelatedModels());
+            }
+        } catch (MessageNotFoundException $e) {
+            // Stale message_id (e.g. manually deleted in Discord) — drop the record and fall through to create.
+            $notification->updates->withoutEvents(function () use ($notification) {
+                $notification->updates->delete();
+            });
+
+            $this->createMessage($notifiable, $notification);
+        }
+    }
+
+    /**
+     * Post a new Discord message and persist the database record with related models.
+     */
+    private function createMessage(object $notifiable, Notification $notification): void
+    {
         $message = $this->discord->createMessage($notifiable->channel(), $notification->toMessage());
 
         $data = array_merge($notification->toDatabase($notifiable), [
