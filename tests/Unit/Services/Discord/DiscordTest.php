@@ -7,6 +7,7 @@ use App\Services\Discord\DiscordClient;
 use App\Services\Discord\Enums\ChannelType;
 use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Exceptions\DiscordRequestException;
+use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Exceptions\RoleNotFoundException;
 use App\Services\Discord\Exceptions\UserNotInGuildException;
 use App\Services\Discord\Payloads\ChannelMessagesQueryString;
@@ -473,5 +474,158 @@ class DiscordTest extends TestCase
 
         // No exception = pass
         $this->assertTrue(true);
+    }
+
+    // -------------------------------------------------------------------------
+    // Exception propagation — simple-delegation methods
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function get_channel_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('channels/111')
+            ->andThrow(new DiscordRequestException('GET', 'channels/111', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getChannel('111');
+    }
+
+    #[Test]
+    public function get_guild_channels_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/channels')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/channels', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getGuildChannels();
+    }
+
+    #[Test]
+    public function search_guild_members_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members/search', Mockery::any())
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members/search', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->searchGuildMembers('alice');
+    }
+
+    #[Test]
+    public function get_guild_roles_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/roles')
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/roles', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getGuildRoles();
+    }
+
+    #[Test]
+    public function get_guild_members_propagates_discord_request_exception(): void
+    {
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::any())
+            ->andThrow(new DiscordRequestException('GET', 'guilds/111222333444555666/members', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getGuildMembers();
+    }
+
+    #[Test]
+    public function get_channel_messages_propagates_discord_request_exception(): void
+    {
+        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
+        $query = ChannelMessagesQueryString::from(['limit' => 10]);
+
+        $this->client->expects('get')
+            ->with('channels/987654321098765432/messages', Mockery::any())
+            ->andThrow(new DiscordRequestException('GET', 'channels/987654321098765432/messages', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getChannelMessages($channel, $query);
+    }
+
+    #[Test]
+    public function get_channel_message_propagates_discord_request_exception(): void
+    {
+        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
+
+        $this->client->expects('get')
+            ->with('channels/987654321098765432/messages/111111111111111111')
+            ->andThrow(new DiscordRequestException('GET', 'channels/987654321098765432/messages/111111111111111111', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->getChannelMessage($channel, '111111111111111111');
+    }
+
+    #[Test]
+    public function create_message_propagates_discord_request_exception(): void
+    {
+        $channel = Channel::from(['id' => '987654321098765432', 'type' => ChannelType::GUILD_TEXT->value]);
+        $payload = MessagePayload::from(['content' => 'Hello']);
+
+        $this->client->expects('post')
+            ->with('channels/987654321098765432/messages', Mockery::any())
+            ->andThrow(new DiscordRequestException('POST', 'channels/987654321098765432/messages', 403));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->createMessage($channel, $payload);
+    }
+
+    #[Test]
+    public function edit_message_propagates_discord_request_exception(): void
+    {
+        $message = Message::from(['id' => '333333333333333333', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
+        $payload = MessagePayload::from(['content' => 'Updated']);
+
+        $this->client->expects('patch')
+            ->with('channels/987654321098765432/messages/333333333333333333', Mockery::any())
+            ->andThrow(new DiscordRequestException('PATCH', 'channels/987654321098765432/messages/333333333333333333', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->editMessage($message, $payload);
+    }
+
+    #[Test]
+    public function delete_message_propagates_discord_request_exception(): void
+    {
+        $message = Message::from(['id' => '444444444444444444', 'channel_id' => '987654321098765432', 'timestamp' => '2021-01-01T00:00:00.000000+00:00', 'tts' => false, 'mention_everyone' => false, 'mention_roles' => [], 'attachments' => [], 'embeds' => [], 'pinned' => false, 'type' => MessageType::Default->value]);
+
+        $this->client->expects('delete')
+            ->with('channels/987654321098765432/messages/444444444444444444')
+            ->andThrow(new DiscordRequestException('DELETE', 'channels/987654321098765432/messages/444444444444444444', 500));
+
+        $this->expectException(DiscordRequestException::class);
+
+        $this->discord->deleteMessage($message);
+    }
+
+    // -------------------------------------------------------------------------
+    // RateLimitedException bubbles through Discord facade
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function rate_limited_exception_bubbles_through_get_channel(): void
+    {
+        $this->client->expects('get')
+            ->with('channels/111')
+            ->andThrow(new RateLimitedException('channels/111', 2.5, 'user'));
+
+        $this->expectException(RateLimitedException::class);
+
+        $this->discord->getChannel('111');
     }
 }
