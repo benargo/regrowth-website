@@ -17,6 +17,7 @@ use App\Services\Discord\Resources\GuildMember;
 use App\Services\Discord\Resources\Message;
 use App\Services\Discord\Resources\Role;
 use Illuminate\Http\Client\Response;
+use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Mockery;
@@ -245,6 +246,39 @@ class DiscordTest extends TestCase
         $paginator = $this->discord->getGuildMembers(limit: 100);
 
         $this->assertTrue($paginator->hasMorePages());
+    }
+
+    #[Test]
+    public function get_guild_members_uses_explicit_guild_id_when_provided(): void
+    {
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([]);
+
+        $this->client->expects('get')
+            ->with('guilds/999888777666555444/members', Mockery::any())
+            ->andReturn($response);
+
+        $this->discord->getGuildMembers(guildId: '999888777666555444');
+
+        // Assertion is implicit: the client expectation above verifies the correct guild ID is used.
+        $this->assertTrue(true);
+    }
+
+    #[Test]
+    public function get_guild_members_passes_cursor_after_parameter_when_cursor_is_provided(): void
+    {
+        $cursor = new Cursor(['id' => '100000000000000099']);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn([]);
+
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::subset(['after' => '100000000000000099']))
+            ->andReturn($response);
+
+        $this->discord->getGuildMembers(cursor: $cursor);
+
+        $this->assertTrue(true);
     }
 
     // -------------------------------------------------------------------------

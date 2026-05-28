@@ -160,6 +160,27 @@ class DiscordClientTest extends TestCase
     }
 
     #[Test]
+    public function it_falls_back_to_retry_after_header_when_body_has_no_retry_after(): void
+    {
+        Http::swap(new Factory);
+        Http::fake([
+            'discord.com/*' => Http::response(
+                ['message' => 'You are being rate limited.'],
+                429,
+                ['Retry-After' => '5', 'X-RateLimit-Scope' => 'shared'],
+            ),
+        ]);
+
+        try {
+            $this->client->get('/channels/123');
+            $this->fail('Expected RateLimitedException');
+        } catch (RateLimitedException $e) {
+            $this->assertSame(5.0, $e->retryAfter);
+            $this->assertSame('shared', $e->scope);
+        }
+    }
+
+    #[Test]
     public function get_throws_discord_request_exception_on_non_2xx_status(): void
     {
         Http::swap(new Factory);
