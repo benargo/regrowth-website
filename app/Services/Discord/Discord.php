@@ -136,6 +136,7 @@ class Discord
         return GuildMember::collect(
             $this->client->get("guilds/{$guildId}/members/search", [
                 'query' => $query,
+                // Discord requires 1 <= limit <= 1000; silently clamp invalid input rather than 422-ing the caller.
                 'limit' => min(max($limit, 1), 1000),
             ])->json(),
             Collection::class,

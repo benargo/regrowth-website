@@ -114,17 +114,46 @@ class ResolveCommentControllerTest extends TestCase
     }
 
     #[Test]
-    public function resolve_sets_deleted_by_to_null(): void
+    public function resolve_soft_deletes_original_with_null_deleted_by(): void
     {
         $user = User::factory()->withPermissions('mark-comment-as-resolved')->create();
         $comment = Comment::factory()->create(['is_resolved' => false]);
 
         $this->actingAs($user)
-            ->postJson(route('api.loot.comments.resolve', $comment));
+            ->postJson(route('api.loot.comments.resolve', $comment))
+            ->assertOk();
+
+        $this->assertSoftDeleted('lootcouncil_comments', [
+            'id' => $comment->id,
+            'deleted_by' => null,
+        ]);
+    }
+
+    #[Test]
+    public function resolve_rolls_back_when_original_delete_fails(): void
+    {
+        $user = User::factory()->withPermissions('mark-comment-as-resolved')->create();
+        $comment = Comment::factory()->create(['is_resolved' => false]);
+
+        Comment::deleting(function () {
+            throw new \RuntimeException('Simulated delete failure');
+        });
+
+        try {
+            $this->actingAs($user)
+                ->postJson(route('api.loot.comments.resolve', $comment));
+        } catch (\RuntimeException) {
+            // expected
+        }
 
         $this->assertDatabaseHas('lootcouncil_comments', [
             'id' => $comment->id,
-            'deleted_by' => null,
+            'is_resolved' => false,
+            'deleted_at' => null,
+        ]);
+        $this->assertDatabaseMissing('lootcouncil_comments', [
+            'item_id' => $comment->item_id,
+            'is_resolved' => true,
         ]);
     }
 

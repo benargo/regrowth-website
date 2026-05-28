@@ -181,6 +181,22 @@ class DiscordClientTest extends TestCase
     }
 
     #[Test]
+    public function it_replaces_zero_retry_after_header_with_one_second_floor(): void
+    {
+        Http::swap(new Factory);
+        Http::fake([
+            'discord.com/*' => Http::response([], 429, ['Retry-After' => '0']),
+        ]);
+
+        try {
+            $this->client->get('test');
+            $this->fail('Expected RateLimitedException');
+        } catch (RateLimitedException $e) {
+            $this->assertSame(1.0, $e->retryAfter);
+        }
+    }
+
+    #[Test]
     public function get_throws_discord_request_exception_on_non_2xx_status(): void
     {
         Http::swap(new Factory);

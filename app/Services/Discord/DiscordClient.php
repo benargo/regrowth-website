@@ -65,9 +65,7 @@ class DiscordClient
         $bodyArr = is_array($body) ? $body : null;
 
         if ($response->status() === 429) {
-            $retryAfter = is_array($body) && isset($body['retry_after'])
-                ? (float) $body['retry_after']
-                : (float) ($response->header('Retry-After') ?: 1.0);
+            $retryAfter = $this->parseRetryAfter($body, $response);
             $scope = $response->header('X-RateLimit-Scope') ?: 'user';
 
             // We intentionally do not retry here — callers run in queue jobs and should
@@ -82,6 +80,21 @@ class DiscordClient
         }
 
         throw new DiscordRequestException($method, $endpoint, $response->status(), $code, $bodyArr);
+    }
+
+    /**
+     * Resolve the retry-after delay from the response, with a 1-second minimum
+     * so callers never schedule an immediate retry that would hammer the API.
+     */
+    protected function parseRetryAfter(mixed $body, Response $response): float
+    {
+        if (is_array($body) && isset($body['retry_after'])) {
+            return max(1.0, (float) $body['retry_after']);
+        }
+
+        $header = $response->header('Retry-After');
+
+        return $header !== null && $header !== '' ? max(1.0, (float) $header) : 1.0;
     }
 
     protected function getDefaultHeaders(): array

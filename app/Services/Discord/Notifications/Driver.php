@@ -73,30 +73,30 @@ class Driver
         ], $relatedModels);
 
         DB::transaction(function () use ($record, $desired) {
-            if ($desired !== []) {
-                $record->relatedModels()->upsert(
-                    $desired,
-                    ['discord_notification_id', 'model_type', 'model_id'],
-                    [],
-                );
-            }
-
-            // Delete rows no longer in $desired.
-            $query = $record->relatedModels();
-
             if ($desired === []) {
-                $query->delete();
+                $record->relatedModels()->delete();
 
                 return;
             }
 
-            $pairs = array_map(fn ($row) => [$row['model_type'], $row['model_id']], $desired);
+            $record->relatedModels()->upsert(
+                $desired,
+                ['discord_notification_id', 'model_type', 'model_id'],
+                [],
+            );
 
-            $query->where(function ($q) use ($pairs) {
-                foreach ($pairs as [$type, $id]) {
-                    $q->where(fn ($inner) => $inner->where('model_type', '!=', $type)->orWhere('model_id', '!=', $id));
-                }
-            })->delete();
+            // Delete any existing pivot rows whose (model_type, model_id) tuple is not in $desired.
+            // The unique index on (discord_notification_id, model_type, model_id) makes this efficient.
+            $placeholders = implode(',', array_fill(0, count($desired), '(?, ?)'));
+            $bindings = [];
+            foreach ($desired as $row) {
+                $bindings[] = $row['model_type'];
+                $bindings[] = $row['model_id'];
+            }
+
+            $record->relatedModels()
+                ->whereRaw("(model_type, model_id) NOT IN ({$placeholders})", $bindings)
+                ->delete();
         });
     }
 }
