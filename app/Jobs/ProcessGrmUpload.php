@@ -197,12 +197,13 @@ class ProcessGrmUpload implements ShouldQueue
                 GrmUploadProcessed::dispatch($processedCount, $skippedCount, $warningCount, $errorCount, $errors);
             }
         } catch (RateLimitedException $e) {
+            $this->release($e->retryAfter);
+
             Log::warning('ProcessGrmUpload: Discord rate limited sending notification, releasing job.', [
                 'endpoint' => $e->endpoint,
                 'retry_after' => $e->retryAfter,
                 'scope' => $e->scope,
             ]);
-            $this->release($e->retryAfter);
 
             return;
         }
