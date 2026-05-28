@@ -85,17 +85,22 @@ class Driver
                 [],
             );
 
-            // Delete any existing pivot rows whose (model_type, model_id) tuple is not in $desired.
-            // The unique index on (discord_notification_id, model_type, model_id) makes this efficient.
-            $placeholders = implode(',', array_fill(0, count($desired), '(?, ?)'));
-            $bindings = [];
-            foreach ($desired as $row) {
-                $bindings[] = $row['model_type'];
-                $bindings[] = $row['model_id'];
-            }
+            // Delete any existing pivot rows that are not part of the desired model pairs.
+            // Use the query builder instead of raw row-value tuple SQL for portability.
+            $keepIds = $record->relatedModels()
+                ->where(function ($query) use ($desired) {
+                    foreach ($desired as $row) {
+                        $query->orWhere(function ($subQuery) use ($row) {
+                            $subQuery
+                                ->where('model_type', $row['model_type'])
+                                ->where('model_id', $row['model_id']);
+                        });
+                    }
+                })
+                ->pluck('id');
 
             $record->relatedModels()
-                ->whereRaw("(model_type, model_id) NOT IN ({$placeholders})", $bindings)
+                ->whereNotIn('id', $keepIds)
                 ->delete();
         });
     }
