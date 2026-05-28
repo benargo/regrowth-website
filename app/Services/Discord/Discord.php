@@ -97,6 +97,7 @@ class Discord
         $guildId = $guildId ?? $this->serverId;
         $after = $cursor?->parameter('id');
 
+        // Fetch one extra so CursorPaginator can detect a next page — Discord returns no pagination metadata.
         $query = ['limit' => min($limit + 1, 1000)];
 
         if ($after) {

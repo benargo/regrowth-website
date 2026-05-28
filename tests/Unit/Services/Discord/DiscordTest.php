@@ -212,6 +212,40 @@ class DiscordTest extends TestCase
         $this->assertSame('100000000000000001', $paginator->items()[0]['id']);
     }
 
+    #[Test]
+    public function get_guild_members_reports_no_next_page_when_results_equal_limit(): void
+    {
+        $members = array_fill(0, 100, ['user' => ['id' => '100000000000000001', 'username' => 'alice', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => null, 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($members);
+
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::subset(['limit' => 101]))
+            ->andReturn($response);
+
+        $paginator = $this->discord->getGuildMembers(limit: 100);
+
+        $this->assertFalse($paginator->hasMorePages());
+    }
+
+    #[Test]
+    public function get_guild_members_reports_a_next_page_when_results_exceed_limit(): void
+    {
+        $members = array_fill(0, 101, ['user' => ['id' => '100000000000000001', 'username' => 'alice', 'discriminator' => '0', 'flags' => 0, 'public_flags' => 0], 'nick' => null, 'roles' => [], 'deaf' => false, 'mute' => false, 'flags' => 0]);
+
+        $response = Mockery::mock(Response::class);
+        $response->expects('json')->withNoArgs()->andReturn($members);
+
+        $this->client->expects('get')
+            ->with('guilds/111222333444555666/members', Mockery::subset(['limit' => 101]))
+            ->andReturn($response);
+
+        $paginator = $this->discord->getGuildMembers(limit: 100);
+
+        $this->assertTrue($paginator->hasMorePages());
+    }
+
     // -------------------------------------------------------------------------
     // searchGuildMembers
     // -------------------------------------------------------------------------
