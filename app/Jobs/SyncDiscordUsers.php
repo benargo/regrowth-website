@@ -65,9 +65,12 @@ class SyncDiscordUsers implements ShouldQueue
                 } catch (UserNotInGuildException $e) {
                     $user->delete();
                     $deleted++;
-                } catch (RateLimitedException $e) {
-                    throw $e;
                 } catch (\Throwable $e) {
+                    // Re-throw rate-limit exceptions so the outer handler can release the job.
+                    if ($e instanceof RateLimitedException) {
+                        throw $e;
+                    }
+
                     Log::warning('Failed to sync Discord user.', [
                         'user_id' => $user->id,
                         'error' => $e->getMessage(),
