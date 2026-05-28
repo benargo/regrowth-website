@@ -740,7 +740,10 @@ class FetchEventsTest extends TestCase
         $this->raidHelper->shouldNotReceive('getEvents');
 
         $job = new FetchEvents(['100000000000000001']);
+        $job->withFakeQueueInteractions();
         $job->handle($this->discord, $this->raidHelper);
+
+        $job->assertNotReleased();
     }
 
     // -------------------------------------------------------------------------
