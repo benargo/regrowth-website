@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard\Requests\Item;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
-use App\Http\Integrations\Blizzard\Pagination\ItemSearchPaginator;
+use App\Http\Integrations\Blizzard\Pagination\SearchPaginator;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\Connector;
@@ -19,6 +19,8 @@ class SearchItemsRequest extends Request implements Cacheable, HasRequestPaginat
     use HasCaching;
 
     protected Method $method = Method::GET;
+
+    private string $locale = 'en_GB';
 
     public function __construct(
         protected ?string $name = null,
@@ -37,6 +39,8 @@ class SearchItemsRequest extends Request implements Cacheable, HasRequestPaginat
         /** @var BlizzardConnector $connector */
         $connector = $pendingRequest->getConnector();
 
+        $this->locale = $connector->getLocale();
+
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
             $connector->namespace('static'),
@@ -48,7 +52,7 @@ class SearchItemsRequest extends Request implements Cacheable, HasRequestPaginat
         $query = [];
 
         if ($this->name !== null) {
-            $query['name.en_GB'] = $this->name;
+            $query["name.{$this->locale}"] = $this->name;
         }
 
         if ($this->orderby !== null) {
@@ -73,6 +77,6 @@ class SearchItemsRequest extends Request implements Cacheable, HasRequestPaginat
 
     public function paginate(Connector $connector): Paginator
     {
-        return new ItemSearchPaginator(connector: $connector, request: $this);
+        return new SearchPaginator(connector: $connector, request: $this);
     }
 }

@@ -52,7 +52,7 @@ class SearchMediaRequestTest extends BlizzardTestCase
     }
 
     #[Test]
-    public function it_maps_name_to_name_en_us_query_param(): void
+    public function it_maps_name_to_locale_specific_query_param(): void
     {
         Saloon::fake([
             'eu.battle.net/oauth/token' => $this->tokenMock(),
@@ -61,7 +61,7 @@ class SearchMediaRequestTest extends BlizzardTestCase
 
         $this->makeConnector()->send(new SearchMediaRequest(tags: ['item'], name: 'Thunderfury'));
 
-        Saloon::assertSent(fn (SearchMediaRequest $r) => $r->query()->get('name.en_US') === 'Thunderfury'
+        Saloon::assertSent(fn (SearchMediaRequest $r) => $r->query()->get('name.en_GB') === 'Thunderfury'
         );
     }
 

@@ -168,7 +168,7 @@ class BlizzardConnector extends Connector
 
         $authenticator = $this->getAccessToken();
         $expiresAt = $authenticator->getExpiresAt();
-        $ttl = $expiresAt !== null ? max(60, $expiresAt->getTimestamp() - time()) : 3600;
+        $ttl = $expiresAt !== null ? max(0, $expiresAt->getTimestamp() - time() - 30) : 3600;
 
         $store->put($cacheKey, [
             'token' => $authenticator->getAccessToken(),

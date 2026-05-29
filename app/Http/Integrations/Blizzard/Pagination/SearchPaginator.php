@@ -6,7 +6,7 @@ use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\PaginationPlugin\Paginator;
 
-class MediaSearchPaginator extends Paginator
+class SearchPaginator extends Paginator
 {
     protected ?int $perPageLimit = 50;
 
@@ -25,10 +25,10 @@ class MediaSearchPaginator extends Paginator
 
     protected function applyPagination(Request $request): Request
     {
-        $request->query()->add('_page', $this->currentPage);
+        $request->query()->merge(['_page' => $this->currentPage]);
 
         if ($this->perPageLimit !== null) {
-            $request->query()->add('_pageSize', min($this->perPageLimit, 1000));
+            $request->query()->merge(['_pageSize' => min($this->perPageLimit, 1000)]);
         }
 
         return $request;
