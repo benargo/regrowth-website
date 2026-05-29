@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Region;
@@ -179,7 +180,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    public function throws_blizzard_api_exception_on_blizzard_404_for_class_endpoint(): void
+    public function throws_invalid_class_exception_on_blizzard_404_for_class_endpoint(): void
     {
         Saloon::fake([
             'eu.battle.net/oauth/token' => $this->tokenMock(),
@@ -189,7 +190,7 @@ class BlizzardConnectorTest extends TestCase
             ),
         ]);
 
-        $this->expectException(BlizzardApiException::class);
+        $this->expectException(InvalidClassException::class);
 
         $this->makeConnector()->send(new TestClassRequest(999));
     }
