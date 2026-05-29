@@ -3,7 +3,7 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsPlayableRace;
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;

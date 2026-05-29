@@ -2,11 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;

@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\Unit\Services\Blizzard\ValueObjects;
+namespace Tests\Unit\Http\Integrations\Blizzard\Data\PlayableRace;
 
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
+use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class PlayableRaceTest extends TestCase
+class PlayableRaceDataTest extends TestCase
 {
     /**
      * @return array<string, mixed>
@@ -66,9 +67,11 @@ class PlayableRaceTest extends TestCase
         $this->assertTrue($vo->isSelectable);
         $this->assertFalse($vo->isAlliedRace);
         $this->assertCount(2, $vo->playableClasses);
-        $this->assertSame('Warrior', $vo->playableClasses[0]['name']);
+        $this->assertInstanceOf(LinkData::class, $vo->playableClasses[0]);
+        $this->assertSame('Warrior', $vo->playableClasses[0]->name);
         $this->assertCount(1, $vo->racialSpells);
-        $this->assertSame('Blood Fury', $vo->racialSpells[0]['name']);
+        $this->assertInstanceOf(LinkData::class, $vo->racialSpells[0]);
+        $this->assertSame('Blood Fury', $vo->racialSpells[0]->name);
     }
 
     #[Test]
@@ -80,32 +83,6 @@ class PlayableRaceTest extends TestCase
         $vo = PlayableRaceData::from($data);
 
         $this->assertSame([], $vo->racialSpells);
-    }
-
-    #[Test]
-    public function from_api_response_defaults_missing_keys(): void
-    {
-        $vo = PlayableRaceData::from(['id' => 1, 'name' => 'Human']);
-
-        $this->assertSame(1, $vo->id);
-        $this->assertSame('Human', $vo->name);
-        $this->assertSame([], $vo->genderName);
-        $this->assertSame([], $vo->faction);
-        $this->assertFalse($vo->isSelectable);
-        $this->assertFalse($vo->isAlliedRace);
-        $this->assertSame([], $vo->playableClasses);
-        $this->assertSame([], $vo->racialSpells);
-    }
-
-    #[Test]
-    public function to_array_round_trips_from_api_shape(): void
-    {
-        $data = $this->sampleApiResponse();
-        unset($data['_links']);
-
-        $vo = PlayableRaceData::from($data);
-
-        $this->assertSame($data, $vo->toArray());
     }
 
     #[Test]

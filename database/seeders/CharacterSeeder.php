@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Models\Character;
 use App\Models\PlayableClass;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;

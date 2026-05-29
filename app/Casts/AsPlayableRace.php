@@ -2,7 +2,7 @@
 
 namespace App\Casts;
 
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;

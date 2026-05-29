@@ -2,6 +2,7 @@
 
 namespace App\Http\Integrations\Blizzard;
 
+use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use App\Services\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Services\Blizzard\Exceptions\ItemNotFoundException;
@@ -200,6 +201,10 @@ class BlizzardConnector extends Connector
 
             if (str_starts_with($path, '/data/wow/item/')) {
                 return new ItemNotFoundException($method, $path, $status, $response, $blizzardCode, $body, $senderException);
+            }
+
+            if (str_starts_with($path, '/data/wow/playable-race/')) {
+                return new InvalidRaceException($method, $path, $status, $response, $blizzardCode, $body, $senderException);
             }
         }
 
