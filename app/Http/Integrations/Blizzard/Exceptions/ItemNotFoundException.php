@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services\Blizzard\Exceptions;
+namespace App\Http\Integrations\Blizzard\Exceptions;
 
+use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use Saloon\Exceptions\Request\Statuses\NotFoundException;
 use Saloon\Http\Response;
 use Throwable;
