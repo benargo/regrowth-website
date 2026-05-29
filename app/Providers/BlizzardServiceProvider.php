@@ -61,7 +61,7 @@ class BlizzardServiceProvider extends ServiceProvider
             return new BlizzardConnector(
                 clientId: Arr::get($config, 'client_id'),
                 clientSecret: Arr::get($config, 'client_secret'),
-                gameVersion: GameVersion::from(Arr::get($config, 'game_version', 'Anniversary')),
+                gameVersion: GameVersion::fromName(Arr::get($config, 'game_version', 'Anniversary')),
                 region: Region::from(Arr::get($config, 'region', 'eu')),
                 locale: Arr::get($config, 'locale'),
             );

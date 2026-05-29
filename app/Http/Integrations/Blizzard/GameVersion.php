@@ -9,6 +9,17 @@ enum GameVersion: string
     case Era = 'World of Warcraft Classic (Era)';
     case Retail = 'World of Warcraft';
 
+    public static function fromName(string $name): self
+    {
+        foreach (self::cases() as $case) {
+            if ($case->name === $name) {
+                return $case;
+            }
+        }
+
+        throw new \ValueError("\"$name\" is not a valid name for enum ".self::class);
+    }
+
     /**
      * Returns the namespace component for this game version, which is used in Blizzard API endpoints.
      */
