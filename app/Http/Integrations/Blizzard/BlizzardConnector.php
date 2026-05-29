@@ -200,6 +200,10 @@ class BlizzardConnector extends Connector
                 return new CharacterNotFoundException($method, $path, $status, $response, $blizzardCode, $body, $senderException);
             }
 
+            if (str_starts_with($path, '/data/wow/media/item/')) {
+                return new ItemNotFoundException($method, $path, $status, $response, $blizzardCode, $body, $senderException);
+            }
+
             if (str_starts_with($path, '/data/wow/item/')) {
                 return new ItemNotFoundException($method, $path, $status, $response, $blizzardCode, $body, $senderException);
             }
