@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Integrations\Blizzard\Requests\Characters;
+namespace App\Http\Integrations\Blizzard\Requests\Character;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
-use App\Http\Integrations\Blizzard\Data\Characters\CharacterProfileData;
+use App\Http\Integrations\Blizzard\Data\Characters\CharacterStatusData;
 use Illuminate\Support\Str;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
@@ -12,7 +12,7 @@ use Saloon\Http\PendingRequest;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 
-class GetCharacterProfileRequest extends Request implements Cacheable
+class GetCharacterStatusRequest extends Request implements Cacheable
 {
     use HasCaching;
 
@@ -26,7 +26,7 @@ class GetCharacterProfileRequest extends Request implements Cacheable
     public function resolveEndpoint(): string
     {
         return sprintf(
-            '/profile/wow/character/%s/%s',
+            '/profile/wow/character/%s/%s/status',
             $this->realmSlug,
             Str::lower($this->characterName),
         );
@@ -48,8 +48,8 @@ class GetCharacterProfileRequest extends Request implements Cacheable
         return 21600;
     }
 
-    public function createDtoFromResponse(Response $response): CharacterProfileData
+    public function createDtoFromResponse(Response $response): CharacterStatusData
     {
-        return CharacterProfileData::from($response->json());
+        return CharacterStatusData::from($response->json());
     }
 }

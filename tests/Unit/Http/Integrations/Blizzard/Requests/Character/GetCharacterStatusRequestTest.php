@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Characters;
+namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterStatusData;
-use App\Http\Integrations\Blizzard\Requests\Characters\GetCharacterStatusRequest;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
