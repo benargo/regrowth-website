@@ -6,7 +6,7 @@ use Saloon\Exceptions\Request\Statuses\NotFoundException;
 use Saloon\Http\Response;
 use Throwable;
 
-class CharacterNotFoundException extends NotFoundException implements BlizzardRequestException
+class ItemNotFoundException extends NotFoundException implements BlizzardRequestException
 {
     /**
      * @param  array<string, mixed>|null  $body
@@ -22,7 +22,7 @@ class CharacterNotFoundException extends NotFoundException implements BlizzardRe
     ) {
         parent::__construct(
             $response,
-            "Character not found: {$this->method} {$this->endpoint} (status {$this->blizzardStatus})",
+            "Item not found: {$this->method} {$this->endpoint} (status {$this->blizzardStatus})",
             $this->blizzardStatus,
             $previous,
         );

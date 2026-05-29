@@ -239,7 +239,7 @@ class ProcessGrmUpload implements ShouldQueue
                 'name' => $name,
                 'error' => $e->getMessage(),
             ]);
-            throw new CharacterNotFoundException("Character {$name} not found via Blizzard API: ".$e->getMessage());
+            throw $e;
         }
 
         // Find or create the character
