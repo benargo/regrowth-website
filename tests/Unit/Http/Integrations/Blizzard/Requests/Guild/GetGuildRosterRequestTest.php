@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Profile;
+namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Guild;
 
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
-use App\Http\Integrations\Blizzard\Requests\Profile\GetGuildRosterRequest;
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
