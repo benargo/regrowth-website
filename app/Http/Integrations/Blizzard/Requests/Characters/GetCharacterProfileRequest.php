@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Integrations\Blizzard\Requests\Profile;
+namespace App\Http\Integrations\Blizzard\Requests\Characters;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
