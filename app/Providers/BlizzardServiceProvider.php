@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Services\Blizzard\BlizzardService;
@@ -60,9 +61,9 @@ class BlizzardServiceProvider extends ServiceProvider
             return new BlizzardConnector(
                 clientId: Arr::get($config, 'client_id'),
                 clientSecret: Arr::get($config, 'client_secret'),
+                gameVersion: GameVersion::from(Arr::get($config, 'game_version', 'Anniversary')),
                 region: Region::from(Arr::get($config, 'region', 'eu')),
                 locale: Arr::get($config, 'locale'),
-                namespaces: Arr::get($config, 'namespaces', []),
             );
         });
 

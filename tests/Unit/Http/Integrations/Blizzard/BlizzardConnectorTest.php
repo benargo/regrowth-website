@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Region;
 use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use App\Services\Blizzard\Exceptions\BlizzardRequestException;
@@ -20,7 +21,7 @@ use Tests\TestCase;
 
 class BlizzardConnectorTest extends TestCase
 {
-    private function makeConnector(?Region $region = null): BlizzardConnector
+    private function makeConnector(?Region $region = null, GameVersion $gameVersion = GameVersion::Anniversary): BlizzardConnector
     {
         $region ??= Region::EU;
 
@@ -29,12 +30,7 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            namespaces: [
-                'profile' => 'profile-classicann-eu',
-                'static' => 'static-classicann-eu',
-                'media' => 'static-eu',
-                'dynamic' => 'dynamic-classicann-eu',
-            ],
+            gameVersion: $gameVersion,
         );
     }
 
@@ -61,13 +57,23 @@ class BlizzardConnectorTest extends TestCase
     // ==================== namespace lookup ====================
 
     #[Test]
-    public function namespace_returns_configured_value(): void
+    public function namespace_returns_derived_value_for_anniversary(): void
     {
-        $connector = $this->makeConnector();
+        $connector = $this->makeConnector(Region::EU, GameVersion::Anniversary);
 
         $this->assertSame('profile-classicann-eu', $connector->namespace('profile'));
         $this->assertSame('static-classicann-eu', $connector->namespace('static'));
-        $this->assertSame('static-eu', $connector->namespace('media'));
+        $this->assertSame('dynamic-classicann-eu', $connector->namespace('dynamic'));
+    }
+
+    #[Test]
+    public function namespace_returns_derived_value_for_retail(): void
+    {
+        $connector = $this->makeConnector(Region::EU, GameVersion::Retail);
+
+        $this->assertSame('profile-eu', $connector->namespace('profile'));
+        $this->assertSame('static-eu', $connector->namespace('static'));
+        $this->assertSame('dynamic-eu', $connector->namespace('dynamic'));
     }
 
     #[Test]
@@ -90,9 +96,9 @@ class BlizzardConnectorTest extends TestCase
         new BlizzardConnector(
             clientId: 'test_id',
             clientSecret: 'test_secret',
+            gameVersion: GameVersion::Anniversary,
             region: Region::EU,
             locale: 'ko_KR',
-            namespaces: [],
         );
     }
 

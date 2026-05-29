@@ -38,16 +38,25 @@ class BlizzardConnector extends Connector
     use ClientCredentialsBasicAuthGrant;
     use HasRateLimits;
 
-    /**
-     * @param  array<string, string>  $namespaces  Map of profile/static/media/dynamic namespace strings.
-     */
+    /** @var array<string, string> */
+    private array $namespaces;
+
     public function __construct(
         protected string $clientId,
         protected string $clientSecret,
+        protected GameVersion $gameVersion,
         protected Region $region,
         protected string $locale,
-        protected array $namespaces,
     ) {
+        $component = $gameVersion->namespaceComponent();
+        $regionValue = $region->value;
+
+        $this->namespaces = [
+            'profile' => "profile{$component}-{$regionValue}",
+            'static' => "static{$component}-{$regionValue}",
+            'dynamic' => "dynamic{$component}-{$regionValue}",
+        ];
+
         if (! $this->region->supportsLocale($this->locale)) {
             throw new InvalidArgumentException(sprintf(
                 'Locale "%s" is not supported for region "%s". Supported locales: %s',
@@ -83,7 +92,7 @@ class BlizzardConnector extends Connector
     }
 
     /**
-     * Get the namespace for a given kind (profile/static/media/dynamic).
+     * Get the namespace for a given kind (profile/static/dynamic).
      *
      * @throws InvalidArgumentException if the namespace kind is invalid.
      */
