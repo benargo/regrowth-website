@@ -29,6 +29,7 @@ class BuildAddonExportFileTest extends TestCase
         parent::setUp();
 
         Storage::fake('local');
+        Storage::fake('public');
 
         // Calculator::wholeGuild() throws when no counting ranks exist; give every test a baseline rank so the job can run.
         GuildRank::factory()->create(['count_attendance' => true]);
@@ -145,14 +146,10 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_priority_icon_from_media(): void
     {
-        $priority = Priority::factory()->create([
-            'title' => 'Tank',
-            'media' => [
-                'media_type' => 'spell',
-                'media_id' => 12345,
-                'media_name' => 'spell_nature_strength',
-            ],
-        ]);
+        $priority = Priority::factory()->create(['title' => 'Tank']);
+        $priority->addMediaFromString('BINARY')
+            ->usingFileName('spell_nature_strength.jpg')
+            ->toMediaCollection('blizzard_icons');
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
@@ -164,12 +161,9 @@ class BuildAddonExportFileTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_icon_when_media_name_missing(): void
+    public function it_returns_null_icon_when_no_media_attached(): void
     {
-        $priority = Priority::factory()->create([
-            'title' => 'Tank',
-            'media' => ['media_type' => 'spell', 'media_id' => 12345],
-        ]);
+        $priority = Priority::factory()->create(['title' => 'Tank']);
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 

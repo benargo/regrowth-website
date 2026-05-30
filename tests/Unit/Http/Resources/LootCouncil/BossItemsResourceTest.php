@@ -2,18 +2,21 @@
 
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Resources\LootCouncil\BossItemsResource;
 use App\Models\Boss;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Mockery;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class BossItemsResourceTest extends TestCase
@@ -27,29 +30,18 @@ class BossItemsResourceTest extends TestCase
         $this->mockBlizzardServices();
     }
 
-    protected function mockBlizzardServices(array $itemData = [], ?string $iconUrl = null): void
+    protected function mockBlizzardServices(array $itemData = []): void
     {
-        $defaultItemData = [
-            'name' => 'Test Item',
-        ];
+        Storage::fake('public');
 
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('findItem')
-            ->andReturn(array_merge($defaultItemData, $itemData));
-        $blizzardService->shouldReceive('findMedia')
-            ->with('item', Mockery::any())
-            ->andReturn([
-                'assets' => [
-                    ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 12345],
-                ],
-            ]);
+        $defaultItemData = ['name' => 'Test Item'];
 
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('get')
-            ->andReturn([12345 => $iconUrl ?? 'https://example.com/stored-icon.jpg']);
-
-        $this->app->instance(BlizzardService::class, $blizzardService);
-        $this->app->instance(MediaService::class, $mediaService);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: array_merge($defaultItemData, $itemData), status: 200),
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => [['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg', 'file_data_id' => 12345]]], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
     }
 
     protected function createResourceData(int $bossId, $items): array
@@ -200,11 +192,12 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_fallback_name_when_blizzard_api_fails(): void
     {
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('findItem')->andThrow(new \Exception('API Error'));
-        $blizzardService->shouldReceive('findMedia')->andThrow(new \Exception('API Error'));
-
-        $this->app->instance(BlizzardService::class, $blizzardService);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => [['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg', 'file_data_id' => 12345]]], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
@@ -219,8 +212,6 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_icon_url(): void
     {
-        $this->mockBlizzardServices([], 'https://example.com/my-icon.jpg');
-
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
         $items = $this->prepareItems([$item->id]);
@@ -228,17 +219,19 @@ class BossItemsResourceTest extends TestCase
         $resource = new BossItemsResource($this->createResourceData($boss->id, $items));
         $array = $resource->toArray(new Request);
 
-        $this->assertSame('https://example.com/my-icon.jpg', $array['items'][0]['icon']);
+        $this->assertNotNull($array['items'][0]['icon']);
+        $this->assertStringContainsString('blizzard-cdn/icons/56/foo.jpg', $array['items'][0]['icon']);
     }
 
     #[Test]
     public function it_returns_null_icon_when_media_api_fails(): void
     {
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('findItem')->andReturn(['name' => 'Test Item']);
-        $blizzardService->shouldReceive('findMedia')->andThrow(new \Exception('API Error'));
-
-        $this->app->instance(BlizzardService::class, $blizzardService);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: ['name' => 'Test Item'], status: 200),
+            GetItemMediaRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
@@ -253,13 +246,12 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_null_icon_when_assets_are_empty(): void
     {
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('findItem')->andReturn(['name' => 'Test Item']);
-        $blizzardService->shouldReceive('findMedia')
-            ->with('item', Mockery::any())
-            ->andReturn(['assets' => []]);
-
-        $this->app->instance(BlizzardService::class, $blizzardService);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: ['name' => 'Test Item'], status: 200),
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
@@ -344,11 +336,12 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_wowhead_url_without_name_when_api_fails(): void
     {
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('findItem')->andThrow(new \Exception('API Error'));
-        $blizzardService->shouldReceive('findMedia')->andThrow(new \Exception('API Error'));
-
-        $this->app->instance(BlizzardService::class, $blizzardService);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => [['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg', 'file_data_id' => 12345]]], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create(['id' => 19019]);

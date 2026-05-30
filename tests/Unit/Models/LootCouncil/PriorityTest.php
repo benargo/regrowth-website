@@ -6,6 +6,7 @@ use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class PriorityTest extends ModelTestCase
@@ -40,7 +41,6 @@ class PriorityTest extends ModelTestCase
         $this->assertFillable($model, [
             'title',
             'type',
-            'media',
         ]);
     }
 
@@ -50,11 +50,26 @@ class PriorityTest extends ModelTestCase
         $priority = $this->create([
             'title' => 'Tank',
             'type' => 'role',
-            'media' => ['media_type' => 'spell', 'media_id' => 71],
         ]);
 
         $this->assertTableHas(['title' => 'Tank', 'type' => 'role']);
         $this->assertModelExists($priority);
+    }
+
+    #[Test]
+    public function it_implements_has_media(): void
+    {
+        $this->assertInstanceOf(HasMedia::class, new Priority);
+    }
+
+    #[Test]
+    public function it_registers_blizzard_icons_collection(): void
+    {
+        $priority = Priority::factory()->create();
+
+        $collections = $priority->getRegisteredMediaCollections();
+
+        $this->assertTrue($collections->contains(fn ($c) => $c->name === 'blizzard_icons'));
     }
 
     #[Test]

@@ -6,11 +6,13 @@ use Database\Factories\LootCouncil\PriorityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Priority extends Model
+class Priority extends Model implements HasMedia
 {
     /** @use HasFactory<PriorityFactory> */
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     /**
      * The table associated with the model.
@@ -27,17 +29,19 @@ class Priority extends Model
     protected $fillable = [
         'title',
         'type',
-        'media',
     ];
 
+    // ============ Media ============
+
     /**
-     * The attributes that should be cast.
-     *
-     * @var list<string, string>
+     * Register media collections for the model.
      */
-    protected $casts = [
-        'media' => 'json',
-    ];
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('blizzard_icons')->singleFile();
+    }
+
+    // ============ Relationships ============
 
     /**
      * Get the items that have this priority.

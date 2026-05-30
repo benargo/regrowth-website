@@ -78,11 +78,13 @@ class BuildAddonExportFile implements ShouldQueue
      */
     protected function buildPriorities(): Collection
     {
-        return Priority::has('items')->get()->map(function (Priority $priority) {
+        return Priority::has('items')->with('media')->get()->map(function (Priority $priority) {
+            $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
+
             return [
                 'id' => $priority->id,
                 'name' => $priority->title,
-                'icon' => $priority->media['media_name'] ?? null,
+                'icon' => $fileName ? pathinfo($fileName, PATHINFO_FILENAME) : null,
             ];
         });
     }

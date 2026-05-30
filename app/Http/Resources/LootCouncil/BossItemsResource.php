@@ -2,26 +2,26 @@
 
 namespace App\Http\Resources\LootCouncil;
 
+use App\Facades\Blizzard;
+use App\Http\Integrations\Blizzard\Data\Media\MediaData;
+use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\LootCouncil\Item;
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class BossItemsResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $blizzard = app(BlizzardService::class);
-        $media = app(MediaService::class);
-
         return [
             'bossId' => $this->resource['bossId'],
-            'items' => $this->resource['items']->map(function (Item $item) use ($blizzard, $media) {
-                $blizzardData = $this->getBlizzardData($blizzard, $item);
-                $iconUrl = $this->getIconUrl($blizzard, $media, $item);
+            'items' => $this->resource['items']->map(function (Item $item) {
+                $blizzardData = $this->getBlizzardData($item);
+                $iconUrl = $this->getIconUrl($item);
 
                 return [
                     'id' => $item->id,
@@ -60,32 +60,26 @@ class BossItemsResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    protected function getBlizzardData(BlizzardService $blizzard, Item $item): array
+    protected function getBlizzardData(Item $item): array
     {
         try {
-            return $blizzard->findItem($item->id);
-        } catch (\Exception) {
+            return Blizzard::send(new GetItemRequest($item->id))->json();
+        } catch (Exception) {
             return [];
         }
     }
 
     /**
-     * Get icon URL from Blizzard media API.
+     * Fetch the item's first icon asset from the Blizzard media endpoint and return its mirrored CDN URL.
      */
-    protected function getIconUrl(BlizzardService $blizzard, MediaService $media, Item $item): ?string
+    protected function getIconUrl(Item $item): ?string
     {
         try {
-            $mediaData = $blizzard->findMedia('item', $item->id);
-            $assets = Arr::get($mediaData, 'assets', []);
+            /** @var MediaData $media */
+            $media = Blizzard::send(new GetItemMediaRequest($item->id))->dto();
 
-            if (empty($assets)) {
-                return null;
-            }
-
-            $urls = $media->get($assets);
-
-            return array_values($urls)[0] ?? null;
-        } catch (\Exception) {
+            return ($media->assets[0] ?? null)?->mirroredUrl();
+        } catch (ItemNotFoundException) {
             return null;
         }
     }
