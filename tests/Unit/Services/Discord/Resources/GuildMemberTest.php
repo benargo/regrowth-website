@@ -171,6 +171,9 @@ class GuildMemberTest extends TestCase
         $member = GuildMember::from([...$this->minimalPayload(), 'joined_at' => null]);
         $this->assertNull($member->joined_at);
 
+        $member = GuildMember::from([...$this->minimalPayload(), 'premium_since' => null]);
+        $this->assertNull($member->premium_since);
+
         $member = GuildMember::from([...$this->minimalPayload(), 'communication_disabled_until' => null]);
         $this->assertNull($member->communication_disabled_until);
     }
