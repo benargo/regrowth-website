@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources\LootCouncil;
 
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
+use App\Facades\Blizzard;
+use App\Http\Integrations\Blizzard\Data\Media\MediaData;
+use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class ItemResource extends JsonResource
@@ -18,10 +21,8 @@ class ItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $blizzard = app(BlizzardService::class);
-        $media = app(MediaService::class);
-        $blizzardData = $this->getBlizzardData($blizzard);
-        $iconUrl = $this->getIconUrl($blizzard, $media);
+        $blizzardData = $this->getBlizzardData();
+        $iconUrl = $this->getIconUrl();
 
         return [
             'id' => $this->id,
@@ -65,36 +66,33 @@ class ItemResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    protected function getBlizzardData(BlizzardService $blizzard): array
+    protected function getBlizzardData(): array
     {
         try {
-            return $blizzard->findItem($this->id);
-        } catch (\Exception) {
+            return Blizzard::send(new GetItemRequest($this->id))->json();
+        } catch (Exception) {
             return [];
         }
     }
 
     /**
-     * Get icon URL from Blizzard media API.
+     * Fetch the mirrored CDN URL for the item's icon asset.
      */
-    protected function getIconUrl(BlizzardService $blizzard, MediaService $media): ?string
+    protected function getIconUrl(): ?string
     {
         try {
-            $mediaData = $blizzard->findMedia('item', $this->id);
-            $assets = Arr::get($mediaData, 'assets', []);
+            /** @var MediaData $media */
+            $media = Blizzard::send(new GetItemMediaRequest($this->id))->dto();
 
-            if (empty($assets)) {
-                return null;
-            }
-
-            $urls = $media->get($assets);
-
-            return array_values($urls)[0] ?? null;
-        } catch (\Exception) {
+            return ($media->assets[0] ?? null)?->mirroredUrl();
+        } catch (ItemNotFoundException) {
             return null;
         }
     }
 
+    /**
+     * Build the Wowhead item URL.
+     */
     protected function getWowheadUrl(?string $name = null): string
     {
         $baseUrl = 'https://www.wowhead.com/tbc/item=';
