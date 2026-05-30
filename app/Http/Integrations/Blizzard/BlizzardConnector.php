@@ -5,6 +5,7 @@ namespace App\Http\Integrations\Blizzard;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use App\Services\Blizzard\Exceptions\CharacterNotFoundException;
 use Illuminate\Support\Arr;
@@ -67,6 +68,11 @@ class BlizzardConnector extends Connector
                 implode(', ', $this->region->locales()),
             ));
         }
+
+        $this->middleware()->onResponse(
+            new EagerlyMirrorAssets,
+            'eagerlyMirrorAssets',
+        );
     }
 
     /**

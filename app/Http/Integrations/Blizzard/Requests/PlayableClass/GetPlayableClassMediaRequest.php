@@ -2,6 +2,7 @@
 
 namespace App\Http\Integrations\Blizzard\Requests\PlayableClass;
 
+use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassMediaData;
@@ -11,6 +12,7 @@ use Saloon\Http\PendingRequest;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 
+#[EagerlyMirrorsAssets]
 class GetPlayableClassMediaRequest extends Request implements Cacheable
 {
     use HasCaching;
