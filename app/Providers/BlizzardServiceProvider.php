@@ -6,6 +6,7 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\MediaService;
@@ -67,6 +68,12 @@ class BlizzardServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(MirrorPathResolver::class, function () use ($config) {
+            return new MirrorPathResolver(
+                region: Region::from(Arr::get($config, 'region', 'eu')),
+            );
+        });
+
         $this->app->singleton(RenderConnector::class, function (Application $app) use ($config) {
             return new RenderConnector(
                 region: Region::from(Arr::get($config, 'region', 'eu')),
@@ -91,6 +98,7 @@ class BlizzardServiceProvider extends ServiceProvider
     {
         return [
             BlizzardConnector::class,
+            MirrorPathResolver::class,
             RenderConnector::class,
 
             /**
