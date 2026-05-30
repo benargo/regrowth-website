@@ -35,7 +35,7 @@ class RenderConnector extends Connector
         );
 
         $this->middleware()->onResponse(
-            new WriteMirrorToDisk,
+            new WriteMirrorToDisk($resolver, $disk),
             'writeMirrorToDisk',
         );
     }

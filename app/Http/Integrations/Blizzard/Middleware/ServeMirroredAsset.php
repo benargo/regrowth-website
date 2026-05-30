@@ -5,10 +5,11 @@ namespace App\Http\Integrations\Blizzard\Middleware;
 use App\Contracts\Http\Integrations\Blizzard\Mirrorable;
 use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Saloon\Contracts\RequestMiddleware;
 use Saloon\Http\Faking\FakeResponse;
 use Saloon\Http\PendingRequest;
 
-class ServeMirroredAsset
+class ServeMirroredAsset implements RequestMiddleware
 {
     public function __construct(
         private readonly MirrorPathResolver $resolver,

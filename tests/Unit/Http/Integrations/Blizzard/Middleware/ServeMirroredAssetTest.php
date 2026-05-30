@@ -3,17 +3,29 @@
 namespace Tests\Unit\Http\Integrations\Blizzard\Middleware;
 
 use App\Contracts\Http\Integrations\Blizzard\Mirrorable;
+use App\Http\Integrations\Blizzard\Middleware\ServeMirroredAsset;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Contracts\RequestMiddleware;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
 class ServeMirroredAssetTest extends TestCase
 {
+    #[Test]
+    public function it_implements_the_request_middleware_interface(): void
+    {
+        $this->assertInstanceOf(RequestMiddleware::class, new ServeMirroredAsset(
+            new MirrorPathResolver(Region::EU),
+            Storage::fake('public'),
+        ));
+    }
+
     #[Test]
     public function it_returns_a_fake_response_from_disk_when_the_file_exists(): void
     {

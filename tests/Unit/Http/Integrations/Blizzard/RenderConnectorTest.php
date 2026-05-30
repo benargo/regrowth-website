@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
+use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use Illuminate\Support\Facades\Storage;
@@ -65,16 +66,15 @@ class RenderConnectorTest extends TestCase
     }
 
     #[Test]
-    public function returns_failed_responses_without_throwing(): void
+    public function throws_media_not_found_exception_on_404(): void
     {
         Saloon::fake([
             MockResponse::make(body: '', status: 404),
         ]);
 
-        $response = $this->makeConnector()->send(new TestRenderIconRequest('does_not_exist'));
+        $this->expectException(MediaNotFoundException::class);
 
-        $this->assertSame(404, $response->status());
-        $this->assertTrue($response->failed());
+        $this->makeConnector()->send(new TestRenderIconRequest('does_not_exist'));
     }
 }
 
