@@ -11,7 +11,8 @@
         "spatie/boost-spatie-guidelines",
         "spatie/laravel-permission",
         "spatie/laravel-medialibrary",
-        "spatie/laravel-query-builder"
+        "spatie/laravel-query-builder",
+        "saloonphp/laravel-plugin"
     ],
     "sail": true,
     "skills": [
@@ -19,7 +20,10 @@
         "configuring-horizon",
         "socialite-development",
         "inertia-react-development",
+        "echo-react-development",
+        "echo-development",
         "tailwindcss-development",
+        "saloon-development",
         "medialibrary-development",
         "laravel-permission-development",
         "laravel-query-builder",
