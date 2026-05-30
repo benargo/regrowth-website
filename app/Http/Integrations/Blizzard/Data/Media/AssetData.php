@@ -8,7 +8,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 use Spatie\LaravelData\Optional;
 
 #[MapInputName(SnakeCaseMapper::class)]
-class MediaAssetData extends Data
+class AssetData extends Data
 {
     public function __construct(
         public readonly string $value,

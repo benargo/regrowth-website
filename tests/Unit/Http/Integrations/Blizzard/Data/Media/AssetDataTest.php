@@ -2,17 +2,17 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Data\Media;
 
-use App\Http\Integrations\Blizzard\Data\Media\MediaAssetData;
+use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
-class MediaAssetDataTest extends TestCase
+class AssetDataTest extends TestCase
 {
     #[Test]
     public function it_casts_full_asset_entry(): void
     {
-        $dto = MediaAssetData::from([
+        $dto = AssetData::from([
             'key' => 'icon',
             'value' => 'https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg',
             'file_data_id' => 642015,
@@ -26,7 +26,7 @@ class MediaAssetDataTest extends TestCase
     #[Test]
     public function it_treats_missing_key_as_optional(): void
     {
-        $dto = MediaAssetData::from([
+        $dto = AssetData::from([
             'value' => 'https://render.worldofwarcraft.com/eu/icons/56/warrior.jpg',
             'file_data_id' => 132221,
         ]);
@@ -39,7 +39,7 @@ class MediaAssetDataTest extends TestCase
     #[Test]
     public function it_treats_missing_file_data_id_as_optional(): void
     {
-        $dto = MediaAssetData::from([
+        $dto = AssetData::from([
             'key' => 'icon',
             'value' => 'https://render.worldofwarcraft.com/eu/icons/56/druid.jpg',
         ]);
@@ -52,7 +52,7 @@ class MediaAssetDataTest extends TestCase
     #[Test]
     public function it_treats_both_key_and_file_data_id_as_optional(): void
     {
-        $dto = MediaAssetData::from([
+        $dto = AssetData::from([
             'value' => 'https://render.worldofwarcraft.com/eu/icons/56/paladin.jpg',
         ]);
 

@@ -11,11 +11,11 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 class MediaData extends Data
 {
     /**
-     * @param  array<int, MediaAssetData>  $assets
+     * @param  array<int, AssetData>  $assets
      */
     public function __construct(
         public readonly int $id,
-        #[DataCollectionOf(MediaAssetData::class)]
+        #[DataCollectionOf(AssetData::class)]
         public readonly array $assets,
     ) {}
 }
