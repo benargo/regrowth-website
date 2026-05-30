@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Facades\Blizzard as BlizzardFacade;
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\GameVersion;
@@ -88,6 +89,7 @@ class BlizzardServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->alias(BlizzardConnector::class, BlizzardFacade::class);
         $this->app->alias(MirrorPathResolver::class, BlizzardRenderPath::class);
     }
 
