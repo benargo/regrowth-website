@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockResponse;
@@ -15,25 +16,20 @@ class RenderConnectorTest extends TestCase
 {
     // ==================== resolveBaseUrl ====================
 
-    #[Test]
-    public function resolves_base_url_from_region(): void
+    private function makeConnector(Region $region = Region::EU): RenderConnector
     {
-        $this->assertSame(
-            'https://render.worldofwarcraft.com/eu',
-            (new RenderConnector(Region::EU))->resolveBaseUrl(),
-        );
-        $this->assertSame(
-            'https://render.worldofwarcraft.com/us',
-            (new RenderConnector(Region::US))->resolveBaseUrl(),
-        );
-        $this->assertSame(
-            'https://render.worldofwarcraft.com/kr',
-            (new RenderConnector(Region::KR))->resolveBaseUrl(),
-        );
-        $this->assertSame(
-            'https://render.worldofwarcraft.com/tw',
-            (new RenderConnector(Region::TW))->resolveBaseUrl(),
-        );
+        return new RenderConnector($region, Storage::fake('public'));
+    }
+
+    #[Test]
+    public function resolves_a_region_agnostic_base_url(): void
+    {
+        $expected = 'https://render.worldofwarcraft.com';
+
+        $this->assertSame($expected, $this->makeConnector(Region::EU)->resolveBaseUrl());
+        $this->assertSame($expected, $this->makeConnector(Region::US)->resolveBaseUrl());
+        $this->assertSame($expected, $this->makeConnector(Region::KR)->resolveBaseUrl());
+        $this->assertSame($expected, $this->makeConnector(Region::TW)->resolveBaseUrl());
     }
 
     // ==================== getRegion ====================
@@ -41,20 +37,20 @@ class RenderConnectorTest extends TestCase
     #[Test]
     public function exposes_the_injected_region(): void
     {
-        $this->assertSame(Region::EU, (new RenderConnector(Region::EU))->getRegion());
-        $this->assertSame(Region::KR, (new RenderConnector(Region::KR))->getRegion());
+        $this->assertSame(Region::EU, $this->makeConnector(Region::EU)->getRegion());
+        $this->assertSame(Region::KR, $this->makeConnector(Region::KR)->getRegion());
     }
 
     // ==================== Pipeline behaviour ====================
 
     #[Test]
-    public function sends_unauthenticated_requests_against_the_region_render_host(): void
+    public function sends_unauthenticated_requests_against_the_render_host(): void
     {
         $mock = Saloon::fake([
             MockResponse::make(body: 'binary-bytes', status: 200),
         ]);
 
-        $response = (new RenderConnector(Region::EU))->send(new TestRenderIconRequest('inv_misc_questionmark'));
+        $response = $this->makeConnector()->send(new TestRenderIconRequest('inv_misc_questionmark'));
 
         $this->assertSame(200, $response->status());
         $this->assertSame('binary-bytes', $response->body());
@@ -62,7 +58,7 @@ class RenderConnectorTest extends TestCase
         $pending = $mock->getLastPendingRequest();
         $this->assertNotNull($pending);
         $this->assertSame(
-            'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
+            'https://render.worldofwarcraft.com/icons/56/inv_misc_questionmark.jpg',
             $pending->getUrl(),
         );
         $this->assertNull($pending->headers()->get('Authorization'));
@@ -75,7 +71,7 @@ class RenderConnectorTest extends TestCase
             MockResponse::make(body: '', status: 404),
         ]);
 
-        $response = (new RenderConnector(Region::EU))->send(new TestRenderIconRequest('does_not_exist'));
+        $response = $this->makeConnector()->send(new TestRenderIconRequest('does_not_exist'));
 
         $this->assertSame(404, $response->status());
         $this->assertTrue($response->failed());

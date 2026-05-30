@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Region;
@@ -77,6 +78,7 @@ class BlizzardServiceProvider extends ServiceProvider
         $this->app->singleton(RenderConnector::class, function (Application $app) use ($config) {
             return new RenderConnector(
                 region: Region::from(Arr::get($config, 'region', 'eu')),
+                disk: $app->make(FilesystemManager::class)->disk(Arr::get($config, 'filesystem', 'public')),
             );
         });
     }
@@ -86,7 +88,7 @@ class BlizzardServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->app->alias(MirrorPathResolver::class, BlizzardRenderPath::class);
     }
 
     /**

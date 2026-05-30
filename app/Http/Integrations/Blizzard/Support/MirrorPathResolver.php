@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Blizzard\Support;
 
 use App\Http\Integrations\Blizzard\Region;
+use Illuminate\Support\Str;
 
 class MirrorPathResolver
 {
@@ -27,17 +28,14 @@ class MirrorPathResolver
     {
         $host = parse_url($url, PHP_URL_HOST);
 
-        if (! is_string($host) || ! $this->isRenderHost($host)) {
+        if (! is_string($host) || ! $this->validateHost($host)) {
             return null;
         }
 
-        $path = parse_url($url, PHP_URL_PATH) ?: '/';
-        $path = ltrim($path, '/');
-
-        $regionPrefix = $this->region->value.'/';
-        if (str_starts_with($path, $regionPrefix)) {
-            $path = substr($path, strlen($regionPrefix));
-        }
+        $path = Str::of(parse_url($url, PHP_URL_PATH) ?: '/')
+            ->ltrim('/')
+            ->after($this->region->value.'/')
+            ->value();
 
         return self::PREFIX.'/'.$path;
     }
@@ -46,9 +44,10 @@ class MirrorPathResolver
      * Determine whether a host belongs to the Blizzard render CDN.
      * Accepts both render.worldofwarcraft.com and regional subdomain variants (e.g. render-eu.worldofwarcraft.com).
      */
-    private function isRenderHost(string $host): bool
+    public function validateHost(string $host): bool
     {
-        return $host === 'render.worldofwarcraft.com'
-            || str_ends_with($host, '.worldofwarcraft.com');
+        $host = Str::of($host);
+
+        return $host->is('render.worldofwarcraft.com') || ($host->startsWith('render-') && $host->endsWith('.worldofwarcraft.com'));
     }
 }

@@ -5,7 +5,6 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Render;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -68,13 +67,11 @@ class FetchAssetRequestTest extends TestCase
     #[Test]
     public function it_sends_through_render_connector_to_the_given_url(): void
     {
-        Storage::fake('public');
-
         $mock = new MockClient([
             FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, app(FilesystemManager::class));
+        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
         $response = $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/icons/56/foo.jpg'));
@@ -89,13 +86,11 @@ class FetchAssetRequestTest extends TestCase
     #[Test]
     public function it_composes_paths_with_inline_region_segments_correctly(): void
     {
-        Storage::fake('public');
-
         $mock = new MockClient([
             FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $connector = new RenderConnector(Region::EU, app(FilesystemManager::class));
+        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
         $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));

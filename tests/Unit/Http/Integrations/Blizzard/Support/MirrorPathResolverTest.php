@@ -46,4 +46,25 @@ class MirrorPathResolverTest extends TestCase
 
         $this->assertNull($resolver->fromUrl('https://example.com/foo.jpg'));
     }
+
+    #[Test]
+    public function validate_host_accepts_apex_and_render_subdomains(): void
+    {
+        $resolver = new MirrorPathResolver(Region::EU);
+
+        $this->assertTrue($resolver->validateHost('render.worldofwarcraft.com'));
+        $this->assertTrue($resolver->validateHost('render-eu.worldofwarcraft.com'));
+        $this->assertTrue($resolver->validateHost('render-us.worldofwarcraft.com'));
+    }
+
+    #[Test]
+    public function validate_host_rejects_other_hosts(): void
+    {
+        $resolver = new MirrorPathResolver(Region::EU);
+
+        $this->assertFalse($resolver->validateHost('example.com'));
+        $this->assertFalse($resolver->validateHost('worldofwarcraft.com'));
+        $this->assertFalse($resolver->validateHost('media.worldofwarcraft.com'));
+        $this->assertFalse($resolver->validateHost('evil.com.worldofwarcraft.com.attacker.com'));
+    }
 }

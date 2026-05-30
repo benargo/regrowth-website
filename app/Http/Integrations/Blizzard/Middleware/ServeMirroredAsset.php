@@ -5,7 +5,6 @@ namespace App\Http\Integrations\Blizzard\Middleware;
 use App\Contracts\Http\Integrations\Blizzard\Mirrorable;
 use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
 use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Filesystem\FilesystemManager;
 use Saloon\Http\Faking\FakeResponse;
 use Saloon\Http\PendingRequest;
 
@@ -13,8 +12,7 @@ class ServeMirroredAsset
 {
     public function __construct(
         private readonly MirrorPathResolver $resolver,
-        private readonly FilesystemManager $filesystem,
-        private readonly string $diskName,
+        private readonly Filesystem $disk,
     ) {}
 
     /**
@@ -28,14 +26,12 @@ class ServeMirroredAsset
             return null;
         }
 
-        $disk = $this->disk();
-
-        if (! $disk->exists($path)) {
+        if (! $this->disk->exists($path)) {
             return null;
         }
 
         return new FakeResponse(
-            body: $disk->get($path) ?? '',
+            body: $this->disk->get($path) ?? '',
             status: 200,
             headers: ['X-Mirror' => 'hit'],
         );
@@ -53,13 +49,5 @@ class ServeMirroredAsset
         }
 
         return $this->resolver->fromUrl($pendingRequest->getUrl());
-    }
-
-    /**
-     * Resolve the configured filesystem disk.
-     */
-    private function disk(): Filesystem
-    {
-        return $this->filesystem->disk($this->diskName);
     }
 }
