@@ -8,7 +8,6 @@ use App\Listeners\FlushAttendanceCache;
 use App\Listeners\FlushLootCouncilCache;
 use App\Listeners\FlushPermissionsCache;
 use App\Listeners\FlushReportsCache;
-use App\Listeners\PrefetchMediaForItem;
 use App\Listeners\ScheduleAddonExportBuild;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Spatie\Permission\PermissionRegistrar;
@@ -27,7 +26,6 @@ abstract class TestCase extends BaseTestCase
         $this->mock(FlushLootCouncilCache::class)->shouldReceive('handle');
         $this->mock(FlushPermissionsCache::class)->shouldReceive('handle');
         $this->mock(FlushReportsCache::class)->shouldReceive('handle');
-        $this->mock(PrefetchMediaForItem::class)->shouldReceive('handle');
         $this->mock(ScheduleAddonExportBuild::class)->shouldReceive('handle');
     }
 }
