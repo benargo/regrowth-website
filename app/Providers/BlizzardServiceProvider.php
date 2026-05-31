@@ -56,6 +56,8 @@ class BlizzardServiceProvider extends ServiceProvider
                 gameVersion: GameVersion::fromName(Arr::get($config, 'game_version', 'Anniversary')),
                 region: Region::from(Arr::get($config, 'region', 'eu')),
                 locale: Arr::get($config, 'locale'),
+                defaultRealmSlug: Arr::get($config, 'realm.slug'),
+                defaultGuildSlug: Arr::get($config, 'guild.slug'),
                 eagerlyMirrorAssets: $app->make(EagerlyMirrorAssets::class),
             );
         });

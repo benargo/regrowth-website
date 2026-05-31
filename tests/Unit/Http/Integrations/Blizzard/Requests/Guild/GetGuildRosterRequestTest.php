@@ -46,4 +46,12 @@ class GetGuildRosterRequestTest extends BlizzardTestCase
         Saloon::assertSent(fn (GetGuildRosterRequest $r) => $r->resolveEndpoint() === '/data/wow/guild/thunderstrike/regrowth/roster'
         );
     }
+
+    #[Test]
+    public function it_builds_a_slugged_endpoint_from_raw_realm_and_guild_names(): void
+    {
+        $request = new GetGuildRosterRequest('Thunderstrike', 'Wild Growth');
+
+        $this->assertSame('/data/wow/guild/thunderstrike/wild-growth/roster', $request->resolveEndpoint());
+    }
 }

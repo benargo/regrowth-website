@@ -33,4 +33,12 @@ class GetCharacterStatusRequestTest extends BlizzardTestCase
         Saloon::assertSent(fn (GetCharacterStatusRequest $r) => $r->resolveEndpoint() === '/profile/wow/character/thunderstrike/foo/status'
         );
     }
+
+    #[Test]
+    public function it_builds_a_slugged_endpoint_from_raw_realm_and_character_names(): void
+    {
+        $request = new GetCharacterStatusRequest('Wild Growth', 'Ben Argo');
+
+        $this->assertSame('/profile/wow/character/wild-growth/ben-argo/status', $request->resolveEndpoint());
+    }
 }

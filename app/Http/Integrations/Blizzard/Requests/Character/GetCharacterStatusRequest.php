@@ -19,17 +19,16 @@ class GetCharacterStatusRequest extends Request implements Cacheable
     protected Method $method = Method::GET;
 
     public function __construct(
-        protected string $realmSlug,
-        protected string $characterName,
-    ) {}
+        protected string $realm,
+        protected string $character,
+    ) {
+        $this->realm = Str::slug($realm);
+        $this->character = Str::slug($character);
+    }
 
     public function resolveEndpoint(): string
     {
-        return sprintf(
-            '/profile/wow/character/%s/%s/status',
-            $this->realmSlug,
-            Str::lower($this->characterName),
-        );
+        return sprintf('/profile/wow/character/%s/%s/status', $this->realm, $this->character);
     }
 
     public function boot(PendingRequest $pendingRequest): void

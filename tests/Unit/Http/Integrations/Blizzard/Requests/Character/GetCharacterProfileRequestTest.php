@@ -69,6 +69,22 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
     }
 
     #[Test]
+    public function it_builds_a_slugged_endpoint_from_raw_realm_and_character_names(): void
+    {
+        $request = new GetCharacterProfileRequest('Wild Growth', 'Ben Argo');
+
+        $this->assertSame('/profile/wow/character/wild-growth/ben-argo', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_accepts_already_slugged_inputs_unchanged(): void
+    {
+        $request = new GetCharacterProfileRequest('thunderstrike', 'thunderlord');
+
+        $this->assertSame('/profile/wow/character/thunderstrike/thunderlord', $request->resolveEndpoint());
+    }
+
+    #[Test]
     public function it_sets_profile_namespace_header(): void
     {
         Saloon::fake([

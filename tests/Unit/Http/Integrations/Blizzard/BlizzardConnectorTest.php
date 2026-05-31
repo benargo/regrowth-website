@@ -27,8 +27,12 @@ use Tests\TestCase;
 
 class BlizzardConnectorTest extends TestCase
 {
-    private function makeConnector(?Region $region = null, GameVersion $gameVersion = GameVersion::Anniversary): BlizzardConnector
-    {
+    private function makeConnector(
+        ?Region $region = null,
+        GameVersion $gameVersion = GameVersion::Anniversary,
+        string $defaultRealmSlug = 'thunderstrike',
+        string $defaultGuildSlug = 'regrowth',
+    ): BlizzardConnector {
         $region ??= Region::EU;
 
         return new BlizzardConnector(
@@ -37,6 +41,8 @@ class BlizzardConnectorTest extends TestCase
             region: $region,
             locale: $region->defaultLocale(),
             gameVersion: $gameVersion,
+            defaultRealmSlug: $defaultRealmSlug,
+            defaultGuildSlug: $defaultGuildSlug,
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
     }
@@ -106,8 +112,28 @@ class BlizzardConnectorTest extends TestCase
             gameVersion: GameVersion::Anniversary,
             region: Region::EU,
             locale: 'ko_KR',
+            defaultRealmSlug: 'thunderstrike',
+            defaultGuildSlug: 'regrowth',
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
+    }
+
+    // ==================== default slugs ====================
+
+    #[Test]
+    public function it_exposes_the_configured_default_realm_slug(): void
+    {
+        $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
+
+        $this->assertSame('thunderstrike', $connector->defaultRealmSlug());
+    }
+
+    #[Test]
+    public function it_exposes_the_configured_default_guild_slug(): void
+    {
+        $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
+
+        $this->assertSame('regrowth', $connector->defaultGuildSlug());
     }
 
     // ==================== OAuth + token caching ====================

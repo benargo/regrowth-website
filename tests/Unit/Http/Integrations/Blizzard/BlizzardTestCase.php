@@ -16,6 +16,8 @@ abstract class BlizzardTestCase extends TestCase
     protected function makeConnector(
         ?Region $region = null,
         GameVersion $gameVersion = GameVersion::Anniversary,
+        string $defaultRealmSlug = 'thunderstrike',
+        string $defaultGuildSlug = 'regrowth',
     ): BlizzardConnector {
         $region ??= Region::EU;
 
@@ -27,6 +29,8 @@ abstract class BlizzardTestCase extends TestCase
             region: $region,
             locale: $region->defaultLocale(),
             gameVersion: $gameVersion,
+            defaultRealmSlug: $defaultRealmSlug,
+            defaultGuildSlug: $defaultGuildSlug,
             eagerlyMirrorAssets: new EagerlyMirrorAssets($renderConnector),
         );
     }
