@@ -2,14 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Facades\BlizzardAsset;
-use App\Facades\BlizzardRenderPath;
+use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Seeder;
 
 class PrioritySeeder extends Seeder
 {
+    public function __construct(
+        private RenderConnector $renderConnector,
+    ) {}
+
     /**
      * Run the database seeds.
      */
@@ -95,9 +98,6 @@ class PrioritySeeder extends Seeder
             ['type' => 'Meme', 'title' => 'Disenchant', 'icon_name' => 'inv_enchant_voidcrystal'],
         ];
 
-        $region = config('services.blizzard.region', 'eu');
-        $disk = config('services.blizzard.filesystem', 'public');
-
         foreach ($priorities as $priority) {
             $iconName = $priority['icon_name'];
 
@@ -110,17 +110,11 @@ class PrioritySeeder extends Seeder
                 continue;
             }
 
-            $url = sprintf('https://render.worldofwarcraft.com/%s/icons/56/%s.jpg', $region, $iconName);
+            $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
 
-            BlizzardAsset::send(new FetchAssetRequest($url));
-
-            $mirrorPath = BlizzardRenderPath::fromUrl($url);
-
-            if ($mirrorPath !== null) {
-                $model->addMediaFromDisk($mirrorPath, $disk)
-                    ->usingFileName("{$iconName}.jpg")
-                    ->toMediaCollection('blizzard_icons');
-            }
+            $model->addMediaFromString($response->body())
+                ->usingFileName("{$iconName}.jpg")
+                ->toMediaCollection('blizzard_icons');
         }
     }
 }
