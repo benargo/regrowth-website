@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\EventTemplateCollection;
@@ -14,7 +16,6 @@ use App\Models\PlayableClass;
 use App\Models\Raid;
 use App\Models\Spell;
 use App\Models\TargetMarker;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -24,6 +25,10 @@ use Inertia\Response;
 #[Authorize('view-officer-dashboard')]
 class EventTemplateController extends Controller
 {
+    public function __construct(
+        private RenderConnector $renderConnector,
+    ) {}
+
     /**
      * Display a listing of event templates.
      */
@@ -72,7 +77,7 @@ class EventTemplateController extends Controller
      * Edit the specified event template.
      */
     #[Authorize('update', 'template')]
-    public function edit(Event $template, Request $request, MediaService $mediaService): Response
+    public function edit(Event $template, Request $request): Response
     {
         $template->load('raids.bosses.media', 'assignments.group');
 
@@ -94,7 +99,9 @@ class EventTemplateController extends Controller
             'spells' => Inertia::optional(function () use ($request) {
                 return SpellResource::collection(Spell::with('media')->get())->resolve($request);
             }),
-            'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
+            'questionMarkIconUrl' => Inertia::optional(
+                fn () => $this->renderConnector->send(new FetchAssetRequest('inv_misc_questionmark'))->mirroredUrl(),
+            )->once(),
         ]);
     }
 
@@ -125,10 +132,5 @@ class EventTemplateController extends Controller
         $template->delete();
 
         return to_route('dashboard.event-templates.index');
-    }
-
-    private function questionMarkIconUrl(MediaService $mediaService): mixed
-    {
-        return Inertia::optional(fn () => $mediaService->get('inv_misc_questionmark'))->once();
     }
 }

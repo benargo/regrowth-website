@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PlayableClassResource;
@@ -13,7 +15,6 @@ use App\Models\EventAssignmentGroup;
 use App\Models\PlayableClass;
 use App\Models\Spell;
 use App\Models\TargetMarker;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Contracts\Queue\QueueableCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,10 @@ use Inertia\Response;
 
 class EventController extends Controller
 {
+    public function __construct(
+        private RenderConnector $renderConnector,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -43,13 +48,15 @@ class EventController extends Controller
      * Display the specified resource.
      */
     #[Authorize('view', 'event')]
-    public function show(Event $event, Request $request, MediaService $mediaService): Response
+    public function show(Event $event, Request $request): Response
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Show', [
             'event' => (new EventResource($event))->resolve($request),
-            'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
+            'questionMarkIconUrl' => Inertia::optional(
+                fn () => $this->renderConnector->send(new FetchAssetRequest('inv_misc_questionmark'))->mirroredUrl(),
+            )->once(),
         ]);
     }
 
@@ -58,7 +65,7 @@ class EventController extends Controller
      */
     #[Middleware('auth')]
     #[Authorize('update', 'event')]
-    public function edit(Event $event, Request $request, MediaService $mediaService): Response
+    public function edit(Event $event, Request $request): Response
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
@@ -80,7 +87,9 @@ class EventController extends Controller
                 return SpellResource::collection(Spell::with('media')->get())->resolve($request);
             }),
             'templates' => $this->loadTemplatesForEvent($event)->all(),
-            'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
+            'questionMarkIconUrl' => Inertia::optional(
+                fn (): ?string => $this->renderConnector->send(new FetchAssetRequest('inv_misc_questionmark'))->mirroredUrl(),
+            )->once(),
         ]);
     }
 
@@ -163,10 +172,5 @@ class EventController extends Controller
         });
 
         return back();
-    }
-
-    private function questionMarkIconUrl(MediaService $mediaService): mixed
-    {
-        return Inertia::optional(fn () => $mediaService->get('inv_misc_questionmark'))->once();
     }
 }
