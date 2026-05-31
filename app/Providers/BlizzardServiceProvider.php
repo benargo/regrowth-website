@@ -12,7 +12,6 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Client;
-use App\Services\Blizzard\MediaService;
 use App\Services\Blizzard\Region as LegacyRegion;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
@@ -47,17 +46,6 @@ class BlizzardServiceProvider extends ServiceProvider
             return new BlizzardService(
                 $app->make(Client::class),
                 $config,
-            );
-        });
-
-        /**
-         * TODO: Remove when refactor is complete.
-         */
-        $this->app->singleton(MediaService::class, function (Application $app) use ($config) {
-            return new MediaService(
-                Arr::get($config, 'region'),
-                $app->make(FilesystemManager::class),
-                Arr::get($config, 'filesystem', 'public'),
             );
         });
 
@@ -112,7 +100,6 @@ class BlizzardServiceProvider extends ServiceProvider
              */
             Client::class,
             BlizzardService::class,
-            MediaService::class,
         ];
     }
 }
