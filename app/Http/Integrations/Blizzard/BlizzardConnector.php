@@ -50,6 +50,7 @@ class BlizzardConnector extends Connector
         protected GameVersion $gameVersion,
         protected Region $region,
         protected string $locale,
+        EagerlyMirrorAssets $eagerlyMirrorAssets,
     ) {
         $component = $gameVersion->namespaceComponent();
         $regionValue = $region->value;
@@ -70,7 +71,7 @@ class BlizzardConnector extends Connector
         }
 
         $this->middleware()->onResponse(
-            new EagerlyMirrorAssets,
+            $eagerlyMirrorAssets,
             'eagerlyMirrorAssets',
         );
     }

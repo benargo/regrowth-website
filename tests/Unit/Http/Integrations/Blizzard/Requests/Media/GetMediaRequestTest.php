@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Media;
 
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\Requests\Media\GetMediaRequest;
+use App\Http\Integrations\Blizzard\Responses\GetMediaResponse;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -13,7 +14,7 @@ use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 class GetMediaRequestTest extends BlizzardTestCase
 {
     #[Test]
-    public function it_casts_response_to_media_data_for_item_tag(): void
+    public function it_returns_a_get_media_response(): void
     {
         Saloon::fake([
             'eu.battle.net/oauth/token' => $this->tokenMock(),
@@ -25,56 +26,15 @@ class GetMediaRequestTest extends BlizzardTestCase
             ], status: 200),
         ]);
 
-        $dto = $this->makeConnector()
-            ->send(new GetMediaRequest('item', 19019))
-            ->dto();
+        $response = $this->makeConnector()->send(new GetMediaRequest('item', 19019));
 
+        $this->assertInstanceOf(GetMediaResponse::class, $response);
+
+        $dto = $response->dto();
         $this->assertInstanceOf(MediaData::class, $dto);
         $this->assertSame(19019, $dto->id);
         $this->assertCount(1, $dto->assets);
         $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', $dto->assets[0]->value);
-    }
-
-    #[Test]
-    public function it_casts_response_to_media_data_for_spell_tag(): void
-    {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => $this->tokenMock(),
-            GetMediaRequest::class => MockResponse::make(body: [
-                'id' => 5,
-                'assets' => [
-                    ['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/icons/56/spell_fire.jpg', 'file_data_id' => 555],
-                ],
-            ], status: 200),
-        ]);
-
-        $dto = $this->makeConnector()
-            ->send(new GetMediaRequest('spell', 5))
-            ->dto();
-
-        $this->assertInstanceOf(MediaData::class, $dto);
-        $this->assertSame(5, $dto->id);
-    }
-
-    #[Test]
-    public function it_casts_response_to_media_data_for_playable_class_tag(): void
-    {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => $this->tokenMock(),
-            GetMediaRequest::class => MockResponse::make(body: [
-                'id' => 1,
-                'assets' => [
-                    ['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/icons/56/class_warrior.jpg', 'file_data_id' => 999],
-                ],
-            ], status: 200),
-        ]);
-
-        $dto = $this->makeConnector()
-            ->send(new GetMediaRequest('playable-class', 1))
-            ->dto();
-
-        $this->assertInstanceOf(MediaData::class, $dto);
-        $this->assertSame(1, $dto->id);
     }
 
     #[Test]
@@ -90,8 +50,7 @@ class GetMediaRequestTest extends BlizzardTestCase
 
         $this->makeConnector()->send(new GetMediaRequest('item', 19019));
 
-        Saloon::assertSent(fn (GetMediaRequest $r) => $r->resolveEndpoint() === '/data/wow/media/item/19019'
-        );
+        Saloon::assertSent(fn (GetMediaRequest $r) => $r->resolveEndpoint() === '/data/wow/media/item/19019');
     }
 
     #[Test]

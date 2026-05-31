@@ -7,16 +7,20 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\GameVersion;
+use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use App\Services\Blizzard\Exceptions\CharacterNotFoundException;
 use Illuminate\Support\Facades\Cache;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\ClientException;
 use Saloon\Http\Faking\MockResponse;
-use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 use Tests\TestCase;
@@ -33,6 +37,7 @@ class BlizzardConnectorTest extends TestCase
             region: $region,
             locale: $region->defaultLocale(),
             gameVersion: $gameVersion,
+            eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
     }
 
@@ -101,6 +106,7 @@ class BlizzardConnectorTest extends TestCase
             gameVersion: GameVersion::Anniversary,
             region: Region::EU,
             locale: 'ko_KR',
+            eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
         );
     }
 
@@ -114,8 +120,10 @@ class BlizzardConnectorTest extends TestCase
             'eu.api.blizzard.com/data/wow/item/19019' => MockResponse::make(['id' => 19019, 'name' => 'Thunderfury']),
         ]);
 
+        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/19019')->getMock();
+
         $connector = $this->makeConnector();
-        $response = $connector->send(new TestItemRequest(19019));
+        $response = $connector->send($request);
 
         $this->assertSame(200, $response->status());
 
@@ -133,8 +141,8 @@ class BlizzardConnectorTest extends TestCase
         ]);
 
         $connector = $this->makeConnector();
-        $connector->send(new TestItemRequest(1));
-        $connector->send(new TestItemRequest(2));
+        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock());
+        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/2')->getMock());
 
         // The token endpoint should only be hit once.
         Saloon::assertSentCount(3); // token + 2 api requests
@@ -160,7 +168,9 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(CharacterNotFoundException::class);
 
-        $this->makeConnector()->send(new TestCharacterRequest('thunderstrike', 'ghost'));
+        $request = Mockery::mock(GetCharacterProfileRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/profile/wow/character/thunderstrike/ghost')->getMock();
+
+        $this->makeConnector()->send($request);
     }
 
     #[Test]
@@ -176,7 +186,9 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidRaceException::class);
 
-        $this->makeConnector()->send(new TestRaceRequest(999));
+        $request = Mockery::mock(GetPlayableRaceRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-race/999')->getMock();
+
+        $this->makeConnector()->send($request);
     }
 
     #[Test]
@@ -192,7 +204,9 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidClassException::class);
 
-        $this->makeConnector()->send(new TestClassRequest(999));
+        $request = Mockery::mock(GetPlayableClassRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-class/999')->getMock();
+
+        $this->makeConnector()->send($request);
     }
 
     #[Test]
@@ -208,7 +222,9 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(ItemNotFoundException::class);
 
-        $this->makeConnector()->send(new TestItemRequest(999999));
+        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/999999')->getMock();
+
+        $this->makeConnector()->send($request);
     }
 
     #[Test]
@@ -225,7 +241,9 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(RateLimitReachedException::class);
 
-        $this->makeConnector()->send(new TestItemRequest(1));
+        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock();
+
+        $this->makeConnector()->send($request);
     }
 
     #[Test]
@@ -239,8 +257,10 @@ class BlizzardConnectorTest extends TestCase
             ),
         ]);
 
+        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock();
+
         try {
-            $this->makeConnector()->send(new TestItemRequest(1));
+            $this->makeConnector()->send($request);
             $this->fail('Expected BlizzardApiException');
         } catch (BlizzardRequestException $e) {
             $this->assertInstanceOf(BlizzardApiException::class, $e);
@@ -251,56 +271,5 @@ class BlizzardConnectorTest extends TestCase
             $this->assertSame('GET', $e->method);
             $this->assertSame('BLZWEBAPI00500000', $e->blizzardCode);
         }
-    }
-}
-
-// Lightweight per-endpoint requests used by the connector tests. Real request
-// classes for the API land in Phase 2.
-
-class TestItemRequest extends Request
-{
-    protected Method $method = Method::GET;
-
-    public function __construct(public readonly int $itemId) {}
-
-    public function resolveEndpoint(): string
-    {
-        return "/data/wow/item/{$this->itemId}";
-    }
-}
-
-class TestCharacterRequest extends Request
-{
-    protected Method $method = Method::GET;
-
-    public function __construct(public readonly string $realm, public readonly string $name) {}
-
-    public function resolveEndpoint(): string
-    {
-        return "/profile/wow/character/{$this->realm}/{$this->name}";
-    }
-}
-
-class TestRaceRequest extends Request
-{
-    protected Method $method = Method::GET;
-
-    public function __construct(public readonly int $id) {}
-
-    public function resolveEndpoint(): string
-    {
-        return "/data/wow/playable-race/{$this->id}";
-    }
-}
-
-class TestClassRequest extends Request
-{
-    protected Method $method = Method::GET;
-
-    public function __construct(public readonly int $id) {}
-
-    public function resolveEndpoint(): string
-    {
-        return "/data/wow/playable-class/{$this->id}";
     }
 }

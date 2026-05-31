@@ -5,17 +5,18 @@ namespace App\Http\Integrations\Blizzard\Requests\Item;
 use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
-use App\Http\Integrations\Blizzard\Data\Media\MediaData;
+use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
 use Saloon\Http\Request;
-use Saloon\Http\Response;
 
 #[EagerlyMirrorsAssets]
 class GetItemMediaRequest extends Request implements Cacheable
 {
     use HasCaching;
+
+    protected ?string $response = GetItemMediaResponse::class;
 
     protected Method $method = Method::GET;
 
@@ -42,10 +43,5 @@ class GetItemMediaRequest extends Request implements Cacheable
     public function cacheExpiryInSeconds(): int
     {
         return 604800; // 7 days
-    }
-
-    public function createDtoFromResponse(Response $response): MediaData
-    {
-        return MediaData::from($response->json());
     }
 }

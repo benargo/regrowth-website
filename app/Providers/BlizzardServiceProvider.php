@@ -6,6 +6,7 @@ use App\Facades\Blizzard as BlizzardFacade;
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\GameVersion;
+use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
@@ -67,6 +68,7 @@ class BlizzardServiceProvider extends ServiceProvider
                 gameVersion: GameVersion::fromName(Arr::get($config, 'game_version', 'Anniversary')),
                 region: Region::from(Arr::get($config, 'region', 'eu')),
                 locale: Arr::get($config, 'locale'),
+                eagerlyMirrorAssets: $app->make(EagerlyMirrorAssets::class),
             );
         });
 

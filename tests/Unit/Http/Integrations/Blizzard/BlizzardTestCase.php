@@ -4,7 +4,10 @@ namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\GameVersion;
+use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
+use App\Http\Integrations\Blizzard\RenderConnector;
+use Illuminate\Support\Facades\Storage;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
@@ -16,12 +19,15 @@ abstract class BlizzardTestCase extends TestCase
     ): BlizzardConnector {
         $region ??= Region::EU;
 
+        $renderConnector = new RenderConnector($region, Storage::disk('public'));
+
         return new BlizzardConnector(
             clientId: 'test_id',
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
             gameVersion: $gameVersion,
+            eagerlyMirrorAssets: new EagerlyMirrorAssets($renderConnector),
         );
     }
 

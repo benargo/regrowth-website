@@ -2,17 +2,23 @@
 
 namespace App\Http\Integrations\Blizzard\Middleware;
 
-use App\Contracts\Http\Integrations\Blizzard\MirrorsAssets;
 use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
+use App\Http\Integrations\Blizzard\Data\Media\AssetData;
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
 use ReflectionClass;
 use Saloon\Http\Response;
-use Spatie\LaravelData\Data;
 use Throwable;
 
 class EagerlyMirrorAssets
 {
     /** @var array<class-string, bool> */
     private static array $cache = [];
+
+    public function __construct(
+        private readonly RenderConnector $renderConnector
+    ) {}
 
     /**
      * Warm the on-disk CDN cache for every asset in the response DTO.
@@ -37,7 +43,19 @@ class EagerlyMirrorAssets
             return;
         }
 
-        $this->walk($dto);
+        collect($dto->assets)->each(function (AssetData $asset): void {
+            try {
+                /** @var FetchAssetResponse $fetchResponse */
+                $fetchResponse = $this->renderConnector->send(new FetchAssetRequest($asset->value));
+                $mirroredPath = $fetchResponse->mirroredPath();
+
+                if ($mirroredPath !== null) {
+                    $asset->setMirroredPath($mirroredPath);
+                }
+            } catch (Throwable $e) {
+                report($e);
+            }
+        });
     }
 
     /**
@@ -50,37 +68,5 @@ class EagerlyMirrorAssets
     {
         return self::$cache[$class] ??= (new ReflectionClass($class))
             ->getAttributes(EagerlyMirrorsAssets::class) !== [];
-    }
-
-    /**
-     * Recursively traverse a DTO graph, calling {@see MirrorsAssets::mirroredUrl()}
-     * on every leaf that implements the contract.
-     *
-     * Handles three node types:
-     * - {@see MirrorsAssets}: terminal — triggers cache warm then stops descent.
-     * - {@see Data}: Spatie DTO — recurses into all public properties.
-     * - array: recurses into every element.
-     */
-    private function walk(mixed $node): void
-    {
-        if ($node instanceof MirrorsAssets) {
-            $node->mirroredUrl();
-
-            return;
-        }
-
-        if ($node instanceof Data) {
-            foreach (get_object_vars($node) as $value) {
-                $this->walk($value);
-            }
-
-            return;
-        }
-
-        if (is_array($node)) {
-            foreach ($node as $value) {
-                $this->walk($value);
-            }
-        }
     }
 }
