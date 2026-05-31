@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DailyQuestIcons;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Requests\StoreDailyQuestsRequest;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Payloads\MessagePayload;
@@ -18,7 +21,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -27,7 +29,8 @@ use Inertia\Response;
 class DailyQuestsController extends Controller
 {
     public function __construct(
-        private Discord $discord
+        private Discord $discord,
+        private RenderConnector $renderConnector,
     ) {}
 
     /*
@@ -39,7 +42,7 @@ class DailyQuestsController extends Controller
     /**
      * Display the current daily quests.
      */
-    public function index(BlizzardService $blizzard, MediaService $media): Response
+    public function index(): Response
     {
         $hasNotification = Cache::tags(['dailyquests'])->remember('daily_quests:today:exists', $this->resetTime(), function () {
             return DiscordNotification::where('type', DailyQuestsMessage::class)
@@ -50,7 +53,7 @@ class DailyQuestsController extends Controller
 
         return Inertia::render('DailyQuests/Index', [
             'hasNotification' => $hasNotification,
-            'quests' => Inertia::defer(fn () => $this->buildQuestsData($blizzard, $media)),
+            'quests' => Inertia::defer(fn () => $this->buildQuestsData()),
         ]);
     }
 
@@ -64,16 +67,16 @@ class DailyQuestsController extends Controller
      * Show the form to set or update daily quests, along with the existing quests if they exist.
      */
     #[Authorize('view-officer-dashboard')]
-    public function form(MediaService $media): Response
+    public function form(): Response
     {
         // $existingNotification = $this->getExistingNotification();
 
         $icons = [
-            'cooking' => $media->get(DailyQuestIcons::Cooking->value),
-            'fishing' => $media->get(DailyQuestIcons::Fishing->value),
-            'dungeon' => $media->get(DailyQuestIcons::Dungeon->value),
-            'heroic' => $media->get(DailyQuestIcons::HeroicDungeon->value),
-            'pvp' => $media->get(DailyQuestIcons::PvP->value),
+            'cooking' => $this->iconUrl(DailyQuestIcons::Cooking->value),
+            'fishing' => $this->iconUrl(DailyQuestIcons::Fishing->value),
+            'dungeon' => $this->iconUrl(DailyQuestIcons::Dungeon->value),
+            'heroic' => $this->iconUrl(DailyQuestIcons::HeroicDungeon->value),
+            'pvp' => $this->iconUrl(DailyQuestIcons::PvP->value),
         ];
 
         $quests = DailyQuest::hydrate(
@@ -184,6 +187,8 @@ class DailyQuestsController extends Controller
     /**
      * Build the quests data for the public index page.
      *
+     * @todo Broken/incomplete — always returns null. Needs a follow-up task to implement.
+     *
      * @return array<int, array<string, mixed>>|null
      */
     private function buildQuestsData(): ?array
@@ -217,25 +222,24 @@ class DailyQuestsController extends Controller
     /**
      * Build reward data with item details from Blizzard API.
      *
+     * @todo Broken/unused — depends on legacy BlizzardService and an unmigrated GetItemMediaRequest path. Needs a follow-up task.
+     *
      * @param  array<int, array{item_id: int, quantity: int}>  $rewards
      * @return array<int, array<string, mixed>>
      */
-    private function buildRewardsData(array $rewards, BlizzardService $blizzard, MediaService $media): array
+    private function buildRewardsData(array $rewards, BlizzardService $blizzard): array
     {
-        return array_map(function (array $reward) use ($blizzard, $media) {
+        return array_map(function (array $reward) use ($blizzard) {
             $itemId = $reward['item_id'];
             $quantity = $reward['quantity'] ?? 1;
 
             try {
                 $blizzardData = $blizzard->findItem($itemId);
-                $mediaData = $blizzard->findMedia('item', $itemId);
-                $assets = Arr::get($mediaData, 'assets', []);
-                $iconUrl = null;
-
-                if (! empty($assets)) {
-                    $urls = $media->get($assets);
-                    $iconUrl = array_values($urls)[0] ?? null;
-                }
+                $iconUrl = app(BlizzardConnector::class)
+                    ->send(new GetItemMediaRequest($itemId))
+                    ->dto()
+                    ?->assets[0]
+                    ?->mirroredUrl();
             } catch (Exception) {
                 $blizzardData = [];
                 $iconUrl = null;
@@ -253,17 +257,10 @@ class DailyQuestsController extends Controller
     }
 
     /**
-     * Get the appropriate icon URL for a given quest type.
+     * Returns the mirrored Storage URL for the given Blizzard icon, or null if unavailable.
      */
-    private function getIconForQuestType(string $type): string
+    private function iconUrl(string $iconName): ?string
     {
-        return match ($type) {
-            'fishingQuest' => DailyQuestIcons::Fishing->value,
-            'cookingQuest' => DailyQuestIcons::Cooking->value,
-            'dungeonQuest' => DailyQuestIcons::Dungeon->value,
-            'heroicQuest' => DailyQuestIcons::HeroicDungeon->value,
-            'pvpQuest' => DailyQuestIcons::PvP->value,
-            default => DailyQuestIcons::Default->value,
-        };
+        return $this->renderConnector->send(new FetchAssetRequest($iconName))->mirroredUrl();
     }
 }
