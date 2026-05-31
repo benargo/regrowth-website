@@ -5,7 +5,6 @@ namespace Tests\Feature\DailyQuests;
 use App\Models\DiscordNotification;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
@@ -23,10 +22,6 @@ class IndexTest extends TestCase
         $this->mock(BlizzardService::class, function (MockInterface $mock) {
             $mock->shouldReceive('findItem')->andReturn(['name' => 'Test Item', 'quality' => ['name' => 'Common']]);
             $mock->shouldReceive('findMedia')->andReturn(['assets' => []]);
-        });
-
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('get')->andReturn('/fake-icon.jpg');
         });
     }
 
