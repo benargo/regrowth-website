@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\Middleware\ServeMirroredAsset;
 use App\Http\Integrations\Blizzard\Middleware\WriteMirrorToDisk;
-use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
+use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Saloon\Http\Connector;
 
@@ -19,7 +19,7 @@ class RenderConnector extends Connector
 {
     public function __construct(
         /**
-         * Region is retained for middleware wiring (e.g. MirrorPathResolver) even though it is
+         * Region is retained for middleware wiring (e.g. MirrorPaths) even though it is
          * no longer part of the base URL. Real Blizzard render CDN URLs mix apex and region-path
          * shapes, so the connector returns a region-agnostic base and lets the caller's path
          * (via FetchAssetRequest) preserve whichever region segment the original URL carried.
@@ -27,7 +27,7 @@ class RenderConnector extends Connector
         protected Region $region,
         Filesystem $disk,
     ) {
-        $resolver = new MirrorPathResolver($region);
+        $resolver = new MirrorPaths($region);
 
         $this->middleware()->onRequest(
             new ServeMirroredAsset($resolver, $disk),

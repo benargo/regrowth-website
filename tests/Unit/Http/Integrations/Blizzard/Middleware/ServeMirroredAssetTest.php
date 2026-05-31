@@ -7,7 +7,7 @@ use App\Http\Integrations\Blizzard\Middleware\ServeMirroredAsset;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
+use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Contracts\RequestMiddleware;
@@ -21,7 +21,7 @@ class ServeMirroredAssetTest extends TestCase
     public function it_implements_the_request_middleware_interface(): void
     {
         $this->assertInstanceOf(RequestMiddleware::class, new ServeMirroredAsset(
-            new MirrorPathResolver(Region::EU),
+            new MirrorPaths(Region::EU),
             Storage::fake('public'),
         ));
     }

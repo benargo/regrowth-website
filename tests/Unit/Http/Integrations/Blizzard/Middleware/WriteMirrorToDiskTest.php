@@ -7,7 +7,7 @@ use App\Http\Integrations\Blizzard\Middleware\WriteMirrorToDisk;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
+use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use GuzzleHttp\Psr7\HttpFactory;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,7 +24,7 @@ class WriteMirrorToDiskTest extends TestCase
     public function it_implements_the_response_middleware_interface(): void
     {
         $this->assertInstanceOf(ResponseMiddleware::class, new WriteMirrorToDisk(
-            new MirrorPathResolver(Region::EU),
+            new MirrorPaths(Region::EU),
             Storage::fake('public'),
         ));
     }
@@ -87,7 +87,7 @@ class WriteMirrorToDiskTest extends TestCase
         $disk = Storage::fake('public');
         $disk->put('blizzard-cdn/icons/56/foo.jpg', 'ALREADY_THERE');
 
-        $resolver = new MirrorPathResolver(Region::EU);
+        $resolver = new MirrorPaths(Region::EU);
         $middleware = new WriteMirrorToDisk($resolver, $disk);
 
         // Build a real PendingRequest so the middleware can resolve the URL

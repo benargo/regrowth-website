@@ -2,8 +2,8 @@
 
 namespace App\Http\Integrations\Blizzard\Requests\Render;
 
-use App\Facades\BlizzardRenderPath;
-use Illuminate\Support\Str;
+use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
+use Illuminate\Support\Stringable;
 use InvalidArgumentException;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
@@ -20,27 +20,35 @@ class FetchAssetRequest extends Request
 {
     protected Method $method = Method::GET;
 
+    protected ?string $response = FetchAssetResponse::class;
+
     private readonly string $endpoint;
 
+    /**
+     * Initialize the request with a full asset URL, validating that it belongs to the Blizzard render CDN
+     * and extracting the host-relative path for use as the request endpoint.
+     *
+     * @throws InvalidArgumentException if the URL is invalid or does not belong to the Blizzard render CDN
+     */
     public function __construct(string $absoluteUrl)
     {
-        $host = parse_url($absoluteUrl, PHP_URL_HOST);
+        $host = str(parse_url($absoluteUrl, PHP_URL_HOST));
 
-        if (! is_string($host) || ! BlizzardRenderPath::validateHost($host)) {
+        if (! $this->validateHost($host)) {
             throw new InvalidArgumentException(
                 "FetchAssetRequest requires a Blizzard render URL; got: {$absoluteUrl}",
             );
         }
 
-        $path = parse_url($absoluteUrl, PHP_URL_PATH);
+        $path = str(parse_url($absoluteUrl, PHP_URL_PATH));
 
-        if (! is_string($path) || $path === '' || $path === '/') {
+        if (! $this->validatePath($path)) {
             throw new InvalidArgumentException(
                 "FetchAssetRequest requires a URL with a non-empty path; got: {$absoluteUrl}",
             );
         }
 
-        $this->endpoint = Str::start($path, '/');
+        $this->endpoint = $path->start('/');
     }
 
     /**
@@ -49,5 +57,23 @@ class FetchAssetRequest extends Request
     public function resolveEndpoint(): string
     {
         return $this->endpoint;
+    }
+
+    /**
+     * Determine whether a host belongs to the Blizzard render CDN.
+     * Accepts both render.worldofwarcraft.com and regional subdomain variants (e.g. render-eu.worldofwarcraft.com).
+     */
+    protected function validateHost(Stringable $host): bool
+    {
+        return $host->is('render.worldofwarcraft.com') || ($host->startsWith('render-') && $host->endsWith('.worldofwarcraft.com'));
+    }
+
+    /**
+     * Validate that the URL path is non-empty and not just a slash, which would be invalid for asset URLs
+     * and indicate a likely error in URL parsing or construction.
+     */
+    protected function validatePath(Stringable $path): bool
+    {
+        return ! $path->isEmpty() && ! $path->is('/');
     }
 }
