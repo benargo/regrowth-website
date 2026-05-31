@@ -100,4 +100,76 @@ class FetchAssetRequestTest extends TestCase
             $mock->getLastPendingRequest()->getUrl(),
         );
     }
+
+    #[Test]
+    public function it_builds_an_endpoint_from_an_icon_name_using_the_connectors_region(): void
+    {
+        $mock = new MockClient([
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector->withMockClient($mock);
+
+        $connector->send(new FetchAssetRequest('inv_misc_questionmark'));
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
+            $mock->getLastPendingRequest()->getUrl(),
+        );
+    }
+
+    #[Test]
+    public function it_builds_an_endpoint_from_an_icon_name_using_the_us_region(): void
+    {
+        $mock = new MockClient([
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $connector = new RenderConnector(Region::US, Storage::fake('public'));
+        $connector->withMockClient($mock);
+
+        $connector->send(new FetchAssetRequest('inv_misc_questionmark'));
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/us/icons/56/inv_misc_questionmark.jpg',
+            $mock->getLastPendingRequest()->getUrl(),
+        );
+    }
+
+    #[Test]
+    public function it_builds_an_endpoint_from_an_icon_name_with_a_custom_size(): void
+    {
+        $mock = new MockClient([
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector->withMockClient($mock);
+
+        $connector->send(new FetchAssetRequest('inv_misc_questionmark', size: 36));
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/eu/icons/36/inv_misc_questionmark.jpg',
+            $mock->getLastPendingRequest()->getUrl(),
+        );
+    }
+
+    #[Test]
+    public function it_preserves_an_existing_file_extension_on_an_icon_name(): void
+    {
+        $mock = new MockClient([
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector->withMockClient($mock);
+
+        $connector->send(new FetchAssetRequest('inv_misc_questionmark.jpg'));
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
+            $mock->getLastPendingRequest()->getUrl(),
+        );
+    }
 }
