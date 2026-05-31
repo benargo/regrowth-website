@@ -2,6 +2,8 @@
 
 namespace Tests\SmokeTest;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\LootCouncil\Item;
@@ -10,12 +12,14 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class LootCouncilPagesTest extends TestCase
@@ -42,6 +46,8 @@ class LootCouncilPagesTest extends TestCase
 
     protected function mockBlizzardServices(): void
     {
+        Storage::fake('public');
+
         $this->instance(
             BlizzardService::class,
             Mockery::mock(BlizzardService::class, function (MockInterface $mock) {
@@ -50,23 +56,27 @@ class LootCouncilPagesTest extends TestCase
                         'id' => $id,
                         'name' => "Test Item {$id}",
                     ]);
-                $mock->shouldReceive('findMedia')
-                    ->with('item', Mockery::any())
-                    ->andReturn([
-                        'assets' => [
-                            ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 123],
-                        ],
-                    ]);
             })
         );
 
-        $this->instance(
-            MediaService::class,
-            Mockery::mock(MediaService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('get')
-                    ->andReturn([123 => 'https://example.com/icon.jpg']);
-            })
-        );
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            GetItemMediaRequest::class => MockResponse::make(body: [
+                'id' => 0,
+                'assets' => [
+                    [
+                        'key' => 'icon',
+                        'value' => 'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
+                        'file_data_id' => 123,
+                    ],
+                ],
+            ], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
     }
 
     protected function createTestItem(): Item

@@ -12,7 +12,6 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
@@ -36,9 +35,6 @@ class CacheRebuildTest extends TestCase
             $mock->shouldReceive('findMedia')->andReturn(['assets' => []]);
         });
 
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('get')->andReturn(null);
-        });
     }
 
     #[Test]

@@ -7,7 +7,6 @@ use App\Jobs\UpdateCharacterFromRoster;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\Skip;
@@ -323,11 +322,6 @@ class UpdateCharacterFromRosterTest extends TestCase
                         ],
                     ],
                 ]);
-        });
-
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('get')
-                ->andReturn([1002 => 'https://cdn.local/paladin.jpg']);
         });
 
         $job = new UpdateCharacterFromRoster([
