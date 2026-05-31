@@ -4,7 +4,8 @@ namespace App\Http\Integrations\Blizzard\Middleware;
 
 use App\Contracts\Http\Integrations\Blizzard\Mirrorable;
 use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
-use App\Http\Integrations\Blizzard\Support\MirrorPathResolver;
+use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
+use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Saloon\Contracts\ResponseMiddleware;
@@ -15,7 +16,7 @@ use Throwable;
 class WriteMirrorToDisk implements ResponseMiddleware
 {
     public function __construct(
-        private readonly MirrorPathResolver $resolver,
+        private readonly MirrorPaths $resolver,
         private readonly Filesystem $disk,
     ) {}
 
@@ -26,6 +27,10 @@ class WriteMirrorToDisk implements ResponseMiddleware
 
         if ($path === null) {
             return;
+        }
+
+        if ($response instanceof FetchAssetResponse) {
+            $response->setMirroredPath($path);
         }
 
         if ($response->status() === 404) {

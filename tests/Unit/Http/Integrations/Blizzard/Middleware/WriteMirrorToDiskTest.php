@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\Middleware\WriteMirrorToDisk;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use GuzzleHttp\Psr7\HttpFactory;
 use Illuminate\Support\Facades\Storage;
@@ -79,6 +80,25 @@ class WriteMirrorToDiskTest extends TestCase
         $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
 
         $disk->assertMissing('blizzard-cdn/icons/56/foo.jpg');
+    }
+
+    #[Test]
+    public function it_sets_the_mirrored_path_on_the_response(): void
+    {
+        $disk = Storage::fake('public');
+
+        $mock = new MockClient([
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $connector = new RenderConnector(Region::EU, $disk);
+        $connector->withMockClient($mock);
+
+        /** @var FetchAssetResponse $response */
+        $response = $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
+
+        $this->assertInstanceOf(FetchAssetResponse::class, $response);
+        $this->assertSame('blizzard-cdn/icons/56/foo.jpg', $response->mirroredPath());
     }
 
     #[Test]
