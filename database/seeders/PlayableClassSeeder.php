@@ -4,18 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\PlayableClass;
 use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 
 class PlayableClassSeeder extends Seeder
 {
-    /**
-     * Inject the BlizzardService and MediaService to fetch class data and media from the Blizzard API.
-     */
     public function __construct(
         private BlizzardService $blizzardService,
-        private MediaService $mediaService,
     ) {}
 
     /**
