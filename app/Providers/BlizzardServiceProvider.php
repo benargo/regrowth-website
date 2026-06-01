@@ -13,9 +13,11 @@ use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\Region as LegacyRegion;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class BlizzardServiceProvider extends ServiceProvider
@@ -83,6 +85,11 @@ class BlizzardServiceProvider extends ServiceProvider
     {
         $this->app->alias(BlizzardConnector::class, BlizzardFacade::class);
         $this->app->alias(MirrorPaths::class, BlizzardRenderPath::class);
+
+        // Define a rate limiter for the FetchGuildRoster job to prevent it from being dispatched too frequently.
+        RateLimiter::for('fetch-guild-roster-job', function (object $job) {
+            return Limit::perHour(1);
+        });
     }
 
     /**

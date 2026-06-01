@@ -2,7 +2,6 @@
 
 namespace App\Services\Blizzard;
 
-use App\Events\GuildRosterFetched;
 use App\Services\Blizzard\Exceptions\InvalidClassException;
 use App\Services\Blizzard\Exceptions\InvalidRaceException;
 use Illuminate\Http\Client\RequestException;
@@ -131,13 +130,7 @@ class BlizzardService
         return Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
             $this->cacheKey('getGuildRoster', $realmSlug, $nameSlug),
             900, // 15 minutes
-            function () use ($realmSlug, $nameSlug) {
-                $roster = $this->getJson($this->profileNamespace, "/data/wow/guild/{$realmSlug}/{$nameSlug}/roster");
-
-                GuildRosterFetched::dispatch($roster);
-
-                return $roster;
-            }
+            fn () => $this->getJson($this->profileNamespace, "/data/wow/guild/{$realmSlug}/{$nameSlug}/roster")
         );
     }
 

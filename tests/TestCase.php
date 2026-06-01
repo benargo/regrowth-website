@@ -2,7 +2,6 @@
 
 namespace Tests;
 
-use App\Listeners\DispatchCharacterUpdates;
 use App\Listeners\FetchGuildRoster;
 use App\Listeners\FlushAttendanceCache;
 use App\Listeners\FlushLootCouncilCache;
@@ -20,7 +19,6 @@ abstract class TestCase extends BaseTestCase
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $this->mock(DispatchCharacterUpdates::class)->shouldReceive('handle');
         $this->mock(FetchGuildRoster::class)->shouldReceive('handle');
         $this->mock(FlushAttendanceCache::class)->shouldReceive('handle');
         $this->mock(FlushLootCouncilCache::class)->shouldReceive('handle');

@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services\Blizzard;
 
-use App\Events\GuildRosterFetched;
 use App\Services\Blizzard\BlizzardService;
 use App\Services\Blizzard\Client;
 use App\Services\Blizzard\Exceptions\InvalidClassException;
@@ -10,7 +9,6 @@ use App\Services\Blizzard\Exceptions\InvalidRaceException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -394,8 +392,6 @@ class BlizzardServiceTest extends TestCase
             ]),
         ]);
 
-        Event::fake([GuildRosterFetched::class]);
-
         $service = $this->makeService();
         $result = $service->getGuildRoster();
 
@@ -411,8 +407,6 @@ class BlizzardServiceTest extends TestCase
             'eu.api.blizzard.com/*' => Http::response(['members' => []]),
         ]);
 
-        Event::fake([GuildRosterFetched::class]);
-
         $service = $this->makeService();
         $service->getGuildRoster();
 
@@ -424,21 +418,6 @@ class BlizzardServiceTest extends TestCase
 
             return true;
         });
-    }
-
-    #[Test]
-    public function get_guild_roster_dispatches_guild_roster_fetched_event(): void
-    {
-        Http::fake([
-            'eu.api.blizzard.com/*' => Http::response(['members' => []]),
-        ]);
-
-        Event::fake([GuildRosterFetched::class]);
-
-        $service = $this->makeService();
-        $service->getGuildRoster();
-
-        Event::assertDispatched(GuildRosterFetched::class);
     }
 
     #[Test]
@@ -454,8 +433,6 @@ class BlizzardServiceTest extends TestCase
             },
         ]);
 
-        Event::fake([GuildRosterFetched::class]);
-
         $service = $this->makeService();
         $service->getGuildRoster();
         $service->getGuildRoster();
@@ -469,8 +446,6 @@ class BlizzardServiceTest extends TestCase
         Http::fake([
             'eu.api.blizzard.com/*' => Http::response(['members' => []]),
         ]);
-
-        Event::fake([GuildRosterFetched::class]);
 
         $service = $this->makeService();
         $service->getGuildRoster();
