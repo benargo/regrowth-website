@@ -33,7 +33,7 @@ Route::get('/', fn () => Inertia::render('Home'))->name('home');
 /**
  * Guild Roster
  */
-Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.index');
+Route::get('/roster', GuildRosterController::class)->name('roster');
 
 /**
  * Loot Bias Tools

@@ -3,61 +3,80 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AllianceRaces;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
+use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class GuildRosterController extends Controller
 {
-    private $races;
+    /** @var array<int, LinkData> */
+    private array $races;
 
-    private $ranks;
+    /** @var Collection<int, GuildRank> */
+    private Collection $ranks;
 
     public function __construct(
-        protected BlizzardService $blizzard,
+        protected BlizzardConnector $blizzard,
     ) {
-        // Load from DB keyed by ID; icons are managed by PlayableClassSeeder via the media library.
-        // Keyed by ID so buildMemberCollection can look up by class ID in O(1).
-        $this->races = collect(Cache::tags(['blizzard', 'mapped-response'])->remember('playable_races:alliance_races', now()->addDays(30), function () {
-            return collect(Arr::get($this->blizzard->getPlayableRaces(), 'races', []))
-                ->filter(fn (array $race) => in_array($race['id'], AllianceRaces::ids()))
-                ->values()
-                ->all();
-        }));
+        $this->races = array_filter(
+            $this->blizzard->send(new GetPlayableRaceIndexRequest)->dto(),
+            fn (LinkData $race) => in_array($race->id, AllianceRaces::ids(), true),
+        );
 
         $this->ranks = GuildRank::select('id', 'position', 'name')->orderBy('position')->get();
     }
 
-    public function index(Request $request)
+    public function __invoke(Request $request): Response
     {
         return Inertia::render('Roster', [
             'classes' => PlayableClass::all()->toResourceCollection()->toArray($request),
-            'races' => $this->races->toArray(),
+            'races' => array_values(array_map(fn (LinkData $race) => [
+                'id' => $race->id,
+                'name' => $race->name,
+            ], $this->races)),
             'ranks' => $this->ranks,
             'level_cap' => 70,
             'members' => Inertia::defer(fn () => $this->buildMemberCollection()),
         ]);
     }
 
-    protected function buildMemberCollection()
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildMemberCollection(): array
     {
-        return Cache::tags(['blizzard', 'mapped-response'])->remember('guild_roster', now()->addHours(6), function () {
-            $roster = $this->blizzard->getGuildRoster();
+        $roster = $this->blizzard->send(new GetGuildRosterRequest(
+            $this->blizzard->defaultRealmSlug(),
+            $this->blizzard->defaultGuildSlug(),
+        ))->dto();
 
-            return Arr::map(Arr::get($roster, 'members'), function (array $member) {
-                $classId = Arr::get($member, 'character.playable_class.id');
-                $raceId = Arr::get($member, 'character.playable_race.id');
+        return collect($roster->members)
+            ->map(function (GuildRosterMemberData $member) {
+                $classId = $member->character->playableClass->id ?? null;
+                $raceId = $member->character->playableRace->id ?? null;
+                $rankPosition = $member->rank;
 
-                data_set($member, 'character.playable_class', $classId ? PlayableClass::find($classId) : null);
-                data_set($member, 'character.playable_race', $this->races->firstWhere('id', $raceId));
-                data_set($member, 'rank', $this->ranks->firstWhere('position', Arr::get($member, 'rank'))?->toArray());
+                $race = collect($this->races)->first(fn (LinkData $race) => $race->id === $raceId);
 
-                return $member;
-            });
-        });
+                return [
+                    'character' => [
+                        'id' => $member->character->id,
+                        'name' => $member->character->name,
+                        'level' => $member->character->level,
+                        'playable_class' => $classId !== null ? PlayableClass::find($classId) : null,
+                        'playable_race' => $race !== null ? ['id' => $race->id, 'name' => $race->name] : null,
+                    ],
+                    'rank' => $this->ranks->firstWhere('position', $rankPosition)?->toArray(),
+                ];
+            })
+            ->all();
     }
 }
