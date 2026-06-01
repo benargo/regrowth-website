@@ -9,7 +9,6 @@
 .github
 .phpactor.json
 .phpunit.result.cache
-.prettierrc
 /.fleet
 /.idea
 /.nova
