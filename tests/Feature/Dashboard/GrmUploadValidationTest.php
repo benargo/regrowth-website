@@ -4,7 +4,6 @@ namespace Tests\Feature\Dashboard;
 
 use App\Jobs\ProcessGrmUpload;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
@@ -148,7 +147,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     }
 
     #[Test]
-    public function upload_initializes_progress_cache(): void
+    public function upload_passes_uploading_user_id_to_job(): void
     {
         Queue::fake();
 
@@ -156,8 +155,9 @@ class GrmUploadValidationTest extends DashboardTestCase
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
-        $this->assertTrue(Cache::has(ProcessGrmUpload::PROGRESS_CACHE_KEY));
-        $this->assertEquals('queued', Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY)['status']);
+        Queue::assertPushed(ProcessGrmUpload::class, function (ProcessGrmUpload $job) {
+            return $job->userId === $this->officer->id;
+        });
     }
 
     #[Test]

@@ -138,7 +138,6 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      */
     Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
     Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
-    Route::get('/grm-upload/status', [GrmController::class, 'getUploadStatus'])->name('grm-upload.status');
 
     /**
      * Phases management
