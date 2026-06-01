@@ -24,6 +24,7 @@ use Saloon\Exceptions\Request\ClientException;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
+use Saloon\RateLimitPlugin\Limit;
 use Tests\TestCase;
 
 class BlizzardConnectorTest extends TestCase
@@ -286,7 +287,55 @@ class BlizzardConnectorTest extends TestCase
         }
     }
 
+    // ==================== Rate limits ====================
+
+    #[Test]
+    #[Group('rate-limits')]
+    public function the_per_second_limit_sleeps_instead_of_throwing(): void
+    {
+        $limits = $this->resolveLimits($this->makeConnector());
+
+        $perSecond = $this->limitForAllow($limits, 100);
+        $hourly = $this->limitForAllow($limits, 36000);
+
+        // The per-second limit self-throttles so a tight processing loop (e.g. the
+        // GRM upload) waits out the window rather than aborting on a thrown exception.
+        $this->assertTrue($perSecond->getShouldSleep(), 'Expected the 100/sec limit to sleep.');
+
+        // The hourly ceiling should still throw — hitting it mid-job signals a real
+        // problem that should fail the job rather than sleep for up to an hour.
+        $this->assertFalse($hourly->getShouldSleep(), 'Expected the 36,000/hour limit to throw.');
+    }
+
     // ==================== Helpers ====================
+
+    /**
+     * Invoke the connector's protected resolveLimits().
+     *
+     * @return array<int, Limit>
+     */
+    private function resolveLimits(BlizzardConnector $connector): array
+    {
+        $method = new \ReflectionMethod($connector, 'resolveLimits');
+
+        return $method->invoke($connector);
+    }
+
+    /**
+     * Find the configured limit with the given per-window allowance.
+     *
+     * @param  array<int, Limit>  $limits
+     */
+    private function limitForAllow(array $limits, int $allow): Limit
+    {
+        foreach ($limits as $limit) {
+            if ($limit->getAllow() === $allow) {
+                return $limit;
+            }
+        }
+
+        $this->fail("No limit found allowing {$allow} requests.");
+    }
 
     private function makeConnector(
         ?Region $region = null,

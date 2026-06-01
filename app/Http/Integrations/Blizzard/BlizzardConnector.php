@@ -254,7 +254,9 @@ class BlizzardConnector extends Connector
     protected function resolveLimits(): array
     {
         return [
-            Limit::allow(100)->everySeconds(1),
+            // Sleep out the window instead of throwing so tight processing loops
+            // (e.g. the GRM upload) self-throttle rather than aborting on a 429.
+            Limit::allow(100)->everySeconds(1)->sleep(),
             Limit::allow(36000)->everyHour(),
         ];
     }
