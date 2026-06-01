@@ -75,13 +75,6 @@ class Character extends Model
         'deleted' => CharacterDeleted::class,
     ];
 
-    /**
-     * All of the relationships to be touched.
-     *
-     * @var array
-     */
-    protected $touches = ['linkedCharacters'];
-
     // ============ Custom attributes ============
 
     /**
