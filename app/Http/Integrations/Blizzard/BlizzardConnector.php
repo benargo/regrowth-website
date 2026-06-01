@@ -2,12 +2,12 @@
 
 namespace App\Http\Integrations\Blizzard;
 
+use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Services\Blizzard\Exceptions\BlizzardApiException;
-use App\Services\Blizzard\Exceptions\CharacterNotFoundException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
