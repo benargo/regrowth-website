@@ -2,8 +2,10 @@
 
 namespace App\Notifications;
 
+use App\Facades\Blizzard;
+use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\LootCouncil\Comment;
-use App\Services\Blizzard\BlizzardService;
 use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
@@ -63,16 +65,13 @@ class NewLootCouncilComment extends Notification
         ];
     }
 
-    /**
-     * Resolve the item name from the Blizzard API.
-     */
     private function resolveItemName(int $itemId): string
     {
         try {
-            $data = app(BlizzardService::class)->findItem($itemId);
+            $item = Blizzard::send(new GetItemRequest($itemId))->dto();
 
-            return $data['name'] ?? "Item #{$itemId}";
-        } catch (\Exception) {
+            return $item->name;
+        } catch (ItemNotFoundException) {
             return "Item #{$itemId}";
         }
     }
