@@ -6,6 +6,7 @@ use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
+use App\Http\Controllers\Dashboard\AddonSchemaController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
@@ -102,9 +103,9 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     /**
      * Addon management
      */
-    Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
+    Route::get('/addon/export', [AddonController::class, 'exportBase64'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
-    Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
+    Route::get('/addon/export/schema', AddonSchemaController::class)->name('addon.export.schema');
     Route::get('/addon/settings', [AddonSettingsController::class, 'index'])->name('addon.settings');
     Route::post('/addon/settings/councillors', [AddonSettingsController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
     Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
