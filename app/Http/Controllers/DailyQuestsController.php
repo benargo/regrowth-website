@@ -4,14 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Enums\DailyQuestIcons;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Requests\StoreDailyQuestsRequest;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Blizzard\BlizzardService;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Payloads\MessagePayload;
@@ -31,6 +32,7 @@ class DailyQuestsController extends Controller
     public function __construct(
         private Discord $discord,
         private RenderConnector $renderConnector,
+        private BlizzardConnector $blizzard,
     ) {}
 
     /*
@@ -187,8 +189,6 @@ class DailyQuestsController extends Controller
     /**
      * Build the quests data for the public index page.
      *
-     * @todo Broken/incomplete — always returns null. Needs a follow-up task to implement.
-     *
      * @return array<int, array<string, mixed>>|null
      */
     private function buildQuestsData(): ?array
@@ -222,37 +222,41 @@ class DailyQuestsController extends Controller
     /**
      * Build reward data with item details from Blizzard API.
      *
-     * @todo Broken/unused — depends on legacy BlizzardService and an unmigrated GetItemMediaRequest path. Needs a follow-up task.
-     *
      * @param  array<int, array{item_id: int, quantity: int}>  $rewards
      * @return array<int, array<string, mixed>>
      */
-    private function buildRewardsData(array $rewards, BlizzardService $blizzard): array
+    private function buildRewardsData(array $rewards): array
     {
-        return array_map(function (array $reward) use ($blizzard) {
+        return array_map(function (array $reward) {
             $itemId = $reward['item_id'];
             $quantity = $reward['quantity'] ?? 1;
 
             try {
-                $blizzardData = $blizzard->findItem($itemId);
-                $iconUrl = app(BlizzardConnector::class)
+                $item = $this->blizzard->send(new GetItemRequest($itemId))->dto();
+                $iconUrl = $this->blizzard
                     ->send(new GetItemMediaRequest($itemId))
                     ->dto()
                     ?->assets[0]
                     ?->mirroredUrl();
-            } catch (Exception) {
-                $blizzardData = [];
-                $iconUrl = null;
-            }
 
-            return [
-                'item_id' => $itemId,
-                'quantity' => $quantity,
-                'name' => $blizzardData['name'] ?? "Item #{$itemId}",
-                'quality' => strtolower($blizzardData['quality']['name'] ?? 'common'),
-                'icon' => $iconUrl,
-                'wowhead_url' => 'https://www.wowhead.com/tbc/item='.$itemId.'/'.Str::slug($blizzardData['name'] ?? ''),
-            ];
+                return [
+                    'item_id' => $itemId,
+                    'quantity' => $quantity,
+                    'name' => $item->name,
+                    'quality' => Str::lower($item->quality->name),
+                    'icon' => $iconUrl,
+                    'wowhead_url' => 'https://www.wowhead.com/tbc/item='.$itemId.'/'.Str::slug($item->name),
+                ];
+            } catch (ItemNotFoundException) {
+                return [
+                    'item_id' => $itemId,
+                    'quantity' => $quantity,
+                    'name' => "Item #{$itemId}",
+                    'quality' => 'common',
+                    'icon' => null,
+                    'wowhead_url' => 'https://www.wowhead.com/tbc/item='.$itemId,
+                ];
+            }
         }, $rewards);
     }
 

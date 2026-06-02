@@ -2,13 +2,15 @@
 
 namespace Tests\Feature\DailyQuests;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\DiscordNotification;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class IndexTest extends TestCase
@@ -19,10 +21,27 @@ class IndexTest extends TestCase
     {
         parent::setUp();
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('findItem')->andReturn(['name' => 'Test Item', 'quality' => ['name' => 'Common']]);
-            $mock->shouldReceive('findMedia')->andReturn(['assets' => []]);
-        });
+        Saloon::fake([
+            GetItemRequest::class => MockResponse::make(body: [
+                'id' => 19019,
+                'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+                'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+                'level' => 80,
+                'required_level' => 60,
+                'media' => ['key' => ['href' => 'https://example.test/media/19019']],
+                'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+                'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'One-Handed Sword', 'id' => 7],
+                'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
+                'purchase_price' => 0,
+                'sell_price' => 0,
+            ], status: 200),
+            GetItemMediaRequest::class => MockResponse::make(body: [
+                'id' => 19019,
+                'assets' => [
+                    ['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/us/icons/56/inv_sword_05.jpg', 'file_data_id' => 21588],
+                ],
+            ], status: 200),
+        ]);
     }
 
     #[Test]
