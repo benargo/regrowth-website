@@ -2,42 +2,41 @@
 
 namespace Database\Seeders;
 
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassIndexRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Arr;
 
 class PlayableClassSeeder extends Seeder
 {
     public function __construct(
-        private BlizzardService $blizzardService,
+        private BlizzardConnector $blizzard,
+        private RenderConnector $renderConnector,
     ) {}
 
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $classes = Arr::get($this->blizzardService->getPlayableClasses(), 'classes', []);
+        /** @var array<int, LinkData> $classes */
+        $classes = $this->blizzard->send(new GetPlayableClassIndexRequest)->dto();
 
         foreach ($classes as $class) {
             $model = PlayableClass::updateOrCreate(
-                ['id' => Arr::get($class, 'id')],
-                ['name' => Arr::get($class, 'name')]
+                ['id' => $class->id],
+                ['name' => $class->name],
             );
 
-            $assets = Arr::get(
-                $this->blizzardService->getPlayableClassMedia(Arr::get($class, 'id')),
-                'assets',
-                []
-            );
+            $mediaDto = $this->blizzard->send(new GetPlayableClassMediaRequest($class->id))->dto();
 
             $model->clearMediaCollection('blizzard_icons');
 
-            foreach ($assets as $asset) {
-                if (Arr::has($asset, 'value', [])) {
-                    $model->addMediaFromUrl(Arr::get($asset, 'value'))->toMediaCollection('blizzard_icons');
-                }
+            foreach ($mediaDto->assets as $asset) {
+                $body = $this->renderConnector->send(new FetchAssetRequest($asset->value))->body();
+
+                $model->addMediaFromString($body)->toMediaCollection('blizzard_icons');
             }
         }
     }

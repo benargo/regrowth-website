@@ -2,16 +2,19 @@
 
 namespace Database\Seeders;
 
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\LootCouncil\Item;
-use App\Services\Blizzard\BlizzardService;
+use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use Illuminate\Database\Seeder;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
+use Saloon\Exceptions\Request\FatalRequestException;
 
 class ItemSeeder extends Seeder
 {
     public function __construct(
-        private readonly BlizzardService $blizzard,
+        private readonly BlizzardConnector $blizzard,
     ) {}
 
     /**
@@ -705,9 +708,6 @@ class ItemSeeder extends Seeder
         ['id' => 35733, 'raid_id' => 9, 'boss_id' => null, 'group' => 'Trash drops'],
     ];
 
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         foreach ($this->items as $item) {
@@ -723,16 +723,20 @@ class ItemSeeder extends Seeder
             });
 
             try {
-                $itemData = $this->blizzard->findItem($item['id']);
-                $mediaData = $this->blizzard->getItemMedia($item['id']);
+                $itemDto = $this->blizzard->send(new GetItemRequest($item['id']))->dto();
+                $mediaResponse = $this->blizzard->send(new GetItemMediaRequest($item['id']));
+
+                // ItemMediaCast::fromArray() expects snake_case keys matching the raw Blizzard payload.
+                // Using the raw JSON body preserves that shape; MediaData::toArray() emits camelCase.
+                $iconPayload = $mediaResponse->json();
 
                 $model->update([
-                    'name' => $itemData['name'] ?? null,
-                    'icon' => ! empty($mediaData) ? $mediaData : null,
+                    'name' => $itemDto->name,
+                    'icon' => ! empty($iconPayload) ? $iconPayload : null,
                 ]);
 
                 $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
-            } catch (ConnectionException|RequestException $e) {
+            } catch (ItemNotFoundException|BlizzardApiException|FatalRequestException $e) {
                 $this->command?->warn("  ⚠ [{$item['id']}] Skipped — {$e->getMessage()}");
 
                 continue;

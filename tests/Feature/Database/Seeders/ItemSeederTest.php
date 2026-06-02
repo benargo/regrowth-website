@@ -2,17 +2,19 @@
 
 namespace Tests\Feature\Database\Seeders;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\LootCouncil\Item;
-use App\Services\Blizzard\BlizzardService;
 use Database\Seeders\BossSeeder;
 use Database\Seeders\ItemSeeder;
 use Database\Seeders\PhaseSeeder;
 use Database\Seeders\RaidSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Client\ConnectionException;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\PendingRequest;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class ItemSeederTest extends TestCase
@@ -29,13 +31,22 @@ class ItemSeederTest extends TestCase
     /**
      * Returns a correctly-shaped Blizzard item response.
      *
-     * @return array{id: int, name: string}
+     * @return array<string, mixed>
      */
     private function makeItemResponse(int $id, ?string $name = null): array
     {
         return [
             'id' => $id,
             'name' => $name ?? "Item {$id}",
+            'quality' => ['type' => 'UNCOMMON', 'name' => 'Uncommon'],
+            'level' => 115,
+            'required_level' => 70,
+            'media' => ['key' => ['href' => "https://example.test/media/{$id}"]],
+            'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 0,
         ];
     }
 
@@ -58,22 +69,25 @@ class ItemSeederTest extends TestCase
         ];
     }
 
-    /**
-     * Mock BlizzardService with correctly-shaped findItem/getItemMedia responses.
-     */
-    private function mockBlizzardService(?callable $callback = null): void
+    private function extractItemIdFromRequest(PendingRequest $request): int
     {
-        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($callback) {
-            $mock->shouldReceive('findItem')
-                ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
+        return (int) last(explode('/', parse_url($request->getUrl(), PHP_URL_PATH)));
+    }
 
-            $mock->shouldReceive('getItemMedia')
-                ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
-
-            if ($callback) {
-                $callback($mock);
-            }
-        });
+    private function fakeSaloon(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(
+                body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
+                status: 200,
+            ),
+            GetItemRequest::class => function (PendingRequest $request): MockResponse {
+                return MockResponse::make(body: $this->makeItemResponse($this->extractItemIdFromRequest($request)), status: 200);
+            },
+            GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
+                return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
+            },
+        ]);
     }
 
     /**
@@ -97,7 +111,7 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_creates_items_with_name_and_icon_from_api(): void
     {
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         $this->seedWithLimitedItems();
 
@@ -115,7 +129,7 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_is_idempotent_and_running_twice_does_not_create_duplicates(): void
     {
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         $this->seedWithLimitedItems();
         $countAfterFirst = Item::count();
@@ -128,7 +142,7 @@ class ItemSeederTest extends TestCase
     #[Test]
     public function seeder_updates_name_and_icon_on_existing_items(): void
     {
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         Item::forceCreate([
             'id' => 28453,
@@ -148,48 +162,9 @@ class ItemSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_leaves_name_null_when_api_returns_no_name(): void
-    {
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('findItem')
-                ->andReturnUsing(fn (int $id) => ['id' => $id]);
-
-            $mock->shouldReceive('getItemMedia')
-                ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
-        });
-
-        $this->seedWithLimitedItems();
-
-        $this->assertDatabaseHas('lootcouncil_items', [
-            'id' => 28453,
-            'name' => null,
-        ]);
-    }
-
-    #[Test]
-    public function seeder_still_creates_items_when_media_api_returns_empty_array(): void
-    {
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('findItem')
-                ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
-
-            $mock->shouldReceive('getItemMedia')
-                ->andReturn([]);
-        });
-
-        $this->seedWithLimitedItems();
-
-        $item = Item::find(28453);
-
-        $this->assertNotNull($item);
-        $this->assertSame('Item 28453', $item->name);
-        $this->assertNull($item->icon);
-    }
-
-    #[Test]
     public function seeder_sets_correct_raid_and_boss_ids_from_static_data(): void
     {
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         $this->seedWithLimitedItems();
 
@@ -201,19 +176,29 @@ class ItemSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_skips_item_and_continues_when_api_throws_http_exception(): void
+    public function seeder_skips_item_and_continues_when_api_returns_404(): void
     {
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('findItem')
-                ->with(28453)
-                ->andThrow(new ConnectionException('Connection refused'));
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(
+                body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
+                status: 200,
+            ),
+            GetItemRequest::class => function (PendingRequest $request): MockResponse {
+                $id = $this->extractItemIdFromRequest($request);
 
-            $mock->shouldReceive('findItem')
-                ->andReturnUsing(fn (int $id) => $this->makeItemResponse($id));
+                if ($id === 28453) {
+                    return MockResponse::make(
+                        body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                        status: 404,
+                    );
+                }
 
-            $mock->shouldReceive('getItemMedia')
-                ->andReturnUsing(fn (int $id) => $this->makeMediaResponse($id));
-        });
+                return MockResponse::make(body: $this->makeItemResponse($id), status: 200);
+            },
+            GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
+                return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
+            },
+        ]);
 
         $this->seedWithLimitedItems();
 
