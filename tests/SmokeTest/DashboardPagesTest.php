@@ -2,18 +2,21 @@
 
 namespace Tests\SmokeTest;
 
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -43,33 +46,17 @@ class DashboardPagesTest extends TestCase
             ->byDefault();
         $this->app->instance(GuildTags::class, $guildTags);
 
-        // Mock BlizzardService to prevent Blizzard API calls
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => []])
-            ->byDefault();
-        $blizzardService->shouldReceive('getPlayableClasses')
-            ->andReturn(['classes' => []])
-            ->byDefault();
-        $blizzardService->shouldReceive('getPlayableRaces')
-            ->andReturn(['races' => []])
-            ->byDefault();
-        $blizzardService->shouldReceive('findPlayableClass')
-            ->andReturn([])
-            ->byDefault();
-        $blizzardService->shouldReceive('getPlayableClassMedia')
-            ->andReturn([])
-            ->byDefault();
-        $blizzardService->shouldReceive('findPlayableRace')
-            ->andReturn([])
-            ->byDefault();
-        $blizzardService->shouldReceive('findItem')
-            ->andReturn([])
-            ->byDefault();
-        $blizzardService->shouldReceive('findMedia')
-            ->andReturn([])
-            ->byDefault();
-        $this->app->instance(BlizzardService::class, $blizzardService);
+        Storage::fake('public');
+
+        // Fake Blizzard API requests to prevent live HTTP calls
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
     }
 
     /**
