@@ -11,6 +11,7 @@ use App\Models\LootCouncil\Item;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class BossItemsResource extends JsonResource
@@ -70,7 +71,7 @@ class BossItemsResource extends JsonResource
     }
 
     /**
-     * Fetch the item's first icon asset from the Blizzard media endpoint and return its mirrored CDN URL.
+     * Fetch the item's first icon asset from the Blizzard media endpoint and return a signed icon URL.
      */
     protected function getIconUrl(Item $item): ?string
     {
@@ -78,7 +79,16 @@ class BossItemsResource extends JsonResource
             /** @var MediaData $media */
             $media = Blizzard::send(new GetItemMediaRequest($item->id))->dto();
 
-            return ($media->assets[0] ?? null)?->mirroredUrl();
+            $asset = $media->assets[0] ?? null;
+
+            if ($asset === null) {
+                return null;
+            }
+
+            return URL::signedRoute('icons.show', [
+                'size' => 56,
+                'name' => (string) Str::of($asset->value)->afterLast('/')->before('?'),
+            ]);
         } catch (ItemNotFoundException) {
             return null;
         }

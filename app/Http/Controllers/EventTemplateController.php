@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\EventTemplateCollection;
@@ -19,16 +17,13 @@ use App\Models\TargetMarker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
 class EventTemplateController extends Controller
 {
-    public function __construct(
-        private RenderConnector $renderConnector,
-    ) {}
-
     /**
      * Display a listing of event templates.
      */
@@ -99,9 +94,10 @@ class EventTemplateController extends Controller
             'spells' => Inertia::optional(function () use ($request) {
                 return SpellResource::collection(Spell::with('media')->get())->resolve($request);
             }),
-            'questionMarkIconUrl' => Inertia::optional(
-                fn () => $this->renderConnector->send(new FetchAssetRequest('inv_misc_questionmark'))->mirroredUrl(),
-            )->once(),
+            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
+                'size' => 56,
+                'name' => ServeIconController::QUESTIONMARK.'.jpg',
+            ]),
         ]);
     }
 

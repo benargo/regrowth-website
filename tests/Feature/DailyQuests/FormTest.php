@@ -9,6 +9,8 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel as ChannelResource;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\URL;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
@@ -52,6 +54,35 @@ class FormTest extends DashboardTestCase
             ->has('dungeonQuests', 1)
             ->has('heroicQuests', 1)
             ->has('pvpQuests', 1)
+        );
+    }
+
+    #[Test]
+    public function form_returns_signed_icon_urls(): void
+    {
+        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.form'));
+
+        $response->assertSuccessful();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/DailyQuests/Form')
+            ->where('icons.cooking', function (mixed $url) {
+                $urlString = (string) $url;
+
+                return str_contains($urlString, '/icons/56/')
+                    && URL::hasValidSignature(request()->create($urlString));
+            })
+            ->where('icons.fishing', function (mixed $url) {
+                return str_contains((string) $url, '/icons/56/');
+            })
+            ->where('icons.dungeon', function (mixed $url) {
+                return str_contains((string) $url, '/icons/56/');
+            })
+            ->where('icons.heroic', function (mixed $url) {
+                return str_contains((string) $url, '/icons/56/');
+            })
+            ->where('icons.pvp', function (mixed $url) {
+                return str_contains((string) $url, '/icons/56/');
+            })
         );
     }
 

@@ -10,6 +10,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class ItemResource extends JsonResource
@@ -76,7 +77,7 @@ class ItemResource extends JsonResource
     }
 
     /**
-     * Fetch the mirrored CDN URL for the item's icon asset.
+     * Fetch a signed icon URL for the item's first media asset.
      */
     protected function getIconUrl(): ?string
     {
@@ -84,7 +85,16 @@ class ItemResource extends JsonResource
             /** @var MediaData $media */
             $media = Blizzard::send(new GetItemMediaRequest($this->id))->dto();
 
-            return ($media->assets[0] ?? null)?->mirroredUrl();
+            $asset = $media->assets[0] ?? null;
+
+            if ($asset === null) {
+                return null;
+            }
+
+            return URL::signedRoute('icons.show', [
+                'size' => 56,
+                'name' => (string) Str::of($asset->value)->afterLast('/')->before('?'),
+            ]);
         } catch (ItemNotFoundException) {
             return null;
         }

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -199,6 +200,20 @@ class EventTemplateControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('dashboard.event-templates.edit', $template));
 
         $response->assertForbidden();
+    }
+
+    #[Test]
+    public function it_passes_question_mark_icon_url_as_signed_url_in_initial_props(): void
+    {
+        $template = Event::factory()->template()->create();
+
+        $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.edit', $template));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard/EventTemplates/Edit')
+            ->where('questionMarkIconUrl', fn ($url) => str_contains((string) $url, '/icons/56/inv_misc_questionmark.jpg')
+                && URL::hasValidSignature(request()->create((string) $url)))
+        );
     }
 
     // ─── update ──────────────────────────────────────────────────────────────────

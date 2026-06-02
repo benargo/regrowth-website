@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PlayableClassResource;
@@ -21,15 +19,12 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class EventController extends Controller
 {
-    public function __construct(
-        private RenderConnector $renderConnector,
-    ) {}
-
     /**
      * Display a listing of the resource.
      */
@@ -54,9 +49,10 @@ class EventController extends Controller
 
         return Inertia::render('Raiding/Plans/Show', [
             'event' => (new EventResource($event))->resolve($request),
-            'questionMarkIconUrl' => Inertia::optional(
-                fn () => $this->renderConnector->send(new FetchAssetRequest('inv_misc_questionmark'))->mirroredUrl(),
-            )->once(),
+            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
+                'size' => 56,
+                'name' => ServeIconController::QUESTIONMARK.'.jpg',
+            ]),
         ]);
     }
 
@@ -87,9 +83,10 @@ class EventController extends Controller
                 return SpellResource::collection(Spell::with('media')->get())->resolve($request);
             }),
             'templates' => $this->loadTemplatesForEvent($event)->all(),
-            'questionMarkIconUrl' => Inertia::optional(
-                fn (): ?string => $this->renderConnector->send(new FetchAssetRequest('inv_misc_questionmark'))->mirroredUrl(),
-            )->once(),
+            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
+                'size' => 56,
+                'name' => ServeIconController::QUESTIONMARK.'.jpg',
+            ]),
         ]);
     }
 

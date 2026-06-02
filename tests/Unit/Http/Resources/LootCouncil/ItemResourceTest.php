@@ -13,6 +13,7 @@ use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
@@ -184,7 +185,8 @@ class ItemResourceTest extends TestCase
         $array = $resource->toArray(new Request);
 
         $this->assertNotNull($array['icon']);
-        $this->assertStringContainsString('blizzard-cdn/icons/56/foo.jpg', $array['icon']);
+        $this->assertStringContainsString('/icons/56/foo.jpg', $array['icon']);
+        $this->assertTrue(URL::hasValidSignature(request()->create($array['icon'])));
     }
 
     #[Test]
