@@ -3,33 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Requests\Media\GetMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Media\SearchMediaRequest;
 use App\Http\Requests\BlizzardMediaRequest;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 
 #[Middleware('auth:sanctum')]
 class BlizzardMediaController extends Controller
 {
+    /**
+     * The number of media items to return per page in the paginated response.
+     */
     private const MEDIA_PER_PAGE = 1000;
 
-    /**
-     * Return a paginated list of Blizzard media icons.
-     *
-     * All pages are eagerly fetched from Blizzard, deduplicated by URL, and
-     * cached for 30 days. Pagination and name-filtering are applied locally.
-     */
-    public function __invoke(BlizzardMediaRequest $request, BlizzardService $blizzard): JsonResponse
+    public function __invoke(BlizzardMediaRequest $request, BlizzardConnector $blizzard): JsonResponse
     {
-        $allIcons = collect(Cache::tags(['blizzard', 'blizzard-api-response'])->remember(
-            $blizzard->cacheKey('blizzard:icons:all'),
-            2592000, // 30 days
-            fn () => $this->fetchAllMediaPages($blizzard),
-        ));
+        $allIcons = $this->fetchAllMediaPages($blizzard);
 
         $filtered = $request->filled('name')
             ? $allIcons->filter(fn (array $icon) => str_contains(
@@ -51,47 +44,34 @@ class BlizzardMediaController extends Controller
     }
 
     /**
-     * Fetch every page of media from Blizzard and return a deduplicated collection.
-     *
-     * @return array<int, array{id: int, name: string, url: string}>
+     * @return Collection<string, array{id: string, name: string, url: string}>
      */
-    private function fetchAllMediaPages(BlizzardService $blizzard): array
+    private function fetchAllMediaPages(BlizzardConnector $blizzard): Collection
     {
         $icons = collect();
 
-        foreach (BlizzardService::VALID_MEDIA_TAGS as $tag) {
-            $page = 1;
-            $totalPages = 1;
+        foreach (GetMediaRequest::VALID_MEDIA_TAGS as $tag) {
+            $paginator = (new SearchMediaRequest(tags: [$tag], orderby: 'id'))->paginate($blizzard);
 
-            do {
-                $response = $blizzard->searchMedia([
-                    'tags' => $tag,
-                    'orderby' => 'id',
-                    '_page' => $page,
-                ]);
+            foreach ($paginator->items() as $result) {
+                $assets = $result['data']['assets'] ?? [];
+                $firstAsset = $assets[0] ?? null;
+                $url = $firstAsset['value'] ?? null;
 
-                foreach (Arr::get($response, 'results', []) as $result) {
-                    $assets = Arr::get($result, 'data.assets', []);
-                    $firstAsset = Arr::first($assets);
-                    $url = Arr::get($firstAsset, 'value');
-                    $name = str($url)->afterLast('/')->beforeLast('.jpg');
-
-                    if ($url === null) {
-                        continue;
-                    }
-
-                    $icons->put((string) $name, [
-                        'id' => (string) $name->slug(), // Use a slug for reliability, since Blizzard media can have duplicate IDs across types
-                        'name' => (string) $name,
-                        'url' => $url,
-                    ]);
+                if ($url === null) {
+                    continue;
                 }
 
-                $totalPages = (int) Arr::get($response, 'pageCount', 1);
-                $page++;
-            } while ($page <= $totalPages);
+                $name = str($url)->afterLast('/')->beforeLast('.jpg');
+
+                $icons->put((string) $name, [
+                    'id' => (string) $name->slug(),
+                    'name' => (string) $name,
+                    'url' => $url,
+                ]);
+            }
         }
 
-        return $icons->sortBy('name')->all();
+        return $icons->sortBy('name');
     }
 }
