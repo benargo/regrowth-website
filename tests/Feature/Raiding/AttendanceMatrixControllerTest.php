@@ -11,12 +11,10 @@ use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
 use App\Models\Raids\Report;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -38,13 +36,6 @@ class AttendanceMatrixControllerTest extends TestCase
             ['name' => 'Officer', 'position' => 5, 'is_visible' => true]
         );
         $officerRole->givePermissionTo($permission);
-
-        // Mock external Blizzard API services used by the matrix controller action.
-        $this->mock(BlizzardService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('findPlayableClass')->andReturn([]);
-            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
-            $mock->shouldReceive('getGuildRoster')->andReturn(['members' => []]);
-        });
     }
 
     // ==================== matrix: Access Control ====================

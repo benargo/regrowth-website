@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Models\DiscordRole;
@@ -11,7 +12,6 @@ use App\Models\LootCouncil\CommentReaction;
 use App\Models\LootCouncil\Item;
 use App\Models\Permission;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -41,19 +41,15 @@ class CommentResourceTest extends TestCase
     {
         Storage::fake('public');
 
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('findItem')->andReturn([
-            'name' => 'Test Item',
-            'item_class' => ['name' => 'Armor'],
-            'item_subclass' => ['name' => 'Plate'],
-            'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
-            'inventory_type' => ['name' => 'Head'],
-        ]);
-
-        $this->app->instance(BlizzardService::class, $blizzardService);
-
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: [
+                'name' => 'Test Item',
+                'item_class' => ['name' => 'Armor'],
+                'item_subclass' => ['name' => 'Plate'],
+                'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
+                'inventory_type' => ['name' => 'Head'],
+            ], status: 200),
             GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
             FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);

@@ -2,10 +2,12 @@
 
 namespace Tests\SmokeTest;
 
-use App\Services\Blizzard\BlizzardService;
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class PublicPagesTest extends TestCase
@@ -24,14 +26,14 @@ class PublicPagesTest extends TestCase
     #[Test]
     public function roster_page_loads(): void
     {
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getPlayableClasses')->andReturn(['classes' => []]);
-            $mock->shouldReceive('getPlayableRaces')->andReturn(['races' => []]);
-            $mock->shouldReceive('getGuildRoster')->andReturn(['members' => []]);
-            $mock->shouldReceive('findPlayableClass')->andReturn([]);
-            $mock->shouldReceive('findPlayableRace')->andReturn([]);
-            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
-        });
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetPlayableRaceIndexRequest::class => MockResponse::make(body: ['races' => []], status: 200),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+        ]);
 
         $response = $this->get('/roster');
 

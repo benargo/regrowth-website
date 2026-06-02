@@ -9,11 +9,9 @@ use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\Raids\Report;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -39,12 +37,6 @@ class AttendanceNamesControllerTest extends TestCase
         $officerRole->givePermissionTo($permission);
 
         $this->officer = User::factory()->officer()->create();
-
-        $this->mock(BlizzardService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('findPlayableClass')->andReturn([]);
-            $mock->shouldReceive('getPlayableClassMedia')->andReturn(['assets' => []]);
-            $mock->shouldReceive('getGuildRoster')->andReturn(['members' => []]);
-        });
     }
 
     // ==================== Access Control ====================
