@@ -37,4 +37,21 @@ enum Instance: string
     case ArathiBasin = 'Arathi Basin';
     case EyeOfTheStorm = 'Eye of the Storm';
     case WarsongGulch = 'Warsong Gulch';
+
+    /**
+     * Get the daily quest reward items for this instance.
+     * Only battleground instances have daily quest rewards.
+     *
+     * @return array<int, array{item_id: int, quantity: int}>
+     */
+    public function dailyQuestRewards(): array
+    {
+        return match ($this) {
+            self::AlteracValley => [['item_id' => 20560, 'quantity' => 3]],
+            self::ArathiBasin => [['item_id' => 20559, 'quantity' => 3]],
+            self::EyeOfTheStorm => [['item_id' => 29024, 'quantity' => 3]],
+            self::WarsongGulch => [['item_id' => 20558, 'quantity' => 3]],
+            default => [],
+        };
+    }
 }
