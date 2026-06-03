@@ -14,7 +14,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\Item;
-use App\Services\Blizzard\Exceptions\BlizzardApiException;
+use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Saloon\Exceptions\Request\FatalRequestException;
@@ -728,7 +728,7 @@ class ItemSeeder extends Seeder
 
                 /** @var MediaData $mediaDto */
                 $mediaDto = $this->blizzard->send(new GetItemMediaRequest($item['id']))->dto();
-            } catch (ItemNotFoundException|BlizzardApiException|FatalRequestException $e) {
+            } catch (ItemNotFoundException|BlizzardRequestException|FatalRequestException $e) {
                 $this->command?->warn("  ⚠ [{$item['id']}] Skipped — {$e->getMessage()}");
 
                 continue;

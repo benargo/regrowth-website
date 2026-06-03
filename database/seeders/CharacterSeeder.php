@@ -9,7 +9,7 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Models\Character;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\Exceptions\BlizzardApiException;
+use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -40,7 +40,7 @@ class CharacterSeeder extends Seeder
                         ? $this->blizzard->send(new GetPlayableRaceRequest($raceId))->dto()
                         : null,
                 ], ['touch' => false]);
-            } catch (CharacterNotFoundException|InvalidRaceException|BlizzardApiException $e) {
+            } catch (CharacterNotFoundException|InvalidRaceException|BlizzardRequestException $e) {
                 Log::warning("Failed to fetch profile for character {$character->name}. Skipping.", ['error' => $e->getMessage()]);
             }
         });
