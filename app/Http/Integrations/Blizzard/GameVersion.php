@@ -2,6 +2,8 @@
 
 namespace App\Http\Integrations\Blizzard;
 
+use ValueError;
+
 enum GameVersion: string
 {
     case Anniversary = 'Burning Crusade Classic (Anniversary)';
@@ -17,7 +19,7 @@ enum GameVersion: string
             }
         }
 
-        throw new \ValueError("\"$name\" is not a valid name for enum ".self::class);
+        throw new ValueError("\"$name\" is not a valid name for enum ".self::class);
     }
 
     /**
