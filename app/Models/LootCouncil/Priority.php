@@ -2,7 +2,7 @@
 
 namespace App\Models\LootCouncil;
 
-use App\Contracts\Models\HasBlizzardIcons;
+use App\Contracts\HasBlizzardIcons;
 use App\Models\Item;
 use Database\Factories\LootCouncil\PriorityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

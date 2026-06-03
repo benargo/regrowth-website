@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Models;
 
-use App\Contracts\Models\HasBlizzardIcons;
+use App\Contracts\HasBlizzardIcons;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootCouncil\Priority;

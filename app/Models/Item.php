@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Contracts\Models\HasBlizzardIcons;
+use App\Contracts\HasBlizzardIcons;
 use App\Events\ItemSaved;
 use Database\Factories\ItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

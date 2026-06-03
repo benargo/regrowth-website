@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models\LootCouncil;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -60,6 +61,12 @@ class PriorityTest extends ModelTestCase
     public function it_implements_has_media(): void
     {
         $this->assertInstanceOf(HasMedia::class, new Priority);
+    }
+
+    #[Test]
+    public function it_implements_has_blizzard_icons(): void
+    {
+        $this->assertInstanceOf(HasBlizzardIcons::class, new Priority);
     }
 
     #[Test]
