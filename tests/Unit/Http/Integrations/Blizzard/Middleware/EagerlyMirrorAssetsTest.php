@@ -4,20 +4,37 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Middleware;
 
 use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
+
+#[EagerlyMirrorsAssets]
+class StubItemMediaRequest extends Request
+{
+    protected ?string $response = GetItemMediaResponse::class;
+
+    protected Method $method = Method::GET;
+
+    public function __construct(protected int $itemId) {}
+
+    public function resolveEndpoint(): string
+    {
+        return "/data/wow/media/item/{$this->itemId}";
+    }
+}
 
 class EagerlyMirrorAssetsTest extends BlizzardTestCase
 {
     #[Test]
-    public function get_item_media_request_carries_the_eagerly_mirrors_assets_attribute(): void
+    public function stub_request_carries_the_eagerly_mirrors_assets_attribute(): void
     {
-        $attributes = (new \ReflectionClass(GetItemMediaRequest::class))
+        $attributes = (new \ReflectionClass(StubItemMediaRequest::class))
             ->getAttributes(EagerlyMirrorsAssets::class);
 
         $this->assertNotEmpty($attributes);
@@ -29,7 +46,7 @@ class EagerlyMirrorAssetsTest extends BlizzardTestCase
         Storage::fake('public');
         $this->fakeItemMediaRequest();
 
-        $this->makeConnector()->send(new GetItemMediaRequest(19019));
+        $this->makeConnector()->send(new StubItemMediaRequest(19019));
 
         Storage::disk('public')->assertExists('blizzard-cdn/icons/56/foo.jpg');
         Storage::disk('public')->assertExists('blizzard-cdn/icons/256/foo.jpg');
@@ -41,7 +58,7 @@ class EagerlyMirrorAssetsTest extends BlizzardTestCase
         Storage::fake('public');
         $this->fakeItemMediaRequest();
 
-        $response = $this->makeConnector()->send(new GetItemMediaRequest(19019));
+        $response = $this->makeConnector()->send(new StubItemMediaRequest(19019));
 
         /** @var MediaData $dto */
         $dto = $response->dto();
@@ -56,7 +73,7 @@ class EagerlyMirrorAssetsTest extends BlizzardTestCase
     {
         Saloon::fake([
             'eu.battle.net/oauth/token' => $this->tokenMock(),
-            GetItemMediaRequest::class => MockResponse::make(body: [
+            StubItemMediaRequest::class => MockResponse::make(body: [
                 'id' => 19019,
                 'assets' => [
                     [
