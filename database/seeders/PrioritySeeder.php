@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Seeder;
 
-class PrioritySeeder extends Seeder
+class PrioritySeeder extends Seeder implements HasBlizzardIcons
 {
     public function __construct(
         private RenderConnector $renderConnector,
@@ -113,7 +114,8 @@ class PrioritySeeder extends Seeder
             $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
 
             $model->addMediaFromString($response->body())
-                ->usingFileName("{$iconName}.jpg")
+                ->usingFileName($iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION)
+                ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
                 ->toMediaCollection('blizzard_icons');
         }
     }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Database\Seeders;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\LootCouncil\Priority;
 use Database\Seeders\PrioritySeeder;
@@ -29,9 +30,12 @@ class PrioritySeederTest extends TestCase
         ]);
     }
 
-    private function runSeeder(): void
+    #[Test]
+    public function priority_model_implements_has_blizzard_icons(): void
     {
-        Model::unguarded(fn () => app(PrioritySeeder::class)->run());
+        $this->assertInstanceOf(HasBlizzardIcons::class, new Priority);
+        $this->assertSame(56, Priority::BLIZZARD_ICON_SIZE);
+        $this->assertSame('jpg', Priority::BLIZZARD_ICON_FILE_EXTENSION);
     }
 
     #[Test]
@@ -60,6 +64,10 @@ class PrioritySeederTest extends TestCase
             'collection_name' => 'blizzard_icons',
             'file_name' => 'inv_shield_04.jpg',
         ]);
+
+        $media = $tank->getFirstMedia('blizzard_icons');
+        $this->assertSame(56, $media->getCustomProperty('size'));
+        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/inv_shield_04.jpg');
     }
 
     #[Test]
@@ -111,5 +119,12 @@ class PrioritySeederTest extends TestCase
         $this->runSeeder();
 
         $this->assertSame(1, Priority::where('title', 'Tank')->count());
+    }
+
+    // ============ Helpers ============
+
+    private function runSeeder(): void
+    {
+        Model::unguarded(fn () => app(PrioritySeeder::class)->run());
     }
 }
