@@ -17,4 +17,9 @@ interface HasBlizzardIcons
      * The name of the bundled questionmark icon used as a placeholder/fallback across the app.
      */
     public const BLIZZARD_UNKNOWN_ICON = 'inv_misc_questionmark';
+
+    /**
+     * The default file extension used for Blizzard icons on the render CDN.
+     */
+    public const BLIZZARD_ICON_FILE_EXTENSION = 'jpg';
 }
