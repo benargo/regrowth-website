@@ -44,12 +44,26 @@ class AttachBlizzardIconToItem implements ShouldQueue
             return;
         }
 
-        $fileName = (string) Str::of($this->assetUrl)->afterLast('/')->before('?');
-        $body = $renderConnector->send(new FetchAssetRequest($this->assetUrl))->body();
+        $url = $this->retailAssetUrl();
+        $fileName = (string) Str::of($url)->afterLast('/')->before('?');
+        $body = $renderConnector->send(new FetchAssetRequest($url))->body();
 
         $item->addMediaFromString($body)
             ->usingFileName($fileName)
             ->withCustomProperties(['size' => 56])
             ->toMediaCollection('blizzard_icons');
+    }
+
+    /**
+     * Rewrite the asset URL to the Retail-region equivalent by stripping the
+     * "classicann-" prefix from the region path segment (e.g. "classicann-eu" → "eu").
+     * The seeder dispatches this job only after a classicann 403, so Retail is always correct.
+     */
+    public function retailAssetUrl(): string
+    {
+        $path = parse_url($this->assetUrl, PHP_URL_PATH);
+        $retailPath = preg_replace('#^/classicann-#', '/', $path);
+
+        return 'https://render.worldofwarcraft.com'.$retailPath;
     }
 }

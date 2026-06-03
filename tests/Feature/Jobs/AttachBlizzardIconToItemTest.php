@@ -121,4 +121,58 @@ class AttachBlizzardIconToItemTest extends TestCase
 
         (new AttachBlizzardIconToItem($item->id, $assetUrl))->handle(app(RenderConnector::class));
     }
+
+    // ==================== Retail Asset URL ====================
+
+    #[Group('retail-asset-url')]
+    #[Test]
+    public function retail_asset_url_strips_classicann_prefix_from_region(): void
+    {
+        $cases = [
+            'https://render.worldofwarcraft.com/classicann-eu/icons/56/inv_jewelry_ring_57.jpg' => 'https://render.worldofwarcraft.com/eu/icons/56/inv_jewelry_ring_57.jpg',
+            'https://render.worldofwarcraft.com/classicann-us/icons/56/spell_fire_fireball.jpg' => 'https://render.worldofwarcraft.com/us/icons/56/spell_fire_fireball.jpg',
+            'https://render.worldofwarcraft.com/classicann-kr/icons/56/ability_warrior_charge.jpg' => 'https://render.worldofwarcraft.com/kr/icons/56/ability_warrior_charge.jpg',
+        ];
+
+        foreach ($cases as $input => $expected) {
+            $job = new AttachBlizzardIconToItem(1, $input);
+            $this->assertSame($expected, $job->retailAssetUrl(), "Failed for: {$input}");
+        }
+    }
+
+    #[Group('retail-asset-url')]
+    #[Test]
+    public function retail_asset_url_is_unchanged_when_url_already_uses_retail_region(): void
+    {
+        $job = new AttachBlizzardIconToItem(1, 'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg');
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
+            $job->retailAssetUrl(),
+        );
+    }
+
+    #[Group('retail-asset-url')]
+    #[Test]
+    public function it_fetches_and_attaches_using_the_retail_url(): void
+    {
+        $item = Item::factory()->create();
+
+        Saloon::fake([
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $assetUrl = "https://render.worldofwarcraft.com/classicann-eu/icons/56/item_{$item->id}.jpg";
+
+        (new AttachBlizzardIconToItem($item->id, $assetUrl))->handle(app(RenderConnector::class));
+
+        $this->assertTrue($item->fresh()->hasMedia('blizzard_icons'));
+
+        $media = $item->fresh()->getFirstMedia('blizzard_icons');
+        $this->assertSame("item_{$item->id}.jpg", $media->file_name);
+
+        Saloon::assertSent(function (FetchAssetRequest $request) use ($item): bool {
+            return str_contains($request->resolveEndpoint(), "/eu/icons/56/item_{$item->id}.jpg");
+        });
+    }
 }

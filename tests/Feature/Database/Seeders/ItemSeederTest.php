@@ -5,6 +5,7 @@ namespace Tests\Feature\Database\Seeders;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Jobs\AttachBlizzardIconToItem;
 use App\Models\Item;
 use Database\Seeders\BossSeeder;
 use Database\Seeders\ItemSeeder;
@@ -12,6 +13,7 @@ use Database\Seeders\PhaseSeeder;
 use Database\Seeders\RaidSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -271,5 +273,51 @@ class ItemSeederTest extends TestCase
         $this->seedWithLimitedItems();
 
         $this->assertSame($mediaCountAfterFirstRun, Media::count());
+    }
+
+    #[Test]
+    public function seeder_dispatches_retry_job_when_icon_fetch_returns_403(): void
+    {
+        Queue::fake();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(
+                body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
+                status: 200,
+            ),
+            GetItemRequest::class => function (PendingRequest $request): MockResponse {
+                return MockResponse::make(body: $this->makeItemResponse($this->extractItemIdFromRequest($request)), status: 200);
+            },
+            GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
+                return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
+            },
+            FetchAssetRequest::class => function (PendingRequest $request): MockResponse {
+                if (str_contains($request->getUrl(), 'item_28453.jpg')) {
+                    return MockResponse::make(body: ['code' => 403, 'detail' => 'Forbidden'], status: 403);
+                }
+
+                return MockResponse::make(body: 'BINARY', status: 200);
+            },
+        ]);
+
+        $this->seedWithLimitedItems();
+
+        // Item 28453 should be persisted with its name set before the icon fetch fails
+        $item28453 = Item::find(28453);
+        $this->assertNotNull($item28453);
+        $this->assertSame('Item 28453', $item28453->name);
+        // No icon yet — job is deferred
+        $this->assertFalse($item28453->hasMedia('blizzard_icons'));
+
+        // The retry job should have been dispatched
+        Queue::assertPushed(AttachBlizzardIconToItem::class, function (AttachBlizzardIconToItem $job) {
+            return $job->itemId === 28453;
+        });
+
+        // Other items should still get their icons immediately
+        $item28454 = Item::find(28454);
+        $this->assertNotNull($item28454);
+        $this->assertSame('Item 28454', $item28454->name);
+        $this->assertTrue($item28454->hasMedia('blizzard_icons'));
     }
 }
