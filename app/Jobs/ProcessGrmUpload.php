@@ -17,7 +17,7 @@ use App\Models\GuildRank;
 use App\Models\User;
 use App\Notifications\GrmUploadCompleted;
 use App\Notifications\GrmUploadFailed;
-use App\Services\Blizzard\Exceptions\BlizzardApiException;
+use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Notifications\NotifiableChannel;
@@ -284,7 +284,7 @@ class ProcessGrmUpload implements ShouldQueue
                 $name,
             ))->dto();
             $characterId = $status->id;
-        } catch (BlizzardApiException $e) {
+        } catch (BlizzardRequestException $e) {
             Log::error('GRM Upload: Could not fetch character data from Blizzard API.', [
                 'name' => $name,
                 'error' => $e->getMessage(),
@@ -372,7 +372,7 @@ class ProcessGrmUpload implements ShouldQueue
                 ]);
 
                 continue;
-            } catch (CharacterNotFoundException|BlizzardApiException $e) {
+            } catch (CharacterNotFoundException|BlizzardRequestException $e) {
                 Log::debug('GRM Upload: Could not process alt character', [
                     'main' => $mainCharacter->name,
                     'alt' => $altName,
