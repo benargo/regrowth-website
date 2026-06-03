@@ -4,6 +4,7 @@ use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossStrategyController;
+use App\Http\Controllers\DailyQuestsAuditController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
 use App\Http\Controllers\Dashboard\AddonSchemaController;
@@ -132,7 +133,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      */
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
-    Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])->name('daily-quests.audit');
+    Route::get('/daily-quests/audit', DailyQuestsAuditController::class)->name('daily-quests.audit');
 
     /**
      * Event templates

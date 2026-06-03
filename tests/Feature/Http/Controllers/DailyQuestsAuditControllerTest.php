@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\DailyQuests;
+namespace Tests\Feature\Http\Controllers;
 
 use App\Models\DiscordNotification;
 use App\Models\DiscordRole;
@@ -25,7 +25,7 @@ class OtherDiscordNotification extends Notification
     }
 }
 
-class AuditLogTest extends DashboardTestCase
+class DailyQuestsAuditControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
     {
