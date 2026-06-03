@@ -8,6 +8,7 @@ use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\Item;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -69,6 +70,52 @@ class AttachBlizzardIconToModelTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
 
         new AttachBlizzardIconToModel(\stdClass::class, 1, 'https://example.test/icon.jpg');
+    }
+
+    // ==================== Middleware ====================
+
+    #[Group('middleware')]
+    #[Test]
+    public function it_applies_without_overlapping_middleware(): void
+    {
+        $job = new AttachBlizzardIconToModel(Item::class, 42, 'https://example.test/icon.jpg');
+        $middleware = $job->middleware();
+
+        $this->assertCount(1, $middleware);
+        $this->assertInstanceOf(WithoutOverlapping::class, $middleware[0]);
+    }
+
+    #[Group('middleware')]
+    #[Test]
+    public function it_scopes_the_overlap_lock_to_the_icon_name(): void
+    {
+        $jobA = new AttachBlizzardIconToModel(Item::class, 1, 'https://example.test/icon_a.jpg');
+        $jobB = new AttachBlizzardIconToModel(Item::class, 2, 'https://example.test/icon_b.jpg');
+        $jobC = new AttachBlizzardIconToModel(Item::class, 3, 'https://example.test/icon_a.jpg');
+
+        /** @var WithoutOverlapping $middlewareA */
+        $middlewareA = $jobA->middleware()[0];
+        /** @var WithoutOverlapping $middlewareB */
+        $middlewareB = $jobB->middleware()[0];
+        /** @var WithoutOverlapping $middlewareC */
+        $middlewareC = $jobC->middleware()[0];
+
+        $this->assertSame('blizzard-icon:icon_a.jpg', $middlewareA->key);
+        $this->assertSame('blizzard-icon:icon_b.jpg', $middlewareB->key);
+        $this->assertSame($middlewareA->key, $middlewareC->key);
+        $this->assertNotSame($middlewareA->key, $middlewareB->key);
+    }
+
+    #[Group('middleware')]
+    #[Test]
+    public function it_releases_the_overlapping_job_after_sixty_seconds(): void
+    {
+        $job = new AttachBlizzardIconToModel(Item::class, 1, 'https://example.test/icon.jpg');
+
+        /** @var WithoutOverlapping $middleware */
+        $middleware = $job->middleware()[0];
+
+        $this->assertSame(60, $middleware->releaseAfter);
     }
 
     // ==================== Handle ====================

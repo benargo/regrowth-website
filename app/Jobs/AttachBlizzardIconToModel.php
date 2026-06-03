@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -24,6 +25,17 @@ class AttachBlizzardIconToModel implements ShouldQueue
         if (! is_a($this->modelClass, HasBlizzardIcons::class, true)) {
             throw new InvalidArgumentException("{$this->modelClass} must implement HasBlizzardIcons.");
         }
+    }
+
+    /**
+     * @return array<int, WithoutOverlapping>
+     */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping("blizzard-icon:{$this->getIconName($this->assetUrl)}"))
+                ->releaseAfter(60),
+        ];
     }
 
     /**
@@ -51,7 +63,7 @@ class AttachBlizzardIconToModel implements ShouldQueue
         }
 
         $url = $this->retailAssetUrl();
-        $fileName = (string) Str::of($url)->afterLast('/')->before('?');
+        $fileName = $this->getIconName($url);
         $body = $renderConnector->send(new FetchAssetRequest($url))->body();
 
         $model->addMediaFromString($body)
@@ -71,5 +83,14 @@ class AttachBlizzardIconToModel implements ShouldQueue
         $retailPath = preg_replace('#^/classicann-#', '/', $path);
 
         return 'https://render.worldofwarcraft.com'.$retailPath;
+    }
+
+    /**
+     * Extract the icon file name from the URL for use as the media's file_name.
+     * This assumes the URL is well-formed and that the file name is the last segment of the path, which is consistent with Blizzard CDN URLs.
+     */
+    private function getIconName(string $url): string
+    {
+        return (string) Str::of($url)->afterLast('/')->before('?');
     }
 }
