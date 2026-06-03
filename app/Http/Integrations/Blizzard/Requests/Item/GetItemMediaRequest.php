@@ -2,7 +2,6 @@
 
 namespace App\Http\Integrations\Blizzard\Requests\Item;
 
-use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
@@ -11,7 +10,6 @@ use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
 use Saloon\Http\Request;
 
-#[EagerlyMirrorsAssets]
 class GetItemMediaRequest extends Request implements Cacheable
 {
     use HasCaching;
