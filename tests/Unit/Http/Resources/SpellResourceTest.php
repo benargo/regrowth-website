@@ -58,7 +58,7 @@ class SpellResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_icon(): void
+    public function it_returns_null_icon(): void
     {
         $spell = Spell::factory()->create();
 

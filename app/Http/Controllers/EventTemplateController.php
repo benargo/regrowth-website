@@ -92,7 +92,7 @@ class EventTemplateController extends Controller
                 return PlayableClassResource::collection(PlayableClass::orderBy('name')->get())->resolve($request);
             }),
             'spells' => Inertia::optional(function () use ($request) {
-                return SpellResource::collection(Spell::with('media')->get())->resolve($request);
+                return SpellResource::collection(Spell::all())->resolve($request);
             }),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
                 'size' => 56,
