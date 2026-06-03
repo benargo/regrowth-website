@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Database\Seeders;
 
+use App\Enums\ItemQuality;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
@@ -127,6 +128,7 @@ class ItemSeederTest extends TestCase
 
         $this->assertNotNull($item);
         $this->assertSame('Item 28453', $item->name);
+        $this->assertSame(ItemQuality::UNCOMMON, $item->quality);
         $this->assertTrue($item->hasMedia('blizzard_icons'));
 
         $media = $item->getFirstMedia('blizzard_icons');
@@ -164,6 +166,7 @@ class ItemSeederTest extends TestCase
             'boss_id' => 1,
             'group' => null,
             'name' => 'Old Name',
+            'quality' => ItemQuality::COMMON->value,
         ]);
 
         $this->seedWithLimitedItems();

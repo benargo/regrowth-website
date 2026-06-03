@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Enums\ItemQuality;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootCouncil\Priority;
@@ -47,6 +48,7 @@ class ItemTest extends ModelTestCase
             'raid_id',
             'boss_id',
             'name',
+            'quality',
             'group',
             'notes',
         ]);
@@ -292,6 +294,25 @@ class ItemTest extends ModelTestCase
         $item = $this->factory()->withName('Blessed Blade of the Windseeker')->create();
 
         $this->assertSame('Blessed Blade of the Windseeker', $item->name);
+    }
+
+    #[Test]
+    public function quality_is_cast_to_item_quality_enum(): void
+    {
+        $item = $this->factory()->withQuality(ItemQuality::EPIC)->create();
+
+        $item->fresh();
+
+        $this->assertInstanceOf(ItemQuality::class, $item->quality);
+        $this->assertSame(ItemQuality::EPIC, $item->quality);
+    }
+
+    #[Test]
+    public function factory_with_quality_state_sets_quality(): void
+    {
+        $item = $this->factory()->withQuality(ItemQuality::RARE)->create();
+
+        $this->assertSame(ItemQuality::RARE, $item->quality);
     }
 
     #[Test]

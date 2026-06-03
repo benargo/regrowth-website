@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ItemQuality;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\Raid;
@@ -31,6 +32,7 @@ class ItemFactory extends Factory
             'raid_id' => null,
             'boss_id' => null,
             'name' => null,
+            'quality' => fake()->randomElement(ItemQuality::cases()),
             'group' => fake()->optional(0.5)->randomElement(['Tokens', 'Weapons', 'Armor', 'Trinkets', 'Rings']),
             'notes' => null,
         ];
@@ -98,6 +100,16 @@ class ItemFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'notes' => $notes ?? fake()->sentence(),
+        ]);
+    }
+
+    /**
+     * Set the item quality.
+     */
+    public function withQuality(?ItemQuality $quality = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'quality' => $quality ?? fake()->randomElement(ItemQuality::cases()),
         ]);
     }
 }

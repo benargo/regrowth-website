@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Enums\ItemQuality;
 use App\Events\ItemSaved;
 use Database\Factories\ItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,8 +29,18 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
         'raid_id',
         'boss_id',
         'name',
+        'quality',
         'group',
         'notes',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'quality' => ItemQuality::class,
     ];
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ItemQuality;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +18,11 @@ return new class extends Migration
 
         Schema::table('lootcouncil_items', function (Blueprint $table) {
             $table->dropColumn('icon');
+        });
+
+        Schema::table('lootcouncil_items', function (Blueprint $table) {
             $table->unsignedBigInteger('raid_id')->nullable()->change();
+            $table->enum('quality', ItemQuality::cases())->after('name');
         });
 
         Schema::rename('lootcouncil_items', 'items');
@@ -35,7 +40,10 @@ return new class extends Migration
         Schema::rename('items', 'lootcouncil_items');
 
         Schema::table('lootcouncil_items', function (Blueprint $table) {
-            $table->unsignedBigInteger('raid_id')->nullable(false)->change();
+            $table->dropColumn('quality');
+        });
+
+        Schema::table('lootcouncil_items', function (Blueprint $table) {
             $table->json('icon')->nullable()->after('name');
         });
     }

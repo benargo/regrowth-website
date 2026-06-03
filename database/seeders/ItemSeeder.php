@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ItemQuality;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
@@ -738,6 +739,7 @@ class ItemSeeder extends Seeder
                     ['id' => $item['id']],
                     [
                         'name' => $itemDto->name,
+                        'quality' => ItemQuality::{$itemDto->quality->type},
                         'raid_id' => $item['raid_id'],
                         'boss_id' => $item['boss_id'],
                         'group' => $item['group'],
