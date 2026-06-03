@@ -2,7 +2,7 @@
 
 namespace App\Support\MediaLibrary;
 
-use App\Contracts\Models\HasBlizzardIcons;
+use App\Contracts\HasBlizzardIcons;
 use Illuminate\Support\Facades\URL;
 use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
 
@@ -17,7 +17,7 @@ use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
  * getTemporaryUrl(), conversion URL, and responsive image URL methods deliberately
  * keep their default behaviour.
  */
-class UrlGenerator extends DefaultUrlGenerator
+class UrlGenerator extends DefaultUrlGenerator implements HasBlizzardIcons
 {
     /**
      * Return a signed icons.show URL for HasBlizzardIcons media; delegate to the
@@ -26,7 +26,7 @@ class UrlGenerator extends DefaultUrlGenerator
     public function getUrl(): string
     {
         if (is_a($this->media->model, HasBlizzardIcons::class) && $this->media->collection_name === 'blizzard_icons') {
-            $size = (int) ($this->media->getCustomProperty('size') ?? 56);
+            $size = (int) ($this->media->getCustomProperty('size') ?? self::BLIZZARD_ICON_SIZE);
 
             return URL::signedRoute('icons.show', [
                 'size' => $size,

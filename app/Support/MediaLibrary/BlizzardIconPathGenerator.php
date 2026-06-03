@@ -2,6 +2,7 @@
 
 namespace App\Support\MediaLibrary;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
@@ -17,7 +18,7 @@ use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
  * the media's file_name. Mirrors the `blizzard-cdn` prefix used by MirrorPaths so
  * the two systems cannot drift.
  */
-class BlizzardIconPathGenerator implements PathGenerator
+class BlizzardIconPathGenerator implements HasBlizzardIcons, PathGenerator
 {
     private const PREFIX = MirrorPaths::PREFIX;
 
@@ -60,7 +61,7 @@ class BlizzardIconPathGenerator implements PathGenerator
      */
     private function directory(Media $media): string
     {
-        $size = (int) ($media->getCustomProperty('size') ?? 56);
+        $size = (int) ($media->getCustomProperty('size') ?? self::BLIZZARD_ICON_SIZE);
 
         return self::PREFIX."/icons/{$size}/";
     }

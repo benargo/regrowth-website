@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Support\MediaLibrary;
 
-use App\Contracts\Models\HasBlizzardIcons;
+use App\Contracts\HasBlizzardIcons;
 use App\Models\Boss;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
