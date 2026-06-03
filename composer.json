@@ -24,6 +24,7 @@
         "saloonphp/pagination-plugin": "^2.3",
         "saloonphp/rate-limit-plugin": "^2",
         "saloonphp/saloon": "^4",
+        "saloonphp/xml-wrangler": "^1.5",
         "socialiteproviders/discord": "^4.2",
         "spatie/laravel-data": "^4.22",
         "spatie/laravel-medialibrary": "^11.22",
