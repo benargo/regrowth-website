@@ -6,6 +6,8 @@ use App\Http\Resources\PlayableClassResource;
 use App\Models\PlayableClass;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -74,5 +76,23 @@ class PlayableClassResourceTest extends TestCase
         $array = (new PlayableClassResource($playableClass))->toArray(new Request);
 
         $this->assertCount(4, $array);
+    }
+
+    #[Test]
+    public function it_returns_signed_icon_url_when_media_attached(): void
+    {
+        Storage::fake('public');
+
+        $playableClass = PlayableClass::factory()->create();
+        $playableClass->addMediaFromString('BINARY')
+            ->usingFileName('classicon_7.jpg')
+            ->withCustomProperties(['size' => 56])
+            ->toMediaCollection('blizzard_icons');
+
+        $array = (new PlayableClassResource($playableClass))->toArray(new Request);
+
+        $this->assertNotNull($array['icon_url']);
+        $this->assertStringContainsString('/icons/56/classicon_7.jpg', $array['icon_url']);
+        $this->assertTrue(URL::hasValidSignature(request()->create($array['icon_url'])));
     }
 }
