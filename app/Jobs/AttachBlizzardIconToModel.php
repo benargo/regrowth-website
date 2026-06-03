@@ -2,23 +2,29 @@
 
 namespace App\Jobs;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use App\Models\Item;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
-class AttachBlizzardIconToItem implements ShouldQueue
+class AttachBlizzardIconToModel implements ShouldQueue
 {
     use Queueable;
 
     public int $tries = 3;
 
     public function __construct(
-        public readonly int $itemId,
+        public readonly string $modelClass,
+        public readonly int|string $modelKey,
         public readonly string $assetUrl,
-    ) {}
+    ) {
+        if (! is_a($this->modelClass, HasBlizzardIcons::class, true)) {
+            throw new InvalidArgumentException("{$this->modelClass} must implement HasBlizzardIcons.");
+        }
+    }
 
     /**
      * @return array<int, int>
@@ -33,14 +39,14 @@ class AttachBlizzardIconToItem implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['blizzard', "item:{$this->itemId}"];
+        return ['blizzard', 'model:'.class_basename($this->modelClass).':'.$this->modelKey];
     }
 
     public function handle(RenderConnector $renderConnector): void
     {
-        $item = Item::findOrFail($this->itemId);
+        $model = ($this->modelClass)::findOrFail($this->modelKey);
 
-        if ($item->hasMedia('blizzard_icons')) {
+        if ($model->hasMedia('blizzard_icons')) {
             return;
         }
 
@@ -48,9 +54,9 @@ class AttachBlizzardIconToItem implements ShouldQueue
         $fileName = (string) Str::of($url)->afterLast('/')->before('?');
         $body = $renderConnector->send(new FetchAssetRequest($url))->body();
 
-        $item->addMediaFromString($body)
+        $model->addMediaFromString($body)
             ->usingFileName($fileName)
-            ->withCustomProperties(['size' => 56])
+            ->withCustomProperties(['size' => HasBlizzardIcons::BLIZZARD_ICON_SIZE])
             ->toMediaCollection('blizzard_icons');
     }
 

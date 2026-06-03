@@ -11,7 +11,7 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use App\Jobs\AttachBlizzardIconToItem;
+use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\Item;
 use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use Illuminate\Database\Seeder;
@@ -758,7 +758,7 @@ class ItemSeeder extends Seeder
                             ->withCustomProperties(['size' => 56])
                             ->toMediaCollection('blizzard_icons');
                     } catch (ForbiddenException $e) {
-                        AttachBlizzardIconToItem::dispatch($model->id, $asset->value)
+                        AttachBlizzardIconToModel::dispatch(Item::class, $model->id, $asset->value)
                             ->delay(now()->addMinutes(5));
                         $this->command?->warn("  ⚠ [{$item['id']}] Icon deferred (403) — retrying in 5 min");
                     } catch (MediaNotFoundException|RequestException $e) {

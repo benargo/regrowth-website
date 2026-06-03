@@ -4,7 +4,7 @@ namespace Tests\Feature\Jobs;
 
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use App\Jobs\AttachBlizzardIconToItem;
+use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\Item;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +16,7 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
-class AttachBlizzardIconToItemTest extends TestCase
+class AttachBlizzardIconToModelTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -32,14 +32,14 @@ class AttachBlizzardIconToItemTest extends TestCase
     #[Test]
     public function it_implements_should_queue(): void
     {
-        $this->assertInstanceOf(ShouldQueue::class, new AttachBlizzardIconToItem(1, 'https://example.test/icon.jpg'));
+        $this->assertInstanceOf(ShouldQueue::class, new AttachBlizzardIconToModel(Item::class, 1, 'https://example.test/icon.jpg'));
     }
 
     #[Group('job-contract')]
     #[Test]
     public function it_has_three_total_attempts(): void
     {
-        $job = new AttachBlizzardIconToItem(1, 'https://example.test/icon.jpg');
+        $job = new AttachBlizzardIconToModel(Item::class, 1, 'https://example.test/icon.jpg');
 
         $this->assertSame(3, $job->tries);
     }
@@ -48,7 +48,7 @@ class AttachBlizzardIconToItemTest extends TestCase
     #[Test]
     public function it_has_five_minute_backoff_between_attempts(): void
     {
-        $job = new AttachBlizzardIconToItem(1, 'https://example.test/icon.jpg');
+        $job = new AttachBlizzardIconToModel(Item::class, 1, 'https://example.test/icon.jpg');
 
         $this->assertSame([300, 300], $job->backoff());
     }
@@ -57,16 +57,25 @@ class AttachBlizzardIconToItemTest extends TestCase
     #[Test]
     public function it_has_the_correct_tags(): void
     {
-        $job = new AttachBlizzardIconToItem(42, 'https://example.test/icon.jpg');
+        $job = new AttachBlizzardIconToModel(Item::class, 42, 'https://example.test/icon.jpg');
 
-        $this->assertSame(['blizzard', 'item:42'], $job->tags());
+        $this->assertSame(['blizzard', 'model:Item:42'], $job->tags());
+    }
+
+    #[Group('job-contract')]
+    #[Test]
+    public function it_throws_when_model_class_does_not_implement_has_blizzard_icons(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        new AttachBlizzardIconToModel(\stdClass::class, 1, 'https://example.test/icon.jpg');
     }
 
     // ==================== Handle ====================
 
     #[Group('handle')]
     #[Test]
-    public function it_fetches_the_asset_and_attaches_media_to_the_item(): void
+    public function it_fetches_the_asset_and_attaches_media_to_the_model(): void
     {
         $item = Item::factory()->create();
 
@@ -76,7 +85,7 @@ class AttachBlizzardIconToItemTest extends TestCase
 
         $assetUrl = "https://render.worldofwarcraft.com/eu/icons/56/item_{$item->id}.jpg";
 
-        (new AttachBlizzardIconToItem($item->id, $assetUrl))->handle(app(RenderConnector::class));
+        (new AttachBlizzardIconToModel(Item::class, $item->id, $assetUrl))->handle(app(RenderConnector::class));
 
         $this->assertTrue($item->fresh()->hasMedia('blizzard_icons'));
 
@@ -96,7 +105,7 @@ class AttachBlizzardIconToItemTest extends TestCase
         ]);
 
         $assetUrl = "https://render.worldofwarcraft.com/eu/icons/56/item_{$item->id}.jpg";
-        $job = new AttachBlizzardIconToItem($item->id, $assetUrl);
+        $job = new AttachBlizzardIconToModel(Item::class, $item->id, $assetUrl);
 
         $job->handle(app(RenderConnector::class));
         $job->handle(app(RenderConnector::class));
@@ -119,7 +128,7 @@ class AttachBlizzardIconToItemTest extends TestCase
 
         $this->expectException(RequestException::class);
 
-        (new AttachBlizzardIconToItem($item->id, $assetUrl))->handle(app(RenderConnector::class));
+        (new AttachBlizzardIconToModel(Item::class, $item->id, $assetUrl))->handle(app(RenderConnector::class));
     }
 
     // ==================== Retail Asset URL ====================
@@ -135,7 +144,7 @@ class AttachBlizzardIconToItemTest extends TestCase
         ];
 
         foreach ($cases as $input => $expected) {
-            $job = new AttachBlizzardIconToItem(1, $input);
+            $job = new AttachBlizzardIconToModel(Item::class, 1, $input);
             $this->assertSame($expected, $job->retailAssetUrl(), "Failed for: {$input}");
         }
     }
@@ -144,7 +153,7 @@ class AttachBlizzardIconToItemTest extends TestCase
     #[Test]
     public function retail_asset_url_is_unchanged_when_url_already_uses_retail_region(): void
     {
-        $job = new AttachBlizzardIconToItem(1, 'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg');
+        $job = new AttachBlizzardIconToModel(Item::class, 1, 'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg');
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
@@ -164,7 +173,7 @@ class AttachBlizzardIconToItemTest extends TestCase
 
         $assetUrl = "https://render.worldofwarcraft.com/classicann-eu/icons/56/item_{$item->id}.jpg";
 
-        (new AttachBlizzardIconToItem($item->id, $assetUrl))->handle(app(RenderConnector::class));
+        (new AttachBlizzardIconToModel(Item::class, $item->id, $assetUrl))->handle(app(RenderConnector::class));
 
         $this->assertTrue($item->fresh()->hasMedia('blizzard_icons'));
 

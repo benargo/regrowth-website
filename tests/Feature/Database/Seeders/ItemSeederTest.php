@@ -5,7 +5,7 @@ namespace Tests\Feature\Database\Seeders;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use App\Jobs\AttachBlizzardIconToItem;
+use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\Item;
 use Database\Seeders\BossSeeder;
 use Database\Seeders\ItemSeeder;
@@ -310,8 +310,8 @@ class ItemSeederTest extends TestCase
         $this->assertFalse($item28453->hasMedia('blizzard_icons'));
 
         // The retry job should have been dispatched
-        Queue::assertPushed(AttachBlizzardIconToItem::class, function (AttachBlizzardIconToItem $job) {
-            return $job->itemId === 28453;
+        Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job) {
+            return $job->modelClass === Item::class && $job->modelKey === 28453;
         });
 
         // Other items should still get their icons immediately
