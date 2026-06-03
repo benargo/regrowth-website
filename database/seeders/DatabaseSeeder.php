@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
 
             // Then seed the core Blizzard data.
-            DailyQuestSeeder::class,
             GuildRankSeeder::class,
 
             // Then seed the datasets
@@ -28,6 +27,9 @@ class DatabaseSeeder extends Seeder
             ZoneSeeder::class,
             PlayableClassSeeder::class,
             TargetMarkerSeeder::class,
+
+            // Then seed the daily quests data
+            DailyQuestSeeder::class,
 
             // Then seed the loot bias data
             PrioritySeeder::class,

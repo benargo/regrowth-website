@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\DailyQuestType;
+use App\Enums\Instance;
 use App\Models\DailyQuest;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,53 +20,40 @@ class DailyQuestFactory extends Factory
     {
         return [
             'name' => fake()->words(3, true),
-            'type' => fake()->randomElement(['Cooking', 'Dungeon', 'Fishing', 'PvP']),
+            'type' => fake()->randomElement(DailyQuestType::cases()),
             'instance' => null,
-            'mode' => null,
-            'rewards' => [
-                ['item_id' => fake()->numberBetween(20000, 40000), 'quantity' => fake()->numberBetween(1, 5)],
-            ],
         ];
     }
 
     public function cooking(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'Cooking',
+            'type' => DailyQuestType::Cooking,
             'instance' => null,
-            'mode' => null,
-            'rewards' => [
-                ['item_id' => 33844, 'quantity' => 1], // Barrel of Fish
-                ['item_id' => 33857, 'quantity' => 1], // Crate of Meat
-            ],
         ]);
     }
 
     public function fishing(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'Fishing',
+            'type' => DailyQuestType::Fishing,
             'instance' => null,
-            'mode' => null,
-            'rewards' => [
-                ['item_id' => 34863, 'quantity' => 1], // Bag of Fishing Treasures
-            ],
         ]);
     }
 
     public function dungeon(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'Dungeon',
+            'type' => DailyQuestType::Dungeon,
             'instance' => fake()->randomElement([
-                'The Arcatraz', 'The Steamvault', 'Shadow Labyrinth',
-                'The Black Morass', 'The Shattered Halls',
-                'The Botanica', 'The Mechanar',
+                Instance::Arcatraz,
+                Instance::Steamvault,
+                Instance::ShadowLabyrinth,
+                Instance::BlackMorass,
+                Instance::ShatteredHalls,
+                Instance::Botanica,
+                Instance::Mechanar,
             ]),
-            'mode' => 'Normal',
-            'rewards' => [
-                ['item_id' => 29460, 'quantity' => 1], // Ethereum Prison Key
-            ],
         ]);
     }
 
@@ -76,32 +65,37 @@ class DailyQuestFactory extends Factory
     public function heroic(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'Dungeon',
+            'type' => DailyQuestType::Heroic,
             'instance' => fake()->randomElement([
-                'The Underbog', 'The Botanica', 'The Black Morass',
-                'The Shattered Halls', 'The Blood Furnace', 'Shadow Labyrinth',
-                'Hellfire Ramparts', 'The Mechanar', 'Mana-Tombs',
-                'Old Hillsbrad Foothills', 'Auchenai Crypts', 'Sethekk Halls',
-                'The Slave Pens', 'The Arcatraz', 'The Steamvault',
+                Instance::Underbog,
+                Instance::Botanica,
+                Instance::BlackMorass,
+                Instance::ShatteredHalls,
+                Instance::BloodFurnace,
+                Instance::ShadowLabyrinth,
+                Instance::HellfireRamparts,
+                Instance::Mechanar,
+                Instance::ManaTombs,
+                Instance::OldHillsbradFoothills,
+                Instance::AuchenaiCrypts,
+                Instance::SethekkHalls,
+                Instance::SlavePens,
+                Instance::Arcatraz,
+                Instance::Steamvault,
             ]),
-            'mode' => 'Heroic',
-            'rewards' => [
-                ['item_id' => 29434, 'quantity' => 2], // Badge of Justice (2)
-            ],
         ]);
     }
 
     public function pvp(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'PvP',
+            'type' => DailyQuestType::PvP,
             'instance' => fake()->randomElement([
-                'Alterac Valley', 'Arathi Basin', 'Eye of the Storm', 'Warsong Gulch',
+                Instance::AlteracValley,
+                Instance::ArathiBasin,
+                Instance::EyeOfTheStorm,
+                Instance::WarsongGulch,
             ]),
-            'mode' => null,
-            'rewards' => [
-                ['item_id' => fake()->randomElement([20560, 20559, 29024, 20558]), 'quantity' => 3],
-            ],
         ]);
     }
 }

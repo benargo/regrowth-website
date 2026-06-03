@@ -162,6 +162,24 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame('Delicious Surprise', $field->value);
     }
 
+    #[Test]
+    public function it_appends_the_instance_name_to_dungeon_and_heroic_field_values(): void
+    {
+        $heroic = DailyQuest::factory()->heroic()->create(['name' => 'The Black Morass']);
+
+        $notification = new DailyQuestsMessage([
+            'Cooking' => null,
+            'Fishing' => null,
+            'Dungeon' => null,
+            'Heroic' => $heroic,
+            'PvP' => null,
+        ]);
+
+        $field = $notification->toMessage()->embeds[0]->fields[0];
+
+        $this->assertSame("The Black Morass ({$heroic->instance->value})", $field->value);
+    }
+
     // -------------------------------------------------------------------------
     // toMessage() — footer
     // -------------------------------------------------------------------------

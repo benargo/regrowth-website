@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Enums\DailyQuestTypeLabel;
+use App\Enums\DailyQuestType;
 use App\Models\DailyQuest;
 use App\Models\DiscordRole;
 use App\Notifications\Concerns\UpdatesExisting;
@@ -17,9 +17,9 @@ class DailyQuestsMessage extends Notification
     use UpdatesExisting;
 
     /**
-     * The daily quests to include in the notification, keyed by their type label (e.g. 'normal', 'alliance', 'horde')
+     * The daily quests to include in the notification, keyed by their DailyQuestType case name (e.g. 'Cooking', 'Fishing', 'Dungeon', 'Heroic', 'PvP').
      *
-     * @var iterable<DailyQuestTypeLabel, DailyQuest|null>
+     * @var iterable<DailyQuestType, DailyQuest|null>
      */
     public iterable $dailyQuests;
 
@@ -29,7 +29,7 @@ class DailyQuestsMessage extends Notification
     private ?DiscordRole $subscribersRole;
 
     /**
-     * @param  iterable<DailyQuestTypeLabel, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their type label
+     * @param  iterable<DailyQuestType, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their DailyQuestType case name
      */
     public function __construct(iterable $dailyQuests)
     {
@@ -46,12 +46,12 @@ class DailyQuestsMessage extends Notification
     {
         $embedFields = collect([]);
 
-        foreach (DailyQuestTypeLabel::map() as $key => $label) {
+        foreach (DailyQuestType::map() as $key => $label) {
             if ($this->dailyQuests[$key] === null) {
                 continue;
             }
 
-            $embedFields->push(new EmbedField($label, $this->dailyQuests[$key]->displayName(), false));
+            $embedFields->push(new EmbedField($label, $this->dailyQuests[$key]->display_name, false));
         }
 
         if ($this->sender()) {

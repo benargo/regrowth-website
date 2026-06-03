@@ -2,8 +2,14 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\HasBlizzardIcons;
+use App\Enums\DailyQuestType;
+use App\Enums\Instance;
 use App\Models\DailyQuest;
+use App\Models\Item;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class DailyQuestTest extends ModelTestCase
@@ -11,6 +17,36 @@ class DailyQuestTest extends ModelTestCase
     protected function modelClass(): string
     {
         return DailyQuest::class;
+    }
+
+    #[Test]
+    public function it_implements_media_library_contracts(): void
+    {
+        $model = new DailyQuest;
+
+        $this->assertInstanceOf(HasMedia::class, $model);
+        $this->assertInstanceOf(HasBlizzardIcons::class, $model);
+    }
+
+    #[Test]
+    public function it_stores_a_single_blizzard_icon(): void
+    {
+        Storage::fake('public');
+
+        $quest = DailyQuest::factory()->cooking()->create();
+
+        $quest->addMediaFromString('BINARY')
+            ->usingFileName('inv_misc_food_15.jpg')
+            ->withCustomProperties(['size' => 56])
+            ->toMediaCollection('blizzard_icons');
+
+        $quest->addMediaFromString('BINARY2')
+            ->usingFileName('trade_fishing.jpg')
+            ->withCustomProperties(['size' => 56])
+            ->toMediaCollection('blizzard_icons');
+
+        $this->assertCount(1, $quest->getMedia('blizzard_icons'));
+        $this->assertSame('trade_fishing.jpg', $quest->getFirstMedia('blizzard_icons')->file_name);
     }
 
     #[Test]
@@ -30,18 +66,6 @@ class DailyQuestTest extends ModelTestCase
             'name',
             'type',
             'instance',
-            'mode',
-            'rewards',
-        ]);
-    }
-
-    #[Test]
-    public function it_casts_rewards_as_json(): void
-    {
-        $model = new DailyQuest;
-
-        $this->assertCasts($model, [
-            'rewards' => 'json',
         ]);
     }
 
@@ -61,10 +85,8 @@ class DailyQuestTest extends ModelTestCase
     {
         $quest = $this->create([
             'name' => 'Test Quest',
-            'type' => 'Cooking',
+            'type' => DailyQuestType::Cooking,
             'instance' => null,
-            'mode' => null,
-            'rewards' => [['item_id' => 12345, 'quantity' => 1]],
         ]);
 
         $this->assertTableHas(['name' => 'Test Quest']);
@@ -78,8 +100,6 @@ class DailyQuestTest extends ModelTestCase
 
         $this->assertNotEmpty($quest->name);
         $this->assertNotNull($quest->type);
-        $this->assertNotNull($quest->rewards);
-        $this->assertIsArray($quest->rewards);
         $this->assertModelExists($quest);
     }
 
@@ -88,10 +108,8 @@ class DailyQuestTest extends ModelTestCase
     {
         $quest = $this->factory()->cooking()->create();
 
-        $this->assertSame('Cooking', $quest->type);
+        $this->assertSame(DailyQuestType::Cooking, $quest->type);
         $this->assertNull($quest->instance);
-        $this->assertNull($quest->mode);
-        $this->assertIsArray($quest->rewards);
     }
 
     #[Test]
@@ -99,9 +117,8 @@ class DailyQuestTest extends ModelTestCase
     {
         $quest = $this->factory()->fishing()->create();
 
-        $this->assertSame('Fishing', $quest->type);
+        $this->assertSame(DailyQuestType::Fishing, $quest->type);
         $this->assertNull($quest->instance);
-        $this->assertNull($quest->mode);
     }
 
     #[Test]
@@ -109,9 +126,9 @@ class DailyQuestTest extends ModelTestCase
     {
         $quest = $this->factory()->instance()->create();
 
-        $this->assertSame('Dungeon', $quest->type);
+        $this->assertSame(DailyQuestType::Dungeon, $quest->type);
         $this->assertNotNull($quest->instance);
-        $this->assertSame('Normal', $quest->mode);
+        $this->assertInstanceOf(Instance::class, $quest->instance);
     }
 
     #[Test]
@@ -119,9 +136,9 @@ class DailyQuestTest extends ModelTestCase
     {
         $quest = $this->factory()->heroic()->create();
 
-        $this->assertSame('Dungeon', $quest->type);
+        $this->assertSame(DailyQuestType::Heroic, $quest->type);
         $this->assertNotNull($quest->instance);
-        $this->assertSame('Heroic', $quest->mode);
+        $this->assertInstanceOf(Instance::class, $quest->instance);
     }
 
     #[Test]
@@ -129,32 +146,30 @@ class DailyQuestTest extends ModelTestCase
     {
         $quest = $this->factory()->pvp()->create();
 
-        $this->assertSame('PvP', $quest->type);
+        $this->assertSame(DailyQuestType::PvP, $quest->type);
         $this->assertNotNull($quest->instance);
-        $this->assertNull($quest->mode);
     }
 
     #[Test]
-    public function rewards_are_stored_and_retrieved_as_array(): void
+    public function rewards_relationship_returns_attached_items_with_quantity(): void
     {
-        $rewards = [
-            ['item_id' => 12345, 'quantity' => 2],
-            ['item_id' => 67890, 'quantity' => 1],
-        ];
+        $quest = $this->create();
 
-        $quest = $this->create(['rewards' => $rewards]);
+        $item = Item::factory()->create();
 
-        $this->assertIsArray($quest->rewards);
-        $this->assertCount(2, $quest->rewards);
-        $this->assertEquals($rewards, $quest->rewards);
+        $quest->rewards()->attach($item->id, ['quantity' => 3]);
+
+        $this->assertCount(1, $quest->rewards);
+        $this->assertTrue($quest->rewards->contains($item));
+        $this->assertSame(3, (int) $quest->rewards->first()->pivot->quantity);
     }
 
     #[Test]
     public function display_name_returns_plain_name_for_non_dungeon_quests(): void
     {
-        $quest = $this->create(['name' => 'Crocolisks in the City', 'type' => 'Fishing', 'instance' => null]);
+        $quest = $this->create(['name' => 'Crocolisks in the City', 'type' => DailyQuestType::Fishing->value, 'instance' => null]);
 
-        $this->assertSame('Crocolisks in the City', $quest->displayName());
+        $this->assertSame('Crocolisks in the City', $quest->display_name);
     }
 
     #[Test]
@@ -162,11 +177,22 @@ class DailyQuestTest extends ModelTestCase
     {
         $quest = $this->create([
             'name' => 'Wanted: Shadowy Executioner',
-            'type' => 'Dungeon',
-            'instance' => 'Shadow Labyrinth',
-            'mode' => 'Normal',
+            'type' => DailyQuestType::Dungeon->value,
+            'instance' => Instance::ShadowLabyrinth->value,
         ]);
 
-        $this->assertSame('Wanted: Shadowy Executioner (Shadow Labyrinth)', $quest->displayName());
+        $this->assertSame('Wanted: Shadowy Executioner (Shadow Labyrinth)', $quest->display_name);
+    }
+
+    #[Test]
+    public function display_name_appends_instance_name_for_heroic_quests(): void
+    {
+        $quest = $this->create([
+            'name' => 'Wanted: Shadowy Executioner',
+            'type' => DailyQuestType::Heroic->value,
+            'instance' => Instance::ShadowLabyrinth->value,
+        ]);
+
+        $this->assertSame('Wanted: Shadowy Executioner (Shadow Labyrinth)', $quest->display_name);
     }
 }

@@ -13,17 +13,28 @@ export default function DailyQuestsForm({
     heroicQuests,
     pvpQuests,
     icons,
+    existingQuests = {},
 }) {
-    const [cookingInput, setCookingInput] = useState("");
-    const [fishingInput, setFishingInput] = useState("");
-    const [dungeonInput, setDungeonInput] = useState("");
-    const [heroicInput, setHeroicInput] = useState("");
-    const [pvpInput, setPvpInput] = useState("");
-    const [cookingQuestId, setCookingQuestId] = useState("");
-    const [fishingQuestId, setFishingQuestId] = useState("");
-    const [dungeonQuestId, setDungeonQuestId] = useState("");
-    const [heroicQuestId, setHeroicQuestId] = useState("");
-    const [pvpQuestId, setPvpQuestId] = useState("");
+    // Seed the autocomplete inputs and hidden ids from today's existing notification
+    // so an officer can review and correct the currently-selected quests.
+    const findQuestById = (quests, id) => (id ? quests.find((q) => q.id === id) : undefined);
+
+    const initialCooking = findQuestById(cookingQuests, existingQuests.cooking_quest_id);
+    const initialFishing = findQuestById(fishingQuests, existingQuests.fishing_quest_id);
+    const initialDungeon = findQuestById(dungeonQuests, existingQuests.dungeon_quest_id);
+    const initialHeroic = findQuestById(heroicQuests, existingQuests.heroic_quest_id);
+    const initialPvp = findQuestById(pvpQuests, existingQuests.pvp_quest_id);
+
+    const [cookingInput, setCookingInput] = useState(initialCooking?.name ?? "");
+    const [fishingInput, setFishingInput] = useState(initialFishing?.name ?? "");
+    const [dungeonInput, setDungeonInput] = useState(initialDungeon?.name ?? "");
+    const [heroicInput, setHeroicInput] = useState(initialHeroic?.name ?? "");
+    const [pvpInput, setPvpInput] = useState(initialPvp?.name ?? "");
+    const [cookingQuestId, setCookingQuestId] = useState(initialCooking?.id ?? "");
+    const [fishingQuestId, setFishingQuestId] = useState(initialFishing?.id ?? "");
+    const [dungeonQuestId, setDungeonQuestId] = useState(initialDungeon?.id ?? "");
+    const [heroicQuestId, setHeroicQuestId] = useState(initialHeroic?.id ?? "");
+    const [pvpQuestId, setPvpQuestId] = useState(initialPvp?.id ?? "");
 
     // Normalize string for comparison: remove accents, normalize apostrophes, lowercase
     const normalizeString = (str) => {

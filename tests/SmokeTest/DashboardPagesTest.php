@@ -36,7 +36,6 @@ class DashboardPagesTest extends TestCase
         );
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'audit-daily-quests', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-boss-strategies', 'guard_name' => 'web']));
 
         // Mock GuildTags to prevent WarcraftLogs API calls
@@ -165,38 +164,6 @@ class DashboardPagesTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Regrowth');
-    }
-
-    #[Test]
-    public function daily_quests_form_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.form'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Test]
-    public function daily_quests_audit_page_loads(): void
-    {
-        $user = User::factory()->officer()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.audit'));
-
-        $response->assertOk();
-        $response->assertSee('Regrowth');
-    }
-
-    #[Test]
-    public function daily_quests_audit_page_requires_officer(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.audit'));
-
-        $response->assertForbidden();
     }
 
     #[Test]
