@@ -20,8 +20,6 @@ use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
  */
 class BlizzardIconPathGenerator implements HasBlizzardIcons, PathGenerator
 {
-    private const PREFIX = MirrorPaths::PREFIX;
-
     private DefaultPathGenerator $default;
 
     public function __construct()
@@ -63,6 +61,6 @@ class BlizzardIconPathGenerator implements HasBlizzardIcons, PathGenerator
     {
         $size = (int) ($media->getCustomProperty('size') ?? self::BLIZZARD_ICON_SIZE);
 
-        return self::PREFIX."/icons/{$size}/";
+        return self::STORAGE_PATH_PREFIX."/icons/{$size}/";
     }
 }

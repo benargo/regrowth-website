@@ -22,4 +22,9 @@ interface HasBlizzardIcons
      * The default file extension used for Blizzard icons on the render CDN.
      */
     public const BLIZZARD_ICON_FILE_EXTENSION = 'jpg';
+
+    /**
+     * The path prefix on the shared disk where Blizzard icons are stored.
+     */
+    public const STORAGE_PATH_PREFIX = 'blizzard-cdn';
 }

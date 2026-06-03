@@ -2,18 +2,12 @@
 
 namespace App\Http\Integrations\Blizzard\Support;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\Region;
 use Illuminate\Support\Stringable;
 
-class MirrorPaths
+class MirrorPaths implements HasBlizzardIcons
 {
-    /**
-     * Top-level directory under the configured disk where all mirrored Blizzard CDN assets are stored.
-     * Namespacing under a single prefix keeps mirror files isolated from other application assets
-     * and makes bulk operations (purge, audit) straightforward.
-     */
-    protected const PREFIX = 'blizzard-cdn';
-
     public function __construct(
         /**
          * The region context to resolve URLs against. This is required to correctly strip the optional region segment from the path.
@@ -40,7 +34,7 @@ class MirrorPaths
             ->after($this->region->value.'/')
             ->value();
 
-        return self::PREFIX.'/'.$path;
+        return self::STORAGE_PATH_PREFIX.'/'.$path;
     }
 
     /**
