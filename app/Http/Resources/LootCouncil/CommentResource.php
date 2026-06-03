@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\LootCouncil;
 
+use App\Http\Resources\ItemResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

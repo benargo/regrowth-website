@@ -9,7 +9,7 @@ use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Jobs\RebuildLootCouncilCache;
 use App\Listeners\FlushLootCouncilCache;
 use App\Models\Boss;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\Phase;
 use App\Models\Raid;

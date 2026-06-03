@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Factories\LootCouncil;
+namespace Database\Factories;
 
 use App\Models\Boss;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,13 +28,22 @@ class ItemFactory extends Factory
     public function definition(): array
     {
         return [
-            'raid_id' => Raid::factory(),
+            'raid_id' => null,
             'boss_id' => null,
             'name' => null,
-            'icon' => null,
             'group' => fake()->optional(0.5)->randomElement(['Tokens', 'Weapons', 'Armor', 'Trinkets', 'Rings']),
             'notes' => null,
         ];
+    }
+
+    /**
+     * Set a raid for the item.
+     */
+    public function withRaid(?Raid $raid = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'raid_id' => $raid?->id ?? Raid::factory(),
+        ]);
     }
 
     /**
@@ -43,7 +52,7 @@ class ItemFactory extends Factory
     public function fromBoss(?Boss $boss = null): static
     {
         return $this->state(function (array $attributes) use ($boss) {
-            $boss = $boss ?? Boss::factory()->create(['raid_id' => $attributes['raid_id']]);
+            $boss = $boss ?? Boss::factory()->create();
 
             return [
                 'boss_id' => $boss->id,
@@ -79,27 +88,6 @@ class ItemFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => $name ?? fake()->words(3, true),
-        ]);
-    }
-
-    /**
-     * Set the icon media data for the item.
-     *
-     * @param  array{id: int, assets: array<int, array{key: string, value: string, file_data_id: int}>}|null  $icon
-     */
-    public function withIcon(?array $icon = null): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'icon' => $icon ?? [
-                'id' => fake()->randomNumber(6),
-                'assets' => [
-                    [
-                        'key' => 'icon',
-                        'value' => fake()->imageUrl(),
-                        'file_data_id' => fake()->randomNumber(6),
-                    ],
-                ],
-            ],
         ]);
     }
 

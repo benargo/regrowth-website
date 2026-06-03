@@ -7,7 +7,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\Permission;
 use App\Models\Phase;

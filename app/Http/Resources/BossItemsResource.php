@@ -1,17 +1,15 @@
 <?php
 
-namespace App\Http\Resources\LootCouncil;
+namespace App\Http\Resources;
 
 use App\Facades\Blizzard;
-use App\Http\Integrations\Blizzard\Data\Media\MediaData;
-use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Models\LootCouncil\Item;
+use App\Http\Resources\LootCouncil\PriorityResource;
+use App\Models\Item;
 use Exception;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class BossItemsResource extends JsonResource
@@ -22,7 +20,6 @@ class BossItemsResource extends JsonResource
             'bossId' => $this->resource['bossId'],
             'items' => $this->resource['items']->map(function (Item $item) {
                 $blizzardData = $this->getBlizzardData($item);
-                $iconUrl = $this->getIconUrl($item);
 
                 return [
                     'id' => $item->id,
@@ -31,7 +28,7 @@ class BossItemsResource extends JsonResource
                     'group' => $item->group,
                     'name' => $blizzardData['name'] ?? "Item #{$item->id}",
                     'slug' => Str::slug($blizzardData['name'] ?? "item-{$item->id}"),
-                    'icon' => $iconUrl,
+                    'icon' => $item->getFirstMediaUrl('blizzard_icons') ?: null,
                     'priorities' => PriorityResource::collection($item->getRelation('priorities')),
                     'hasNotes' => $item->notes !== null,
                     'commentsCount' => $item->comments_count,
@@ -44,10 +41,8 @@ class BossItemsResource extends JsonResource
 
     /**
      * Get a related model's data if it's loaded, otherwise return the foreign key ID.
-     *
-     * @return array<string, mixed>|int
      */
-    protected function getRelation(Item $item, string $relation)
+    protected function getRelation(Item $item, string $relation): Model|int|null
     {
         if (! $item->relationLoaded($relation)) {
             return $item->{"{$relation}_id"};
@@ -67,30 +62,6 @@ class BossItemsResource extends JsonResource
             return Blizzard::send(new GetItemRequest($item->id))->json();
         } catch (Exception) {
             return [];
-        }
-    }
-
-    /**
-     * Fetch the item's first icon asset from the Blizzard media endpoint and return a signed icon URL.
-     */
-    protected function getIconUrl(Item $item): ?string
-    {
-        try {
-            /** @var MediaData $media */
-            $media = Blizzard::send(new GetItemMediaRequest($item->id))->dto();
-
-            $asset = $media->assets[0] ?? null;
-
-            if ($asset === null) {
-                return null;
-            }
-
-            return URL::signedRoute('icons.show', [
-                'size' => 56,
-                'name' => (string) Str::of($asset->value)->afterLast('/')->before('?'),
-            ]);
-        } catch (ItemNotFoundException) {
-            return null;
         }
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Models\LootCouncil;
 
+use App\Contracts\Models\HasBlizzardIcons;
+use App\Models\Item;
 use Database\Factories\LootCouncil\PriorityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Priority extends Model implements HasMedia
+class Priority extends Model implements HasBlizzardIcons, HasMedia
 {
     /** @use HasFactory<PriorityFactory> */
     use HasFactory, InteractsWithMedia;

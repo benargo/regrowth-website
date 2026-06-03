@@ -1,14 +1,12 @@
 <?php
 
-namespace Tests\Unit\Http\Resources\LootCouncil;
+namespace Tests\Unit\Http\Resources;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
-use App\Http\Resources\LootCouncil\BossItemsResource;
+use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
+use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,8 +38,6 @@ class BossItemsResourceTest extends TestCase
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
             GetItemRequest::class => MockResponse::make(body: array_merge($defaultItemData, $itemData), status: 200),
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => [['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg', 'file_data_id' => 12345]]], status: 200),
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 
@@ -196,8 +192,6 @@ class BossItemsResourceTest extends TestCase
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
             GetItemRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => [['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg', 'file_data_id' => 12345]]], status: 200),
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $boss = Boss::factory()->create();
@@ -215,6 +209,10 @@ class BossItemsResourceTest extends TestCase
     {
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
+        $item->addMediaFromString('BINARY')
+            ->usingFileName('foo.jpg')
+            ->withCustomProperties(['size' => 56])
+            ->toMediaCollection('blizzard_icons');
         $items = $this->prepareItems([$item->id]);
 
         $resource = new BossItemsResource($this->createResourceData($boss->id, $items));
@@ -226,35 +224,8 @@ class BossItemsResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_null_icon_when_media_api_fails(): void
+    public function it_returns_null_icon_when_no_media_attached(): void
     {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(body: ['name' => 'Test Item'], status: 200),
-            GetItemMediaRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
-
-        $boss = Boss::factory()->create();
-        $item = Item::factory()->fromBoss($boss)->create();
-        $items = $this->prepareItems([$item->id]);
-
-        $resource = new BossItemsResource($this->createResourceData($boss->id, $items));
-        $array = $resource->toArray(new Request);
-
-        $this->assertNull($array['items'][0]['icon']);
-    }
-
-    #[Test]
-    public function it_returns_null_icon_when_assets_are_empty(): void
-    {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(body: ['name' => 'Test Item'], status: 200),
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
-
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
         $items = $this->prepareItems([$item->id]);
@@ -341,8 +312,6 @@ class BossItemsResourceTest extends TestCase
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
             GetItemRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => [['key' => 'icon', 'value' => 'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg', 'file_data_id' => 12345]]], status: 200),
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $boss = Boss::factory()->create();

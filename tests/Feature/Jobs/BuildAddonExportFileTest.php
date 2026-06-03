@@ -6,7 +6,7 @@ use App\Jobs\BuildAddonExportFile;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Models\Raids\Report;

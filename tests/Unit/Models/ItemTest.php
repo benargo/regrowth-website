@@ -1,15 +1,17 @@
 <?php
 
-namespace Tests\Unit\Models\LootCouncil;
+namespace Tests\Unit\Models;
 
-use App\Casts\ItemMediaCast;
+use App\Contracts\Models\HasBlizzardIcons;
 use App\Models\Boss;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class ItemTest extends ModelTestCase
@@ -20,11 +22,11 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_lootcouncil_items_table(): void
+    public function it_uses_items_table(): void
     {
         $model = new Item;
 
-        $this->assertSame('lootcouncil_items', $model->getTable());
+        $this->assertSame('items', $model->getTable());
     }
 
     #[Test]
@@ -45,20 +47,26 @@ class ItemTest extends ModelTestCase
             'raid_id',
             'boss_id',
             'name',
-            'icon',
             'group',
             'notes',
         ]);
     }
 
     #[Test]
-    public function it_can_be_created_with_required_attributes(): void
+    public function it_can_be_created_without_raid_id(): void
+    {
+        $item = $this->create(['raid_id' => null]);
+
+        $this->assertNull($item->raid_id);
+        $this->assertModelExists($item);
+    }
+
+    #[Test]
+    public function it_can_be_created_with_raid_id(): void
     {
         $raid = Raid::factory()->create();
 
-        $item = $this->create([
-            'raid_id' => $raid->id,
-        ]);
+        $item = $this->create(['raid_id' => $raid->id]);
 
         $this->assertTableHas(['raid_id' => $raid->id]);
         $this->assertModelExists($item);
@@ -91,12 +99,7 @@ class ItemTest extends ModelTestCase
     #[Test]
     public function it_allows_null_boss_id(): void
     {
-        $raid = Raid::factory()->create();
-
-        $item = $this->create([
-            'raid_id' => $raid->id,
-            'boss_id' => null,
-        ]);
+        $item = $this->create(['boss_id' => null]);
 
         $this->assertNull($item->boss_id);
         $this->assertModelExists($item);
@@ -105,12 +108,7 @@ class ItemTest extends ModelTestCase
     #[Test]
     public function it_allows_null_group(): void
     {
-        $raid = Raid::factory()->create();
-
-        $item = $this->create([
-            'raid_id' => $raid->id,
-            'group' => null,
-        ]);
+        $item = $this->create(['group' => null]);
 
         $this->assertNull($item->group);
         $this->assertModelExists($item);
@@ -119,12 +117,7 @@ class ItemTest extends ModelTestCase
     #[Test]
     public function it_allows_null_notes(): void
     {
-        $raid = Raid::factory()->create();
-
-        $item = $this->create([
-            'raid_id' => $raid->id,
-            'notes' => null,
-        ]);
+        $item = $this->create(['notes' => null]);
 
         $this->assertNull($item->notes);
         $this->assertModelExists($item);
@@ -135,8 +128,33 @@ class ItemTest extends ModelTestCase
     {
         $item = $this->create();
 
-        $this->assertNotNull($item->raid_id);
         $this->assertModelExists($item);
+    }
+
+    #[Test]
+    public function factory_default_has_null_raid_id(): void
+    {
+        $item = $this->create();
+
+        $this->assertNull($item->raid_id);
+    }
+
+    #[Test]
+    public function factory_with_raid_state_sets_raid_id(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $item = $this->factory()->withRaid($raid)->create();
+
+        $this->assertSame($raid->id, $item->raid_id);
+    }
+
+    #[Test]
+    public function factory_with_raid_state_creates_raid_when_none_given(): void
+    {
+        $item = $this->factory()->withRaid()->create();
+
+        $this->assertNotNull($item->raid_id);
     }
 
     #[Test]
@@ -231,22 +249,6 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_allows_null_icon(): void
-    {
-        $item = $this->create(['icon' => null]);
-
-        $this->assertNull($item->icon);
-    }
-
-    #[Test]
-    public function it_casts_icon_to_item_media_cast(): void
-    {
-        $item = $this->factory()->withIcon()->create();
-
-        $this->assertInstanceOf(ItemMediaCast::class, $item->icon);
-    }
-
-    #[Test]
     public function slug_is_derived_from_name(): void
     {
         $item = $this->create(['name' => 'Warglaive of Azzinoth']);
@@ -293,11 +295,33 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function factory_with_icon_state_sets_icon(): void
+    public function it_implements_media_library_contracts(): void
     {
-        $item = $this->factory()->withIcon()->create();
+        $model = new Item;
 
-        $this->assertInstanceOf(ItemMediaCast::class, $item->icon);
-        $this->assertNotEmpty($item->icon->assets);
+        $this->assertInstanceOf(HasMedia::class, $model);
+        $this->assertInstanceOf(HasBlizzardIcons::class, $model);
+    }
+
+    #[Test]
+    public function it_stores_a_single_blizzard_icon(): void
+    {
+        Storage::fake('public');
+
+        $item = $this->create();
+
+        $item->addMediaFromString('BINARY')
+            ->usingFileName('inv_sword_04.jpg')
+            ->withCustomProperties(['size' => 56])
+            ->toMediaCollection('blizzard_icons');
+
+        $item->addMediaFromString('BINARY2')
+            ->usingFileName('inv_sword_05.jpg')
+            ->withCustomProperties(['size' => 56])
+            ->toMediaCollection('blizzard_icons');
+
+        // singleFile() collection keeps only the most recent media item.
+        $this->assertCount(1, $item->getMedia('blizzard_icons'));
+        $this->assertSame('inv_sword_05.jpg', $item->getFirstMedia('blizzard_icons')->file_name);
     }
 }

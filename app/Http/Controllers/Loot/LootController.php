@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Loot;
 use App\Http\Controllers\Concerns\QueriesLootCouncilCache;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RaidResource;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;

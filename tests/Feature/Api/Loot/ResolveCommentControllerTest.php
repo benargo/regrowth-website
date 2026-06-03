@@ -3,8 +3,8 @@
 namespace Tests\Feature\Api\Loot;
 
 use App\Models\Boss;
+use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;

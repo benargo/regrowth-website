@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
 use App\Http\Resources\LootCouncil\PriorityResource;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;

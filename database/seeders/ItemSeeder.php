@@ -3,18 +3,28 @@
 namespace Database\Seeders;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Data\Item\ItemData;
+use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
+use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Models\LootCouncil\Item;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Jobs\AttachBlizzardIconToItem;
+use App\Models\Item;
 use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Saloon\Exceptions\Request\FatalRequestException;
+use Saloon\Exceptions\Request\RequestException;
+use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
 class ItemSeeder extends Seeder
 {
     public function __construct(
         private readonly BlizzardConnector $blizzard,
+        private readonly RenderConnector $renderConnector,
     ) {}
 
     /**
@@ -711,10 +721,23 @@ class ItemSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->items as $item) {
-            $model = Item::withoutEvents(function () use ($item) {
+            try {
+                /** @var ItemData $itemDto */
+                $itemDto = $this->blizzard->send(new GetItemRequest($item['id']))->dto();
+
+                /** @var MediaData $mediaDto */
+                $mediaDto = $this->blizzard->send(new GetItemMediaRequest($item['id']))->dto();
+            } catch (ItemNotFoundException|BlizzardApiException|FatalRequestException $e) {
+                $this->command?->warn("  ⚠ [{$item['id']}] Skipped — {$e->getMessage()}");
+
+                continue;
+            }
+
+            $model = Item::withoutEvents(function () use ($item, $itemDto) {
                 return Item::updateOrCreate(
                     ['id' => $item['id']],
                     [
+                        'name' => $itemDto->name,
                         'raid_id' => $item['raid_id'],
                         'boss_id' => $item['boss_id'],
                         'group' => $item['group'],
@@ -722,25 +745,29 @@ class ItemSeeder extends Seeder
                 );
             });
 
-            try {
-                $itemDto = $this->blizzard->send(new GetItemRequest($item['id']))->dto();
-                $mediaResponse = $this->blizzard->send(new GetItemMediaRequest($item['id']));
+            if (! $model->hasMedia('blizzard_icons')) {
+                $asset = $mediaDto->assets[0] ?? null;
 
-                // ItemMediaCast::fromArray() expects snake_case keys matching the raw Blizzard payload.
-                // Using the raw JSON body preserves that shape; MediaData::toArray() emits camelCase.
-                $iconPayload = $mediaResponse->json();
+                if ($asset !== null) {
+                    try {
+                        $fileName = (string) Str::of($asset->value)->afterLast('/')->before('?');
+                        $body = $this->renderConnector->send(new FetchAssetRequest($asset->value))->body();
 
-                $model->update([
-                    'name' => $itemDto->name,
-                    'icon' => ! empty($iconPayload) ? $iconPayload : null,
-                ]);
-
-                $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
-            } catch (ItemNotFoundException|BlizzardApiException|FatalRequestException $e) {
-                $this->command?->warn("  ⚠ [{$item['id']}] Skipped — {$e->getMessage()}");
-
-                continue;
+                        $model->addMediaFromString($body)
+                            ->usingFileName($fileName)
+                            ->withCustomProperties(['size' => 56])
+                            ->toMediaCollection('blizzard_icons');
+                    } catch (ForbiddenException $e) {
+                        AttachBlizzardIconToItem::dispatch($model->id, $asset->value)
+                            ->delay(now()->addMinutes(5));
+                        $this->command?->warn("  ⚠ [{$item['id']}] Icon deferred (403) — retrying in 5 min");
+                    } catch (MediaNotFoundException|RequestException $e) {
+                        $this->command?->warn("  ⚠ [{$item['id']}] Icon skipped — {$e->getMessage()}");
+                    }
+                }
             }
+
+            $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
         }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models\LootCouncil;
 use App\Events\CommentCreated;
 use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
+use App\Models\Item;
 use App\Models\User;
 use Database\Factories\LootCouncil\CommentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
