@@ -42,6 +42,10 @@ class WriteMirrorToDisk implements ResponseMiddleware
             );
         }
 
+        if ($response->status() === 403) {
+            $response->throw();
+        }
+
         if (! $response->successful()) {
             try {
                 $response->throw();
