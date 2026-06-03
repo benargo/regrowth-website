@@ -2,6 +2,7 @@
 
 namespace App\Http\Integrations\Blizzard\Requests\Render;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
 use Illuminate\Support\Stringable;
@@ -22,7 +23,7 @@ use Saloon\Http\Request;
  * used as the endpoint, avoiding the SSRF-flavoured opt-in for absolute-URL
  * endpoint overrides.
  */
-class FetchAssetRequest extends Request
+class FetchAssetRequest extends Request implements HasBlizzardIcons
 {
     protected Method $method = Method::GET;
 
@@ -38,7 +39,7 @@ class FetchAssetRequest extends Request
      * @throws InvalidArgumentException if an absolute URL is given that is invalid
      *                                  or does not belong to the Blizzard render CDN
      */
-    public function __construct(string $input, int $size = 56)
+    public function __construct(string $input, int $size = self::BLIZZARD_ICON_SIZE)
     {
         if (str_contains($input, '://')) {
             $host = str(parse_url($input, PHP_URL_HOST));

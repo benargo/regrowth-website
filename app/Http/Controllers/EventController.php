@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PlayableClassResource;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class EventController extends Controller
+class EventController extends Controller implements HasBlizzardIcons
 {
     /**
      * Display a listing of the resource.
@@ -50,8 +51,8 @@ class EventController extends Controller
         return Inertia::render('Raiding/Plans/Show', [
             'event' => (new EventResource($event))->resolve($request),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => 56,
-                'name' => ServeIconController::QUESTIONMARK.'.jpg',
+                'size' => self::BLIZZARD_ICON_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.jpg',
             ]),
         ]);
     }
@@ -84,8 +85,8 @@ class EventController extends Controller
             }),
             'templates' => $this->loadTemplatesForEvent($event)->all(),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => 56,
-                'name' => ServeIconController::QUESTIONMARK.'.jpg',
+                'size' => self::BLIZZARD_ICON_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::BLIZZARD_ICON_FILE_EXTENSION,
             ]),
         ]);
     }

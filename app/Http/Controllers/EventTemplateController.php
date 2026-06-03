@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\EventTemplateCollection;
@@ -22,7 +23,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
-class EventTemplateController extends Controller
+class EventTemplateController extends Controller implements HasBlizzardIcons
 {
     /**
      * Display a listing of event templates.
@@ -95,8 +96,8 @@ class EventTemplateController extends Controller
                 return SpellResource::collection(Spell::all())->resolve($request);
             }),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => 56,
-                'name' => ServeIconController::QUESTIONMARK.'.jpg',
+                'size' => self::BLIZZARD_ICON_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::BLIZZARD_ICON_FILE_EXTENSION,
             ]),
         ]);
     }

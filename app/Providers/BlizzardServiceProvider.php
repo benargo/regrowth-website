@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Contracts\Models\HasBlizzardIcons;
+use App\Contracts\HasBlizzardIcons;
 use App\Facades\Blizzard as BlizzardFacade;
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;

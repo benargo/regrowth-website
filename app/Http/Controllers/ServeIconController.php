@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Requests\ServeIconRequest;
@@ -9,13 +10,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Throwable;
 
-class ServeIconController extends Controller
+class ServeIconController extends Controller implements HasBlizzardIcons
 {
-    /**
-     * The bundled questionmark icon used as a placeholder/fallback across the app.
-     */
-    public const QUESTIONMARK = 'inv_misc_questionmark';
-
     private const LONG_CACHE = 'public, max-age=31536000, immutable';
 
     private const FALLBACK_CACHE = 'public, max-age=60';
@@ -31,7 +27,7 @@ class ServeIconController extends Controller
         // The questionmark is a bundled local asset (also our fallback) — serve it directly,
         // never round-tripping to the CDN for an icon we already ship.
         // Served as JPEG regardless of the requested extension — there is no PNG variant.
-        if ((string) Str::of($name)->before('.') === self::QUESTIONMARK) {
+        if ((string) Str::of($name)->before('.') === self::BLIZZARD_UNKNOWN_ICON) {
             return $this->icon($this->questionmarkBytes(), 'image/jpeg', self::LONG_CACHE);
         }
 
