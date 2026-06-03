@@ -2,6 +2,7 @@
 
 namespace App\Http\Integrations\Blizzard;
 
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
@@ -24,6 +25,7 @@ use Saloon\RateLimitPlugin\Traits\HasRateLimits;
 use Saloon\Traits\OAuth2\ClientCredentialsBasicAuthGrant;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
+use Saloon\XmlWrangler\XmlReader;
 use Throwable;
 
 /**
@@ -214,9 +216,21 @@ class BlizzardConnector extends Connector
         $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: $pendingRequest->getUrl();
         $method = $pendingRequest->getMethod()->value;
 
-        $body = $response->json();
-        $body = is_array($body) ? $body : null;
-        $blizzardCode = is_array($body) ? Arr::get($body, 'type') : null;
+        $blizzardCode = null;
+
+        try {
+            $body = $response->json();
+            $body = is_array($body) ? $body : null;
+            $blizzardCode = is_array($body) ? Arr::get($body, 'type') : null;
+        } catch (\JsonException) {
+            $xml = $this->tryParseXml($response->body());
+
+            if ($xml !== null) {
+                return new BlizzardXmlException($method, $path, $status, $response, $xml, $senderException);
+            }
+
+            $body = null;
+        }
 
         // 429s are handled by the rate-limit plugin (RateLimitReachedException).
 
@@ -267,5 +281,21 @@ class BlizzardConnector extends Connector
     protected function resolveRateLimitStore(): RateLimitStore
     {
         return new LaravelCacheStore(Cache::store());
+    }
+
+    /**
+     * Try to parse a raw response body as XML, returning null if it doesn't look like XML or fails to parse.
+     */
+    private function tryParseXml(string $rawBody): ?XmlReader
+    {
+        if (! str_starts_with(ltrim($rawBody), '<?xml')) {
+            return null;
+        }
+
+        try {
+            return XmlReader::fromString($rawBody);
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

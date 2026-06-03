@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
@@ -284,6 +285,59 @@ class BlizzardConnectorTest extends TestCase
             $this->assertSame('/data/wow/item/1', $e->endpoint);
             $this->assertSame('GET', $e->method);
             $this->assertSame('BLZWEBAPI00500000', $e->blizzardCode);
+        }
+    }
+
+    #[Test]
+    #[Group('exception-mapping')]
+    public function throws_blizzard_xml_exception_when_body_is_xml(): void
+    {
+        $xml = <<<'XML'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Error>
+                <Code>AccessDenied</Code>
+                <Message>Access Denied</Message>
+                <RequestId>YMXGKZGB32S1YA0T</RequestId>
+            </Error>
+            XML;
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/data/wow/item/*' => MockResponse::make($xml, 403, ['Content-Type' => 'application/xml']),
+        ]);
+
+        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock();
+
+        try {
+            $this->makeConnector()->send($request);
+            $this->fail('Expected BlizzardXmlException');
+        } catch (BlizzardRequestException $e) {
+            $this->assertInstanceOf(BlizzardXmlException::class, $e);
+            $this->assertSame(403, $e->blizzardStatus);
+            $this->assertSame('AccessDenied', $e->xmlCode);
+            $this->assertSame('Access Denied', $e->xmlMessage);
+            $this->assertStringContainsString('AccessDenied', $e->getMessage());
+            $this->assertStringContainsString('Access Denied', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    #[Group('exception-mapping')]
+    public function throws_blizzard_api_exception_without_crashing_when_body_is_non_json_non_xml(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+            'eu.api.blizzard.com/data/wow/item/*' => MockResponse::make('Service Unavailable', 503, ['Content-Type' => 'text/plain']),
+        ]);
+
+        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock();
+
+        try {
+            $this->makeConnector()->send($request);
+            $this->fail('Expected BlizzardApiException');
+        } catch (BlizzardRequestException $e) {
+            $this->assertInstanceOf(BlizzardApiException::class, $e);
+            $this->assertSame(503, $e->blizzardStatus);
         }
     }
 
