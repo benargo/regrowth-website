@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title', 50);
             $table->string('type', 50);
-            $table->json('media');
+            // $table->json('media'); // removed: icons now stored via Spatie Media Library
             $table->timestamps();
         });
     }

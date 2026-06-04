@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PlayableClassResource;
@@ -13,17 +14,17 @@ use App\Models\EventAssignmentGroup;
 use App\Models\PlayableClass;
 use App\Models\Spell;
 use App\Models\TargetMarker;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Contracts\Queue\QueueableCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class EventController extends Controller
+class EventController extends Controller implements HasBlizzardIcons
 {
     /**
      * Display a listing of the resource.
@@ -43,13 +44,16 @@ class EventController extends Controller
      * Display the specified resource.
      */
     #[Authorize('view', 'event')]
-    public function show(Event $event, Request $request, MediaService $mediaService): Response
+    public function show(Event $event, Request $request): Response
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Show', [
             'event' => (new EventResource($event))->resolve($request),
-            'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
+            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
+                'size' => self::BLIZZARD_ICON_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.jpg',
+            ]),
         ]);
     }
 
@@ -58,7 +62,7 @@ class EventController extends Controller
      */
     #[Middleware('auth')]
     #[Authorize('update', 'event')]
-    public function edit(Event $event, Request $request, MediaService $mediaService): Response
+    public function edit(Event $event, Request $request): Response
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
 
@@ -77,10 +81,13 @@ class EventController extends Controller
                 return PlayableClassResource::collection(PlayableClass::orderBy('name')->get())->resolve($request);
             }),
             'spells' => Inertia::optional(function () use ($request) {
-                return SpellResource::collection(Spell::with('media')->get())->resolve($request);
+                return SpellResource::collection(Spell::all())->resolve($request);
             }),
             'templates' => $this->loadTemplatesForEvent($event)->all(),
-            'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
+            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
+                'size' => self::BLIZZARD_ICON_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::BLIZZARD_ICON_FILE_EXTENSION,
+            ]),
         ]);
     }
 
@@ -163,10 +170,5 @@ class EventController extends Controller
         });
 
         return back();
-    }
-
-    private function questionMarkIconUrl(MediaService $mediaService): mixed
-    {
-        return Inertia::optional(fn () => $mediaService->get('inv_misc_questionmark'))->once();
     }
 }

@@ -5,7 +5,6 @@ namespace Tests\Unit\Http\Resources;
 use App\Http\Resources\BossResource;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
-use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Test;

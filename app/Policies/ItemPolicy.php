@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\User;
 
 class ItemPolicy extends AuthorizationPolicy

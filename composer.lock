@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "433d1ab1224e04840611019719de6760",
+    "content-hash": "bc6496586324b02087d8ac33e4d43f88",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -4035,6 +4035,296 @@
             "time": "2025-12-30T16:12:18+00:00"
         },
         {
+            "name": "php-standard-library/php-standard-library",
+            "version": "6.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-standard-library/php-standard-library.git",
+                "reference": "331f3ab363508825e62c42725f96c091bcceb970"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-standard-library/php-standard-library/zipball/331f3ab363508825e62c42725f96c091bcceb970",
+                "reference": "331f3ab363508825e62c42725f96c091bcceb970",
+                "shasum": ""
+            },
+            "require": {
+                "ext-bcmath": "*",
+                "ext-intl": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "ext-openssl": "*",
+                "ext-sodium": "*",
+                "php": "~8.4.0 || ~8.5.0",
+                "revolt/event-loop": "^1.0.8"
+            },
+            "conflict": {
+                "azjezz/psl": "*"
+            },
+            "replace": {
+                "php-standard-library/ansi": "self.version",
+                "php-standard-library/async": "self.version",
+                "php-standard-library/binary": "self.version",
+                "php-standard-library/cache": "self.version",
+                "php-standard-library/channel": "self.version",
+                "php-standard-library/cidr": "self.version",
+                "php-standard-library/class": "self.version",
+                "php-standard-library/collection": "self.version",
+                "php-standard-library/comparison": "self.version",
+                "php-standard-library/compression": "self.version",
+                "php-standard-library/crypto": "self.version",
+                "php-standard-library/data-structure": "self.version",
+                "php-standard-library/date-time": "self.version",
+                "php-standard-library/default": "self.version",
+                "php-standard-library/dict": "self.version",
+                "php-standard-library/dns": "self.version",
+                "php-standard-library/dnssec": "self.version",
+                "php-standard-library/either": "self.version",
+                "php-standard-library/either-or-both": "self.version",
+                "php-standard-library/encoding": "self.version",
+                "php-standard-library/env": "self.version",
+                "php-standard-library/file": "self.version",
+                "php-standard-library/filesystem": "self.version",
+                "php-standard-library/foundation": "self.version",
+                "php-standard-library/fun": "self.version",
+                "php-standard-library/graph": "self.version",
+                "php-standard-library/h2": "self.version",
+                "php-standard-library/hash": "self.version",
+                "php-standard-library/hpack": "self.version",
+                "php-standard-library/html": "self.version",
+                "php-standard-library/http-client": "self.version",
+                "php-standard-library/http-message": "self.version",
+                "php-standard-library/interface": "self.version",
+                "php-standard-library/interoperability": "self.version",
+                "php-standard-library/io": "self.version",
+                "php-standard-library/ip": "self.version",
+                "php-standard-library/iri": "self.version",
+                "php-standard-library/iter": "self.version",
+                "php-standard-library/json": "self.version",
+                "php-standard-library/locale": "self.version",
+                "php-standard-library/math": "self.version",
+                "php-standard-library/message": "self.version",
+                "php-standard-library/mime": "self.version",
+                "php-standard-library/network": "self.version",
+                "php-standard-library/observer": "self.version",
+                "php-standard-library/option": "self.version",
+                "php-standard-library/os": "self.version",
+                "php-standard-library/password": "self.version",
+                "php-standard-library/process": "self.version",
+                "php-standard-library/promise": "self.version",
+                "php-standard-library/pseudo-random": "self.version",
+                "php-standard-library/punycode": "self.version",
+                "php-standard-library/random-sequence": "self.version",
+                "php-standard-library/range": "self.version",
+                "php-standard-library/regex": "self.version",
+                "php-standard-library/result": "self.version",
+                "php-standard-library/runtime": "self.version",
+                "php-standard-library/secure-random": "self.version",
+                "php-standard-library/shell": "self.version",
+                "php-standard-library/smtp": "self.version",
+                "php-standard-library/socks": "self.version",
+                "php-standard-library/str": "self.version",
+                "php-standard-library/tcp": "self.version",
+                "php-standard-library/terminal": "self.version",
+                "php-standard-library/tls": "self.version",
+                "php-standard-library/trait": "self.version",
+                "php-standard-library/tree": "self.version",
+                "php-standard-library/type": "self.version",
+                "php-standard-library/udp": "self.version",
+                "php-standard-library/unix": "self.version",
+                "php-standard-library/uri": "self.version",
+                "php-standard-library/url": "self.version",
+                "php-standard-library/vec": "self.version"
+            },
+            "require-dev": {
+                "carthage-software/mago": "^1.29.0",
+                "ext-brotli": "*",
+                "infection/infection": "^0.32.6",
+                "php-coveralls/php-coveralls": "^2.9.1",
+                "phpbench/phpbench": "^1.6.0",
+                "phpunit/phpunit": "^13.0.5"
+            },
+            "suggest": {
+                "php-standard-library/phpstan-extension": "PHPStan integration",
+                "php-standard-library/psalm-plugin": "Psalm integration"
+            },
+            "bin": [
+                "bin/psl"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-next": "6.2.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "packages/foundation/src/Psl/bootstrap.php",
+                    "packages/ansi/src/Psl/bootstrap.php",
+                    "packages/async/src/Psl/bootstrap.php",
+                    "packages/binary/src/Psl/bootstrap.php",
+                    "packages/cache/src/Psl/bootstrap.php",
+                    "packages/channel/src/Psl/bootstrap.php",
+                    "packages/class/src/Psl/bootstrap.php",
+                    "packages/comparison/src/Psl/bootstrap.php",
+                    "packages/compression/src/Psl/bootstrap.php",
+                    "packages/crypto/src/Psl/bootstrap.php",
+                    "packages/date-time/src/Psl/bootstrap.php",
+                    "packages/dict/src/Psl/bootstrap.php",
+                    "packages/encoding/src/Psl/bootstrap.php",
+                    "packages/env/src/Psl/bootstrap.php",
+                    "packages/dns/src/Psl/bootstrap.php",
+                    "packages/dnssec/src/Psl/bootstrap.php",
+                    "packages/either-or-both/src/Psl/bootstrap.php",
+                    "packages/file/src/Psl/bootstrap.php",
+                    "packages/filesystem/src/Psl/bootstrap.php",
+                    "packages/fun/src/Psl/bootstrap.php",
+                    "packages/graph/src/Psl/bootstrap.php",
+                    "packages/h2/src/Psl/bootstrap.php",
+                    "packages/hash/src/Psl/bootstrap.php",
+                    "packages/hpack/src/Psl/bootstrap.php",
+                    "packages/html/src/Psl/bootstrap.php",
+                    "packages/http-client/src/Psl/bootstrap.php",
+                    "packages/http-message/src/Psl/bootstrap.php",
+                    "packages/interface/src/Psl/bootstrap.php",
+                    "packages/io/src/Psl/bootstrap.php",
+                    "packages/iter/src/Psl/bootstrap.php",
+                    "packages/json/src/Psl/bootstrap.php",
+                    "packages/mime/src/Psl/bootstrap.php",
+                    "packages/message/src/Psl/bootstrap.php",
+                    "packages/math/src/Psl/bootstrap.php",
+                    "packages/network/src/Psl/bootstrap.php",
+                    "packages/option/src/Psl/bootstrap.php",
+                    "packages/os/src/Psl/bootstrap.php",
+                    "packages/password/src/Psl/bootstrap.php",
+                    "packages/pseudo-random/src/Psl/bootstrap.php",
+                    "packages/punycode/src/Psl/bootstrap.php",
+                    "packages/range/src/Psl/bootstrap.php",
+                    "packages/regex/src/Psl/bootstrap.php",
+                    "packages/result/src/Psl/bootstrap.php",
+                    "packages/runtime/src/Psl/bootstrap.php",
+                    "packages/secure-random/src/Psl/bootstrap.php",
+                    "packages/smtp/src/Psl/bootstrap.php",
+                    "packages/shell/src/Psl/bootstrap.php",
+                    "packages/socks/src/Psl/bootstrap.php",
+                    "packages/str/src/Psl/bootstrap.php",
+                    "packages/tcp/src/Psl/bootstrap.php",
+                    "packages/terminal/src/Psl/bootstrap.php",
+                    "packages/tls/src/Psl/bootstrap.php",
+                    "packages/trait/src/Psl/bootstrap.php",
+                    "packages/tree/src/Psl/bootstrap.php",
+                    "packages/type/src/Psl/bootstrap.php",
+                    "packages/udp/src/Psl/bootstrap.php",
+                    "packages/unix/src/Psl/bootstrap.php",
+                    "packages/uri/src/Psl/bootstrap.php",
+                    "packages/url/src/Psl/bootstrap.php",
+                    "packages/iri/src/Psl/bootstrap.php",
+                    "packages/vec/src/Psl/bootstrap.php"
+                ],
+                "psr-4": {
+                    "Psl\\": "packages/foundation/src/Psl/",
+                    "Psl\\H2\\": "packages/h2/src/Psl/H2/",
+                    "Psl\\IO\\": "packages/io/src/Psl/IO/",
+                    "Psl\\IP\\": "packages/ip/src/Psl/IP/",
+                    "Psl\\OS\\": "packages/os/src/Psl/OS/",
+                    "Psl\\DNS\\": "packages/dns/src/Psl/DNS/",
+                    "Psl\\Env\\": "packages/env/src/Psl/Env/",
+                    "Psl\\Fun\\": "packages/fun/src/Psl/Fun/",
+                    "Psl\\IRI\\": "packages/iri/src/Psl/IRI/",
+                    "Psl\\Str\\": "packages/str/src/Psl/Str/",
+                    "Psl\\TCP\\": "packages/tcp/src/Psl/TCP/",
+                    "Psl\\TLS\\": "packages/tls/src/Psl/TLS/",
+                    "Psl\\UDP\\": "packages/udp/src/Psl/UDP/",
+                    "Psl\\URI\\": "packages/uri/src/Psl/URI/",
+                    "Psl\\URL\\": "packages/url/src/Psl/URL/",
+                    "Psl\\Vec\\": "packages/vec/src/Psl/Vec/",
+                    "Psl\\Ansi\\": "packages/ansi/src/Psl/Ansi/",
+                    "Psl\\CIDR\\": "packages/cidr/src/Psl/CIDR/",
+                    "Psl\\Dict\\": "packages/dict/src/Psl/Dict/",
+                    "Psl\\File\\": "packages/file/src/Psl/File/",
+                    "Psl\\Hash\\": "packages/hash/src/Psl/Hash/",
+                    "Psl\\Html\\": "packages/html/src/Psl/Html/",
+                    "Psl\\Iter\\": "packages/iter/src/Psl/Iter/",
+                    "Psl\\Json\\": "packages/json/src/Psl/Json/",
+                    "Psl\\MIME\\": "packages/mime/src/Psl/MIME/",
+                    "Psl\\Math\\": "packages/math/src/Psl/Math/",
+                    "Psl\\SMTP\\": "packages/smtp/src/Psl/SMTP/",
+                    "Psl\\Tree\\": "packages/tree/src/Psl/Tree/",
+                    "Psl\\Type\\": "packages/type/src/Psl/Type/",
+                    "Psl\\Unix\\": "packages/unix/src/Psl/Unix/",
+                    "Psl\\Async\\": "packages/async/src/Psl/Async/",
+                    "Psl\\Cache\\": "packages/cache/src/Psl/Cache/",
+                    "Psl\\Class\\": "packages/class/src/Psl/Class/",
+                    "Psl\\Graph\\": "packages/graph/src/Psl/Graph/",
+                    "Psl\\HPACK\\": "packages/hpack/src/Psl/HPACK/",
+                    "Psl\\Range\\": "packages/range/src/Psl/Range/",
+                    "Psl\\Regex\\": "packages/regex/src/Psl/Regex/",
+                    "Psl\\Shell\\": "packages/shell/src/Psl/Shell/",
+                    "Psl\\Socks\\": "packages/socks/src/Psl/Socks/",
+                    "Psl\\Trait\\": "packages/trait/src/Psl/Trait/",
+                    "Psl\\Binary\\": "packages/binary/src/Psl/Binary/",
+                    "Psl\\Crypto\\": "packages/crypto/src/Psl/Crypto/",
+                    "Psl\\DNSSEC\\": "packages/dnssec/src/Psl/DNSSEC/",
+                    "Psl\\Either\\": "packages/either/src/Psl/Either/",
+                    "Psl\\Locale\\": "packages/locale/src/Psl/Locale/",
+                    "Psl\\Option\\": "packages/option/src/Psl/Option/",
+                    "Psl\\Result\\": "packages/result/src/Psl/Result/",
+                    "Psl\\Channel\\": "packages/channel/src/Psl/Channel/",
+                    "Psl\\Default\\": "packages/default/src/Psl/Default/",
+                    "Psl\\Message\\": "packages/message/src/Psl/Message/",
+                    "Psl\\Network\\": "packages/network/src/Psl/Network/",
+                    "Psl\\Process\\": "packages/process/src/Psl/Process/",
+                    "Psl\\Promise\\": "packages/promise/src/Psl/Promise/",
+                    "Psl\\Runtime\\": "packages/runtime/src/Psl/Runtime/",
+                    "Psl\\DateTime\\": "packages/date-time/src/Psl/DateTime/",
+                    "Psl\\Encoding\\": "packages/encoding/src/Psl/Encoding/",
+                    "Psl\\Observer\\": "packages/observer/src/Psl/Observer/",
+                    "Psl\\Password\\": "packages/password/src/Psl/Password/",
+                    "Psl\\Punycode\\": "packages/punycode/src/Psl/Punycode/",
+                    "Psl\\Terminal\\": "packages/terminal/src/Psl/Terminal/",
+                    "Psl\\Interface\\": "packages/interface/src/Psl/Interface/",
+                    "Psl\\Collection\\": "packages/collection/src/Psl/Collection/",
+                    "Psl\\Comparison\\": "packages/comparison/src/Psl/Comparison/",
+                    "Psl\\Filesystem\\": "packages/filesystem/src/Psl/Filesystem/",
+                    "Psl\\Compression\\": "packages/compression/src/Psl/Compression/",
+                    "Psl\\HTTP\\Client\\": "packages/http-client/src/Psl/HTTP/Client/",
+                    "Psl\\EitherOrBoth\\": "packages/either-or-both/src/Psl/EitherOrBoth/",
+                    "Psl\\HTTP\\Message\\": "packages/http-message/src/Psl/HTTP/Message/",
+                    "Psl\\PseudoRandom\\": "packages/pseudo-random/src/Psl/PseudoRandom/",
+                    "Psl\\SecureRandom\\": "packages/secure-random/src/Psl/SecureRandom/",
+                    "Psl\\DataStructure\\": "packages/data-structure/src/Psl/DataStructure/",
+                    "Psl\\RandomSequence\\": "packages/random-sequence/src/Psl/RandomSequence/",
+                    "Psl\\Interoperability\\": "packages/interoperability/src/Psl/Interoperability/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "azjezz",
+                    "email": "azjezz@protonmail.com"
+                }
+            ],
+            "description": "PHP Standard Library",
+            "support": {
+                "issues": "https://github.com/php-standard-library/php-standard-library/issues",
+                "source": "https://github.com/php-standard-library/php-standard-library/tree/6.2.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/azjezz",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/veewee",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-05-23T22:30:15+00:00"
+        },
+        {
             "name": "phpdocumentor/reflection",
             "version": "6.6.0",
             "source": {
@@ -5853,6 +6143,447 @@
             "time": "2024-06-11T12:45:25+00:00"
         },
         {
+            "name": "revolt/event-loop",
+            "version": "v1.0.9",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/revoltphp/event-loop.git",
+                "reference": "44061cf513e53c6200372fc935ac42271566295d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/revoltphp/event-loop/zipball/44061cf513e53c6200372fc935ac42271566295d",
+                "reference": "44061cf513e53c6200372fc935ac42271566295d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1"
+            },
+            "require-dev": {
+                "ext-json": "*",
+                "jetbrains/phpstorm-stubs": "^2019.3",
+                "phpunit/phpunit": "^9",
+                "psalm/phar": "6.16.*"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Revolt\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Aaron Piotrowski",
+                    "email": "aaron@trowski.com"
+                },
+                {
+                    "name": "Cees-Jan Kiewiet",
+                    "email": "ceesjank@gmail.com"
+                },
+                {
+                    "name": "Christian Lück",
+                    "email": "christian@clue.engineering"
+                },
+                {
+                    "name": "Niklas Keller",
+                    "email": "me@kelunik.com"
+                }
+            ],
+            "description": "Rock-solid event loop for concurrent PHP applications.",
+            "keywords": [
+                "async",
+                "asynchronous",
+                "concurrency",
+                "event",
+                "event-loop",
+                "non-blocking",
+                "scheduler"
+            ],
+            "support": {
+                "issues": "https://github.com/revoltphp/event-loop/issues",
+                "source": "https://github.com/revoltphp/event-loop/tree/v1.0.9"
+            },
+            "time": "2026-05-16T17:55:38+00:00"
+        },
+        {
+            "name": "saloonphp/cache-plugin",
+            "version": "v3.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/saloonphp/cache-plugin.git",
+                "reference": "106d89b6645aa1c054f9687ef8b1eb2ef0b44c47"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/saloonphp/cache-plugin/zipball/106d89b6645aa1c054f9687ef8b1eb2ef0b44c47",
+                "reference": "106d89b6645aa1c054f9687ef8b1eb2ef0b44c47",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2",
+                "saloonphp/saloon": "^3.0 || ^4.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.13",
+                "league/flysystem": "^3.12.2",
+                "orchestra/testbench": "^9.15 || ^10.7",
+                "pestphp/pest": "^2.3 || ^4.0",
+                "psr/simple-cache": "^3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Saloon\\CachePlugin\\": "src/",
+                    "Saloon\\CachePlugin\\Tests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sammyjo20",
+                    "email": "29132017+Sammyjo20@users.noreply.github.com"
+                }
+            ],
+            "description": "Official plugin for caching Saloon responses",
+            "support": {
+                "source": "https://github.com/saloonphp/cache-plugin/tree/v3.1.0"
+            },
+            "time": "2026-03-25T20:44:39+00:00"
+        },
+        {
+            "name": "saloonphp/laravel-plugin",
+            "version": "v4.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/saloonphp/laravel-plugin.git",
+                "reference": "c9754084dabe1002000d01cc2192fd08cfa6079d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/saloonphp/laravel-plugin/zipball/c9754084dabe1002000d01cc2192fd08cfa6079d",
+                "reference": "c9754084dabe1002000d01cc2192fd08cfa6079d",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/console": "^11.0 || ^12.39.0 || ^13.0",
+                "illuminate/support": "^11.0 || ^12.39.0 || ^13.0",
+                "php": "^8.2",
+                "saloonphp/saloon": "^4.0",
+                "symfony/finder": "^6.4 || ^7.0 || ^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.48",
+                "laravel/pulse": "^1.4",
+                "laravel/telescope": "^5.16",
+                "orchestra/testbench": "^9.15 || ^10.7 || ^11.0",
+                "pestphp/pest": "^3.0|^4.0",
+                "phpstan/phpstan": "^1.10.57|^2.0.2"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Saloon": "Saloon\\Laravel\\Facades\\Saloon"
+                    },
+                    "providers": [
+                        "Saloon\\Laravel\\SaloonServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Saloon\\Laravel\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sam Carré",
+                    "email": "29132017+Sammyjo20@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The official Laravel plugin for Saloon",
+            "homepage": "https://github.com/saloonphp/laravel-plugin",
+            "keywords": [
+                "api",
+                "api-integrations",
+                "saloon",
+                "saloonphp",
+                "sdk"
+            ],
+            "support": {
+                "source": "https://github.com/saloonphp/laravel-plugin/tree/v4.3.0"
+            },
+            "time": "2026-04-23T23:22:12+00:00"
+        },
+        {
+            "name": "saloonphp/pagination-plugin",
+            "version": "v2.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/saloonphp/pagination-plugin.git",
+                "reference": "a61822ca93c1207008941822b00df1d8740a4096"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/saloonphp/pagination-plugin/zipball/a61822ca93c1207008941822b00df1d8740a4096",
+                "reference": "a61822ca93c1207008941822b00df1d8740a4096",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2",
+                "saloonphp/saloon": "^3.0 || ^4.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.5",
+                "illuminate/collections": "^11.0 || ^12.0",
+                "pestphp/pest": "^3.0 || ^4.0",
+                "phpstan/phpstan": "^1.9",
+                "spatie/invade": "^2.0"
+            },
+            "suggest": {
+                "illuminate/collections": "Used to provide LazyCollections via the collect() method on paginators."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Saloon\\PaginationPlugin\\": "src/",
+                    "Saloon\\PaginationPlugin\\Tests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sam Carré",
+                    "email": "29132017+Sammyjo20@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Official Pagination Plugin For Saloon v3",
+            "homepage": "https://github.com/saloonphp/pagination-plugin",
+            "support": {
+                "source": "https://github.com/saloonphp/pagination-plugin/tree/v2.3.0"
+            },
+            "time": "2026-03-25T20:40:25+00:00"
+        },
+        {
+            "name": "saloonphp/rate-limit-plugin",
+            "version": "v2.5.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/saloonphp/rate-limit-plugin.git",
+                "reference": "f3e7700b73cef0322fea3392a57449d96b748ee2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/saloonphp/rate-limit-plugin/zipball/f3e7700b73cef0322fea3392a57449d96b748ee2",
+                "reference": "f3e7700b73cef0322fea3392a57449d96b748ee2",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2",
+                "saloonphp/saloon": "^3.0 || ^4.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.5",
+                "mockery/mockery": "^1.5",
+                "orchestra/testbench": "^9.15 || ^10.7",
+                "pestphp/pest": "^v3.8.4 || ^v4.1.4",
+                "phpstan/phpstan": "^1.9",
+                "predis/predis": "^2.1",
+                "psr/simple-cache": "^3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Saloon\\RateLimitPlugin\\": "src/",
+                    "Saloon\\RateLimitPlugin\\Tests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sam Carré",
+                    "email": "29132017+Sammyjo20@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Handle rate limits beautifully in your Saloon API integrations or SDKs",
+            "homepage": "https://github.com/sammyjo20",
+            "support": {
+                "issues": "https://github.com/saloonphp/rate-limit-plugin/issues",
+                "source": "https://github.com/saloonphp/rate-limit-plugin/tree/v2.5.1"
+            },
+            "time": "2026-03-25T20:56:11+00:00"
+        },
+        {
+            "name": "saloonphp/saloon",
+            "version": "v4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/saloonphp/saloon.git",
+                "reference": "1307b1d72cacdd2c9c20978cdf7a0b720b4bf3bb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/saloonphp/saloon/zipball/1307b1d72cacdd2c9c20978cdf7a0b720b4bf3bb",
+                "reference": "1307b1d72cacdd2c9c20978cdf7a0b720b4bf3bb",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.6",
+                "guzzlehttp/promises": "^1.5 || ^2.0",
+                "guzzlehttp/psr7": "^2.0",
+                "php": "^8.2",
+                "psr/http-factory": "^1.0",
+                "psr/http-message": "^1.1 || ^2.0"
+            },
+            "conflict": {
+                "sammyjo20/saloon": "*"
+            },
+            "require-dev": {
+                "ext-simplexml": "*",
+                "friendsofphp/php-cs-fixer": "^3.5",
+                "illuminate/collections": "^10.0 || ^11.0 || ^12.0",
+                "league/flysystem": "^3.0",
+                "pestphp/pest": "^2.36.0 || ^3.8.2 || ^4.1.4",
+                "phpstan/phpstan": "^2.1.13",
+                "saloonphp/xml-wrangler": "^1.1",
+                "spatie/invade": "^2.1",
+                "symfony/dom-crawler": "^6.0 || ^7.0",
+                "symfony/var-dumper": "^6.3 || ^7.0"
+            },
+            "suggest": {
+                "illuminate/collections": "Required for the response collect() method.",
+                "saloonphp/xml-wrangler": "Required for the response xmlReader() method.",
+                "symfony/dom-crawler": "Required for the response dom() method.",
+                "symfony/var-dumper": "Required for default debugging drivers."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Saloon\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sam Carré",
+                    "email": "29132017+Sammyjo20@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Build beautiful API integrations and SDKs with Saloon",
+            "homepage": "https://github.com/saloonphp/saloon",
+            "keywords": [
+                "api",
+                "api-integrations",
+                "saloon",
+                "sammyjo20",
+                "sdk"
+            ],
+            "support": {
+                "issues": "https://github.com/saloonphp/saloon/issues",
+                "source": "https://github.com/saloonphp/saloon/tree/v4.0.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sammyjo20",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-03-17T22:58:33+00:00"
+        },
+        {
+            "name": "saloonphp/xml-wrangler",
+            "version": "v1.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/saloonphp/xml-wrangler.git",
+                "reference": "4f35b68245dee8041193369efd4d73a98ad04a5f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/saloonphp/xml-wrangler/zipball/4f35b68245dee8041193369efd4d73a98ad04a5f",
+                "reference": "4f35b68245dee8041193369efd4d73a98ad04a5f",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "php": "^8.2",
+                "spatie/array-to-xml": "^3.2",
+                "veewee/xml": "^3.1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.5",
+                "guzzlehttp/guzzle": "^7.8",
+                "illuminate/collections": "^10.30",
+                "pestphp/pest": "^v3.8.4 || v4.1.4",
+                "phpstan/phpstan": "^1.9",
+                "psr/http-message": "^2.0",
+                "saloonphp/saloon": "^4.0",
+                "symfony/var-dumper": "^7.3"
+            },
+            "suggest": {
+                "illuminate/collections": "Used for the collect and lazyCollect methods when reading XML."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Saloon\\XmlWrangler\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sam Carré",
+                    "email": "29132017+Sammyjo20@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Easily Read & Write XML in PHP",
+            "homepage": "https://github.com/saloonphp/xml-wrangler",
+            "support": {
+                "issues": "https://github.com/saloonphp/xml-wrangler/issues",
+                "source": "https://github.com/saloonphp/xml-wrangler/tree/v1.5.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sammyjo20",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-03-25T22:32:39+00:00"
+        },
+        {
             "name": "socialiteproviders/discord",
             "version": "4.2.0",
             "source": {
@@ -5975,6 +6706,74 @@
                 "source": "https://github.com/socialiteproviders/manager"
             },
             "time": "2026-03-18T22:13:24+00:00"
+        },
+        {
+            "name": "spatie/array-to-xml",
+            "version": "3.4.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/array-to-xml.git",
+                "reference": "88b2f3852a922dd73177a68938f8eb2ec70c7224"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/array-to-xml/zipball/88b2f3852a922dd73177a68938f8eb2ec70c7224",
+                "reference": "88b2f3852a922dd73177a68938f8eb2ec70c7224",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.2",
+                "pestphp/pest": "^1.21",
+                "spatie/pest-plugin-snapshots": "^1.1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\ArrayToXml\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://freek.dev",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Convert an array to xml",
+            "homepage": "https://github.com/spatie/array-to-xml",
+            "keywords": [
+                "array",
+                "convert",
+                "xml"
+            ],
+            "support": {
+                "source": "https://github.com/spatie/array-to-xml/tree/3.4.4"
+            },
+            "funding": [
+                {
+                    "url": "https://spatie.be/open-source/support-us",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/spatie",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-12-15T09:00:41+00:00"
         },
         {
             "name": "spatie/image",
@@ -9435,6 +10234,86 @@
                 "source": "https://github.com/tijsverkoyen/CssToInlineStyles/tree/v2.4.0"
             },
             "time": "2025-12-02T11:56:42+00:00"
+        },
+        {
+            "name": "veewee/xml",
+            "version": "3.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/veewee/xml.git",
+                "reference": "6529e0570d9e987c5f9c636d533df7d275f5f898"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/veewee/xml/zipball/6529e0570d9e987c5f9c636d533df7d275f5f898",
+                "reference": "6529e0570d9e987c5f9c636d533df7d275f5f898",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-libxml": "*",
+                "ext-xml": "*",
+                "ext-xmlreader": "*",
+                "ext-xmlwriter": "*",
+                "ext-xsl": "*",
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
+                "php-standard-library/php-standard-library": "^3.0 || ~4.0 || ^5.0 || ^6.0",
+                "webmozart/assert": "^1.10"
+            },
+            "require-dev": {
+                "infection/infection": "^0.31.7",
+                "php-cs-fixer/shim": "~3.88",
+                "php-standard-library/psalm-plugin": "^2.2",
+                "phpunit/phpunit": "~12.3",
+                "symfony/finder": "^6.1 || ^7.0",
+                "veewee/composer-run-parallel": "^1.0.0",
+                "vimeo/psalm": "~6.13"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/bootstrap.php"
+                ],
+                "psr-4": {
+                    "VeeWee\\Xml\\": "src/Xml"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Toon Verwerft",
+                    "email": "toonverwerft@gmail.com"
+                }
+            ],
+            "description": "XML without worries",
+            "keywords": [
+                "Xpath",
+                "array-to-xml",
+                "dom",
+                "dom-manipulation",
+                "reader",
+                "writer",
+                "xml",
+                "xml-to-array",
+                "xml_decode",
+                "xml_encode",
+                "xsd",
+                "xslt"
+            ],
+            "support": {
+                "issues": "https://github.com/veewee/xml/issues",
+                "source": "https://github.com/veewee/xml/tree/3.7.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/veewee",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-04-24T07:53:14+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

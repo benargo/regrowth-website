@@ -4,8 +4,10 @@ use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossStrategyController;
+use App\Http\Controllers\DailyQuestsAuditController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
+use App\Http\Controllers\Dashboard\AddonSchemaController;
 use App\Http\Controllers\Dashboard\AddonSettingsController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\GrmController;
@@ -23,6 +25,7 @@ use App\Http\Controllers\Loot\ShowRaidController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ServeIconController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,9 +33,18 @@ use Inertia\Inertia;
 Route::get('/', fn () => Inertia::render('Home'))->name('home');
 
 /**
+ * Icon serving
+ */
+Route::get('/icons/{size}/{name}', ServeIconController::class)
+    ->name('icons.show')
+    ->where('size', '[0-9]+')
+    ->where('name', '[a-z0-9_]+\.(jpg|png)')
+    ->middleware(['signed', 'throttle:icons']);
+
+/**
  * Guild Roster
  */
-Route::get('/roster', [GuildRosterController::class, 'index'])->name('roster.index');
+Route::get('/roster', GuildRosterController::class)->name('roster');
 
 /**
  * Loot Bias Tools
@@ -102,9 +114,9 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
     /**
      * Addon management
      */
-    Route::get('/addon/export', [AddonController::class, 'export'])->name('addon.export');
+    Route::get('/addon/export', [AddonController::class, 'exportBase64'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
-    Route::get('/addon/export/schema', [AddonController::class, 'exportSchema'])->name('addon.export.schema');
+    Route::get('/addon/export/schema', AddonSchemaController::class)->name('addon.export.schema');
     Route::get('/addon/settings', [AddonSettingsController::class, 'index'])->name('addon.settings');
     Route::post('/addon/settings/councillors', [AddonSettingsController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
     Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
@@ -121,7 +133,7 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      */
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
-    Route::get('/daily-quests/audit', [DailyQuestsController::class, 'audit'])->name('daily-quests.audit');
+    Route::get('/daily-quests/audit', DailyQuestsAuditController::class)->name('daily-quests.audit');
 
     /**
      * Event templates
@@ -138,7 +150,6 @@ Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['a
      */
     Route::get('/grm-upload', [GrmController::class, 'showUploadForm'])->name('grm-upload.form');
     Route::post('/grm-upload', [GrmController::class, 'handleUpload'])->name('grm-upload.upload');
-    Route::get('/grm-upload/status', [GrmController::class, 'getUploadStatus'])->name('grm-upload.status');
 
     /**
      * Phases management

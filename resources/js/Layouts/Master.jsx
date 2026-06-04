@@ -73,7 +73,7 @@ export default function Master({ title, children }) {
                     {/* Desktop menu */}
                     <div className="hidden lg:ml-10 lg:flex lg:flex-1 lg:items-center lg:justify-between">
                         <div className="flex gap-4 space-x-1">
-                            <NavLink href={route("roster.index")}>
+                            <NavLink href={route("roster")}>
                                 <Icon icon="users" style="solid" className="mr-2 h-6" />
                                 Roster
                             </NavLink>
@@ -162,7 +162,7 @@ export default function Master({ title, children }) {
                 {/* Mobile menu */}
                 <div className={`${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`} id="mobile-menu">
                     <div className="space-y-1 px-2 pb-3 pt-2">
-                        <ResponsiveNavLink href={route("roster.index")}>
+                        <ResponsiveNavLink href={route("roster")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>

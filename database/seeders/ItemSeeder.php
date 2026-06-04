@@ -2,16 +2,30 @@
 
 namespace Database\Seeders;
 
-use App\Models\LootCouncil\Item;
-use App\Services\Blizzard\BlizzardService;
+use App\Enums\ItemQuality;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Data\Item\ItemData;
+use App\Http\Integrations\Blizzard\Data\Media\MediaData;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
+use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Jobs\AttachBlizzardIconToModel;
+use App\Models\Item;
 use Illuminate\Database\Seeder;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Str;
+use Saloon\Exceptions\Request\FatalRequestException;
+use Saloon\Exceptions\Request\RequestException;
+use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
 class ItemSeeder extends Seeder
 {
     public function __construct(
-        private readonly BlizzardService $blizzard,
+        private readonly BlizzardConnector $blizzard,
+        private readonly RenderConnector $renderConnector,
     ) {}
 
     /**
@@ -705,16 +719,27 @@ class ItemSeeder extends Seeder
         ['id' => 35733, 'raid_id' => 9, 'boss_id' => null, 'group' => 'Trash drops'],
     ];
 
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         foreach ($this->items as $item) {
-            $model = Item::withoutEvents(function () use ($item) {
+            try {
+                /** @var ItemData $itemDto */
+                $itemDto = $this->blizzard->send(new GetItemRequest($item['id']))->dto();
+
+                /** @var MediaData $mediaDto */
+                $mediaDto = $this->blizzard->send(new GetItemMediaRequest($item['id']))->dto();
+            } catch (ItemNotFoundException|BlizzardRequestException|FatalRequestException $e) {
+                $this->command?->warn("  ⚠ [{$item['id']}] Skipped — {$e->getMessage()}");
+
+                continue;
+            }
+
+            $model = Item::withoutEvents(function () use ($item, $itemDto) {
                 return Item::updateOrCreate(
                     ['id' => $item['id']],
                     [
+                        'name' => $itemDto->name,
+                        'quality' => ItemQuality::{$itemDto->quality->type},
                         'raid_id' => $item['raid_id'],
                         'boss_id' => $item['boss_id'],
                         'group' => $item['group'],
@@ -722,21 +747,29 @@ class ItemSeeder extends Seeder
                 );
             });
 
-            try {
-                $itemData = $this->blizzard->findItem($item['id']);
-                $mediaData = $this->blizzard->getItemMedia($item['id']);
+            if (! $model->hasMedia('blizzard_icons')) {
+                $asset = $mediaDto->assets[0] ?? null;
 
-                $model->update([
-                    'name' => $itemData['name'] ?? null,
-                    'icon' => ! empty($mediaData) ? $mediaData : null,
-                ]);
+                if ($asset !== null) {
+                    try {
+                        $fileName = (string) Str::of($asset->value)->afterLast('/')->before('?');
+                        $body = $this->renderConnector->send(new FetchAssetRequest($asset->value))->body();
 
-                $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
-            } catch (ConnectionException|RequestException $e) {
-                $this->command?->warn("  ⚠ [{$item['id']}] Skipped — {$e->getMessage()}");
-
-                continue;
+                        $model->addMediaFromString($body)
+                            ->usingFileName($fileName)
+                            ->withCustomProperties(['size' => 56])
+                            ->toMediaCollection('blizzard_icons');
+                    } catch (ForbiddenException $e) {
+                        AttachBlizzardIconToModel::dispatch(Item::class, $model->id, $asset->value)
+                            ->delay(now()->addMinutes(5));
+                        $this->command?->warn("  ⚠ [{$item['id']}] Icon deferred (403) — retrying in 5 min");
+                    } catch (MediaNotFoundException|RequestException $e) {
+                        $this->command?->warn("  ⚠ [{$item['id']}] Icon skipped — {$e->getMessage()}");
+                    }
+                }
             }
+
+            $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
         }
     }
 }

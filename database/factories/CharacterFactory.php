@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CharacterFactory extends Factory

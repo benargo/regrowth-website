@@ -5,12 +5,10 @@ namespace App\Models;
 use App\Enums\AffectType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Spell extends Model implements HasMedia
+class Spell extends Model
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.

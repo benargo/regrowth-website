@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\HasBlizzardIcons;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class PlayableClass extends Model implements HasMedia
+class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
 {
     use HasFactory, InteractsWithMedia;
 

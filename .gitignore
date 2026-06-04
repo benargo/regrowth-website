@@ -1,7 +1,5 @@
 *.log
-.claude
 .DS_Store
-.engram
 .env
 .env.backup
 .env.dusk.local
@@ -9,10 +7,14 @@
 .github
 .phpactor.json
 .phpunit.result.cache
+/.claude/worktrees
+/.engram
 /.fleet
 /.idea
 /.nova
 /.phpunit.cache
+/.playwright
+/.playwright-cli
 /.vscode
 /.zed
 /auth.json

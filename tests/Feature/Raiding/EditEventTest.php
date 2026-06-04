@@ -14,6 +14,7 @@ use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -137,6 +138,24 @@ class EditEventTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Raiding/Plans/Edit')
             ->has('templates', 0)
+        );
+    }
+
+    #[Test]
+    public function it_passes_question_mark_icon_url_as_signed_url_in_initial_props(): void
+    {
+        $user = User::factory()->create();
+        $user->discordRoles()->attach($this->memberRole->id);
+
+        $raid = Raid::factory()->create();
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid);
+
+        $response = $this->actingAs($user)->get(route('raiding.plans.edit', $event));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('questionMarkIconUrl', fn ($url) => str_contains((string) $url, '/icons/56/inv_misc_questionmark.jpg')
+                && URL::hasValidSignature(request()->create((string) $url)))
         );
     }
 

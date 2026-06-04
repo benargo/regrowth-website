@@ -5,7 +5,6 @@ namespace Tests\Unit\Models;
 use App\Enums\AffectType;
 use App\Models\Spell;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class SpellTest extends ModelTestCase
@@ -112,26 +111,5 @@ class SpellTest extends ModelTestCase
 
         $this->assertSame('Holy Nova', $spell->name);
         $this->assertSame(AffectType::Magic, $spell->type);
-    }
-
-    #[Test]
-    public function it_implements_has_media_interface(): void
-    {
-        $spell = $this->create();
-
-        $this->assertInstanceOf(HasMedia::class, $spell);
-    }
-
-    #[Test]
-    public function it_can_add_media(): void
-    {
-        $spell = $this->create();
-        $testFile = storage_path('app/test-image.png');
-        file_put_contents($testFile, 'fake image content');
-
-        $spell->addMedia($testFile)->toMediaCollection('default');
-
-        $this->assertNotEmpty($spell->getMedia('default'));
-        @unlink($testFile);
     }
 }

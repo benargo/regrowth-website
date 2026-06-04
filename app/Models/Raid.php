@@ -6,7 +6,6 @@ use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
 use Database\Factories\RaidFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Casts\Attribute;

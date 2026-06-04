@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\EventTemplateCollection;
@@ -14,15 +15,15 @@ use App\Models\PlayableClass;
 use App\Models\Raid;
 use App\Models\Spell;
 use App\Models\TargetMarker;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
-class EventTemplateController extends Controller
+class EventTemplateController extends Controller implements HasBlizzardIcons
 {
     /**
      * Display a listing of event templates.
@@ -72,7 +73,7 @@ class EventTemplateController extends Controller
      * Edit the specified event template.
      */
     #[Authorize('update', 'template')]
-    public function edit(Event $template, Request $request, MediaService $mediaService): Response
+    public function edit(Event $template, Request $request): Response
     {
         $template->load('raids.bosses.media', 'assignments.group');
 
@@ -92,9 +93,12 @@ class EventTemplateController extends Controller
                 return PlayableClassResource::collection(PlayableClass::orderBy('name')->get())->resolve($request);
             }),
             'spells' => Inertia::optional(function () use ($request) {
-                return SpellResource::collection(Spell::with('media')->get())->resolve($request);
+                return SpellResource::collection(Spell::all())->resolve($request);
             }),
-            'questionMarkIconUrl' => $this->questionMarkIconUrl($mediaService),
+            'questionMarkIconUrl' => URL::signedRoute('icons.show', [
+                'size' => self::BLIZZARD_ICON_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::BLIZZARD_ICON_FILE_EXTENSION,
+            ]),
         ]);
     }
 
@@ -125,10 +129,5 @@ class EventTemplateController extends Controller
         $template->delete();
 
         return to_route('dashboard.event-templates.index');
-    }
-
-    private function questionMarkIconUrl(MediaService $mediaService): mixed
-    {
-        return Inertia::optional(fn () => $mediaService->get('inv_misc_questionmark'))->once();
     }
 }

@@ -2,24 +2,23 @@
 
 namespace Tests\Unit\Notifications;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\LootCouncil\Comment;
 use App\Notifications\NewLootCouncilComment;
-use App\Services\Blizzard\BlizzardService;
 use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('notifications')]
 class NewLootCouncilCommentTest extends TestCase
 {
     use RefreshDatabase;
-
-    private function makeNotifiable(): NotifiableChannel
-    {
-        return new NotifiableChannel(Channel::from(['id' => '123456789']));
-    }
 
     #[Test]
     public function it_uses_discord_driver(): void
@@ -35,10 +34,7 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')
-                ->andReturn(['name' => 'Thunderfury']);
-        });
+        $this->fakeItemResponse('Thunderfury');
 
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
@@ -47,30 +43,17 @@ class NewLootCouncilCommentTest extends TestCase
     }
 
     #[Test]
-    public function it_falls_back_to_item_id_on_api_failure(): void
+    public function it_falls_back_to_item_id_when_item_not_found(): void
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')
-                ->andThrow(new \Exception('API error'));
-        });
-
-        $notification = new NewLootCouncilComment($comment);
-        $message = $notification->toMessage();
-
-        $this->assertStringContainsString("Item #{$comment->item->id}", $message->embeds[0]->description);
-    }
-
-    #[Test]
-    public function it_falls_back_when_name_is_null_in_response(): void
-    {
-        $comment = Comment::factory()->create();
-
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')
-                ->andReturn(['name' => null]);
-        });
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(
+                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                status: 404,
+            ),
+        ]);
 
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
@@ -83,9 +66,7 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')->andReturn(['name' => 'Warglaive']);
-        });
+        $this->fakeItemResponse('Warglaive');
 
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
@@ -101,9 +82,7 @@ class NewLootCouncilCommentTest extends TestCase
     {
         $comment = Comment::factory()->create();
 
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')->andReturn(['name' => 'Warglaive']);
-        });
+        $this->fakeItemResponse('Warglaive');
 
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
@@ -126,9 +105,7 @@ class NewLootCouncilCommentTest extends TestCase
         $comment = Comment::factory()->create();
         $notifiable = $this->makeNotifiable();
 
-        $this->mock(BlizzardService::class, function ($mock) {
-            $mock->shouldReceive('findItem')->andReturn(['name' => 'Warglaive']);
-        });
+        $this->fakeItemResponse('Warglaive');
 
         $notification = new NewLootCouncilComment($comment);
         $data = $notification->toDatabase($notifiable);
@@ -137,5 +114,30 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertSame('123456789', $data['channel_id']);
         $this->assertSame($comment->user->id, $data['created_by_user_id']);
         $this->assertArrayHasKey('embeds', $data['payload']);
+    }
+
+    private function makeNotifiable(): NotifiableChannel
+    {
+        return new NotifiableChannel(Channel::from(['id' => '123456789']));
+    }
+
+    private function fakeItemResponse(string $name = 'Thunderfury, Blessed Blade of the Windseeker', int $id = 19019): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: [
+                'id' => $id,
+                'name' => $name,
+                'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+                'level' => 80,
+                'required_level' => 60,
+                'media' => ['key' => ['href' => 'https://example.test/media/19019']],
+                'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+                'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'One-Handed Sword', 'id' => 7],
+                'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
+                'purchase_price' => 0,
+                'sell_price' => 0,
+            ], status: 200),
+        ]);
     }
 }

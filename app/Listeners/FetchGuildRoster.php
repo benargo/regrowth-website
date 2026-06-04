@@ -24,6 +24,6 @@ class FetchGuildRoster implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['blizzard', 'guild', 'roster'];
+        return ['blizzard'];
     }
 }

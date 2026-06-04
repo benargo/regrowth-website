@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\DailyQuestType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,31 +17,27 @@ class StoreDailyQuestsRequest extends FormRequest
             'cooking_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('daily_quests', 'id')->where('type', 'Cooking'),
+                Rule::exists('daily_quests', 'id')->where('type', DailyQuestType::Cooking->value),
             ],
             'fishing_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('daily_quests', 'id')->where('type', 'Fishing'),
+                Rule::exists('daily_quests', 'id')->where('type', DailyQuestType::Fishing->value),
             ],
             'dungeon_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('daily_quests', 'id')
-                    ->where('type', 'Dungeon')
-                    ->where('mode', 'Normal'),
+                Rule::exists('daily_quests', 'id')->where('type', DailyQuestType::Dungeon->value),
             ],
             'heroic_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('daily_quests', 'id')
-                    ->where('type', 'Dungeon')
-                    ->where('mode', 'Heroic'),
+                Rule::exists('daily_quests', 'id')->where('type', DailyQuestType::Heroic->value),
             ],
             'pvp_quest_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('daily_quests', 'id')->where('type', 'PvP'),
+                Rule::exists('daily_quests', 'id')->where('type', DailyQuestType::PvP->value),
             ],
         ];
     }

@@ -16,17 +16,34 @@ class ItemQualityTest extends TestCase
         $this->assertCount(8, ItemQuality::cases());
     }
 
+    // ==================== values ====================
+
     #[Test]
-    public function each_case_has_the_correct_hex_color(): void
+    public function each_case_has_the_correct_quality_name_value(): void
     {
-        $this->assertSame('9d9d9d', ItemQuality::Poor->value);
-        $this->assertSame('ffffff', ItemQuality::Common->value);
-        $this->assertSame('1eff00', ItemQuality::Uncommon->value);
-        $this->assertSame('0070dd', ItemQuality::Rare->value);
-        $this->assertSame('a335ee', ItemQuality::Epic->value);
-        $this->assertSame('ff8000', ItemQuality::Legendary->value);
-        $this->assertSame('e6cc80', ItemQuality::Artifact->value);
-        $this->assertSame('00ccff', ItemQuality::Heirloom->value);
+        $this->assertSame('Poor', ItemQuality::POOR->value);
+        $this->assertSame('Common', ItemQuality::COMMON->value);
+        $this->assertSame('Uncommon', ItemQuality::UNCOMMON->value);
+        $this->assertSame('Rare', ItemQuality::RARE->value);
+        $this->assertSame('Epic', ItemQuality::EPIC->value);
+        $this->assertSame('Legendary', ItemQuality::LEGENDARY->value);
+        $this->assertSame('Artifact', ItemQuality::ARTIFACT->value);
+        $this->assertSame('Heirloom', ItemQuality::HEIRLOOM->value);
+    }
+
+    // ==================== colorCode ====================
+
+    #[Test]
+    public function each_case_returns_the_correct_color_code(): void
+    {
+        $this->assertSame(0x9D9D9D, ItemQuality::POOR->colorCode());
+        $this->assertSame(0xFFFFFF, ItemQuality::COMMON->colorCode());
+        $this->assertSame(0x1EFF00, ItemQuality::UNCOMMON->colorCode());
+        $this->assertSame(0x0070DD, ItemQuality::RARE->colorCode());
+        $this->assertSame(0xA335EE, ItemQuality::EPIC->colorCode());
+        $this->assertSame(0xFF8000, ItemQuality::LEGENDARY->colorCode());
+        $this->assertSame(0xE6CC80, ItemQuality::ARTIFACT->colorCode());
+        $this->assertSame(0x00CCFF, ItemQuality::HEIRLOOM->colorCode());
     }
 
     // ==================== cssClass ====================
@@ -34,36 +51,13 @@ class ItemQualityTest extends TestCase
     #[Test]
     public function css_class_returns_lowercase_name_prefixed(): void
     {
-        $this->assertSame('item-quality-poor', ItemQuality::Poor->cssClass());
-        $this->assertSame('item-quality-common', ItemQuality::Common->cssClass());
-        $this->assertSame('item-quality-uncommon', ItemQuality::Uncommon->cssClass());
-        $this->assertSame('item-quality-rare', ItemQuality::Rare->cssClass());
-        $this->assertSame('item-quality-epic', ItemQuality::Epic->cssClass());
-        $this->assertSame('item-quality-legendary', ItemQuality::Legendary->cssClass());
-        $this->assertSame('item-quality-artifact', ItemQuality::Artifact->cssClass());
-        $this->assertSame('item-quality-heirloom', ItemQuality::Heirloom->cssClass());
-    }
-
-    // ==================== fromName ====================
-
-    #[Test]
-    public function from_name_returns_correct_case_for_exact_match(): void
-    {
-        $this->assertSame(ItemQuality::Rare, ItemQuality::fromName('Rare'));
-    }
-
-    #[Test]
-    public function from_name_is_case_insensitive(): void
-    {
-        $this->assertSame(ItemQuality::Epic, ItemQuality::fromName('epic'));
-        $this->assertSame(ItemQuality::Epic, ItemQuality::fromName('EPIC'));
-        $this->assertSame(ItemQuality::Epic, ItemQuality::fromName('ePiC'));
-    }
-
-    #[Test]
-    public function from_name_returns_null_for_unknown_name(): void
-    {
-        $this->assertNull(ItemQuality::fromName('Mythic'));
-        $this->assertNull(ItemQuality::fromName(''));
+        $this->assertSame('item-quality-poor', ItemQuality::POOR->cssClass());
+        $this->assertSame('item-quality-common', ItemQuality::COMMON->cssClass());
+        $this->assertSame('item-quality-uncommon', ItemQuality::UNCOMMON->cssClass());
+        $this->assertSame('item-quality-rare', ItemQuality::RARE->cssClass());
+        $this->assertSame('item-quality-epic', ItemQuality::EPIC->cssClass());
+        $this->assertSame('item-quality-legendary', ItemQuality::LEGENDARY->cssClass());
+        $this->assertSame('item-quality-artifact', ItemQuality::ARTIFACT->cssClass());
+        $this->assertSame('item-quality-heirloom', ItemQuality::HEIRLOOM->cssClass());
     }
 }

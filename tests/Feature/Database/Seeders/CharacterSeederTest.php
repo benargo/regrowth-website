@@ -2,15 +2,17 @@
 
 namespace Tests\Feature\Database\Seeders;
 
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
+use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Models\Character;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\BlizzardService;
 use Database\Seeders\CharacterSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class CharacterSeederTest extends TestCase
@@ -23,8 +25,17 @@ class CharacterSeederTest extends TestCase
     private function makeProfileResponse(int $classId = 7, int $raceId = 2): array
     {
         return [
-            'character_class' => ['id' => $classId],
-            'race' => ['id' => $raceId],
+            'id' => 1,
+            'name' => 'Thrall',
+            'gender' => ['type' => 'MALE', 'name' => 'Male'],
+            'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
+            'race' => ['key' => ['href' => "https://example.test/race/{$raceId}"], 'name' => 'Orc', 'id' => $raceId],
+            'character_class' => ['key' => ['href' => "https://example.test/class/{$classId}"], 'name' => 'Shaman', 'id' => $classId],
+            'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
+            'level' => 70,
+            'last_login_timestamp' => 0,
+            'average_item_level' => 0,
+            'equipped_item_level' => 0,
         ];
     }
 
@@ -45,18 +56,22 @@ class CharacterSeederTest extends TestCase
         ];
     }
 
-    private function mockBlizzardService(?callable $callback = null): void
+    private function fakeSaloon(int $classId = 7, int $raceId = 2): void
     {
-        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($callback) {
-            $mock->shouldReceive('getCharacterProfile')
-                ->andReturnUsing(fn () => $this->makeProfileResponse());
-            $mock->shouldReceive('findPlayableRace')
-                ->andReturnUsing(fn (int $id) => $this->makePlayableRaceResponse($id));
-
-            if ($callback) {
-                $callback($mock);
-            }
-        });
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(
+                body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
+                status: 200,
+            ),
+            GetCharacterProfileRequest::class => MockResponse::make(
+                body: $this->makeProfileResponse($classId, $raceId),
+                status: 200,
+            ),
+            GetPlayableRaceRequest::class => MockResponse::make(
+                body: $this->makePlayableRaceResponse($raceId),
+                status: 200,
+            ),
+        ]);
     }
 
     private function runSeeder(): void
@@ -69,7 +84,7 @@ class CharacterSeederTest extends TestCase
     {
         $playableClass = PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
 
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         $character = Character::factory()->create(['name' => 'Thrall']);
 
@@ -86,10 +101,7 @@ class CharacterSeederTest extends TestCase
     #[Test]
     public function seeder_skips_characters_with_both_columns_already_populated(): void
     {
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldNotReceive('getCharacterProfile');
-            $mock->shouldNotReceive('findPlayableRace');
-        });
+        Saloon::fake([]);
 
         Character::factory()
             ->withPlayableClass()
@@ -97,6 +109,8 @@ class CharacterSeederTest extends TestCase
             ->create(['name' => 'Thrall']);
 
         $this->runSeeder();
+
+        Saloon::assertNothingSent();
     }
 
     #[Test]
@@ -104,7 +118,7 @@ class CharacterSeederTest extends TestCase
     {
         PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
 
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         $character = Character::factory()
             ->withPlayableClass(PlayableClass::find(7))
@@ -125,10 +139,16 @@ class CharacterSeederTest extends TestCase
             ->once()
             ->withArgs(fn (string $msg) => str_contains($msg, 'Failed to fetch profile for character'));
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getCharacterProfile')
-                ->andThrow(new \RuntimeException('Blizzard API down'));
-        });
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(
+                body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
+                status: 200,
+            ),
+            GetCharacterProfileRequest::class => MockResponse::make(
+                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                status: 404,
+            ),
+        ]);
 
         $character = Character::factory()->create(['name' => 'Thrall']);
 
@@ -145,7 +165,7 @@ class CharacterSeederTest extends TestCase
     {
         PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
 
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         $characterA = Character::factory()->create(['name' => 'Thrall']);
         $characterB = Character::factory()->create(['name' => 'Garrosh']);
@@ -165,7 +185,7 @@ class CharacterSeederTest extends TestCase
     #[Test]
     public function seeder_sets_null_playable_class_id_when_class_not_found_in_database(): void
     {
-        $this->mockBlizzardService();
+        $this->fakeSaloon();
 
         $character = Character::factory()->create(['name' => 'Thrall']);
 

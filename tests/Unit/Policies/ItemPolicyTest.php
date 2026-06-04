@@ -3,7 +3,7 @@
 namespace Tests\Unit\Policies;
 
 use App\Models\DiscordRole;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\User;
 use App\Policies\ItemPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -3,7 +3,7 @@
 namespace App\Events;
 
 use App\Contracts\Events\SchedulesAddonExportBuild;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 

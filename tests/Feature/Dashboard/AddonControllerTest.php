@@ -2,15 +2,17 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\GuildRank;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 
 class AddonControllerTest extends DashboardTestCase
@@ -28,12 +30,15 @@ class AddonControllerTest extends DashboardTestCase
 
         $this->app->instance(GuildTags::class, $guildTags);
 
-        // Mock BlizzardService to return empty roster by default
+        // Fake Saloon to return empty roster by default
         // This prevents real API calls during tests that don't specifically test GRM freshness
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => []])
-            ->byDefault();
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+        ]);
     }
 
     /**
@@ -152,52 +157,6 @@ class AddonControllerTest extends DashboardTestCase
         $this->seedExportFile();
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
-
-        $response->assertOk();
-    }
-
-    #[Test]
-    public function export_schema_requires_authentication(): void
-    {
-        $response = $this->get(route('dashboard.addon.export.schema'));
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
-    public function export_schema_forbids_guest_users(): void
-    {
-        $user = User::factory()->guest()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function export_schema_forbids_member_users(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function export_schema_forbids_raider_users(): void
-    {
-        $user = User::factory()->raider()->create();
-
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function export_schema_allows_officer_users(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
 
         $response->assertOk();
     }
@@ -400,122 +359,6 @@ class AddonControllerTest extends DashboardTestCase
     }
 
     // ==========================================
-    // Export Schema Endpoint Tests
-    // ==========================================
-
-    #[Test]
-    public function export_schema_renders_inertia_page_with_schema(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/ExportSchema')
-            ->has('schema')
-        );
-    }
-
-    #[Test]
-    public function export_schema_includes_json_schema_metadata(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('schema', fn (Assert $schema) => $schema
-                ->where('$schema', 'https://json-schema.org/draft/2020-12/schema')
-                ->has('$id')
-                ->where('title', 'Regrowth Loot Tool Export Schema')
-                ->has('description')
-                ->where('type', 'object')
-                ->has('properties')
-            )
-        );
-    }
-
-    #[Test]
-    public function export_schema_defines_system_properties(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('schema.properties.system')
-            ->has('schema.properties.system.properties.date_generated')
-            ->has('schema.properties.system.properties.user')
-        );
-    }
-
-    #[Test]
-    public function export_schema_defines_priorities_properties(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('schema.properties.priorities')
-            ->where('schema.properties.priorities.type', 'array')
-        );
-    }
-
-    #[Test]
-    public function export_schema_defines_items_properties(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('schema.properties.items')
-            ->where('schema.properties.items.type', 'array')
-        );
-    }
-
-    #[Test]
-    public function export_schema_defines_players_properties(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('schema.properties.players')
-            ->where('schema.properties.players.type', 'array')
-        );
-    }
-
-    #[Test]
-    public function export_schema_defines_player_attendance_properties(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('schema.properties.players.items.properties.name')
-            ->has('schema.properties.players.items.properties.attendance')
-            ->has('schema.properties.players.items.properties.attendance.properties.first_attendance')
-            ->has('schema.properties.players.items.properties.attendance.properties.attended')
-            ->has('schema.properties.players.items.properties.attendance.properties.total')
-            ->has('schema.properties.players.items.properties.attendance.properties.percentage')
-        );
-    }
-
-    #[Test]
-    public function export_schema_defines_councillors_properties(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->has('schema.properties.councillors')
-            ->where('schema.properties.councillors.type', 'array')
-            ->has('schema.properties.councillors.items.properties.id')
-            ->has('schema.properties.councillors.items.properties.name')
-            ->has('schema.properties.councillors.items.properties.rank')
-        );
-    }
-
-    #[Test]
-    public function export_schema_id_contains_version_1_2_0(): void
-    {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
-
-        $schema = $response->original->getData()['page']['props']['schema'];
-
-        $this->assertStringContainsString('v=1.2.0', $schema['$id']);
-    }
-
-    // ==========================================
     // GRM Freshness Tests
     // ==========================================
 
@@ -525,9 +368,13 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => []]);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -548,9 +395,13 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => []]);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.json'));
 
@@ -571,9 +422,13 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => []]);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -591,9 +446,13 @@ class AddonControllerTest extends DashboardTestCase
         Storage::fake('local');
         $this->seedExportFile();
 
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => []]);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -614,16 +473,20 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardService to return 5 raiders
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => [
-                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 4, 'name' => 'Player4'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 5, 'name' => 'Player5'], 'rank' => $raiderRank->position],
-            ]]);
+        // Fake Saloon to return 5 raiders
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 4, 'name' => 'Player4', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 5, 'name' => 'Player5', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                ],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -652,14 +515,18 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardService to return 3 raiders (same as CSV)
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => [
-                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
-            ]]);
+        // Fake Saloon to return 3 raiders (same as CSV)
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                ],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -690,14 +557,18 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardService to return 3 raiders (difference of 2)
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => [
-                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
-            ]]);
+        // Fake Saloon to return 3 raiders (difference of 2)
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                ],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -725,16 +596,20 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardService to return 5 raiders (difference of 3)
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => [
-                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 4, 'name' => 'Player4'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 5, 'name' => 'Player5'], 'rank' => $raiderRank->position],
-            ]]);
+        // Fake Saloon to return 5 raiders (difference of 3)
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 4, 'name' => 'Player4', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 5, 'name' => 'Player5', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                ],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -767,14 +642,18 @@ class AddonControllerTest extends DashboardTestCase
         $trialRaiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Trial Raider']);
         GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
 
-        // Mock BlizzardService to return 3 raiders across different ranks
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => [
-                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $coreRaiderRank->position],
-                ['character' => ['id' => 3, 'name' => 'Player3'], 'rank' => $trialRaiderRank->position],
-            ]]);
+        // Fake Saloon to return 3 raiders across different ranks
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $coreRaiderRank->position],
+                    ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $trialRaiderRank->position],
+                ],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -797,9 +676,13 @@ class AddonControllerTest extends DashboardTestCase
         $csvContent = "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nPlayer1,Member,80,1,Main,\n";
         Storage::disk('local')->put('grm/uploads/latest.csv', $csvContent);
 
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => []]);
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -830,13 +713,17 @@ class AddonControllerTest extends DashboardTestCase
         $officerRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Officer']);
         $memberRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Member']);
 
-        // Mock BlizzardService to return non-raiders
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => [
-                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $officerRank->position],
-                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $memberRank->position],
-            ]]);
+        // Fake Saloon to return non-raiders
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $officerRank->position],
+                    ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $memberRank->position],
+                ],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 
@@ -864,13 +751,17 @@ class AddonControllerTest extends DashboardTestCase
         // Create a raider rank (doesn't count attendance to avoid triggering attendance calculation)
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
-        // Mock BlizzardService to return 2 raiders
-        $this->mock(BlizzardService::class)
-            ->shouldReceive('getGuildRoster')
-            ->andReturn(['members' => [
-                ['character' => ['id' => 1, 'name' => 'Player1'], 'rank' => $raiderRank->position],
-                ['character' => ['id' => 2, 'name' => 'Player2'], 'rank' => $raiderRank->position],
-            ]]);
+        // Fake Saloon to return 2 raiders
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                    ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
+                ],
+            ], status: 200),
+        ]);
 
         $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export'));
 

@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Contracts\HasBlizzardIcons;
+use App\Enums\DailyQuestType;
 use App\Enums\Instance;
-use Database\Factories\DailyQuestFactory;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[UseFactory(DailyQuestFactory::class)]
-class DailyQuest extends Model
+class DailyQuest extends Model implements HasBlizzardIcons, HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     /**
      * The table associated with the model.
@@ -29,8 +32,6 @@ class DailyQuest extends Model
         'name',
         'type',
         'instance',
-        'mode',
-        'rewards',
     ];
 
     /**
@@ -49,22 +50,41 @@ class DailyQuest extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'type' => DailyQuestType::class,
         'instance' => Instance::class,
-        'rewards' => 'json',
     ];
 
-    /**
-     * Get the quest name with the instance name appended for dungeon quests.
-     *
-     * Using a plain method rather than an Eloquent accessor prevents the formatted
-     * value from being cached in $attributes and re-appended after queue serialisation.
-     */
-    public function displayName(): string
-    {
-        if ($this->type === 'Dungeon' && $this->instance) {
-            return "{$this->name} ({$this->instance->value})";
-        }
+    // ============ Custom attributes ============
 
-        return $this->name;
+    protected function displayName(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => in_array($this->type, [DailyQuestType::Dungeon, DailyQuestType::Heroic]) && $this->instance
+                ? "{$this->name} ({$this->instance->value})"
+                : $this->name,
+        );
+    }
+
+    // ============ Laravel Media Library ============
+
+    /**
+     * Register media collections for the model.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('blizzard_icons')->singleFile();
+    }
+
+    // ============ Relationships ============
+
+    /**
+     * The items rewarded for completing this quest.
+     *
+     * @return BelongsToMany<Item, $this>
+     */
+    public function rewards(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'pivot_dailyquest_rewards', 'daily_quest_id', 'item_id')
+            ->withPivot('quantity');
     }
 }

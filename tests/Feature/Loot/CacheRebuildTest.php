@@ -3,21 +3,25 @@
 namespace Tests\Feature\Loot;
 
 use App\Events\ItemPrioritySaved;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Jobs\RebuildLootCouncilCache;
 use App\Listeners\FlushLootCouncilCache;
 use App\Models\Boss;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
-use Mockery\MockInterface;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\PendingRequest;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class CacheRebuildTest extends TestCase
@@ -31,14 +35,23 @@ class CacheRebuildTest extends TestCase
         app()->forgetInstance(FlushLootCouncilCache::class);
         app()->bind(FlushLootCouncilCache::class, fn () => new FlushLootCouncilCache);
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('findItem')->andReturn(['name' => 'Test Item']);
-            $mock->shouldReceive('findMedia')->andReturn(['assets' => []]);
-        });
+        Storage::fake('public');
 
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('get')->andReturn(null);
-        });
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
+                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
+                $segments = explode('/', trim($path, '/'));
+                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
+
+                return MockResponse::make(body: [
+                    'id' => $itemId,
+                    'name' => "Test Item {$itemId}",
+                ], status: 200);
+            },
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
     }
 
     #[Test]

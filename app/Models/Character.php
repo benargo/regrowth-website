@@ -6,7 +6,6 @@ use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Raids\Report;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +14,6 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Arr;
 
 class Character extends Model
 {
@@ -77,13 +75,6 @@ class Character extends Model
         'deleted' => CharacterDeleted::class,
     ];
 
-    /**
-     * All of the relationships to be touched.
-     *
-     * @var array
-     */
-    protected $touches = ['linkedCharacters'];
-
     // ============ Custom attributes ============
 
     /**
@@ -142,17 +133,13 @@ class Character extends Model
             ->withPivot('presence', 'is_loot_councillor');
     }
 
-    // ========== Prunable configuration ============
+    // ========== Prunable ============
 
     /**
      * Get the prunable model query.
      */
     public function prunable(): Builder
     {
-        $memberIds = collect(Arr::get(app(BlizzardService::class)->getGuildRoster(), 'members', []))
-            ->pluck('character.id')
-            ->toArray();
-
-        return static::whereNotIn('id', $memberIds)->where('updated_at', '<=', now()->subDays(14));
+        return static::where('updated_at', '<=', now()->subDays(14));
     }
 }
