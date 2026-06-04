@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Blizzard\Exceptions;
+namespace App\Http\Integrations\Blizzard\Exceptions;
 
 use Throwable;
 

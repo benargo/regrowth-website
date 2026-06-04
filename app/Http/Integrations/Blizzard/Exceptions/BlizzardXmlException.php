@@ -2,7 +2,6 @@
 
 namespace App\Http\Integrations\Blizzard\Exceptions;
 
-use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use Saloon\Exceptions\Request\ClientException;
 use Saloon\Http\Response;
 use Saloon\XmlWrangler\XmlReader;

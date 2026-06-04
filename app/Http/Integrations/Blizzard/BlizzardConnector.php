@@ -2,13 +2,13 @@
 
 namespace App\Http\Integrations\Blizzard;
 
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardApiException;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
-use App\Services\Blizzard\Exceptions\BlizzardApiException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
@@ -33,8 +33,7 @@ use Throwable;
  *
  * Handles base URL resolution per region, OAuth2 client-credentials authentication
  * (with cached token), automatic locale query parameter injection, rate limiting,
- * and translation of upstream errors into the App\Services\Blizzard\Exceptions\*
- * hierarchy that callers already catch.
+ * and translation of upstream errors into typed exception hierarchy that callers catch.
  */
 class BlizzardConnector extends Connector
 {
@@ -175,10 +174,6 @@ class BlizzardConnector extends Connector
      */
     protected function cachedAuthenticator(): AccessTokenAuthenticator
     {
-        // TODO:
-        // v2 key prevents collision with the legacy App\Services\Blizzard\Client,
-        // which writes a raw string at blizzard:access_token:{region} during the
-        // migration window. Drop the suffix once the legacy Client is removed.
         $cacheKey = "blizzard:access_token:v2:{$this->region->value}";
         $store = Cache::tags(['blizzard', 'api-auth']);
 

@@ -3,6 +3,8 @@
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardApiException;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
@@ -15,8 +17,6 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
-use App\Services\Blizzard\Exceptions\BlizzardApiException;
-use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;

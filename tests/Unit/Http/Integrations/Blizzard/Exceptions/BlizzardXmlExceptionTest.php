@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Exceptions;
 
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
-use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
