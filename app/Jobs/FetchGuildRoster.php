@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
-use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
@@ -75,15 +74,7 @@ class FetchGuildRoster implements ShouldQueue
         }
 
         $guildRank = GuildRank::where('position', $member->rank)->firstOrFail();
-
-        $classData = $blizzard->send(
-            new GetPlayableClassRequest($member->character->playableClass->id)
-        )->dto();
-
-        $playableClass = PlayableClass::updateOrCreate(
-            ['id' => $classData->id],
-            ['name' => $classData->name],
-        );
+        $playableClass = PlayableClass::find($member->character->playableClass?->id);
 
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([
@@ -94,7 +85,10 @@ class FetchGuildRoster implements ShouldQueue
                 'name' => $member->character->playableRace->name,
             ],
         ]);
-        $character->playableClass()->associate($playableClass);
+
+        if (is_a($playableClass, PlayableClass::class)) {
+            $character->playableClass()->associate($playableClass);
+        }
         $character->rank()->associate($guildRank);
         $character->save();
     }

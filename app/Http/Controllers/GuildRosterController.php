@@ -44,14 +44,14 @@ class GuildRosterController extends Controller
             ], $this->races)),
             'ranks' => $this->ranks,
             'level_cap' => 70,
-            'members' => Inertia::defer(fn () => $this->buildMemberCollection()),
+            'members' => Inertia::defer(fn () => $this->buildMemberCollection($request)),
         ]);
     }
 
     /**
      * @return array<int, array<string, mixed>>
      */
-    protected function buildMemberCollection(): array
+    protected function buildMemberCollection(Request $request): array
     {
         $roster = $this->blizzard->send(new GetGuildRosterRequest(
             $this->blizzard->defaultRealmSlug(),
@@ -60,21 +60,15 @@ class GuildRosterController extends Controller
 
         return collect($roster->members)
             ->map(function (GuildRosterMemberData $member) {
-                $classId = $member->character->playableClass->id ?? null;
-                $raceId = $member->character->playableRace->id ?? null;
-                $rankPosition = $member->rank;
-
-                $race = collect($this->races)->first(fn (LinkData $race) => $race->id === $raceId);
-
                 return [
                     'character' => [
                         'id' => $member->character->id,
                         'name' => $member->character->name,
                         'level' => $member->character->level,
-                        'playable_class' => $classId !== null ? PlayableClass::find($classId) : null,
-                        'playable_race' => $race !== null ? ['id' => $race->id, 'name' => $race->name] : null,
+                        'playable_class' => PlayableClass::find($member->character->playableClass?->id),
+                        'playable_race' => $member->character->playableRace?->only('id', 'name'),
                     ],
-                    'rank' => $this->ranks->firstWhere('position', $rankPosition)?->toArray(),
+                    'rank' => $this->ranks->firstWhere('position', $member->rank)?->toArray(),
                 ];
             })
             ->all();

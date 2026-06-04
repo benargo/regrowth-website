@@ -112,6 +112,8 @@ class GuildRosterControllerTest extends TestCase
     #[Test]
     public function it_enriches_members_with_playable_class_and_race(): void
     {
+        PlayableClass::factory()->create(['id' => 8, 'name' => 'Mage']);
+
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
             GetPlayableRaceIndexRequest::class => MockResponse::make(body: [
@@ -142,8 +144,10 @@ class GuildRosterControllerTest extends TestCase
             ->missing('members')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('members', 1)
-                ->has('members.0.character.playable_class')
-                ->has('members.0.character.playable_race')
+                ->where('members.0.character.playable_class.id', 8)
+                ->where('members.0.character.playable_class.name', 'Mage')
+                ->where('members.0.character.playable_race.id', 1)
+                ->where('members.0.character.playable_race.name', 'Human')
                 ->has('members.0.rank.id')
                 ->has('members.0.rank.position')
                 ->has('members.0.rank.name')
