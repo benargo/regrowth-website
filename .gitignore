@@ -9,11 +9,11 @@
 .github
 .phpactor.json
 .phpunit.result.cache
-.prettierrc
 /.fleet
 /.idea
 /.nova
 /.phpunit.cache
+/.playwright-cli
 /.vscode
 /.zed
 /auth.json
