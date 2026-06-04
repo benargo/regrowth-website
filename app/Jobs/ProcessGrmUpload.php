@@ -45,7 +45,7 @@ class ProcessGrmUpload implements ShouldQueue
      *
      * @var int
      */
-    public $timeout = 300; // 5 minutes
+    public $timeout = 900; // 15 minutes
 
     /**
      * The timestamp of the last progress broadcast, used to throttle updates.
