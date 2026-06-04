@@ -2,12 +2,12 @@
 
 namespace App\Http\Integrations\Blizzard;
 
-use App\Http\Integrations\Blizzard\Exceptions\BlizzardApiException;
-use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
+use App\Http\Integrations\Blizzard\Exceptions\ApiException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -221,7 +221,7 @@ class BlizzardConnector extends Connector
             $xml = $this->tryParseXml($response->body());
 
             if ($xml !== null) {
-                return new BlizzardXmlException($method, $path, $status, $response, $xml, $senderException);
+                return new XmlException($method, $path, $status, $response, $xml, $senderException);
             }
 
             $body = null;
@@ -251,7 +251,7 @@ class BlizzardConnector extends Connector
             }
         }
 
-        return new BlizzardApiException($method, $path, $status, $response, $blizzardCode, $body, $senderException);
+        return new ApiException($method, $path, $status, $response, $blizzardCode, $body, $senderException);
     }
 
     /**

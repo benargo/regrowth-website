@@ -3,13 +3,13 @@
 namespace Database\Seeders;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Models\Character;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\Exceptions\BlizzardRequestException;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;

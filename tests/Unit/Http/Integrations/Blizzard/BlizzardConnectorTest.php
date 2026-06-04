@@ -3,13 +3,13 @@
 namespace Tests\Unit\Http\Integrations\Blizzard;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Exceptions\BlizzardApiException;
+use App\Http\Integrations\Blizzard\Exceptions\ApiException;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
-use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
@@ -276,9 +276,9 @@ class BlizzardConnectorTest extends TestCase
 
         try {
             $this->makeConnector()->send($request);
-            $this->fail('Expected BlizzardApiException');
+            $this->fail('Expected ApiException');
         } catch (BlizzardRequestException $e) {
-            $this->assertInstanceOf(BlizzardApiException::class, $e);
+            $this->assertInstanceOf(ApiException::class, $e);
             $this->assertInstanceOf(ClientException::class, $e);
             $this->assertNotInstanceOf(ItemNotFoundException::class, $e);
             $this->assertSame(500, $e->blizzardStatus);
@@ -310,9 +310,9 @@ class BlizzardConnectorTest extends TestCase
 
         try {
             $this->makeConnector()->send($request);
-            $this->fail('Expected BlizzardXmlException');
+            $this->fail('Expected XmlException');
         } catch (BlizzardRequestException $e) {
-            $this->assertInstanceOf(BlizzardXmlException::class, $e);
+            $this->assertInstanceOf(XmlException::class, $e);
             $this->assertSame(403, $e->blizzardStatus);
             $this->assertSame('AccessDenied', $e->xmlCode);
             $this->assertSame('Access Denied', $e->xmlMessage);
@@ -334,9 +334,9 @@ class BlizzardConnectorTest extends TestCase
 
         try {
             $this->makeConnector()->send($request);
-            $this->fail('Expected BlizzardApiException');
+            $this->fail('Expected ApiException');
         } catch (BlizzardRequestException $e) {
-            $this->assertInstanceOf(BlizzardApiException::class, $e);
+            $this->assertInstanceOf(ApiException::class, $e);
             $this->assertSame(503, $e->blizzardStatus);
         }
     }

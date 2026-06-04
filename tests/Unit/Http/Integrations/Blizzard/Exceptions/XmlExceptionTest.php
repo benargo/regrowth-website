@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Integrations\Blizzard\Exceptions;
 
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
-use App\Http\Integrations\Blizzard\Exceptions\BlizzardXmlException;
+use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -11,7 +11,7 @@ use Saloon\Exceptions\Request\ClientException;
 use Saloon\Http\Response;
 use Saloon\XmlWrangler\XmlReader;
 
-class BlizzardXmlExceptionTest extends TestCase
+class XmlExceptionTest extends TestCase
 {
     private Response $response;
 
@@ -42,13 +42,13 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function it_extends_client_exception(): void
     {
-        $this->assertTrue(is_subclass_of(BlizzardXmlException::class, ClientException::class));
+        $this->assertTrue(is_subclass_of(XmlException::class, ClientException::class));
     }
 
     #[Test]
     public function it_implements_blizzard_request_exception(): void
     {
-        $this->assertTrue(is_subclass_of(BlizzardXmlException::class, BlizzardRequestException::class));
+        $this->assertTrue(is_subclass_of(XmlException::class, BlizzardRequestException::class));
     }
 
     // ==================== constructor property assignment ====================
@@ -56,7 +56,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function it_stores_method_endpoint_and_status(): void
     {
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('Code', 'Msg'));
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('Code', 'Msg'));
 
         $this->assertSame('GET', $e->method);
         $this->assertSame('/data/wow/item/1', $e->endpoint);
@@ -66,7 +66,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function it_extracts_xml_code_and_message(): void
     {
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
 
         $this->assertSame('AccessDenied', $e->xmlCode);
         $this->assertSame('Access Denied', $e->xmlMessage);
@@ -77,7 +77,7 @@ class BlizzardXmlExceptionTest extends TestCase
     {
         $reader = $this->makeReader('<Error><Code></Code><Message>Something</Message></Error>');
 
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $reader);
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $reader);
 
         $this->assertNull($e->xmlCode);
     }
@@ -87,7 +87,7 @@ class BlizzardXmlExceptionTest extends TestCase
     {
         $reader = $this->makeReader('<Error><Code>SomeCode</Code><Message></Message></Error>');
 
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $reader);
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $reader);
 
         $this->assertNull($e->xmlMessage);
     }
@@ -97,7 +97,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function it_includes_method_endpoint_and_status_in_message(): void
     {
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
 
         $this->assertStringContainsString('GET', $e->getMessage());
         $this->assertStringContainsString('/data/wow/item/1', $e->getMessage());
@@ -107,7 +107,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function it_includes_xml_code_in_message(): void
     {
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
 
         $this->assertStringContainsString('AccessDenied', $e->getMessage());
     }
@@ -115,7 +115,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function it_includes_xml_message_in_message(): void
     {
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
 
         $this->assertStringContainsString('Access Denied', $e->getMessage());
     }
@@ -125,7 +125,7 @@ class BlizzardXmlExceptionTest extends TestCase
     {
         $reader = $this->makeReader('<Error><Code></Code><Message></Message></Error>');
 
-        $e = new BlizzardXmlException('GET', '/data/wow/item/1', 403, $this->response, $reader);
+        $e = new XmlException('GET', '/data/wow/item/1', 403, $this->response, $reader);
 
         $this->assertStringNotContainsString(' — ', $e->getMessage());
     }
@@ -135,7 +135,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function get_method_returns_method(): void
     {
-        $e = new BlizzardXmlException('POST', '/endpoint', 500, $this->response, $this->xmlWith('Err', 'msg'));
+        $e = new XmlException('POST', '/endpoint', 500, $this->response, $this->xmlWith('Err', 'msg'));
 
         $this->assertSame('POST', $e->getMethod());
     }
@@ -143,7 +143,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function get_endpoint_returns_endpoint(): void
     {
-        $e = new BlizzardXmlException('GET', '/data/wow/item/99', 403, $this->response, $this->xmlWith('Err', 'msg'));
+        $e = new XmlException('GET', '/data/wow/item/99', 403, $this->response, $this->xmlWith('Err', 'msg'));
 
         $this->assertSame('/data/wow/item/99', $e->getEndpoint());
     }
@@ -151,7 +151,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function get_blizzard_status_returns_status(): void
     {
-        $e = new BlizzardXmlException('GET', '/endpoint', 503, $this->response, $this->xmlWith('Err', 'msg'));
+        $e = new XmlException('GET', '/endpoint', 503, $this->response, $this->xmlWith('Err', 'msg'));
 
         $this->assertSame(503, $e->getBlizzardStatus());
     }
@@ -159,7 +159,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function get_blizzard_code_returns_xml_code(): void
     {
-        $e = new BlizzardXmlException('GET', '/endpoint', 403, $this->response, $this->xmlWith('AccessDenied', 'Denied'));
+        $e = new XmlException('GET', '/endpoint', 403, $this->response, $this->xmlWith('AccessDenied', 'Denied'));
 
         $this->assertSame('AccessDenied', $e->getBlizzardCode());
     }
@@ -169,7 +169,7 @@ class BlizzardXmlExceptionTest extends TestCase
     {
         $reader = $this->makeReader('<Error><Code></Code><Message></Message></Error>');
 
-        $e = new BlizzardXmlException('GET', '/endpoint', 403, $this->response, $reader);
+        $e = new XmlException('GET', '/endpoint', 403, $this->response, $reader);
 
         $this->assertNull($e->getBlizzardCode());
     }
@@ -177,7 +177,7 @@ class BlizzardXmlExceptionTest extends TestCase
     #[Test]
     public function get_blizzard_body_returns_array_with_code_and_message(): void
     {
-        $e = new BlizzardXmlException('GET', '/endpoint', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
+        $e = new XmlException('GET', '/endpoint', 403, $this->response, $this->xmlWith('AccessDenied', 'Access Denied'));
 
         $this->assertSame(['code' => 'AccessDenied', 'message' => 'Access Denied'], $e->getBlizzardBody());
     }
@@ -187,7 +187,7 @@ class BlizzardXmlExceptionTest extends TestCase
     {
         $reader = $this->makeReader('<Error><Code></Code><Message></Message></Error>');
 
-        $e = new BlizzardXmlException('GET', '/endpoint', 403, $this->response, $reader);
+        $e = new XmlException('GET', '/endpoint', 403, $this->response, $reader);
 
         $this->assertNull($e->getBlizzardBody());
     }
@@ -197,7 +197,7 @@ class BlizzardXmlExceptionTest extends TestCase
     {
         $reader = $this->makeReader('<Error><Code>AccessDenied</Code><Message></Message></Error>');
 
-        $e = new BlizzardXmlException('GET', '/endpoint', 403, $this->response, $reader);
+        $e = new XmlException('GET', '/endpoint', 403, $this->response, $reader);
 
         $this->assertSame(['code' => 'AccessDenied'], $e->getBlizzardBody());
     }

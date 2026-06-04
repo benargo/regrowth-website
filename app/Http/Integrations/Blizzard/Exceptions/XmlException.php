@@ -7,7 +7,7 @@ use Saloon\Http\Response;
 use Saloon\XmlWrangler\XmlReader;
 use Throwable;
 
-class BlizzardXmlException extends ClientException implements BlizzardRequestException
+class XmlException extends ClientException implements BlizzardRequestException
 {
     public readonly ?string $xmlCode;
 

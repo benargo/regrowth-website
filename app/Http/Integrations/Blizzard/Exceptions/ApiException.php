@@ -6,7 +6,7 @@ use Saloon\Exceptions\Request\ClientException;
 use Saloon\Http\Response;
 use Throwable;
 
-class BlizzardApiException extends ClientException implements BlizzardRequestException
+class ApiException extends ClientException implements BlizzardRequestException
 {
     /**
      * @param  array<string, mixed>|null  $body
