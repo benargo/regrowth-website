@@ -39,9 +39,9 @@ class GuildMember extends Data
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
         public readonly string|Optional|null $joined_at,
 
-        /** @var string|Optional ISO8601 timestamp of when the user started boosting the guild */
+        /** @var string|Optional|null ISO8601 timestamp of when the user started boosting the guild */
         #[Nullable, StringType, DateFormat('Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP')]
-        public readonly string|Optional $premium_since,
+        public readonly string|Optional|null $premium_since,
 
         /** @var bool Whether the user is deafened in voice channels */
         #[BooleanType]
