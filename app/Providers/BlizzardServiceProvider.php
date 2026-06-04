@@ -11,9 +11,6 @@ use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\Client;
-use App\Services\Blizzard\Region as LegacyRegion;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
@@ -31,28 +28,6 @@ class BlizzardServiceProvider extends ServiceProvider
     public function register(): void
     {
         $config = config('services.blizzard');
-
-        /**
-         * TODO: Remove when refactor is complete.
-         */
-        $this->app->bind(Client::class, function (Application $app) use ($config) {
-            return new Client(
-                clientId: Arr::get($config, 'client_id'),
-                clientSecret: Arr::get($config, 'client_secret'),
-                region: LegacyRegion::from(Arr::get($config, 'region', 'eu')),
-                locale: Arr::get($config, 'locale'),
-            );
-        });
-
-        /**
-         * TODO: Remove when refactor is complete.
-         */
-        $this->app->singleton(BlizzardService::class, function (Application $app) use ($config) {
-            return new BlizzardService(
-                $app->make(Client::class),
-                $config,
-            );
-        });
 
         $this->app->singleton(BlizzardConnector::class, function (Application $app) use ($config) {
             return new BlizzardConnector(
@@ -114,12 +89,6 @@ class BlizzardServiceProvider extends ServiceProvider
             BlizzardConnector::class,
             MirrorPaths::class,
             RenderConnector::class,
-
-            /**
-             * TODO: Remove when refactor is complete.
-             */
-            Client::class,
-            BlizzardService::class,
         ];
     }
 }
