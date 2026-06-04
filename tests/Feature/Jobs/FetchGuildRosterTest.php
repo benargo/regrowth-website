@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Jobs\FetchGuildRoster;
@@ -12,6 +13,7 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimitedWithRedis;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -324,6 +326,30 @@ class FetchGuildRosterTest extends TestCase
             $absent->fresh()->updated_at->equalTo($beforeAbsent),
             'A character absent from the roster should remain untouched.',
         );
+    }
+
+    #[Group('character-synchronisation')]
+    #[Test]
+    public function it_does_not_dispatch_character_updated_when_syncing(): void
+    {
+        Event::fake([CharacterUpdated::class]);
+
+        GuildRank::factory()->create(['position' => 0]);
+
+        Saloon::fake([
+            'battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
+                $this->memberPayload(1, 'Alpha', 70, 1, 1, 'Human', 0),
+            ]), status: 200),
+        ]);
+
+        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+
+        Event::assertNotDispatched(CharacterUpdated::class);
     }
 
     /**

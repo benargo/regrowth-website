@@ -78,7 +78,7 @@ class BuildAddonExportFile implements ShouldQueue
      */
     protected function buildPriorities(): Collection
     {
-        return Priority::has('items')->with('media')->get()->map(function (Priority $priority) {
+        return Priority::has('items')->where('type', '!=', 'Meme')->with('media')->get()->map(function (Priority $priority) {
             $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
 
             return [
@@ -97,8 +97,9 @@ class BuildAddonExportFile implements ShouldQueue
         return Item::has('priorities')->select('id', 'notes')->get()->map(function (Item $item) {
             return [
                 'item_id' => $item->id,
-                'priorities' => ItemPriority::where('item_id', $item->id)
-                    ->select('priority_id', 'weight')
+                'priorities' => ItemPriority::select('priority_id', 'weight')
+                    ->where('item_id', $item->id)
+                    ->whereRelation('priority', 'type', '!=', 'Meme')
                     ->get(),
                 'notes' => $this->cleanNotes($item->notes),
             ];

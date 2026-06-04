@@ -189,6 +189,23 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertEquals('Warlock', $priorityData['name']);
     }
 
+    #[Test]
+    public function it_excludes_meme_type_priorities(): void
+    {
+        $standardPriority = Priority::factory()->create(['type' => 'Role', 'title' => 'Tank']);
+        $memePriority = Priority::factory()->create(['type' => 'Meme', 'title' => 'Disenchant']);
+        $item = Item::factory()->create();
+        ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
+        ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
+
+        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+
+        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $ids = collect($data['priorities'])->pluck('id')->toArray();
+        $this->assertContains($standardPriority->id, $ids);
+        $this->assertNotContains($memePriority->id, $ids);
+    }
+
     // ==========================================
     // Item Data Tests
     // ==========================================
@@ -226,6 +243,24 @@ class BuildAddonExportFileTest extends TestCase
         $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
         $itemPriorityData = collect($itemData['priorities'])->firstWhere('priority_id', $priority->id);
         $this->assertEquals(75, $itemPriorityData['weight']);
+    }
+
+    #[Test]
+    public function it_excludes_meme_priorities_from_item_priorities(): void
+    {
+        $item = Item::factory()->create();
+        $standardPriority = Priority::factory()->create(['type' => 'Spec', 'title' => 'Fire Mage']);
+        $memePriority = Priority::factory()->create(['type' => 'Meme', 'title' => 'Bakas']);
+        ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
+        ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
+
+        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+
+        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $itemData = collect($data['items'])->firstWhere('item_id', $item->id);
+        $priorityIds = collect($itemData['priorities'])->pluck('priority_id')->toArray();
+        $this->assertContains($standardPriority->id, $priorityIds);
+        $this->assertNotContains($memePriority->id, $priorityIds);
     }
 
     // ==========================================

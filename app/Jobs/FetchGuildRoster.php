@@ -86,10 +86,12 @@ class FetchGuildRoster implements ShouldQueue
             ],
         ]);
 
-        if (is_a($playableClass, PlayableClass::class)) {
-            $character->playableClass()->associate($playableClass);
-        }
-        $character->rank()->associate($guildRank);
-        $character->save();
+        Character::withoutEvents(function () use ($character, $playableClass, $guildRank) {
+            if (is_a($playableClass, PlayableClass::class)) {
+                $character->playableClass()->associate($playableClass);
+            }
+            $character->rank()->associate($guildRank);
+            $character->save();
+        });
     }
 }
