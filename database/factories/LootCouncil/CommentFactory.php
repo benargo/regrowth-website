@@ -2,8 +2,8 @@
 
 namespace Database\Factories\LootCouncil;
 
+use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;

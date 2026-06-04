@@ -2,33 +2,41 @@
 
 namespace App\Enums;
 
+use Illuminate\Support\Str;
+
 enum ItemQuality: string
 {
-    case Poor = '9d9d9d';
-    case Common = 'ffffff';
-    case Uncommon = '1eff00';
-    case Rare = '0070dd';
-    case Epic = 'a335ee';
-    case Legendary = 'ff8000';
-    case Artifact = 'e6cc80';
-    case Heirloom = '00ccff';
+    case POOR = 'Poor';
+    case COMMON = 'Common';
+    case UNCOMMON = 'Uncommon';
+    case RARE = 'Rare';
+    case EPIC = 'Epic';
+    case LEGENDARY = 'Legendary';
+    case ARTIFACT = 'Artifact';
+    case HEIRLOOM = 'Heirloom';
 
-    public function cssClass(): string
+    /**
+     * Get the hex color code associated with this item quality.
+     */
+    public function colorCode(): int
     {
-        return 'item-quality-'.strtolower($this->name);
+        return match ($this) {
+            self::POOR => 0x9D9D9D,
+            self::COMMON => 0xFFFFFF,
+            self::UNCOMMON => 0x1EFF00,
+            self::RARE => 0x0070DD,
+            self::EPIC => 0xA335EE,
+            self::LEGENDARY => 0xFF8000,
+            self::ARTIFACT => 0xE6CC80,
+            self::HEIRLOOM => 0x00CCFF,
+        };
     }
 
     /**
-     * Find the ItemQuality by its name (case-insensitive).
+     * Get a CSS class name corresponding to this item quality, which can be used for styling purposes.
      */
-    public static function fromName(string $name): ?self
+    public function cssClass(): string
     {
-        foreach (self::cases() as $case) {
-            if (strcasecmp($case->name, $name) === 0) {
-                return $case;
-            }
-        }
-
-        return null;
+        return 'item-quality-'.Str::slug($this->name);
     }
 }

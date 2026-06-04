@@ -3,19 +3,20 @@
 namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Requests\Items\UpdateItemNotesRequest;
 use App\Http\Requests\Items\UpdateItemPrioritiesRequest;
+use App\Http\Resources\ItemResource;
 use App\Http\Resources\LootCouncil\CommentResource;
-use App\Http\Resources\LootCouncil\ItemResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\Priority;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -25,7 +26,7 @@ class ItemController extends Controller
 {
     /** Display a specific loot item. */
     #[Authorize('view', 'item')]
-    public function show(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
+    public function show(BlizzardConnector $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
         $slug = $this->resolveItemSlug($blizzard, $item);
 
@@ -43,7 +44,7 @@ class ItemController extends Controller
 
     /** Show the form for editing a specific loot item. */
     #[Authorize('update', 'item')]
-    public function edit(BlizzardService $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
+    public function edit(BlizzardConnector $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
         $slug = $this->resolveItemSlug($blizzard, $item);
 
@@ -66,7 +67,7 @@ class ItemController extends Controller
 
     /** Redirect to the edit page for a specific loot item. */
     #[Authorize('update', 'item')]
-    public function redirectToEdit(BlizzardService $blizzard, Item $item): RedirectResponse
+    public function redirectToEdit(BlizzardConnector $blizzard, Item $item): RedirectResponse
     {
         return redirect()->route('loot.items.edit', ['item' => $item->id, 'name' => $this->resolveItemSlug($blizzard, $item)], 303);
     }
@@ -95,9 +96,13 @@ class ItemController extends Controller
     }
 
     /** Resolve the slug for a loot item, using the Blizzard API if necessary. */
-    private function resolveItemSlug(BlizzardService $blizzard, Item $item): string
+    private function resolveItemSlug(BlizzardConnector $blizzard, Item $item): string
     {
-        return Str::slug(Arr::get($blizzard->findItem($item->id), 'name') ?? "item-{$item->id}");
+        try {
+            return Str::slug($blizzard->send(new GetItemRequest($item->id))->dto()->name);
+        } catch (ItemNotFoundException) {
+            return "item-{$item->id}";
+        }
     }
 
     /** Load the item's priorities, raid, and boss relationships. */

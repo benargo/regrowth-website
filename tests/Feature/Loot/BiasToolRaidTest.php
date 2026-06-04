@@ -2,22 +2,25 @@
 
 namespace Tests\Feature\Loot;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\PendingRequest;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class BiasToolRaidTest extends TestCase
@@ -38,31 +41,23 @@ class BiasToolRaidTest extends TestCase
 
     protected function mockItemService(): void
     {
-        $this->instance(
-            BlizzardService::class,
-            Mockery::mock(BlizzardService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('findItem')
-                    ->andReturnUsing(fn (int $id) => [
-                        'id' => $id,
-                        'name' => "Test Item {$id}",
-                    ]);
+        Storage::fake('public');
 
-                $mock->shouldReceive('findMedia')
-                    ->andReturn([
-                        'assets' => [
-                            ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 123],
-                        ],
-                    ]);
-            })
-        );
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
+                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
+                $segments = explode('/', trim($path, '/'));
+                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
 
-        $this->instance(
-            MediaService::class,
-            Mockery::mock(MediaService::class, function (MockInterface $mock) {
-                $mock->shouldReceive('get')
-                    ->andReturn([123 => 'https://example.com/icon.jpg']);
-            })
-        );
+                return MockResponse::make(body: [
+                    'id' => $itemId,
+                    'name' => "Test Item {$itemId}",
+                ], status: 200);
+            },
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
     }
 
     protected function raidUrl(Raid $raid, ?string $name = null): string

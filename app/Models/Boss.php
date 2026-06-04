@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
 use Database\Factories\BossFactory;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;

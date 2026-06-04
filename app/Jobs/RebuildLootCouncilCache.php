@@ -2,10 +2,10 @@
 
 namespace App\Jobs;
 
-use App\Http\Resources\LootCouncil\BossItemsResource;
+use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
+use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Item;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -76,10 +76,10 @@ class RebuildLootCouncilCache implements ShouldQueue
                     ->get();
 
                 $commentCounts = Comment::query()
-                    ->join('lootcouncil_items', 'lootcouncil_items.id', '=', 'lootcouncil_comments.item_id')
-                    ->whereNotNull('lootcouncil_items.boss_id')
-                    ->selectRaw('lootcouncil_items.boss_id, count(*) as comments_count')
-                    ->groupBy('lootcouncil_items.boss_id')
+                    ->join('items', 'items.id', '=', 'lootcouncil_comments.item_id')
+                    ->whereNotNull('items.boss_id')
+                    ->selectRaw('items.boss_id, count(*) as comments_count')
+                    ->groupBy('items.boss_id')
                     ->pluck('comments_count', 'boss_id');
 
                 $bosses->each(fn ($boss) => $boss->comments_count = $commentCounts->get($boss->id, 0));
@@ -117,6 +117,7 @@ class RebuildLootCouncilCache implements ShouldQueue
                 $items = Item::query()
                     ->where('boss_id', $bossId)
                     ->with([
+                        'media',
                         'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
                     ])
                     ->withCount('comments')
@@ -148,6 +149,7 @@ class RebuildLootCouncilCache implements ShouldQueue
                     ->where('raid_id', $raidId)
                     ->whereNull('boss_id')
                     ->with([
+                        'media',
                         'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
                     ])
                     ->withCount('comments')

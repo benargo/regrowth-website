@@ -2,32 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\DailyQuestIcons;
+use App\Enums\DailyQuestType;
 use App\Http\Requests\StoreDailyQuestsRequest;
+use App\Http\Resources\DailyQuestResource;
 use App\Models\DailyQuest;
 use App\Models\DiscordNotification;
+use App\Models\DiscordNotificationRelatedModel;
 use App\Notifications\DailyQuestsMessage;
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Notifications\NotifiableChannel;
-use App\Services\Discord\Payloads\MessagePayload;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DailyQuestsController extends Controller
 {
     public function __construct(
-        private Discord $discord
+        private Discord $discord,
     ) {}
 
     /*
@@ -39,7 +35,7 @@ class DailyQuestsController extends Controller
     /**
      * Display the current daily quests.
      */
-    public function index(BlizzardService $blizzard, MediaService $media): Response
+    public function index(): Response
     {
         $hasNotification = Cache::tags(['dailyquests'])->remember('daily_quests:today:exists', $this->resetTime(), function () {
             return DiscordNotification::where('type', DailyQuestsMessage::class)
@@ -50,7 +46,7 @@ class DailyQuestsController extends Controller
 
         return Inertia::render('DailyQuests/Index', [
             'hasNotification' => $hasNotification,
-            'quests' => Inertia::defer(fn () => $this->buildQuestsData($blizzard, $media)),
+            'quests' => Inertia::defer(fn () => $this->buildQuestsData()),
         ]);
     }
 
@@ -63,55 +59,38 @@ class DailyQuestsController extends Controller
     /**
      * Show the form to set or update daily quests, along with the existing quests if they exist.
      */
-    #[Authorize('view-officer-dashboard')]
-    public function form(MediaService $media): Response
+    #[Authorize('set-daily-quests')]
+    public function form(): Response
     {
-        // $existingNotification = $this->getExistingNotification();
-
-        $icons = [
-            'cooking' => $media->get(DailyQuestIcons::Cooking->value),
-            'fishing' => $media->get(DailyQuestIcons::Fishing->value),
-            'dungeon' => $media->get(DailyQuestIcons::Dungeon->value),
-            'heroic' => $media->get(DailyQuestIcons::HeroicDungeon->value),
-            'pvp' => $media->get(DailyQuestIcons::PvP->value),
-        ];
-
         $quests = DailyQuest::hydrate(
             Cache::tags(['dailyquests'])->remember('daily_quests:all', now()->addMonth(), function () {
                 return DailyQuest::all()->map->getAttributes()->toArray();
             })
-        )->groupBy('type');
+        )->groupBy(fn (DailyQuest $quest) => $quest->type->value);
 
         return Inertia::render('Dashboard/DailyQuests/Form', [
-            'cookingQuests' => $quests->get('Cooking', collect())->toArray(),
-            'fishingQuests' => $quests->get('Fishing', collect())->toArray(),
-            'dungeonQuests' => $quests->get('Dungeon', collect())->where('mode', 'Normal')->values()->toArray(),
-            'heroicQuests' => $quests->get('Dungeon', collect())->where('mode', 'Heroic')->values()->toArray(),
-            'pvpQuests' => $quests->get('PvP', collect())->toArray(),
-            'icons' => $icons,
-            // 'existingNotification' => $existingNotification ? [
-            //     'id' => $existingNotification->id,
-            //     'cooking_quest_id' => $existingNotification->cooking_quest_id,
-            //     'fishing_quest_id' => $existingNotification->fishing_quest_id,
-            //     'dungeon_quest_id' => $existingNotification->dungeon_quest_id,
-            //     'heroic_quest_id' => $existingNotification->heroic_quest_id,
-            //     'pvp_quest_id' => $existingNotification->pvp_quest_id,
-            // ] : null,
+            'cookingQuests' => $quests->get(DailyQuestType::Cooking->value, collect())->values()->toArray(),
+            'fishingQuests' => $quests->get(DailyQuestType::Fishing->value, collect())->values()->toArray(),
+            'dungeonQuests' => $quests->get(DailyQuestType::Dungeon->value, collect())->values()->toArray(),
+            'heroicQuests' => $quests->get(DailyQuestType::Heroic->value, collect())->values()->toArray(),
+            'pvpQuests' => $quests->get(DailyQuestType::PvP->value, collect())->values()->toArray(),
+            'icons' => $this->categoryIcons(),
+            'existingQuests' => $this->existingQuestSelections(),
         ]);
     }
 
     /**
      * Handle the form submission to set or update daily quests.
      */
-    #[Authorize('view-officer-dashboard')]
+    #[Authorize('set-daily-quests')]
     public function store(StoreDailyQuestsRequest $request): RedirectResponse
     {
         $quests = [
-            'Cooking' => $request->input('cooking_quest_id') ? DailyQuest::find($request->input('cooking_quest_id')) : null,
-            'Fishing' => $request->input('fishing_quest_id') ? DailyQuest::find($request->input('fishing_quest_id')) : null,
-            'Dungeon' => $request->input('dungeon_quest_id') ? DailyQuest::find($request->input('dungeon_quest_id')) : null,
-            'Heroic' => $request->input('heroic_quest_id') ? DailyQuest::find($request->input('heroic_quest_id')) : null,
-            'PvP' => $request->input('pvp_quest_id') ? DailyQuest::find($request->input('pvp_quest_id')) : null,
+            DailyQuestType::Cooking->name => $request->input('cooking_quest_id') ? DailyQuest::find($request->input('cooking_quest_id')) : null,
+            DailyQuestType::Fishing->name => $request->input('fishing_quest_id') ? DailyQuest::find($request->input('fishing_quest_id')) : null,
+            DailyQuestType::Dungeon->name => $request->input('dungeon_quest_id') ? DailyQuest::find($request->input('dungeon_quest_id')) : null,
+            DailyQuestType::Heroic->name => $request->input('heroic_quest_id') ? DailyQuest::find($request->input('heroic_quest_id')) : null,
+            DailyQuestType::PvP->name => $request->input('pvp_quest_id') ? DailyQuest::find($request->input('pvp_quest_id')) : null,
         ];
 
         $this->channel()->notify(
@@ -122,29 +101,6 @@ class DailyQuestsController extends Controller
         );
 
         return back()->with('success', 'Daily quests set and posted to Discord!');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Audit Log
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Display an audit log of all daily quest notifications.
-     */
-    #[Authorize('view-officer-dashboard')]
-    #[Authorize('audit-daily-quests')]
-    public function audit(Request $request): Response
-    {
-        $paginator = DiscordNotification::where('type', DailyQuestsMessage::class)
-            ->latest()
-            ->paginate(20)
-            ->appends($request->query());
-
-        return Inertia::render('Dashboard/DailyQuests/Audit', [
-            'entries' => $paginator,
-        ]);
     }
 
     /*
@@ -182,88 +138,135 @@ class DailyQuestsController extends Controller
     }
 
     /**
-     * Build the quests data for the public index page.
+     * Build the category icon URLs keyed by the form's category keys.
+     *
+     * Each icon is sourced from a representative quest's media (the UrlGenerator
+     * signs blizzard_icons URLs automatically), falling back to null when no
+     * quest of that type has an attached icon.
+     *
+     * @return array<string, string|null>
+     */
+    private function categoryIcons(): array
+    {
+        return Cache::tags(['dailyquests'])->remember('daily_quests:category_icons', now()->addMonth(), function () {
+            $representatives = DailyQuest::query()
+                ->whereHas('media', fn ($query) => $query->where('collection_name', 'blizzard_icons'))
+                ->with('media')
+                ->get()
+                ->keyBy(fn (DailyQuest $quest) => $quest->type->value);
+
+            return [
+                'cooking' => $this->iconFor($representatives, DailyQuestType::Cooking),
+                'fishing' => $this->iconFor($representatives, DailyQuestType::Fishing),
+                'dungeon' => $this->iconFor($representatives, DailyQuestType::Dungeon),
+                'heroic' => $this->iconFor($representatives, DailyQuestType::Heroic),
+                'pvp' => $this->iconFor($representatives, DailyQuestType::PvP),
+            ];
+        });
+    }
+
+    /**
+     * Resolve the icon URL for a quest type from the representative quests.
+     *
+     * @param  Collection<string, DailyQuest>  $representatives
+     */
+    private function iconFor($representatives, DailyQuestType $type): ?string
+    {
+        $quest = $representatives->get($type->value);
+
+        return $quest ? ($quest->getFirstMediaUrl('blizzard_icons') ?: null) : null;
+    }
+
+    /**
+     * Build the currently-selected quest id per category from today's notification,
+     * so the form can pre-populate existing values for correction.
+     *
+     * @return array<string, int|null>
+     */
+    private function existingQuestSelections(): array
+    {
+        $selections = [
+            'cooking_quest_id' => null,
+            'fishing_quest_id' => null,
+            'dungeon_quest_id' => null,
+            'heroic_quest_id' => null,
+            'pvp_quest_id' => null,
+        ];
+
+        $notification = $this->getExistingNotification();
+
+        if (! $notification) {
+            return $selections;
+        }
+
+        // The related-model morph is resolved lazily per row rather than eager-loaded:
+        // model_id is stored as a string (morph keys are polymorphic), which breaks the
+        // strict type matching Eloquent uses when eager-loading morphTo relations.
+        foreach ($notification->relatedModels as $related) {
+            $quest = $related->relatedModel;
+
+            if (! $quest instanceof DailyQuest) {
+                continue;
+            }
+
+            $key = $this->categoryKeyForType($quest->type);
+
+            if ($key) {
+                $selections[$key] = $quest->id;
+            }
+        }
+
+        return $selections;
+    }
+
+    /**
+     * Map a DailyQuestType to its form field key.
+     */
+    private function categoryKeyForType(DailyQuestType $type): ?string
+    {
+        return match ($type) {
+            DailyQuestType::Cooking => 'cooking_quest_id',
+            DailyQuestType::Fishing => 'fishing_quest_id',
+            DailyQuestType::Dungeon => 'dungeon_quest_id',
+            DailyQuestType::Heroic => 'heroic_quest_id',
+            DailyQuestType::PvP => 'pvp_quest_id',
+        };
+    }
+
+    /**
+     * Build the quests data for the public index page from the latest notification's
+     * related models.
      *
      * @return array<int, array<string, mixed>>|null
      */
     private function buildQuestsData(): ?array
     {
         try {
-            Cache::tags(['daily_quests'])->remember('daily_quests:today', $this->resetTime(), function () {
+            return Cache::tags(['dailyquests'])->remember('daily_quests:today', $this->resetTime(), function () {
                 $notification = DiscordNotification::where('type', DailyQuestsMessage::class)
                     ->where('created_at', '>=', Carbon::yesterday()->setTime(4, 0, 0))
                     ->where('created_at', '<=', Carbon::tomorrow()->setTime(3, 59, 59))
+                    ->with('relatedModels')
                     ->latest()
                     ->firstOrFail();
 
-                // Make sure the payload is valid and can be parsed.
-                if (! $notification->payload instanceof MessagePayload) {
-                    throw new Exception('Invalid payload for daily quests notification');
-                }
+                // The related-model morph is resolved lazily per row rather than eager-loaded:
+                // model_id is stored as a string (morph keys are polymorphic), which breaks the
+                // strict type matching Eloquent uses when eager-loading morphTo relations.
+                $quests = $notification->relatedModels
+                    ->map(fn (DiscordNotificationRelatedModel $related) => $related->relatedModel)
+                    ->filter(fn ($model) => $model instanceof DailyQuest)
+                    ->values();
 
-                $fields = $notification->payload->embeds[0]->fields ?? [];
+                $quests->loadMissing('rewards.media');
 
-                // Temporary
-                return [];
+                return DailyQuestResource::collection($quests)->resolve();
             });
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             // It's fine if there's no notification for today, just return null and the frontend can handle it.
             // We use this try-catch to avoid caching a null value, which would prevent the system from picking up
             // a new notification if one is created later in the day.
             return null;
         }
-    }
-
-    /**
-     * Build reward data with item details from Blizzard API.
-     *
-     * @param  array<int, array{item_id: int, quantity: int}>  $rewards
-     * @return array<int, array<string, mixed>>
-     */
-    private function buildRewardsData(array $rewards, BlizzardService $blizzard, MediaService $media): array
-    {
-        return array_map(function (array $reward) use ($blizzard, $media) {
-            $itemId = $reward['item_id'];
-            $quantity = $reward['quantity'] ?? 1;
-
-            try {
-                $blizzardData = $blizzard->findItem($itemId);
-                $mediaData = $blizzard->findMedia('item', $itemId);
-                $assets = Arr::get($mediaData, 'assets', []);
-                $iconUrl = null;
-
-                if (! empty($assets)) {
-                    $urls = $media->get($assets);
-                    $iconUrl = array_values($urls)[0] ?? null;
-                }
-            } catch (Exception) {
-                $blizzardData = [];
-                $iconUrl = null;
-            }
-
-            return [
-                'item_id' => $itemId,
-                'quantity' => $quantity,
-                'name' => $blizzardData['name'] ?? "Item #{$itemId}",
-                'quality' => strtolower($blizzardData['quality']['name'] ?? 'common'),
-                'icon' => $iconUrl,
-                'wowhead_url' => 'https://www.wowhead.com/tbc/item='.$itemId.'/'.Str::slug($blizzardData['name'] ?? ''),
-            ];
-        }, $rewards);
-    }
-
-    /**
-     * Get the appropriate icon URL for a given quest type.
-     */
-    private function getIconForQuestType(string $type): string
-    {
-        return match ($type) {
-            'fishingQuest' => DailyQuestIcons::Fishing->value,
-            'cookingQuest' => DailyQuestIcons::Cooking->value,
-            'dungeonQuest' => DailyQuestIcons::Dungeon->value,
-            'heroicQuest' => DailyQuestIcons::HeroicDungeon->value,
-            'pvpQuest' => DailyQuestIcons::PvP->value,
-            default => DailyQuestIcons::Default->value,
-        };
     }
 }

@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Http\Integrations\Blizzard\Requests\PlayableClass;
+
+use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\Responses\GetPlayableClassMediaResponse;
+use Saloon\CachePlugin\Contracts\Cacheable;
+use Saloon\Enums\Method;
+use Saloon\Http\PendingRequest;
+use Saloon\Http\Request;
+
+#[EagerlyMirrorsAssets]
+class GetPlayableClassMediaRequest extends Request implements Cacheable
+{
+    use HasCaching;
+
+    protected ?string $response = GetPlayableClassMediaResponse::class;
+
+    protected Method $method = Method::GET;
+
+    public function __construct(
+        protected int $playableClassId,
+    ) {}
+
+    public function resolveEndpoint(): string
+    {
+        return "/data/wow/media/playable-class/{$this->playableClassId}";
+    }
+
+    public function boot(PendingRequest $pendingRequest): void
+    {
+        /** @var BlizzardConnector $connector */
+        $connector = $pendingRequest->getConnector();
+
+        $pendingRequest->headers()->add(
+            'Battlenet-Namespace',
+            $connector->namespace('static'),
+        );
+    }
+
+    public function cacheExpiryInSeconds(): int
+    {
+        return 2592000; // 30 days
+    }
+}

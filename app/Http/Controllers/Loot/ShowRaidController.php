@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Concerns\QueriesLootCouncilCache;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\LootCouncil\BossItemsResource;
+use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -80,7 +80,7 @@ class ShowRaidController extends Controller
                         'raid_id' => $raid->id,
                         'name' => 'Trash drops',
                         'encounter_order' => 999,
-                        'comments_count' => $raid->comments()->whereNull('lootcouncil_items.boss_id')->count(),
+                        'comments_count' => $raid->comments()->whereNull('items.boss_id')->count(),
                     ]);
                 }
 
@@ -116,6 +116,7 @@ class ShowRaidController extends Controller
                 $items = Item::query()
                     ->where('boss_id', $bossId)
                     ->with([
+                        'media',
                         'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
                     ])
                     ->withCount('comments')
@@ -146,6 +147,7 @@ class ShowRaidController extends Controller
                 ->where('raid_id', $raidId)
                 ->whereNull('boss_id')
                 ->with([
+                    'media',
                     'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
                 ])
                 ->withCount('comments')

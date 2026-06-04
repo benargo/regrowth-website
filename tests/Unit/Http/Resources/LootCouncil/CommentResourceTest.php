@@ -2,21 +2,25 @@
 
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Models\DiscordRole;
+use App\Models\Item;
 use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\CommentReaction;
-use App\Models\LootCouncil\Item;
 use App\Models\Permission;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class CommentResourceTest extends TestCase
@@ -35,36 +39,34 @@ class CommentResourceTest extends TestCase
 
     protected function mockBlizzardServices(): void
     {
-        $blizzardService = Mockery::mock(BlizzardService::class);
-        $blizzardService->shouldReceive('findItem')->andReturn([
-            'name' => 'Test Item',
-            'item_class' => ['name' => 'Armor'],
-            'item_subclass' => ['name' => 'Plate'],
-            'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
-            'inventory_type' => ['name' => 'Head'],
+        Storage::fake('public');
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => MockResponse::make(body: [
+                'name' => 'Test Item',
+                'item_class' => ['name' => 'Armor'],
+                'item_subclass' => ['name' => 'Plate'],
+                'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
+                'inventory_type' => ['name' => 'Head'],
+            ], status: 200),
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
-        $blizzardService->shouldReceive('findMedia')
-            ->with('item', Mockery::any())
-            ->andReturn([
-                'assets' => [
-                    ['key' => 'icon', 'value' => 'https://example.com/icon.jpg', 'file_data_id' => 12345],
-                ],
-            ]);
-
-        $mediaService = Mockery::mock(MediaService::class);
-        $mediaService->shouldReceive('get')
-            ->andReturn([12345 => 'https://example.com/icon.jpg']);
-
-        $this->app->instance(BlizzardService::class, $blizzardService);
-        $this->app->instance(MediaService::class, $mediaService);
     }
 
     protected function mockCacheService(): void
     {
+        $realStore = Cache::store();
+
         $cacheStore = Mockery::mock();
         $cacheStore->shouldReceive('remember')
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
         $cacheStore->shouldReceive('flush')->andReturn(true);
+
+        $blizzardAuthStore = Mockery::mock();
+        $blizzardAuthStore->shouldReceive('get')->andReturn(null);
+        $blizzardAuthStore->shouldReceive('put')->andReturn(true);
 
         Cache::shouldReceive('tags')
             ->with(['db', 'lootcouncil'])
@@ -73,6 +75,13 @@ class CommentResourceTest extends TestCase
         Cache::shouldReceive('tags')
             ->with(['raiding', 'events'])
             ->andReturn($cacheStore);
+
+        Cache::shouldReceive('tags')
+            ->with(['blizzard', 'api-auth'])
+            ->andReturn($blizzardAuthStore);
+
+        Cache::shouldReceive('store')
+            ->andReturn($realStore);
     }
 
     protected function setUpPermissions(): void

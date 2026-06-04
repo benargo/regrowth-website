@@ -3,7 +3,7 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\AsPlayableRace;
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -91,24 +91,37 @@ class AsPlayableRaceTest extends TestCase
     }
 
     #[Test]
-    public function set_throws_invalid_argument_on_array_input(): void
+    public function set_encodes_array_with_id_and_name_as_json(): void
     {
         $cast = new AsPlayableRace;
         $model = $this->createStub(Model::class);
 
-        $this->expectException(InvalidArgumentException::class);
+        $result = $cast->set($model, 'playable_race', ['id' => 3, 'name' => 'Dwarf'], []);
 
-        $cast->set($model, 'playable_race', ['id' => 2, 'name' => 'Orc'], []);
+        $this->assertSame(json_encode(['id' => 3, 'name' => 'Dwarf']), $result);
     }
 
     #[Test]
-    public function set_encodes_vo_as_id_and_name_json(): void
+    public function set_array_produces_same_json_as_dto(): void
     {
         $cast = new AsPlayableRace;
         $model = $this->createStub(Model::class);
-        $vo = PlayableRaceData::from($this->sampleApiResponse(2, 'Orc'));
+        $dto = PlayableRaceData::from($this->sampleApiResponse(3, 'Dwarf'));
 
-        $result = $cast->set($model, 'playable_race', $vo, []);
+        $fromArray = $cast->set($model, 'playable_race', ['id' => 3, 'name' => 'Dwarf'], []);
+        $fromDto = $cast->set($model, 'playable_race', $dto, []);
+
+        $this->assertSame($fromDto, $fromArray);
+    }
+
+    #[Test]
+    public function set_encodes_dto_as_id_and_name_json(): void
+    {
+        $cast = new AsPlayableRace;
+        $model = $this->createStub(Model::class);
+        $dto = PlayableRaceData::from($this->sampleApiResponse(2, 'Orc'));
+
+        $result = $cast->set($model, 'playable_race', $dto, []);
 
         $this->assertSame(json_encode([
             'id' => 2,

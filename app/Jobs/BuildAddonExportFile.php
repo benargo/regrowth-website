@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Services\Attendance\Calculator;
@@ -78,11 +78,13 @@ class BuildAddonExportFile implements ShouldQueue
      */
     protected function buildPriorities(): Collection
     {
-        return Priority::has('items')->get()->map(function (Priority $priority) {
+        return Priority::has('items')->where('type', '!=', 'Meme')->with('media')->get()->map(function (Priority $priority) {
+            $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
+
             return [
                 'id' => $priority->id,
                 'name' => $priority->title,
-                'icon' => $priority->media['media_name'] ?? null,
+                'icon' => $fileName ? pathinfo($fileName, PATHINFO_FILENAME) : null,
             ];
         });
     }
@@ -95,8 +97,9 @@ class BuildAddonExportFile implements ShouldQueue
         return Item::has('priorities')->select('id', 'notes')->get()->map(function (Item $item) {
             return [
                 'item_id' => $item->id,
-                'priorities' => ItemPriority::where('item_id', $item->id)
-                    ->select('priority_id', 'weight')
+                'priorities' => ItemPriority::select('priority_id', 'weight')
+                    ->where('item_id', $item->id)
+                    ->whereRelation('priority', 'type', '!=', 'Meme')
                     ->get(),
                 'notes' => $this->cleanNotes($item->notes),
             ];

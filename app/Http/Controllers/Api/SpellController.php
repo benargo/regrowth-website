@@ -24,6 +24,6 @@ class SpellController extends Controller
             'type' => $request->validated('type'),
         ]);
 
-        return response()->json((new SpellResource($spell->load('media')))->resolve($request), 201);
+        return response()->json((new SpellResource($spell))->resolve($request), 201);
     }
 }

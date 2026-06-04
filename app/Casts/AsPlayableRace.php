@@ -2,9 +2,10 @@
 
 namespace App\Casts;
 
-use App\Services\Blizzard\ValueObjects\PlayableRaceData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use InvalidArgumentException;
 
 /**
@@ -34,6 +35,7 @@ class AsPlayableRace implements CastsAttributes
      * Accept a PlayableRace value object and serialize a reduced {id, name}
      * payload for storage.
      *
+     * @param  PlayableRaceData|array|null  $value
      * @param  array<string, mixed>  $attributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): ?string
@@ -42,17 +44,18 @@ class AsPlayableRace implements CastsAttributes
             return null;
         }
 
+        if (is_array($value) && Arr::has($value, ['id', 'name'])) {
+            return json_encode(Arr::only($value, ['id', 'name']));
+        }
+
         if (! $value instanceof PlayableRaceData) {
             throw new InvalidArgumentException(sprintf(
-                'The %s attribute must be assigned a %s value object or null.',
+                'The %s attribute must be assigned a %s value object, an array with id and name, or null.',
                 $key,
                 PlayableRaceData::class,
             ));
         }
 
-        return json_encode([
-            'id' => $value->id,
-            'name' => $value->name,
-        ]);
+        return $value->only('id', 'name')->toJson();
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Models\LootCouncil;
 
-use App\Models\LootCouncil\Item;
+use App\Models\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

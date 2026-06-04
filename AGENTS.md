@@ -14,6 +14,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/framework (LARAVEL) - v13
 - laravel/horizon (HORIZON) - v5
 - laravel/prompts (PROMPTS) - v0
+- laravel/reverb (REVERB) - v1
 - laravel/sanctum (SANCTUM) - v4
 - laravel/socialite (SOCIALITE) - v5
 - tightenco/ziggy (ZIGGY) - v2
@@ -26,6 +27,8 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/sail (SAIL) - v1
 - phpunit/phpunit (PHPUNIT) - v12
 - @inertiajs/react (INERTIA_REACT) - v3
+- @laravel/echo-react (ECHO_REACT) - v2
+- laravel-echo (ECHO) - v2
 - prettier (PRETTIER) - v3
 - react (REACT) - v19
 - tailwindcss (TAILWINDCSS) - v3
@@ -221,6 +224,17 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Inertia + React
 
 - IMPORTANT: Activate `inertia-react-development` when working with Inertia React client-side patterns.
+
+=== saloonphp/laravel-plugin rules ===
+
+## SaloonPHP
+
+- PHP library for building API integrations and SDKs.
+- Documentation: https://docs.saloon.dev
+- Check `composer.json` for version (v2, v3 or v4). Use `web-search` tool for latest docs before implementing.
+- If the project uses v3, inform the user that v3 is affected by three published security issues and prefer upgrading to v4 before adding new Saloon work, unless the user explicitly needs a v3-compatible change.
+- Always use Artisan commands to generate SaloonPHP classes: `vendor/bin/sail artisan saloon:connector`, `vendor/bin/sail artisan saloon:request`, `vendor/bin/sail artisan saloon:response`, `vendor/bin/sail artisan php artisan saloon:plugin`, `vendor/bin/sail artisan saloon:auth`.- Documentation: `https://docs.saloon.dev`
+- IMPORTANT: Activate saloon-development skill when working with SaloonPHP-related tasks.
 
 === spatie/laravel-medialibrary rules ===
 

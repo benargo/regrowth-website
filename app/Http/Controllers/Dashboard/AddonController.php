@@ -3,64 +3,56 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\GuildRank;
-use App\Services\Blizzard\BlizzardService;
 use App\Services\WarcraftLogs\GuildTags;
 use Carbon\Carbon;
+use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
 class AddonController extends Controller
 {
     public function __construct(
-        protected BlizzardService $blizzard,
+        protected BlizzardConnector $blizzardConnector,
         protected GuildTags $guildTags,
+        protected FilesystemManager $storage,
     ) {}
 
-    // ==========================================
-    // Data export
-    // ==========================================
-
-    public function export(Request $request)
+    public function exportBase64(Request $request): Response
     {
         return Inertia::render('Dashboard/Addon/Export', [
-            'exportedData' => Inertia::defer(fn () => $this->getBase64ExportedData($request)),
+            'exportedData' => Inertia::defer(function () use ($request): string {
+                $data = $this->getExportedData($request);
+
+                if ($data === null) {
+                    return '';
+                }
+
+                return base64_encode(json_encode($data));
+            }),
             'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
         ]);
     }
 
-    public function exportJson(Request $request)
+    public function exportJson(Request $request): Response
     {
         return Inertia::render('Dashboard/Addon/ExportJson', [
-            'exportedData' => Inertia::defer(fn () => $this->getJsonExportedData($request, JSON_PRETTY_PRINT)),
+            'exportedData' => Inertia::defer(function () use ($request): string {
+                $data = $this->getExportedData($request);
+
+                if ($data === null) {
+                    return '';
+                }
+
+                return json_encode($data, JSON_PRETTY_PRINT);
+            }),
             'grmFreshness' => Inertia::defer(fn () => $this->getGrmFreshness()),
         ]);
-    }
-
-    protected function getBase64ExportedData(Request $request): string
-    {
-        $data = $this->getExportedData($request);
-
-        if ($data === null) {
-            return '';
-        }
-
-        return base64_encode(json_encode($data));
-    }
-
-    protected function getJsonExportedData(Request $request, $style = null): string
-    {
-        $data = $this->getExportedData($request);
-
-        if ($data === null) {
-            return '';
-        }
-
-        return json_encode($data, $style);
     }
 
     /**
@@ -68,7 +60,7 @@ class AddonController extends Controller
      */
     protected function getExportedData(Request $request): ?array
     {
-        $json = Storage::disk('local')->get('addon/export.json');
+        $json = $this->storage->disk('local')->get('addon/export.json');
 
         if ($json === null) {
             return null;
@@ -93,7 +85,7 @@ class AddonController extends Controller
         $timestamp = Carbon::createFromTimestamp(0);
 
         // Check the last modified time of the GRM upload file
-        $disk = Storage::disk('local');
+        $disk = $this->storage->disk('local');
 
         if ($disk->exists('grm/uploads/latest.csv')) {
             $fileLastModifiedTime = $disk->lastModified('grm/uploads/latest.csv');
@@ -101,11 +93,14 @@ class AddonController extends Controller
         }
 
         // Check if the roster data is significantly different from the roster data at the time of the last GRM upload
-        $roster = $this->blizzard->getGuildRoster();
+        $roster = $this->blizzardConnector->send(new GetGuildRosterRequest(
+            $this->blizzardConnector->defaultRealmSlug(),
+            $this->blizzardConnector->defaultGuildSlug(),
+        ))->dto();
         $raiderRankPositions = GuildRank::whereLike('name', '%Raider%')->pluck('position');
 
-        $raiderCount = collect(Arr::get($roster, 'members', []))
-            ->filter(fn (array $member) => $raiderRankPositions->contains(Arr::get($member, 'rank')))
+        $raiderCount = collect($roster->members)
+            ->filter(fn ($member) => $raiderRankPositions->contains($member->rank))
             ->count();
 
         // Count the number of raiders in the GRM upload file.
@@ -146,104 +141,6 @@ class AddonController extends Controller
             'dataIsStale' => $dataIsStale,
             'blzRaiderCount' => $raiderCount,
             'grmRaiderCount' => $grmRaidersCount,
-        ];
-    }
-
-    // ==========================================
-    // Schema display
-    // ==========================================
-
-    public function exportSchema()
-    {
-        return Inertia::render('Dashboard/Addon/ExportSchema', [
-            'schema' => $this->getSchema(),
-        ]);
-    }
-
-    protected function getSchema(): array
-    {
-        return [
-            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-            '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.2.0',
-            'title' => 'Regrowth Loot Tool Export Schema',
-            'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
-            'type' => 'object',
-            'properties' => [
-                'system' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'date_generated' => ['type' => 'integer'],
-                        'user' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'id' => ['type' => 'integer'],
-                                'name' => ['type' => 'string'],
-                            ],
-                        ],
-                    ],
-                ],
-                'priorities' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'id' => ['type' => 'integer'],
-                            'name' => ['type' => 'string'],
-                            'icon' => ['type' => ['string', 'null']],
-                        ],
-                    ],
-                ],
-                'items' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'item_id' => ['type' => 'integer'],
-                            'priorities' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'priority_id' => ['type' => 'integer'],
-                                        'weight' => ['type' => 'integer'],
-                                    ],
-                                ],
-                            ],
-                            'notes' => ['type' => ['string', 'null']],
-                        ],
-                    ],
-                ],
-                'players' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'id' => ['type' => 'integer'],
-                            'name' => ['type' => 'string'],
-                            'attendance' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'first_attendance' => ['type' => 'string', 'format' => 'date-time'],
-                                    'attended' => ['type' => 'integer'],
-                                    'total' => ['type' => 'integer'],
-                                    'percentage' => ['type' => 'number'],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                'councillors' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'id' => ['type' => 'integer'],
-                            'name' => ['type' => 'string'],
-                            'rank' => ['type' => 'string'],
-                        ],
-                    ],
-                ],
-            ],
         ];
     }
 }

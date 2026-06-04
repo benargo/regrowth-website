@@ -3,15 +3,13 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Requests\Dashboard\UploadGrmDataRequest;
 use App\Jobs\ProcessGrmUpload;
-use App\Services\Blizzard\BlizzardService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -21,7 +19,7 @@ class GrmController extends Controller
     protected Filesystem $storage;
 
     public function __construct(
-        protected BlizzardService $blizzard,
+        protected BlizzardConnector $blizzardConnector,
     ) {
         $this->storage = Storage::disk('local');
 
@@ -45,18 +43,13 @@ class GrmController extends Controller
 
         return Inertia::render('Dashboard/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
-            'memberCount' => Inertia::defer(fn () => count(Arr::get($this->blizzard->getGuildRoster(), 'members', []))),
+            'memberCount' => Inertia::defer(fn () => count(
+                $this->blizzardConnector->send(new GetGuildRosterRequest(
+                    $this->blizzardConnector->defaultRealmSlug(),
+                    $this->blizzardConnector->defaultGuildSlug(),
+                ))->dto()->members,
+            )),
         ]);
-    }
-
-    /**
-     * Return the current GRM upload progress from the cache.
-     */
-    public function getUploadStatus(): JsonResponse
-    {
-        return response()->json(
-            Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY, ['status' => 'unknown'])
-        );
     }
 
     #[Authorize('edit-datasets')]
@@ -69,22 +62,9 @@ class GrmController extends Controller
         $this->storage->put('grm/archives/'.Carbon::now()->format('Y-m-d_H-i-s').'.csv', $grmData);
         $this->storage->put('grm/uploads/latest.csv', $grmData);
 
-        // Initialise progress cache before dispatching so the status endpoint
-        // returns a meaningful state immediately after the redirect.
-        Cache::put(ProcessGrmUpload::PROGRESS_CACHE_KEY, [
-            'status' => 'queued',
-            'step' => 0,
-            'total' => 3,
-            'message' => 'Upload queued for processing...',
-            'processedCount' => 0,
-            'skippedCount' => 0,
-            'warningCount' => 0,
-            'errorCount' => 0,
-            'errors' => [],
-        ], now()->addHours(4));
-
-        // Dispatch the processing job
-        ProcessGrmUpload::dispatch($parsedData)->withoutDelay();
+        // Dispatch the processing job; progress is delivered live over the
+        // uploading user's private broadcast channel.
+        ProcessGrmUpload::dispatch($parsedData, $request->user()->id)->withoutDelay();
 
         return redirect()->route('dashboard.grm-upload.form')->with('success', 'GRM data uploaded successfully. Processing will continue in the background.');
     }

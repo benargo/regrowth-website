@@ -26,12 +26,8 @@ class PriorityFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => fake()->randomElement(['Tank', 'Healer', 'Melee DPS', 'Ranged DPS', 'Caster', 'Physical']),
+            'title' => fake()->unique()->numerify('Priority-###'),
             'type' => fake()->randomElement(['role', 'class', 'spec']),
-            'media' => [
-                'media_type' => 'spell',
-                'media_id' => fake()->numberBetween(1000, 9999),
-            ],
         ];
     }
 

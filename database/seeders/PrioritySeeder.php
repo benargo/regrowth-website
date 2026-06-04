@@ -2,11 +2,22 @@
 
 namespace Database\Seeders;
 
+use App\Contracts\HasBlizzardIcons;
+use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Seeder;
+use Saloon\Exceptions\Request\RequestException;
+use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
-class PrioritySeeder extends Seeder
+class PrioritySeeder extends Seeder implements HasBlizzardIcons
 {
+    public function __construct(
+        private RenderConnector $renderConnector,
+    ) {}
+
     /**
      * Run the database seeds.
      */
@@ -17,86 +28,109 @@ class PrioritySeeder extends Seeder
 
         $priorities = [
             // Roles
-            ['type' => 'Role', 'title' => 'Tank', 'media' => ['media_name' => 'inv_shield_04']],
-            ['type' => 'Role', 'title' => 'Backup tank', 'media' => ['media_name' => 'inv_shield_09']],
-            ['type' => 'Role', 'title' => 'Healer', 'media' => ['media_name' => 'spell_holy_heal']],
-            ['type' => 'Role', 'title' => 'Melee DPS', 'media' => ['media_name' => 'inv_sword_04']],
-            ['type' => 'Role', 'title' => 'Caster DPS', 'media' => ['media_name' => 'spell_nature_elementalprecision_1']],
+            ['type' => 'Role', 'title' => 'Tank', 'icon_name' => 'inv_shield_04'],
+            ['type' => 'Role', 'title' => 'Backup tank', 'icon_name' => 'inv_shield_09'],
+            ['type' => 'Role', 'title' => 'Healer', 'icon_name' => 'spell_holy_heal'],
+            ['type' => 'Role', 'title' => 'Melee DPS', 'icon_name' => 'inv_sword_04'],
+            ['type' => 'Role', 'title' => 'Caster DPS', 'icon_name' => 'spell_nature_elementalprecision_1'],
 
             // Classes
-            ['type' => 'Class', 'title' => 'Druid', 'media' => ['media_name' => 'classicon_druid']],
-            ['type' => 'Class', 'title' => 'Hunter', 'media' => ['media_name' => 'classicon_hunter']],
-            ['type' => 'Class', 'title' => 'Mage', 'media' => ['media_name' => 'classicon_mage']],
-            ['type' => 'Class', 'title' => 'Paladin', 'media' => ['media_name' => 'classicon_paladin']],
-            ['type' => 'Class', 'title' => 'Priest', 'media' => ['media_name' => 'classicon_priest']],
-            ['type' => 'Class', 'title' => 'Rogue', 'media' => ['media_name' => 'classicon_rogue']],
-            ['type' => 'Class', 'title' => 'Shaman', 'media' => ['media_name' => 'classicon_shaman']],
-            ['type' => 'Class', 'title' => 'Warlock', 'media' => ['media_name' => 'classicon_warlock']],
-            ['type' => 'Class', 'title' => 'Warrior', 'media' => ['media_name' => 'classicon_warrior']],
+            ['type' => 'Class', 'title' => 'Druid', 'icon_name' => 'classicon_druid'],
+            ['type' => 'Class', 'title' => 'Hunter', 'icon_name' => 'classicon_hunter'],
+            ['type' => 'Class', 'title' => 'Mage', 'icon_name' => 'classicon_mage'],
+            ['type' => 'Class', 'title' => 'Paladin', 'icon_name' => 'classicon_paladin'],
+            ['type' => 'Class', 'title' => 'Priest', 'icon_name' => 'classicon_priest'],
+            ['type' => 'Class', 'title' => 'Rogue', 'icon_name' => 'classicon_rogue'],
+            ['type' => 'Class', 'title' => 'Shaman', 'icon_name' => 'classicon_shaman'],
+            ['type' => 'Class', 'title' => 'Warlock', 'icon_name' => 'classicon_warlock'],
+            ['type' => 'Class', 'title' => 'Warrior', 'icon_name' => 'classicon_warrior'],
 
             // Specs - Druid
-            ['type' => 'Spec', 'title' => 'Balance Druid', 'media' => ['media_name' => 'spell_nature_starfall']],
-            ['type' => 'Spec', 'title' => 'Feral DPS Druid', 'media' => ['media_name' => 'ability_druid_catform']],
-            ['type' => 'Spec', 'title' => 'Feral Tank Druid', 'media' => ['media_name' => 'ability_racial_bearform']],
-            ['type' => 'Spec', 'title' => 'Restoration Druid', 'media' => ['media_name' => 'spell_nature_healingtouch']],
+            ['type' => 'Spec', 'title' => 'Balance Druid', 'icon_name' => 'spell_nature_starfall'],
+            ['type' => 'Spec', 'title' => 'Feral DPS Druid', 'icon_name' => 'ability_druid_catform'],
+            ['type' => 'Spec', 'title' => 'Feral Tank Druid', 'icon_name' => 'ability_racial_bearform'],
+            ['type' => 'Spec', 'title' => 'Restoration Druid', 'icon_name' => 'spell_nature_healingtouch'],
 
             // Specs - Hunter
-            ['type' => 'Spec', 'title' => 'Beast Mastery Hunter', 'media' => ['media_name' => 'ability_hunter_beasttaming']],
-            ['type' => 'Spec', 'title' => 'Marksmanship Hunter', 'media' => ['media_name' => 'ability_marksmanship']],
-            ['type' => 'Spec', 'title' => 'Survival Hunter', 'media' => ['media_name' => 'ability_hunter_swiftstrike']],
+            ['type' => 'Spec', 'title' => 'Beast Mastery Hunter', 'icon_name' => 'ability_hunter_beasttaming'],
+            ['type' => 'Spec', 'title' => 'Marksmanship Hunter', 'icon_name' => 'ability_marksmanship'],
+            ['type' => 'Spec', 'title' => 'Survival Hunter', 'icon_name' => 'ability_hunter_swiftstrike'],
 
             // Specs - Mage
-            ['type' => 'Spec', 'title' => 'Arcane Mage', 'media' => ['media_name' => 'spell_arcane_blast']],
-            ['type' => 'Spec', 'title' => 'Fire Mage', 'media' => ['media_name' => 'spell_fire_flamebolt']],
-            ['type' => 'Spec', 'title' => 'Frost Mage', 'media' => ['media_name' => 'spell_frost_frostbolt02']],
+            ['type' => 'Spec', 'title' => 'Arcane Mage', 'icon_name' => 'spell_arcane_blast'],
+            ['type' => 'Spec', 'title' => 'Fire Mage', 'icon_name' => 'spell_fire_flamebolt'],
+            ['type' => 'Spec', 'title' => 'Frost Mage', 'icon_name' => 'spell_frost_frostbolt02'],
 
             // Specs - Paladin
-            ['type' => 'Spec', 'title' => 'Holy Paladin', 'media' => ['media_name' => 'spell_holy_holybolt']],
-            ['type' => 'Spec', 'title' => 'Protection Paladin', 'media' => ['media_name' => 'spell_holy_devotionaura']],
-            ['type' => 'Spec', 'title' => 'Retribution Paladin', 'media' => ['media_name' => 'spell_holy_auraoflight']],
+            ['type' => 'Spec', 'title' => 'Holy Paladin', 'icon_name' => 'spell_holy_holybolt'],
+            ['type' => 'Spec', 'title' => 'Protection Paladin', 'icon_name' => 'spell_holy_devotionaura'],
+            ['type' => 'Spec', 'title' => 'Retribution Paladin', 'icon_name' => 'spell_holy_auraoflight'],
 
             // Specs - Priest
-            ['type' => 'Spec', 'title' => 'Discipline Priest', 'media' => ['media_name' => 'spell_holy_powerwordshield']],
-            ['type' => 'Spec', 'title' => 'Holy Priest', 'media' => ['media_name' => 'spell_holy_guardianspirit']],
-            ['type' => 'Spec', 'title' => 'Shadow Priest', 'media' => ['media_name' => 'spell_shadow_shadowwordpain']],
+            ['type' => 'Spec', 'title' => 'Discipline Priest', 'icon_name' => 'spell_holy_powerwordshield'],
+            ['type' => 'Spec', 'title' => 'Holy Priest', 'icon_name' => 'spell_holy_guardianspirit'],
+            ['type' => 'Spec', 'title' => 'Shadow Priest', 'icon_name' => 'spell_shadow_shadowwordpain'],
 
             // Specs - Rogue
-            ['type' => 'Spec', 'title' => 'Assassination Rogue', 'media' => ['media_name' => 'ability_rogue_eviscerate']],
-            ['type' => 'Spec', 'title' => 'Combat Rogue', 'media' => ['media_name' => 'ability_backstab']],
-            ['type' => 'Spec', 'title' => 'Subtlety Rogue', 'media' => ['media_name' => 'ability_stealth']],
+            ['type' => 'Spec', 'title' => 'Assassination Rogue', 'icon_name' => 'ability_rogue_eviscerate'],
+            ['type' => 'Spec', 'title' => 'Combat Rogue', 'icon_name' => 'ability_backstab'],
+            ['type' => 'Spec', 'title' => 'Subtlety Rogue', 'icon_name' => 'ability_stealth'],
 
             // Specs - Shaman
-            ['type' => 'Spec', 'title' => 'Elemental Shaman', 'media' => ['media_name' => 'spell_nature_lightning']],
-            ['type' => 'Spec', 'title' => 'Enhancement Shaman', 'media' => ['media_name' => 'spell_nature_lightningshield']],
-            ['type' => 'Spec', 'title' => 'Restoration Shaman', 'media' => ['media_name' => 'spell_nature_magicimmunity']],
+            ['type' => 'Spec', 'title' => 'Elemental Shaman', 'icon_name' => 'spell_nature_lightning'],
+            ['type' => 'Spec', 'title' => 'Enhancement Shaman', 'icon_name' => 'spell_nature_lightningshield'],
+            ['type' => 'Spec', 'title' => 'Restoration Shaman', 'icon_name' => 'spell_nature_magicimmunity'],
 
             // Specs - Warlock
-            ['type' => 'Spec', 'title' => 'Affliction Warlock', 'media' => ['media_name' => 'spell_shadow_deathcoil']],
-            ['type' => 'Spec', 'title' => 'Demonology Warlock', 'media' => ['media_name' => 'spell_shadow_metamorphosis']],
-            ['type' => 'Spec', 'title' => 'Destruction Warlock', 'media' => ['media_name' => 'spell_shadow_rainoffire']],
+            ['type' => 'Spec', 'title' => 'Affliction Warlock', 'icon_name' => 'spell_shadow_deathcoil'],
+            ['type' => 'Spec', 'title' => 'Demonology Warlock', 'icon_name' => 'spell_shadow_metamorphosis'],
+            ['type' => 'Spec', 'title' => 'Destruction Warlock', 'icon_name' => 'spell_shadow_rainoffire'],
 
             // Specs - Warrior
-            ['type' => 'Spec', 'title' => 'Arms Warrior', 'media' => ['media_name' => 'ability_warrior_savageblow']],
-            ['type' => 'Spec', 'title' => 'Fury Warrior', 'media' => ['media_name' => 'ability_warrior_innerrage']],
-            ['type' => 'Spec', 'title' => 'Protection Warrior', 'media' => ['media_name' => 'ability_warrior_defensivestance']],
+            ['type' => 'Spec', 'title' => 'Arms Warrior', 'icon_name' => 'ability_warrior_savageblow'],
+            ['type' => 'Spec', 'title' => 'Fury Warrior', 'icon_name' => 'ability_warrior_innerrage'],
+            ['type' => 'Spec', 'title' => 'Protection Warrior', 'icon_name' => 'ability_warrior_defensivestance'],
 
             // Custom
-            ['type' => 'Custom', 'title' => 'Feral Druid', 'media' => ['media_name' => 'ability_druid_mangle2']],
-            ['type' => 'Custom', 'title' => 'Fire Warlock', 'media' => ['media_name' => 'spell_fire_burnout']],
-            ['type' => 'Custom', 'title' => 'Shadow Warlock', 'media' => ['media_name' => 'spell_shadow_shadowbolt']],
-            ['type' => 'Custom', 'title' => 'Healing Priest', 'media' => ['media_name' => 'spell_holy_greaterheal']],
-            ['type' => 'Custom', 'title' => 'DPS Warrior', 'media' => ['media_name' => 'ability_rogue_ambush']],
+            ['type' => 'Custom', 'title' => 'Feral Druid', 'icon_name' => 'ability_druid_mangle2'],
+            ['type' => 'Custom', 'title' => 'Fire Warlock', 'icon_name' => 'spell_fire_burnout'],
+            ['type' => 'Custom', 'title' => 'Shadow Warlock', 'icon_name' => 'spell_shadow_shadowbolt'],
+            ['type' => 'Custom', 'title' => 'Healing Priest', 'icon_name' => 'spell_holy_greaterheal'],
+            ['type' => 'Custom', 'title' => 'DPS Warrior', 'icon_name' => 'ability_rogue_ambush'],
 
             // Disenchant
-            ['type' => 'Meme', 'title' => 'Bakas', 'media' => ['media_name' => 'ui_embercourt-emoji-elated']],
-            ['type' => 'Meme', 'title' => 'Disenchant', 'media' => ['media_name' => 'inv_enchant_voidcrystal']],
+            ['type' => 'Meme', 'title' => 'Bakas', 'icon_name' => 'ui_embercourt-emoji-elated'],
+            ['type' => 'Meme', 'title' => 'Disenchant', 'icon_name' => 'inv_enchant_voidcrystal'],
         ];
 
         foreach ($priorities as $priority) {
-            Priority::query()->updateOrCreate(
+            $iconName = $priority['icon_name'];
+
+            $model = Priority::query()->updateOrCreate(
                 ['title' => $priority['title']],
-                $priority
+                ['type' => $priority['type'], 'title' => $priority['title']],
             );
+
+            if ($model->hasMedia('blizzard_icons')) {
+                continue;
+            }
+
+            $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+
+            try {
+                $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
+
+                $model->addMediaFromString($response->body())
+                    ->usingFileName($iconFileName)
+                    ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                    ->toMediaCollection('blizzard_icons');
+            } catch (ForbiddenException $e) {
+                AttachBlizzardIconToModel::dispatch(Priority::class, $model->id, $e->getPendingRequest()->getUrl())
+                    ->delay(now()->addMinutes(5));
+                $this->command?->warn("  ⚠ [{$model->title}] Icon deferred (403) — retrying in 5 min");
+            } catch (MediaNotFoundException|RequestException $e) {
+                $this->command?->warn("  ⚠ [{$model->title}] Icon skipped — {$e->getMessage()}");
+            }
         }
     }
 }

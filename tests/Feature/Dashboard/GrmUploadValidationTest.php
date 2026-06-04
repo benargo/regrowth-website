@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 
 class GrmUploadValidationTest extends DashboardTestCase
@@ -82,6 +84,54 @@ class GrmUploadValidationTest extends DashboardTestCase
     }
 
     #[Test]
+    public function upload_form_member_count_reflects_guild_roster(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => [
+                    [
+                        'character' => [
+                            'id' => 1,
+                            'name' => 'Alpha',
+                            'level' => 70,
+                            'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
+                            'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
+                            'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
+                        ],
+                        'rank' => 0,
+                    ],
+                    [
+                        'character' => [
+                            'id' => 2,
+                            'name' => 'Bravo',
+                            'level' => 70,
+                            'playable_class' => ['key' => ['href' => 'https://example.test/class/2'], 'name' => 'Paladin', 'id' => 2],
+                            'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
+                            'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
+                        ],
+                        'rank' => 1,
+                    ],
+                ],
+            ], status: 200),
+        ]);
+
+        $response = $this->actingAs($this->officer)->get(route('dashboard.grm-upload.form'));
+        $pageData = $response->viewData('page');
+
+        $partialResponse = $this->actingAs($this->officer)->get(route('dashboard.grm-upload.form'), [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $pageData['version'],
+            'X-Inertia-Partial-Component' => 'Dashboard/GrmUpload/Form',
+            'X-Inertia-Partial-Data' => 'memberCount',
+        ]);
+
+        $partialResponse->assertOk();
+        $partialResponse->assertJsonPath('props.memberCount', 2);
+    }
+
+    #[Test]
     public function upload_validates_grm_data_required(): void
     {
 
@@ -148,7 +198,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     }
 
     #[Test]
-    public function upload_initializes_progress_cache(): void
+    public function upload_passes_uploading_user_id_to_job(): void
     {
         Queue::fake();
 
@@ -156,8 +206,9 @@ class GrmUploadValidationTest extends DashboardTestCase
             'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nTestChar,Raider,80,1,Main,",
         ]);
 
-        $this->assertTrue(Cache::has(ProcessGrmUpload::PROGRESS_CACHE_KEY));
-        $this->assertEquals('queued', Cache::get(ProcessGrmUpload::PROGRESS_CACHE_KEY)['status']);
+        Queue::assertPushed(ProcessGrmUpload::class, function (ProcessGrmUpload $job) {
+            return $job->userId === $this->officer->id;
+        });
     }
 
     #[Test]

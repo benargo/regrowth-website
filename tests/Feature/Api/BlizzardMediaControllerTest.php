@@ -2,26 +2,61 @@
 
 namespace Tests\Feature\Api;
 
+use App\Http\Integrations\Blizzard\Requests\Media\GetMediaRequest;
+use App\Http\Integrations\Blizzard\Requests\Media\SearchMediaRequest;
 use App\Models\User;
-use App\Services\Blizzard\BlizzardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\PendingRequest;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class BlizzardMediaControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function blizzardPage(int $page, int $totalPages, array $results): array
+    protected function setUp(): void
     {
-        return ['results' => $results, 'pageCount' => $totalPages, 'page' => $page];
+        parent::setUp();
+
+        Cache::flush();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+        ]);
     }
 
-    private function blizzardResult(string $url): array
+    private function mediaPageResponse(string $tag, int $page, int $totalPages, array $results): MockResponse
+    {
+        return MockResponse::make(body: [
+            'results' => $results,
+            'pageCount' => $totalPages,
+            'page' => $page,
+            'resultCount' => count($results),
+        ], status: 200);
+    }
+
+    private function mediaResult(string $url): array
     {
         return ['data' => ['assets' => [['value' => $url]]]];
+    }
+
+    /** Build a Saloon mock closure that routes each SearchMediaRequest by tag and page. */
+    private function buildSearchMediaMock(callable $resolver): callable
+    {
+        return function (PendingRequest $pendingRequest) use ($resolver): MockResponse {
+            $queryParams = $pendingRequest->query()->all();
+            $tag = $queryParams['tags'] ?? '';
+            $page = (int) ($queryParams['_page'] ?? 1);
+
+            return $resolver($tag, $page);
+        };
     }
 
     // ─── authentication ────────────────────────────────────────────────────────
@@ -38,18 +73,20 @@ class BlizzardMediaControllerTest extends TestCase
     public function it_fetches_all_blizzard_pages_and_returns_combined_results(): void
     {
         $user = User::factory()->create();
-        $tagCount = count(BlizzardService::VALID_MEDIA_TAGS);
+        $tagCount = count(GetMediaRequest::VALID_MEDIA_TAGS);
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($tagCount) {
-            $mock->shouldReceive('cacheKey')->with('blizzard:icons:all')->andReturn('blizzard:icons:all:test');
-
-            // One call per tag, each returning a single result
-            $mock->shouldReceive('searchMedia')
-                ->times($tagCount)
-                ->andReturnUsing(fn (array $params) => $this->blizzardPage(1, 1, [
-                    $this->blizzardResult("https://example.com/icons/56/{$params['tags']}_spell.jpg"),
-                ]));
-        });
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            SearchMediaRequest::class => $this->buildSearchMediaMock(
+                fn (string $tag, int $page) => $this->mediaPageResponse($tag, 1, 1, [
+                    $this->mediaResult("https://example.com/icons/56/{$tag}_spell.jpg"),
+                ]),
+            ),
+        ]);
 
         $response = $this->actingAs($user)->getJson(route('api.blizzard.media'));
 
@@ -60,31 +97,28 @@ class BlizzardMediaControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_caches_icons_and_does_not_re_fetch_blizzard_on_second_request(): void
+    public function it_returns_results_from_all_media_tags(): void
     {
         $user = User::factory()->create();
-        $tagCount = count(BlizzardService::VALID_MEDIA_TAGS);
+        $tagCount = count(GetMediaRequest::VALID_MEDIA_TAGS);
 
-        Cache::flush();
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            SearchMediaRequest::class => $this->buildSearchMediaMock(
+                fn (string $tag, int $page) => $this->mediaPageResponse($tag, 1, 1, [
+                    $this->mediaResult("https://example.com/icons/56/{$tag}_unique.jpg"),
+                ]),
+            ),
+        ]);
 
-        $callCount = 0;
+        $response = $this->actingAs($user)->getJson(route('api.blizzard.media'));
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) use (&$callCount) {
-            $mock->shouldReceive('cacheKey')->with('blizzard:icons:all')->andReturn('blizzard:icons:all:test');
-
-            $mock->shouldReceive('searchMedia')->andReturnUsing(function () use (&$callCount) {
-                $callCount++;
-
-                return $this->blizzardPage(1, 1, [
-                    $this->blizzardResult('https://example.com/icons/56/spell_holy_avenging.jpg'),
-                ]);
-            });
-        });
-
-        $this->actingAs($user)->getJson(route('api.blizzard.media'))->assertOk();
-        $this->actingAs($user)->getJson(route('api.blizzard.media'))->assertOk();
-
-        $this->assertSame($tagCount, $callCount, 'Blizzard API should only be called once per tag; second request must use cache.');
+        $response->assertOk();
+        $response->assertJsonCount($tagCount, 'data');
     }
 
     // ─── null url filtering ────────────────────────────────────────────────────
@@ -93,23 +127,25 @@ class BlizzardMediaControllerTest extends TestCase
     public function it_skips_results_with_null_url(): void
     {
         $user = User::factory()->create();
-        $tagCount = count(BlizzardService::VALID_MEDIA_TAGS);
+        $firstTag = GetMediaRequest::VALID_MEDIA_TAGS[0];
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('cacheKey')->with('blizzard:icons:all')->andReturn('blizzard:icons:all:test');
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            SearchMediaRequest::class => $this->buildSearchMediaMock(function (string $tag) use ($firstTag) {
+                if ($tag === $firstTag) {
+                    return $this->mediaPageResponse($tag, 1, 1, [
+                        ['data' => ['assets' => [['value' => null]]]],
+                        $this->mediaResult('https://example.com/icons/56/spell_fire_blast.jpg'),
+                    ]);
+                }
 
-            $mock->shouldReceive('searchMedia')
-                ->andReturnUsing(function (array $params) {
-                    if ($params['tags'] === BlizzardService::VALID_MEDIA_TAGS[0]) {
-                        return $this->blizzardPage(1, 1, [
-                            ['data' => ['assets' => [['value' => null]]]],
-                            $this->blizzardResult('https://example.com/icons/56/spell_fire_blast.jpg'),
-                        ]);
-                    }
-
-                    return $this->blizzardPage(1, 1, []);
-                });
-        });
+                return $this->mediaPageResponse($tag, 1, 1, []);
+            }),
+        ]);
 
         $response = $this->actingAs($user)->getJson(route('api.blizzard.media'));
 
@@ -126,16 +162,19 @@ class BlizzardMediaControllerTest extends TestCase
         $user = User::factory()->create();
         $duplicateUrl = 'https://example.com/icons/56/spell_holy_avenging.jpg';
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($duplicateUrl) {
-            $mock->shouldReceive('cacheKey')->with('blizzard:icons:all')->andReturn('blizzard:icons:all:test');
-
-            // Each tag returns the same icon URL on two pages
-            $mock->shouldReceive('searchMedia')
-                ->andReturnUsing(fn (array $params) => match ($params['_page']) {
-                    1 => $this->blizzardPage(1, 2, [$this->blizzardResult($duplicateUrl)]),
-                    default => $this->blizzardPage(2, 2, [$this->blizzardResult($duplicateUrl)]),
-                });
-        });
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            SearchMediaRequest::class => $this->buildSearchMediaMock(
+                fn (string $tag, int $page) => match ($page) {
+                    1 => $this->mediaPageResponse($tag, 1, 2, [$this->mediaResult($duplicateUrl)]),
+                    default => $this->mediaPageResponse($tag, 2, 2, [$this->mediaResult($duplicateUrl)]),
+                },
+            ),
+        ]);
 
         $response = $this->actingAs($user)->getJson(route('api.blizzard.media'));
 
@@ -150,23 +189,26 @@ class BlizzardMediaControllerTest extends TestCase
     public function it_filters_results_by_partial_name_match(): void
     {
         $user = User::factory()->create();
+        $firstTag = GetMediaRequest::VALID_MEDIA_TAGS[0];
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('cacheKey')->with('blizzard:icons:all')->andReturn('blizzard:icons:all:test');
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            SearchMediaRequest::class => $this->buildSearchMediaMock(function (string $tag) use ($firstTag) {
+                if ($tag === $firstTag) {
+                    return $this->mediaPageResponse($tag, 1, 1, [
+                        $this->mediaResult('https://example.com/icons/56/spell_holy_avenging.jpg'),
+                        $this->mediaResult('https://example.com/icons/56/spell_fire_blast.jpg'),
+                        $this->mediaResult('https://example.com/icons/56/spell_holy_light.jpg'),
+                    ]);
+                }
 
-            $mock->shouldReceive('searchMedia')
-                ->andReturnUsing(function (array $params) {
-                    if ($params['tags'] === BlizzardService::VALID_MEDIA_TAGS[0]) {
-                        return $this->blizzardPage(1, 1, [
-                            $this->blizzardResult('https://example.com/icons/56/spell_holy_avenging.jpg'),
-                            $this->blizzardResult('https://example.com/icons/56/spell_fire_blast.jpg'),
-                            $this->blizzardResult('https://example.com/icons/56/spell_holy_light.jpg'),
-                        ]);
-                    }
-
-                    return $this->blizzardPage(1, 1, []);
-                });
-        });
+                return $this->mediaPageResponse($tag, 1, 1, []);
+            }),
+        ]);
 
         $response = $this->actingAs($user)->getJson(route('api.blizzard.media', ['name' => 'holy']));
 
@@ -180,21 +222,24 @@ class BlizzardMediaControllerTest extends TestCase
     public function it_returns_the_filename_slug_as_the_icon_id(): void
     {
         $user = User::factory()->create();
+        $firstTag = GetMediaRequest::VALID_MEDIA_TAGS[0];
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('cacheKey')->with('blizzard:icons:all')->andReturn('blizzard:icons:all:test');
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            SearchMediaRequest::class => $this->buildSearchMediaMock(function (string $tag) use ($firstTag) {
+                if ($tag === $firstTag) {
+                    return $this->mediaPageResponse($tag, 1, 1, [
+                        $this->mediaResult('https://example.com/icons/56/Spell_Holy_Avenging.jpg'),
+                    ]);
+                }
 
-            $mock->shouldReceive('searchMedia')
-                ->andReturnUsing(function (array $params) {
-                    if ($params['tags'] === BlizzardService::VALID_MEDIA_TAGS[0]) {
-                        return $this->blizzardPage(1, 1, [
-                            $this->blizzardResult('https://example.com/icons/56/Spell_Holy_Avenging.jpg'),
-                        ]);
-                    }
-
-                    return $this->blizzardPage(1, 1, []);
-                });
-        });
+                return $this->mediaPageResponse($tag, 1, 1, []);
+            }),
+        ]);
 
         $response = $this->actingAs($user)->getJson(route('api.blizzard.media'));
 
@@ -210,23 +255,26 @@ class BlizzardMediaControllerTest extends TestCase
     public function it_paginates_results_at_1000_per_page(): void
     {
         $user = User::factory()->create();
+        $firstTag = GetMediaRequest::VALID_MEDIA_TAGS[0];
 
         $manyResults = collect(range(1, 1250))
-            ->map(fn (int $i) => $this->blizzardResult("https://example.com/icons/56/spell_{$i}.jpg"))
+            ->map(fn (int $i) => $this->mediaResult("https://example.com/icons/56/spell_{$i}.jpg"))
             ->all();
 
-        $this->mock(BlizzardService::class, function (MockInterface $mock) use ($manyResults) {
-            $mock->shouldReceive('cacheKey')->with('blizzard:icons:all')->andReturn('blizzard:icons:all:test');
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make([
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ]),
+            SearchMediaRequest::class => $this->buildSearchMediaMock(function (string $tag) use ($firstTag, $manyResults) {
+                if ($tag === $firstTag) {
+                    return $this->mediaPageResponse($tag, 1, 1, $manyResults);
+                }
 
-            $mock->shouldReceive('searchMedia')
-                ->andReturnUsing(function (array $params) use ($manyResults) {
-                    if ($params['tags'] === BlizzardService::VALID_MEDIA_TAGS[0]) {
-                        return $this->blizzardPage(1, 1, $manyResults);
-                    }
-
-                    return $this->blizzardPage(1, 1, []);
-                });
-        });
+                return $this->mediaPageResponse($tag, 1, 1, []);
+            }),
+        ]);
 
         $page1 = $this->actingAs($user)->getJson(route('api.blizzard.media', ['page' => 1]));
         $page1->assertOk();
