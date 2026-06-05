@@ -20,7 +20,7 @@ function DashboardCard({ href, icon, children }) {
     );
 }
 
-export default function Index({ discordRoles }) {
+export default function Dashboard({ discordRoles }) {
     const { auth } = usePage().props;
     const user = auth?.user;
 
