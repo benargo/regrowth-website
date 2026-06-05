@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Enums\CharacterRole;
 use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
@@ -16,9 +17,6 @@ use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 class SpecialisationSeeder extends Seeder implements HasBlizzardIcons
 {
     public function __construct(
-        /**
-         * Inject the MediaService to fetch specialisation icons from the Blizzard API.
-         */
         private RenderConnector $renderConnector,
     ) {}
 
@@ -79,15 +77,14 @@ class SpecialisationSeeder extends Seeder implements HasBlizzardIcons
      */
     public function run(): void
     {
-        // Ensure PlayableClasses are seeded first so we can reference them when creating specialisations.
-        $this->call([
-            PlayableClassSeeder::class,
-        ]);
-
         $keys = PlayableClass::select('id', 'name')->orderBy('name')->get()->keyBy('name');
 
         foreach ($this->specialisations as $className => $specs) {
-            assert($keys->has($className), "PlayableClass '{$className}' not found in the database.");
+            if (! $keys->has($className)) {
+                $this->command?->warn("Playable class [{$className}] not found — skipping its specialisations");
+
+                continue;
+            }
 
             $playableClass = $keys->get($className);
 
