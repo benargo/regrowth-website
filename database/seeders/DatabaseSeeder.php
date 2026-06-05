@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             BossSeeder::class,
             ZoneSeeder::class,
             PlayableClassSeeder::class,
+            PlayableRaceSeeder::class,
             TargetMarkerSeeder::class,
 
             // Then seed the daily quests data

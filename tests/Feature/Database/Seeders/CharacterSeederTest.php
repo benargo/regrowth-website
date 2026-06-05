@@ -3,9 +3,9 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
-use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Models\Character;
 use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use Database\Seeders\CharacterSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,23 +39,6 @@ class CharacterSeederTest extends TestCase
         ];
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function makePlayableRaceResponse(int $id = 2, string $name = 'Orc'): array
-    {
-        return [
-            'id' => $id,
-            'name' => $name,
-            'gender_name' => ['male' => $name, 'female' => $name],
-            'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
-            'is_selectable' => true,
-            'is_allied_race' => false,
-            'playable_classes' => [],
-            'racial_spells' => [],
-        ];
-    }
-
     private function fakeSaloon(int $classId = 7, int $raceId = 2): void
     {
         Saloon::fake([
@@ -65,10 +48,6 @@ class CharacterSeederTest extends TestCase
             ),
             GetCharacterProfileRequest::class => MockResponse::make(
                 body: $this->makeProfileResponse($classId, $raceId),
-                status: 200,
-            ),
-            GetPlayableRaceRequest::class => MockResponse::make(
-                body: $this->makePlayableRaceResponse($raceId),
                 status: 200,
             ),
         ]);
@@ -83,6 +62,7 @@ class CharacterSeederTest extends TestCase
     public function seeder_populates_playable_class_id_and_playable_race_for_characters_missing_them(): void
     {
         $playableClass = PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
+        PlayableRace::factory()->create(['id' => 2, 'name' => 'Orc']);
 
         $this->fakeSaloon();
 
@@ -94,8 +74,8 @@ class CharacterSeederTest extends TestCase
 
         $this->assertSame(7, $fresh->playable_class_id);
         $this->assertTrue($fresh->playableClass->is($playableClass));
-        $this->assertSame(2, $fresh->playable_race['id']);
-        $this->assertSame('Orc', $fresh->playable_race['name']);
+        $this->assertSame(2, $fresh->playable_race_id);
+        $this->assertSame('Orc', $fresh->playableRace->name);
     }
 
     #[Test]
@@ -105,7 +85,7 @@ class CharacterSeederTest extends TestCase
 
         Character::factory()
             ->withPlayableClass()
-            ->withPlayableRace(1, 'Human')
+            ->withPlayableRace(PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']))
             ->create(['name' => 'Thrall']);
 
         $this->runSeeder();
@@ -117,6 +97,7 @@ class CharacterSeederTest extends TestCase
     public function seeder_processes_character_missing_only_playable_race(): void
     {
         PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
+        PlayableRace::factory()->create(['id' => 2, 'name' => 'Orc']);
 
         $this->fakeSaloon();
 
@@ -128,8 +109,8 @@ class CharacterSeederTest extends TestCase
 
         $fresh = $character->fresh();
 
-        $this->assertSame(2, $fresh->playable_race['id']);
-        $this->assertSame('Orc', $fresh->playable_race['name']);
+        $this->assertSame(2, $fresh->playable_race_id);
+        $this->assertSame('Orc', $fresh->playableRace->name);
     }
 
     #[Test]
@@ -157,13 +138,14 @@ class CharacterSeederTest extends TestCase
         $fresh = $character->fresh();
 
         $this->assertNull($fresh->playable_class_id);
-        $this->assertNull($fresh->getRawOriginal('playable_race'));
+        $this->assertNull($fresh->playable_race_id);
     }
 
     #[Test]
     public function seeder_does_not_recurse_infinitely_when_characters_are_mutually_linked(): void
     {
         PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
+        PlayableRace::factory()->create(['id' => 2, 'name' => 'Orc']);
 
         $this->fakeSaloon();
 
@@ -185,6 +167,8 @@ class CharacterSeederTest extends TestCase
     #[Test]
     public function seeder_sets_null_playable_class_id_when_class_not_found_in_database(): void
     {
+        PlayableRace::factory()->create(['id' => 2, 'name' => 'Orc']);
+
         $this->fakeSaloon();
 
         $character = Character::factory()->create(['name' => 'Thrall']);
