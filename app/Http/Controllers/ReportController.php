@@ -90,7 +90,7 @@ class ReportController extends Controller
      */
     public function show(Request $request, Report $report): Response
     {
-        $report->load(['guildTag', 'zone', 'characters.rank', 'characters.playableClass', 'linkedReports']);
+        $report->load(['guildTag', 'zone', 'characters.rank', 'characters.playableClass', 'characters.playableRace', 'linkedReports']);
 
         return Inertia::render('Raiding/Reports/Show', [
             'report' => new ReportResource($report),
