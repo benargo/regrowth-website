@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Enums\CharacterRole;
 use App\Models\Character;
 use App\Models\CharacterSpecialisation;
@@ -9,6 +10,7 @@ use App\Models\PlayableClass;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class CharacterSpecialisationTest extends ModelTestCase
@@ -36,6 +38,15 @@ class CharacterSpecialisationTest extends ModelTestCase
             'role',
             'name',
         ]);
+    }
+
+    #[Test]
+    public function it_implements_media_library_contracts(): void
+    {
+        $model = new CharacterSpecialisation;
+
+        $this->assertInstanceOf(HasMedia::class, $model);
+        $this->assertInstanceOf(HasBlizzardIcons::class, $model);
     }
 
     #[Test]

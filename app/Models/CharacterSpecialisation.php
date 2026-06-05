@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\HasBlizzardIcons;
 use App\Enums\CharacterRole;
 use Database\Factories\CharacterSpecialisationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class CharacterSpecialisation extends Model implements HasMedia
+class CharacterSpecialisation extends Model implements HasBlizzardIcons, HasMedia
 {
     /** use HasFactory<CharacterSpecialisationFactory> */
     use HasFactory, InteractsWithMedia;
