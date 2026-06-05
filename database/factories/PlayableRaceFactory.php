@@ -34,6 +34,35 @@ class PlayableRaceFactory extends Factory
         'Vulpera',
         'Worgen',
         'Zandalari Troll',
+        'Ashborne',
+        'Crystalkin',
+        'Deepstrider',
+        'Embersoul',
+        'Frostwalker',
+        'Gilded Gnome',
+        'Grimfang',
+        'Hollowed',
+        'Ironscale',
+        'Jadeclaw',
+        'Kindleborn',
+        'Lunarkin',
+        'Mirefolk',
+        'Netherspawn',
+        'Obsidian Dwarf',
+        'Plagueborn',
+        'Quicksilver',
+        'Rimeborn',
+        'Sandwalker',
+        'Shadowmeld Elf',
+        'Stonehide',
+        'Thornback',
+        'Umbral Troll',
+        'Verdant',
+        'Waveborn',
+        'Wyrmkin',
+        'Ashenveil',
+        'Bonecaller',
+        'Copperclaw',
     ];
 
     /**
@@ -44,7 +73,7 @@ class PlayableRaceFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => $this->faker->unique()->numberBetween(1, 23),
+            'id' => $this->faker->unique()->numberBetween(1, 10000),
             'name' => $this->faker->unique()->randomElement($this->raceNames),
         ];
     }

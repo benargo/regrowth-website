@@ -17,7 +17,6 @@ class PlayableRaceResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'characters' => $this->whenLoaded('characters', fn () => CharacterResource::collection($this->characters)),
         ];
     }
 }

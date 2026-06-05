@@ -3,7 +3,6 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\PlayableRaceResource;
-use App\Models\Character;
 use App\Models\PlayableRace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -52,30 +51,7 @@ class PlayableRaceResourceTest extends TestCase
 
         $array = (new PlayableRaceResource($playableRace))->resolve(new Request);
 
-        $this->assertCount(2, $array);
-    }
-
-    #[Test]
-    public function it_omits_characters_when_not_loaded(): void
-    {
-        $playableRace = PlayableRace::factory()->create();
-
-        $array = (new PlayableRaceResource($playableRace))->resolve(new Request);
-
         $this->assertArrayNotHasKey('characters', $array);
-    }
-
-    #[Test]
-    public function it_includes_characters_when_loaded(): void
-    {
-        $playableRace = PlayableRace::factory()->create();
-        Character::factory()->count(2)->for($playableRace, 'playableRace')->create();
-
-        $playableRace->load('characters');
-
-        $array = (new PlayableRaceResource($playableRace))->resolve(new Request);
-
-        $this->assertArrayHasKey('characters', $array);
-        $this->assertCount(2, $array['characters']);
+        $this->assertSame(['id', 'name'], array_keys($array));
     }
 }
