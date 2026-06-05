@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CharacterFactory extends Factory
@@ -28,8 +28,8 @@ class CharacterFactory extends Factory
             'level' => fake()->numberBetween(1, 80),
             'rank_id' => null,
             'playable_class_id' => null,
+            'playable_race_id' => null,
             'is_main' => false,
-            'playable_race' => null,
         ];
     }
 
@@ -96,23 +96,11 @@ class CharacterFactory extends Factory
 
     /**
      * Indicate that the character has a playable race.
-     *
-     * Builds a PlayableRace value object from a minimal fake API response so
-     * the AsPlayableRace cast's set() path runs.
      */
-    public function withPlayableRace(int $raceId = 1, string $name = 'Human'): static
+    public function withPlayableRace(?PlayableRace $playableRace = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'playable_race' => PlayableRaceData::from([
-                'id' => $raceId,
-                'name' => $name,
-                'gender_name' => ['male' => $name, 'female' => $name],
-                'faction' => [],
-                'is_selectable' => true,
-                'is_allied_race' => false,
-                'playable_classes' => [],
-                'racial_spells' => [],
-            ]),
+            'playable_race_id' => $playableRace ?? PlayableRace::factory(),
         ]);
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -76,14 +77,16 @@ class FetchGuildRoster implements ShouldQueue
         $guildRank = GuildRank::where('position', $member->rank)->firstOrFail();
         $playableClass = PlayableClass::find($member->character->playableClass?->id);
 
+        $playableRace = PlayableRace::updateOrCreate(
+            ['id' => $member->character->playableRace->id],
+            ['name' => $member->character->playableRace->name],
+        );
+
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([
             'name' => $member->character->name,
             'level' => $member->character->level,
-            'playable_race' => [
-                'id' => $member->character->playableRace->id,
-                'name' => $member->character->playableRace->name,
-            ],
+            'playable_race_id' => $playableRace->id,
         ]);
 
         Character::withoutEvents(function () use ($character, $playableClass, $guildRank) {

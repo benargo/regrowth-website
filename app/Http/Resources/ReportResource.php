@@ -38,7 +38,7 @@ class ReportResource extends JsonResource
                         'name' => $character->name,
                         'is_main' => $character->is_main,
                         'playable_class' => null,
-                        'playable_race' => $character->playable_race,
+                        'playable_race' => null,
                         'pivot' => [
                             'presence' => $character->pivot->presence,
                             'is_loot_councillor' => $character->pivot->is_loot_councillor,
@@ -59,6 +59,12 @@ class ReportResource extends JsonResource
                             'name' => $character->rank->name,
                             'count_attendance' => $character->rank->count_attendance,
                         ] : null;
+                    }
+
+                    if ($character->relationLoaded('playableRace')) {
+                        $data['playable_race'] = $character->playableRace
+                            ? ['id' => $character->playableRace->id, 'name' => $character->playableRace->name]
+                            : null;
                     }
 
                     return $data;

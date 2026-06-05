@@ -49,7 +49,7 @@ class PlannedAbsenceController extends Controller
                     return PlannedAbsenceResource::collection(
                         PlannedAbsence::query()
                             ->withTrashed()
-                            ->with(['character', 'createdBy'])
+                            ->with(['character.playableRace', 'createdBy'])
                             ->orderBy('start_date')
                             ->get()
                     )->resolve($request);
@@ -148,7 +148,7 @@ class PlannedAbsenceController extends Controller
     {
         $characters = $this->buildCharactersResourceCollection($request);
 
-        $plannedAbsence->load(['character', 'createdBy']);
+        $plannedAbsence->load(['character.playableRace', 'createdBy']);
 
         $resolvedCharacter = $request->user()->cannot('createForOthers', PlannedAbsence::class)
             ? $this->resolveCharacterFromUserNickname($request->user())
@@ -338,6 +338,7 @@ class PlannedAbsenceController extends Controller
         return Cache::tags(['characters'])->remember('characters:mains:to_resource_collection', now()->addDay(), function () use ($request) {
             return CharacterResource::collection(
                 Character::query()
+                    ->with('playableRace')
                     ->where('is_main', true)
                     ->orderBy('name')
                     ->get()

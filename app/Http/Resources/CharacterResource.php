@@ -31,7 +31,7 @@ class CharacterResource extends JsonResource
             'is_loot_councillor' => $this->is_loot_councillor,
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
             'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
-            'playable_race' => $this->playable_race,
+            'playable_race' => $this->whenLoaded('playableRace', fn () => (new PlayableRaceResource($this->playableRace))->resolve($request)),
             'pivot' => $this->whenPivotLoaded('pivot_characters_raid_reports', fn () => [
                 'presence' => $this->pivot->presence,
                 'is_loot_councillor' => $this->pivot->is_loot_councillor,
