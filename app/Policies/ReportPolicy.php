@@ -12,7 +12,7 @@ class ReportPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-reports');
+        return $user->isAuthorizedTo('manage-reports');
     }
 
     /**
@@ -20,7 +20,7 @@ class ReportPolicy
      */
     public function update(User $user, Report $report): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-reports');
+        return $user->isAuthorizedTo('manage-reports');
     }
 
     /**
@@ -28,6 +28,6 @@ class ReportPolicy
      */
     public function delete(User $user, Report $report): bool
     {
-        return $user->hasPermissionViaDiscordRoles('manage-reports');
+        return $user->isAuthorizedTo('manage-reports');
     }
 }

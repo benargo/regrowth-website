@@ -492,7 +492,7 @@ class UserTest extends ModelTestCase
         $user->discordRoles()->attach($role->id);
         $user->load('discordRoles.permissions');
 
-        $this->assertTrue($user->hasPermissionViaDiscordRoles('test-permission'));
+        $this->assertTrue($user->isAuthorizedTo('test-permission'));
     }
 
     #[Test]
@@ -505,7 +505,7 @@ class UserTest extends ModelTestCase
         $user = User::factory()->create();
         $user->discordRoles()->attach($role->id);
 
-        $this->assertFalse($user->hasPermissionViaDiscordRoles('test-permission'));
+        $this->assertFalse($user->isAuthorizedTo('test-permission'));
     }
 
     #[Test]
@@ -515,6 +515,6 @@ class UserTest extends ModelTestCase
 
         $user = User::factory()->create();
 
-        $this->assertFalse($user->hasPermissionViaDiscordRoles('test-permission'));
+        $this->assertFalse($user->isAuthorizedTo('test-permission'));
     }
 }

@@ -43,12 +43,12 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Authorization Gates
          */
-        Gate::define('edit-datasets', fn (User $user) => $user->hasPermissionViaDiscordRoles('edit-datasets'));
-        Gate::define('impersonate-roles', fn (User $user) => $user->hasPermissionViaDiscordRoles('impersonate-roles'));
-        Gate::define('view-attendance', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-attendance'));
-        Gate::define('view-officer-dashboard', fn (User $user) => $user->hasPermissionViaDiscordRoles('view-officer-dashboard'));
-        Gate::define('set-daily-quests', fn (User $user) => $user->hasPermissionViaDiscordRoles('set-daily-quests'));
-        Gate::define('audit-daily-quests', fn (User $user) => $user->hasPermissionViaDiscordRoles('audit-daily-quests'));
+        Gate::define('edit-datasets', fn (User $user) => $user->isAuthorizedTo('edit-datasets'));
+        Gate::define('impersonate-roles', fn (User $user) => $user->isAuthorizedTo('impersonate-roles'));
+        Gate::define('view-attendance', fn (User $user) => $user->isAuthorizedTo('view-attendance'));
+        Gate::define('view-officer-dashboard', fn (User $user) => $user->isAuthorizedTo('view-officer-dashboard'));
+        Gate::define('set-daily-quests', fn (User $user) => $user->isAuthorizedTo('set-daily-quests'));
+        Gate::define('audit-daily-quests', fn (User $user) => $user->isAuthorizedTo('audit-daily-quests'));
 
         /**
          * Rate limiting
