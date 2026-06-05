@@ -39,6 +39,7 @@ class Character extends Model
         'level',
         'rank_id',
         'playable_class_id',
+        'specialisation_id',
         'playable_race',
         'is_main',
         'is_loot_councillor',
@@ -121,6 +122,14 @@ class Character extends Model
     public function plannedAbsences(): HasMany
     {
         return $this->hasMany(PlannedAbsence::class);
+    }
+
+    /**
+     * Get the specialisation associated with the character.
+     */
+    public function specialisation(): BelongsTo
+    {
+        return $this->belongsTo(CharacterSpecialisation::class, 'specialisation_id');
     }
 
     /**

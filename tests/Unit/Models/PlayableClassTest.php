@@ -103,4 +103,22 @@ class PlayableClassTest extends ModelTestCase
 
         $this->assertCount(0, $playableClass->characters);
     }
+
+    // specialisations
+
+    #[Test]
+    public function specialisations_returns_has_many_relationship(): void
+    {
+        $playableClass = new PlayableClass;
+
+        $this->assertInstanceOf(HasMany::class, $playableClass->specialisations());
+    }
+
+    #[Test]
+    public function specialisations_returns_empty_collection_when_none_associated(): void
+    {
+        $playableClass = $this->create();
+
+        $this->assertCount(0, $playableClass->specialisations);
+    }
 }
