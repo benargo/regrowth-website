@@ -33,6 +33,10 @@ class CharacterSeeder extends Seeder
                 $playableClass = PlayableClass::find($profile->characterClass->id ?? null);
                 $race = PlayableRace::find($profile->race->id ?? null);
 
+                if ($race === null && isset($profile->race->id)) {
+                    Log::warning("PlayableRace ID {$profile->race->id} not found for character {$character->name}. Has PlayableRaceSeeder been run?");
+                }
+
                 $character->update([
                     'playable_class_id' => $playableClass?->id,
                     'playable_race_id' => $race?->id,

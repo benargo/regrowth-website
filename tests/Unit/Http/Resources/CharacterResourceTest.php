@@ -25,9 +25,10 @@ class CharacterResourceTest extends TestCase
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
-        $character = Character::factory()->create();
+        $playableRace = PlayableRace::factory()->create();
+        $character = Character::factory()->withPlayableRace($playableRace)->create();
 
-        $array = (new CharacterResource($character))->toArray(new Request);
+        $array = (new CharacterResource($character->load('playableRace')))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
         $this->assertArrayHasKey('name', $array);
@@ -37,6 +38,7 @@ class CharacterResourceTest extends TestCase
         $this->assertArrayHasKey('is_loot_councillor', $array);
         $this->assertArrayHasKey('planned_absences', $array);
         $this->assertArrayHasKey('playable_class', $array);
+        $this->assertArrayHasKey('playable_race', $array);
         $this->assertArrayHasKey('pivot', $array);
         $this->assertArrayHasKey('rank', $array);
     }
