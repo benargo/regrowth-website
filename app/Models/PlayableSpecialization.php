@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\PlayableSpecRole;
-use Database\Factories\PlayableSpecialisationFactory;
+use Database\Factories\PlayableSpecializationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +12,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class PlayableSpecialisation extends Model implements HasBlizzardIcons, HasMedia
+class PlayableSpecialization extends Model implements HasBlizzardIcons, HasMedia
 {
-    /** use HasFactory<PlayableSpecialisationFactory> */
+    /** use HasFactory<PlayableSpecializationFactory> */
     use HasFactory, InteractsWithMedia;
 
     /**

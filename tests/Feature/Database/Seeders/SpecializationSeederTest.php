@@ -5,9 +5,9 @@ namespace Tests\Feature\Database\Seeders;
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Jobs\AttachBlizzardIconToModel;
-use App\Models\CharacterSpecialisation;
 use App\Models\PlayableClass;
-use Database\Seeders\SpecialisationSeeder;
+use App\Models\PlayableSpecialization;
+use Database\Seeders\SpecializationSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -18,7 +18,7 @@ use Saloon\Laravel\Facades\Saloon;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
 
-class SpecialisationSeederTest extends TestCase
+class SpecializationSeederTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -50,7 +50,7 @@ class SpecialisationSeederTest extends TestCase
 
     private function runSeeder(): void
     {
-        Model::unguarded(fn () => app(SpecialisationSeeder::class)->run());
+        Model::unguarded(fn () => app(SpecializationSeeder::class)->run());
     }
 
     // ==================== Record Creation ====================
@@ -62,11 +62,11 @@ class SpecialisationSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('character_specialisations', 27);
+        $this->assertDatabaseCount('playable_specializations', 27);
     }
 
     #[Test]
-    public function seeder_creates_specialisations_with_correct_roles(): void
+    public function seeder_creates_specializations_with_correct_roles(): void
     {
         $this->seedPlayableClasses();
 
@@ -74,13 +74,13 @@ class SpecialisationSeederTest extends TestCase
 
         $druid = PlayableClass::where('name', 'Druid')->first();
 
-        $this->assertDatabaseHas('character_specialisations', [
+        $this->assertDatabaseHas('playable_specializations', [
             'playable_class_id' => $druid->id,
             'name' => 'Balance',
             'role' => 'DPS',
         ]);
 
-        $this->assertDatabaseHas('character_specialisations', [
+        $this->assertDatabaseHas('playable_specializations', [
             'playable_class_id' => $druid->id,
             'name' => 'Restoration',
             'role' => 'Healer',
@@ -88,7 +88,7 @@ class SpecialisationSeederTest extends TestCase
 
         $warrior = PlayableClass::where('name', 'Warrior')->first();
 
-        $this->assertDatabaseHas('character_specialisations', [
+        $this->assertDatabaseHas('playable_specializations', [
             'playable_class_id' => $warrior->id,
             'name' => 'Protection',
             'role' => 'Tank',
@@ -96,7 +96,7 @@ class SpecialisationSeederTest extends TestCase
     }
 
     #[Test]
-    public function seeder_attaches_blizzard_icon_to_each_specialisation(): void
+    public function seeder_attaches_blizzard_icon_to_each_specialization(): void
     {
         $this->seedPlayableClasses();
 
@@ -104,13 +104,13 @@ class SpecialisationSeederTest extends TestCase
 
         $this->assertDatabaseCount('media', 27);
         $this->assertDatabaseHas('media', [
-            'model_type' => CharacterSpecialisation::class,
+            'model_type' => PlayableSpecialization::class,
             'collection_name' => 'blizzard_icons',
             'file_name' => 'spell_nature_starfall.jpg',
         ]);
 
         $druid = PlayableClass::where('name', 'Druid')->first();
-        $balance = CharacterSpecialisation::where('playable_class_id', $druid->id)->where('name', 'Balance')->first();
+        $balance = PlayableSpecialization::where('playable_class_id', $druid->id)->where('name', 'Balance')->first();
         $media = $balance->getFirstMedia('blizzard_icons');
 
         $this->assertSame(HasBlizzardIcons::BLIZZARD_ICON_SIZE, $media->getCustomProperty('size'));
@@ -126,12 +126,12 @@ class SpecialisationSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $specialisationCount = CharacterSpecialisation::count();
+        $specializationCount = PlayableSpecialization::count();
         $mediaCount = Media::count();
 
         $this->runSeeder();
 
-        $this->assertSame($specialisationCount, CharacterSpecialisation::count());
+        $this->assertSame($specializationCount, PlayableSpecialization::count());
         $this->assertSame($mediaCount, Media::count());
     }
 
@@ -141,7 +141,7 @@ class SpecialisationSeederTest extends TestCase
         $this->seedPlayableClasses();
 
         $druid = PlayableClass::where('name', 'Druid')->first();
-        $balance = CharacterSpecialisation::factory()->create([
+        $balance = PlayableSpecialization::factory()->create([
             'playable_class_id' => $druid->id,
             'name' => 'Balance',
         ]);
@@ -157,7 +157,7 @@ class SpecialisationSeederTest extends TestCase
     // ==================== Class Association ====================
 
     #[Test]
-    public function seeder_associates_specialisations_with_correct_playable_class(): void
+    public function seeder_associates_specializations_with_correct_playable_class(): void
     {
         $this->seedPlayableClasses();
 
@@ -165,7 +165,7 @@ class SpecialisationSeederTest extends TestCase
 
         $shaman = PlayableClass::where('name', 'Shaman')->first();
 
-        $shamanSpecs = CharacterSpecialisation::where('playable_class_id', $shaman->id)
+        $shamanSpecs = PlayableSpecialization::where('playable_class_id', $shaman->id)
             ->pluck('name')
             ->sort()
             ->values()
@@ -192,11 +192,11 @@ class SpecialisationSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('character_specialisations', 27);
+        $this->assertDatabaseCount('playable_specializations', 27);
         $this->assertDatabaseCount('media', 0);
 
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
-            return $job->modelClass === CharacterSpecialisation::class
+            return $job->modelClass === PlayableSpecialization::class
                 && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/spell_nature_starfall.jpg';
         });
     }
@@ -217,7 +217,7 @@ class SpecialisationSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('character_specialisations', 27);
+        $this->assertDatabaseCount('playable_specializations', 27);
         $this->assertDatabaseCount('media', 0);
         Queue::assertNothingPushed();
     }

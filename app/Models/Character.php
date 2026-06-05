@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Character extends Model
 {
@@ -78,6 +79,16 @@ class Character extends Model
     // ============ Custom attributes ============
 
     /**
+     * URL-safe slug derived from the character name; used in route bindings.
+     */
+    protected function slug(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => Str::slug($this->name),
+        );
+    }
+
+    /**
      * Get the main character from the linked characters.
      */
     protected function mainCharacter(): Attribute
@@ -123,7 +134,10 @@ class Character extends Model
         return $this->hasMany(PlannedAbsence::class);
     }
 
-    public function specialisations(): BelongsToMany
+    /**
+     * Get the playable specializations associated with the character.
+     */
+    public function specializations(): BelongsToMany
     {
         return $this->belongsToMany(PlayableSpecialization::class, 'pivot_character_specializations', 'character_id', 'playable_specialization_id')
             ->withPivot('is_raid_spec')

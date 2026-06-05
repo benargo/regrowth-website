@@ -134,6 +134,24 @@ class CharacterTest extends ModelTestCase
         $this->assertTrue($character->is_main);
     }
 
+    // slug
+
+    #[Test]
+    public function slug_returns_url_safe_version_of_name(): void
+    {
+        $character = $this->factory()->make(['name' => 'Death Knight Bob']);
+
+        $this->assertSame('death-knight-bob', $character->slug);
+    }
+
+    #[Test]
+    public function slug_strips_apostrophes_and_special_characters(): void
+    {
+        $character = $this->factory()->make(['name' => "Kael'thas"]);
+
+        $this->assertSame('kaelthas', $character->slug);
+    }
+
     // linked_characters
 
     #[Test]
@@ -414,48 +432,48 @@ class CharacterTest extends ModelTestCase
         $this->assertCount(0, (new Character)->prunable()->get());
     }
 
-    // specialisations
+    // specializations
 
     #[Test]
-    public function specialisations_returns_belongs_to_many_relationship(): void
+    public function specializations_returns_belongs_to_many_relationship(): void
     {
         $character = new Character;
 
-        $this->assertInstanceOf(BelongsToMany::class, $character->specialisations());
+        $this->assertInstanceOf(BelongsToMany::class, $character->specializations());
     }
 
     #[Test]
-    public function specialisations_returns_empty_collection_by_default(): void
+    public function specializations_returns_empty_collection_by_default(): void
     {
         $character = $this->create();
 
-        $this->assertCount(0, $character->specialisations);
+        $this->assertCount(0, $character->specializations);
     }
 
     #[Test]
-    public function it_can_attach_specialisations_via_pivot(): void
+    public function it_can_attach_specializations_via_pivot(): void
     {
         $character = $this->create();
-        $specialisation = PlayableSpecialization::factory()->create();
+        $specialization = PlayableSpecialization::factory()->create();
 
-        $character->specialisations()->attach($specialisation->id);
+        $character->specializations()->attach($specialization->id);
 
-        $this->assertCount(1, $character->fresh()->specialisations);
-        $this->assertTrue($character->fresh()->specialisations->first()->is($specialisation));
+        $this->assertCount(1, $character->fresh()->specializations);
+        $this->assertTrue($character->fresh()->specializations->first()->is($specialization));
     }
 
     #[Test]
-    public function deleting_specialisation_removes_it_from_characters_specialisations(): void
+    public function deleting_specialization_removes_it_from_characters_specializations(): void
     {
         $character = $this->create();
-        $specialisation = PlayableSpecialization::factory()->create();
-        $character->specialisations()->attach($specialisation->id);
+        $specialization = PlayableSpecialization::factory()->create();
+        $character->specializations()->attach($specialization->id);
 
-        $specialisation->delete();
+        $specialization->delete();
 
         $this->assertDatabaseMissing('pivot_character_specializations', [
             'character_id' => $character->id,
-            'playable_specialization_id' => $specialisation->id,
+            'playable_specialization_id' => $specialization->id,
         ]);
     }
 

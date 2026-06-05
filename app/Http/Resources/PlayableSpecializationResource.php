@@ -5,21 +5,16 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PlayableClassResource extends JsonResource
+class PlayableSpecializationResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'slug' => $this->slug,
+            'role' => $this->role->value,
             'icon_url' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
-            'specializations' => $this->whenLoaded('specializations', fn () => PlayableSpecializationResource::collection($this->specializations)),
+            'is_raid_spec' => $this->whenPivotLoaded('pivot_character_specializations', fn () => (bool) $this->pivot->is_raid_spec),
         ];
     }
 }
