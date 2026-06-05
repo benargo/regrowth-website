@@ -281,8 +281,8 @@ class FetchGuildRosterTest extends TestCase
 
         $character = Character::find(1);
         $this->assertNotNull($character);
-        $this->assertSame(7, $character->playable_race['id']);
-        $this->assertSame('Gnome', $character->playable_race['name']);
+        $this->assertSame(7, $character->playable_race_id);
+        $this->assertSame('Gnome', $character->playableRace->name);
     }
 
     #[Group('character-synchronisation')]
