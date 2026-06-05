@@ -2,19 +2,20 @@
 
 namespace Tests\Feature\Database\Seeders;
 
-use App\Enums\CharacterRole;
+use App\Contracts\HasBlizzardIcons;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\CharacterSpecialisation;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\MediaService;
-use Database\Seeders\PlayableClassSeeder;
 use Database\Seeders\SpecialisationSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
-use Spatie\MediaLibrary\Downloaders\HttpFacadeDownloader;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
 
 class SpecialisationSeederTest extends TestCase
@@ -25,12 +26,11 @@ class SpecialisationSeederTest extends TestCase
     {
         parent::setUp();
 
-        // Stub PlayableClassSeeder so it doesn't require Blizzard API calls;
-        // we seed the PlayableClasses we need directly via factory.
-        $this->mock(PlayableClassSeeder::class, function (MockInterface $mock) {
-            $mock->shouldReceive('setContainer')->andReturnSelf();
-            $mock->shouldReceive('__invoke')->andReturnNull();
-        });
+        Storage::fake('public');
+
+        Saloon::fake([
+            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
     }
 
     private function seedPlayableClasses(): void
@@ -48,25 +48,9 @@ class SpecialisationSeederTest extends TestCase
         });
     }
 
-    private function mockMediaService(?callable $callback = null): void
-    {
-        $this->mock(MediaService::class, function (MockInterface $mock) use ($callback) {
-            $mock->shouldReceive('get')
-                ->andReturnUsing(fn (string $icon) => "https://example.com/icons/{$icon}.jpg");
-
-            if ($callback) {
-                $callback($mock);
-            }
-        });
-    }
-
     private function runSeeder(): void
     {
-        Model::unguarded(function () {
-            $seeder = app(SpecialisationSeeder::class);
-            $seeder->setContainer(app());
-            $seeder->run();
-        });
+        Model::unguarded(fn () => app(SpecialisationSeeder::class)->run());
     }
 
     // ==================== Record Creation ====================
@@ -74,11 +58,6 @@ class SpecialisationSeederTest extends TestCase
     #[Test]
     public function seeder_creates_all_27_specialisations(): void
     {
-        Storage::fake('public');
-        Http::fake(['*' => Http::response('fake-image-data', 200)]);
-        config(['media-library.media_downloader' => HttpFacadeDownloader::class]);
-
-        $this->mockMediaService();
         $this->seedPlayableClasses();
 
         $this->runSeeder();
@@ -89,11 +68,6 @@ class SpecialisationSeederTest extends TestCase
     #[Test]
     public function seeder_creates_specialisations_with_correct_roles(): void
     {
-        Storage::fake('public');
-        Http::fake(['*' => Http::response('fake-image-data', 200)]);
-        config(['media-library.media_downloader' => HttpFacadeDownloader::class]);
-
-        $this->mockMediaService();
         $this->seedPlayableClasses();
 
         $this->runSeeder();
@@ -103,13 +77,13 @@ class SpecialisationSeederTest extends TestCase
         $this->assertDatabaseHas('character_specialisations', [
             'playable_class_id' => $druid->id,
             'name' => 'Balance',
-            'role' => CharacterRole::damage->value,
+            'role' => 'DPS',
         ]);
 
         $this->assertDatabaseHas('character_specialisations', [
             'playable_class_id' => $druid->id,
             'name' => 'Restoration',
-            'role' => CharacterRole::healer->value,
+            'role' => 'Healer',
         ]);
 
         $warrior = PlayableClass::where('name', 'Warrior')->first();
@@ -117,18 +91,13 @@ class SpecialisationSeederTest extends TestCase
         $this->assertDatabaseHas('character_specialisations', [
             'playable_class_id' => $warrior->id,
             'name' => 'Protection',
-            'role' => CharacterRole::tank->value,
+            'role' => 'Tank',
         ]);
     }
 
     #[Test]
-    public function seeder_attaches_icon_to_blizzard_icons_media_collection(): void
+    public function seeder_attaches_blizzard_icon_to_each_specialisation(): void
     {
-        Storage::fake('public');
-        Http::fake(['*' => Http::response('fake-image-data', 200)]);
-        config(['media-library.media_downloader' => HttpFacadeDownloader::class]);
-
-        $this->mockMediaService();
         $this->seedPlayableClasses();
 
         $this->runSeeder();
@@ -137,80 +106,52 @@ class SpecialisationSeederTest extends TestCase
         $this->assertDatabaseHas('media', [
             'model_type' => CharacterSpecialisation::class,
             'collection_name' => 'blizzard_icons',
+            'file_name' => 'spell_nature_starfall.jpg',
         ]);
+
+        $druid = PlayableClass::where('name', 'Druid')->first();
+        $balance = CharacterSpecialisation::where('playable_class_id', $druid->id)->where('name', 'Balance')->first();
+        $media = $balance->getFirstMedia('blizzard_icons');
+
+        $this->assertSame(HasBlizzardIcons::BLIZZARD_ICON_SIZE, $media->getCustomProperty('size'));
+        Storage::disk('public')->assertExists('blizzard-cdn/icons/56/spell_nature_starfall.jpg');
     }
 
     // ==================== Idempotency ====================
 
     #[Test]
-    public function seeder_is_idempotent_and_does_not_create_duplicate_specialisations(): void
+    public function seeder_is_idempotent(): void
     {
-        Storage::fake('public');
-        Http::fake(['*' => Http::response('fake-image-data', 200)]);
-        config(['media-library.media_downloader' => HttpFacadeDownloader::class]);
-
-        $this->mockMediaService();
         $this->seedPlayableClasses();
 
         $this->runSeeder();
+
+        $specialisationCount = CharacterSpecialisation::count();
+        $mediaCount = Media::count();
+
         $this->runSeeder();
 
-        $this->assertDatabaseCount('character_specialisations', 27);
+        $this->assertSame($specialisationCount, CharacterSpecialisation::count());
+        $this->assertSame($mediaCount, Media::count());
     }
 
     #[Test]
-    public function seeder_replaces_existing_icon_without_duplicating_media(): void
+    public function seeder_does_not_reattach_icon_when_already_present(): void
     {
-        Storage::fake('public');
-        Http::fake(['*' => Http::response('fake-image-data', 200)]);
-        config(['media-library.media_downloader' => HttpFacadeDownloader::class]);
-
-        $this->mockMediaService();
         $this->seedPlayableClasses();
 
-        $this->runSeeder();
-        $this->runSeeder();
-
-        $this->assertDatabaseCount('media', 27);
-    }
-
-    // ==================== Media Service Integration ====================
-
-    #[Test]
-    public function seeder_passes_icon_name_to_media_service(): void
-    {
-        Storage::fake('public');
-        Http::fake(['*' => Http::response('fake-image-data', 200)]);
-        config(['media-library.media_downloader' => HttpFacadeDownloader::class]);
-
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('get')
-                ->with('spell_nature_starfall')
-                ->once()
-                ->andReturn('https://example.com/icons/spell_nature_starfall.jpg');
-
-            $mock->shouldReceive('get')
-                ->andReturnUsing(fn (string $icon) => "https://example.com/icons/{$icon}.jpg");
-        });
-
-        $this->seedPlayableClasses();
-
-        $this->runSeeder();
-    }
-
-    #[Test]
-    public function seeder_skips_media_attachment_when_media_service_returns_null(): void
-    {
-        $this->mock(MediaService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('get')->andReturnNull();
-        });
-
-        $this->seedPlayableClasses();
+        $druid = PlayableClass::where('name', 'Druid')->first();
+        $balance = CharacterSpecialisation::factory()->create([
+            'playable_class_id' => $druid->id,
+            'name' => 'Balance',
+        ]);
+        $balance->addMediaFromString('BINARY')
+            ->usingFileName('spell_nature_starfall.jpg')
+            ->toMediaCollection('blizzard_icons');
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('character_specialisations', 27);
-        $this->assertDatabaseCount('media', 0);
+        $this->assertCount(1, $balance->fresh()->getMedia('blizzard_icons'));
     }
 
     // ==================== Class Association ====================
@@ -218,11 +159,6 @@ class SpecialisationSeederTest extends TestCase
     #[Test]
     public function seeder_associates_specialisations_with_correct_playable_class(): void
     {
-        Storage::fake('public');
-        Http::fake(['*' => Http::response('fake-image-data', 200)]);
-        config(['media-library.media_downloader' => HttpFacadeDownloader::class]);
-
-        $this->mockMediaService();
         $this->seedPlayableClasses();
 
         $this->runSeeder();
@@ -236,5 +172,53 @@ class SpecialisationSeederTest extends TestCase
             ->all();
 
         $this->assertSame(['Elemental', 'Enhancement', 'Restoration'], $shamanSpecs);
+    }
+
+    // ==================== Error Handling ====================
+
+    #[Test]
+    public function seeder_dispatches_retry_job_when_icon_fetch_returns_403(): void
+    {
+        Queue::fake();
+
+        Saloon::fake([
+            FetchAssetRequest::class => MockResponse::make(
+                body: ['code' => 403, 'detail' => 'Forbidden'],
+                status: 403,
+            ),
+        ]);
+
+        $this->seedPlayableClasses();
+
+        $this->runSeeder();
+
+        $this->assertDatabaseCount('character_specialisations', 27);
+        $this->assertDatabaseCount('media', 0);
+
+        Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
+            return $job->modelClass === CharacterSpecialisation::class
+                && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/spell_nature_starfall.jpg';
+        });
+    }
+
+    #[Test]
+    public function seeder_skips_icon_and_continues_when_icon_is_not_found(): void
+    {
+        Queue::fake();
+
+        Saloon::fake([
+            FetchAssetRequest::class => MockResponse::make(
+                body: '',
+                status: 404,
+            ),
+        ]);
+
+        $this->seedPlayableClasses();
+
+        $this->runSeeder();
+
+        $this->assertDatabaseCount('character_specialisations', 27);
+        $this->assertDatabaseCount('media', 0);
+        Queue::assertNothingPushed();
     }
 }

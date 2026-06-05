@@ -2,19 +2,24 @@
 
 namespace Database\Seeders;
 
-use App\Enums\CharacterRole;
+use App\Contracts\HasBlizzardIcons;
+use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
+use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\CharacterSpecialisation;
 use App\Models\PlayableClass;
-use App\Services\Blizzard\MediaService;
 use Illuminate\Database\Seeder;
+use Saloon\Exceptions\Request\RequestException;
+use Saloon\Exceptions\Request\Statuses\ForbiddenException;
 
-class SpecialisationSeeder extends Seeder
+class SpecialisationSeeder extends Seeder implements HasBlizzardIcons
 {
     public function __construct(
         /**
          * Inject the MediaService to fetch specialisation icons from the Blizzard API.
          */
-        private MediaService $mediaService
+        private RenderConnector $renderConnector,
     ) {}
 
     /**
@@ -22,50 +27,50 @@ class SpecialisationSeeder extends Seeder
      */
     private array $specialisations = [
         'Druid' => [
-            ['name' => 'Balance', 'role' => CharacterRole::damage, 'icon' => 'spell_nature_starfall'],
-            ['name' => 'Feral', 'role' => CharacterRole::tank, 'icon' => 'ability_racial_bearform'],
-            ['name' => 'Feral', 'role' => CharacterRole::damage, 'icon' => 'ability_druid_catform'],
-            ['name' => 'Restoration', 'role' => CharacterRole::healer, 'icon' => 'spell_nature_healingtouch'],
+            ['name' => 'Balance', 'role' => CharacterRole::damage, 'icon_name' => 'spell_nature_starfall'],
+            ['name' => 'Feral', 'role' => CharacterRole::tank, 'icon_name' => 'ability_racial_bearform'],
+            ['name' => 'Feral', 'role' => CharacterRole::damage, 'icon_name' => 'ability_druid_catform'],
+            ['name' => 'Restoration', 'role' => CharacterRole::healer, 'icon_name' => 'spell_nature_healingtouch'],
         ],
         'Hunter' => [
-            ['name' => 'Beast Mastery', 'role' => CharacterRole::damage, 'icon' => 'ability_hunter_beasttaming'],
-            ['name' => 'Marksmanship', 'role' => CharacterRole::damage, 'icon' => 'ability_marksmanship'],
-            ['name' => 'Survival', 'role' => CharacterRole::damage, 'icon' => 'ability_hunter_swiftstrike'],
+            ['name' => 'Beast Mastery', 'role' => CharacterRole::damage, 'icon_name' => 'ability_hunter_beasttaming'],
+            ['name' => 'Marksmanship', 'role' => CharacterRole::damage, 'icon_name' => 'ability_marksmanship'],
+            ['name' => 'Survival', 'role' => CharacterRole::damage, 'icon_name' => 'ability_hunter_swiftstrike'],
         ],
         'Mage' => [
-            ['name' => 'Arcane', 'role' => CharacterRole::damage, 'icon' => 'spell_arcane_blast'],
-            ['name' => 'Fire', 'role' => CharacterRole::damage, 'icon' => 'spell_fire_flamebolt'],
-            ['name' => 'Frost', 'role' => CharacterRole::damage, 'icon' => 'spell_frost_frostbolt02'],
+            ['name' => 'Arcane', 'role' => CharacterRole::damage, 'icon_name' => 'spell_arcane_blast'],
+            ['name' => 'Fire', 'role' => CharacterRole::damage, 'icon_name' => 'spell_fire_flamebolt'],
+            ['name' => 'Frost', 'role' => CharacterRole::damage, 'icon_name' => 'spell_frost_frostbolt02'],
         ],
         'Paladin' => [
-            ['name' => 'Holy', 'role' => CharacterRole::healer, 'icon' => 'spell_holy_holybolt'],
-            ['name' => 'Protection', 'role' => CharacterRole::tank, 'icon' => 'spell_holy_devotionaura'],
-            ['name' => 'Retribution', 'role' => CharacterRole::damage, 'icon' => 'spell_holy_auraoflight'],
+            ['name' => 'Holy', 'role' => CharacterRole::healer, 'icon_name' => 'spell_holy_holybolt'],
+            ['name' => 'Protection', 'role' => CharacterRole::tank, 'icon_name' => 'spell_holy_devotionaura'],
+            ['name' => 'Retribution', 'role' => CharacterRole::damage, 'icon_name' => 'spell_holy_auraoflight'],
         ],
         'Priest' => [
-            ['name' => 'Discipline', 'role' => CharacterRole::healer, 'icon' => 'spell_holy_powerwordshield'],
-            ['name' => 'Holy', 'role' => CharacterRole::healer, 'icon' => 'spell_holy_guardianspirit'],
-            ['name' => 'Shadow', 'role' => CharacterRole::damage, 'icon' => 'spell_shadow_shadowwordpain'],
+            ['name' => 'Discipline', 'role' => CharacterRole::healer, 'icon_name' => 'spell_holy_powerwordshield'],
+            ['name' => 'Holy', 'role' => CharacterRole::healer, 'icon_name' => 'spell_holy_guardianspirit'],
+            ['name' => 'Shadow', 'role' => CharacterRole::damage, 'icon_name' => 'spell_shadow_shadowwordpain'],
         ],
         'Rogue' => [
-            ['name' => 'Assassination', 'role' => CharacterRole::damage, 'icon' => 'ability_rogue_eviscerate'],
-            ['name' => 'Combat', 'role' => CharacterRole::damage, 'icon' => 'ability_backstab'],
-            ['name' => 'Subtlety', 'role' => CharacterRole::damage, 'icon' => 'ability_stealth'],
+            ['name' => 'Assassination', 'role' => CharacterRole::damage, 'icon_name' => 'ability_rogue_eviscerate'],
+            ['name' => 'Combat', 'role' => CharacterRole::damage, 'icon_name' => 'ability_backstab'],
+            ['name' => 'Subtlety', 'role' => CharacterRole::damage, 'icon_name' => 'ability_stealth'],
         ],
         'Shaman' => [
-            ['name' => 'Elemental', 'role' => CharacterRole::damage, 'icon' => 'spell_nature_lightning'],
-            ['name' => 'Enhancement', 'role' => CharacterRole::damage, 'icon' => 'spell_nature_lightningshield'],
-            ['name' => 'Restoration', 'role' => CharacterRole::healer, 'icon' => 'spell_nature_magicimmunity'],
+            ['name' => 'Elemental', 'role' => CharacterRole::damage, 'icon_name' => 'spell_nature_lightning'],
+            ['name' => 'Enhancement', 'role' => CharacterRole::damage, 'icon_name' => 'spell_nature_lightningshield'],
+            ['name' => 'Restoration', 'role' => CharacterRole::healer, 'icon_name' => 'spell_nature_magicimmunity'],
         ],
         'Warlock' => [
-            ['name' => 'Affliction', 'role' => CharacterRole::damage, 'icon' => 'spell_shadow_deathcoil'],
-            ['name' => 'Demonology', 'role' => CharacterRole::damage, 'icon' => 'spell_shadow_metamorphosis'],
-            ['name' => 'Destruction', 'role' => CharacterRole::damage, 'icon' => 'spell_shadow_rainoffire'],
+            ['name' => 'Affliction', 'role' => CharacterRole::damage, 'icon_name' => 'spell_shadow_deathcoil'],
+            ['name' => 'Demonology', 'role' => CharacterRole::damage, 'icon_name' => 'spell_shadow_metamorphosis'],
+            ['name' => 'Destruction', 'role' => CharacterRole::damage, 'icon_name' => 'spell_shadow_rainoffire'],
         ],
         'Warrior' => [
-            ['name' => 'Arms', 'role' => CharacterRole::damage, 'icon' => 'ability_warrior_savageblow'],
-            ['name' => 'Fury', 'role' => CharacterRole::damage, 'icon' => 'ability_warrior_innerrage'],
-            ['name' => 'Protection', 'role' => CharacterRole::tank, 'icon' => 'ability_warrior_defensivestance'],
+            ['name' => 'Arms', 'role' => CharacterRole::damage, 'icon_name' => 'ability_warrior_savageblow'],
+            ['name' => 'Fury', 'role' => CharacterRole::damage, 'icon_name' => 'ability_warrior_innerrage'],
+            ['name' => 'Protection', 'role' => CharacterRole::tank, 'icon_name' => 'ability_warrior_defensivestance'],
         ],
     ];
 
@@ -97,11 +102,26 @@ class SpecialisationSeeder extends Seeder
                     ]
                 );
 
-                $iconUrl = $this->mediaService->get($spec['icon']);
+                if ($model->hasMedia('blizzard_icons')) {
+                    continue;
+                }
 
-                if ($iconUrl !== null) {
-                    $model->clearMediaCollection('blizzard_icons');
-                    $model->addMediaFromUrl($iconUrl)->toMediaCollection('blizzard_icons');
+                $iconName = $spec['icon_name'];
+                $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+
+                try {
+                    $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
+
+                    $model->addMediaFromString($response->body())
+                        ->usingFileName($iconFileName)
+                        ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                        ->toMediaCollection('blizzard_icons');
+                } catch (ForbiddenException $e) {
+                    AttachBlizzardIconToModel::dispatch(CharacterSpecialisation::class, $model->id, $e->getPendingRequest()->getUrl())
+                        ->delay(now()->addMinutes(5));
+                    $this->command?->warn("  ⚠ [{$model->title}] Icon deferred (403) — retrying in 5 min");
+                } catch (MediaNotFoundException|RequestException $e) {
+                    $this->command?->warn("  ⚠ [{$model->title}] Icon skipped — {$e->getMessage()}");
                 }
             }
         }
