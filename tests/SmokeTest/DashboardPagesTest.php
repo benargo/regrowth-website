@@ -37,6 +37,8 @@ class DashboardPagesTest extends TestCase
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-datasets', 'guard_name' => 'web']));
         $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-boss-strategies', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'set-daily-quests', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'audit-daily-quests', 'guard_name' => 'web']));
 
         // Mock GuildTags to prevent WarcraftLogs API calls
         $guildTags = Mockery::mock(GuildTags::class);
@@ -79,7 +81,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        $response = $this->actingAs($user)->get(route('management.dashboard'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -92,7 +94,7 @@ class DashboardPagesTest extends TestCase
         $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export'));
+        $response = $this->actingAs($user)->get(route('management.addon.export'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -105,7 +107,7 @@ class DashboardPagesTest extends TestCase
         $this->seedExportFile();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.json'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.json'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -116,7 +118,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -127,7 +129,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($user)->get(route('management.addon.settings'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -138,7 +140,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.ranks.view'));
+        $response = $this->actingAs($user)->get(route('management.ranks.view'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -149,7 +151,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($user)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -160,10 +162,42 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get('/dashboard/grm-upload');
+        $response = $this->actingAs($user)->get(route('management.grm-upload.form'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function daily_quests_form_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('management.daily-quests.form'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function daily_quests_audit_page_loads(): void
+    {
+        $user = User::factory()->officer()->create();
+
+        $response = $this->actingAs($user)->get(route('management.daily-quests.audit'));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
+    }
+
+    #[Test]
+    public function daily_quests_audit_page_requires_officer(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('management.daily-quests.audit'));
+
+        $response->assertForbidden();
     }
 
     #[Test]
@@ -172,9 +206,9 @@ class DashboardPagesTest extends TestCase
         Permission::factory()->inGroup('test-group')->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.permissions.index'));
+        $response = $this->actingAs($user)->get(route('management.permissions.index'));
 
-        $response->assertRedirect(route('dashboard.permissions.group.show', ['group' => 'test-group']));
+        $response->assertRedirect(route('management.permissions.group.show', ['group' => 'test-group']));
     }
 
     #[Test]
@@ -183,7 +217,7 @@ class DashboardPagesTest extends TestCase
         Permission::factory()->inGroup('test-group')->create();
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.permissions.group.show', ['group' => 'test-group']));
+        $response = $this->actingAs($user)->get(route('management.permissions.group.show', ['group' => 'test-group']));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -194,7 +228,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.boss-strategies.index'));
+        $response = $this->actingAs($user)->get(route('management.boss-strategies.index'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -207,7 +241,7 @@ class DashboardPagesTest extends TestCase
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->actingAs($user)->get(
-            route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
+            route('management.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
         );
 
         $response->assertOk();

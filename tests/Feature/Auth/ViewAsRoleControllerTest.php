@@ -121,7 +121,7 @@ class ViewAsRoleControllerTest extends TestCase
         // Stop impersonation
         $response = $this->get(route('auth.return-to-self'));
 
-        $response->assertRedirect(route('dashboard.index'));
+        $response->assertRedirect(route('management.dashboard'));
         $response->assertSessionHas('success');
 
         $this->assertAuthenticatedAs($originalUser);

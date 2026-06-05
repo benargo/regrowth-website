@@ -41,7 +41,7 @@ class GrmController extends Controller
             $lastModified = null;
         }
 
-        return Inertia::render('Dashboard/GrmUpload/Form', [
+        return Inertia::render('Manage/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
             'memberCount' => Inertia::defer(fn () => count(
                 $this->blizzardConnector->send(new GetGuildRosterRequest(
@@ -66,6 +66,6 @@ class GrmController extends Controller
         // uploading user's private broadcast channel.
         ProcessGrmUpload::dispatch($parsedData, $request->user()->id)->withoutDelay();
 
-        return redirect()->route('dashboard.grm-upload.form')->with('success', 'GRM data uploaded successfully. Processing will continue in the background.');
+        return redirect()->route('management.grm-upload.form')->with('success', 'GRM data uploaded successfully. Processing will continue in the background.');
     }
 }

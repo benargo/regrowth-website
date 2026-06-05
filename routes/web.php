@@ -108,8 +108,9 @@ Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.n
 /*
  * Officers' Dashboard
  */
-Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.', 'middleware' => ['auth']], function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('index');
+Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['auth']], function () {
+    Route::get('/', fn () => redirect()->route('management.dashboard'))->name('index');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     /**
      * Addon management
@@ -201,5 +202,11 @@ Route::get('/info/battlenet-usage', function () {
 Route::get('/info/privacy', function () {
     return Inertia::render('Info/PrivacyPolicy');
 })->name('privacypolicy');
+
+/**
+ * Deprecated routes
+ */
+Route::get('/dashboard', fn () => redirect()->route('management.dashboard'));
+Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.next');
 
 require __DIR__.'/auth.php';

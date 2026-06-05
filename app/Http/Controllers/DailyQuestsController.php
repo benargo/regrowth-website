@@ -68,7 +68,7 @@ class DailyQuestsController extends Controller
             })
         )->groupBy(fn (DailyQuest $quest) => $quest->type->value);
 
-        return Inertia::render('Dashboard/DailyQuests/Form', [
+        return Inertia::render('Manage/DailyQuests/Form', [
             'cookingQuests' => $quests->get(DailyQuestType::Cooking->value, collect())->values()->toArray(),
             'fishingQuests' => $quests->get(DailyQuestType::Fishing->value, collect())->values()->toArray(),
             'dungeonQuests' => $quests->get(DailyQuestType::Dungeon->value, collect())->values()->toArray(),

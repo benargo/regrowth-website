@@ -56,10 +56,10 @@ class EventTemplateControllerTest extends TestCase
     #[Test]
     public function it_renders_the_index_page_for_officers(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.index'));
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/EventTemplates/Index'));
+        $response->assertInertia(fn (Assert $page) => $page->component('Manage/EventTemplates/Index'));
     }
 
     #[Test]
@@ -69,7 +69,7 @@ class EventTemplateControllerTest extends TestCase
         $template = Event::factory()->template()->create(['title' => 'SSC Setup']);
         $template->raids()->attach($raid->id);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.index'));
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('templates', 1)
@@ -88,7 +88,7 @@ class EventTemplateControllerTest extends TestCase
         $template = Event::factory()->template()->create(['title' => 'Combined']);
         $template->raids()->attach([$raidA->id, $raidB->id]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.index'));
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('raidGroups', 2)
@@ -98,7 +98,7 @@ class EventTemplateControllerTest extends TestCase
     #[Test]
     public function it_returns_403_for_unauthenticated_users_on_index(): void
     {
-        $response = $this->get(route('dashboard.event-templates.index'));
+        $response = $this->get(route('management.event-templates.index'));
 
         $response->assertRedirect(route('login'));
     }
@@ -108,7 +108,7 @@ class EventTemplateControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.event-templates.index'));
+        $response = $this->actingAs($user)->get(route('management.event-templates.index'));
 
         $response->assertForbidden();
     }
@@ -120,11 +120,11 @@ class EventTemplateControllerTest extends TestCase
     {
         $raid = Raid::factory()->create();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.create'));
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.create'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/EventTemplates/Create')
+            ->component('Manage/EventTemplates/Create')
             ->has('raids', 1)
             ->where('raids.0.id', $raid->id)
         );
@@ -137,7 +137,7 @@ class EventTemplateControllerTest extends TestCase
     {
         $raid = Raid::factory()->create();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.event-templates.store'), [
+        $response = $this->actingAs($this->officer)->post(route('management.event-templates.store'), [
             'title' => 'My Template',
             'raid_ids' => [$raid->id],
         ]);
@@ -147,7 +147,7 @@ class EventTemplateControllerTest extends TestCase
         $this->assertTrue($template->is_template);
         $this->assertTrue($template->raids()->where('raids.id', $raid->id)->exists());
 
-        $response->assertRedirect(route('dashboard.event-templates.edit', $template));
+        $response->assertRedirect(route('management.event-templates.edit', $template));
     }
 
     #[Test]
@@ -155,7 +155,7 @@ class EventTemplateControllerTest extends TestCase
     {
         $raid = Raid::factory()->create();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.event-templates.store'), [
+        $response = $this->actingAs($this->officer)->post(route('management.event-templates.store'), [
             'title' => '',
             'raid_ids' => [$raid->id],
         ]);
@@ -166,7 +166,7 @@ class EventTemplateControllerTest extends TestCase
     #[Test]
     public function store_requires_at_least_one_raid(): void
     {
-        $response = $this->actingAs($this->officer)->post(route('dashboard.event-templates.store'), [
+        $response = $this->actingAs($this->officer)->post(route('management.event-templates.store'), [
             'title' => 'My Template',
             'raid_ids' => [],
         ]);
@@ -181,11 +181,11 @@ class EventTemplateControllerTest extends TestCase
     {
         $template = Event::factory()->template()->create();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.edit', $template));
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.edit', $template));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/EventTemplates/Edit')
+            ->component('Manage/EventTemplates/Edit')
             ->has('template')
             ->has('raids')
         );
@@ -197,7 +197,7 @@ class EventTemplateControllerTest extends TestCase
         $user = User::factory()->create();
         $template = Event::factory()->template()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.event-templates.edit', $template));
+        $response = $this->actingAs($user)->get(route('management.event-templates.edit', $template));
 
         $response->assertForbidden();
     }
@@ -207,10 +207,10 @@ class EventTemplateControllerTest extends TestCase
     {
         $template = Event::factory()->template()->create();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.event-templates.edit', $template));
+        $response = $this->actingAs($this->officer)->get(route('management.event-templates.edit', $template));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/EventTemplates/Edit')
+            ->component('Manage/EventTemplates/Edit')
             ->where('questionMarkIconUrl', fn ($url) => str_contains((string) $url, '/icons/56/inv_misc_questionmark.jpg')
                 && URL::hasValidSignature(request()->create((string) $url)))
         );
@@ -226,7 +226,7 @@ class EventTemplateControllerTest extends TestCase
         $template = Event::factory()->template()->create(['title' => 'Old Title']);
         $template->raids()->attach($raidA->id);
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.event-templates.update', $template), [
+        $response = $this->actingAs($this->officer)->patch(route('management.event-templates.update', $template), [
             'title' => 'New Title',
             'raid_ids' => [$raidB->id],
         ]);
@@ -246,9 +246,9 @@ class EventTemplateControllerTest extends TestCase
     {
         $template = Event::factory()->template()->create();
 
-        $response = $this->actingAs($this->officer)->delete(route('dashboard.event-templates.destroy', $template));
+        $response = $this->actingAs($this->officer)->delete(route('management.event-templates.destroy', $template));
 
-        $response->assertRedirect(route('dashboard.event-templates.index'));
+        $response->assertRedirect(route('management.event-templates.index'));
         $this->assertDatabaseMissing('events', ['id' => $template->id]);
     }
 }

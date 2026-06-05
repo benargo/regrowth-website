@@ -23,7 +23,7 @@ class PhaseUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->put(route('dashboard.phases.update', $phase), [
+        $response = $this->put(route('management.phases.update', $phase), [
             'start_date' => '2025-06-15T14:00',
         ]);
 
@@ -36,7 +36,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $user = User::factory()->guest()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.update', $phase), [
+        $response = $this->actingAs($user)->put(route('management.phases.update', $phase), [
             'start_date' => '2025-06-15T14:00',
         ]);
 
@@ -49,7 +49,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.update', $phase), [
+        $response = $this->actingAs($user)->put(route('management.phases.update', $phase), [
             'start_date' => '2025-06-15T14:00',
         ]);
 
@@ -62,7 +62,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $user = User::factory()->raider()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.update', $phase), [
+        $response = $this->actingAs($user)->put(route('management.phases.update', $phase), [
             'start_date' => '2025-06-15T14:00',
         ]);
 
@@ -74,7 +74,7 @@ class PhaseUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => '2025-06-15T14:00',
         ]);
 
@@ -86,7 +86,7 @@ class PhaseUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => '2025-06-15T14:00',
         ]);
 
@@ -100,7 +100,7 @@ class PhaseUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->started()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => null,
         ]);
 
@@ -114,7 +114,7 @@ class PhaseUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->started()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => '',
         ]);
 
@@ -128,7 +128,7 @@ class PhaseUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => 'not-a-date',
         ]);
 
@@ -141,7 +141,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $phase = Phase::factory()->create();
 
         // Winter time in Paris (UTC+1): 15:00 Paris = 14:00 UTC
-        $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => '2025-01-15T15:00',
         ]);
 

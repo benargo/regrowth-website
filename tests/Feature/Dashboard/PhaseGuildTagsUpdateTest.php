@@ -15,7 +15,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -28,7 +28,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $user = User::factory()->guest()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($user)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -41,7 +41,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($user)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -54,7 +54,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $user = User::factory()->raider()->create();
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($user)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($user)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -66,7 +66,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -80,7 +80,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $tag1 = GuildTag::factory()->create();
         $tag2 = GuildTag::factory()->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [$tag1->id, $tag2->id],
         ]);
 
@@ -98,7 +98,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $existingTag = GuildTag::factory()->withPhase($phase)->create();
         $newTag = GuildTag::factory()->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [$newTag->id],
         ]);
 
@@ -116,7 +116,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $tag1 = GuildTag::factory()->withPhase($phase)->create();
         $tag2 = GuildTag::factory()->withPhase($phase)->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
@@ -132,7 +132,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), []);
+        $response = $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), []);
 
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
@@ -142,7 +142,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => 'not-an-array',
         ]);
 
@@ -154,7 +154,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
     {
         $phase = Phase::factory()->create();
 
-        $response = $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $response = $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [99999],
         ]);
 
@@ -169,7 +169,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $tagForPhase1 = GuildTag::factory()->withPhase($phase1)->create();
         $tagForPhase2 = GuildTag::factory()->withPhase($phase2)->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase1), [
+        $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase1), [
             'guild_tag_ids' => [],
         ]);
 

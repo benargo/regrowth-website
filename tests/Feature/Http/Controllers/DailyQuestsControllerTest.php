@@ -36,7 +36,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
     #[Test]
     public function form_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.daily-quests.form'));
+        $response = $this->get(route('management.daily-quests.form'));
 
         $response->assertRedirect(route('login'));
     }
@@ -46,7 +46,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.daily-quests.form'));
+        $response = $this->actingAs($user)->get(route('management.daily-quests.form'));
 
         $response->assertForbidden();
     }
@@ -62,11 +62,11 @@ class DailyQuestsControllerTest extends DashboardTestCase
         $heroic = DailyQuest::factory()->heroic()->create();
         $pvp = DailyQuest::factory()->pvp()->create();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.form'));
+        $response = $this->actingAs($this->officer)->get(route('management.daily-quests.form'));
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/DailyQuests/Form')
+            ->component('Manage/DailyQuests/Form')
             ->has('cookingQuests', 1)
             ->has('fishingQuests', 1)
             ->has('dungeonQuests', 1)
@@ -85,7 +85,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
 
         $this->notificationWithQuests([$cooking, $dungeon]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.form'));
+        $response = $this->actingAs($this->officer)->get(route('management.daily-quests.form'));
 
         $response->assertInertia(fn ($page) => $page
             ->where('existingQuests.cooking_quest_id', $cooking->id)
@@ -99,7 +99,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
     #[Test]
     public function form_existing_selections_are_null_when_no_notification_exists_today(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.form'));
+        $response = $this->actingAs($this->officer)->get(route('management.daily-quests.form'));
 
         $response->assertInertia(fn ($page) => $page
             ->where('existingQuests.cooking_quest_id', null)
@@ -119,7 +119,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
             ->withCustomProperties(['size' => 56])
             ->toMediaCollection('blizzard_icons');
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.daily-quests.form'));
+        $response = $this->actingAs($this->officer)->get(route('management.daily-quests.form'));
 
         $response->assertInertia(fn ($page) => $page
             ->where('icons.cooking', fn ($url) => $url !== null && str_contains($url, 'inv_misc_food_15.jpg'))
@@ -132,7 +132,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post(route('dashboard.daily-quests.store'));
+        $response = $this->post(route('management.daily-quests.store'));
 
         $response->assertRedirect(route('login'));
     }
@@ -142,7 +142,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.daily-quests.store'));
+        $response = $this->actingAs($user)->post(route('management.daily-quests.store'));
 
         $response->assertForbidden();
     }
@@ -159,7 +159,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
             ->once()
             ->andReturn(ChannelResource::from(['id' => '123456789']));
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.daily-quests.store'), [
+        $response = $this->actingAs($this->officer)->post(route('management.daily-quests.store'), [
             'cooking_quest_id' => DailyQuest::factory()->cooking()->create()->id,
             'fishing_quest_id' => DailyQuest::factory()->fishing()->create()->id,
             'dungeon_quest_id' => DailyQuest::factory()->dungeon()->create()->id,
@@ -178,7 +178,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
     {
         $cooking = DailyQuest::factory()->cooking()->create();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.daily-quests.store'), [
+        $response = $this->actingAs($this->officer)->post(route('management.daily-quests.store'), [
             'cooking_quest_id' => $cooking->id,
             'fishing_quest_id' => $cooking->id, // wrong type
             'dungeon_quest_id' => DailyQuest::factory()->dungeon()->create()->id,

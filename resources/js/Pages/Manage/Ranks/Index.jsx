@@ -264,7 +264,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
         debounceTimer.current = setTimeout(() => {
             setIsSaving(true);
             router.post(
-                route("dashboard.ranks.update-positions"),
+                route("management.ranks.update-positions"),
                 {
                     ranks: ranks.map((rank, index) => ({
                         id: rank.id,
@@ -315,7 +315,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
 
     const handleDelete = (rankId) => {
         setIsSaving(true);
-        router.delete(route("dashboard.ranks.destroy", rankId), {
+        router.delete(route("management.ranks.destroy", rankId), {
             preserveScroll: true,
             onSuccess: () => {
                 setRanks((prev) => prev.filter((r) => r.id !== rankId));
@@ -331,7 +331,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
         setIsCreating(true);
         setIsSaving(true);
         router.post(
-            route("dashboard.ranks.store"),
+            route("management.ranks.store"),
             { name },
             {
                 preserveScroll: true,
@@ -352,7 +352,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
         setIsSavingName(rankId);
         setIsSaving(true);
         router.put(
-            route("dashboard.ranks.update", rankId),
+            route("management.ranks.update", rankId),
             { name: newName },
             {
                 preserveScroll: true,
@@ -376,49 +376,49 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
             <SharedHeader backgroundClass="bg-officer-meeting" title="Manage Guild Ranks" />
             {/* Content */}
             <PageContainer>
-                    <div className="flex items-center gap-4">
-                        <p className="text-grey-200">Drag and drop to reorder guild ranks.</p>
-                        <AutoSaveLabel processing={isSaving} />
-                    </div>
-                    <div className="mt-6 w-64">
-                        {ranks.length === 0 ? (
-                            <div className="flex flex-col rounded border border-amber-600">
-                                <NewRankInput nextPosition={0} onSave={handleCreate} isSaving={isCreating} />
-                            </div>
-                        ) : (
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={pointerWithin}
-                                onDragStart={handleDragStart}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <SortableContext items={ranks.map((r) => r.id)} strategy={verticalListSortingStrategy}>
-                                    <div className="flex flex-col rounded border border-amber-600">
-                                        {ranks.map((rank, index) => (
-                                            <SortableRankItem
-                                                key={rank.id}
-                                                rank={rank}
-                                                index={index}
-                                                onNameChange={handleNameChange}
-                                                isSavingName={isSavingName}
-                                            />
-                                        ))}
-                                        {ranks.length < 10 && (
-                                            <NewRankInput
-                                                nextPosition={ranks.length}
-                                                onSave={handleCreate}
-                                                isSaving={isCreating}
-                                            />
-                                        )}
-                                    </div>
-                                </SortableContext>
-                                <DragOverlay>
-                                    <RankOverlay rank={activeRank} index={activeIndex} />
-                                </DragOverlay>
-                                <TrashZone isVisible={activeId !== null} />
-                            </DndContext>
-                        )}
-                    </div>
+                <div className="flex items-center gap-4">
+                    <p className="text-grey-200">Drag and drop to reorder guild ranks.</p>
+                    <AutoSaveLabel processing={isSaving} />
+                </div>
+                <div className="mt-6 w-64">
+                    {ranks.length === 0 ? (
+                        <div className="flex flex-col rounded border border-amber-600">
+                            <NewRankInput nextPosition={0} onSave={handleCreate} isSaving={isCreating} />
+                        </div>
+                    ) : (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={pointerWithin}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext items={ranks.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+                                <div className="flex flex-col rounded border border-amber-600">
+                                    {ranks.map((rank, index) => (
+                                        <SortableRankItem
+                                            key={rank.id}
+                                            rank={rank}
+                                            index={index}
+                                            onNameChange={handleNameChange}
+                                            isSavingName={isSavingName}
+                                        />
+                                    ))}
+                                    {ranks.length < 10 && (
+                                        <NewRankInput
+                                            nextPosition={ranks.length}
+                                            onSave={handleCreate}
+                                            isSaving={isCreating}
+                                        />
+                                    )}
+                                </div>
+                            </SortableContext>
+                            <DragOverlay>
+                                <RankOverlay rank={activeRank} index={activeIndex} />
+                            </DragOverlay>
+                            <TrashZone isVisible={activeId !== null} />
+                        </DndContext>
+                    )}
+                </div>
             </PageContainer>
         </Master>
     );

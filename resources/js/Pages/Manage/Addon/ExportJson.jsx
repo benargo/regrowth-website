@@ -8,7 +8,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
 import PageContainer from "@/Components/PageContainer";
 
-export default function AddonExport({ exportedData, grmFreshness }) {
+export default function AddonExportJson({ exportedData, grmFreshness }) {
     const dataRef = useRef(null);
 
     function selectAllContent() {
@@ -34,12 +34,12 @@ export default function AddonExport({ exportedData, grmFreshness }) {
             <PageContainer>
                 <TabNav
                     tabs={[
-                        { name: "base64", label: "Base64", href: route("dashboard.addon.export") },
-                        { name: "json", label: "JSON", href: route("dashboard.addon.export.json") },
-                        { name: "schema", label: "Schema", href: route("dashboard.addon.export.schema") },
-                        { name: "settings", label: "Settings", href: route("dashboard.addon.settings") },
+                        { name: "base64", label: "Base64", href: route("management.addon.export") },
+                        { name: "json", label: "JSON", href: route("management.addon.export.json") },
+                        { name: "schema", label: "Schema", href: route("management.addon.export.schema") },
+                        { name: "settings", label: "Settings", href: route("management.addon.settings") },
                     ]}
-                    currentTab="base64"
+                    currentTab="json"
                 />
                 <Deferred data="grmFreshness" fallback={<div></div>}>
                     {grmFreshness?.dataIsStale && (
@@ -56,7 +56,7 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                                     </div>
                                     <div className="flex-auto">
                                         <Link
-                                            href={route("dashboard.grm-upload.form")}
+                                            href={route("management.grm-upload.form")}
                                             className="inline-flex items-center rounded-md border border-transparent bg-red-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-25"
                                         >
                                             <Icon icon="file-upload" style="solid" className="mr-2" />
@@ -76,13 +76,13 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                                         <p>
                                             The GRM data used to generate this addon data is over 7 days old (last
                                             updated on {new Date(grmFreshness?.lastModified).toLocaleDateString()}).
-                                            Please consider uploading a fresh GRM export to ensure your addon data
-                                            is up to date.
+                                            Please consider uploading a fresh GRM export to ensure your addon data is up
+                                            to date.
                                         </p>
                                     </div>
                                     <div className="flex-initial">
                                         <Link
-                                            href={route("dashboard.grm-upload.form")}
+                                            href={route("management.grm-upload.form")}
                                             className="inline-flex items-center rounded-md border border-transparent bg-yellow-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-yellow-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-25"
                                         >
                                             <Icon icon="file-upload" style="solid" className="mr-2" />
@@ -96,15 +96,12 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                 </Deferred>
                 <div className="flex flex-row items-baseline space-x-4">
                     <div className="flex-1">
-                        <p>
-                            This is the version you should import into the addon. Click the button to export the
-                            addon data to your clipboard.
-                        </p>
+                        <p>Click the button to copy the JSON data to your clipboard.</p>
                     </div>
                     <CopyButton
                         getValue={() => exportedData}
-                        label="Copy Addon Data"
-                        successMessage="Addon data copied to clipboard!"
+                        label="Copy JSON Data"
+                        successMessage="JSON data copied to clipboard!"
                         className="flex flex-none items-center justify-center rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-800"
                     />
                 </div>
@@ -113,22 +110,22 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                     fallback={
                         <div className="mt-6">
                             <div className="flex min-h-64 w-full items-center justify-center rounded border border-gray-800 bg-brown-800/50 p-4">
-                                <p className="animate-pulse text-gray-400">
-                                    Loading data... this may take a while.
-                                </p>
+                                <p className="animate-pulse text-gray-400">Loading data... this may take a while.</p>
                             </div>
                         </div>
                     }
                 >
                     <div className="mt-6">
-                        <div
+                        <pre
                             ref={dataRef}
                             onClick={selectAllContent}
-                            className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto break-all rounded border border-gray-800 bg-brown-800/50 p-4 text-white"
+                            className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 bg-brown-800/50 p-4 text-sm text-white"
                         >
-                            {exportedData?.length === 0 && <p>No addon data available.</p>}
-                            {exportedData}
-                        </div>
+                            {exportedData?.length === 0 && "No addon data available."}
+                            {exportedData?.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+                                String.fromCharCode(parseInt(hex, 16)),
+                            )}
+                        </pre>
                     </div>
                 </Deferred>
             </PageContainer>

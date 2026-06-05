@@ -30,7 +30,7 @@ class PhaseController extends Controller
 
         $currentPhase = $phases->firstWhere('start_date', '<=', now());
 
-        return Inertia::render('Dashboard/Phases/Index', [
+        return Inertia::render('Manage/Phases/Index', [
             'phases' => PhaseResource::collection($phases)->toArray($request),
             'current_phase' => $currentPhase?->id ?? null,
             'all_guild_tags' => Inertia::defer(fn () => $this->buildAllGuildTags()),

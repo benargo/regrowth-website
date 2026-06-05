@@ -35,7 +35,7 @@ class GrmUploadCompleted extends Notification
             'embeds' => [Embed::from([
                 'title' => 'GRM Upload Processing Completed',
                 'description' => 'Officers should make sure they update the RegrowthLootTool with new data.',
-                'url' => route('dashboard.addon.export'),
+                'url' => route('management.addon.export'),
                 'color' => 5763719,
                 'image' => EmbedMedia::from(['url' => config('app.url').'/images/jaina_thumbsup.webp']),
                 'fields' => $fields,

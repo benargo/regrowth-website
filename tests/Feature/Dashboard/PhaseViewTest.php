@@ -14,11 +14,11 @@ class PhaseViewTest extends DashboardTestCase
     {
         Phase::factory()->started()->create();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', fn ($value) => $value !== null)
         );
@@ -29,11 +29,11 @@ class PhaseViewTest extends DashboardTestCase
     {
         Phase::factory()->unscheduled()->create();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', null)
         );
@@ -44,15 +44,15 @@ class PhaseViewTest extends DashboardTestCase
     {
         $phase = Phase::factory()->started()->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => '2026-03-15T14:00',
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', fn ($value) => str_contains($value, '2026-03-15'))
         );
@@ -63,15 +63,15 @@ class PhaseViewTest extends DashboardTestCase
     {
         $phase = Phase::factory()->started()->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.update', $phase), [
             'start_date' => null,
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->where('phases.0.start_date', null)
         );
@@ -84,15 +84,15 @@ class PhaseViewTest extends DashboardTestCase
         $tag1 = GuildTag::factory()->create();
         $tag2 = GuildTag::factory()->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [$tag1->id, $tag2->id],
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 2)
         );
@@ -105,15 +105,15 @@ class PhaseViewTest extends DashboardTestCase
         GuildTag::factory()->withPhase($phase)->create();
         GuildTag::factory()->withPhase($phase)->create();
 
-        $this->actingAs($this->officer)->put(route('dashboard.phases.guild-tags.update', $phase), [
+        $this->actingAs($this->officer)->put(route('management.phases.guild-tags.update', $phase), [
             'guild_tag_ids' => [],
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 0)
         );
@@ -129,11 +129,11 @@ class PhaseViewTest extends DashboardTestCase
             'count_attendance' => true,
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 1)
             ->where('phases.0.guild_tags.0.count_attendance', true)
@@ -150,11 +150,11 @@ class PhaseViewTest extends DashboardTestCase
             'count_attendance' => false,
         ]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.phases.view'));
+        $response = $this->actingAs($this->officer)->get(route('management.phases.view'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/Phases/Index')
+            ->component('Manage/Phases/Index')
             ->has('phases', 1)
             ->has('phases.0.guild_tags', 1)
             ->where('phases.0.guild_tags.0.count_attendance', false)

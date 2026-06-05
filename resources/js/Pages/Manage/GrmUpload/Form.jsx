@@ -150,7 +150,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("dashboard.grm-upload.upload"), {
+        post(route("management.grm-upload.upload"), {
             onSuccess: startProgressModal,
         });
     };

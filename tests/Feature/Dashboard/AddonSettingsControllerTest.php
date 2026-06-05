@@ -35,7 +35,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function settings_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.addon.settings'));
+        $response = $this->get(route('management.addon.settings'));
 
         $response->assertRedirect('/login');
     }
@@ -45,7 +45,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($user)->get(route('management.addon.settings'));
 
         $response->assertForbidden();
     }
@@ -55,7 +55,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($user)->get(route('management.addon.settings'));
 
         $response->assertForbidden();
     }
@@ -65,7 +65,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($user)->get(route('management.addon.settings'));
 
         $response->assertForbidden();
     }
@@ -73,7 +73,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function settings_allows_officer_users(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertOk();
     }
@@ -81,10 +81,10 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function settings_renders_inertia_page(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/Settings')
+            ->component('Manage/Addon/Settings')
         );
     }
 
@@ -93,7 +93,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         $councillor = Character::factory()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('settings.councillors', 1)
@@ -108,7 +108,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         GuildRank::query()->delete();
         GuildRank::factory()->create(['name' => 'Test Rank', 'position' => 1]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         // Note: GuildRank model transforms names to title case
         $response->assertInertia(fn (Assert $page) => $page
@@ -128,7 +128,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
             ->andReturn(collect([$tag]));
         $this->app->instance(GuildTags::class, $guildTags);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('settings.tags', 1)
@@ -142,7 +142,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         Character::factory()->create(['name' => 'DeferredCharacter']);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('characters')
@@ -160,7 +160,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
         Character::factory()->lootCouncillor()->create(['name' => 'Mike']);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('settings.councillors', function ($councillors) {
@@ -180,7 +180,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         GuildRank::factory()->create(['name' => 'Guild Master', 'position' => 1]);
         GuildRank::factory()->create(['name' => 'Member', 'position' => 3]);
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.settings'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         // Note: GuildRank model transforms names to title case
         $response->assertInertia(fn (Assert $page) => $page
@@ -198,7 +198,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function add_councillor_requires_authentication(): void
     {
-        $response = $this->post(route('dashboard.addon.settings.councillors.add'));
+        $response = $this->post(route('management.addon.settings.councillors.add'));
 
         $response->assertRedirect('/login');
     }
@@ -209,7 +209,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $user = User::factory()->guest()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($user)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -222,7 +222,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $user = User::factory()->member()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($user)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -235,7 +235,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $user = User::factory()->raider()->create();
         $character = Character::factory()->create(['name' => 'TestChar']);
 
-        $response = $this->actingAs($user)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($user)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -247,7 +247,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         $character = Character::factory()->create(['name' => 'TestChar']);
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -257,7 +257,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function add_councillor_requires_character_name(): void
     {
-        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), []);
+        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), []);
 
         $response->assertSessionHasErrors(['character_name']);
     }
@@ -265,7 +265,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function add_councillor_requires_character_name_to_be_string(): void
     {
-        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => 12345,
         ]);
 
@@ -275,7 +275,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function add_councillor_requires_character_to_exist(): void
     {
-        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => 'NonExistentCharacter',
         ]);
 
@@ -289,7 +289,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
         $this->assertFalse($character->is_loot_councillor);
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -303,12 +303,12 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $character = Character::factory()->create(['name' => 'TestChar']);
 
         $response = $this->actingAs($this->officer)
-            ->from(route('dashboard.addon.settings'))
-            ->post(route('dashboard.addon.settings.councillors.add'), [
+            ->from(route('management.addon.settings'))
+            ->post(route('management.addon.settings.councillors.add'), [
                 'character_name' => $character->name,
             ]);
 
-        $response->assertRedirect(route('dashboard.addon.settings'));
+        $response->assertRedirect(route('management.addon.settings'));
     }
 
     #[Test]
@@ -318,7 +318,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
         $this->assertTrue($character->is_loot_councillor);
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.addon.settings.councillors.add'), [
+        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
             'character_name' => $character->name,
         ]);
 
@@ -335,7 +335,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->delete(route('management.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect('/login');
     }
@@ -346,7 +346,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $user = User::factory()->guest()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($user)->delete(route('management.addon.settings.councillors.remove', $character));
 
         $response->assertForbidden();
     }
@@ -357,7 +357,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $user = User::factory()->member()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($user)->delete(route('management.addon.settings.councillors.remove', $character));
 
         $response->assertForbidden();
     }
@@ -368,7 +368,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $user = User::factory()->raider()->create();
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($user)->delete(route('management.addon.settings.councillors.remove', $character));
 
         $response->assertForbidden();
     }
@@ -378,7 +378,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         $character = Character::factory()->lootCouncillor()->create();
 
-        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect();
     }
@@ -390,7 +390,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
         $this->assertTrue($character->is_loot_councillor);
 
-        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect();
         $this->assertFalse($character->fresh()->is_loot_councillor);
@@ -402,16 +402,16 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $character = Character::factory()->lootCouncillor()->create();
 
         $response = $this->actingAs($this->officer)
-            ->from(route('dashboard.addon.settings'))
-            ->delete(route('dashboard.addon.settings.councillors.remove', $character));
+            ->from(route('management.addon.settings'))
+            ->delete(route('management.addon.settings.councillors.remove', $character));
 
-        $response->assertRedirect(route('dashboard.addon.settings'));
+        $response->assertRedirect(route('management.addon.settings'));
     }
 
     #[Test]
     public function remove_councillor_returns_404_for_nonexistent_character(): void
     {
-        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', 99999));
+        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', 99999));
 
         $response->assertNotFound();
     }
@@ -423,7 +423,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
         $this->assertFalse($character->is_loot_councillor);
 
-        $response = $this->actingAs($this->officer)->delete(route('dashboard.addon.settings.councillors.remove', $character));
+        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', $character));
 
         $response->assertRedirect();
         $this->assertFalse($character->fresh()->is_loot_councillor);

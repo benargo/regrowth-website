@@ -33,7 +33,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     {
         $templates = Event::templates()->with('raids')->orderBy('title')->get();
 
-        return Inertia::render('Dashboard/EventTemplates/Index', (new EventTemplateCollection($templates))->toArray(request()));
+        return Inertia::render('Manage/EventTemplates/Index', (new EventTemplateCollection($templates))->toArray(request()));
     }
 
     /**
@@ -42,7 +42,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     #[Authorize('create', Event::class)]
     public function create(): Response
     {
-        return Inertia::render('Dashboard/EventTemplates/Create', [
+        return Inertia::render('Manage/EventTemplates/Create', [
             'raids' => Raid::orderBy('id')->get(),
         ]);
     }
@@ -66,7 +66,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
 
         $template->raids()->attach($validated['raid_ids']);
 
-        return to_route('dashboard.event-templates.edit', $template);
+        return redirect()->route('management.event-templates.edit', $template);
     }
 
     /**
@@ -77,7 +77,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     {
         $template->load('raids.bosses.media', 'assignments.group');
 
-        return Inertia::render('Dashboard/EventTemplates/Edit', [
+        return Inertia::render('Manage/EventTemplates/Edit', [
             'template' => (new EventResource($template))->resolve($request),
             'raids' => RaidResource::collection(Raid::orderBy('id')->get())->resolve($request),
             'targetMarkers' => TargetMarker::all()->map(fn (TargetMarker $m) => ['slug' => $m->slug, 'name' => $m->name])->values(),
@@ -128,6 +128,6 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     {
         $template->delete();
 
-        return to_route('dashboard.event-templates.index');
+        return redirect()->route('management.event-templates.index');
     }
 }

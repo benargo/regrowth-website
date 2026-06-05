@@ -20,11 +20,11 @@ class BossStrategyControllerTest extends DashboardTestCase
         Phase::factory()->create();
         Boss::factory()->for(Raid::factory())->create();
 
-        $response = $this->actingAs($this->officer)->get(route('dashboard.boss-strategies.index'));
+        $response = $this->actingAs($this->officer)->get(route('management.boss-strategies.index'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/BossStrategies/Index')
+            ->component('Manage/BossStrategies/Index')
             ->has('bosses')
             ->has('phases')
         );
@@ -33,7 +33,7 @@ class BossStrategyControllerTest extends DashboardTestCase
     #[Test]
     public function index_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.boss-strategies.index'));
+        $response = $this->get(route('management.boss-strategies.index'));
 
         $response->assertRedirect('/login');
     }
@@ -44,12 +44,12 @@ class BossStrategyControllerTest extends DashboardTestCase
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->actingAs($this->officer)->get(
-            route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
+            route('management.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
         );
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Dashboard/BossStrategies/Edit')
+            ->component('Manage/BossStrategies/Edit')
             ->has('boss')
         );
     }
@@ -60,7 +60,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->get(
-            route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
+            route('management.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
         );
 
         $response->assertRedirect('/login');
@@ -73,7 +73,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->actingAs($user)->get(
-            route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
+            route('management.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug])
         );
 
         $response->assertForbidden();
@@ -86,7 +86,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['notes' => '**bold text**']
         );
 
@@ -104,7 +104,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $boss = Boss::factory()->for(Raid::factory())->create(['notes' => '## Existing notes']);
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['notes' => null]
         );
 
@@ -125,7 +125,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $file = UploadedFile::fake()->image('strategy.png', 800, 600);
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['images' => [$file]]
         );
 
@@ -146,7 +146,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $initialCount = $boss->getMedia()->count();
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['deleted_images' => []]
         );
 
@@ -174,7 +174,7 @@ class BossStrategyControllerTest extends DashboardTestCase
 
         // Reorder: second should be first
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['image_order' => [$url2, $url1]]
         );
 
@@ -192,7 +192,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['notes' => 'updated notes']
         );
 
@@ -204,12 +204,12 @@ class BossStrategyControllerTest extends DashboardTestCase
     {
         $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
         $boss = Boss::factory()->for(Raid::factory())->create();
-        $editUrl = route('dashboard.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug]);
+        $editUrl = route('management.boss-strategies.edit', ['boss' => $boss, 'slug' => $boss->slug]);
 
         $response = $this->actingAs($user)
             ->withHeaders(['Referer' => $editUrl])
             ->patch(
-                route('dashboard.boss-strategies.update', ['boss' => $boss]),
+                route('management.boss-strategies.update', ['boss' => $boss]),
                 ['notes' => 'updated notes']
             );
 
@@ -223,7 +223,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $boss = Boss::factory()->for(Raid::factory())->create();
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['notes' => '## Auto-saved notes']
         );
 
@@ -244,7 +244,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $file = UploadedFile::fake()->image('instant.png', 800, 600);
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['images' => [$file]]
         );
 
@@ -266,7 +266,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $mediaUrl = $boss->getFirstMedia()->getUrl();
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['deleted_images' => [$mediaUrl]]
         );
 
@@ -290,7 +290,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $url2 = $media[1]->getUrl();
 
         $response = $this->actingAs($user)->patch(
-            route('dashboard.boss-strategies.update', ['boss' => $boss]),
+            route('management.boss-strategies.update', ['boss' => $boss]),
             ['image_order' => [$url2, $url1]]
         );
 

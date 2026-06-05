@@ -31,7 +31,7 @@ function TemplateCard({ template, onDeleteClick }) {
             </div>
             <div className="flex gap-2">
                 <Link
-                    href={route("dashboard.event-templates.edit", template.id)}
+                    href={route("management.event-templates.edit", template.id)}
                     className="flex items-center gap-1 rounded border border-amber-600 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20"
                 >
                     <Icon icon="edit" style="light" />
@@ -56,7 +56,7 @@ export default function Index({ templates, raidGroups }) {
 
     function handleDelete() {
         setDeleting(true);
-        router.delete(route("dashboard.event-templates.destroy", templateToDelete.id), {
+        router.delete(route("management.event-templates.destroy", templateToDelete.id), {
             preserveScroll: true,
             onFinish: () => {
                 setDeleting(false);
@@ -71,7 +71,7 @@ export default function Index({ templates, raidGroups }) {
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
-                        href={route("dashboard.index")}
+                        href={route("management.dashboard")}
                         className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
@@ -81,41 +81,41 @@ export default function Index({ templates, raidGroups }) {
             </ToolNav>
 
             <PageContainer>
-                    <div className="mb-8 flex items-center justify-between">
-                        <p className="text-gray-400">Create and manage reusable raid event templates.</p>
-                        <Link
-                            href={route("dashboard.event-templates.create")}
-                            className="flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500"
-                        >
-                            <Icon icon="plus" style="light" />
-                            Create Template
-                        </Link>
-                    </div>
+                <div className="mb-8 flex items-center justify-between">
+                    <p className="text-gray-400">Create and manage reusable raid event templates.</p>
+                    <Link
+                        href={route("management.event-templates.create")}
+                        className="flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500"
+                    >
+                        <Icon icon="plus" style="light" />
+                        Create Template
+                    </Link>
+                </div>
 
-                    {raidGroups.length === 0 ? (
-                        <p className="text-center text-gray-500">No templates yet. Create one to get started.</p>
-                    ) : (
-                        <div className="flex flex-col gap-12">
-                            {raidGroups.map(({ raid, templates: raidTemplates }) => (
-                                <section key={raid.id}>
-                                    <h2 className="mb-4 text-xl font-semibold text-amber-400">{raid.name}</h2>
-                                    {raidTemplates.length === 0 ? (
-                                        <p className="text-sm text-gray-500">No templates for this raid yet.</p>
-                                    ) : (
-                                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                            {raidTemplates.map((template) => (
-                                                <TemplateCard
-                                                    key={`${raid.id}-${template.id}`}
-                                                    template={template}
-                                                    onDeleteClick={setTemplateToDelete}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </section>
-                            ))}
-                        </div>
-                    )}
+                {raidGroups.length === 0 ? (
+                    <p className="text-center text-gray-500">No templates yet. Create one to get started.</p>
+                ) : (
+                    <div className="flex flex-col gap-12">
+                        {raidGroups.map(({ raid, templates: raidTemplates }) => (
+                            <section key={raid.id}>
+                                <h2 className="mb-4 text-xl font-semibold text-amber-400">{raid.name}</h2>
+                                {raidTemplates.length === 0 ? (
+                                    <p className="text-sm text-gray-500">No templates for this raid yet.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                        {raidTemplates.map((template) => (
+                                            <TemplateCard
+                                                key={`${raid.id}-${template.id}`}
+                                                template={template}
+                                                onDeleteClick={setTemplateToDelete}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </section>
+                        ))}
+                    </div>
+                )}
             </PageContainer>
 
             <ConfirmationModal
@@ -129,8 +129,8 @@ export default function Index({ templates, raidGroups }) {
                 variant="delete"
             >
                 Are you sure you want to delete{" "}
-                <span className="font-semibold text-white">&ldquo;{templateToDelete?.title}&rdquo;</span>?{" "}
-                This cannot be undone.
+                <span className="font-semibold text-white">&ldquo;{templateToDelete?.title}&rdquo;</span>? This cannot
+                be undone.
             </ConfirmationModal>
         </Master>
     );

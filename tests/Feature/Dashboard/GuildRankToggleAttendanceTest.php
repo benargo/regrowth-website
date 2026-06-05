@@ -15,7 +15,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -28,7 +28,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $user = User::factory()->guest()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->actingAs($user)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -41,7 +41,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $user = User::factory()->member()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->actingAs($user)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -54,7 +54,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $user = User::factory()->raider()->create();
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($user)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->actingAs($user)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -66,7 +66,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->doesNotCountAttendance()->create();
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->actingAs($this->officer)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -80,7 +80,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
 
         $this->assertFalse($rank->count_attendance);
 
-        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $this->actingAs($this->officer)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 
@@ -96,7 +96,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
 
         $this->assertTrue($rank->count_attendance);
 
-        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $this->actingAs($this->officer)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => false,
         ]);
 
@@ -110,7 +110,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), []);
+        $response = $this->actingAs($this->officer)->patch(route('management.ranks.toggle-attendance', $rank), []);
 
         $response->assertSessionHasErrors(['count_attendance']);
     }
@@ -120,7 +120,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $response = $this->actingAs($this->officer)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => 'not-a-boolean',
         ]);
 
@@ -133,7 +133,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $rank1 = GuildRank::factory()->doesNotCountAttendance()->create();
         $rank2 = GuildRank::factory()->create(['count_attendance' => true]);
 
-        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank1), [
+        $this->actingAs($this->officer)->patch(route('management.ranks.toggle-attendance', $rank1), [
             'count_attendance' => true,
         ]);
 
@@ -152,7 +152,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         Cache::put('guild_ranks:index', 'cached-data');
         $this->assertTrue(Cache::has('guild_ranks:index'));
 
-        $this->actingAs($this->officer)->patch(route('dashboard.ranks.toggle-attendance', $rank), [
+        $this->actingAs($this->officer)->patch(route('management.ranks.toggle-attendance', $rank), [
             'count_attendance' => true,
         ]);
 

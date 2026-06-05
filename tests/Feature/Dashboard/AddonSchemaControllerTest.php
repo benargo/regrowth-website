@@ -16,7 +16,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_requires_authentication(): void
     {
-        $response = $this->get(route('dashboard.addon.export.schema'));
+        $response = $this->get(route('management.addon.export.schema'));
 
         $response->assertRedirect('/login');
     }
@@ -26,7 +26,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
 
         $response->assertForbidden();
     }
@@ -36,7 +36,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
 
         $response->assertForbidden();
     }
@@ -46,7 +46,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($user)->get(route('management.addon.export.schema'));
 
         $response->assertForbidden();
     }
@@ -54,7 +54,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_allows_officer_users(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertOk();
     }
@@ -66,10 +66,10 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_renders_inertia_page_with_schema(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard/Addon/ExportSchema')
+            ->component('Manage/Addon/ExportSchema')
             ->has('schema')
         );
     }
@@ -77,7 +77,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_includes_json_schema_metadata(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema', fn (Assert $schema) => $schema
@@ -94,7 +94,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_system_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.system')
@@ -106,7 +106,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_priorities_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.priorities')
@@ -117,7 +117,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_items_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.items')
@@ -128,7 +128,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_players_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.players')
@@ -139,7 +139,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_player_attendance_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.players.items.properties.name')
@@ -154,7 +154,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_defines_councillors_properties(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('schema.properties.councillors')
@@ -168,7 +168,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
     #[Test]
     public function export_schema_id_contains_version_1_2_0(): void
     {
-        $response = $this->actingAs($this->officer)->get(route('dashboard.addon.export.schema'));
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $schema = $response->original->getData()['page']['props']['schema'];
 

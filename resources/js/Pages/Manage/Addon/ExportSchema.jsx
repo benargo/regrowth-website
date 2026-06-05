@@ -26,10 +26,10 @@ export default function AddonExportSchema({ schema }) {
             <PageContainer>
                 <TabNav
                     tabs={[
-                        { name: "base64", label: "Base64", href: route("dashboard.addon.export") },
-                        { name: "json", label: "JSON", href: route("dashboard.addon.export.json") },
-                        { name: "schema", label: "Schema", href: route("dashboard.addon.export.schema") },
-                        { name: "settings", label: "Settings", href: route("dashboard.addon.settings") },
+                        { name: "base64", label: "Base64", href: route("management.addon.export") },
+                        { name: "json", label: "JSON", href: route("management.addon.export.json") },
+                        { name: "schema", label: "Schema", href: route("management.addon.export.schema") },
+                        { name: "settings", label: "Settings", href: route("management.addon.settings") },
                     ]}
                     currentTab="schema"
                 />
@@ -66,8 +66,8 @@ export default function AddonExportSchema({ schema }) {
                     </h3>
                     <ul className="mt-2 list-inside list-disc text-sm">
                         <li>
-                            <code>system.last_modified</code> now returns an Epoch timestamp. Previously it returned
-                            an ISO 8601 string.
+                            <code>system.last_modified</code> now returns an Epoch timestamp. Previously it returned an
+                            ISO 8601 string.
                         </li>
                     </ul>
                     <h3 className="text-md mt-4 font-semibold">

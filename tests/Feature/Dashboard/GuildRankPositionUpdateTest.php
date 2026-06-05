@@ -15,7 +15,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     {
         $ranks = GuildRank::factory()->count(3)->create();
 
-        $response = $this->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->post(route('management.ranks.update-positions'), [
             'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
         ]);
 
@@ -28,7 +28,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $user = User::factory()->guest()->create();
         $ranks = GuildRank::factory()->count(3)->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($user)->post(route('management.ranks.update-positions'), [
             'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
         ]);
 
@@ -41,7 +41,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $user = User::factory()->member()->create();
         $ranks = GuildRank::factory()->count(3)->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($user)->post(route('management.ranks.update-positions'), [
             'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
         ]);
 
@@ -54,7 +54,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $user = User::factory()->raider()->create();
         $ranks = GuildRank::factory()->count(3)->create();
 
-        $response = $this->actingAs($user)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($user)->post(route('management.ranks.update-positions'), [
             'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
         ]);
 
@@ -66,7 +66,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     {
         $ranks = GuildRank::factory()->count(3)->create();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
         ]);
 
@@ -77,7 +77,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     public function update_positions_validates_ranks_required(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), []);
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), []);
 
         $response->assertSessionHasErrors(['ranks']);
     }
@@ -86,7 +86,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     public function update_positions_validates_ranks_must_be_array(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => 'not-an-array',
         ]);
 
@@ -97,7 +97,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     public function update_positions_validates_rank_id_required(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['position' => 0],
             ],
@@ -110,7 +110,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     public function update_positions_validates_rank_id_exists(): void
     {
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => 99999, 'position' => 0],
             ],
@@ -124,7 +124,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => $rank->id],
             ],
@@ -138,7 +138,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => $rank->id, 'position' => 'not-an-integer'],
             ],
@@ -152,7 +152,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create();
 
-        $response = $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => $rank->id, 'position' => -1],
             ],
@@ -168,7 +168,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $rank2 = GuildRank::factory()->create(['position' => 1]);
         $rank3 = GuildRank::factory()->create(['position' => 2]);
 
-        $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => $rank1->id, 'position' => 2],
                 ['id' => $rank2->id, 'position' => 0],
@@ -187,7 +187,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $rank1 = GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
         $rank2 = GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
 
-        $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => $rank1->id, 'position' => 1],
                 ['id' => $rank2->id, 'position' => 0],
@@ -203,7 +203,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     {
         $rank = GuildRank::factory()->create(['position' => 5]);
 
-        $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => $rank->id, 'position' => 0],
             ],
@@ -220,7 +220,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         Cache::put('guild_ranks:index', 'cached-data');
         $this->assertTrue(Cache::has('guild_ranks:index'));
 
-        $this->actingAs($this->officer)->post(route('dashboard.ranks.update-positions'), [
+        $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
                 ['id' => $rank->id, 'position' => $rank->position],
             ],

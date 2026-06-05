@@ -135,9 +135,11 @@ export default function Master({ title, children }) {
                                             </Dropdown.Link>
                                         )}
                                         <Can permission="view-officer-dashboard">
-                                            <Dropdown.Link href={route("dashboard.index")}>
-                                                <Icon icon="cogs" style="regular" className="mr-2 h-6" />
-                                                Officers&rsquo; Dashboard
+                                            <Dropdown.Link href={route("management.dashboard")}>
+                                                <Icon icon="cogs" style="regular" className="mr-2" />
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <span>Control Panel</span>
+                                                </div>
                                             </Dropdown.Link>
                                         </Can>
                                         <Dropdown.Link href={route("logout")} method="post" as="button">
@@ -226,11 +228,11 @@ export default function Master({ title, children }) {
                                 )}
                                 <Can permission="view-officer-dashboard">
                                     <Link
-                                        href={route("dashboard.index")}
+                                        href={route("management.dashboard")}
                                         className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
                                     >
                                         <Icon icon="cogs" style="regular" className="mr-2" />
-                                        Officers' Control Panel
+                                        Control Panel
                                     </Link>
                                 </Can>
                                 <Link
