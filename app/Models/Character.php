@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Raids\Report;
@@ -40,7 +39,7 @@ class Character extends Model
         'level',
         'rank_id',
         'playable_class_id',
-        'playable_race',
+        'playable_race_id',
         'is_main',
         'is_loot_councillor',
     ];
@@ -53,7 +52,6 @@ class Character extends Model
     protected $casts = [
         'is_main' => 'boolean',
         'is_loot_councillor' => 'boolean',
-        'playable_race' => AsPlayableRace::class,
     ];
 
     /**
@@ -113,7 +111,15 @@ class Character extends Model
      */
     public function playableClass(): BelongsTo
     {
-        return $this->belongsTo(PlayableClass::class, 'playable_class_id');
+        return $this->belongsTo(PlayableClass::class);
+    }
+
+    /**
+     * Get the playable race associated with the character.
+     */
+    public function playableRace(): BelongsTo
+    {
+        return $this->belongsTo(PlayableRace::class);
     }
 
     /**

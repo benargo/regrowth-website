@@ -2,14 +2,13 @@
 
 namespace Tests\Unit\Models;
 
-use App\Casts\AsPlayableRace;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
-use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
 use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,7 +45,7 @@ class CharacterTest extends ModelTestCase
             'level',
             'rank_id',
             'playable_class_id',
-            'playable_race',
+            'playable_race_id',
             'is_main',
             'is_loot_councillor',
         ]);
@@ -60,7 +59,6 @@ class CharacterTest extends ModelTestCase
         $this->assertCasts($model, [
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
-            'playable_race' => AsPlayableRace::class,
         ]);
     }
 
@@ -309,69 +307,43 @@ class CharacterTest extends ModelTestCase
 
     // playable_race
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function sampleRaceApiResponse(int $id = 2, string $name = 'Orc'): array
+    #[Test]
+    public function playable_race_returns_belongs_to_relationship(): void
     {
-        return [
-            'id' => $id,
-            'name' => $name,
-            'gender_name' => ['male' => $name, 'female' => $name],
-            'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
-            'is_selectable' => true,
-            'is_allied_race' => false,
-            'playable_classes' => [],
-            'racial_spells' => [],
-        ];
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsTo::class, $character->playableRace());
     }
 
     #[Test]
-    public function playable_race_returns_unknown_when_column_is_null(): void
+    public function it_can_be_created_with_playable_race(): void
+    {
+        $playableRace = PlayableRace::factory()->create();
+        $character = $this->factory()->withPlayableRace($playableRace)->create();
+
+        $this->assertSame($playableRace->id, $character->playable_race_id);
+        $this->assertInstanceOf(PlayableRace::class, $character->playableRace);
+    }
+
+    #[Test]
+    public function playable_race_is_null_by_default(): void
     {
         $character = $this->create();
 
-        $playableRace = $character->playable_race;
-
-        $this->assertNull($playableRace['id']);
-        $this->assertSame('Unknown Race', $playableRace['name']);
+        $this->assertNull($character->playable_race_id);
+        $this->assertNull($character->playableRace);
     }
 
     #[Test]
-    public function playable_race_returns_stored_data_when_set(): void
+    public function playable_race_is_set_to_null_when_playable_race_is_deleted(): void
     {
-        $character = $this->factory()->withPlayableRace(2, 'Orc')->create();
+        $playableRace = PlayableRace::factory()->create();
+        $character = $this->factory()->withPlayableRace($playableRace)->create();
 
-        $playableRace = $character->fresh()->playable_race;
+        $playableRace->delete();
 
-        $this->assertSame(2, $playableRace['id']);
-        $this->assertSame('Orc', $playableRace['name']);
-    }
-
-    #[Test]
-    public function assigning_playable_race_vo_persists_reduced_shape_via_cast(): void
-    {
-        $character = $this->create();
-        $character->playable_race = PlayableRaceData::from($this->sampleRaceApiResponse(2, 'Orc'));
-        $character->save();
-
-        $this->assertDatabaseHas('characters', [
-            'id' => $character->id,
-            'playable_race' => json_encode(['id' => 2, 'name' => 'Orc']),
-        ]);
-    }
-
-    #[Test]
-    public function playable_race_setter_accepts_null_and_clears_column(): void
-    {
-        $character = $this->factory()->withPlayableRace(2, 'Orc')->create();
-        $character->playable_race = null;
-        $character->save();
-
-        $this->assertDatabaseHas('characters', [
-            'id' => $character->id,
-            'playable_race' => null,
-        ]);
+        $character->refresh();
+        $this->assertNull($character->playable_race_id);
     }
 
     // prunable

@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
 use App\Models\Raids\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,7 +37,6 @@ class CharacterResourceTest extends TestCase
         $this->assertArrayHasKey('is_loot_councillor', $array);
         $this->assertArrayHasKey('planned_absences', $array);
         $this->assertArrayHasKey('playable_class', $array);
-        $this->assertArrayHasKey('playable_race', $array);
         $this->assertArrayHasKey('pivot', $array);
         $this->assertArrayHasKey('rank', $array);
     }
@@ -79,6 +79,28 @@ class CharacterResourceTest extends TestCase
         $this->assertSame('warrior', $array['playable_class']['slug']);
         $this->assertArrayHasKey('icon_url', $array['playable_class']);
         $this->assertNull($array['playable_class']['icon_url']);
+    }
+
+    #[Test]
+    public function it_omits_playable_race_when_not_loaded(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertInstanceOf(MissingValue::class, $array['playable_race']);
+    }
+
+    #[Test]
+    public function it_includes_playable_race_attributes_when_loaded(): void
+    {
+        $playableRace = PlayableRace::factory()->create(['name' => 'Orc']);
+        $character = Character::factory()->withPlayableRace($playableRace)->create();
+
+        $array = (new CharacterResource($character->load('playableRace')))->toArray(new Request);
+
+        $this->assertSame($playableRace->id, $array['playable_race']['id']);
+        $this->assertSame('Orc', $array['playable_race']['name']);
     }
 
     #[Test]
