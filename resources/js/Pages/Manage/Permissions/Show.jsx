@@ -19,7 +19,7 @@
  *                                         non-admins cannot toggle permissions for their own role
  *
  * Behaviour:
- * - Each cell in the table is a toggle button that calls `dashboard.permissions.permission.update`
+ * - Each cell in the table is a toggle button that calls `management.permissions.permission.update`
  *   via a PATCH request (see PermissionController@update).
  * - Toggles are disabled for a non-admin user's own highest role to prevent privilege escalation.
  * - Processing state is tracked per toggle (keyed as `${roleId}-${permissionId}`) to show

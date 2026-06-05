@@ -100,11 +100,6 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::patch('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
 });
 
-/**
- * Comps spreadsheet redirect
- */
-Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.next');
-
 /*
  * Officers' Dashboard
  */

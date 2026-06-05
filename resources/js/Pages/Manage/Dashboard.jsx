@@ -4,6 +4,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Collapsible from "@/Components/Collapsible";
 import { Can } from "@/Components/Authorizable";
 import PageContainer from "@/Components/PageContainer";
+import SharedHeader from "@/Components/SharedHeader";
 
 function DashboardCard({ href, icon, children }) {
     return (
@@ -19,18 +20,13 @@ function DashboardCard({ href, icon, children }) {
     );
 }
 
-export default function Index({ discordRoles }) {
+export default function Dashboard({ discordRoles }) {
     const { auth } = usePage().props;
     const user = auth?.user;
 
     return (
         <Master title="Officers’ Dashboard">
-            {/* Header */}
-            <div className="bg-officer-meeting py-24 text-white">
-                <div className="container mx-auto px-4">
-                    <h1 className="text-center text-4xl font-bold">Officers&rsquo; Dashboard</h1>
-                </div>
-            </div>
+            <SharedHeader title="Officers' Dashboard" backgroundClass="bg-officer-meeting" />
 
             {/* Content */}
             <PageContainer>
