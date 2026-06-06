@@ -34,6 +34,8 @@ class PlayableRaceSeeder extends Seeder
                     'faction' => Faction::{$factionType},
                 ],
             );
+
+            $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
         }
     }
 }
