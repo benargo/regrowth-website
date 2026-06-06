@@ -4,7 +4,8 @@ namespace App\Http\Integrations\Blizzard\Requests\PlayableRace;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
-use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
+use Illuminate\Support\Arr;
 use Saloon\CachePlugin\Contracts\Cacheable;
 use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
@@ -40,9 +41,9 @@ class GetPlayableRaceIndexRequest extends Request implements Cacheable
 
     public function createDtoFromResponse(Response $response): array
     {
-        return array_map(
-            fn (array $race) => LinkData::from($race),
+        return Arr::map(
             $response->json('races', []),
+            fn (array $race) => PlayableRaceData::from($race),
         );
     }
 }

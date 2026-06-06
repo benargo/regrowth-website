@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AllianceRaces;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
-use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use App\Models\GuildRank;
@@ -17,7 +17,7 @@ use Inertia\Response;
 
 class GuildRosterController extends Controller
 {
-    /** @var array<int, LinkData> */
+    /** @var array<int, PlayableRaceData> */
     private array $races;
 
     /** @var Collection<int, GuildRank> */
@@ -28,7 +28,7 @@ class GuildRosterController extends Controller
     ) {
         $this->races = array_filter(
             $this->blizzard->send(new GetPlayableRaceIndexRequest)->dto(),
-            fn (LinkData $race) => in_array($race->id, AllianceRaces::ids(), true),
+            fn (PlayableRaceData $race) => in_array($race->id, AllianceRaces::ids(), true),
         );
 
         $this->ranks = GuildRank::select('id', 'position', 'name')->orderBy('position')->get();
@@ -38,7 +38,7 @@ class GuildRosterController extends Controller
     {
         return Inertia::render('Roster', [
             'classes' => PlayableClass::all()->toResourceCollection()->toArray($request),
-            'races' => array_values(array_map(fn (LinkData $race) => [
+            'races' => array_values(array_map(fn (PlayableRaceData $race) => [
                 'id' => $race->id,
                 'name' => $race->name,
             ], $this->races)),
