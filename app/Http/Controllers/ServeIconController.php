@@ -7,9 +7,11 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
 use App\Http\Requests\ServeIconRequest;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Str;
 use Throwable;
 
+#[Middleware('signed', 'throttle:icons')]
 class ServeIconController extends Controller implements HasBlizzardIcons
 {
     private const LONG_CACHE = 'public, max-age=31536000, immutable';

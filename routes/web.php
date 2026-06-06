@@ -25,21 +25,11 @@ use App\Http\Controllers\Loot\ShowRaidController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ServeIconController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('Home'))->name('home');
-
-/**
- * Icon serving
- */
-Route::get('/icons/{size}/{name}', ServeIconController::class)
-    ->name('icons.show')
-    ->where('size', '[0-9]+')
-    ->where('name', '[a-z0-9_]+\.(jpg|png)')
-    ->middleware(['signed', 'throttle:icons']);
 
 /**
  * Guild Roster
@@ -204,4 +194,5 @@ Route::get('/info/privacy', function () {
 Route::get('/dashboard', fn () => redirect()->route('management.dashboard'));
 Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.next');
 
+require __DIR__.'/assets.php';
 require __DIR__.'/auth.php';
