@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Faction;
 use Database\Factories\PlayableRaceFactory;
 use Illuminate\Database\Eloquent\Attributes\WithoutIncrementing;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
@@ -24,6 +25,16 @@ class PlayableRace extends Model
     protected $fillable = [
         'id',
         'name',
+        'faction',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'faction' => Faction::class,
     ];
 
     /**

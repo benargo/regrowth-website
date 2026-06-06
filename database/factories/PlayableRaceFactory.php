@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Faction;
 use App\Models\PlayableRace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -75,6 +76,7 @@ class PlayableRaceFactory extends Factory
         return [
             'id' => $this->faker->unique()->numberBetween(1, 10000),
             'name' => $this->faker->unique()->randomElement($this->raceNames),
+            'faction' => $this->faker->randomElement(Faction::cases()),
         ];
     }
 }

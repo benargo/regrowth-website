@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\Faction;
 use App\Models\PlayableRace;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Test;
@@ -47,7 +48,16 @@ class PlayableRaceTest extends ModelTestCase
         $this->assertFillable($model, [
             'id',
             'name',
+            'faction',
         ]);
+    }
+
+    #[Test]
+    public function it_casts_faction_to_faction_enum(): void
+    {
+        $model = new PlayableRace;
+
+        $this->assertCasts($model, ['faction' => Faction::class]);
     }
 
     #[Test]

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableRace;
 
-use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -12,7 +12,7 @@ use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 class GetPlayableRaceIndexRequestTest extends BlizzardTestCase
 {
     #[Test]
-    public function it_returns_array_of_link_data(): void
+    public function it_returns_array_of_playable_race_data(): void
     {
         Saloon::fake([
             'eu.battle.net/oauth/token' => $this->tokenMock(),
@@ -30,7 +30,7 @@ class GetPlayableRaceIndexRequestTest extends BlizzardTestCase
 
         $this->assertIsArray($result);
         $this->assertCount(2, $result);
-        $this->assertInstanceOf(LinkData::class, $result[0]);
+        $this->assertInstanceOf(PlayableRaceData::class, $result[0]);
         $this->assertSame('Human', $result[0]->name);
         $this->assertSame(1, $result[0]->id);
     }

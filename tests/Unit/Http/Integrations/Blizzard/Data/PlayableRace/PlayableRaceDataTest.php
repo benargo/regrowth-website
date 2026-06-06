@@ -5,6 +5,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\PlayableRace;
 use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 class PlayableRaceDataTest extends TestCase
@@ -52,6 +53,25 @@ class PlayableRaceDataTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    #[Test]
+    public function from_api_response_parses_index_response(): void
+    {
+        $vo = PlayableRaceData::from([
+            'key' => ['href' => 'https://eu.api.blizzard.com/data/wow/playable-race/1'],
+            'name' => 'Human',
+            'id' => 1,
+        ]);
+
+        $this->assertSame(1, $vo->id);
+        $this->assertSame('Human', $vo->name);
+        $this->assertInstanceOf(Optional::class, $vo->genderName);
+        $this->assertInstanceOf(Optional::class, $vo->faction);
+        $this->assertInstanceOf(Optional::class, $vo->isSelectable);
+        $this->assertInstanceOf(Optional::class, $vo->isAlliedRace);
+        $this->assertInstanceOf(Optional::class, $vo->playableClasses);
+        $this->assertInstanceOf(Optional::class, $vo->racialSpells);
     }
 
     #[Test]
