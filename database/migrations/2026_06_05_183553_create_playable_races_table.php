@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Faction;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,6 +15,7 @@ return new class extends Migration
         Schema::create('playable_races', function (Blueprint $table) {
             $table->id();
             $table->string('name', length: 32)->unique();
+            $table->enum('faction', Faction::cases())->default(Faction::NEUTRAL->value)->index();
         });
 
         Schema::table('characters', function (Blueprint $table) {
