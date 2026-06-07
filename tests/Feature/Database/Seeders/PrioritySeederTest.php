@@ -36,8 +36,8 @@ class PrioritySeederTest extends TestCase
     public function priority_model_implements_has_blizzard_icons(): void
     {
         $this->assertInstanceOf(HasBlizzardIcons::class, new Priority);
-        $this->assertSame(56, Priority::BLIZZARD_ICON_SIZE);
-        $this->assertSame('jpg', Priority::BLIZZARD_ICON_FILE_EXTENSION);
+        $this->assertSame(56, Priority::DEFAULT_MEDIA_SIZE);
+        $this->assertSame('jpg', Priority::DEFAULT_MEDIA_FILE_EXTENSION);
     }
 
     #[Test]

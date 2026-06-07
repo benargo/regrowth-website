@@ -113,7 +113,7 @@ class SpecializationSeederTest extends TestCase
         $balance = PlayableSpecialization::where('playable_class_id', $druid->id)->where('name', 'Balance')->first();
         $media = $balance->getFirstMedia('blizzard_icons');
 
-        $this->assertSame(HasBlizzardIcons::BLIZZARD_ICON_SIZE, $media->getCustomProperty('size'));
+        $this->assertSame(HasBlizzardIcons::DEFAULT_MEDIA_SIZE, $media->getCustomProperty('size'));
         Storage::disk('public')->assertExists('blizzard-cdn/icons/56/spell_nature_starfall.jpg');
     }
 

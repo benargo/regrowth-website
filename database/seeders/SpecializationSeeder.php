@@ -104,14 +104,14 @@ class SpecializationSeeder extends Seeder implements HasBlizzardIcons
                 }
 
                 $iconName = $spec['icon_name'];
-                $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+                $iconFileName = $iconName.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION;
 
                 try {
                     $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
 
                     $model->addMediaFromString($response->body())
                         ->usingFileName($iconFileName)
-                        ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                        ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
                         ->toMediaCollection('blizzard_icons');
                 } catch (ForbiddenException $e) {
                     AttachBlizzardIconToModel::dispatch(PlayableSpecialization::class, $model->id, $e->getPendingRequest()->getUrl())

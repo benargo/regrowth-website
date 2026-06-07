@@ -39,7 +39,7 @@ class FetchAssetRequest extends Request implements HasBlizzardIcons
      * @throws InvalidArgumentException if an absolute URL is given that is invalid
      *                                  or does not belong to the Blizzard render CDN
      */
-    public function __construct(string $input, int $size = self::BLIZZARD_ICON_SIZE)
+    public function __construct(string $input, int $size = self::DEFAULT_MEDIA_SIZE)
     {
         if (str_contains($input, '://')) {
             $host = str(parse_url($input, PHP_URL_HOST));

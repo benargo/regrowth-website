@@ -11,7 +11,7 @@ interface HasBlizzardIcons
     /**
      * The default size (in pixels) of Blizzard icons to request and store.
      */
-    public const BLIZZARD_ICON_SIZE = 56;
+    public const DEFAULT_MEDIA_SIZE = 56;
 
     /**
      * The name of the bundled questionmark icon used as a placeholder/fallback across the app.
@@ -21,7 +21,12 @@ interface HasBlizzardIcons
     /**
      * The default file extension used for Blizzard icons on the render CDN.
      */
-    public const BLIZZARD_ICON_FILE_EXTENSION = 'jpg';
+    public const DEFAULT_MEDIA_FILE_EXTENSION = 'jpg';
+
+    /**
+     * The Laravel Media Library collection name
+     */
+    public const MEDIA_COLLECTION = 'blizzard_icons';
 
     /**
      * The path prefix on the shared disk where Blizzard icons are stored.

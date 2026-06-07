@@ -110,14 +110,14 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
             }
 
             $iconName = $model->type->icon();
-            $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+            $iconFileName = $iconName.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION;
 
             try {
                 $body = $this->renderConnector->send(new FetchAssetRequest($iconName))->body();
 
                 $model->addMediaFromString($body)
                     ->usingFileName($iconFileName)
-                    ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                    ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
                     ->toMediaCollection('blizzard_icons');
             } catch (ForbiddenException $e) {
                 AttachBlizzardIconToModel::dispatch(DailyQuest::class, $model->id, $this->typeIconUrl($iconFileName))
@@ -232,7 +232,7 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
     private function typeIconUrl(string $iconName): string
     {
         return $this->renderConnector->resolveBaseUrl()
-            ."/{$this->renderConnector->getRegion()->value}/icons/".self::BLIZZARD_ICON_SIZE."/{$iconName}";
+            ."/{$this->renderConnector->getRegion()->value}/icons/".self::DEFAULT_MEDIA_SIZE."/{$iconName}";
     }
 
     /**

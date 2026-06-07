@@ -68,7 +68,7 @@ class AttachBlizzardIconToModel implements ShouldQueue
 
         $model->addMediaFromString($body)
             ->usingFileName($fileName)
-            ->withCustomProperties(['size' => HasBlizzardIcons::BLIZZARD_ICON_SIZE])
+            ->withCustomProperties(['size' => HasBlizzardIcons::DEFAULT_MEDIA_SIZE])
             ->toMediaCollection('blizzard_icons');
     }
 
