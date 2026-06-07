@@ -4,12 +4,10 @@ namespace App\Http\Integrations\Blizzard\Requests\Render;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
+use App\Http\Integrations\Blizzard\Requests\RenderRequest;
+use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
-use InvalidArgumentException;
-use Saloon\Enums\Method;
 use Saloon\Http\PendingRequest;
-use Saloon\Http\Request;
 
 /**
  * Fetches an arbitrary asset from the Blizzard render CDN.
@@ -23,48 +21,21 @@ use Saloon\Http\Request;
  * used as the endpoint, avoiding the SSRF-flavoured opt-in for absolute-URL
  * endpoint overrides.
  */
-class FetchIconRequest extends Request implements HasBlizzardIcons
+class FetchIconRequest extends RenderRequest implements HasBlizzardIcons
 {
-    protected Method $method = Method::GET;
+    private ?string $iconName = null;
 
-    protected ?string $response = FetchAssetResponse::class;
-
-    private ?string $endpoint = null;
-
-    private readonly ?string $iconName;
-
-    private readonly int $size;
-
-    /**
-     * @throws InvalidArgumentException if an absolute URL is given that is invalid
-     *                                  or does not belong to the Blizzard render CDN
-     */
-    public function __construct(string $input, int $size = self::DEFAULT_MEDIA_SIZE)
+    public function __construct(string $input, ?int $size = null)
     {
-        if (str_contains($input, '://')) {
-            $host = str(parse_url($input, PHP_URL_HOST));
+        parent::__construct($input, $size);
 
-            if (! $this->validateHost($host)) {
-                throw new InvalidArgumentException(
-                    "FetchIconRequest requires a Blizzard render URL; got: {$input}",
-                );
+        Str::of($input)->tap(function (Stringable $string) {
+            if ($string->doesntContain('://')) {
+                $this->iconName = $string->value();
             }
+        });
 
-            $path = str(parse_url($input, PHP_URL_PATH));
-
-            if (! $this->validatePath($path)) {
-                throw new InvalidArgumentException(
-                    "FetchIconRequest requires a URL with a non-empty path; got: {$input}",
-                );
-            }
-
-            $this->endpoint = $path->start('/');
-            $this->iconName = null;
-            $this->size = $size;
-        } else {
-            $this->iconName = $input;
-            $this->size = $size;
-        }
+        $this->size = $size ?? self::DEFAULT_MEDIA_SIZE;
     }
 
     /**
@@ -80,39 +51,17 @@ class FetchIconRequest extends Request implements HasBlizzardIcons
             return;
         }
 
-        $iconName = str($this->iconName)->contains('.') ? $this->iconName : "{$this->iconName}.jpg";
+        $iconName = Str::of($this->iconName);
+
+        $iconName = $iconName->when($iconName->doesntContain('.'), function (Stringable $str) {
+            return $str->append('.', self::DEFAULT_MEDIA_FILE_EXTENSION);
+        });
 
         /** @var RenderConnector $connector */
         $connector = $pendingRequest->getConnector();
 
         $pendingRequest->setUrl(
-            $connector->getRegion()->renderCdnUrl()."/icons/{$this->size}/{$iconName}",
+            $connector->getRegion()->renderCdnUrl()."/icons/{$this->size}/{$iconName->value()}",
         );
-    }
-
-    /**
-     * Return the host-relative path for this asset request.
-     * For icon-name inputs, boot() overwrites the URL via setUrl() after construction.
-     */
-    public function resolveEndpoint(): string
-    {
-        return $this->endpoint ?? '/';
-    }
-
-    /**
-     * Determine whether a host belongs to the Blizzard render CDN.
-     * Accepts both render.worldofwarcraft.com and regional subdomain variants (e.g. render-eu.worldofwarcraft.com).
-     */
-    protected function validateHost(Stringable $host): bool
-    {
-        return $host->is('render.worldofwarcraft.com') || ($host->startsWith('render-') && $host->endsWith('.worldofwarcraft.com'));
-    }
-
-    /**
-     * Validate that the URL path is non-empty and not just a slash.
-     */
-    protected function validatePath(Stringable $path): bool
-    {
-        return ! $path->isEmpty() && ! $path->is('/');
     }
 }
