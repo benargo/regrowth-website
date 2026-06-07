@@ -8,6 +8,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import { Can } from "@/Components/Authorizable";
 import SpecIcon from "@/Components/Characters/SpecIcon";
 import SpecBadge from "@/Components/Characters/SpecBadge";
+import raidSpec from "@/Helpers/RaidSpec";
 
 function ReportsSkeleton() {
     return (
@@ -47,12 +48,12 @@ function SectionHeading({ children }) {
 }
 
 export default function Show({ character, recent_reports }) {
-    const raidSpec = character.specializations?.find((s) => s.is_raid_spec) ?? null;
+    const spec = raidSpec(character);
     const isLoading = recent_reports === undefined;
 
     return (
         <Master title={character.name}>
-            <SharedHeader backgroundClass="bg-goldshire" title={character.name} />
+            <SharedHeader backgroundClass="bg-stormwind" title={character.name} />
 
             <PageContainer>
                 {/* Identity strip */}
@@ -83,7 +84,7 @@ export default function Show({ character, recent_reports }) {
 
                     <Can permission="update-characters">
                         <Link
-                            href={route("management.characters.edit", {
+                            href={route("characters.edit", {
                                 character: character.id,
                                 slug: character.slug,
                             })}
@@ -98,11 +99,11 @@ export default function Show({ character, recent_reports }) {
                 {/* Meta card */}
                 <MetaCard>
                     <MetaItem icon="shield-alt">{character.rank?.name ?? "—"}</MetaItem>
-                    {raidSpec && (
+                    {spec && (
                         <MetaItem icon="star">
                             <span className="inline-flex items-center gap-1.5">
-                                <SpecIcon specialization={raidSpec} playableClass={character.playable_class} size={4} />
-                                {raidSpec.name}
+                                <SpecIcon specialization={spec} playableClass={character.playable_class} size={4} />
+                                {spec.name}
                                 <span className="text-gray-500 text-xs">raid spec</span>
                             </span>
                         </MetaItem>
@@ -139,7 +140,7 @@ export default function Show({ character, recent_reports }) {
                                     {character.linked_characters.map((alt) => (
                                         <Link
                                             key={alt.id}
-                                            href={route("management.characters.show", {
+                                            href={route("characters.show", {
                                                 character: alt.id,
                                                 slug: alt.slug,
                                             })}
