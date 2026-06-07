@@ -11,52 +11,8 @@ import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 import RankLabel from "@/Components/GuildRanks/RankLabel";
 import FilterDropdown from "@/Components/FilterDropdown";
-
-// ─── Filter components ────────────────────────────────────────────────────────
-
-function SearchInput({ value, onChange, placeholder = "Search by name...", dusk }) {
-    return (
-        <div className="relative">
-            <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-                dusk={dusk}
-                className="w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
-            {value && (
-                <button
-                    onClick={() => onChange("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-                >
-                    <Icon icon="times" style="solid" />
-                </button>
-            )}
-        </div>
-    );
-}
-
-
-function ToggleFilter({ label, value, onChange, dusk }) {
-    return (
-        <label className="flex cursor-pointer items-center gap-3 rounded border border-amber-600 bg-brown-800 px-4 py-2">
-            <span className="text-sm text-white">{label}</span>
-            <div className="relative ml-auto">
-                <input
-                    type="checkbox"
-                    checked={value}
-                    onChange={(e) => onChange(e.target.checked)}
-                    dusk={dusk}
-                    className="peer sr-only"
-                />
-                <div className="h-6 w-10 rounded-full bg-brown-700 transition-colors peer-checked:bg-amber-600" />
-                <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
-            </div>
-        </label>
-    );
-}
+import SearchInput from "@/Components/SearchInput";
+import ToggleFilter from "@/Components/ToggleFilter";
 
 // ─── Matrix components ────────────────────────────────────────────────────────
 
