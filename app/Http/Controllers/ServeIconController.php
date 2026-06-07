@@ -11,7 +11,8 @@ use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Str;
 use Throwable;
 
-#[Middleware('signed', 'throttle:icons')]
+#[Middleware('signed')]
+#[Middleware('throttle:icons')]
 class ServeIconController extends Controller implements HasBlizzardIcons
 {
     private const LONG_CACHE = 'public, max-age=31536000, immutable';
