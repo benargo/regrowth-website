@@ -3,7 +3,9 @@
 namespace Tests\Unit\Support\MediaLibrary;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Contracts\HasCharacterMedia;
 use App\Models\Boss;
+use App\Models\Character;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -69,6 +71,33 @@ class UrlGeneratorTest extends TestCase
 
         $this->assertStringContainsString('/storage/', $url);
         $this->assertStringNotContainsString('/icons/', $url);
+    }
+
+    #[Test]
+    public function it_returns_signed_icons_show_url_for_has_character_media_model(): void
+    {
+        $character = Character::factory()->create();
+
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->withCustomProperties(['size' => HasCharacterMedia::DEFAULT_MEDIA_SIZE])
+            ->toMediaCollection('character_portraits');
+
+        $url = $character->getFirstMediaUrl('character_portraits');
+
+        $this->assertNotNull($url);
+        $this->assertStringContainsString('/icons/135/character_15678.jpg', $url);
+        $this->assertTrue(URL::hasValidSignature(request()->create($url)));
+    }
+
+    #[Test]
+    public function it_returns_null_for_has_character_media_with_no_media(): void
+    {
+        $character = Character::factory()->create();
+
+        $url = $character->getFirstMediaUrl('character_portraits') ?: null;
+
+        $this->assertNull($url);
     }
 
     #[Test]
