@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Manage;
+namespace Tests\Feature\Characters;
 
 use App\Models\Character;
 use App\Models\PlayableClass;
@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
-class CharacterManagementTest extends TestCase
+class EditCharactersTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -40,74 +40,6 @@ class CharacterManagementTest extends TestCase
     }
 
     // =========================================================================
-    // Index
-    // =========================================================================
-
-    #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get(route('management.characters.index'));
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
-    public function index_renders_with_characters(): void
-    {
-        Character::factory()->withPlayableClass()->withRank()->create();
-        $user = $this->member();
-
-        $response = $this->actingAs($user)->get(route('management.characters.index'));
-
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Roster/Index')
-            ->missing('characters')
-            ->has('classes')
-            ->has('ranks')
-            ->has('races')
-            ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters', 1))
-        );
-    }
-
-    // =========================================================================
-    // Show
-    // =========================================================================
-
-    #[Test]
-    public function show_requires_authentication(): void
-    {
-        $character = Character::factory()->create();
-
-        $response = $this->get(route('management.characters.show', [
-            'character' => $character,
-            'slug' => $this->characterSlug($character),
-        ]));
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
-    public function show_renders_character_overview(): void
-    {
-        $character = Character::factory()->withPlayableClass()->withRank()->create();
-        $user = $this->member();
-
-        $response = $this->actingAs($user)->get(route('management.characters.show', [
-            'character' => $character,
-            'slug' => $this->characterSlug($character),
-        ]));
-
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Manage/Characters/Show')
-            ->has('character')
-            ->missing('recent_reports')
-            ->loadDeferredProps(fn (Assert $reload) => $reload->has('recent_reports'))
-        );
-    }
-
-    // =========================================================================
     // Edit
     // =========================================================================
 
@@ -116,7 +48,7 @@ class CharacterManagementTest extends TestCase
     {
         $character = Character::factory()->create();
 
-        $response = $this->get(route('management.characters.edit', [
+        $response = $this->get(route('characters.edit', [
             'character' => $character,
             'slug' => $this->characterSlug($character),
         ]));
@@ -130,7 +62,7 @@ class CharacterManagementTest extends TestCase
         $character = Character::factory()->create();
         $user = $this->member();
 
-        $response = $this->actingAs($user)->get(route('management.characters.edit', [
+        $response = $this->actingAs($user)->get(route('characters.edit', [
             'character' => $character,
             'slug' => $this->characterSlug($character),
         ]));
@@ -148,7 +80,7 @@ class CharacterManagementTest extends TestCase
 
         $user = $this->officer();
 
-        $response = $this->actingAs($user)->get(route('management.characters.edit', [
+        $response = $this->actingAs($user)->get(route('characters.edit', [
             'character' => $character,
             'slug' => $this->characterSlug($character),
         ]));
@@ -171,7 +103,7 @@ class CharacterManagementTest extends TestCase
     {
         $character = Character::factory()->create();
 
-        $response = $this->patch(route('management.characters.update', $character), [
+        $response = $this->patch(route('characters.update', $character), [
             'specialization_ids' => [],
             'raid_specialization_id' => null,
             'is_loot_councillor' => false,
@@ -186,7 +118,7 @@ class CharacterManagementTest extends TestCase
         $character = Character::factory()->create();
         $user = $this->member();
 
-        $response = $this->actingAs($user)->patch(route('management.characters.update', $character), [
+        $response = $this->actingAs($user)->patch(route('characters.update', $character), [
             'specialization_ids' => [],
             'raid_specialization_id' => null,
             'is_loot_councillor' => false,
@@ -205,7 +137,7 @@ class CharacterManagementTest extends TestCase
 
         $user = $this->officer();
 
-        $response = $this->actingAs($user)->patch(route('management.characters.update', $character), [
+        $response = $this->actingAs($user)->patch(route('characters.update', $character), [
             'specialization_ids' => [$specs->get(1)->id, $specs->get(2)->id],
             'raid_specialization_id' => null,
             'is_loot_councillor' => false,
@@ -236,7 +168,7 @@ class CharacterManagementTest extends TestCase
 
         $user = $this->officer();
 
-        $this->actingAs($user)->patch(route('management.characters.update', $character), [
+        $this->actingAs($user)->patch(route('characters.update', $character), [
             'specialization_ids' => [$specs->get(0)->id, $specs->get(1)->id],
             'raid_specialization_id' => $specs->get(0)->id,
             'is_loot_councillor' => false,
@@ -265,7 +197,7 @@ class CharacterManagementTest extends TestCase
 
         $user = $this->officer();
 
-        $response = $this->actingAs($user)->patch(route('management.characters.update', $character), [
+        $response = $this->actingAs($user)->patch(route('characters.update', $character), [
             'specialization_ids' => [$otherSpec->id],
             'raid_specialization_id' => null,
             'is_loot_councillor' => false,
@@ -283,7 +215,7 @@ class CharacterManagementTest extends TestCase
 
         $user = $this->officer();
 
-        $response = $this->actingAs($user)->patch(route('management.characters.update', $character), [
+        $response = $this->actingAs($user)->patch(route('characters.update', $character), [
             'specialization_ids' => [$specs->get(0)->id],
             'raid_specialization_id' => $specs->get(1)->id,
             'is_loot_councillor' => false,
@@ -302,7 +234,7 @@ class CharacterManagementTest extends TestCase
 
         $user = $this->officer();
 
-        $response = $this->actingAs($user)->patch(route('management.characters.update', $character), [
+        $response = $this->actingAs($user)->patch(route('characters.update', $character), [
             'specialization_ids' => [],
             'raid_specialization_id' => null,
             'is_loot_councillor' => false,
@@ -319,7 +251,7 @@ class CharacterManagementTest extends TestCase
 
         $user = $this->officer();
 
-        $this->actingAs($user)->patch(route('management.characters.update', $character), [
+        $this->actingAs($user)->patch(route('characters.update', $character), [
             'specialization_ids' => [],
             'raid_specialization_id' => null,
             'is_loot_councillor' => true,

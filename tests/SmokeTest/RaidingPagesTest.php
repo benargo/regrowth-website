@@ -43,6 +43,15 @@ class RaidingPagesTest extends TestCase
     }
 
     #[Test]
+    public function comps_page_redirects(): void
+    {
+        $response = $this->get(route('raiding.plans.next'));
+
+        $response->assertStatus(303);
+        $response->assertRedirect();
+    }
+
+    #[Test]
     public function raiding_index_loads(): void
     {
         $user = User::factory()->member()->create();

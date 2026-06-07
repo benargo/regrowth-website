@@ -5,78 +5,28 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import FilterDropdown from "@/Components/FilterDropdown";
 import EmptyState from "@/Components/EmptyState";
-import Icon from "@/Components/FontAwesome/Icon";
 import Pill from "@/Components/Pill";
 import SpecIcon from "@/Components/Characters/SpecIcon";
-
-function SearchInput({ value, onChange }) {
-    return (
-        <div className="relative">
-            <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder="Search by name..."
-                className="w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
-            <button
-                onClick={() => onChange("")}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white ${value ? "" : "invisible"}`}
-            >
-                <Icon icon="times" style="solid" />
-            </button>
-        </div>
-    );
-}
-
-function SortableHeader({ column, label, currentColumn, currentDirection, onSort }) {
-    const isActive = currentColumn === column;
-
-    return (
-        <th
-            className="cursor-pointer select-none px-4 py-3 text-left text-sm font-semibold text-amber-500 transition-colors hover:text-amber-400"
-            onClick={() => onSort(column)}
-        >
-            <span className="inline-flex items-center gap-2">
-                {label}
-                <span className="text-xs">
-                    <Icon
-                        icon="sort-up"
-                        style="solid"
-                        className={isActive && currentDirection === "asc" ? "" : "hidden"}
-                    />
-                    <Icon
-                        icon="sort-down"
-                        style="solid"
-                        className={isActive && currentDirection === "desc" ? "" : "hidden"}
-                    />
-                    <Icon icon="sort" style="solid" className={`text-gray-600 ${!isActive ? "" : "hidden"}`} />
-                </span>
-            </span>
-        </th>
-    );
-}
-
-function raidSpec(character) {
-    return Array.isArray(character.specializations)
-        ? (character.specializations.find((s) => s.is_raid_spec) ?? null)
-        : null;
-}
+import SearchInput from "@/Components/SearchInput";
+import SortableTable from "@/Components/SortableTable";
+import raidSpec from "@/Helpers/RaidSpec";
 
 function CharacterRow({ character }) {
     const spec = raidSpec(character);
 
     return (
         <tr
-            className="cursor-pointer transition-colors hover:bg-brown-800/50"
-            onClick={() =>
-                router.visit(
-                    route("management.characters.show", {
-                        character: character.id,
-                        slug: character.slug,
-                    }),
-                )
+            className={character.is_known ? "cursor-pointer transition-colors hover:bg-brown-800/50" : undefined}
+            onClick={
+                character.is_known
+                    ? () =>
+                          router.visit(
+                              route("characters.show", {
+                                  character: character.id,
+                                  slug: character.slug,
+                              }),
+                          )
+                    : undefined
             }
         >
             <td className="px-4 py-3">
@@ -113,15 +63,8 @@ function CharacterRow({ character }) {
 
 function CharacterCard({ character }) {
     const spec = raidSpec(character);
-
-    return (
-        <Link
-            href={route("management.characters.show", {
-                character: character.id,
-                slug: character.slug,
-            })}
-            className="block rounded-lg border border-brown-700 bg-brown-800/50 p-4 transition-colors hover:border-amber-600/40"
-        >
+    const cardContent = (
+        <>
             <div className="mb-3 flex items-center gap-3">
                 <SpecIcon specialization={spec} playableClass={character.playable_class} size={10} />
                 <div className="min-w-0 flex-1">
@@ -149,7 +92,27 @@ function CharacterCard({ character }) {
             <div className="flex items-center text-sm">
                 <span className="text-amber-500">{character.rank?.name ?? "—"}</span>
             </div>
-        </Link>
+        </>
+    );
+
+    if (character.is_known) {
+        return (
+            <Link
+                href={route("characters.show", {
+                    character: character.id,
+                    slug: character.slug,
+                })}
+                className="block rounded-lg border border-brown-700 bg-brown-800/50 p-4 transition-colors hover:border-amber-600/40"
+            >
+                {cardContent}
+            </Link>
+        );
+    }
+
+    return (
+        <div className="block rounded-lg border border-brown-700 bg-brown-800/50 p-4">
+            {cardContent}
+        </div>
     );
 }
 
@@ -190,19 +153,20 @@ export default function Index({ characters, classes, ranks, races }) {
     const [selectedRaces, setSelectedRaces] = useState(() => races?.map((r) => r.id));
     const [selectedRanks, setSelectedRanks] = useState(() => ranks?.map((r) => r.id));
 
-    const handleSort = (column) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-        } else {
-            setSortColumn(column);
-            setSortDirection("asc");
-        }
-    };
+    const classById = useMemo(() => new Map((classes ?? []).map((c) => [c.id, c])), [classes]);
+    const raceById = useMemo(() => new Map((races ?? []).map((r) => [r.id, r])), [races]);
+    const rankByPos = useMemo(() => new Map((ranks ?? []).map((r) => [r.position, r])), [ranks]);
 
     const filteredAndSorted = useMemo(() => {
         if (!Array.isArray(characters)) return [];
 
         return characters
+            .map(({ character, rank }) => ({
+                ...character,
+                playable_class: classById.get(character.playable_class_id) ?? null,
+                playable_race: raceById.get(character.playable_race_id) ?? null,
+                rank: rankByPos.get(rank) ?? null,
+            }))
             .filter((c) => {
                 if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) {
                     return false;
@@ -247,11 +211,11 @@ export default function Index({ characters, classes, ranks, races }) {
                 if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
                 return 0;
             });
-    }, [characters, searchQuery, selectedClasses, selectedRaces, selectedRanks, sortColumn, sortDirection]);
+    }, [characters, classById, raceById, rankByPos, searchQuery, selectedClasses, selectedRaces, selectedRanks, sortColumn, sortDirection]);
 
     return (
-        <div>
-            <SharedHeader title="Characters" />
+        <Master title="Guild Roster">
+            <SharedHeader title="Guild Roster" backgroundClass="bg-stormwind" />
             <PageContainer>
                 {isLoading ? (
                     <IndexSkeleton />
@@ -261,19 +225,19 @@ export default function Index({ characters, classes, ranks, races }) {
                             <SearchInput value={searchQuery} onChange={setSearchQuery} />
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <FilterDropdown
-                                    label="Class"
+                                    label={{singular: "Class", plural: "Classes"}}
                                     options={classes ?? []}
                                     selected={selectedClasses ?? []}
                                     onChange={setSelectedClasses}
                                 />
                                 <FilterDropdown
-                                    label="Race"
+                                    label={{singular: "Race", plural: "Races"}}
                                     options={races ?? []}
                                     selected={selectedRaces ?? []}
                                     onChange={setSelectedRaces}
                                 />
                                 <FilterDropdown
-                                    label="Rank"
+                                    label={{singular: "Rank", plural: "Ranks"}}
                                     options={ranks ?? []}
                                     selected={selectedRanks ?? []}
                                     onChange={setSelectedRanks}
@@ -289,52 +253,18 @@ export default function Index({ characters, classes, ranks, races }) {
                         ) : (
                             <>
                                 <div className="hidden overflow-x-auto md:block">
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="border-b border-brown-700">
-                                                <SortableHeader
-                                                    column="name"
-                                                    label="Name"
-                                                    currentColumn={sortColumn}
-                                                    currentDirection={sortDirection}
-                                                    onSort={handleSort}
-                                                />
-                                                <SortableHeader
-                                                    column="level"
-                                                    label="Level"
-                                                    currentColumn={sortColumn}
-                                                    currentDirection={sortDirection}
-                                                    onSort={handleSort}
-                                                />
-                                                <SortableHeader
-                                                    column="race"
-                                                    label="Race"
-                                                    currentColumn={sortColumn}
-                                                    currentDirection={sortDirection}
-                                                    onSort={handleSort}
-                                                />
-                                                <SortableHeader
-                                                    column="class"
-                                                    label="Class"
-                                                    currentColumn={sortColumn}
-                                                    currentDirection={sortDirection}
-                                                    onSort={handleSort}
-                                                />
-                                                <SortableHeader
-                                                    column="rank"
-                                                    label="Rank"
-                                                    currentColumn={sortColumn}
-                                                    currentDirection={sortDirection}
-                                                    onSort={handleSort}
-                                                />
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-brown-700/50">
-                                            {filteredAndSorted.map((character) => (
-                                                <CharacterRow key={character.id} character={character} />
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <SortableTable
+                                        columns={["name", "level", "race", "class", "rank"]}
+                                        defaultSortColumn="rank"
+                                        onSort={(col, dir) => {
+                                            setSortColumn(col);
+                                            setSortDirection(dir);
+                                        }}
+                                    >
+                                        {filteredAndSorted.map((character) => (
+                                            <CharacterRow key={character.id} character={character} />
+                                        ))}
+                                    </SortableTable>
                                 </div>
 
                                 <div className="space-y-3 md:hidden">
@@ -347,8 +277,6 @@ export default function Index({ characters, classes, ranks, races }) {
                     </>
                 )}
             </PageContainer>
-        </div>
+        </Master>
     );
 }
-
-Index.layout = (page) => <Master>{page}</Master>;

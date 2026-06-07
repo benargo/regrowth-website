@@ -26,7 +26,7 @@ export default function Edit({ character, specializations }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        patch(route("management.characters.update", character.id));
+        patch(route("characters.update", character.id));
     }
 
     function toggleSpec(specId) {
@@ -147,7 +147,7 @@ export default function Edit({ character, specializations }) {
                                 {processing ? "Saving…" : "Save Changes"}
                             </PrimaryButton>
                             <Link
-                                href={route("management.characters.show", {
+                                href={route("characters.show", {
                                     character: character.id,
                                     slug: character.slug,
                                 })}
