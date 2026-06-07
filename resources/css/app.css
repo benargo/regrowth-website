@@ -24,6 +24,7 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+/* Deprecated background, avoid using for new pages */
 .bg-goldshire {
     background-image: url("../images/bg_goldshire.webp");
     background-position: center;
@@ -93,5 +94,11 @@ svg.recharts-surface {
 .bg-ssctk {
     background-image: url("../images/bg_ssctk.webp");
     background-position: center;
+    background-size: cover;
+}
+
+.bg-stormwind {
+    background-image: url("../images/bg_stormwind.webp");
+    background-position: bottom -60px center;
     background-size: cover;
 }
