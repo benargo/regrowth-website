@@ -3,7 +3,7 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Contracts\HasBlizzardIcons;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\PlayableClass;
 use App\Models\PlayableSpecialization;
@@ -29,7 +29,7 @@ class SpecializationSeederTest extends TestCase
         Storage::fake('public');
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 
@@ -182,7 +182,7 @@ class SpecializationSeederTest extends TestCase
         Queue::fake();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: ['code' => 403, 'detail' => 'Forbidden'],
                 status: 403,
             ),
@@ -207,7 +207,7 @@ class SpecializationSeederTest extends TestCase
         Queue::fake();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: '',
                 status: 404,
             ),

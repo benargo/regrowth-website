@@ -6,7 +6,7 @@ use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\Middleware\WriteMirrorToDisk;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use GuzzleHttp\Psr7\HttpFactory;
@@ -36,13 +36,13 @@ class WriteMirrorToDiskTest extends TestCase
         $disk = Storage::fake('public');
 
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, $disk);
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
+        $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
 
         $disk->assertExists('blizzard-cdn/icons/56/foo.jpg');
         $this->assertSame('BINARY', $disk->get('blizzard-cdn/icons/56/foo.jpg'));
@@ -54,7 +54,7 @@ class WriteMirrorToDiskTest extends TestCase
         $disk = Storage::fake('public');
 
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'missing', status: 404),
+            FetchIconRequest::class => MockResponse::make(body: 'missing', status: 404),
         ]);
 
         $connector = new RenderConnector(Region::EU, $disk);
@@ -62,7 +62,7 @@ class WriteMirrorToDiskTest extends TestCase
 
         $this->expectException(MediaNotFoundException::class);
 
-        $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/missing.jpg'));
+        $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/missing.jpg'));
     }
 
     #[Test]
@@ -71,13 +71,13 @@ class WriteMirrorToDiskTest extends TestCase
         $disk = Storage::fake('public');
 
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'oops', status: 503),
+            FetchIconRequest::class => MockResponse::make(body: 'oops', status: 503),
         ]);
 
         $connector = new RenderConnector(Region::EU, $disk);
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
+        $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
 
         $disk->assertMissing('blizzard-cdn/icons/56/foo.jpg');
     }
@@ -88,14 +88,14 @@ class WriteMirrorToDiskTest extends TestCase
         $disk = Storage::fake('public');
 
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, $disk);
         $connector->withMockClient($mock);
 
         /** @var FetchAssetResponse $response */
-        $response = $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
+        $response = $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
 
         $this->assertInstanceOf(FetchAssetResponse::class, $response);
         $this->assertSame('blizzard-cdn/icons/56/foo.jpg', $response->mirroredPath());
@@ -112,7 +112,7 @@ class WriteMirrorToDiskTest extends TestCase
 
         // Build a real PendingRequest so the middleware can resolve the URL
         $connector = new RenderConnector(Region::EU, $disk);
-        $fetchRequest = new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg');
+        $fetchRequest = new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg');
         $pendingRequest = new PendingRequest($connector, $fetchRequest);
 
         $factory = new HttpFactory;

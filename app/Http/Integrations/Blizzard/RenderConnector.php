@@ -22,7 +22,7 @@ class RenderConnector extends Connector
          * Region is retained for middleware wiring (e.g. MirrorPaths) even though it is
          * no longer part of the base URL. Real Blizzard render CDN URLs mix apex and region-path
          * shapes, so the connector returns a region-agnostic base and lets the caller's path
-         * (via FetchAssetRequest) preserve whichever region segment the original URL carried.
+         * (via FetchIconRequest) preserve whichever region segment the original URL carried.
          */
         protected Region $region,
         Filesystem $disk,

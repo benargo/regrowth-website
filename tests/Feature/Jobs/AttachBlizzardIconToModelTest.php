@@ -3,7 +3,7 @@
 namespace Tests\Feature\Jobs;
 
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\Item;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -127,7 +127,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         $item = Item::factory()->create();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $assetUrl = "https://render.worldofwarcraft.com/eu/icons/56/item_{$item->id}.jpg";
@@ -148,7 +148,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         $item = Item::factory()->create();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $assetUrl = "https://render.worldofwarcraft.com/eu/icons/56/item_{$item->id}.jpg";
@@ -168,7 +168,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         $item = Item::factory()->create();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: ['code' => 403], status: 403),
+            FetchIconRequest::class => MockResponse::make(body: ['code' => 403], status: 403),
         ]);
 
         $assetUrl = "https://render.worldofwarcraft.com/eu/icons/56/item_{$item->id}.jpg";
@@ -215,7 +215,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         $item = Item::factory()->create();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $assetUrl = "https://render.worldofwarcraft.com/classicann-eu/icons/56/item_{$item->id}.jpg";
@@ -227,7 +227,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         $media = $item->fresh()->getFirstMedia('blizzard_icons');
         $this->assertSame("item_{$item->id}.jpg", $media->file_name);
 
-        Saloon::assertSent(function (FetchAssetRequest $request) use ($item): bool {
+        Saloon::assertSent(function (FetchIconRequest $request) use ($item): bool {
             return str_contains($request->resolveEndpoint(), "/eu/icons/56/item_{$item->id}.jpg");
         });
     }

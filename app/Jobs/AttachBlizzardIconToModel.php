@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -64,7 +64,7 @@ class AttachBlizzardIconToModel implements ShouldQueue
 
         $url = $this->retailAssetUrl();
         $fileName = $this->getIconName($url);
-        $body = $renderConnector->send(new FetchAssetRequest($url))->body();
+        $body = $renderConnector->send(new FetchIconRequest($url))->body();
 
         $model->addMediaFromString($body)
             ->usingFileName($fileName)

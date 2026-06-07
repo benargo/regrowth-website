@@ -12,7 +12,7 @@ use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\Item;
 use Illuminate\Database\Seeder;
@@ -753,7 +753,7 @@ class ItemSeeder extends Seeder
                 if ($asset !== null) {
                     try {
                         $fileName = (string) Str::of($asset->value)->afterLast('/')->before('?');
-                        $body = $this->renderConnector->send(new FetchAssetRequest($asset->value))->body();
+                        $body = $this->renderConnector->send(new FetchIconRequest($asset->value))->body();
 
                         $model->addMediaFromString($body)
                             ->usingFileName($fileName)

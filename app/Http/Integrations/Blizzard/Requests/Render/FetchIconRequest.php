@@ -23,7 +23,7 @@ use Saloon\Http\Request;
  * used as the endpoint, avoiding the SSRF-flavoured opt-in for absolute-URL
  * endpoint overrides.
  */
-class FetchAssetRequest extends Request implements HasBlizzardIcons
+class FetchIconRequest extends Request implements HasBlizzardIcons
 {
     protected Method $method = Method::GET;
 
@@ -46,7 +46,7 @@ class FetchAssetRequest extends Request implements HasBlizzardIcons
 
             if (! $this->validateHost($host)) {
                 throw new InvalidArgumentException(
-                    "FetchAssetRequest requires a Blizzard render URL; got: {$input}",
+                    "FetchIconRequest requires a Blizzard render URL; got: {$input}",
                 );
             }
 
@@ -54,7 +54,7 @@ class FetchAssetRequest extends Request implements HasBlizzardIcons
 
             if (! $this->validatePath($path)) {
                 throw new InvalidArgumentException(
-                    "FetchAssetRequest requires a URL with a non-empty path; got: {$input}",
+                    "FetchIconRequest requires a URL with a non-empty path; got: {$input}",
                 );
             }
 
@@ -86,7 +86,7 @@ class FetchAssetRequest extends Request implements HasBlizzardIcons
         $connector = $pendingRequest->getConnector();
 
         $pendingRequest->setUrl(
-            $connector->resolveBaseUrl()."/{$connector->getRegion()->value}/icons/{$this->size}/{$iconName}",
+            $connector->getRegion()->renderCdnUrl()."/icons/{$this->size}/{$iconName}",
         );
     }
 

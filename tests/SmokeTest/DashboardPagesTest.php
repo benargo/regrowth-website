@@ -3,7 +3,7 @@
 namespace Tests\SmokeTest;
 
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Permission;
@@ -56,7 +56,7 @@ class DashboardPagesTest extends TestCase
                 'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
                 'members' => [],
             ], status: 200),
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 

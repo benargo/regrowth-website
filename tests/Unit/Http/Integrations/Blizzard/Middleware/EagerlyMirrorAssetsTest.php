@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Middleware;
 
 use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -88,7 +88,7 @@ class EagerlyMirrorAssetsTest extends BlizzardTestCase
                     ],
                 ],
             ], status: 200),
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 }

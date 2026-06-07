@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Requests\ServeIconRequest;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
@@ -35,7 +35,7 @@ class ServeIconController extends Controller implements HasBlizzardIcons
         }
 
         try {
-            $response = $renderConnector->send(new FetchAssetRequest($name, $size));
+            $response = $renderConnector->send(new FetchIconRequest($name, $size));
 
             if ($response->successful()) {
                 return $this->icon(

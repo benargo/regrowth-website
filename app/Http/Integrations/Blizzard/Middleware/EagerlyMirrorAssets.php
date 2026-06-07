@@ -5,7 +5,7 @@ namespace App\Http\Integrations\Blizzard\Middleware;
 use App\Http\Integrations\Blizzard\Attributes\EagerlyMirrorsAssets;
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
 use ReflectionClass;
 use Saloon\Http\Response;
@@ -46,7 +46,7 @@ class EagerlyMirrorAssets
         collect($dto->assets)->each(function (AssetData $asset): void {
             try {
                 /** @var FetchAssetResponse $fetchResponse */
-                $fetchResponse = $this->renderConnector->send(new FetchAssetRequest($asset->value));
+                $fetchResponse = $this->renderConnector->send(new FetchIconRequest($asset->value));
                 $mirroredPath = $fetchResponse->mirroredPath();
 
                 if ($mirroredPath !== null) {

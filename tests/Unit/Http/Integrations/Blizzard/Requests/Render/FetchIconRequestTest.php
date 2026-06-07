@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Render;
 
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,12 +13,12 @@ use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
-class FetchAssetRequestTest extends TestCase
+class FetchIconRequestTest extends TestCase
 {
     #[Test]
     public function it_strips_the_host_for_apex_render_urls(): void
     {
-        $request = new FetchAssetRequest('https://render.worldofwarcraft.com/icons/56/foo.jpg');
+        $request = new FetchIconRequest('https://render.worldofwarcraft.com/icons/56/foo.jpg');
 
         $this->assertSame('/icons/56/foo.jpg', $request->resolveEndpoint());
         $this->assertSame(Method::GET, $request->getMethod());
@@ -27,7 +27,7 @@ class FetchAssetRequestTest extends TestCase
     #[Test]
     public function it_strips_the_host_for_regional_subdomain_render_urls(): void
     {
-        $request = new FetchAssetRequest('https://render-eu.worldofwarcraft.com/icons/56/foo.jpg');
+        $request = new FetchIconRequest('https://render-eu.worldofwarcraft.com/icons/56/foo.jpg');
 
         $this->assertSame('/icons/56/foo.jpg', $request->resolveEndpoint());
     }
@@ -35,7 +35,7 @@ class FetchAssetRequestTest extends TestCase
     #[Test]
     public function it_preserves_an_inline_region_segment_in_the_path(): void
     {
-        $request = new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg');
+        $request = new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg');
 
         $this->assertSame('/eu/icons/56/foo.jpg', $request->resolveEndpoint());
     }
@@ -45,7 +45,7 @@ class FetchAssetRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchAssetRequest('https://example.com/icons/56/foo.jpg');
+        new FetchIconRequest('https://example.com/icons/56/foo.jpg');
     }
 
     #[Test]
@@ -53,7 +53,7 @@ class FetchAssetRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchAssetRequest('https://render.worldofwarcraft.com');
+        new FetchIconRequest('https://render.worldofwarcraft.com');
     }
 
     #[Test]
@@ -61,20 +61,20 @@ class FetchAssetRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchAssetRequest('https://render.worldofwarcraft.com/');
+        new FetchIconRequest('https://render.worldofwarcraft.com/');
     }
 
     #[Test]
     public function it_sends_through_render_connector_to_the_given_url(): void
     {
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $response = $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/icons/56/foo.jpg'));
+        $response = $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/icons/56/foo.jpg'));
 
         $this->assertSame('BINARY', $response->body());
         $this->assertSame(
@@ -87,13 +87,13 @@ class FetchAssetRequestTest extends TestCase
     public function it_composes_paths_with_inline_region_segments_correctly(): void
     {
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
+        $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg',
@@ -105,13 +105,13 @@ class FetchAssetRequestTest extends TestCase
     public function it_builds_an_endpoint_from_an_icon_name_using_the_connectors_region(): void
     {
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchAssetRequest('inv_misc_questionmark'));
+        $connector->send(new FetchIconRequest('inv_misc_questionmark'));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
@@ -123,13 +123,13 @@ class FetchAssetRequestTest extends TestCase
     public function it_builds_an_endpoint_from_an_icon_name_using_the_us_region(): void
     {
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::US, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchAssetRequest('inv_misc_questionmark'));
+        $connector->send(new FetchIconRequest('inv_misc_questionmark'));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/us/icons/56/inv_misc_questionmark.jpg',
@@ -141,13 +141,13 @@ class FetchAssetRequestTest extends TestCase
     public function it_builds_an_endpoint_from_an_icon_name_with_a_custom_size(): void
     {
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchAssetRequest('inv_misc_questionmark', size: 36));
+        $connector->send(new FetchIconRequest('inv_misc_questionmark', size: 36));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/icons/36/inv_misc_questionmark.jpg',
@@ -159,13 +159,13 @@ class FetchAssetRequestTest extends TestCase
     public function it_preserves_an_existing_file_extension_on_an_icon_name(): void
     {
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchAssetRequest('inv_misc_questionmark.jpg'));
+        $connector->send(new FetchIconRequest('inv_misc_questionmark.jpg'));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -36,7 +36,7 @@ class ServeIconControllerTest extends TestCase
         Storage::disk('public')->put('blizzard-cdn/icons/56/inv_bracer_02.jpg', $diskBytes);
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: $apiBytes, status: 200, headers: ['Content-Type' => 'image/jpeg']),
+            FetchIconRequest::class => MockResponse::make(body: $apiBytes, status: 200, headers: ['Content-Type' => 'image/jpeg']),
         ]);
 
         $url = URL::signedRoute('icons.show', ['size' => 56, 'name' => 'inv_bracer_02.jpg']);
@@ -58,7 +58,7 @@ class ServeIconControllerTest extends TestCase
         $bytes = 'API_BINARY_CONTENT';
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: $bytes, status: 200, headers: ['Content-Type' => 'image/jpeg']),
+            FetchIconRequest::class => MockResponse::make(body: $bytes, status: 200, headers: ['Content-Type' => 'image/jpeg']),
         ]);
 
         $url = URL::signedRoute('icons.show', ['size' => 56, 'name' => 'inv_bracer_02.jpg']);
@@ -79,7 +79,7 @@ class ServeIconControllerTest extends TestCase
         Storage::fake('public');
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: '', status: 404),
+            FetchIconRequest::class => MockResponse::make(body: '', status: 404),
         ]);
 
         $url = URL::signedRoute('icons.show', ['size' => 56, 'name' => 'inv_bracer_02.jpg']);
@@ -100,7 +100,7 @@ class ServeIconControllerTest extends TestCase
         Storage::fake('public');
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: '', status: 500),
+            FetchIconRequest::class => MockResponse::make(body: '', status: 500),
         ]);
 
         $url = URL::signedRoute('icons.show', ['size' => 56, 'name' => 'inv_bracer_02.jpg']);
@@ -121,7 +121,7 @@ class ServeIconControllerTest extends TestCase
         Storage::fake('public');
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: 'NOT-THE-QUESTIONMARK', status: 200, headers: ['Content-Type' => 'image/jpeg']),
+            FetchIconRequest::class => MockResponse::make(body: 'NOT-THE-QUESTIONMARK', status: 200, headers: ['Content-Type' => 'image/jpeg']),
         ]);
 
         $url = URL::signedRoute('icons.show', ['size' => 56, 'name' => 'inv_misc_questionmark.jpg']);
