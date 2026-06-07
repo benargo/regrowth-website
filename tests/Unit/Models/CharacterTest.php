@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 class CharacterTest extends ModelTestCase
@@ -498,6 +499,38 @@ class CharacterTest extends ModelTestCase
 
         $character->refresh();
         $this->assertNull($character->rank_id);
+    }
+
+    // HasMedia / character_portrait
+
+    #[Test]
+    public function it_implements_has_media_interface(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(HasMedia::class, $character);
+    }
+
+    #[Test]
+    public function it_registers_character_portrait_collection(): void
+    {
+        $character = $this->create();
+
+        $collections = $character->getRegisteredMediaCollections();
+        $names = array_map(fn ($c) => $c->name, $collections->all());
+
+        $this->assertContains(Character::MEDIA_COLLECTION, $names);
+    }
+
+    #[Test]
+    public function character_portrait_collection_is_single_file(): void
+    {
+        $character = $this->create();
+
+        $collection = $character->getRegisteredMediaCollections()
+            ->firstWhere('name', Character::MEDIA_COLLECTION);
+
+        $this->assertTrue($collection->singleFile);
     }
 
     // warcraft_logs_reports

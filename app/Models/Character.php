@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\HasCharacterMedia;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Raids\Report;
@@ -14,10 +15,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Character extends Model
+class Character extends Model implements HasCharacterMedia, HasMedia
 {
-    use HasFactory, Prunable;
+    use HasFactory, InteractsWithMedia, Prunable;
 
     /**
      * The attributes that are the model's default values.
@@ -73,6 +76,13 @@ class Character extends Model
         'updated' => CharacterUpdated::class,
         'deleted' => CharacterDeleted::class,
     ];
+
+    // ============ Media ============
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::MEDIA_COLLECTION)->singleFile();
+    }
 
     // ============ Custom attributes ============
 

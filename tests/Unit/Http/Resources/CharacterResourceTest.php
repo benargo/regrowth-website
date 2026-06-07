@@ -15,6 +15,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -41,6 +43,7 @@ class CharacterResourceTest extends TestCase
         $this->assertArrayHasKey('playable_race', $array);
         $this->assertArrayHasKey('pivot', $array);
         $this->assertArrayHasKey('rank', $array);
+        $this->assertArrayHasKey('portrait_url', $array);
     }
 
     #[Test]
@@ -199,6 +202,46 @@ class CharacterResourceTest extends TestCase
 
         $this->assertIsArray($array['specializations']);
         $this->assertCount(2, $array['specializations']);
+    }
+
+    // portrait_url
+
+    #[Test]
+    public function it_includes_portrait_url_key(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertArrayHasKey('portrait_url', $array);
+    }
+
+    #[Test]
+    public function it_returns_null_portrait_url_when_no_media_attached(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertNull($array['portrait_url']);
+    }
+
+    #[Test]
+    public function it_returns_signed_portrait_url_when_media_attached(): void
+    {
+        Storage::fake('public');
+
+        $character = Character::factory()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->withCustomProperties(['size' => 135])
+            ->toMediaCollection(Character::MEDIA_COLLECTION);
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertNotNull($array['portrait_url']);
+        $this->assertStringContainsString('/icons/135/character_15678.jpg', $array['portrait_url']);
+        $this->assertTrue(URL::hasValidSignature(request()->create($array['portrait_url'])));
     }
 
     #[Test]
