@@ -17,11 +17,16 @@ class DailyQuestsMessage extends Notification
     use UpdatesExisting;
 
     /**
-     * The daily quests to include in the notification, keyed by their DailyQuestType case name (e.g. 'Cooking', 'Fishing', 'Dungeon', 'Heroic', 'PvP').
+     * The daily quest references to include in the notification, keyed by their
+     * DailyQuestType case name (e.g. 'Cooking', 'Fishing', 'Dungeon', 'Heroic', 'PvP').
      *
-     * @var iterable<DailyQuestType, DailyQuest|null>
+     * Stored as lightweight identifier arrays rather than full models so the
+     * notification stays JSON-encodable when queued. Hydrated on demand when
+     * building the message.
+     *
+     * @var array<string, array{model_id: int|string, model_type: class-string<DailyQuest>}|null>
      */
-    public iterable $dailyQuests;
+    public array $dailyQuests;
 
     /**
      * The Discord role to mention in the notification message (e.g. "Daily Quests Subscribers")
@@ -29,11 +34,16 @@ class DailyQuestsMessage extends Notification
     private ?DiscordRole $subscribersRole;
 
     /**
-     * @param  iterable<DailyQuestType, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their DailyQuestType case name
+     * @param  iterable<string, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their DailyQuestType case name
      */
     public function __construct(iterable $dailyQuests)
     {
-        $this->dailyQuests = $dailyQuests;
+        $this->dailyQuests = collect($dailyQuests)
+            ->map(fn (?DailyQuest $quest) => $quest === null ? null : [
+                'model_id' => $quest->getKey(),
+                'model_type' => $quest::class,
+            ])
+            ->all();
 
         // Load the "Daily Quests Subscribers" role from the database to include in the message payload
         $this->subscribersRole = DiscordRole::find(config('services.discord.roles.daily_quest_subscribers'));
@@ -47,11 +57,13 @@ class DailyQuestsMessage extends Notification
         $embedFields = collect([]);
 
         foreach (DailyQuestType::map() as $key => $label) {
-            if ($this->dailyQuests[$key] === null) {
+            $quest = $this->hydrate($this->dailyQuests[$key] ?? null);
+
+            if ($quest === null) {
                 continue;
             }
 
-            $embedFields->push(new EmbedField($label, $this->dailyQuests[$key]->display_name, false));
+            $embedFields->push(new EmbedField($label, $quest->display_name, false));
         }
 
         if ($this->sender()) {

@@ -20,14 +20,9 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
 {
     use UpdatesExisting;
 
-    /** The event that triggered the raid assignments to be published. */
-    public Event $event;
-
     public function __construct(Event $event)
     {
-        $this->event = $event;
-
-        $this->withRelatedModels([$this->event]);
+        $this->withRelatedModels([$event]);
     }
 
     /**
@@ -70,13 +65,16 @@ class RaidAssignmentsPublished extends Notification implements ShouldBroadcast
      */
     public function toMessage(): MessagePayload
     {
+        /** @var Event $event */
+        $event = $this->hydrateOrFail($this->relatedModel(Event::class));
+
         return MessagePayload::from([
             'embeds' => [Embed::from([
                 'title' => 'Assignments posted for tonight!',
                 'type' => EmbedType::Rich,
                 'description' => 'Assignments for tonight have been posted. Please familiarise yourself with your duties this evening.',
-                'url' => route('raiding.plans.show', ['event' => $this->event]),
-                'color' => $this->event->color ? hexdec($this->event->color) : 7768390,
+                'url' => route('raiding.plans.show', ['event' => $event]),
+                'color' => $event->color ? hexdec($event->color) : 7768390,
                 'footer' => $this->embedFooter(),
                 'image' => $this->embedMedia(),
                 'timestamp' => now()->toIso8601String(),

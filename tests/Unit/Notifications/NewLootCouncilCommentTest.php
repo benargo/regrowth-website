@@ -116,6 +116,31 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertArrayHasKey('embeds', $data['payload']);
     }
 
+    #[Test]
+    public function it_stores_the_related_comment_as_an_id_reference_not_a_full_model(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $related = (new NewLootCouncilComment($comment))->mapRelatedModels();
+
+        $this->assertSame([
+            ['model_id' => $comment->getKey(), 'model_type' => Comment::class],
+        ], $related);
+    }
+
+    #[Test]
+    public function it_produces_a_json_encodable_queue_payload(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $serialized = serialize(new NewLootCouncilComment($comment));
+
+        $this->assertNotFalse(
+            json_encode(['command' => $serialized], JSON_UNESCAPED_UNICODE),
+            'Queue payload must be JSON-encodable: '.json_last_error_msg(),
+        );
+    }
+
     private function makeNotifiable(): NotifiableChannel
     {
         return new NotifiableChannel(Channel::from(['id' => '123456789']));

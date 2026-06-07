@@ -290,7 +290,9 @@ class RaidAssignmentsPublishedTest extends TestCase
         $unserialized = unserialize($serialized);
 
         $this->assertInstanceOf(RaidAssignmentsPublished::class, $unserialized);
-        $this->assertSame($event->getKey(), $unserialized->event->getKey());
+        $this->assertSame([
+            ['model_id' => $event->getKey(), 'model_type' => Event::class],
+        ], $unserialized->mapRelatedModels());
     }
 
     #[Test]
@@ -303,5 +305,21 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $this->assertInstanceOf(RaidAssignmentsPublished::class, $unserialized);
         $this->assertNotNull($unserialized->toMessage());
+    }
+
+    #[Test]
+    public function it_produces_a_json_encodable_queue_payload_when_the_event_has_a_binary_color(): void
+    {
+        // The events.color column is varbinary, so the model's raw attribute holds bytes
+        // that are not valid UTF-8. The queue serialises the notification and json_encodes
+        // it (JSON_UNESCAPED_UNICODE); a related model carrying those raw bytes breaks it.
+        $event = Event::factory()->create(['color' => 0x76C846]);
+
+        $serialized = serialize(new RaidAssignmentsPublished($event));
+
+        $this->assertNotFalse(
+            json_encode(['command' => $serialized], JSON_UNESCAPED_UNICODE),
+            'Queue payload must be JSON-encodable: '.json_last_error_msg(),
+        );
     }
 }

@@ -13,9 +13,8 @@ use Illuminate\Support\Str;
 
 class NewLootCouncilComment extends Notification
 {
-    public function __construct(
-        public Comment $comment,
-    ) {
+    public function __construct(Comment $comment)
+    {
         $this->withRelatedModels([$comment])
             ->withSender($comment->user);
     }
@@ -25,15 +24,18 @@ class NewLootCouncilComment extends Notification
      */
     public function toMessage(): MessagePayload
     {
-        $item = $this->comment->item;
-        $user = $this->comment->user;
+        /** @var Comment $comment */
+        $comment = $this->hydrateOrFail($this->relatedModel(Comment::class));
+
+        $item = $comment->item;
+        $user = $comment->user;
         $itemName = $this->resolveItemName($item->id);
 
         $description = sprintf(
             "New comment posted by <@%s> on **%s**\n\n%s",
             $user->id,
             $itemName,
-            $this->comment->body,
+            $comment->body,
         );
 
         $itemUrl = route('loot.items.show', [
@@ -47,7 +49,7 @@ class NewLootCouncilComment extends Notification
                 'url' => $itemUrl,
                 'color' => 5814783,
                 'description' => $description,
-                'timestamp' => $this->comment->created_at->toIso8601String(),
+                'timestamp' => $comment->created_at->toIso8601String(),
             ])],
         ]);
     }
