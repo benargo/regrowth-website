@@ -116,21 +116,18 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                             options={zones}
                             selected={selectedZoneIds}
                             onChange={setSelectedZoneIds}
-                            dusk="filter-zone"
                         />
                         <FilterDropdown
                             label={{ singular: "Tag", plural: "Tags" }}
                             options={guildTags}
                             selected={selectedGuildTagIds}
                             onChange={setSelectedGuildTagIds}
-                            dusk="filter-guild-tag"
                         />
                         <FilterDropdown
                             label={{ singular: "Day", plural: "Days" }}
                             options={DAYS}
                             selected={selectedDays}
                             onChange={setSelectedDays}
-                            dusk="filter-day"
                         />
                         <DateFilterButton
                             label="After"

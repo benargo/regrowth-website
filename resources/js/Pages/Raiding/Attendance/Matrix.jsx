@@ -14,7 +14,7 @@ import FilterDropdown from "@/Components/FilterDropdown";
 
 // ─── Filter components ────────────────────────────────────────────────────────
 
-function SearchInput({ value, onChange, placeholder = "Search by name...", dusk }) {
+function SearchInput({ value, onChange, placeholder = "Search by name..." }) {
     return (
         <div className="relative">
             <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -23,7 +23,6 @@ function SearchInput({ value, onChange, placeholder = "Search by name...", dusk 
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                dusk={dusk}
                 className="w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
             />
             {value && (
@@ -39,7 +38,7 @@ function SearchInput({ value, onChange, placeholder = "Search by name...", dusk 
 }
 
 
-function ToggleFilter({ label, value, onChange, dusk }) {
+function ToggleFilter({ label, value, onChange }) {
     return (
         <label className="flex cursor-pointer items-center gap-3 rounded border border-amber-600 bg-brown-800 px-4 py-2">
             <span className="text-sm text-white">{label}</span>
@@ -48,7 +47,6 @@ function ToggleFilter({ label, value, onChange, dusk }) {
                     type="checkbox"
                     checked={value}
                     onChange={(e) => onChange(e.target.checked)}
-                    dusk={dusk}
                     className="peer sr-only"
                 />
                 <div className="h-6 w-10 rounded-full bg-brown-700 transition-colors peer-checked:bg-amber-600" />
