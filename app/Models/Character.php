@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\HasCharacterMedia;
+use App\Enums\Gender;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Raids\Report;
@@ -43,6 +44,7 @@ class Character extends Model implements HasCharacterMedia, HasMedia
         'rank_id',
         'playable_class_id',
         'playable_race_id',
+        'gender',
         'is_main',
         'is_loot_councillor',
     ];
@@ -53,6 +55,7 @@ class Character extends Model implements HasCharacterMedia, HasMedia
      * @var array
      */
     protected $casts = [
+        'gender' => Gender::class,
         'is_main' => 'boolean',
         'is_loot_councillor' => 'boolean',
     ];

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\Gender;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Character;
@@ -47,6 +48,7 @@ class CharacterTest extends ModelTestCase
             'rank_id',
             'playable_class_id',
             'playable_race_id',
+            'gender',
             'is_main',
             'is_loot_councillor',
         ]);
@@ -58,6 +60,7 @@ class CharacterTest extends ModelTestCase
         $model = new Character;
 
         $this->assertCasts($model, [
+            'gender' => Gender::class,
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
         ]);
