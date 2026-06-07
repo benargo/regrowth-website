@@ -257,7 +257,7 @@ class DashboardPagesTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('management.characters.index'));
+        $response = $this->actingAs($user)->get(route('characters.index'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page->component('Roster/Index'));
@@ -270,11 +270,11 @@ class DashboardPagesTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(
-            route('management.characters.show', ['character' => $character, 'slug' => $character->slug])
+            route('characters.show', ['character' => $character, 'slug' => $character->slug])
         );
 
         $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page->component('Manage/Characters/Show'));
+        $response->assertInertia(fn (Assert $page) => $page->component('Roster/Characters/Show'));
     }
 
     #[Test]
@@ -285,7 +285,7 @@ class DashboardPagesTest extends TestCase
         $user = User::factory()->officer()->create();
 
         $response = $this->actingAs($user)->get(
-            route('management.characters.edit', ['character' => $character, 'slug' => $character->slug])
+            route('characters.edit', ['character' => $character, 'slug' => $character->slug])
         );
 
         $response->assertOk();

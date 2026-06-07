@@ -4,6 +4,7 @@ namespace Tests\SmokeTest;
 
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
+use App\Models\Character;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -17,7 +18,7 @@ class PublicPagesTest extends TestCase
     #[Test]
     public function home_page_loads(): void
     {
-        $response = $this->get('/');
+        $response = $this->get(route('home'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -35,25 +36,30 @@ class PublicPagesTest extends TestCase
             ], status: 200),
         ]);
 
-        $response = $this->get('/roster');
+        $response = $this->get(route('characters.index'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
 
     #[Test]
-    public function comps_page_redirects(): void
+    public function character_show_page_loads(): void
     {
-        $response = $this->get('/comps');
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
 
-        $response->assertStatus(303);
-        $response->assertRedirect();
+        $response = $this->get(route('characters.show', [
+            'character' => $character,
+            'slug' => $character->slug,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Regrowth');
     }
 
     #[Test]
     public function battlenet_usage_page_loads(): void
     {
-        $response = $this->get('/info/battlenet-usage');
+        $response = $this->get(route('battlenet-usage'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -62,7 +68,7 @@ class PublicPagesTest extends TestCase
     #[Test]
     public function privacy_policy_page_loads(): void
     {
-        $response = $this->get('/info/privacy');
+        $response = $this->get(route('privacypolicy'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');
@@ -71,7 +77,7 @@ class PublicPagesTest extends TestCase
     #[Test]
     public function daily_quests_page_loads(): void
     {
-        $response = $this->get('/daily-quests');
+        $response = $this->get(route('daily-quests.index'));
 
         $response->assertOk();
         $response->assertSee('Regrowth');

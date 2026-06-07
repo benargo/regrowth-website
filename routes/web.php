@@ -17,7 +17,6 @@ use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
-use App\Http\Controllers\GuildRosterController;
 use App\Http\Controllers\Loot\CommentController;
 use App\Http\Controllers\Loot\ItemController;
 use App\Http\Controllers\Loot\LootController;
@@ -45,7 +44,19 @@ Route::get('/icons/{size}/{name}', ServeIconController::class)
 /**
  * Guild Roster
  */
-Route::get('/roster', GuildRosterController::class)->name('roster');
+Route::get('/roster', [CharacterController::class, 'index'])
+    ->name('characters.index');
+Route::get('/roster/characters', fn () => redirect()->route('characters.index', status: 303));
+Route::get('/roster/characters/{character}/{slug}', [CharacterController::class, 'show'])
+    ->name('characters.show');
+
+/**
+ * Character management
+ */
+Route::get('/manage/characters/{character}/{slug}/edit', [CharacterController::class, 'edit'])
+    ->name('characters.edit');
+Route::patch('/manage/characters/{character}', [CharacterController::class, 'update'])
+    ->name('characters.update');
 
 /**
  * Loot Bias Tools
@@ -124,14 +135,6 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
     Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'edit'])->name('boss-strategies.edit');
     Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->name('boss-strategies.update');
-
-    /**
-     * Characters
-     */
-    Route::get('/characters', [CharacterController::class, 'index'])->name('characters.index');
-    Route::get('/characters/{character}/{slug}', [CharacterController::class, 'show'])->name('characters.show');
-    Route::get('/characters/{character}/{slug}/edit', [CharacterController::class, 'edit'])->name('characters.edit');
-    Route::patch('/characters/{character}', [CharacterController::class, 'update'])->name('characters.update');
 
     /**
      * Daily quests
