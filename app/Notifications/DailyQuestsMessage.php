@@ -19,9 +19,9 @@ class DailyQuestsMessage extends Notification
     /**
      * The daily quests to include in the notification, keyed by their DailyQuestType case name (e.g. 'Cooking', 'Fishing', 'Dungeon', 'Heroic', 'PvP').
      *
-     * @var iterable<DailyQuestType, DailyQuest|null>
+     * @var array<string, DailyQuest|null>
      */
-    public iterable $dailyQuests;
+    public array $dailyQuests;
 
     /**
      * The Discord role to mention in the notification message (e.g. "Daily Quests Subscribers")
@@ -29,9 +29,9 @@ class DailyQuestsMessage extends Notification
     private ?DiscordRole $subscribersRole;
 
     /**
-     * @param  iterable<DailyQuestType, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their DailyQuestType case name
+     * @param  array<string, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their DailyQuestType case name
      */
-    public function __construct(iterable $dailyQuests)
+    public function __construct(array $dailyQuests)
     {
         $this->dailyQuests = $dailyQuests;
 
