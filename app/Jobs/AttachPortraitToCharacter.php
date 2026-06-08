@@ -3,7 +3,12 @@
 namespace App\Jobs;
 
 use App\Contracts\HasCharacterMedia;
+use App\Enums\Gender;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
+use App\Http\Integrations\Blizzard\Middleware\MergeUriQuery;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest;
 use App\Models\Character;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,7 +17,7 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Str;
 use Illuminate\Support\Uri;
 
-class AttachPortraitToCharacter implements ShouldQueue
+class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
 {
     use Queueable;
 
@@ -24,7 +29,7 @@ class AttachPortraitToCharacter implements ShouldQueue
         public readonly int $characterId,
         Uri|string $assetUrl,
     ) {
-        $this->assetUrl = $assetUrl instanceof Uri ? $assetUrl : Uri::of($assetUrl);
+        $this->assetUrl = is_a($assetUrl, Uri::class) ? $assetUrl : Uri::of($assetUrl);
     }
 
     /**
@@ -54,25 +59,63 @@ class AttachPortraitToCharacter implements ShouldQueue
         return ['blizzard', 'character:'.$this->characterId];
     }
 
-    public function handle(RenderConnector $renderConnector): void
+    public function handle(RenderConnector $renderConnector, BlizzardConnector $blizzardConnector): void
     {
         $character = Character::findOrFail($this->characterId);
 
-        if ($character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION)) {
+        $this->syncGender($character, $blizzardConnector);
+
+        if ($character->hasMedia(self::MEDIA_COLLECTION)) {
             return;
         }
 
-        $fileName = $this->getPortraitFileName($this->assetUrl);
-        $body = $renderConnector->send(new FetchCharacterPortraitRequest($this->assetUrl))->body();
+        $assetUrl = $this->withFallback($character);
+        $fileName = $this->assetUrl->pathSegments()->last();
+        $request = new FetchCharacterPortraitRequest($assetUrl);
+
+        if ($assetUrl->query()->all() !== []) {
+            $request->middleware()->onRequest(new MergeUriQuery($assetUrl), 'mergeUriQuery');
+        }
+
+        $body = $renderConnector->send($request)->body();
 
         $character->addMediaFromString($body)
             ->usingFileName($fileName)
-            ->withCustomProperties(['size' => HasCharacterMedia::DEFAULT_MEDIA_SIZE])
-            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
+            ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
+            ->toMediaCollection(self::MEDIA_COLLECTION);
     }
 
-    private function getPortraitFileName(Uri $url): string
+    /**
+     * Fetches the character's gender from the Blizzard API and persists it if not already set.
+     * Failures are swallowed so portrait attachment can still proceed.
+     */
+    private function syncGender(Character $character, BlizzardConnector $blizzardConnector): void
     {
-        return (string) Str::of((string) $url->path())->afterLast('/');
+        if ($character->gender !== null) {
+            return;
+        }
+
+        try {
+            $profile = $blizzardConnector->send(new GetCharacterProfileRequest(
+                $blizzardConnector->defaultRealmSlug(),
+                Str::lower($character->name),
+            ))->dto();
+
+            $character->gender = Gender::from(data_get($profile, 'gender.name'));
+            $character->saveQuietly();
+        } catch (BlizzardRequestException|\ValueError) {
+            // Gender sync is best-effort; portrait attachment can still proceed.
+        }
+    }
+
+    private function withFallback(Character $character): Uri
+    {
+        if ($character->playable_race_id === null || $character->gender === null) {
+            return $this->assetUrl;
+        }
+
+        return $this->assetUrl->withQuery([
+            'alt' => "/shadow/avatar/{$character->playable_race_id}-{$character->gender->id()}.jpg",
+        ]);
     }
 }
