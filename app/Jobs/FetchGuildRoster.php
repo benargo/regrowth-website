@@ -2,11 +2,15 @@
 
 namespace App\Jobs;
 
+use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
 use App\Models\GuildRank;
+use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -72,14 +76,20 @@ class FetchGuildRoster implements ShouldQueue
             return;
         }
 
+        $characterDto = $blizzard->send(new GetCharacterProfileRequest(
+            $blizzard->defaultRealmSlug(),
+            $member->character->name
+        ))->dto();
+
         $guildRank = GuildRank::where('position', $member->rank)->firstOrFail();
 
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([
             'name' => $member->character->name,
             'level' => $member->character->level,
-            'playable_class_id' => $member->character->playableClass?->id,
-            'playable_race_id' => $member->character->playableRace?->id,
+            'playable_class_id' => PlayableClass::find(data_get($characterDto, 'characterClass.id'))?->getKey(),
+            'playable_race_id' => PlayableRace::find(data_get($characterDto, 'race.id'))?->getKey(),
+            'gender' => Gender::from(data_get($characterDto, 'gender.name')),
         ]);
 
         Character::withoutEvents(function () use ($character, $guildRank) {

@@ -2,13 +2,16 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Enums\Gender;
 use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Jobs\FetchGuildRoster;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,14 +66,11 @@ class FetchGuildRosterTest extends TestCase
         GuildRank::factory()->create(['position' => 0]);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
                 $this->memberPayload(1, 'Alpha', 70, 1),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
         ]);
 
         (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
@@ -84,16 +84,14 @@ class FetchGuildRosterTest extends TestCase
     {
         GuildRank::factory()->create(['position' => 0]);
         PlayableClass::factory()->create(['id' => 2, 'name' => 'Shaman']);
+        PlayableRace::factory()->create(['id' => 3, 'name' => 'Orc']);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(999, 'Thrall', 80, 2, 3, 'Orc', 0),
+                $this->memberPayload(999, 'Thrall', 80, 0),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(classId: 2, raceId: 3), status: 200),
         ]);
 
         (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
@@ -111,17 +109,15 @@ class FetchGuildRosterTest extends TestCase
     {
         $rank = GuildRank::factory()->create(['position' => 0]);
         PlayableClass::factory()->create(['id' => 2, 'name' => 'Shaman']);
+        PlayableRace::factory()->create(['id' => 3, 'name' => 'Orc']);
         Character::factory()->create(['id' => 999, 'name' => 'OldName', 'level' => 70, 'rank_id' => $rank->id]);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(999, 'Thrall', 80, 2, 3, 'Orc', 0),
+                $this->memberPayload(999, 'Thrall', 80, 0),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(classId: 2, raceId: 3), status: 200),
         ]);
 
         (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
@@ -139,16 +135,14 @@ class FetchGuildRosterTest extends TestCase
     {
         GuildRank::factory()->create(['position' => 0]);
         PlayableClass::factory()->create(['id' => 5, 'name' => 'Priest']);
+        PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(1, 'Alpha', 70, 5, 1, 'Human', 0),
+                $this->memberPayload(1, 'Alpha', 70, 0),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(classId: 5, raceId: 1), status: 200),
         ]);
 
         (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
@@ -161,16 +155,14 @@ class FetchGuildRosterTest extends TestCase
     public function it_saves_the_character_without_a_class_when_not_in_the_local_table(): void
     {
         GuildRank::factory()->create(['position' => 0]);
+        PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(1, 'Alpha', 70, 5, 1, 'Human', 0),
+                $this->memberPayload(1, 'Alpha', 70, 0),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(classId: 5, raceId: 1), status: 200),
         ]);
 
         $this->assertDatabaseMissing('playable_classes', ['id' => 5]);
@@ -189,13 +181,9 @@ class FetchGuildRosterTest extends TestCase
         GuildRank::factory()->create(['position' => 0]);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(55, 'Lowbie', 59, 1, 1, 'Human', 0),
+                $this->memberPayload(55, 'Lowbie', 59, 0),
             ]), status: 200),
         ]);
 
@@ -204,77 +192,20 @@ class FetchGuildRosterTest extends TestCase
         $this->assertDatabaseMissing('characters', ['id' => 55]);
     }
 
-    #[Group('error-handling')]
-    #[Test]
-    public function it_logs_and_continues_to_the_next_member_when_one_fails(): void
-    {
-        GuildRank::factory()->create(['position' => 0]);
-
-        Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
-            GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                // First member has an unknown rank (99) and fails on firstOrFail().
-                $this->memberPayload(1, 'FailChar', 70, 1, 1, 'Human', 99),
-                // Second member has a valid rank and should still sync.
-                $this->memberPayload(2, 'GoodChar', 70, 1, 1, 'Human', 0),
-            ]), status: 200),
-        ]);
-
-        Log::shouldReceive('warning')->once()->withArgs(function ($message, $context) {
-            return $message === 'Failed to sync character from guild roster.'
-                && $context['character_id'] === 1;
-        });
-
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
-
-        $this->assertDatabaseMissing('characters', ['id' => 1]);
-        $this->assertDatabaseHas('characters', ['id' => 2, 'name' => 'GoodChar']);
-    }
-
-    #[Group('error-handling')]
-    #[Test]
-    public function it_logs_and_continues_when_guild_rank_is_missing(): void
-    {
-        Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
-            GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(1, 'NoRankChar', 70, 1, 1, 'Human', 99),
-            ]), status: 200),
-        ]);
-
-        Log::shouldReceive('warning')->once()->withArgs(function ($message, $context) {
-            return $message === 'Failed to sync character from guild roster.'
-                && $context['character_id'] === 1;
-        });
-
-        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
-
-        $this->assertDatabaseMissing('characters', ['id' => 1]);
-    }
-
     #[Group('character-synchronisation')]
     #[Test]
-    public function it_stores_playable_race_from_roster_link_data_without_extra_api_call(): void
+    public function it_stores_playable_race_from_profile_data(): void
     {
         GuildRank::factory()->create(['position' => 0]);
+        PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        PlayableRace::factory()->create(['id' => 7, 'name' => 'Gnome']);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(1, 'Alpha', 70, 1, 7, 'Gnome', 0),
+                $this->memberPayload(1, 'Alpha', 70, 0),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(classId: 1, raceId: 7), status: 200),
         ]);
 
         (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
@@ -290,6 +221,8 @@ class FetchGuildRosterTest extends TestCase
     public function it_touches_every_character_present_in_the_roster(): void
     {
         $rank = GuildRank::factory()->create(['position' => 0]);
+        PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
         $rosterMember = Character::factory()->create([
             'id' => 500,
             'name' => 'RosterChar',
@@ -302,14 +235,11 @@ class FetchGuildRosterTest extends TestCase
         ]);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(500, 'RosterChar', 70, 1, 1, 'Human', 0),
+                $this->memberPayload(500, 'RosterChar', 70, 0),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(classId: 1, raceId: 1), status: 200),
         ]);
 
         $beforeMember = $rosterMember->updated_at;
@@ -337,19 +267,106 @@ class FetchGuildRosterTest extends TestCase
         GuildRank::factory()->create(['position' => 0]);
 
         Saloon::fake([
-            'battle.net/oauth/token' => MockResponse::make([
-                'access_token' => 'test_token',
-                'token_type' => 'bearer',
-                'expires_in' => 3600,
-            ]),
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
             GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
-                $this->memberPayload(1, 'Alpha', 70, 1, 1, 'Human', 0),
+                $this->memberPayload(1, 'Alpha', 70, 0),
             ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
         ]);
 
         (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
 
         Event::assertNotDispatched(CharacterUpdated::class);
+    }
+
+    #[Group('gender')]
+    #[Test]
+    public function it_stores_male_gender_from_the_character_profile(): void
+    {
+        GuildRank::factory()->create(['position' => 0]);
+
+        Saloon::fake([
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
+                $this->memberPayload(1, 'Thrall', 70, 0),
+            ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(gender: 'Male'), status: 200),
+        ]);
+
+        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+
+        $this->assertSame(Gender::MALE, Character::find(1)->gender);
+    }
+
+    #[Group('gender')]
+    #[Test]
+    public function it_stores_female_gender_from_the_character_profile(): void
+    {
+        GuildRank::factory()->create(['position' => 0]);
+
+        Saloon::fake([
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
+                $this->memberPayload(2, 'Sylvanas', 70, 0),
+            ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(gender: 'Female'), status: 200),
+        ]);
+
+        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+
+        $this->assertSame(Gender::FEMALE, Character::find(2)->gender);
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_logs_and_continues_to_the_next_member_when_one_fails(): void
+    {
+        GuildRank::factory()->create(['position' => 0]);
+        PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
+        PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
+
+        Saloon::fake([
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
+                // First member has an unknown rank (99) and fails on firstOrFail().
+                $this->memberPayload(1, 'FailChar', 70, 99),
+                // Second member has a valid rank and should still sync.
+                $this->memberPayload(2, 'GoodChar', 70, 0),
+            ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
+        ]);
+
+        Log::shouldReceive('warning')->once()->withArgs(function ($message, $context) {
+            return $message === 'Failed to sync character from guild roster.'
+                && $context['character_id'] === 1;
+        });
+
+        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseMissing('characters', ['id' => 1]);
+        $this->assertDatabaseHas('characters', ['id' => 2, 'name' => 'GoodChar']);
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_logs_and_continues_when_guild_rank_is_missing(): void
+    {
+        Saloon::fake([
+            'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            GetGuildRosterRequest::class => MockResponse::make(body: $this->rosterPayload([
+                $this->memberPayload(1, 'NoRankChar', 70, 99),
+            ]), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
+        ]);
+
+        Log::shouldReceive('warning')->once()->withArgs(function ($message, $context) {
+            return $message === 'Failed to sync character from guild roster.'
+                && $context['character_id'] === 1;
+        });
+
+        (new FetchGuildRoster)->handle(app(BlizzardConnector::class));
+
+        $this->assertDatabaseMissing('characters', ['id' => 1]);
     }
 
     /**
@@ -371,7 +388,7 @@ class FetchGuildRosterTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function memberPayload(int $id, string $name, int $level, int $classId = 1, int $raceId = 1, string $raceName = 'Human', int $rank = 0): array
+    private function memberPayload(int $id, string $name, int $level, int $rank = 0): array
     {
         return [
             'character' => [
@@ -379,11 +396,39 @@ class FetchGuildRosterTest extends TestCase
                 'name' => $name,
                 'id' => $id,
                 'level' => $level,
-                'playable_class' => ['key' => ['href' => "https://example.test/class/{$classId}"], 'name' => 'Warrior', 'id' => $classId],
-                'playable_race' => ['key' => ['href' => "https://example.test/race/{$raceId}"], 'name' => $raceName, 'id' => $raceId],
+                'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
+                'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
                 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
             ],
             'rank' => $rank,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function makeProfileResponse(string $gender = 'Male', int $classId = 1, int $raceId = 1): array
+    {
+        return [
+            'id' => 1,
+            'name' => 'Testcharacter',
+            'gender' => ['type' => strtoupper($gender), 'name' => $gender],
+            'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
+            'race' => ['key' => ['href' => "https://example.test/race/{$raceId}"], 'name' => 'Orc', 'id' => $raceId],
+            'character_class' => ['key' => ['href' => "https://example.test/class/{$classId}"], 'name' => 'Shaman', 'id' => $classId],
+            'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
+            'level' => 70,
+            'last_login_timestamp' => 0,
+            'average_item_level' => 0,
+            'equipped_item_level' => 0,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function makeTokenResponse(): array
+    {
+        return ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600];
     }
 }
