@@ -70,7 +70,8 @@ class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
         }
 
         $assetUrl = $this->withFallback($character);
-        $fileName = $this->assetUrl->pathSegments()->last();
+        $fileName = $this->assetUrl->pathSegments()->last()
+            ?? throw new \ValueError("Cannot extract filename from asset URL: {$this->assetUrl}");
         $request = new FetchCharacterPortraitRequest($assetUrl);
 
         if ($assetUrl->query()->all() !== []) {

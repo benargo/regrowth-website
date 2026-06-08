@@ -89,7 +89,7 @@ class FetchGuildRoster implements ShouldQueue
             'level' => $member->character->level,
             'playable_class_id' => PlayableClass::find(data_get($characterDto, 'characterClass.id'))?->getKey(),
             'playable_race_id' => PlayableRace::find(data_get($characterDto, 'race.id'))?->getKey(),
-            'gender' => Gender::from(data_get($characterDto, 'gender.name')),
+            'gender' => Gender::tryFrom(data_get($characterDto, 'gender.name')),
         ]);
 
         Character::withoutEvents(function () use ($character, $guildRank) {
