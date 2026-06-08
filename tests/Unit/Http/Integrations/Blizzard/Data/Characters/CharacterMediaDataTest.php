@@ -47,7 +47,7 @@ class CharacterMediaDataTest extends TestCase
         $this->assertSame('avatar', $dto->assets[0]->key);
         $this->assertSame(
             'https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg',
-            $dto->assets[0]->value,
+            (string) $dto->assets[0]->value,
         );
     }
 
