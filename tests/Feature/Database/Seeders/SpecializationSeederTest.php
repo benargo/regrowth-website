@@ -3,7 +3,7 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Contracts\HasBlizzardIcons;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\PlayableClass;
 use App\Models\PlayableSpecialization;
@@ -29,7 +29,7 @@ class SpecializationSeederTest extends TestCase
         Storage::fake('public');
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 
@@ -113,7 +113,7 @@ class SpecializationSeederTest extends TestCase
         $balance = PlayableSpecialization::where('playable_class_id', $druid->id)->where('name', 'Balance')->first();
         $media = $balance->getFirstMedia('blizzard_icons');
 
-        $this->assertSame(HasBlizzardIcons::BLIZZARD_ICON_SIZE, $media->getCustomProperty('size'));
+        $this->assertSame(HasBlizzardIcons::DEFAULT_MEDIA_SIZE, $media->getCustomProperty('size'));
         Storage::disk('public')->assertExists('blizzard-cdn/icons/56/spell_nature_starfall.jpg');
     }
 
@@ -182,7 +182,7 @@ class SpecializationSeederTest extends TestCase
         Queue::fake();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: ['code' => 403, 'detail' => 'Forbidden'],
                 status: 403,
             ),
@@ -197,7 +197,7 @@ class SpecializationSeederTest extends TestCase
 
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
             return $job->modelClass === PlayableSpecialization::class
-                && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/spell_nature_starfall.jpg';
+                && (string) $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/spell_nature_starfall.jpg';
         });
     }
 
@@ -207,7 +207,7 @@ class SpecializationSeederTest extends TestCase
         Queue::fake();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: '',
                 status: 404,
             ),

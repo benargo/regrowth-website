@@ -74,7 +74,7 @@ class PlayableClassDataTest extends TestCase
         $this->assertInstanceOf(HrefData::class, $dto->pvpTalentSlots);
         $this->assertSame(
             'https://eu.api.blizzard.com/data/wow/playable-class/7/pvp-talent-slots?namespace=static-2.5.5_65000-classicann-eu',
-            $dto->pvpTalentSlots->href,
+            (string) $dto->pvpTalentSlots->href,
         );
         $this->assertCount(2, $dto->playableRaces);
         $this->assertInstanceOf(LinkData::class, $dto->playableRaces[0]);

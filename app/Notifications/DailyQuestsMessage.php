@@ -34,9 +34,9 @@ class DailyQuestsMessage extends Notification
     private ?DiscordRole $subscribersRole;
 
     /**
-     * @param  iterable<string, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their DailyQuestType case name
+     * @param  array<string, DailyQuest|null>  $dailyQuests  The daily quests to include in the notification, keyed by their DailyQuestType case name
      */
-    public function __construct(iterable $dailyQuests)
+    public function __construct(array $dailyQuests)
     {
         $this->dailyQuests = collect($dailyQuests)
             ->map(fn (?DailyQuest $quest) => $quest === null ? null : [

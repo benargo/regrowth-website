@@ -51,7 +51,7 @@ class EventController extends Controller implements HasBlizzardIcons
         return Inertia::render('Raiding/Plans/Show', [
             'event' => (new EventResource($event))->resolve($request),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => self::BLIZZARD_ICON_SIZE,
+                'size' => self::DEFAULT_MEDIA_SIZE,
                 'name' => self::BLIZZARD_UNKNOWN_ICON.'.jpg',
             ]),
         ]);
@@ -85,8 +85,8 @@ class EventController extends Controller implements HasBlizzardIcons
             }),
             'templates' => $this->loadTemplatesForEvent($event)->all(),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => self::BLIZZARD_ICON_SIZE,
-                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::BLIZZARD_ICON_FILE_EXTENSION,
+                'size' => self::DEFAULT_MEDIA_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION,
             ]),
         ]);
     }

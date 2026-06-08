@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Media;
 
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Uri;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
@@ -20,8 +21,21 @@ class AssetDataTest extends TestCase
         ]);
 
         $this->assertSame('icon', $dto->key);
-        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', $dto->value);
+        $this->assertInstanceOf(Uri::class, $dto->value);
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', (string) $dto->value);
         $this->assertSame(642015, $dto->fileDataId);
+    }
+
+    #[Test]
+    public function it_serialises_the_value_back_to_a_url_string(): void
+    {
+        $dto = AssetData::from([
+            'key' => 'icon',
+            'value' => 'https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg',
+            'file_data_id' => 642015,
+        ]);
+
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', $dto->toArray()['value']);
     }
 
     #[Test]
@@ -33,7 +47,7 @@ class AssetDataTest extends TestCase
         ]);
 
         $this->assertInstanceOf(Optional::class, $dto->key);
-        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/warrior.jpg', $dto->value);
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/warrior.jpg', (string) $dto->value);
         $this->assertSame(132221, $dto->fileDataId);
     }
 
@@ -46,7 +60,7 @@ class AssetDataTest extends TestCase
         ]);
 
         $this->assertSame('icon', $dto->key);
-        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/druid.jpg', $dto->value);
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/druid.jpg', (string) $dto->value);
         $this->assertInstanceOf(Optional::class, $dto->fileDataId);
     }
 
@@ -58,7 +72,7 @@ class AssetDataTest extends TestCase
         ]);
 
         $this->assertInstanceOf(Optional::class, $dto->key);
-        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/paladin.jpg', $dto->value);
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/paladin.jpg', (string) $dto->value);
         $this->assertInstanceOf(Optional::class, $dto->fileDataId);
     }
 

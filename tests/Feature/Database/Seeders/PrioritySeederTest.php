@@ -3,7 +3,7 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Contracts\HasBlizzardIcons;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\LootCouncil\Priority;
 use Database\Seeders\PrioritySeeder;
@@ -28,7 +28,7 @@ class PrioritySeederTest extends TestCase
         Storage::fake('public');
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 
@@ -36,8 +36,8 @@ class PrioritySeederTest extends TestCase
     public function priority_model_implements_has_blizzard_icons(): void
     {
         $this->assertInstanceOf(HasBlizzardIcons::class, new Priority);
-        $this->assertSame(56, Priority::BLIZZARD_ICON_SIZE);
-        $this->assertSame('jpg', Priority::BLIZZARD_ICON_FILE_EXTENSION);
+        $this->assertSame(56, Priority::DEFAULT_MEDIA_SIZE);
+        $this->assertSame('jpg', Priority::DEFAULT_MEDIA_FILE_EXTENSION);
     }
 
     #[Test]
@@ -129,7 +129,7 @@ class PrioritySeederTest extends TestCase
         Queue::fake();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: ['code' => 403, 'detail' => 'Forbidden'],
                 status: 403,
             ),
@@ -142,7 +142,7 @@ class PrioritySeederTest extends TestCase
 
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
             return $job->modelClass === Priority::class
-                && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/inv_shield_04.jpg';
+                && (string) $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/inv_shield_04.jpg';
         });
     }
 
@@ -152,7 +152,7 @@ class PrioritySeederTest extends TestCase
         Queue::fake();
 
         Saloon::fake([
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: '',
                 status: 404,
             ),

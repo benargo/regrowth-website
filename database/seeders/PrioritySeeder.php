@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Seeder;
@@ -115,14 +115,14 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
                 continue;
             }
 
-            $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+            $iconFileName = $iconName.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION;
 
             try {
-                $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
+                $response = $this->renderConnector->send(new FetchIconRequest($iconName));
 
                 $model->addMediaFromString($response->body())
                     ->usingFileName($iconFileName)
-                    ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                    ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
                     ->toMediaCollection('blizzard_icons');
             } catch (ForbiddenException $e) {
                 AttachBlizzardIconToModel::dispatch(Priority::class, $model->id, $e->getPendingRequest()->getUrl())

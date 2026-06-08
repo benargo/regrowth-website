@@ -32,7 +32,7 @@ class GetItemMediaRequestTest extends BlizzardTestCase
         $this->assertInstanceOf(MediaData::class, $dto);
         $this->assertSame(19019, $dto->id);
         $this->assertCount(1, $dto->assets);
-        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', $dto->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', (string) $dto->assets[0]->value);
         $this->assertSame('icon', $dto->assets[0]->key);
         $this->assertSame(132221, $dto->assets[0]->fileDataId);
     }

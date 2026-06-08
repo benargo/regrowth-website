@@ -29,6 +29,7 @@ class CharacterResource extends JsonResource
             'level' => $this->level,
             'is_main' => $this->is_main,
             'is_loot_councillor' => $this->is_loot_councillor,
+            'portrait_url' => $this->getFirstMediaUrl('character_portraits') ?: null,
             'planned_absences' => $this->whenLoaded('plannedAbsences', fn () => PlannedAbsenceResource::collection($this->plannedAbsences)),
             'playable_class' => $this->whenLoaded('playableClass', fn () => (new PlayableClassResource($this->playableClass))->resolve($request)),
             'playable_race' => $this->whenLoaded('playableRace', fn () => (new PlayableRaceResource($this->playableRace))->resolve($request)),

@@ -4,7 +4,7 @@ namespace Tests\Feature\Database\Seeders;
 
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassIndexRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\PlayableClass;
 use Database\Seeders\PlayableClassSeeder;
@@ -60,7 +60,7 @@ class PlayableClassSeederTest extends TestCase
                 body: $this->makeMediaResponse(7),
                 status: 200,
             ),
-            FetchAssetRequest::class => MockResponse::make(body: 'fake-image-data', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'fake-image-data', status: 200),
         ]);
 
         $this->runSeeder();
@@ -168,7 +168,7 @@ class PlayableClassSeederTest extends TestCase
                 body: $this->makeMediaResponse(7),
                 status: 200,
             ),
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: ['code' => 403, 'detail' => 'Forbidden'],
                 status: 403,
             ),
@@ -182,7 +182,7 @@ class PlayableClassSeederTest extends TestCase
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
             return $job->modelClass === PlayableClass::class
                 && $job->modelKey === 7
-                && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/classicon_7.jpg';
+                && (string) $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/classicon_7.jpg';
         });
     }
 
@@ -230,7 +230,7 @@ class PlayableClassSeederTest extends TestCase
 
                 return MockResponse::make(body: $this->makeMediaResponse($classId), status: 200);
             },
-            FetchAssetRequest::class => MockResponse::make(body: 'fake-image-data', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'fake-image-data', status: 200),
         ]);
     }
 
