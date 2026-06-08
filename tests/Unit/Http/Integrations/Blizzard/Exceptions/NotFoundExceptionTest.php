@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Exceptions;
 
+use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\NotFoundException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -16,6 +17,12 @@ class NotFoundExceptionTest extends TestCase
     public function it_extends_saloon_not_found_exception(): void
     {
         $this->assertInstanceOf(Base::class, $this->makeException());
+    }
+
+    #[Test]
+    public function it_implements_blizzard_request_exception(): void
+    {
+        $this->assertTrue(is_subclass_of(NotFoundException::class, BlizzardRequestException::class));
     }
 
     #[Test]
@@ -107,7 +114,8 @@ class NotFoundExceptionTest extends TestCase
     {
         $response = $this->createStub(Response::class);
 
-        $exception = new class('GET', '/data/wow/item/1', 404, $response) extends NotFoundException {
+        $exception = new class('GET', '/data/wow/item/1', 404, $response) extends NotFoundException
+        {
             protected string $prefix = 'Custom prefix:';
         };
 
