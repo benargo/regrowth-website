@@ -30,7 +30,7 @@ abstract class RenderRequest extends Request
      */
     public function __construct(Uri|string $input, ?int $size = null)
     {
-        if ($size) {
+        if ($size !== null) {
             $this->size = $size;
         }
 
@@ -65,7 +65,7 @@ abstract class RenderRequest extends Request
             && ! (str_starts_with($host, 'render-') && str_ends_with($host, '.worldofwarcraft.com'))
         ) {
             throw new InvalidArgumentException(
-                "FetchIconRequest requires a Blizzard render URL; got: {$uri}",
+                "Render request requires a Blizzard render URL; got: {$uri}",
             );
         }
 
@@ -73,7 +73,7 @@ abstract class RenderRequest extends Request
 
         if ($path === '' || $path === '/') {
             throw new InvalidArgumentException(
-                "FetchIconRequest requires a URL with a non-empty path; got: {$uri}",
+                "Render request requires a URL with a non-empty path; got: {$uri}",
             );
         }
 
