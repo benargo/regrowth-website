@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\RenderRequest;
 use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
+use Illuminate\Support\Uri;
 use Saloon\Http\PendingRequest;
 
 /**
@@ -25,15 +26,17 @@ class FetchIconRequest extends RenderRequest implements HasBlizzardIcons
 {
     private ?string $iconName = null;
 
-    public function __construct(string $input, ?int $size = null)
+    public function __construct(Uri|string $input, ?int $size = null)
     {
         parent::__construct($input, $size);
 
-        Str::of($input)->tap(function (Stringable $string) {
-            if ($string->doesntContain('://')) {
-                $this->iconName = $string->value();
-            }
-        });
+        if (is_string($input)) {
+            Str::of($input)->tap(function (Stringable $string) {
+                if ($string->doesntContain('://')) {
+                    $this->iconName = $string->value();
+                }
+            });
+        }
 
         $this->size = $size ?? self::DEFAULT_MEDIA_SIZE;
     }

@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\RenderRequest;
 use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
+use Illuminate\Support\Uri;
 use InvalidArgumentException;
 use Saloon\Http\PendingRequest;
 
@@ -28,23 +29,25 @@ class FetchCharacterPortraitRequest extends RenderRequest implements HasCharacte
 
     private ?string $portraitPath = null;
 
-    public function __construct(string $input, ?int $size = null)
+    public function __construct(Uri|string $input, ?int $size = null)
     {
         parent::__construct($input, $size);
 
-        Str::of($input)->tap(function (Stringable $string) {
-            if ($string->doesntContain('://')) {
-                if ($string->doesntContain('/')) {
-                    throw new InvalidArgumentException(
-                        "FetchCharacterPortraitRequest bare input must be in {realmSlug}/{portraitFile} format; got: {$string}",
-                    );
-                }
+        if (is_string($input)) {
+            Str::of($input)->tap(function (Stringable $string) {
+                if ($string->doesntContain('://')) {
+                    if ($string->doesntContain('/')) {
+                        throw new InvalidArgumentException(
+                            "FetchCharacterPortraitRequest bare input must be in {realmSlug}/{portraitFile} format; got: {$string}",
+                        );
+                    }
 
-                [$realmSlug, $portraitPath] = explode('/', $string->value(), 2);
-                $this->realmSlug = $realmSlug;
-                $this->portraitPath = $portraitPath;
-            }
-        });
+                    [$realmSlug, $portraitPath] = explode('/', $string->value(), 2);
+                    $this->realmSlug = $realmSlug;
+                    $this->portraitPath = $portraitPath;
+                }
+            });
+        }
 
         $this->size = $size ?? self::DEFAULT_MEDIA_SIZE;
     }

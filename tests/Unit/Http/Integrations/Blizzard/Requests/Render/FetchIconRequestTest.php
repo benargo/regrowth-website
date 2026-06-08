@@ -6,6 +6,7 @@ use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Uri;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
@@ -38,6 +39,44 @@ class FetchIconRequestTest extends TestCase
         $request = new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg');
 
         $this->assertSame('/eu/icons/56/foo.jpg', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_accepts_a_uri_instance_as_an_absolute_render_url(): void
+    {
+        $request = new FetchIconRequest(
+            Uri::of('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'),
+        );
+
+        $this->assertSame('/eu/icons/56/foo.jpg', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    public function it_rejects_a_uri_instance_with_a_non_blizzard_host(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new FetchIconRequest(Uri::of('https://example.com/icons/56/foo.jpg'));
+    }
+
+    #[Test]
+    public function it_sends_a_uri_instance_through_the_render_connector(): void
+    {
+        $mock = new MockClient([
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector->withMockClient($mock);
+
+        $connector->send(new FetchIconRequest(
+            Uri::of('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'),
+        ));
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/eu/icons/56/foo.jpg',
+            $mock->getLastPendingRequest()->getUrl(),
+        );
     }
 
     #[Test]

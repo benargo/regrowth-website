@@ -6,6 +6,7 @@ use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Uri;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
@@ -52,6 +53,49 @@ class FetchCharacterPortraitRequestTest extends TestCase
         $this->assertSame(
             '/eu/character/thunderstrike/135/51042439-avatar.jpg',
             $request->resolveEndpoint(),
+        );
+    }
+
+    #[Test]
+    public function it_accepts_a_uri_instance_as_an_absolute_render_url(): void
+    {
+        $request = new FetchCharacterPortraitRequest(
+            Uri::of('https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg'),
+        );
+
+        $this->assertSame(
+            '/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg',
+            $request->resolveEndpoint(),
+        );
+    }
+
+    #[Test]
+    public function it_rejects_a_uri_instance_with_a_non_blizzard_host(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new FetchCharacterPortraitRequest(
+            Uri::of('https://example.com/character/thunderstrike/135/51042439-avatar.jpg'),
+        );
+    }
+
+    #[Test]
+    public function it_sends_a_uri_instance_through_the_render_connector(): void
+    {
+        $mock = new MockClient([
+            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $connector = new RenderConnector(Region::EU, Storage::fake('public'));
+        $connector->withMockClient($mock);
+
+        $connector->send(new FetchCharacterPortraitRequest(
+            Uri::of('https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg'),
+        ));
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg',
+            $mock->getLastPendingRequest()->getUrl(),
         );
     }
 

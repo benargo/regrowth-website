@@ -53,7 +53,7 @@ class GetMediaResponseTest extends BlizzardTestCase
         $this->assertInstanceOf(MediaData::class, $data);
         $this->assertSame(19019, $data->id);
         $this->assertCount(1, $data->assets);
-        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', $data->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', (string) $data->assets[0]->value);
     }
 
     #[Test]

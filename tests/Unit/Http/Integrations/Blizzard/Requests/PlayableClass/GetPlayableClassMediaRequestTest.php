@@ -37,7 +37,7 @@ class GetPlayableClassMediaRequestTest extends BlizzardTestCase
         $this->assertInstanceOf(PlayableClassMediaData::class, $dto);
         $this->assertSame(7, $dto->id);
         $this->assertCount(1, $dto->assets);
-        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', $dto->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', (string) $dto->assets[0]->value);
         $this->assertSame('icon', $dto->assets[0]->key);
         $this->assertSame(642015, $dto->assets[0]->fileDataId);
     }
