@@ -16,7 +16,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -227,7 +226,7 @@ class CharacterResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_signed_portrait_url_when_media_attached(): void
+    public function it_returns_storage_portrait_url_when_media_attached(): void
     {
         Storage::fake('public');
 
@@ -240,8 +239,9 @@ class CharacterResourceTest extends TestCase
         $array = (new CharacterResource($character))->toArray(new Request);
 
         $this->assertNotNull($array['portrait_url']);
-        $this->assertStringContainsString('/icons/135/character_15678.jpg', $array['portrait_url']);
-        $this->assertTrue(URL::hasValidSignature(request()->create($array['portrait_url'])));
+        $this->assertStringContainsString('/storage/', $array['portrait_url']);
+        $this->assertStringContainsString('character_15678.jpg', $array['portrait_url']);
+        $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
     }
 
     #[Test]
