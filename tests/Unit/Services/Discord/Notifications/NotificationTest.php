@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\Discord\Notifications;
 
+use App\Models\User;
 use App\Services\Discord\Notifications\Driver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Notifications\Notification;
@@ -10,6 +11,8 @@ use App\Services\Discord\Resources\Channel;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -38,10 +41,42 @@ class ConcreteNotification extends Notification
     {
         return [];
     }
+
+    /**
+     * Expose the protected hydrate() helper for testing.
+     *
+     * @param  array{model_id: int|string, model_type: class-string<Model>}|null  $reference
+     */
+    public function hydratePublic(?array $reference): ?Model
+    {
+        return $this->hydrate($reference);
+    }
+
+    /**
+     * Expose the protected hydrateOrFail() helper for testing.
+     *
+     * @param  array{model_id: int|string, model_type: class-string<Model>}|null  $reference
+     */
+    public function hydrateOrFailPublic(?array $reference): Model
+    {
+        return $this->hydrateOrFail($reference);
+    }
+
+    /**
+     * Expose the protected relatedModel() helper for testing.
+     *
+     * @return array{model_id: int|string, model_type: class-string<Model>}|null
+     */
+    public function relatedModelPublic(string $type): ?array
+    {
+        return $this->relatedModel($type);
+    }
 }
 
 class NotificationTest extends TestCase
 {
+    use RefreshDatabase;
+
     private NotifiableChannel $notifiable;
 
     protected function setUp(): void
@@ -192,6 +227,122 @@ class NotificationTest extends TestCase
             ['model_id' => 20, 'model_type' => StubModelA::class],
             ['model_id' => 30, 'model_type' => StubModelA::class],
         ], $result);
+    }
+
+    // -------------------------------------------------------------------------
+    // hydrate()
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_hydrates_a_model_from_a_reference(): void
+    {
+        $user = User::factory()->create();
+        $notification = new ConcreteNotification;
+
+        $model = $notification->hydratePublic([
+            'model_id' => $user->getKey(),
+            'model_type' => User::class,
+        ]);
+
+        $this->assertInstanceOf(User::class, $model);
+        $this->assertTrue($model->is($user));
+    }
+
+    #[Test]
+    public function it_returns_null_when_hydrating_a_null_reference(): void
+    {
+        $notification = new ConcreteNotification;
+
+        $this->assertNull($notification->hydratePublic(null));
+    }
+
+    #[Test]
+    public function it_returns_null_when_hydrating_a_reference_to_a_missing_model(): void
+    {
+        $notification = new ConcreteNotification;
+
+        $model = $notification->hydratePublic([
+            'model_id' => 999999,
+            'model_type' => User::class,
+        ]);
+
+        $this->assertNull($model);
+    }
+
+    // -------------------------------------------------------------------------
+    // hydrateOrFail()
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_hydrates_or_fail_returns_the_model_when_present(): void
+    {
+        $user = User::factory()->create();
+        $notification = new ConcreteNotification;
+
+        $model = $notification->hydrateOrFailPublic([
+            'model_id' => $user->getKey(),
+            'model_type' => User::class,
+        ]);
+
+        $this->assertTrue($model->is($user));
+    }
+
+    #[Test]
+    public function it_hydrates_or_fail_throws_when_the_model_is_missing(): void
+    {
+        $notification = new ConcreteNotification;
+
+        $this->expectException(ModelNotFoundException::class);
+
+        $notification->hydrateOrFailPublic([
+            'model_id' => 999999,
+            'model_type' => User::class,
+        ]);
+    }
+
+    #[Test]
+    public function it_hydrates_or_fail_throws_when_the_reference_is_null(): void
+    {
+        $notification = new ConcreteNotification;
+
+        $this->expectException(ModelNotFoundException::class);
+
+        $notification->hydrateOrFailPublic(null);
+    }
+
+    // -------------------------------------------------------------------------
+    // relatedModel()
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_returns_the_first_related_reference_for_a_given_type(): void
+    {
+        $modelA = new StubModelA;
+        $modelA->id = 1;
+
+        $modelB = new StubModelB;
+        $modelB->id = 'abc-uuid';
+
+        $notification = new ConcreteNotification;
+        $notification->withRelatedModels([$modelA, $modelB]);
+
+        $this->assertSame(
+            ['model_id' => 1, 'model_type' => StubModelA::class],
+            $notification->relatedModelPublic(StubModelA::class),
+        );
+        $this->assertSame(
+            ['model_id' => 'abc-uuid', 'model_type' => StubModelB::class],
+            $notification->relatedModelPublic(StubModelB::class),
+        );
+    }
+
+    #[Test]
+    public function it_returns_null_when_no_related_reference_matches_the_type(): void
+    {
+        $notification = new ConcreteNotification;
+        $notification->withRelatedModels([]);
+
+        $this->assertNull($notification->relatedModelPublic(StubModelA::class));
     }
 
     // -------------------------------------------------------------------------
