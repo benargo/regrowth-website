@@ -74,7 +74,7 @@ class UrlGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_signed_icons_show_url_for_has_character_media_model(): void
+    public function it_returns_storage_url_for_has_character_media_model(): void
     {
         $character = Character::factory()->create();
 
@@ -86,8 +86,9 @@ class UrlGeneratorTest extends TestCase
         $url = $character->getFirstMediaUrl('character_portraits');
 
         $this->assertNotNull($url);
-        $this->assertStringContainsString('/icons/135/character_15678.jpg', $url);
-        $this->assertTrue(URL::hasValidSignature(request()->create($url)));
+        $this->assertStringContainsString('/storage/', $url);
+        $this->assertStringContainsString('character_15678.jpg', $url);
+        $this->assertStringNotContainsString('/icons/', $url);
     }
 
     #[Test]

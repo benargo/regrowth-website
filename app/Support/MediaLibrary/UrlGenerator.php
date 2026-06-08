@@ -3,15 +3,14 @@
 namespace App\Support\MediaLibrary;
 
 use App\Contracts\HasBlizzardIcons;
-use App\Contracts\HasCharacterMedia;
 use Illuminate\Support\Facades\URL;
 use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
 
 /**
  * For media owned by a HasBlizzardIcons model, returns a signed icons.show URL
  * (the resilient System A route). For all other media, defers to the default
- * /storage/... URL behaviour, keeping Boss and any other default-collection media
- * unaffected.
+ * /storage/... URL behaviour, keeping character portraits, Boss media, and any
+ * other default-collection media unaffected.
  *
  * Only getUrl() is overridden intentionally. Blizzard icons are single-file with no
  * conversions and are served exclusively via the signed icons.show route, so
@@ -28,15 +27,6 @@ class UrlGenerator extends DefaultUrlGenerator implements HasBlizzardIcons
     {
         if (is_a($this->media->model, HasBlizzardIcons::class) && $this->media->collection_name === 'blizzard_icons') {
             $size = (int) ($this->media->getCustomProperty('size') ?? self::DEFAULT_MEDIA_SIZE);
-
-            return URL::signedRoute('icons.show', [
-                'size' => $size,
-                'name' => $this->media->file_name,
-            ]);
-        }
-
-        if (is_a($this->media->model, HasCharacterMedia::class) && $this->media->collection_name === 'character_portraits') {
-            $size = (int) ($this->media->getCustomProperty('size') ?? HasCharacterMedia::DEFAULT_MEDIA_SIZE);
 
             return URL::signedRoute('icons.show', [
                 'size' => $size,
