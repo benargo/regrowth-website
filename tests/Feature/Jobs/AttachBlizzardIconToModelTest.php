@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Uri;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Exceptions\Request\RequestException;
@@ -180,6 +181,43 @@ class AttachBlizzardIconToModelTest extends TestCase
 
     // ==================== Retail Asset URL ====================
 
+    // ==================== Uri Input ====================
+
+    #[Group('uri-input')]
+    #[Test]
+    public function it_accepts_a_uri_instance_for_the_asset_url(): void
+    {
+        $item = Item::factory()->create();
+
+        Saloon::fake([
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $assetUrl = Uri::of("https://render.worldofwarcraft.com/eu/icons/56/item_{$item->id}.jpg");
+
+        (new AttachBlizzardIconToModel(Item::class, $item->id, $assetUrl))->handle(app(RenderConnector::class));
+
+        $media = $item->fresh()->getFirstMedia('blizzard_icons');
+        $this->assertSame("item_{$item->id}.jpg", $media->file_name);
+    }
+
+    #[Group('uri-input')]
+    #[Test]
+    public function it_round_trips_through_queue_serialization_with_a_uri_asset_url(): void
+    {
+        $assetUrl = Uri::of('https://render.worldofwarcraft.com/classicann-eu/icons/56/inv_jewelry_ring_57.jpg');
+
+        $job = new AttachBlizzardIconToModel(Item::class, 7, $assetUrl);
+
+        /** @var AttachBlizzardIconToModel $restored */
+        $restored = unserialize(serialize($job));
+
+        $this->assertSame(
+            'https://render.worldofwarcraft.com/eu/icons/56/inv_jewelry_ring_57.jpg',
+            (string) $restored->retailAssetUrl(),
+        );
+    }
+
     #[Group('retail-asset-url')]
     #[Test]
     public function retail_asset_url_strips_classicann_prefix_from_region(): void
@@ -192,7 +230,7 @@ class AttachBlizzardIconToModelTest extends TestCase
 
         foreach ($cases as $input => $expected) {
             $job = new AttachBlizzardIconToModel(Item::class, 1, $input);
-            $this->assertSame($expected, $job->retailAssetUrl(), "Failed for: {$input}");
+            $this->assertSame($expected, (string) $job->retailAssetUrl(), "Failed for: {$input}");
         }
     }
 
@@ -204,7 +242,7 @@ class AttachBlizzardIconToModelTest extends TestCase
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/icons/56/inv_misc_questionmark.jpg',
-            $job->retailAssetUrl(),
+            (string) $job->retailAssetUrl(),
         );
     }
 

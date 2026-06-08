@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Str;
+use Illuminate\Support\Uri;
 use InvalidArgumentException;
 
 class AttachBlizzardIconToModel implements ShouldQueue
@@ -17,14 +18,18 @@ class AttachBlizzardIconToModel implements ShouldQueue
 
     public int $tries = 3;
 
+    public readonly Uri $assetUrl;
+
     public function __construct(
         public readonly string $modelClass,
         public readonly int|string $modelKey,
-        public readonly string $assetUrl,
+        Uri|string $assetUrl,
     ) {
         if (! is_a($this->modelClass, HasBlizzardIcons::class, true)) {
             throw new InvalidArgumentException("{$this->modelClass} must implement HasBlizzardIcons.");
         }
+
+        $this->assetUrl = $assetUrl instanceof Uri ? $assetUrl : Uri::of($assetUrl);
     }
 
     /**
@@ -33,7 +38,7 @@ class AttachBlizzardIconToModel implements ShouldQueue
     public function middleware(): array
     {
         return [
-            (new WithoutOverlapping("blizzard-icon:{$this->getIconName($this->assetUrl)}"))
+            (new WithoutOverlapping('blizzard-icon:'.$this->getIconName($this->assetUrl)))
                 ->releaseAfter(60),
         ];
     }
@@ -77,20 +82,19 @@ class AttachBlizzardIconToModel implements ShouldQueue
      * "classicann-" prefix from the region path segment (e.g. "classicann-eu" → "eu").
      * The seeder dispatches this job only after a classicann 403, so Retail is always correct.
      */
-    public function retailAssetUrl(): string
+    public function retailAssetUrl(): Uri
     {
-        $path = parse_url($this->assetUrl, PHP_URL_PATH);
-        $retailPath = preg_replace('#^/classicann-#', '/', $path);
+        $retailPath = preg_replace('#^/classicann-#', '/', Str::start((string) $this->assetUrl->path(), '/'));
 
-        return 'https://render.worldofwarcraft.com'.$retailPath;
+        return Uri::of('https://render.worldofwarcraft.com')->withPath($retailPath);
     }
 
     /**
      * Extract the icon file name from the URL for use as the media's file_name.
      * This assumes the URL is well-formed and that the file name is the last segment of the path, which is consistent with Blizzard CDN URLs.
      */
-    private function getIconName(string $url): string
+    private function getIconName(Uri $url): string
     {
-        return (string) Str::of($url)->afterLast('/')->before('?');
+        return (string) Str::of((string) $url->path())->afterLast('/');
     }
 }

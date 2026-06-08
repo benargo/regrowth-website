@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Str;
+use Illuminate\Support\Uri;
 
 class AttachPortraitToCharacter implements ShouldQueue
 {
@@ -17,10 +18,14 @@ class AttachPortraitToCharacter implements ShouldQueue
 
     public int $tries = 3;
 
+    public readonly Uri $assetUrl;
+
     public function __construct(
         public readonly int $characterId,
-        public readonly string $assetUrl,
-    ) {}
+        Uri|string $assetUrl,
+    ) {
+        $this->assetUrl = $assetUrl instanceof Uri ? $assetUrl : Uri::of($assetUrl);
+    }
 
     /**
      * @return array<int, WithoutOverlapping>
@@ -66,8 +71,8 @@ class AttachPortraitToCharacter implements ShouldQueue
             ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
     }
 
-    private function getPortraitFileName(string $url): string
+    private function getPortraitFileName(Uri $url): string
     {
-        return (string) Str::of($url)->afterLast('/')->before('?');
+        return (string) Str::of((string) $url->path())->afterLast('/');
     }
 }

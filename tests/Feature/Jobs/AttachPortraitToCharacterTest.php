@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Uri;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Exceptions\Request\RequestException;
@@ -164,6 +165,48 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->expectException(RequestException::class);
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class));
+    }
+
+    // ==================== Uri Input ====================
+
+    #[Group('uri-input')]
+    #[Test]
+    public function it_accepts_a_uri_instance_for_the_asset_url(): void
+    {
+        $character = Character::factory()->create();
+
+        Saloon::fake([
+            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $assetUrl = Uri::of('https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+
+        (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class));
+
+        $media = $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->assertSame('51042439-avatar.jpg', $media->file_name);
+    }
+
+    #[Group('uri-input')]
+    #[Test]
+    public function it_round_trips_through_queue_serialization_with_a_uri_asset_url(): void
+    {
+        $character = Character::factory()->create();
+
+        Saloon::fake([
+            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $assetUrl = Uri::of('https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+
+        $job = new AttachPortraitToCharacter($character->id, $assetUrl);
+
+        /** @var AttachPortraitToCharacter $restored */
+        $restored = unserialize(serialize($job));
+        $restored->handle(app(RenderConnector::class));
+
+        $media = $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION);
+        $this->assertSame('51042439-avatar.jpg', $media->file_name);
     }
 
     // ==================== Filename ====================
