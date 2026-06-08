@@ -182,7 +182,7 @@ class PlayableClassSeederTest extends TestCase
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
             return $job->modelClass === PlayableClass::class
                 && $job->modelKey === 7
-                && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/classicon_7.jpg';
+                && (string) $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/classicon_7.jpg';
         });
     }
 

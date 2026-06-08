@@ -197,7 +197,7 @@ class SpecializationSeederTest extends TestCase
 
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
             return $job->modelClass === PlayableSpecialization::class
-                && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/spell_nature_starfall.jpg';
+                && (string) $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/spell_nature_starfall.jpg';
         });
     }
 

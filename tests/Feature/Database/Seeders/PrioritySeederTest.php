@@ -142,7 +142,7 @@ class PrioritySeederTest extends TestCase
 
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
             return $job->modelClass === Priority::class
-                && $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/inv_shield_04.jpg';
+                && (string) $job->assetUrl === 'https://render.worldofwarcraft.com/eu/icons/56/inv_shield_04.jpg';
         });
     }
 
