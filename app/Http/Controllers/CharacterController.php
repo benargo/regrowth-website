@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\HasCharacterMedia;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Requests\UpdateCharacterRequest;
 use App\Http\Resources\CharacterResource;
@@ -11,6 +13,7 @@ use App\Http\Resources\GuildRosterMemberCollection;
 use App\Http\Resources\PlayableClassResource;
 use App\Http\Resources\PlayableRaceResource;
 use App\Http\Resources\PlayableSpecializationResource;
+use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlayableClass;
@@ -62,6 +65,23 @@ class CharacterController extends Controller
         }
 
         $character->load(['playableClass', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
+
+        if (! $character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION)) {
+            try {
+                $dto = $this->blizzard->send(new GetCharacterMediaRequest(
+                    $this->blizzard->defaultRealmSlug(),
+                    $character->name,
+                ))->dto();
+
+                $avatarAsset = collect($dto->assets)->first(fn ($asset) => $asset->key === 'avatar');
+
+                if ($avatarAsset !== null) {
+                    AttachPortraitToCharacter::dispatch($character->id, $avatarAsset->value);
+                }
+            } catch (\Throwable) {
+                // Blizzard outage must not break the page render.
+            }
+        }
 
         return Inertia::render('Roster/Characters/Show', [
             'character' => (new CharacterResource($character))->resolve($request),

@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
@@ -9,6 +9,7 @@ import { Can } from "@/Components/Authorizable";
 import SpecIcon from "@/Components/Characters/SpecIcon";
 import SpecBadge from "@/Components/Characters/SpecBadge";
 import raidSpec from "@/Helpers/RaidSpec";
+import useCharacterPortraitChannel from "@/Hooks/useCharacterPortraitChannel";
 
 function ReportsSkeleton() {
     return (
@@ -51,6 +52,10 @@ export default function Show({ character, recent_reports }) {
     const spec = raidSpec(character);
     const isLoading = recent_reports === undefined;
 
+    useCharacterPortraitChannel(character.id, () => {
+        router.reload({ only: ["character"] });
+    });
+
     return (
         <Master title={character.name}>
             <SharedHeader backgroundClass="bg-stormwind" title={character.name} />
@@ -58,11 +63,15 @@ export default function Show({ character, recent_reports }) {
             <PageContainer>
                 {/* Identity strip */}
                 <div className="mb-8 flex flex-wrap items-center gap-3">
-                    {character.playable_class?.icon_url && (
+                    {character.portrait_url ? (
                         <img
-                            src={character.playable_class.icon_url}
-                            alt={character.playable_class.name}
+                            src={character.portrait_url}
+                            alt={character.name}
                             className="h-12 w-12 rounded-lg border border-amber-600/30 shadow-lg shadow-black/40"
+                        />
+                    ) : (
+                        <div
+                            className="h-12 w-12 rounded-lg bg-gray-600 border border-gray-600/30 shadow-lg shadow-black/40"
                         />
                     )}
                     <div>
