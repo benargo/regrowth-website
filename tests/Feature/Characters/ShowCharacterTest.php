@@ -2,17 +2,26 @@
 
 namespace Tests\Feature\Characters;
 
+use App\Contracts\HasCharacterMedia;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
+use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
 class ShowCharacterTest extends TestCase
 {
+    use HasBlizzardTokenMock;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -20,16 +29,6 @@ class ShowCharacterTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
-    }
-
-    private function member(): User
-    {
-        return User::factory()->withPermissions('view-officer-dashboard')->create();
-    }
-
-    private function characterSlug(Character $character): string
-    {
-        return Str::slug($character->name);
     }
 
     #[Test]
@@ -94,5 +93,96 @@ class ShowCharacterTest extends TestCase
             ->missing('recent_reports')
             ->loadDeferredProps(fn (Assert $reload) => $reload->has('recent_reports'))
         );
+    }
+
+    // ==================== Portrait dispatch ====================
+
+    #[Test]
+    public function show_dispatches_portrait_job_when_character_has_no_media(): void
+    {
+        Bus::fake([AttachPortraitToCharacter::class]);
+
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
+            GetCharacterMediaRequest::class => MockResponse::make(body: $this->makeMediaResponse(), status: 200),
+        ]);
+
+        $this->get(route('characters.show', [
+            'character' => $character,
+            'slug' => $this->characterSlug($character),
+        ]))->assertOk();
+
+        Bus::assertDispatched(AttachPortraitToCharacter::class, fn ($job) => $job->characterId === $character->id);
+    }
+
+    #[Test]
+    public function show_does_not_dispatch_portrait_job_when_character_already_has_media(): void
+    {
+        Bus::fake([AttachPortraitToCharacter::class]);
+        Storage::fake('public');
+
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('portrait.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
+
+        $this->get(route('characters.show', [
+            'character' => $character,
+            'slug' => $this->characterSlug($character),
+        ]))->assertOk();
+
+        Bus::assertNotDispatched(AttachPortraitToCharacter::class);
+    }
+
+    #[Test]
+    public function show_does_not_error_and_does_not_dispatch_when_blizzard_media_request_fails(): void
+    {
+        Bus::fake([AttachPortraitToCharacter::class]);
+
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
+            GetCharacterMediaRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404'], status: 404),
+        ]);
+
+        $this->get(route('characters.show', [
+            'character' => $character,
+            'slug' => $this->characterSlug($character),
+        ]))->assertOk();
+
+        Bus::assertNotDispatched(AttachPortraitToCharacter::class);
+    }
+
+    // ==================== Helpers ====================
+
+    private function member(): User
+    {
+        return User::factory()->withPermissions('view-officer-dashboard')->create();
+    }
+
+    private function characterSlug(Character $character): string
+    {
+        return Str::slug($character->name);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function makeMediaResponse(): array
+    {
+        return [
+            '_links' => ['self' => ['href' => 'https://eu.api.blizzard.com']],
+            'character' => [
+                'key' => ['href' => 'https://eu.api.blizzard.com'],
+                'name' => 'Testcharacter',
+                'id' => 1,
+            ],
+            'assets' => [
+                ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],
+            ],
+        ];
     }
 }
