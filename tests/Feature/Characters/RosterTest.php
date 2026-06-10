@@ -10,10 +10,12 @@ use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
 class RosterTest extends TestCase
 {
+    use HasBlizzardTokenMock;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -21,17 +23,6 @@ class RosterTest extends TestCase
         parent::setUp();
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
-    }
-
-    private function fakeRosterWithMembers(array $members): void
-    {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetGuildRosterRequest::class => MockResponse::make(body: [
-                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
-                'members' => $members,
-            ], status: 200),
-        ]);
     }
 
     #[Test]
@@ -147,5 +138,16 @@ class RosterTest extends TestCase
                 ->missing('characters.0.character.playable_race')
             )
         );
+    }
+
+    private function fakeRosterWithMembers(array $members): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'members' => $members,
+            ], status: 200),
+        ]);
     }
 }
