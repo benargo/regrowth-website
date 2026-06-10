@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
+use App\Events\Broadcasts\CharacterPortraitAttached;
 use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\RenderConnector;
@@ -24,10 +25,12 @@ use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
 class AttachPortraitToCharacterTest extends TestCase
 {
+    use HasBlizzardTokenMock;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -510,6 +513,53 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame('51042439-avatar.jpg', $media->file_name);
     }
 
+    // ==================== Broadcast ====================
+
+    #[Group('broadcast')]
+    #[Test]
+    public function it_dispatches_character_portrait_attached_after_successfully_attaching_media(): void
+    {
+        Event::fake([CharacterPortraitAttached::class]);
+
+        $character = Character::factory()->create(['gender' => Gender::MALE]);
+
+        Saloon::fake([
+            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+
+        (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Event::assertDispatched(CharacterPortraitAttached::class, fn ($e) => $e->characterId === $character->id);
+    }
+
+    #[Group('broadcast')]
+    #[Test]
+    public function it_does_not_dispatch_character_portrait_attached_when_portrait_already_present(): void
+    {
+        Event::fake([CharacterPortraitAttached::class]);
+
+        $character = Character::factory()->create(['gender' => Gender::MALE]);
+
+        Saloon::fake([
+            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+
+        // First run attaches media.
+        (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Event::assertDispatched(CharacterPortraitAttached::class);
+        Event::fake([CharacterPortraitAttached::class]);
+
+        // Second run hits the idempotent early-return path.
+        (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Event::assertNotDispatched(CharacterPortraitAttached::class);
+    }
+
     // ==================== Helpers ====================
 
     /**
@@ -530,13 +580,5 @@ class AttachPortraitToCharacterTest extends TestCase
             'average_item_level' => 0,
             'equipped_item_level' => 0,
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function makeTokenResponse(): array
-    {
-        return ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600];
     }
 }
