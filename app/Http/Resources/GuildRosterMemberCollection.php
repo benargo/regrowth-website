@@ -33,24 +33,30 @@ class GuildRosterMemberCollection extends ResourceCollection
     /** @return array<int, array<string, mixed>> */
     public function toArray(Request $request): array
     {
-        return $this->collection->map(function (GuildRosterMemberData $member) use ($request) {
-            $character = $this->knownCharacters->get($member->character->id);
+        return $this->collection
+            ->sortBy([
+                fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->rank <=> $b->rank,
+                fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $b->character->level <=> $a->character->level,
+                fn (GuildRosterMemberData $a, GuildRosterMemberData $b) => $a->character->name <=> $b->character->name,
+            ])
+            ->map(function (GuildRosterMemberData $member) use ($request) {
+                $character = $this->knownCharacters->get($member->character->id);
 
-            return [
-                'character' => [
-                    'id' => $member->character->id,
-                    'name' => $member->character->name,
-                    'slug' => Str::slug($member->character->name),
-                    'level' => $member->character->level,
-                    'playable_class_id' => $member->character->playableClass->id,
-                    'playable_race_id' => $member->character->playableRace->id,
-                    'is_known' => $character !== null,
-                    'specializations' => $character !== null
-                        ? PlayableSpecializationResource::collection($character->specializations)->resolve($request)
-                        : [],
-                ],
-                'rank' => $member->rank,
-            ];
-        })->all();
+                return [
+                    'character' => [
+                        'id' => $member->character->id,
+                        'name' => $member->character->name,
+                        'slug' => Str::slug($member->character->name),
+                        'level' => $member->character->level,
+                        'playable_class_id' => $member->character->playableClass->id,
+                        'playable_race_id' => $member->character->playableRace->id,
+                        'is_known' => $character !== null,
+                        'specializations' => $character !== null
+                            ? PlayableSpecializationResource::collection($character->specializations)->resolve($request)
+                            : [],
+                    ],
+                    'rank' => $member->rank,
+                ];
+            })->values()->all();
     }
 }
