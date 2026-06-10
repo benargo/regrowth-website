@@ -11,6 +11,7 @@ use App\Models\Character;
 use App\Models\PlayableSpecialization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Uri;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -26,7 +27,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         int $raceId = 2,
         int $rank = 3,
     ): GuildRosterMemberData {
-        $href = new HrefData('https://example.test');
+        $href = new HrefData(Uri::of('https://example.test'));
 
         return new GuildRosterMemberData(
             character: new GuildRosterCharacterData(
