@@ -19,29 +19,6 @@ class GuildRosterMemberCollectionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeMember(
-        int $id = 1,
-        string $name = 'Thrall',
-        int $level = 60,
-        int $classId = 7,
-        int $raceId = 2,
-        int $rank = 3,
-    ): GuildRosterMemberData {
-        $href = new HrefData(Uri::of('https://example.test'));
-
-        return new GuildRosterMemberData(
-            character: new GuildRosterCharacterData(
-                id: $id,
-                name: $name,
-                level: $level,
-                playableClass: new LinkData(key: $href, name: 'Shaman', id: $classId),
-                playableRace: new LinkData(key: $href, name: 'Orc', id: $raceId),
-                realm: new LinkData(key: $href, name: 'Thunderstrike', id: 1),
-            ),
-            rank: $rank,
-        );
-    }
-
     #[Test]
     public function it_returns_expected_keys(): void
     {
@@ -145,5 +122,50 @@ class GuildRosterMemberCollectionTest extends TestCase
         $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
 
         $this->assertSame([], $result[0]['character']['specializations']);
+    }
+
+    #[Test]
+    public function it_sorts_by_rank_then_level_descending_then_name(): void
+    {
+        $members = [
+            $this->makeMember(id: 1, name: 'Zara', level: 70, rank: 2),
+            $this->makeMember(id: 2, name: 'Aaron', level: 70, rank: 1),
+            $this->makeMember(id: 3, name: 'Mia', level: 80, rank: 2),
+            $this->makeMember(id: 4, name: 'Bob', level: 70, rank: 1),
+            $this->makeMember(id: 5, name: 'Carl', level: 60, rank: 2),
+        ];
+
+        $result = (new GuildRosterMemberCollection($members))->toArray(new Request);
+
+        $this->assertSame([
+            ['name' => 'Aaron', 'rank' => 1],
+            ['name' => 'Bob', 'rank' => 1],
+            ['name' => 'Mia', 'rank' => 2],
+            ['name' => 'Zara', 'rank' => 2],
+            ['name' => 'Carl', 'rank' => 2],
+        ], array_map(fn ($r) => ['name' => $r['character']['name'], 'rank' => $r['rank']], $result));
+    }
+
+    private function makeMember(
+        int $id = 1,
+        string $name = 'Thrall',
+        int $level = 60,
+        int $classId = 7,
+        int $raceId = 2,
+        int $rank = 3,
+    ): GuildRosterMemberData {
+        $href = new HrefData(Uri::of('https://example.test'));
+
+        return new GuildRosterMemberData(
+            character: new GuildRosterCharacterData(
+                id: $id,
+                name: $name,
+                level: $level,
+                playableClass: new LinkData(key: $href, name: 'Shaman', id: $classId),
+                playableRace: new LinkData(key: $href, name: 'Orc', id: $raceId),
+                realm: new LinkData(key: $href, name: 'Thunderstrike', id: 1),
+            ),
+            rank: $rank,
+        );
     }
 }
