@@ -33,6 +33,37 @@ class ShowCharacterTest extends TestCase
     }
 
     #[Test]
+    public function show_redirects_to_canonical_url_when_slug_is_missing(): void
+    {
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
+
+        $response = $this->get(route('characters.show', ['character' => $character]));
+
+        $response->assertRedirect(route('characters.show', [
+            'character' => $character,
+            'slug' => $this->characterSlug($character),
+        ]));
+        $response->assertStatus(303);
+    }
+
+    #[Test]
+    public function show_redirects_to_canonical_url_when_slug_is_wrong(): void
+    {
+        $character = Character::factory()->withPlayableClass()->withRank()->create();
+
+        $response = $this->get(route('characters.show', [
+            'character' => $character,
+            'slug' => 'wrong-slug',
+        ]));
+
+        $response->assertRedirect(route('characters.show', [
+            'character' => $character,
+            'slug' => $this->characterSlug($character),
+        ]));
+        $response->assertStatus(303);
+    }
+
+    #[Test]
     public function show_is_accessible_without_authentication(): void
     {
         $character = Character::factory()->withPlayableClass()->withRank()->create();

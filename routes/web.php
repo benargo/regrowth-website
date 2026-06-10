@@ -37,7 +37,7 @@ Route::get('/', fn () => Inertia::render('Home'))->name('home');
 Route::get('/roster', [CharacterController::class, 'index'])
     ->name('characters.index');
 Route::get('/roster/characters', fn () => redirect()->route('characters.index', status: 303));
-Route::get('/roster/characters/{character}/{slug}', [CharacterController::class, 'show'])
+Route::get('/roster/characters/{character}/{slug?}', [CharacterController::class, 'show'])
     ->name('characters.show');
 
 /**

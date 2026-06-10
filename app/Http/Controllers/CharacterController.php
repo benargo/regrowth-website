@@ -52,8 +52,15 @@ class CharacterController extends Controller
     /**
      * Display a single character's overview.
      */
-    public function show(Request $request, Character $character, string $slug): Response
+    public function show(Request $request, Character $character, ?string $slug = null): Response|RedirectResponse
     {
+        if ($slug !== $character->slug) {
+            return redirect()->route('characters.show', [
+                'character' => $character,
+                'slug' => $character->slug,
+            ], 303);
+        }
+
         $character->load(['playableClass', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
 
         return Inertia::render('Roster/Characters/Show', [
