@@ -22,10 +22,12 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
 class FetchGuildRosterTest extends TestCase
 {
+    use HasBlizzardTokenMock;
     use RefreshDatabase;
 
     #[Group('job-contract')]
@@ -422,13 +424,5 @@ class FetchGuildRosterTest extends TestCase
             'average_item_level' => 0,
             'equipped_item_level' => 0,
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function makeTokenResponse(): array
-    {
-        return ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600];
     }
 }
