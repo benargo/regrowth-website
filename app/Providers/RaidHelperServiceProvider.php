@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Services\RaidHelper\RaidHelper;
 use App\Services\RaidHelper\RaidHelperClient;
 use Illuminate\Contracts\Foundation\Application;
@@ -23,6 +24,14 @@ class RaidHelperServiceProvider extends ServiceProvider
         $this->app->singleton(RaidHelper::class, function (Application $app) {
             return new RaidHelper($app->make(RaidHelperClient::class), config('services.raidhelper'));
         });
+
+        // Saloon connector (runs alongside the legacy service during migration)
+        $this->app->singleton(RaidHelperConnector::class, function (Application $app) {
+            return new RaidHelperConnector(
+                token: config('services.raidhelper.token'),
+                serverId: config('services.raidhelper.server_id'),
+            );
+        });
     }
 
     /**
@@ -35,6 +44,7 @@ class RaidHelperServiceProvider extends ServiceProvider
         return [
             RaidHelperClient::class,
             RaidHelper::class,
+            RaidHelperConnector::class,
         ];
     }
 }
