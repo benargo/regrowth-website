@@ -3,16 +3,17 @@
 namespace App\Jobs\RaidHelper;
 
 use App\Events\Broadcasts\CompositionChanged;
+use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Http\Integrations\RaidHelper\Pagination\EventsPaginator;
+use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use App\Http\Integrations\RaidHelper\Requests\GetCompositionRequest;
+use App\Http\Integrations\RaidHelper\Requests\GetEventsRequest;
 use App\Http\Resources\EventCompositionResource;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\RateLimitedException;
-use App\Services\Discord\Resources\Channel;
-use App\Services\RaidHelper\Exceptions\NoEventsFoundException;
-use App\Services\RaidHelper\RaidHelper;
-use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Carbon\CarbonInterface;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,6 +21,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Saloon\Exceptions\Request\Statuses\NotFoundException;
 
 class FetchEvents implements ShouldQueue
 {
@@ -64,11 +66,11 @@ class FetchEvents implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(Discord $discord, RaidHelper $raidHelper): void
+    public function handle(Discord $discord, RaidHelperConnector $raidHelper): void
     {
         // Step 1. Validate the channel IDs to ensure they belong to the correct server.
         try {
-            $validChannels = $discord->getGuildChannels($raidHelper->getServerId())->whereIn('id', $this->channelIds)->pluck('id');
+            $validChannels = $discord->getGuildChannels($raidHelper->serverId())->whereIn('id', $this->channelIds)->pluck('id');
         } catch (RateLimitedException $e) {
             Log::warning('FetchEvents: Discord rate limited fetching guild channels, releasing job.', [
                 'endpoint' => $e->endpoint,
@@ -79,44 +81,41 @@ class FetchEvents implements ShouldQueue
 
             return;
         } catch (Exception $e) {
-            Log::error("Failed to fetch channels from Discord API for server ID {$raidHelper->getServerId()}. Error: {$e->getMessage()}");
+            Log::error("Failed to fetch channels from Discord API for server ID {$raidHelper->serverId()}. Error: {$e->getMessage()}");
             $validChannels = collect(); // Proceed with an empty collection of valid channels to avoid breaking the entire job
         }
 
         $events = collect();
 
         // Step 2. Fetch events from the Raid Helper API for the valid channels and within the specified time range.
-        $validChannels->map(function ($channelId) use (&$events, $raidHelper) {
-            // Step 2a. Fetch the first page of events for the current channel with the specified time filters.
-            try {
-                $paginatedEvents = $raidHelper->getEvents(
-                    includeSignUps: true,
-                    channelId: $channelId,
-                    startTimeFilter: $this->startTimeFilter,
-                    endTimeFilter: $this->endTimeFilter,
-                );
-                $events = $events->merge($paginatedEvents->items());
-            } catch (NoEventsFoundException $e) {
-                Log::notice("No events found for channel ID $channelId with the specified time filters. Skipping to the next channel.");
+        $validChannels->each(function ($channelId) use (&$events, $raidHelper) {
+            $request = new GetEventsRequest(
+                serverId: $raidHelper->serverId(),
+                includeSignUps: true,
+                channelId: $channelId,
+                startTimeFilter: $this->startTimeFilter,
+                endTimeFilter: $this->endTimeFilter,
+            );
 
-                return; // Skip to the next channel if no events are found for the current channel
+            $channelEvents = collect();
+
+            foreach (new EventsPaginator(connector: $raidHelper, request: $request) as $response) {
+                $channelEvents = $channelEvents->merge(
+                    EventData::collect($response->json('postedEvents', []))
+                );
             }
 
-            // Step 2b. If there are more pages of events, continue fetching until all pages have been retrieved.
-            while ($paginatedEvents->hasMorePages()) {
-                $paginatedEvents = $raidHelper->getEvents(
-                    page: $paginatedEvents->currentPage() + 1,
-                    includeSignUps: true,
-                    channelId: $channelId,
-                    startTimeFilter: $this->startTimeFilter,
-                    endTimeFilter: $this->endTimeFilter,
-                );
-                $events = $events->merge($paginatedEvents->items());
+            if ($channelEvents->isEmpty()) {
+                Log::notice("No events found for channel ID {$channelId} with the specified time filters. Skipping to the next channel.");
+
+                return;
             }
+
+            $events = $events->merge($channelEvents);
         });
 
         // Step 3. Upsert the events and their associated comps into the database.
-        $events->each(function (RaidHelperEvent $event) use ($raidHelper) {
+        $events->each(function (EventData $event) use ($raidHelper) {
             // Step 3a. Decode the raids from the event description.
             $raidsString = str($event->description)
                 ->after("-# Do not edit below this line...\n")
@@ -166,7 +165,12 @@ class FetchEvents implements ShouldQueue
             // Step 3d. Fetch the comp data for the event from the Raid Helper API and sync the associated characters with their
             // comp details (slot number, group number, confirmation status).
             Log::debug("Syncing comp data for event ID {$event->id} in the database.");
-            $comp = $raidHelper->getComp($event->id);
+
+            try {
+                $comp = $raidHelper->send(new GetCompositionRequest($event->id))->dto();
+            } catch (NotFoundException) {
+                $comp = null;
+            }
 
             // Create an empty array to hold the character sync data for the event.
             $characterSync = [];

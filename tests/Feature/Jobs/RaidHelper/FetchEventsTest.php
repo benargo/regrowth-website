@@ -3,6 +3,9 @@
 namespace Tests\Feature\Jobs\RaidHelper;
 
 use App\Enums\RaidBackground;
+use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use App\Http\Integrations\RaidHelper\Requests\GetCompositionRequest;
+use App\Http\Integrations\RaidHelper\Requests\GetEventsRequest;
 use App\Jobs\RaidHelper\FetchEvents;
 use App\Models\Character;
 use App\Models\Event;
@@ -10,17 +13,16 @@ use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Resources\Channel;
-use App\Services\RaidHelper\RaidHelper;
-use App\Services\RaidHelper\Resources\Comp;
-use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 class FetchEventsTest extends TestCase
@@ -29,17 +31,18 @@ class FetchEventsTest extends TestCase
 
     private Discord&MockInterface $discord;
 
-    private RaidHelper&MockInterface $raidHelper;
+    private RaidHelperConnector $connector;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->discord = Mockery::mock(Discord::class);
-        $this->raidHelper = Mockery::mock(RaidHelper::class);
-
         $this->app->instance(Discord::class, $this->discord);
-        $this->app->instance(RaidHelper::class, $this->raidHelper);
+
+        // Bind a real connector with deterministic config; HTTP is faked per-test.
+        $this->connector = new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+        $this->app->instance(RaidHelperConnector::class, $this->connector);
     }
 
     // -------------------------------------------------------------------------
@@ -49,34 +52,33 @@ class FetchEventsTest extends TestCase
     #[Test]
     public function it_only_processes_channel_ids_that_belong_to_the_server(): void
     {
-        $serverId = '111222333444555666';
         $validChannelId = '100000000000000001';
         $invalidChannelId = '999999999999999999';
 
-        $this->raidHelper->shouldReceive('getServerId')->andReturn($serverId);
         $this->discord->shouldReceive('getGuildChannels')
-            ->with($serverId)
+            ->with('111222333444555666')
             ->andReturn(Collection::make([Channel::from(['id' => $validChannelId])]));
 
-        $this->raidHelper->shouldReceive('getEvents')
-            ->once()
-            ->andReturn($this->singlePagePaginator([]));
+        $this->fakeEmptyEventsPage();
 
         $job = new FetchEvents([$validChannelId, $invalidChannelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
+
+        Saloon::assertSentCount(1);
     }
 
     #[Test]
     public function it_skips_all_channels_when_none_belong_to_the_server(): void
     {
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->andReturn(Collection::make([]));
 
-        $this->raidHelper->shouldNotReceive('getEvents');
+        Saloon::fake([]);
 
         $job = new FetchEvents(['999999999999999999']);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
+
+        Saloon::assertNothingSent();
     }
 
     // -------------------------------------------------------------------------
@@ -89,19 +91,18 @@ class FetchEventsTest extends TestCase
         $channelOneId = '100000000000000001';
         $channelTwoId = '100000000000000002';
 
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->andReturn(Collection::make([
                 Channel::from(['id' => $channelOneId]),
                 Channel::from(['id' => $channelTwoId]),
             ]));
 
-        $this->raidHelper->shouldReceive('getEvents')
-            ->twice()
-            ->andReturn($this->singlePagePaginator([]));
+        $this->fakeEmptyEventsPage();
 
         $job = new FetchEvents([$channelOneId, $channelTwoId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
+
+        Saloon::assertSentCount(2);
     }
 
     #[Test]
@@ -111,30 +112,21 @@ class FetchEventsTest extends TestCase
         $start = Carbon::parse('2024-01-01 06:00:00', 'UTC');
         $end = Carbon::parse('2024-01-08 05:59:59', 'UTC');
 
-        $capturedChannelId = null;
-        $capturedStart = null;
-        $capturedEnd = null;
-
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
 
-        $this->raidHelper->shouldReceive('getEvents')
-            ->withArgs(function ($page, $includeSignUps, $channelIdArg, $startFilter, $endFilter) use (&$capturedChannelId, &$capturedStart, &$capturedEnd) {
-                $capturedChannelId = $channelIdArg;
-                $capturedStart = $startFilter;
-                $capturedEnd = $endFilter;
-
-                return true;
-            })
-            ->andReturn($this->singlePagePaginator([]));
+        $this->fakeEmptyEventsPage();
 
         $job = new FetchEvents([$channelId], $start, $end);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
-        $this->assertSame($channelId, $capturedChannelId);
-        $this->assertTrue($capturedStart->eq($start));
-        $this->assertTrue($capturedEnd->eq($end));
+        Saloon::assertSent(function (Request $request) use ($channelId, $start, $end) {
+            $headers = $request->headers();
+
+            return $headers->get('StartTimeFilter') === $start->unix()
+                && $headers->get('EndTimeFilter') === $end->unix()
+                && $headers->get('ChannelFilter') === $channelId;
+        });
     }
 
     #[Test]
@@ -142,24 +134,17 @@ class FetchEventsTest extends TestCase
     {
         $channelId = '100000000000000001';
 
-        $capturedIncludeSignUps = null;
-
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
 
-        $this->raidHelper->shouldReceive('getEvents')
-            ->withArgs(function ($page, $includeSignUps) use (&$capturedIncludeSignUps) {
-                $capturedIncludeSignUps = $includeSignUps;
-
-                return true;
-            })
-            ->andReturn($this->singlePagePaginator([]));
+        $this->fakeEmptyEventsPage();
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
-        $this->assertTrue($capturedIncludeSignUps);
+        Saloon::assertSent(function (Request $request) {
+            return $request->headers()->get('IncludeSignUps') === 'true';
+        });
     }
 
     #[Test]
@@ -169,42 +154,23 @@ class FetchEventsTest extends TestCase
         $payloadOne = $this->minimalListingEventPayload(['id' => '999000000000000001']);
         $payloadTwo = $this->minimalListingEventPayload(['id' => '999000000000000002']);
 
-        $pageOne = (new Paginator(
-            items: RaidHelperEvent::collect([$payloadOne]),
-            perPage: 1,
-            currentPage: 1,
-            options: [],
-        ))->hasMorePagesWhen(true);
-
-        $pageTwo = (new Paginator(
-            items: RaidHelperEvent::collect([$payloadTwo]),
-            perPage: 1,
-            currentPage: 2,
-            options: [],
-        ))->hasMorePagesWhen(false);
-
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
 
-        $this->raidHelper->shouldReceive('getEvents')
-            ->once()
-            ->withArgs(fn ($page, $includeSignUps, $channelIdArg) => $channelIdArg === $channelId && $page !== 2)
-            ->andReturn($pageOne);
-
-        $this->raidHelper->shouldReceive('getEvents')
-            ->once()
-            ->withArgs(fn ($page, $includeSignUps, $channelIdArg) => $channelIdArg === $channelId && $page === 2)
-            ->andReturn($pageTwo);
-
-        $this->raidHelper->shouldReceive('getComp')->with('999000000000000001')->andReturn(null);
-        $this->raidHelper->shouldReceive('getComp')->with('999000000000000002')->andReturn(null);
+        Saloon::fake([
+            GetCompositionRequest::class => MockResponse::make(['reason' => 'unknown composition', 'status' => 'failed'], 404),
+            MockResponse::make(['eventsTransmitted' => 1000, 'postedEvents' => [$payloadOne]], 200),
+            MockResponse::make(['eventsTransmitted' => 1, 'postedEvents' => [$payloadTwo]], 200),
+        ]);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $this->assertDatabaseHas('events', ['raid_helper_event_id' => '999000000000000001']);
         $this->assertDatabaseHas('events', ['raid_helper_event_id' => '999000000000000002']);
+
+        // Two event pages + two composition lookups (one per event).
+        Saloon::assertSentCount(4);
     }
 
     // -------------------------------------------------------------------------
@@ -224,7 +190,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $this->assertDatabaseHas('events', [
             'raid_helper_event_id' => '999000000000000001',
@@ -249,7 +215,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $this->assertDatabaseHas('events', [
             'id' => $existingEvent->id,
@@ -276,7 +242,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $appTimezone = config('app.timezone');
@@ -288,7 +254,7 @@ class FetchEventsTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Comp sync
+    // Composition sync
     // -------------------------------------------------------------------------
 
     #[Test]
@@ -297,17 +263,17 @@ class FetchEventsTest extends TestCase
         $channelId = '100000000000000001';
         $character = Character::factory()->create(['name' => 'Arthas']);
 
-        $comp = Comp::from($this->minimalCompPayload([
+        $composition = $this->minimalCompositionPayload([
             'slots' => [
                 $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1, 'isConfirmed' => 'confirmed']),
             ],
-        ]));
+        ]);
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
-        $this->setupSingleEventRun($channelId, $payload, $comp);
+        $this->setupSingleEventRun($channelId, $payload, $composition);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertTrue($event->characters->contains($character));
@@ -323,17 +289,17 @@ class FetchEventsTest extends TestCase
     {
         $channelId = '100000000000000001';
 
-        $comp = Comp::from($this->minimalCompPayload([
+        $composition = $this->minimalCompositionPayload([
             'slots' => [
                 $this->minimalSlotPayload(['name' => 'UnknownCharacter']),
             ],
-        ]));
+        ]);
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
-        $this->setupSingleEventRun($channelId, $payload, $comp);
+        $this->setupSingleEventRun($channelId, $payload, $composition);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(0, $event->characters);
@@ -348,7 +314,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertNotNull($event);
@@ -367,7 +333,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event->refresh();
         $this->assertCount(0, $event->characters);
@@ -380,18 +346,18 @@ class FetchEventsTest extends TestCase
         $arthas = Character::factory()->create(['name' => 'Arthas']);
         $sylvanas = Character::factory()->create(['name' => 'Sylvanas']);
 
-        $comp = Comp::from($this->minimalCompPayload([
+        $composition = $this->minimalCompositionPayload([
             'slots' => [
                 $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
                 $this->minimalSlotPayload(['id' => 'slot-2', 'name' => 'Sylvanas', 'slotNumber' => 2, 'groupNumber' => 1]),
             ],
-        ]));
+        ]);
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
-        $this->setupSingleEventRun($channelId, $payload, $comp);
+        $this->setupSingleEventRun($channelId, $payload, $composition);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(2, $event->characters);
@@ -410,20 +376,20 @@ class FetchEventsTest extends TestCase
         $arthas = Character::factory()->create(['name' => 'Arthas']);
         $thrall = Character::factory()->create(['name' => 'Thrall']);
 
-        $comp = Comp::from($this->minimalCompPayload([
+        $composition = $this->minimalCompositionPayload([
             'slots' => [
                 $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
             ],
-        ]));
+        ]);
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
-        $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
+        $this->setupSingleEventRun($channelId, $payload, $composition, signUps: [
             ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'className' => 'Warrior'],
             ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001, 'className' => 'Shaman'],
         ]);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $thrallPivot = $event->characters->find($thrall->id)?->pivot;
@@ -440,19 +406,19 @@ class FetchEventsTest extends TestCase
         $channelId = '100000000000000001';
         $arthas = Character::factory()->create(['name' => 'Arthas']);
 
-        $comp = Comp::from($this->minimalCompPayload([
+        $composition = $this->minimalCompositionPayload([
             'slots' => [
                 $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
             ],
-        ]));
+        ]);
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
-        $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
+        $this->setupSingleEventRun($channelId, $payload, $composition, signUps: [
             ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'className' => 'Warrior'],
         ]);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $arthasPivot = $event->characters->find($arthas->id)?->pivot;
@@ -470,14 +436,14 @@ class FetchEventsTest extends TestCase
         Character::factory()->create(['name' => 'Sylvanas']);
         Character::factory()->create(['name' => 'Varian']);
 
-        $comp = Comp::from($this->minimalCompPayload([
+        $composition = $this->minimalCompositionPayload([
             'slots' => [
                 $this->minimalSlotPayload(['name' => 'Arthas', 'slotNumber' => 1, 'groupNumber' => 1]),
             ],
-        ]));
+        ]);
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
-        $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
+        $this->setupSingleEventRun($channelId, $payload, $composition, signUps: [
             ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'className' => 'Warrior'],
             ['id' => 2, 'name' => 'Jaina', 'userId' => '222', 'entryTime' => 1700000001, 'className' => 'Absence'],
             ['id' => 3, 'name' => 'Sylvanas', 'userId' => '333', 'entryTime' => 1700000002, 'className' => 'Late'],
@@ -485,7 +451,7 @@ class FetchEventsTest extends TestCase
         ]);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(1, $event->characters);
@@ -507,7 +473,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(1, $event->raids);
@@ -529,7 +495,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(2, $event->raids);
@@ -552,7 +518,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(1, $event->raids);
@@ -573,7 +539,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(0, $event->raids);
@@ -592,7 +558,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertCount(0, $event->raids);
@@ -607,7 +573,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertNotNull($event);
@@ -629,7 +595,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertSame(RaidBackground::KARAZHAN, $event->background_css_class);
@@ -646,7 +612,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertNull($event->background_css_class);
@@ -669,7 +635,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertSame(RaidBackground::KARAZHAN, $event->background_css_class);
@@ -690,7 +656,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $existingEvent->refresh();
         $this->assertNull($existingEvent->background_css_class);
@@ -712,7 +678,7 @@ class FetchEventsTest extends TestCase
         $this->setupSingleEventRun($channelId, $payload, null);
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $event = Event::where('raid_helper_event_id', '999000000000000001')->first();
         $this->assertSame('226e73', $event->color);
@@ -732,7 +698,7 @@ class FetchEventsTest extends TestCase
         Cache::spy();
 
         $job = new FetchEvents([$channelId]);
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         Cache::shouldHaveReceived('tags')->with(['events'])->once();
     }
@@ -740,35 +706,35 @@ class FetchEventsTest extends TestCase
     #[Test]
     public function it_releases_itself_when_discord_is_rate_limited_fetching_channels(): void
     {
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->once()
             ->andThrow(new RateLimitedException('guilds/111222333444555666/channels', 15.0, 'global'));
 
-        $this->raidHelper->shouldNotReceive('getEvents');
+        Saloon::fake([]);
 
         $job = new FetchEvents(['100000000000000001']);
         $job->withFakeQueueInteractions();
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $job->assertReleased(15.0);
+        Saloon::assertNothingSent();
     }
 
     #[Test]
     public function it_continues_with_empty_channels_on_other_discord_errors(): void
     {
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->once()
             ->andThrow(new \RuntimeException('Connection timeout'));
 
-        $this->raidHelper->shouldNotReceive('getEvents');
+        Saloon::fake([]);
 
         $job = new FetchEvents(['100000000000000001']);
         $job->withFakeQueueInteractions();
-        $job->handle($this->discord, $this->raidHelper);
+        $job->handle($this->discord, $this->connector);
 
         $job->assertNotReleased();
+        Saloon::assertNothingSent();
     }
 
     // -------------------------------------------------------------------------
@@ -776,14 +742,14 @@ class FetchEventsTest extends TestCase
     // -------------------------------------------------------------------------
 
     /**
-     * Wire up mocks for a single-event, single-channel run.
+     * Fake a single-channel, single-event run.
      *
      * @param  array<string, mixed>  $eventPayload
-     * @param  array<int, array<string, mixed>>|null  $signUps  Sign-up payloads embedded in the listing event for bench sync
+     * @param  array<string, mixed>|null  $compositionPayload  Composition body, or null to fake a 404 (no composition).
+     * @param  array<int, array<string, mixed>>|null  $signUps
      */
-    private function setupSingleEventRun(string $channelId, array $eventPayload, ?Comp $comp, ?array $signUps = null): void
+    private function setupSingleEventRun(string $channelId, array $eventPayload, ?array $compositionPayload, ?array $signUps = null): void
     {
-        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
         $this->discord->shouldReceive('getGuildChannels')
             ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
 
@@ -791,28 +757,25 @@ class FetchEventsTest extends TestCase
             $eventPayload = array_merge($eventPayload, ['signUps' => $signUps]);
         }
 
-        $this->raidHelper->shouldReceive('getEvents')
-            ->once()
-            ->andReturn($this->singlePagePaginator([$eventPayload]));
-
-        $this->raidHelper->shouldReceive('getComp')
-            ->with($eventPayload['id'])
-            ->andReturn($comp);
+        Saloon::fake([
+            GetEventsRequest::class => MockResponse::make([
+                'eventsTransmitted' => 1,
+                'postedEvents' => [$eventPayload],
+            ], 200),
+            GetCompositionRequest::class => $compositionPayload === null
+                ? MockResponse::make(['reason' => 'unknown composition', 'status' => 'failed'], 404)
+                : MockResponse::make($compositionPayload, 200),
+        ]);
     }
 
     /**
-     * Build a single-page LengthAwarePaginator from an array of raw event payloads.
-     *
-     * @param  array<int, array<string, mixed>>  $payloads
+     * Fake a single empty events page (no events for the channel).
      */
-    private function singlePagePaginator(array $payloads): Paginator
+    private function fakeEmptyEventsPage(): void
     {
-        return (new Paginator(
-            items: RaidHelperEvent::collect($payloads),
-            perPage: max(count($payloads), 1),
-            currentPage: 1,
-            options: [],
-        ))->hasMorePagesWhen(false);
+        Saloon::fake([
+            GetEventsRequest::class => MockResponse::make(['eventsTransmitted' => 0, 'postedEvents' => []], 200),
+        ]);
     }
 
     /**
@@ -840,11 +803,11 @@ class FetchEventsTest extends TestCase
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
-    private function minimalCompPayload(array $overrides = []): array
+    private function minimalCompositionPayload(array $overrides = []): array
     {
         return array_merge([
             'id' => '999000000000000001',
-            'title' => 'Weekly Comp',
+            'title' => 'Weekly Composition',
             'editPermissions' => 'managers',
             'showRoles' => true,
             'showClasses' => true,
