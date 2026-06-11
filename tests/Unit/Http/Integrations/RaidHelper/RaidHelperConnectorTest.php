@@ -11,10 +11,18 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
+use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
+use Saloon\RateLimitPlugin\Stores\MemoryStore;
 use Tests\TestCase;
 
 class RaidHelperConnectorTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        MemoryStore::clear();
+    }
+
     #[Test]
     public function it_authenticates_with_the_bare_token_and_no_prefix(): void
     {
@@ -57,6 +65,32 @@ class RaidHelperConnectorTest extends TestCase
         ]);
 
         $this->expectException(InternalServerErrorException::class);
+
+        $this->makeConnector()->send(new ConnectorProbeRequest);
+    }
+
+    // ==================== Rate limits ====================
+
+    #[Test]
+    public function it_throws_rate_limit_reached_on_a_429_with_retry_after_header(): void
+    {
+        Saloon::fake([
+            ConnectorProbeRequest::class => MockResponse::make([], 429, ['Retry-After' => '5']),
+        ]);
+
+        $this->expectException(RateLimitReachedException::class);
+
+        $this->makeConnector()->send(new ConnectorProbeRequest);
+    }
+
+    #[Test]
+    public function it_throws_rate_limit_reached_on_a_429_with_no_retry_after_header(): void
+    {
+        Saloon::fake([
+            ConnectorProbeRequest::class => MockResponse::make([], 429),
+        ]);
+
+        $this->expectException(RateLimitReachedException::class);
 
         $this->makeConnector()->send(new ConnectorProbeRequest);
     }
