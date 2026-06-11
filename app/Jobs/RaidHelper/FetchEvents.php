@@ -90,6 +90,7 @@ class FetchEvents implements ShouldQueue
             // Step 2a. Fetch the first page of events for the current channel with the specified time filters.
             try {
                 $paginatedEvents = $raidHelper->getEvents(
+                    includeSignUps: true,
                     channelId: $channelId,
                     startTimeFilter: $this->startTimeFilter,
                     endTimeFilter: $this->endTimeFilter,
@@ -105,6 +106,7 @@ class FetchEvents implements ShouldQueue
             while ($paginatedEvents->hasMorePages()) {
                 $paginatedEvents = $raidHelper->getEvents(
                     page: $paginatedEvents->currentPage() + 1,
+                    includeSignUps: true,
                     channelId: $channelId,
                     startTimeFilter: $this->startTimeFilter,
                     endTimeFilter: $this->endTimeFilter,
@@ -190,7 +192,7 @@ class FetchEvents implements ShouldQueue
                 try {
                     $compNames = collect($comp->slots)->pluck('name');
                     $benchedNames = collect($event->signUps)
-                        ->whereNotIn('cClassName', ['Absence', 'Late', 'Tentative'])
+                        ->whereNotIn('className', ['Absence', 'Late', 'Tentative'])
                         ->pluck('name')
                         ->diff($compNames);
 

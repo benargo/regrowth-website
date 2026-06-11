@@ -138,6 +138,31 @@ class FetchEventsTest extends TestCase
     }
 
     #[Test]
+    public function it_requests_sign_ups_when_fetching_events(): void
+    {
+        $channelId = '100000000000000001';
+
+        $capturedIncludeSignUps = null;
+
+        $this->raidHelper->shouldReceive('getServerId')->andReturn('111222333444555666');
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([Channel::from(['id' => $channelId])]));
+
+        $this->raidHelper->shouldReceive('getEvents')
+            ->withArgs(function ($page, $includeSignUps) use (&$capturedIncludeSignUps) {
+                $capturedIncludeSignUps = $includeSignUps;
+
+                return true;
+            })
+            ->andReturn($this->singlePagePaginator([]));
+
+        $job = new FetchEvents([$channelId]);
+        $job->handle($this->discord, $this->raidHelper);
+
+        $this->assertTrue($capturedIncludeSignUps);
+    }
+
+    #[Test]
     public function it_collects_events_across_multiple_pages(): void
     {
         $channelId = '100000000000000001';
@@ -393,8 +418,8 @@ class FetchEventsTest extends TestCase
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
         $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
-            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'cClassName' => 'Warrior'],
-            ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001, 'cClassName' => 'Shaman'],
+            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'className' => 'Warrior'],
+            ['id' => 2, 'name' => 'Thrall', 'userId' => '222', 'entryTime' => 1700000001, 'className' => 'Shaman'],
         ]);
 
         $job = new FetchEvents([$channelId]);
@@ -423,7 +448,7 @@ class FetchEventsTest extends TestCase
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
         $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
-            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'cClassName' => 'Warrior'],
+            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'className' => 'Warrior'],
         ]);
 
         $job = new FetchEvents([$channelId]);
@@ -453,10 +478,10 @@ class FetchEventsTest extends TestCase
 
         $payload = $this->minimalListingEventPayload(['id' => '999000000000000001']);
         $this->setupSingleEventRun($channelId, $payload, $comp, signUps: [
-            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'cClassName' => 'Warrior'],
-            ['id' => 2, 'name' => 'Jaina', 'userId' => '222', 'entryTime' => 1700000001, 'cClassName' => 'Absence'],
-            ['id' => 3, 'name' => 'Sylvanas', 'userId' => '333', 'entryTime' => 1700000002, 'cClassName' => 'Late'],
-            ['id' => 4, 'name' => 'Varian', 'userId' => '444', 'entryTime' => 1700000003, 'cClassName' => 'Tentative'],
+            ['id' => 1, 'name' => 'Arthas', 'userId' => '111', 'entryTime' => 1700000000, 'className' => 'Warrior'],
+            ['id' => 2, 'name' => 'Jaina', 'userId' => '222', 'entryTime' => 1700000001, 'className' => 'Absence'],
+            ['id' => 3, 'name' => 'Sylvanas', 'userId' => '333', 'entryTime' => 1700000002, 'className' => 'Late'],
+            ['id' => 4, 'name' => 'Varian', 'userId' => '444', 'entryTime' => 1700000003, 'className' => 'Tentative'],
         ]);
 
         $job = new FetchEvents([$channelId]);
