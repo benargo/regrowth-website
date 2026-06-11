@@ -136,7 +136,17 @@ class GetItemRequest extends Request implements Cacheable
 
 **Custom Response class only when you need behaviour on the response** — e.g. memoising the DTO so middleware-enriched state survives repeated `dto()` calls (`Responses/GetMediaResponse.php` returns `$this->mediaData ??= MediaData::from($this->json())`). Most requests need no custom Response; returning the DTO via `createDtoFromResponse` is enough.
 
-Each request lands **with a test** (Phase 5 patterns). Build resource by resource; callers still use the legacy service until Phase 4.
+**Every DTO must have a unit test.** Mirror the path under `tests/Unit/Http/Integrations/{Api}/Data/`. Each test extends `Tests\TestCase` (no `RefreshDatabase`), uses `#[Test]` attribute notation, and exercises hydration via `DtoClass::from($this->sampleApiResponse())`. Cover:
+
+- **All required fields** — assert each property matches the expected cast value (use string inputs for integer/bool fields to prove the cast fires).
+- **Casts** — if a field uses a custom or `BuiltinTypeCast`, assert the cast result (e.g. `'2'` → `2`, `'confirmed'` → `true`).
+- **Nested collections** — assert `assertCount()` and `assertInstanceOf()` on each `#[DataCollectionOf]` property; spot-check a nested property.
+- **Nullable / optional fields** — one test that omits them and asserts `null`; one test that populates them.
+- **Empty collections** — for DTOs with collection properties, assert empty arrays are handled gracefully.
+
+Place a private `sampleApiResponse(): array` helper at the bottom of the class (after all `#[Test]` methods) returning a realistic API payload with string values where the API sends strings.
+
+Each request lands **with its own test** (Phase 5 patterns), and every DTO it returns lands with a **unit test**. Build resource by resource; callers still use the legacy service until Phase 4.
 
 ## Phase 4 — Migrate callers one at a time
 
