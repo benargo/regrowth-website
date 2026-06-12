@@ -153,7 +153,7 @@ class EventData extends Data
     public static function rules(): array
     {
         return [
-            'startTime' => ['before:endTime', 'before_or_equal:closingTime'],
+            'startTime' => ['before:endTime', 'after_or_equal:closingTime'],
             'endTime' => ['after:startTime', 'after:closingTime'],
             'closingTime' => ['before_or_equal:startTime'],
         ];
