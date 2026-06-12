@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\RaidHelper\Data\Compositions;
 
 use App\Casts\IsConfirmed;
+use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\BuiltinTypeCast;
@@ -11,9 +12,9 @@ use Spatie\LaravelData\Data;
 class CompositionSlotData extends Data
 {
     public function __construct(
-        /** @var string The unique identifier for this slot */
-        #[StringType]
-        public readonly string $id,
+        /** @var string|null The unique identifier for this slot (absent when no Discord user is assigned) */
+        #[Nullable, StringType]
+        public readonly ?string $id,
 
         /** @var string The name of the sign-up in this slot */
         #[StringType]

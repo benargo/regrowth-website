@@ -58,6 +58,46 @@ class EventWebhookRequestTest extends TestCase
         $this->assertArrayHasKey('id', $validator->errors()->toArray());
     }
 
+    #[Test]
+    public function it_passes_validation_with_optional_fields_present(): void
+    {
+        $body = array_merge($this->eventBody, [
+            'signUps' => [
+                [
+                    'id' => 1,
+                    'name' => 'Player One',
+                    'userId' => '400000000000000001',
+                    'entryTime' => 1699998000,
+                    'status' => 'primary',
+                    'className' => 'Warrior',
+                    'specName' => 'Protection',
+                ],
+            ],
+            'classes' => [
+                [
+                    'name' => 'Warrior',
+                    'emoteId' => '123456789',
+                    'type' => 'primary',
+                    'specs' => [
+                        ['name' => 'Protection', 'emoteId' => '987654321', 'roleEmoteId' => '111111111', 'roleName' => 'Tank'],
+                    ],
+                ],
+            ],
+            'roles' => [
+                ['name' => 'Tank', 'limit' => 2, 'emoteId' => '111111111'],
+            ],
+            'advancedSettings' => [
+                'limit' => 25,
+                'lockAtLimit' => true,
+                'attendance' => 'raid',
+            ],
+        ]);
+
+        $validator = $this->validate($body);
+
+        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
+    }
+
     private function makeRequest(): EventWebhookRequest
     {
         return EventWebhookRequest::create('/', 'POST');
