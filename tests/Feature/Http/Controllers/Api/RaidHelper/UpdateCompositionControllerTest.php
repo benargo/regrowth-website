@@ -41,7 +41,7 @@ class UpdateCompositionControllerTest extends TestCase
     public function it_returns_202_and_dispatches_sync_composition_for_a_valid_comp_update_webhook(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.comp-update'),
+            '/api/raidhelper/comp-update',
             $this->minimalCompBody(),
             ['Authorization' => 'test-secret'],
         );
@@ -54,7 +54,7 @@ class UpdateCompositionControllerTest extends TestCase
     public function it_rejects_requests_with_an_invalid_authorization_header(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.comp-update'),
+            '/api/raidhelper/comp-update',
             $this->minimalCompBody(),
             ['Authorization' => 'wrong-secret'],
         );
@@ -70,7 +70,7 @@ class UpdateCompositionControllerTest extends TestCase
         unset($body['eventId']);
 
         $response = $this->postJson(
-            route('api.raidhelper.comp-update'),
+            '/api/raidhelper/comp-update',
             $body,
             ['Authorization' => 'test-secret'],
         );

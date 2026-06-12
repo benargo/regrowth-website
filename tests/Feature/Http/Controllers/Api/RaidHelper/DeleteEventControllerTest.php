@@ -22,7 +22,7 @@ class DeleteEventControllerTest extends TestCase
     public function it_returns_202_and_dispatches_delete_event_for_a_valid_event_delete_webhook(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.event-delete'),
+            '/api/raidhelper/event-delete',
             ['id' => '111222333444555001'],
             ['Authorization' => 'test-secret'],
         );
@@ -35,7 +35,7 @@ class DeleteEventControllerTest extends TestCase
     public function it_rejects_requests_with_an_invalid_authorization_header(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.event-delete'),
+            '/api/raidhelper/event-delete',
             ['id' => '111222333444555001'],
             ['Authorization' => 'wrong-secret'],
         );
@@ -48,7 +48,7 @@ class DeleteEventControllerTest extends TestCase
     public function it_returns_422_when_id_is_missing(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.event-delete'),
+            '/api/raidhelper/event-delete',
             [],
             ['Authorization' => 'test-secret'],
         );

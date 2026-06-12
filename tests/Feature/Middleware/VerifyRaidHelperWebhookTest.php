@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Middleware;
 
+use App\Http\Middleware\VerifyRaidHelperWebhook;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -12,7 +13,7 @@ class VerifyRaidHelperWebhookTest extends TestCase
     {
         parent::setUp();
 
-        Route::middleware('raidhelper.webhook')->post('/_test/raidhelper-webhook', fn () => response()->json(['ok' => true]));
+        Route::middleware(VerifyRaidHelperWebhook::class)->post('/_test/raidhelper-webhook', fn () => response()->json(['ok' => true]));
     }
 
     #[Test]

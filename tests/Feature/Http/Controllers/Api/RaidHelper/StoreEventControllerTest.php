@@ -40,7 +40,7 @@ class StoreEventControllerTest extends TestCase
     public function it_returns_202_and_dispatches_sync_event_for_a_valid_event_create_webhook(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.event-create'),
+            '/api/raidhelper/event-create',
             $this->minimalEventBody(),
             ['Authorization' => 'test-secret'],
         );
@@ -53,7 +53,7 @@ class StoreEventControllerTest extends TestCase
     public function it_rejects_requests_with_an_invalid_authorization_header(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.event-create'),
+            '/api/raidhelper/event-create',
             $this->minimalEventBody(),
             ['Authorization' => 'wrong-secret'],
         );
@@ -66,7 +66,7 @@ class StoreEventControllerTest extends TestCase
     public function it_returns_422_for_a_malformed_event_body(): void
     {
         $response = $this->postJson(
-            route('api.raidhelper.event-create'),
+            '/api/raidhelper/event-create',
             [],
             ['Authorization' => 'test-secret'],
         );
