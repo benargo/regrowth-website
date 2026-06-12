@@ -3,14 +3,11 @@
 namespace App\Http\Requests\RaidHelper;
 
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class UpdateCompositionRequest extends FormRequest
+class UpdateCompositionRequest extends RaidHelperWebhookRequest
 {
     private readonly Collection $compositionRules;
 
@@ -19,6 +16,11 @@ class UpdateCompositionRequest extends FormRequest
         parent::__construct();
         $this->compositionRules = collect(CompositionData::getValidationRules([]))
             ->mapWithKeys(fn ($rules, $key) => [Str::camel($key) => $rules]);
+    }
+
+    protected function webhookRules(): Collection
+    {
+        return $this->compositionRules;
     }
 
     public function rules(): array
@@ -30,17 +32,12 @@ class UpdateCompositionRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $allowed = $this->compositionRules
+        $allowed = collect($this->rules())
             ->keys()
             ->filter(fn ($key) => ! str_contains($key, '.') && ! str_contains($key, '*'));
 
         if (count(Arr::reject($this->keys(), fn ($key) => $allowed->contains($key))) > 0) {
             abort(400);
         }
-    }
-
-    protected function failedValidation(Validator $validator): void
-    {
-        throw new HttpResponseException(response()->noContent(400));
     }
 }

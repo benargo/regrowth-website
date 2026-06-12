@@ -67,6 +67,18 @@ class UpdateCompositionRequestTest extends TestCase
         $this->assertArrayHasKey('title', $validator->errors()->toArray());
     }
 
+    #[Test]
+    public function prepare_for_validation_does_not_reject_merged_keys_such_as_id(): void
+    {
+        $rules = $this->makeRequest()->rules();
+
+        $allowed = collect($rules)
+            ->keys()
+            ->filter(fn ($key) => ! str_contains($key, '.') && ! str_contains($key, '*'));
+
+        $this->assertTrue($allowed->contains('id'), "'id' must be present in the derived allowed-keys list");
+    }
+
     private function makeRequest(): UpdateCompositionRequest
     {
         return UpdateCompositionRequest::create('/', 'POST');
