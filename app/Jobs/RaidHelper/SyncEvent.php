@@ -117,5 +117,7 @@ class SyncEvent implements ShouldQueue
         broadcast(new CompositionChanged($event->id, $composition));
 
         Cache::tags(['events'])->flush();
+
+        FetchComposition::dispatch($event->id);
     }
 }

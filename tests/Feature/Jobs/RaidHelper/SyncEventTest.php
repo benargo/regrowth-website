@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs\RaidHelper;
 
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Jobs\RaidHelper\FetchComposition;
 use App\Jobs\RaidHelper\SyncEvent;
 use App\Models\Character;
 use App\Models\Event;
@@ -11,6 +12,7 @@ use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -213,6 +215,22 @@ class SyncEventTest extends TestCase
         SyncEvent::dispatchSync($data);
 
         EventFacade::assertDispatched(CompositionChanged::class);
+    }
+
+    #[Test]
+    public function it_dispatches_fetch_composition_after_syncing(): void
+    {
+        Queue::fake()->except([SyncEvent::class]);
+
+        $data = EventData::from($this->minimalEventPayload());
+
+        SyncEvent::dispatchSync($data);
+
+        Queue::assertPushed(FetchComposition::class, function (FetchComposition $job) {
+            $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+            return $job->eventId === $event->id;
+        });
     }
 
     #[Test]
