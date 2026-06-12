@@ -15,7 +15,7 @@ class FetchRaidHelperEventsTest extends TestCase
     {
         $command = $this->app->make(FetchRaidHelperEvents::class);
 
-        $this->assertSame('raid-helper:fetch-events', $command->getName());
+        $this->assertSame('fetch:raid-helper', $command->getName());
     }
 
     #[Test]
@@ -31,7 +31,7 @@ class FetchRaidHelperEventsTest extends TestCase
     {
         Bus::fake();
 
-        $this->artisan('raid-helper:fetch-events')
+        $this->artisan('fetch:raid-helper')
             ->assertSuccessful();
 
         Bus::assertDispatched(FetchEvents::class);
@@ -42,7 +42,7 @@ class FetchRaidHelperEventsTest extends TestCase
     {
         Bus::fake();
 
-        $this->artisan('raid-helper:fetch-events')
+        $this->artisan('fetch:raid-helper')
             ->expectsOutputToContain('Raid Helper events fetch job dispatched successfully.')
             ->assertSuccessful();
     }

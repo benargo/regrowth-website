@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
-         colors="true"
->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true">
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
@@ -44,5 +40,6 @@
         <env name="DISCORD_CLIENT_SECRET" value="test_discord_client_secret"/>
         <env name="DISCORD_BOT_TOKEN" value="test_discord_bot_token"/>
         <env name="DISCORD_SERVER_ID" value="829020506907869214"/>
+        <env name="RAID_HELPER_WEBHOOK_KEY" value="test_webhook_key"/>
     </php>
 </phpunit>
