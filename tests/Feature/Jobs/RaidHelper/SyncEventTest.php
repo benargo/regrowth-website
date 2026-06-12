@@ -111,6 +111,99 @@ class SyncEventTest extends TestCase
     }
 
     #[Test]
+    public function it_uses_a_single_query_to_resolve_raids_from_the_description(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $description = "-# Do not edit below this line...\n".json_encode([['id' => $raid->id, 'name' => $raid->name]]);
+
+        $data = EventData::from($this->minimalEventPayload(['description' => $description]));
+
+        // Run the job twice to confirm the same raid is associated each time (not duplicated by double-query).
+        SyncEvent::dispatchSync($data);
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+        $this->assertCount(1, $event->raids);
+        $this->assertTrue($event->raids->contains($raid));
+    }
+
+    #[Test]
+    public function it_does_not_overwrite_slotted_characters_pivot_data_set_by_sync_composition(): void
+    {
+        $slotted = Character::factory()->create(['name' => 'Arthas']);
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+
+        // Simulate SyncComposition having placed Arthas in slot 1, group 1, not benched.
+        $event->characters()->attach($slotted->id, [
+            'slot_number' => 1,
+            'group_number' => 1,
+            'is_confirmed' => true,
+            'is_benched' => false,
+        ]);
+
+        // SyncEvent fires (e.g. title change webhook) with Arthas in sign-ups.
+        $data = EventData::from($this->minimalEventPayload([
+            'id' => '111222333444555001',
+            'signUps' => [
+                $this->minimalSignUpPayload(['name' => 'Arthas', 'className' => 'Warrior']),
+            ],
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $pivot = $event->characters()->where('character_id', $slotted->id)->first()?->pivot;
+
+        $this->assertNotNull($pivot);
+        $this->assertSame(1, (int) $pivot->slot_number);
+        $this->assertSame(1, (int) $pivot->group_number);
+        $this->assertFalse((bool) $pivot->is_benched);
+    }
+
+    #[Test]
+    public function it_detaches_benched_characters_who_are_no_longer_in_sign_ups(): void
+    {
+        $removed = Character::factory()->create(['name' => 'Arthas']);
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+
+        // Arthas was benched from a previous sync.
+        $event->characters()->attach($removed->id, [
+            'slot_number' => null,
+            'group_number' => null,
+            'is_confirmed' => false,
+            'is_benched' => true,
+        ]);
+
+        // New event data arrives with no sign-ups (Arthas has left the event).
+        $data = EventData::from($this->minimalEventPayload(['id' => '111222333444555001']));
+
+        SyncEvent::dispatchSync($data);
+
+        $this->assertFalse($event->characters()->where('character_id', $removed->id)->exists());
+    }
+
+    #[Test]
+    public function it_does_not_detach_slotted_characters_absent_from_sign_ups(): void
+    {
+        $slotted = Character::factory()->create(['name' => 'Arthas']);
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+
+        // Arthas is slotted (not benched) by SyncComposition.
+        $event->characters()->attach($slotted->id, [
+            'slot_number' => 2,
+            'group_number' => 1,
+            'is_confirmed' => true,
+            'is_benched' => false,
+        ]);
+
+        // New event data arrives with no sign-ups for Arthas.
+        $data = EventData::from($this->minimalEventPayload(['id' => '111222333444555001']));
+
+        SyncEvent::dispatchSync($data);
+
+        $this->assertTrue($event->characters()->where('character_id', $slotted->id)->exists());
+    }
+
+    #[Test]
     public function it_broadcasts_composition_changed(): void
     {
         EventFacade::fake();

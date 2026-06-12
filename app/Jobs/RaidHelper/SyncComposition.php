@@ -35,9 +35,12 @@ class SyncComposition implements ShouldQueue
         // Build the sync array for slotted characters.
         $slottedSync = [];
 
+        $allSlotNames = array_map(fn (CompositionSlotData $slot) => $slot->name, $this->data->slots);
+        $charactersByName = Character::whereIn('name', $allSlotNames)->get()->keyBy('name');
+
         foreach ($this->data->slots as $slot) {
             /** @var CompositionSlotData $slot */
-            $character = Character::where('name', $slot->name)->first();
+            $character = $charactersByName->get($slot->name);
 
             if (! $character) {
                 continue;
@@ -57,11 +60,15 @@ class SyncComposition implements ShouldQueue
         // Detach characters that are no longer slotted and are not benched.
         $slottedIds = array_keys($slottedSync);
 
-        $event->characters()
+        $toDetach = $event->characters()
             ->wherePivot('is_benched', false)
             ->whereNotIn('characters.id', $slottedIds)
-            ->get()
-            ->each(fn (Character $character) => $event->characters()->detach($character->id));
+            ->pluck('characters.id')
+            ->all();
+
+        if (! empty($toDetach)) {
+            $event->characters()->detach($toDetach);
+        }
 
         // Broadcast and flush cache.
         $event->load(['characters.playableClass', 'characters.rank', 'raids']);

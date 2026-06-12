@@ -44,8 +44,10 @@ class SyncEvent implements ShouldQueue
 
                 $query = Raid::where('id', Arr::get($row, 'id'))->where('name', Arr::get($row, 'name'));
 
-                if ($query->exists()) {
-                    $raids->push($query->first());
+                $raid = $query->first();
+
+                if ($raid) {
+                    $raids->push($raid);
                 }
             }
         }
@@ -82,7 +84,32 @@ class SyncEvent implements ShouldQueue
                 ];
             });
 
-        $event->characters()->sync($characterSync);
+        // Only attach characters not already on the pivot to avoid overwriting SyncComposition slot data.
+        $signedUpCharacterIds = array_keys($characterSync);
+
+        $alreadyAttachedIds = $event->characters()
+            ->whereIn('characters.id', $signedUpCharacterIds)
+            ->pluck('characters.id')
+            ->all();
+
+        $newCharacterIds = array_diff($signedUpCharacterIds, $alreadyAttachedIds);
+
+        foreach ($newCharacterIds as $characterId) {
+            $event->characters()->attach($characterId, $characterSync[$characterId]);
+        }
+
+        // Detach benched characters who are no longer in the sign-ups list.
+        // Slotted characters (is_benched=false) are managed by SyncComposition and must not be touched.
+        $benchedNoLongerSignedUp = $event->characters()
+            ->wherePivot('is_benched', true)
+            ->pluck('characters.id')
+            ->diff($signedUpCharacterIds)
+            ->values()
+            ->all();
+
+        if (! empty($benchedNoLongerSignedUp)) {
+            $event->characters()->detach($benchedNoLongerSignedUp);
+        }
 
         // Broadcast and flush cache.
         $event->load(['characters.playableClass', 'characters.rank', 'raids']);
