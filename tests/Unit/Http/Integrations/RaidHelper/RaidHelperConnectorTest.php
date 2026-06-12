@@ -13,6 +13,8 @@ use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
+use Saloon\RateLimitPlugin\Limit;
+use Saloon\RateLimitPlugin\Stores\MemoryStore;
 use Tests\TestCase;
 
 class RaidHelperConnectorTest extends TestCase
@@ -117,9 +119,85 @@ class RaidHelperConnectorTest extends TestCase
         $this->assertSame(200, $response->status());
     }
 
+    // ==================== Proactive limits ====================
+    // Each test uses an anonymous subclass exposing only the tier under test so
+    // tighter buckets cannot fire prematurely during the loop of a wider-tier test.
+
+    #[Test]
+    public function it_enforces_the_2_per_5s_tier(): void
+    {
+        $this->assertProactiveLimitBlocks(limit: 2, seconds: 5);
+    }
+
+    #[Test]
+    public function it_enforces_the_10_per_60s_tier(): void
+    {
+        $this->assertProactiveLimitBlocks(limit: 10, seconds: 60);
+    }
+
+    #[Test]
+    public function it_enforces_the_40_per_600s_tier(): void
+    {
+        $this->assertProactiveLimitBlocks(limit: 40, seconds: 600);
+    }
+
+    #[Test]
+    public function it_enforces_the_200_per_3600s_tier(): void
+    {
+        $this->assertProactiveLimitBlocks(limit: 200, seconds: 3600);
+    }
+
+    #[Test]
+    public function it_enforces_the_1000_per_86400s_tier(): void
+    {
+        $this->assertProactiveLimitBlocks(limit: 1000, seconds: 86400);
+    }
+
     private function makeConnector(): RaidHelperConnector
     {
         return new RaidHelperConnector(token: 'test-token', serverId: '111222333444555666');
+    }
+
+    /**
+     * Builds an anonymous connector with a single rate-limit tier and a fresh
+     * MemoryStore, sends exactly $limit successful requests, then asserts the
+     * next one is blocked proactively before it reaches the wire.
+     */
+    private function assertProactiveLimitBlocks(int $limit, int $seconds): void
+    {
+        MemoryStore::clear();
+
+        $store = new MemoryStore;
+
+        $connector = new class('test-token', '111222333444555666', $store, $limit, $seconds) extends RaidHelperConnector
+        {
+            public function __construct(
+                string $token,
+                string $serverId,
+                private readonly MemoryStore $memoryStore,
+                private readonly int $tierLimit,
+                private readonly int $tierSeconds,
+            ) {
+                parent::__construct($token, $serverId, $memoryStore);
+            }
+
+            protected function resolveLimits(): array
+            {
+                return [Limit::allow($this->tierLimit)->everySeconds($this->tierSeconds)];
+            }
+        };
+
+        Saloon::fake([
+            ConnectorProbeRequest::class => MockResponse::make([], 200),
+        ]);
+
+        for ($i = 0; $i < $limit; $i++) {
+            $connector->send(new ConnectorProbeRequest);
+        }
+
+        $this->expectException(RateLimitReachedException::class);
+
+        $connector->send(new ConnectorProbeRequest);
     }
 }
 

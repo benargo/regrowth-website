@@ -59,14 +59,21 @@ class RaidHelperConnector extends Connector
     }
 
     /**
-     * No proactive limits — Raid Helper communicates limits dynamically via
-     * response headers. Throttling is handled reactively in handleTooManyAttempts().
+     * Proactive limits derived from Raid Helper's observed rate-limit tiers.
+     * The reactive handleTooManyAttempts() still adjusts remaining counts from
+     * response headers when a 429 is received.
      *
      * @return array<int, Limit>
      */
     protected function resolveLimits(): array
     {
-        return [];
+        return [
+            Limit::allow(2)->everySeconds(5)->name('2_per_5s'),
+            Limit::allow(10)->everySeconds(60)->name('10_per_60s'),
+            Limit::allow(40)->everySeconds(600)->name('40_per_600s'),
+            Limit::allow(200)->everySeconds(3600)->name('200_per_3600s'),
+            Limit::allow(1000)->everySeconds(86400)->name('1000_per_86400s'),
+        ];
     }
 
     /**
