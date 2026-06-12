@@ -5,15 +5,16 @@ namespace Tests\Feature\Http\Controllers\Api\RaidHelper;
 use App\Jobs\RaidHelper\DeleteEvent;
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\EventWebhookBody;
 use Tests\TestCase;
 
 class DeleteEventControllerTest extends TestCase
 {
+    use EventWebhookBody;
+
     protected function setUp(): void
     {
         parent::setUp();
-
-        config(['services.raidhelper.webhook_key' => 'test-secret']);
 
         Bus::fake();
     }
@@ -23,8 +24,8 @@ class DeleteEventControllerTest extends TestCase
     {
         $response = $this->postJson(
             '/api/raidhelper/event-delete',
-            ['id' => '111222333444555001'],
-            ['Authorization' => 'test-secret'],
+            $this->eventBody,
+            ['Authorization' => 'test_webhook_key'],
         );
 
         $response->assertStatus(202);
@@ -36,8 +37,8 @@ class DeleteEventControllerTest extends TestCase
     {
         $response = $this->postJson(
             '/api/raidhelper/event-delete',
-            ['id' => '111222333444555001'],
-            ['Authorization' => 'wrong-secret'],
+            $this->eventBody,
+            ['Authorization' => 'wrong_webhook_key'],
         );
 
         $response->assertUnauthorized();
@@ -45,15 +46,15 @@ class DeleteEventControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_422_when_id_is_missing(): void
+    public function it_returns_400_when_payload_is_invalid(): void
     {
         $response = $this->postJson(
             '/api/raidhelper/event-delete',
             [],
-            ['Authorization' => 'test-secret'],
+            ['Authorization' => 'test_webhook_key'],
         );
 
-        $response->assertUnprocessable();
+        $response->assertBadRequest();
         Bus::assertNotDispatched(DeleteEvent::class);
     }
 }

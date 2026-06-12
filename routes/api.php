@@ -8,9 +8,8 @@ use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
 use App\Http\Controllers\Api\Loot\ResolveCommentController;
 use App\Http\Controllers\Api\RaidHelper\DeleteEventController;
-use App\Http\Controllers\Api\RaidHelper\StoreEventController;
+use App\Http\Controllers\Api\RaidHelper\SyncEventController;
 use App\Http\Controllers\Api\RaidHelper\UpdateCompositionController;
-use App\Http\Controllers\Api\RaidHelper\UpdateEventController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,8 +27,8 @@ Route::post('/loot/comments/{comment}/resolve', ResolveCommentController::class)
 Route::post('/spells', [SpellController::class, 'store'])->name('api.spells.store');
 
 Route::prefix('/raidhelper')->group(function () {
-    Route::post('/event-create', StoreEventController::class);
-    Route::post('/event-edit', UpdateEventController::class);
+    Route::post('/event-create', SyncEventController::class);
+    Route::post('/event-edit', SyncEventController::class);
     Route::post('/event-delete', DeleteEventController::class);
     Route::post('/comp-update', UpdateCompositionController::class);
 });
