@@ -737,6 +737,24 @@ class FetchEventsTest extends TestCase
         Saloon::assertNothingSent();
     }
 
+    #[Test]
+    public function it_releases_itself_when_raid_helper_is_rate_limited(): void
+    {
+        $this->discord->shouldReceive('getGuildChannels')
+            ->andReturn(Collection::make([Channel::from(['id' => '100000000000000001'])]));
+
+        Saloon::fake([
+            GetEventsRequest::class => MockResponse::make([], 429, ['Retry-After' => '30']),
+        ]);
+
+        $job = new FetchEvents(['100000000000000001']);
+        $job->withFakeQueueInteractions();
+        $job->handle($this->discord, $this->connector);
+
+        $job->assertReleased();
+        $this->assertSame(0, Event::query()->count());
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

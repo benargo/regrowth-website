@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Integrations\RaidHelper;
 
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\Statuses\InternalServerErrorException;
@@ -12,17 +13,10 @@ use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
-use Saloon\RateLimitPlugin\Stores\MemoryStore;
 use Tests\TestCase;
 
 class RaidHelperConnectorTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        MemoryStore::clear();
-    }
-
     #[Test]
     public function it_authenticates_with_the_bare_token_and_no_prefix(): void
     {
@@ -93,6 +87,34 @@ class RaidHelperConnectorTest extends TestCase
         $this->expectException(RateLimitReachedException::class);
 
         $this->makeConnector()->send(new ConnectorProbeRequest);
+    }
+
+    #[Test]
+    public function its_default_store_does_not_leak_exceeded_state_between_instances(): void
+    {
+        // A 429 against one connector marks its limit exceeded. Because the default store
+        // is cache-backed (not the process-global MemoryStore), a fresh connector built in
+        // the next test gets a clean slate once the array cache is flushed. We simulate the
+        // cross-test boundary here by flushing the cache between sends.
+        Saloon::fake([
+            ConnectorProbeRequest::class => MockResponse::make([], 429, ['Retry-After' => '60']),
+        ]);
+
+        try {
+            $this->makeConnector()->send(new ConnectorProbeRequest);
+        } catch (RateLimitReachedException) {
+            // Expected: the first connector hits the limit.
+        }
+
+        Cache::flush();
+
+        Saloon::fake([
+            ConnectorProbeRequest::class => MockResponse::make(['ok' => true], 200),
+        ]);
+
+        $response = $this->makeConnector()->send(new ConnectorProbeRequest);
+
+        $this->assertSame(200, $response->status());
     }
 
     private function makeConnector(): RaidHelperConnector

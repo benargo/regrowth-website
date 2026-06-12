@@ -19,9 +19,11 @@ use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Saloon\Exceptions\Request\Statuses\NotFoundException;
+use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 
 class FetchEvents implements ShouldQueue
 {
@@ -85,6 +87,26 @@ class FetchEvents implements ShouldQueue
             $validChannels = collect(); // Proceed with an empty collection of valid channels to avoid breaking the entire job
         }
 
+        try {
+            $this->syncEvents($validChannels, $raidHelper);
+        } catch (RateLimitReachedException $e) {
+            Log::warning('FetchEvents: Raid Helper rate limited, releasing job.', [
+                'release_in_seconds' => $e->getLimit()->getRemainingSeconds(),
+            ]);
+            $this->release($e->getLimit()->getRemainingSeconds());
+
+            return;
+        }
+    }
+
+    /**
+     * Fetch events from the Raid Helper API for the valid channels and upsert them,
+     * along with their compositions, into the database.
+     *
+     * @param  Collection<int, string>  $validChannels
+     */
+    private function syncEvents(Collection $validChannels, RaidHelperConnector $raidHelper): void
+    {
         $events = collect();
 
         // Step 2. Fetch events from the Raid Helper API for the valid channels and within the specified time range.

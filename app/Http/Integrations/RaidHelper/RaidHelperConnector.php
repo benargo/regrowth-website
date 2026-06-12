@@ -2,13 +2,14 @@
 
 namespace App\Http\Integrations\RaidHelper;
 
+use Illuminate\Support\Facades\Cache;
 use Saloon\Contracts\Authenticator;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\Response;
 use Saloon\RateLimitPlugin\Contracts\RateLimitStore;
 use Saloon\RateLimitPlugin\Limit;
-use Saloon\RateLimitPlugin\Stores\MemoryStore;
+use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
 use Saloon\RateLimitPlugin\Traits\HasRateLimits;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
@@ -69,13 +70,13 @@ class RaidHelperConnector extends Connector
     }
 
     /**
-     * Resolve the rate limit store. Defaults to in-memory so tests get a fresh
-     * store per connector instance. The service provider injects a persistent
-     * LaravelCacheStore for production use.
+     * Resolve the rate limit store. Defaults to a cache-backed store so the
+     * array cache driver flushes the rate-limit state between tests. The service
+     * provider injects a persistent LaravelCacheStore for production use.
      */
     protected function resolveRateLimitStore(): RateLimitStore
     {
-        return $this->store ?? new MemoryStore;
+        return $this->store ?? new LaravelCacheStore(Cache::store());
     }
 
     /**
