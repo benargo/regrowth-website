@@ -12,12 +12,12 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('app:sync-discord')->hourly()->name('sync-discord');
 
 /**
- * Fetch events from the Raid Helper API every hour to keep our event data up to date.
+ * Reconcile events with the Raid Helper API every six hours as a backstop for missed webhooks.
  *
  * This job will run with default parameters, which means it will fetch events from the channels specified in the config file
  * and with a default time range of 1 week ago to 1 week from now.
  */
-Schedule::job(new FetchRaidHelperEvents)->hourly()->name('fetch-raid-helper-events')->withoutOverlapping();
+Schedule::job(new FetchRaidHelperEvents)->everySixHours()->name('fetch-raid-helper-events')->withoutOverlapping();
 
 /**
  * Fetch the guild roster every 6 hours to ensure we have the latest member information.
