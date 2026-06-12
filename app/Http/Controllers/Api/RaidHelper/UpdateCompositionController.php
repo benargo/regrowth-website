@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api\RaidHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use App\Http\Middleware\VerifyRaidHelperWebhook;
+use App\Http\Requests\RaidHelper\UpdateCompositionRequest;
 use App\Jobs\RaidHelper\SyncComposition;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 
@@ -16,13 +16,11 @@ class UpdateCompositionController extends Controller
     /**
      * Handle a Raid Helper comp-update webhook by dispatching a SyncComposition job.
      */
-    public function __invoke(Request $request): Response
+    public function __invoke(UpdateCompositionRequest $request): Response
     {
-        $request->validate(['eventId' => ['required', 'string']]);
+        $data = CompositionData::from($request->all());
 
-        $data = CompositionData::from($request->except('eventId'));
-
-        SyncComposition::dispatch($request->input('eventId'), $data);
+        SyncComposition::dispatch($data->id, $data);
 
         return response()->noContent(202);
     }
