@@ -6,6 +6,9 @@
                 "artisan",
                 "boost:mcp"
             ]
+        },
+        "saloon": {
+            "url": "https://docs.saloon.dev/~gitbook/mcp"
         }
     }
 }
