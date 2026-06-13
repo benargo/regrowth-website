@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Requests\RaidHelper;
 
 use App\Http\Requests\RaidHelper\EventWebhookRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -44,6 +45,30 @@ class EventWebhookRequestTest extends TestCase
         $this->expectException(HttpException::class);
 
         $method->invoke($request);
+    }
+
+    #[Test]
+    public function prepare_for_validation_logs_unexpected_keys_before_aborting(): void
+    {
+        Log::spy();
+
+        $request = new EventWebhookRequest;
+        $request->replace(array_merge($this->eventBody, ['unknownField' => 'value']));
+
+        $method = new \ReflectionMethod(EventWebhookRequest::class, 'prepareForValidation');
+
+        try {
+            $method->invoke($request);
+            $this->fail('Expected HttpException was not thrown');
+        } catch (HttpException $e) {
+            $this->assertSame(400, $e->getStatusCode());
+        }
+
+        Log::shouldHaveReceived('debug')
+            ->once()
+            ->withArgs(fn (string $message, array $context) => $message === 'Raid Helper webhook contained unexpected keys'
+                && $context['request'] === EventWebhookRequest::class
+                && in_array('unknownField', $context['unexpected_keys']));
     }
 
     #[Test]

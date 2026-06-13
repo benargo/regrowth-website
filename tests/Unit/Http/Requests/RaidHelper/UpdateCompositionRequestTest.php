@@ -5,6 +5,8 @@ namespace Tests\Unit\Http\Requests\RaidHelper;
 use App\Http\Requests\RaidHelper\UpdateCompositionRequest;
 use App\Models\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -65,6 +67,35 @@ class UpdateCompositionRequestTest extends TestCase
 
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('title', $validator->errors()->toArray());
+    }
+
+    #[Test]
+    public function failed_validation_logs_the_errors_and_payload(): void
+    {
+        Log::spy();
+
+        $request = UpdateCompositionRequest::create('/', 'POST');
+        $request->replace(['id' => 'missing-event']);
+
+        $validator = Validator::make($request->all(), $request->rules());
+
+        $this->assertTrue($validator->fails());
+
+        $method = new \ReflectionMethod($request, 'failedValidation');
+
+        try {
+            $method->invoke($request, $validator);
+            $this->fail('Expected HttpResponseException was not thrown');
+        } catch (HttpResponseException $e) {
+            $this->assertSame(400, $e->getResponse()->getStatusCode());
+        }
+
+        Log::shouldHaveReceived('debug')
+            ->once()
+            ->withArgs(fn (string $message, array $context) => $message === 'Raid Helper webhook failed validation'
+                && $context['request'] === UpdateCompositionRequest::class
+                && isset($context['errors'])
+                && isset($context['payload']));
     }
 
     #[Test]
