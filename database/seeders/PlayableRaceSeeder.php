@@ -35,7 +35,7 @@ class PlayableRaceSeeder extends Seeder
                 ],
             );
 
-            $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
+            $this->command?->line("  <info>✓</info> [{$race['id']}] {$model->name}");
         }
     }
 }
