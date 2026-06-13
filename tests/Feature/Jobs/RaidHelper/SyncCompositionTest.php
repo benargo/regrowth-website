@@ -21,11 +21,17 @@ class SyncCompositionTest extends TestCase
     #[Test]
     public function it_does_nothing_when_event_is_not_found(): void
     {
+        EventFacade::fake();
+
+        Cache::tags(['events'])->put('events:test', 'value', 60);
+
         $data = $this->minimalCompositionData();
 
         SyncComposition::dispatchSync('non-existent-event-id', $data);
 
         $this->assertDatabaseCount('pivot_events_characters', 0);
+        EventFacade::assertNotDispatched(CompositionChanged::class);
+        $this->assertEquals('value', Cache::tags(['events'])->get('events:test'));
     }
 
     #[Test]

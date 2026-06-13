@@ -11,7 +11,6 @@ use App\Models\Event;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 
 class SyncComposition implements ShouldQueue
 {
@@ -22,20 +21,37 @@ class SyncComposition implements ShouldQueue
         public readonly CompositionData $data,
     ) {}
 
+    /**
+     * Get the middleware the job should pass through.
+     *
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new class
+        {
+            public function handle(object $job, \Closure $next): void
+            {
+                if (Event::where('raid_helper_event_id', $job->raidHelperEventId)->doesntExist()) {
+                    return;
+                }
+
+                $next($job);
+            }
+        }];
+    }
+
+    /**
+     * Execute the job.
+     */
     public function handle(): void
     {
         $event = Event::where('raid_helper_event_id', $this->raidHelperEventId)->first();
 
-        if (! $event) {
-            Log::warning('SyncComposition: event not found.', ['raid_helper_event_id' => $this->raidHelperEventId]);
-
-            return;
-        }
-
         // Build the sync array for slotted characters.
         $slottedSync = [];
 
-        $allSlotNames = array_map(fn (CompositionSlotData $slot) => $slot->name, $this->data->slots);
+        $allSlotNames = array_column($this->data->slots, 'name');
         $charactersByName = Character::whereIn('name', $allSlotNames)->get()->keyBy('name');
 
         foreach ($this->data->slots as $slot) {
