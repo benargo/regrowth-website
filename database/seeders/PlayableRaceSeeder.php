@@ -27,7 +27,7 @@ class PlayableRaceSeeder extends Seeder
             $raceData = $this->blizzard->send(new GetPlayableRaceRequest($race->id))->dto();
             $factionType = data_get($raceData, 'faction.type', 'NEUTRAL');
 
-            PlayableRace::updateOrCreate(
+            $model = PlayableRace::updateOrCreate(
                 ['id' => $race->id],
                 [
                     'name' => $raceData->name,
@@ -35,7 +35,7 @@ class PlayableRaceSeeder extends Seeder
                 ],
             );
 
-            $this->command?->line("  <info>✓</info> [{$race['id']}] {$model->name}");
+            $this->command?->line("  <info>✓</info> [{$model->id}] {$model->name}");
         }
     }
 }

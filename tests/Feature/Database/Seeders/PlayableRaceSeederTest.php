@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexReq
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
 use App\Models\PlayableRace;
 use Database\Seeders\PlayableRaceSeeder;
+use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -67,6 +68,19 @@ class PlayableRaceSeederTest extends TestCase
         $this->runSeeder();
 
         $this->assertDatabaseHas('playable_races', ['id' => 9, 'name' => 'Goblin', 'faction' => Faction::NEUTRAL->value]);
+    }
+
+    #[Test]
+    public function seeder_outputs_a_line_per_race_to_the_console(): void
+    {
+        $this->fakeSaloon();
+
+        $command = $this->createMock(Command::class);
+        $command->expects($this->exactly(2))
+            ->method('line')
+            ->with($this->matchesRegularExpression('/✓.*\[(?:1|2)\].*(?:Human|Orc)/'));
+
+        $this->runSeeder($command);
     }
 
     #[Test]
@@ -140,8 +154,12 @@ class PlayableRaceSeederTest extends TestCase
         ]);
     }
 
-    private function runSeeder(): void
+    private function runSeeder(?Command $command = null): void
     {
-        Model::unguarded(fn () => app(PlayableRaceSeeder::class)->run());
+        Model::unguarded(function () use ($command) {
+            $seeder = app(PlayableRaceSeeder::class);
+            $seeder->setCommand($command ?? $this->createMock(Command::class));
+            $seeder->run();
+        });
     }
 }
