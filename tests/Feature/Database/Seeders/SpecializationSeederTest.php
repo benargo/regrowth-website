@@ -292,7 +292,7 @@ class SpecializationSeederTest extends TestCase
     {
         Model::unguarded(function () use ($command) {
             $seeder = app(SpecializationSeeder::class);
-            $seeder->setCommand($command ?? $this->createMock(Command::class));
+            $seeder->setCommand($command ?? $this->createStub(Command::class));
             $seeder->run();
         });
     }

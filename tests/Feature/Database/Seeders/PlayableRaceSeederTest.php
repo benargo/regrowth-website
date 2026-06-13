@@ -158,7 +158,7 @@ class PlayableRaceSeederTest extends TestCase
     {
         Model::unguarded(function () use ($command) {
             $seeder = app(PlayableRaceSeeder::class);
-            $seeder->setCommand($command ?? $this->createMock(Command::class));
+            $seeder->setCommand($command ?? $this->createStub(Command::class));
             $seeder->run();
         });
     }
