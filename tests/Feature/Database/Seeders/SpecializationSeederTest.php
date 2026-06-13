@@ -8,6 +8,7 @@ use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\PlayableClass;
 use App\Models\PlayableSpecialization;
 use Database\Seeders\SpecializationSeeder;
+use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -31,26 +32,6 @@ class SpecializationSeederTest extends TestCase
         Saloon::fake([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
-    }
-
-    private function seedPlayableClasses(): void
-    {
-        Model::unguarded(function () {
-            PlayableClass::factory()->create(['name' => 'Druid']);
-            PlayableClass::factory()->create(['name' => 'Hunter']);
-            PlayableClass::factory()->create(['name' => 'Mage']);
-            PlayableClass::factory()->create(['name' => 'Paladin']);
-            PlayableClass::factory()->create(['name' => 'Priest']);
-            PlayableClass::factory()->create(['name' => 'Rogue']);
-            PlayableClass::factory()->create(['name' => 'Shaman']);
-            PlayableClass::factory()->create(['name' => 'Warlock']);
-            PlayableClass::factory()->create(['name' => 'Warrior']);
-        });
-    }
-
-    private function runSeeder(): void
-    {
-        Model::unguarded(fn () => app(SpecializationSeeder::class)->run());
     }
 
     // ==================== Record Creation ====================
@@ -220,5 +201,99 @@ class SpecializationSeederTest extends TestCase
         $this->assertDatabaseCount('playable_specializations', 27);
         $this->assertDatabaseCount('media', 0);
         Queue::assertNothingPushed();
+    }
+
+    // ==================== Console Output ====================
+
+    #[Test]
+    public function seeder_outputs_info_per_specialization_on_success(): void
+    {
+        $this->seedPlayableClasses();
+
+        $command = $this->createMock(Command::class);
+        $command->expects($this->exactly(27))
+            ->method('info')
+            ->with($this->matchesRegularExpression('/✓.*\[\d+\]/'));
+
+        $this->runSeeder($command);
+    }
+
+    #[Test]
+    public function seeder_outputs_warn_when_playable_class_is_not_found(): void
+    {
+        $command = $this->createMock(Command::class);
+        $command->expects($this->exactly(9))
+            ->method('warn')
+            ->with($this->matchesRegularExpression('/not found — skipping/'));
+
+        $this->runSeeder($command);
+    }
+
+    #[Test]
+    public function seeder_outputs_warn_when_icon_fetch_returns_403(): void
+    {
+        Queue::fake();
+
+        Saloon::fake([
+            FetchIconRequest::class => MockResponse::make(
+                body: ['code' => 403, 'detail' => 'Forbidden'],
+                status: 403,
+            ),
+        ]);
+
+        $this->seedPlayableClasses();
+
+        $command = $this->createMock(Command::class);
+        $command->expects($this->exactly(28))
+            ->method('warn')
+            ->with($this->matchesRegularExpression('/Icon deferred \(403\)/'));
+
+        $this->runSeeder($command);
+    }
+
+    #[Test]
+    public function seeder_outputs_warn_when_icon_is_not_found(): void
+    {
+        Queue::fake();
+
+        Saloon::fake([
+            FetchIconRequest::class => MockResponse::make(
+                body: '',
+                status: 404,
+            ),
+        ]);
+
+        $this->seedPlayableClasses();
+
+        $command = $this->createMock(Command::class);
+        $command->expects($this->exactly(28))
+            ->method('warn')
+            ->with($this->matchesRegularExpression('/Icon skipped/'));
+
+        $this->runSeeder($command);
+    }
+
+    private function seedPlayableClasses(): void
+    {
+        Model::unguarded(function () {
+            PlayableClass::factory()->create(['name' => 'Druid']);
+            PlayableClass::factory()->create(['name' => 'Hunter']);
+            PlayableClass::factory()->create(['name' => 'Mage']);
+            PlayableClass::factory()->create(['name' => 'Paladin']);
+            PlayableClass::factory()->create(['name' => 'Priest']);
+            PlayableClass::factory()->create(['name' => 'Rogue']);
+            PlayableClass::factory()->create(['name' => 'Shaman']);
+            PlayableClass::factory()->create(['name' => 'Warlock']);
+            PlayableClass::factory()->create(['name' => 'Warrior']);
+        });
+    }
+
+    private function runSeeder(?Command $command = null): void
+    {
+        Model::unguarded(function () use ($command) {
+            $seeder = app(SpecializationSeeder::class);
+            $seeder->setCommand($command ?? $this->createMock(Command::class));
+            $seeder->run();
+        });
     }
 }
