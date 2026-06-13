@@ -22,7 +22,7 @@ class FetchGuildRosterTest extends TestCase
     {
         Bus::fake([FetchGuildRoster::class]);
 
-        $this->artisan('blizzard:fetch-guild-roster')
+        $this->artisan('fetch:blizzard-roster')
             ->expectsOutput('Guild roster refreshed.')
             ->assertSuccessful();
 
@@ -40,7 +40,7 @@ class FetchGuildRosterTest extends TestCase
         $interval->method('forHumans')->willReturn('15 minutes');
         CarbonInterval::macro('seconds', fn () => $interval);
 
-        $this->artisan('blizzard:fetch-guild-roster')
+        $this->artisan('fetch:blizzard-roster')
             ->expectsOutput('The guild roster was refreshed recently. Please wait 15 minutes before refreshing again.')
             ->assertSuccessful();
 
