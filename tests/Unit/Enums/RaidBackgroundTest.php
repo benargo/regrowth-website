@@ -73,7 +73,7 @@ class RaidBackgroundTest extends TestCase
     #[Test]
     public function zul_aman_has_correct_value(): void
     {
-        $this->assertSame('bg-zulaman', RaidBackground::ZulAman->value);
+        $this->assertSame('bg-raid-zulaman', RaidBackground::ZulAman->value);
     }
 
     #[Test]
