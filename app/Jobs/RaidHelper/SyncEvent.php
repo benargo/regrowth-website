@@ -18,15 +18,42 @@ class SyncEvent implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public readonly EventData $data) {}
+    private string $timezone;
 
+    public function __construct(public readonly EventData $data)
+    {
+        $this->timezone = config('app.timezone', 'UTC');
+    }
+
+    /**
+     * Get the middleware the job should pass through.
+     *
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new class
+        {
+            public function handle(object $job, \Closure $next): void
+            {
+                $allowedChannelIds = config('services.raidhelper.channel_ids', []);
+
+                if (! in_array($job->data->channelId, $allowedChannelIds, strict: true)) {
+                    return;
+                }
+
+                $next($job);
+            }
+        }];
+    }
+
+    /**
+     * Execute the job.
+     */
     public function handle(): void
     {
-        $data = $this->data;
-        $timezone = config('app.timezone', 'UTC');
-
         // Decode raids from the event description.
-        $raidsString = str($data->description)
+        $raidsString = str($this->data->description)
             ->after("-# Do not edit below this line...\n")
             ->trim();
 
@@ -54,14 +81,14 @@ class SyncEvent implements ShouldQueue
 
         // Upsert the event.
         $event = Event::updateOrCreate(
-            ['raid_helper_event_id' => $data->id],
+            ['raid_helper_event_id' => $this->data->id],
             [
-                'title' => $data->title,
-                'start_time' => $data->startTime->setTimezone($timezone),
-                'end_time' => $data->endTime->setTimezone($timezone),
+                'title' => $this->data->title,
+                'start_time' => $this->data->startTime->setTimezone($this->timezone),
+                'end_time' => $this->data->endTime->setTimezone($this->timezone),
                 'background_css_class' => $raids->firstWhere('background_css_class')?->background_css_class ?? null,
-                'color' => $data->color,
-                'channel_id' => $data->channelId,
+                'color' => $this->data->color,
+                'channel_id' => $this->data->channelId,
             ]
         );
 
@@ -71,7 +98,7 @@ class SyncEvent implements ShouldQueue
         // Sync benched characters from sign-ups (all signed-up, non-absent players not in comp are benched).
         $characterSync = [];
 
-        $signUps = collect($data->signUps ?? [])
+        $signUps = collect($this->data->signUps ?? [])
             ->whereNotIn('className', ['Absence', 'Late', 'Tentative']);
 
         Character::whereIn('name', $signUps->pluck('name'))->get()

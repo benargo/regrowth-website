@@ -9,6 +9,7 @@ use App\Jobs\RaidHelper\SyncEvent;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\Raid;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event as EventFacade;
@@ -19,6 +20,13 @@ use Tests\TestCase;
 class SyncEventTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('services.raidhelper.channel_ids', ['100000000000000001']);
+    }
 
     #[Test]
     public function it_creates_a_new_event_from_event_data(): void
@@ -203,6 +211,53 @@ class SyncEventTest extends TestCase
         SyncEvent::dispatchSync($data);
 
         $this->assertTrue($event->characters()->where('character_id', $slotted->id)->exists());
+    }
+
+    #[Test]
+    public function it_does_not_upsert_an_event_from_an_unlisted_channel(): void
+    {
+        config()->set('services.raidhelper.channel_ids', ['999000000000000001']);
+
+        $data = EventData::from($this->minimalEventPayload(['channelId' => '100000000000000001']));
+
+        SyncEvent::dispatchSync($data);
+
+        $this->assertDatabaseCount('events', 0);
+    }
+
+    #[Test]
+    public function it_upserts_an_event_when_its_channel_is_in_the_allowed_list(): void
+    {
+        config()->set('services.raidhelper.channel_ids', ['100000000000000001']);
+
+        $data = EventData::from($this->minimalEventPayload(['channelId' => '100000000000000001']));
+
+        SyncEvent::dispatchSync($data);
+
+        $this->assertDatabaseHas('events', [
+            'raid_helper_event_id' => '111222333444555001',
+        ]);
+    }
+
+    #[Test]
+    public function it_captures_the_timezone_at_construction_time(): void
+    {
+        config()->set('app.timezone', 'Pacific/Auckland');
+
+        $data = EventData::from($this->minimalEventPayload(['startTime' => 1700000000]));
+        $job = new SyncEvent($data);
+
+        // Change timezone after construction — the stored datetime must still reflect Pacific/Auckland.
+        config()->set('app.timezone', 'America/New_York');
+
+        $job->handle();
+
+        $expected = Carbon::createFromTimestamp(1700000000)->setTimezone('Pacific/Auckland')->toDateTimeString();
+
+        $this->assertDatabaseHas('events', [
+            'raid_helper_event_id' => '111222333444555001',
+            'start_time' => $expected,
+        ]);
     }
 
     #[Test]
