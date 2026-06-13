@@ -98,11 +98,11 @@ class EventResourceTest extends TestCase
     {
         $this->mockChannel();
 
-        $event = Event::factory()->withBackground(RaidBackground::KARAZHAN)->create();
+        $event = Event::factory()->withBackground(RaidBackground::Karazhan)->create();
 
         $array = $this->makeResource($event);
 
-        $this->assertSame(RaidBackground::KARAZHAN->value, $array['background']);
+        $this->assertSame(RaidBackground::Karazhan->value, $array['background']);
     }
 
     #[Test]

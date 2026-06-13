@@ -188,7 +188,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function it_returns_background_css_class_value(): void
     {
-        $raid = Raid::factory()->withBackground(RaidBackground::KARAZHAN)->create();
+        $raid = Raid::factory()->withBackground(RaidBackground::Karazhan)->create();
 
         $array = (new RaidResource($raid))->toArray(new Request);
 

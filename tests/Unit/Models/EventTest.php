@@ -87,10 +87,10 @@ class EventTest extends ModelTestCase
     #[Test]
     public function background_css_class_is_cast_to_raid_background_enum(): void
     {
-        $event = Event::factory()->make(['background_css_class' => RaidBackground::KARAZHAN]);
+        $event = Event::factory()->make(['background_css_class' => RaidBackground::Karazhan]);
 
         $this->assertInstanceOf(RaidBackground::class, $event->background_css_class);
-        $this->assertSame(RaidBackground::KARAZHAN, $event->background_css_class);
+        $this->assertSame(RaidBackground::Karazhan, $event->background_css_class);
     }
 
     #[Test]

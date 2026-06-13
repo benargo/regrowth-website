@@ -101,10 +101,10 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function background_css_class_is_cast_to_raid_background_enum(): void
     {
-        $raid = $this->create(['background_css_class' => RaidBackground::KARAZHAN]);
+        $raid = $this->create(['background_css_class' => RaidBackground::Karazhan]);
 
         $this->assertInstanceOf(RaidBackground::class, $raid->background_css_class);
-        $this->assertSame(RaidBackground::KARAZHAN, $raid->background_css_class);
+        $this->assertSame(RaidBackground::Karazhan, $raid->background_css_class);
     }
 
     // ==================== color ====================

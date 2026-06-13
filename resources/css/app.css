@@ -66,8 +66,26 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-raid-black-temple {
+    background-image: url("../images/bg_blacktemple.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-gruul {
+    background-image: url("../images/bg_gruul.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-raid-gruul-magtheridon {
     background-image: url("../images/bg_gruul_magtheridon.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-hyjal-summit {
+    background-image: url("../images/bg_hyjalsummit.webp");
     background-position: center;
     background-size: cover;
 }
@@ -78,15 +96,33 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-raid-magtheridon {
+    background-image: url("../images/bg_magtheridon.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-raid-serpentshrine-cavern {
     background-image: url("../images/bg_serpentshrinecavern.webp");
     background-position: center bottom;
     background-size: cover;
 }
 
+.bg-raid-sunwell-plateau {
+    background-image: url("../images/bg_sunwell.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-raid-tempest-keep {
     background-image: url("../images/bg_tempestkeep.webp");
     background-position: center bottom;
+    background-size: cover;
+}
+
+.bg-raid-zulaman {
+    background-image: url("../images/bg_zulaman.webp");
+    background-position: center;
     background-size: cover;
 }
 
