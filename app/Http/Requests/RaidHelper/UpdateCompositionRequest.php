@@ -52,7 +52,7 @@ class UpdateCompositionRequest extends RaidHelperWebhookRequest
             'slots.*.classEmoteId' => ['required', 'string'],
             'slots.*.specName' => ['required', 'string'],
             'slots.*.specEmoteId' => ['required', 'string'],
-            'slots.*.isConfirmed' => ['required', 'boolean'],
+            'slots.*.isConfirmed' => ['required', 'string', 'in:confirmed,unconfirmed'],
             'slots.*.color' => ['required', 'string'],
         ];
     }

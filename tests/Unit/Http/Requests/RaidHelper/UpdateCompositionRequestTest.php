@@ -99,6 +99,35 @@ class UpdateCompositionRequestTest extends TestCase
     }
 
     #[Test]
+    public function it_passes_validation_when_slot_is_confirmed_is_a_string(): void
+    {
+        Event::factory()->create(['raid_helper_event_id' => 'comp-111']);
+
+        foreach (['confirmed', 'unconfirmed'] as $value) {
+            $body = $this->minimalCompBody();
+            $body['slots'] = [$this->minimalSlot(['isConfirmed' => $value])];
+
+            $validator = $this->validate($body);
+
+            $this->assertTrue($validator->passes(), "Expected '{$value}' to pass but got: ".implode(' ', $validator->errors()->all()));
+        }
+    }
+
+    #[Test]
+    public function it_fails_validation_when_slot_is_confirmed_is_a_boolean(): void
+    {
+        Event::factory()->create(['raid_helper_event_id' => 'comp-111']);
+
+        $body = $this->minimalCompBody();
+        $body['slots'] = [$this->minimalSlot(['isConfirmed' => true])];
+
+        $validator = $this->validate($body);
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('slots.0.isConfirmed', $validator->errors()->toArray());
+    }
+
+    #[Test]
     public function prepare_for_validation_does_not_reject_merged_keys_such_as_id(): void
     {
         $rules = $this->makeRequest()->rules();
@@ -118,6 +147,23 @@ class UpdateCompositionRequestTest extends TestCase
     private function validate(array $params): \Illuminate\Validation\Validator
     {
         return Validator::make($params, $this->makeRequest()->rules());
+    }
+
+    /** @return array<string, mixed> */
+    private function minimalSlot(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => '123',
+            'name' => 'Testchar',
+            'groupNumber' => 1,
+            'slotNumber' => 1,
+            'className' => 'Warrior',
+            'classEmoteId' => '579532030153588739',
+            'specName' => 'Fury',
+            'specEmoteId' => '637564445215948810',
+            'isConfirmed' => 'confirmed',
+            'color' => '#C69B6D',
+        ], $overrides);
     }
 
     /** @return array<string, mixed> */
