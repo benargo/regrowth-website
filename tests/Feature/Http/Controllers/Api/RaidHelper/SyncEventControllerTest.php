@@ -4,6 +4,7 @@ namespace Tests\Feature\Http\Controllers\Api\RaidHelper;
 
 use App\Jobs\RaidHelper\SyncEvent;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\EventWebhookBody;
@@ -17,6 +18,7 @@ class SyncEventControllerTest extends TestCase
     {
         parent::setUp();
 
+        Log::spy();
         Bus::fake();
     }
 

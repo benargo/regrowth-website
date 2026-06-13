@@ -4,6 +4,7 @@ namespace Tests\Feature\Http\Controllers\Api\RaidHelper;
 
 use App\Jobs\RaidHelper\DeleteEvent;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\EventWebhookBody;
 use Tests\TestCase;
@@ -16,6 +17,7 @@ class DeleteEventControllerTest extends TestCase
     {
         parent::setUp();
 
+        Log::spy();
         Bus::fake();
     }
 

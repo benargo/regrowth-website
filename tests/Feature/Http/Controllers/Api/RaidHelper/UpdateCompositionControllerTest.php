@@ -6,6 +6,7 @@ use App\Jobs\RaidHelper\SyncComposition;
 use App\Models\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -19,6 +20,7 @@ class UpdateCompositionControllerTest extends TestCase
 
         config(['services.raidhelper.webhook_key' => 'test-secret']);
 
+        Log::spy();
         Bus::fake();
     }
 

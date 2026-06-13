@@ -9,6 +9,7 @@ use App\Http\Requests\RaidHelper\UpdateCompositionRequest;
 use App\Jobs\RaidHelper\SyncComposition;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
+use Illuminate\Support\Facades\Log;
 
 #[Middleware(VerifyRaidHelperWebhook::class)]
 class UpdateCompositionController extends Controller
@@ -18,6 +19,8 @@ class UpdateCompositionController extends Controller
      */
     public function __invoke(UpdateCompositionRequest $request): Response
     {
+        Log::info('UpdateCompositionController hit');
+
         $data = CompositionData::from($request->all());
 
         SyncComposition::dispatch($data->id, $data);
