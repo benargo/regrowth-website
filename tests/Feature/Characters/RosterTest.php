@@ -38,39 +38,19 @@ class RosterTest extends TestCase
     }
 
     #[Test]
-    public function index_passes_filters_prop_with_defaults(): void
+    public function index_does_not_pass_a_filters_prop(): void
     {
-        $response = $this->get(route('characters.index'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Roster/Index')
-            ->has('filters')
-            ->where('filters.sort_column', 'rank')
-            ->where('filters.sort_direction', 'asc')
-            ->where('filters.search', null)
-            ->where('filters.class_ids', null)
-            ->where('filters.race_ids', null)
-            ->where('filters.rank_names', null)
-            ->where('filters.known_only', null)
-        );
-    }
-
-    #[Test]
-    public function index_passes_filters_prop_from_query_string(): void
-    {
+        // Filters are persisted client-side in localStorage, so the server no
+        // longer round-trips a filters prop or reads filter query parameters.
         $response = $this->get(route('characters.index', [
             'filter[search]' => 'Ozona',
-            'filter[known_only]' => '1',
             'sort_column' => 'name',
             'sort_direction' => 'desc',
         ]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Roster/Index')
-            ->where('filters.search', 'Ozona')
-            ->where('filters.known_only', '1')
-            ->where('filters.sort_column', 'name')
-            ->where('filters.sort_direction', 'desc')
+            ->missing('filters')
         );
     }
 
@@ -100,7 +80,6 @@ class RosterTest extends TestCase
             ->has('classes')
             ->has('ranks')
             ->has('races')
-            ->has('filters')
             ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters', 1))
         );
     }

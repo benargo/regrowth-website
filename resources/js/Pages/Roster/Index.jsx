@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
@@ -11,7 +11,7 @@ import SpecIcon from "@/Components/Characters/SpecIcon";
 import SearchInput from "@/Components/SearchInput";
 import { Can } from "@/Components/Authorizable";
 import SortableTable from "@/Components/SortableTable";
-import { decodeFilter } from "@/Helpers/EncodeFilter";
+import useLocalStorage from "@/Hooks/useLocalStorage";
 import raidSpec from "@/Helpers/RaidSpec";
 
 function CharacterRowCells({ character, spec }) {
@@ -145,26 +145,30 @@ function IndexSkeleton() {
     );
 }
 
-export default function Index({ characters, classes, ranks, races, filters }) {
+export default function Index({ characters, classes, ranks, races }) {
     const isLoading = characters === undefined;
 
-    const [sortColumn, setSortColumn] = useState(() => filters?.sort_column ?? "rank");
-    const [sortDirection, setSortDirection] = useState(() => filters?.sort_direction ?? "asc");
-    const [searchQuery, setSearchQuery] = useState(() => filters?.search ?? "");
-    const [selectedClasses, setSelectedClasses] = useState(() =>
-        decodeFilter(filters?.class_ids, classes?.map((c) => c.id) ?? []),
+    // Filters persist client-side in localStorage so the user's last selection
+    // is restored when they leave and return to the page. A null stored value
+    // means "not yet customised" and resolves to all options selected below.
+    const [sortColumn, setSortColumn] = useLocalStorage("roster.sort_column", "rank");
+    const [sortDirection, setSortDirection] = useLocalStorage("roster.sort_direction", "asc");
+    const [searchQuery, setSearchQuery] = useLocalStorage("roster.search", "");
+    const [storedClasses, setSelectedClasses] = useLocalStorage("roster.class_ids", null);
+    const [storedRaces, setSelectedRaces] = useLocalStorage("roster.race_ids", null);
+    const [storedRanks, setSelectedRanks] = useLocalStorage("roster.rank_names", null);
+    const [showKnownOnly, setShowKnownOnly] = useLocalStorage("roster.known_only", false);
+    const [showMainOnly, setShowMainOnly] = useLocalStorage("roster.main_only", false);
+
+    const selectedClasses = useMemo(
+        () => storedClasses ?? (classes ?? []).map((c) => c.id),
+        [storedClasses, classes],
     );
-    const [selectedRaces, setSelectedRaces] = useState(() =>
-        decodeFilter(filters?.race_ids, races?.map((r) => r.id) ?? []),
+    const selectedRaces = useMemo(
+        () => storedRaces ?? (races ?? []).map((r) => r.id),
+        [storedRaces, races],
     );
-    const [selectedRanks, setSelectedRanks] = useState(() => {
-        const value = filters?.rank_names;
-        if (value === null || value === undefined) return ranks ?? [];
-        if (Array.isArray(value)) return value;
-        return value.split(",");
-    });
-    const [showKnownOnly, setShowKnownOnly] = useState(() => filters?.known_only === "1");
-    const [showMainOnly, setShowMainOnly] = useState(() => filters?.main_only === "1");
+    const selectedRanks = useMemo(() => storedRanks ?? (ranks ?? []), [storedRanks, ranks]);
 
     const classById = useMemo(() => new Map((classes ?? []).map((c) => [c.id, c])), [classes]);
     const raceById = useMemo(() => new Map((races ?? []).map((r) => [r.id, r])), [races]);

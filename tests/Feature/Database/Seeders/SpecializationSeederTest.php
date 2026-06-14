@@ -39,13 +39,13 @@ class SpecializationSeederTest extends TestCase
     // ==================== Record Creation ====================
 
     #[Test]
-    public function seeder_creates_all_27_specialisations(): void
+    public function seeder_creates_all_28_specialisations(): void
     {
         $this->seedPlayableClasses();
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('playable_specializations', 27);
+        $this->assertDatabaseCount('playable_specializations', 28);
     }
 
     #[Test]
@@ -85,7 +85,7 @@ class SpecializationSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('media', 27);
+        $this->assertDatabaseCount('media', 28);
         $this->assertDatabaseHas('media', [
             'model_type' => PlayableSpecialization::class,
             'collection_name' => 'blizzard_icons',
@@ -124,7 +124,7 @@ class SpecializationSeederTest extends TestCase
         $this->seedPlayableClasses();
 
         $druid = PlayableClass::where('name', 'Druid')->first();
-        $balance = PlayableSpecialization::factory()->create([
+        $balance = PlayableSpecialization::factory()->damage()->create([
             'playable_class_id' => $druid->id,
             'name' => 'Balance',
         ]);
@@ -134,6 +134,7 @@ class SpecializationSeederTest extends TestCase
 
         $this->runSeeder();
 
+        $this->assertSame(1, PlayableSpecialization::where('playable_class_id', $druid->id)->where('name', 'Balance')->count());
         $this->assertCount(1, $balance->fresh()->getMedia('blizzard_icons'));
     }
 
@@ -175,7 +176,7 @@ class SpecializationSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('playable_specializations', 27);
+        $this->assertDatabaseCount('playable_specializations', 28);
         $this->assertDatabaseCount('media', 0);
 
         Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job): bool {
@@ -200,7 +201,7 @@ class SpecializationSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $this->assertDatabaseCount('playable_specializations', 27);
+        $this->assertDatabaseCount('playable_specializations', 28);
         $this->assertDatabaseCount('media', 0);
         Queue::assertNothingPushed();
     }
@@ -213,7 +214,7 @@ class SpecializationSeederTest extends TestCase
         $this->seedPlayableClasses();
 
         $command = $this->createMock(Command::class);
-        $command->expects($this->exactly(27))
+        $command->expects($this->exactly(28))
             ->method('info')
             ->with($this->matchesRegularExpression('/✓.*\[\d+\]/'));
 

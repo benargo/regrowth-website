@@ -41,15 +41,6 @@ class CharacterController extends Controller
             'classes' => PlayableClassResource::collection(PlayableClass::orderBy('name')->get())->resolve($request),
             'ranks' => GuildRank::select('name')->orderBy('position')->get()->pluck('name')->unique()->values(),
             'races' => PlayableRaceResource::collection(PlayableRace::where('faction', Faction::ALLIANCE)->orderBy('name')->get())->resolve($request),
-            'filters' => [
-                'search' => $request->input('filter.search'),
-                'class_ids' => $request->input('filter.class_ids'),
-                'race_ids' => $request->input('filter.race_ids'),
-                'rank_names' => $request->input('filter.rank_names'),
-                'known_only' => $request->input('filter.known_only'),
-                'sort_column' => $request->query('sort_column', 'rank'),
-                'sort_direction' => $request->query('sort_direction', 'asc'),
-            ],
             'characters' => Inertia::defer(function () use ($request) {
                 $members = $this->blizzard->send(new GetGuildRosterRequest(
                     $this->blizzard->defaultRealmSlug(),
