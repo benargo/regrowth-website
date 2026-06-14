@@ -4,9 +4,11 @@ namespace Tests\Unit\Policies;
 
 use App\Models\User;
 use App\Policies\ViewAsRolePolicy;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
 class ViewAsRolePolicyTest extends TestCase
 {
     #[Test]

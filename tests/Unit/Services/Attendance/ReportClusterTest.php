@@ -15,9 +15,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 use JsonSerializable;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class ReportClusterTest extends TestCase
 {
     use RefreshDatabase;
@@ -58,6 +60,7 @@ class ReportClusterTest extends TestCase
         return Report::with(['characters', 'zone'])->get();
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_when_constructed_with_an_empty_collection(): void
     {

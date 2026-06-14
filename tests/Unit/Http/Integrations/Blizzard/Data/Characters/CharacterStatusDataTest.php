@@ -3,9 +3,11 @@
 namespace Tests\Unit\Http\Integrations\Blizzard\Data\Characters;
 
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterStatusData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class CharacterStatusDataTest extends TestCase
 {
     #[Test]

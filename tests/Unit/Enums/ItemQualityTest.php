@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\ItemQuality;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('loot')]
 class ItemQualityTest extends TestCase
 {
     // ==================== cases ====================

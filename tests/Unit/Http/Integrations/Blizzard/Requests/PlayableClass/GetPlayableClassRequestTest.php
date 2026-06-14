@@ -5,11 +5,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableClass;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassData;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetPlayableClassRequestTest extends BlizzardTestCase
 {
     #[Test]
@@ -73,6 +75,7 @@ class GetPlayableClassRequestTest extends BlizzardTestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_invalid_class_exception_on_404(): void
     {

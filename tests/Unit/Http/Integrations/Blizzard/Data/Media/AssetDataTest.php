@@ -5,10 +5,12 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Media;
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Uri;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class AssetDataTest extends TestCase
 {
     #[Test]

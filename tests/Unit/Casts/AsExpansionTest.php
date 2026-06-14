@@ -7,10 +7,12 @@ use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use stdClass;
 use Tests\TestCase;
 
+#[Group('platform')]
 class AsExpansionTest extends TestCase
 {
     private function sampleJson(): string
@@ -119,6 +121,7 @@ class AsExpansionTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function set_throws_invalid_argument_when_value_is_not_an_expansion(): void
     {

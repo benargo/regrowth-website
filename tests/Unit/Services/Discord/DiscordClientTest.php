@@ -9,9 +9,11 @@ use App\Services\Discord\Exceptions\RateLimitedException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class DiscordClientTest extends TestCase
 {
     private DiscordClient $client;
@@ -216,6 +218,7 @@ class DiscordClientTest extends TestCase
         }
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function get_throws_message_not_found_exception_on_404_for_message_endpoint(): void
     {
@@ -230,6 +233,7 @@ class DiscordClientTest extends TestCase
         $this->client->get('/channels/123/messages/456');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function delete_throws_discord_request_exception_on_500(): void
     {

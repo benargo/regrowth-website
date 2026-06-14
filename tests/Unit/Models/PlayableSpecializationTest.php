@@ -9,10 +9,12 @@ use App\Models\PlayableClass;
 use App\Models\PlayableSpecialization;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
+#[Group('characters')]
 class PlayableSpecializationTest extends ModelTestCase
 {
     protected function modelClass(): string

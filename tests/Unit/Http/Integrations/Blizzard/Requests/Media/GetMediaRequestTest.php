@@ -6,11 +6,13 @@ use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\Requests\Media\GetMediaRequest;
 use App\Http\Integrations\Blizzard\Responses\GetMediaResponse;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetMediaRequestTest extends BlizzardTestCase
 {
     #[Test]
@@ -53,6 +55,7 @@ class GetMediaRequestTest extends BlizzardTestCase
         Saloon::assertSent(fn (GetMediaRequest $r) => $r->resolveEndpoint() === '/data/wow/media/item/19019');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_invalid_argument_exception_for_invalid_tag(): void
     {
@@ -62,6 +65,7 @@ class GetMediaRequestTest extends BlizzardTestCase
         new GetMediaRequest('invalid-tag', 1);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_invalid_argument_exception_for_empty_tag(): void
     {

@@ -7,10 +7,12 @@ use App\Models\Raids\Report;
 use App\Models\User;
 use App\Policies\ReportPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class ReportPolicyTest extends TestCase
 {
     use RefreshDatabase;

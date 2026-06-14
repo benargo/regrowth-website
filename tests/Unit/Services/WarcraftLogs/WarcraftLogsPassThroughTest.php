@@ -9,9 +9,11 @@ use App\Services\WarcraftLogs\GuildTags;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\WarcraftLogs;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class WarcraftLogsPassThroughTest extends TestCase
 {
     private WarcraftLogs $service;

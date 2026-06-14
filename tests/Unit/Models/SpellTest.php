@@ -4,9 +4,11 @@ namespace Tests\Unit\Models;
 
 use App\Enums\AffectType;
 use App\Models\Spell;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class SpellTest extends ModelTestCase
 {
     protected function modelClass(): string

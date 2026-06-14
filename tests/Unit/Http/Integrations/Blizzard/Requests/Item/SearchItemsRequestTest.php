@@ -3,11 +3,13 @@
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Item;
 
 use App\Http\Integrations\Blizzard\Requests\Item\SearchItemsRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class SearchItemsRequestTest extends BlizzardTestCase
 {
     #[Test]

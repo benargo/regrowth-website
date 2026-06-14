@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\Gender;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('characters')]
 class GenderTest extends TestCase
 {
     // ==================== cases ====================

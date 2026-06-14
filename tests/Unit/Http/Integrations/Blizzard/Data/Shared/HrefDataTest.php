@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Shared;
 
 use App\Http\Integrations\Blizzard\Data\Shared\HrefData;
 use Illuminate\Support\Uri;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class HrefDataTest extends TestCase
 {
     #[Test]

@@ -3,9 +3,11 @@
 namespace Tests\Unit\Http\Requests\Items;
 
 use App\Http\Requests\Items\UpdateItemNotesRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('loot')]
 class UpdateItemNotesRequestTest extends TestCase
 {
     private function makeRequest(array $data = []): UpdateItemNotesRequest

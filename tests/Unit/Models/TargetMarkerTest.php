@@ -3,9 +3,11 @@
 namespace Tests\Unit\Models;
 
 use App\Models\TargetMarker;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class TargetMarkerTest extends ModelTestCase
 {
     protected function modelClass(): string

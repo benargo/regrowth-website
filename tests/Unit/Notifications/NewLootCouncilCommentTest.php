@@ -15,7 +15,9 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
-#[Group('notifications')]
+#[Group('loot')]
+#[Group('discord-integration')]
+#[Group('blizzard-integration')]
 class NewLootCouncilCommentTest extends TestCase
 {
     use RefreshDatabase;

@@ -4,9 +4,12 @@ namespace Tests\Unit\Http\Requests\Raid;
 
 use App\Http\Requests\Raid\StoreReportRequest;
 use Illuminate\Validation\Rules\Exists;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class StoreReportRequestTest extends TestCase
 {
     private function makeRequest(): StoreReportRequest

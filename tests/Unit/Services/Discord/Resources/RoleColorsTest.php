@@ -3,10 +3,12 @@
 namespace Tests\Unit\Services\Discord\Resources;
 
 use App\Services\Discord\Resources\RoleColors;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class RoleColorsTest extends TestCase
 {
     #[Test]

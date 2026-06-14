@@ -11,10 +11,12 @@ use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class BossTest extends ModelTestCase
 {
     protected function modelClass(): string

@@ -6,6 +6,7 @@ use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockResponse;
@@ -13,6 +14,7 @@ use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class RenderConnectorTest extends TestCase
 {
     // ==================== resolveBaseUrl ====================
@@ -65,6 +67,7 @@ class RenderConnectorTest extends TestCase
         $this->assertNull($pending->headers()->get('Authorization'));
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function throws_media_not_found_exception_on_404(): void
     {

@@ -16,9 +16,11 @@ use App\Services\Discord\Resources\Channel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class EventTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -152,6 +154,7 @@ class EventTest extends ModelTestCase
         $this->assertSame('226e73', $event->color);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function color_setter_throws_for_invalid_string(): void
     {

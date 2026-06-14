@@ -6,9 +6,11 @@ use App\Http\Resources\PermissionGroupsCollection;
 use App\Models\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
 class PermissionGroupsCollectionTest extends TestCase
 {
     use RefreshDatabase;

@@ -8,9 +8,11 @@ use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class EventAssignmentGroupTest extends ModelTestCase
 {
     protected function modelClass(): string

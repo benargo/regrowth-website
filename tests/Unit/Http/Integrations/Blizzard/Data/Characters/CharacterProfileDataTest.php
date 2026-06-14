@@ -4,10 +4,12 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Characters;
 
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterProfileData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class CharacterProfileDataTest extends TestCase
 {
     /**

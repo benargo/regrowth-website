@@ -3,9 +3,11 @@
 namespace Tests\Unit\Http\Integrations\Blizzard\Data\Item;
 
 use App\Http\Integrations\Blizzard\Data\Item\ItemQualityData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class ItemQualityDataTest extends TestCase
 {
     #[Test]

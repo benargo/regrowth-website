@@ -9,12 +9,14 @@ use App\Services\Discord\Resources\Attachment;
 use App\Services\Discord\Resources\Embed;
 use App\Services\Discord\Resources\Message;
 use App\Services\Discord\Resources\MessageReference;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class MessageTest extends TestCase
 {
     #[Test]

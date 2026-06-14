@@ -3,12 +3,14 @@
 namespace Tests\Unit\Services\Discord\Resources;
 
 use App\Services\Discord\Resources\User;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class UserTest extends TestCase
 {
     #[Test]

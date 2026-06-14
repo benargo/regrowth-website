@@ -8,12 +8,14 @@ use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Uri;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class FetchCharacterPortraitRequestTest extends TestCase
 {
     #[Test]
@@ -69,6 +71,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_a_uri_instance_with_a_non_blizzard_host(): void
     {
@@ -99,6 +102,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_non_blizzard_hosts(): void
     {
@@ -107,6 +111,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
         new FetchCharacterPortraitRequest('https://example.com/character/thunderstrike/135/51042439-avatar.jpg');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_urls_without_a_path(): void
     {
@@ -115,6 +120,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
         new FetchCharacterPortraitRequest('https://render.worldofwarcraft.com');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_urls_whose_path_is_only_a_slash(): void
     {
@@ -123,6 +129,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
         new FetchCharacterPortraitRequest('https://render.worldofwarcraft.com/');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_bare_inputs_without_a_slash(): void
     {

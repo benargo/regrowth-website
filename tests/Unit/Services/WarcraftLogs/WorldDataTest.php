@@ -9,9 +9,11 @@ use App\Services\WarcraftLogs\WorldData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class WorldDataTest extends TestCase
 {
     protected function getService(): WorldData
@@ -210,6 +212,7 @@ class WorldDataTest extends TestCase
         $this->assertEquals('Molten Core', $zones[0]->name);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function get_zones_throws_for_invalid_expansion_id(): void
     {

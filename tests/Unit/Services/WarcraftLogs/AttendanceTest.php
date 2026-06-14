@@ -12,9 +12,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\LazyCollection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class AttendanceTest extends TestCase
 {
     protected function makeService(array $configOverrides = []): Attendance
@@ -329,6 +331,7 @@ class AttendanceTest extends TestCase
         $this->assertEquals(2, $benchedPlayer->presence);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function lazy_throws_exception_when_guild_not_found(): void
     {
