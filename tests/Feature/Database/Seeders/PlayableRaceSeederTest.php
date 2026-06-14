@@ -10,12 +10,14 @@ use Database\Seeders\PlayableRaceSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('characters')]
 class PlayableRaceSeederTest extends TestCase
 {
     use RefreshDatabase;

@@ -7,10 +7,12 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class GuildResourceControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -37,6 +39,7 @@ class GuildResourceControllerTest extends TestCase
 
     // ==================== searchMembers: Validation ====================
 
+    #[Group('validation')]
     #[Test]
     public function search_members_returns_422_when_query_is_missing(): void
     {

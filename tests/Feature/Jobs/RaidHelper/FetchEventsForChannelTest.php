@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
@@ -18,6 +19,8 @@ use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 use Saloon\RateLimitPlugin\Limit;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class FetchEventsForChannelTest extends TestCase
 {
     private RaidHelperConnector $connector;

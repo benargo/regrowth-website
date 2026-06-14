@@ -13,10 +13,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class EventTemplateControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -103,6 +105,7 @@ class EventTemplateControllerTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_for_users_without_manage_raid_plans_on_index(): void
     {
@@ -150,6 +153,7 @@ class EventTemplateControllerTest extends TestCase
         $response->assertRedirect(route('management.event-templates.edit', $template));
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_requires_a_title(): void
     {
@@ -163,6 +167,7 @@ class EventTemplateControllerTest extends TestCase
         $response->assertSessionHasErrors('title');
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_requires_at_least_one_raid(): void
     {
@@ -191,6 +196,7 @@ class EventTemplateControllerTest extends TestCase
         );
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_for_unauthorized_user_on_edit(): void
     {

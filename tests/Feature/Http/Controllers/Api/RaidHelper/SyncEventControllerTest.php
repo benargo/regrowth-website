@@ -6,10 +6,13 @@ use App\Jobs\RaidHelper\SyncEvent;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\EventWebhookBody;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class SyncEventControllerTest extends TestCase
 {
     use EventWebhookBody;
@@ -36,6 +39,7 @@ class SyncEventControllerTest extends TestCase
         Bus::assertDispatched(SyncEvent::class);
     }
 
+    #[Group('authorization')]
     #[Test]
     #[DataProvider('eventEndpoints')]
     public function it_rejects_requests_with_an_invalid_authorization_header(string $url): void

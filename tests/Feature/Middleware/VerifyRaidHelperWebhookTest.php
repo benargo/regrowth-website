@@ -4,9 +4,11 @@ namespace Tests\Feature\Middleware;
 
 use App\Http\Middleware\VerifyRaidHelperWebhook;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class VerifyRaidHelperWebhookTest extends TestCase
 {
     protected function setUp(): void
@@ -16,6 +18,7 @@ class VerifyRaidHelperWebhookTest extends TestCase
         Route::middleware(VerifyRaidHelperWebhook::class)->post('/_test/raidhelper-webhook', fn () => response()->json(['ok' => true]));
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_rejects_requests_with_no_authorization_header(): void
     {
@@ -26,6 +29,7 @@ class VerifyRaidHelperWebhookTest extends TestCase
         $response->assertStatus(401);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_rejects_requests_with_a_wrong_authorization_header(): void
     {
@@ -36,6 +40,7 @@ class VerifyRaidHelperWebhookTest extends TestCase
         $response->assertStatus(401);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_rejects_requests_when_the_webhook_key_is_not_configured(): void
     {

@@ -7,12 +7,14 @@ use App\Http\Integrations\RaidHelper\Pagination\EventsPaginator;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetEventsRequest;
 use Carbon\Carbon;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class GetEventsRequestTest extends TestCase
 {
     #[Test]

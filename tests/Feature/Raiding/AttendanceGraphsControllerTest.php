@@ -14,10 +14,12 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class AttendanceGraphsControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -47,6 +49,7 @@ class AttendanceGraphsControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function index_forbids_guest_users(): void
     {
@@ -57,6 +60,7 @@ class AttendanceGraphsControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function index_forbids_member_users(): void
     {
@@ -67,6 +71,7 @@ class AttendanceGraphsControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function index_forbids_raider_users(): void
     {
@@ -77,6 +82,7 @@ class AttendanceGraphsControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function index_forbids_loot_councillor_users(): void
     {

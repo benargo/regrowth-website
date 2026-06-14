@@ -8,11 +8,13 @@ use App\Models\PlayableClass;
 use Database\Seeders\GuildRankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('characters')]
 class GuildRosterControllerTest extends TestCase
 {
     use RefreshDatabase;

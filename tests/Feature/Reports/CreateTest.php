@@ -15,10 +15,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class CreateTest extends TestCase
 {
     use RefreshDatabase;
@@ -47,6 +50,7 @@ class CreateTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function create_forbids_users_without_manage_reports(): void
     {

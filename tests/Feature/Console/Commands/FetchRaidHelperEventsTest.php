@@ -5,9 +5,12 @@ namespace Tests\Feature\Console\Commands;
 use App\Console\Commands\FetchRaidHelperEvents;
 use App\Jobs\RaidHelper\FetchEvents;
 use Illuminate\Support\Facades\Bus;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class FetchRaidHelperEventsTest extends TestCase
 {
     #[Test]

@@ -12,9 +12,12 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('daily-quests')]
+#[Group('discord-integration')]
 class DeleteStaleDailyQuestsMessageTest extends TestCase
 {
     use RefreshDatabase;

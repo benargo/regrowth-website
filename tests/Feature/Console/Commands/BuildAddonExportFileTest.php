@@ -5,9 +5,11 @@ namespace Tests\Feature\Console\Commands;
 use App\Jobs\BuildAddonExportFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class BuildAddonExportFileTest extends TestCase
 {
     use RefreshDatabase;
