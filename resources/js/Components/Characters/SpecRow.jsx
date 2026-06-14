@@ -1,4 +1,3 @@
-import Icon from "@/Components/FontAwesome/Icon";
 import SpecIcon from "@/Components/Characters/SpecIcon";
 
 export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetRaid, disabled }) {
@@ -18,19 +17,22 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
             />
 
             <SpecIcon specialization={spec} size={6} />
-            <span className={`flex-1 font-medium ${isSelected ? "text-white" : "text-gray-400"}`}>
+            <span className={`flex font-medium ${isSelected ? "text-white" : "text-gray-400"}`}>
                 {spec.name}
             </span>
 
             {spec.role && (
-                <span className="text-xs text-gray-600 uppercase tracking-wide">{spec.role}</span>
+                <span className="inline-flex flex-row gap-1 flex-1 text-xs text-gray-400 uppercase tracking-wide">
+                    {spec.role_icon_url && (<img src={spec.role_icon_url} alt={spec.role} className="w-4 h-4" />)}
+                    <p>{spec.role}</p>
+                </span>
             )}
 
             <label
                 className={`flex items-center gap-1.5 text-xs transition-colors ${
                     isSelected
                         ? "cursor-pointer text-amber-500 hover:text-amber-400"
-                        : "cursor-not-allowed text-gray-700"
+                        : "cursor-not-allowed text-gray-400"
                 }`}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -41,9 +43,7 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
                     disabled={disabled || !isSelected}
                     className="h-3.5 w-3.5 border-amber-600 bg-brown-900 text-amber-500 focus:ring-amber-500 focus:ring-offset-0 disabled:cursor-not-allowed"
                 />
-                <Icon icon="star" style="solid" className={`text-[11px] ${isRaidSpec ? "" : "hidden"}`} />
-                <Icon icon="star" style="light" className={`text-[11px] ${isRaidSpec ? "hidden" : ""}`} />
-                <span className="hidden sm:inline">Raid</span>
+                <span className="hidden sm:inline">raid spec</span>
             </label>
         </label>
     );

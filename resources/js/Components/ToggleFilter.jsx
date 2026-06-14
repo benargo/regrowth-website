@@ -1,4 +1,4 @@
-export default function ToggleFilter({ label, value, onChange, dusk }) {
+export default function ToggleFilter({ label, value, onChange }) {
     return (
         <label className="flex cursor-pointer items-center gap-3 rounded border border-amber-600 bg-brown-800 px-4 py-2">
             <span className="text-sm text-white">{label}</span>
@@ -7,7 +7,6 @@ export default function ToggleFilter({ label, value, onChange, dusk }) {
                     type="checkbox"
                     checked={value}
                     onChange={(e) => onChange(e.target.checked)}
-                    dusk={dusk}
                     className="peer sr-only"
                 />
                 <div className="h-6 w-10 rounded-full bg-brown-700 transition-colors peer-checked:bg-amber-600" />

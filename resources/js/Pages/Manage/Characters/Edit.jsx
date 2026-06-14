@@ -1,7 +1,7 @@
 import { Link, useForm } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
-import PageContainer from "@/Components/PageContainer";
+import FormContainer from "@/Components/FormContainer";
 import FormField from "@/Components/FormField";
 import PrimaryButton from "@/Components/PrimaryButton";
 import InputError from "@/Components/InputError";
@@ -59,7 +59,7 @@ export default function Edit({ character, specializations }) {
         <Master title={`Edit · ${character.name}`}>
             <SharedHeader backgroundClass="bg-goldshire" title={`Edit: ${character.name}`} />
 
-            <PageContainer>
+            <FormContainer>
                 <form onSubmit={handleSubmit}>
                     {/* Character identity (read-only) */}
                     <div className="mb-8 flex items-center gap-4">
@@ -83,10 +83,10 @@ export default function Edit({ character, specializations }) {
                         {/* Specializations */}
                         <section>
                             <SectionHeading>Specializations</SectionHeading>
-                            <p className="mb-4 text-sm text-gray-500">
+                            <p className="mb-4 text-sm text-gray-400">
                                 Select which specs this character plays. Mark one as the{" "}
                                 <span className="inline-flex items-center gap-1 text-amber-500">
-                                    <Icon icon="star" style="solid" className="text-[11px]" /> raid spec
+                                    raid spec
                                 </span>
                                 .
                             </p>
@@ -158,7 +158,7 @@ export default function Edit({ character, specializations }) {
                         </div>
                     </div>
                 </form>
-            </PageContainer>
+            </FormContainer>
         </Master>
     );
 }

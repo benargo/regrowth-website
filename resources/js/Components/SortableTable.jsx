@@ -1,4 +1,4 @@
-import { useState, useEffect, Children, isValidElement } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
 
 function columnLabel(key) {
@@ -12,8 +12,9 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
     const isActive = sortColumn === column;
 
     return (
-        <th
-            className="cursor-pointer select-none px-4 py-3 text-left text-sm font-semibold text-amber-500 transition-colors hover:text-amber-400"
+        <div
+            role="columnheader"
+            className="table-cell cursor-pointer select-none px-4 py-3 text-left text-sm font-semibold text-amber-500 transition-colors hover:text-amber-400"
             onClick={() => onSort(column)}
         >
             <span className="inline-flex items-center gap-2">
@@ -30,7 +31,7 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
                     )}
                 </span>
             </span>
-        </th>
+        </div>
     );
 }
 
@@ -42,16 +43,8 @@ export default function SortableTable({
     className,
     children,
 }) {
-    const childArray = Children.toArray(children);
-    const hasCustomThead = childArray.some(
-        (child) => isValidElement(child) && child.type === "thead",
-    );
-    const hasCustomTbody = childArray.some(
-        (child) => isValidElement(child) && child.type === "tbody",
-    );
-
-    if (process.env.NODE_ENV !== "production" && !hasCustomThead && !columns) {
-        throw new Error("SortableTable: either a 'columns' prop or a <thead> child is required.");
+    if (process.env.NODE_ENV !== "production" && !columns) {
+        throw new Error("SortableTable: a 'columns' prop is required.");
     }
 
     const initialColumn = defaultSortColumn ?? (columns?.[0] ?? "");
@@ -70,39 +63,25 @@ export default function SortableTable({
         }
     }, [sortColumn, sortDirection]);
 
-    const bodyChildren = hasCustomTbody
-        ? childArray.filter((child) => isValidElement(child) && child.type === "tbody")
-        : null;
-
-    const rowChildren = !hasCustomTbody
-        ? childArray.filter((child) => !isValidElement(child) || child.type !== "thead")
-        : null;
-
     return (
-        <table className={`w-full text-left${className ? ` ${className}` : ""}`}>
-            {hasCustomThead
-                ? childArray.filter((child) => isValidElement(child) && child.type === "thead")
-                : columns && (
-                      <thead>
-                          <tr className="border-b border-brown-700">
-                              {columns.map((col) => (
-                                  <SortableHeader
-                                      key={col}
-                                      column={col}
-                                      label={columnLabel(col)}
-                                      sortColumn={sortColumn}
-                                      sortDirection={sortDirection}
-                                      onSort={handleSort}
-                                  />
-                              ))}
-                          </tr>
-                      </thead>
-                  )}
-            {hasCustomTbody ? (
-                bodyChildren
-            ) : (
-                <tbody className="divide-y divide-brown-700/50">{rowChildren}</tbody>
-            )}
-        </table>
+        <div role="table" className={`table w-full text-left${className ? ` ${className}` : ""}`}>
+            <div role="rowgroup" className="table-header-group">
+                <div role="row" className="table-row border-b border-brown-700">
+                    {columns.map((col) => (
+                        <SortableHeader
+                            key={col}
+                            column={col}
+                            label={columnLabel(col)}
+                            sortColumn={sortColumn}
+                            sortDirection={sortDirection}
+                            onSort={handleSort}
+                        />
+                    ))}
+                </div>
+            </div>
+            <div role="rowgroup" className="table-row-group">
+                {children}
+            </div>
+        </div>
     );
 }

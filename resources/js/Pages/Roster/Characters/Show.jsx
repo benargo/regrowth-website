@@ -38,7 +38,7 @@ function RankPill({ rank }) {
     const colors = RANK_COLORS[slug] ?? { bg: "bg-gray-800/50", text: "text-gray-400", border: "border-gray-600/40" };
 
     return (
-        <span className={`inline-flex items-center rounded border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${colors.bg} ${colors.text} ${colors.border}`}>
+        <span className={`inline-flex items-center rounded border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${colors.bg} ${colors.text} ${colors.border}`}>
             {rank.name}
         </span>
     );
@@ -55,11 +55,14 @@ function ReportsSkeleton() {
 }
 
 function ReportRow({ report }) {
-    const date = new Date(report.start_time).toLocaleDateString(undefined, {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    });
+    const d = new Date(report.start_time);
+    const day = d.getDate();
+    const suffix = { one: "st", two: "nd", few: "rd", other: "th" }[
+        new Intl.PluralRules(undefined, { type: "ordinal" }).select(day)
+    ];
+    const weekday = d.toLocaleDateString(undefined, { weekday: "long" });
+    const month = d.toLocaleDateString(undefined, { month: "long" });
+    const date = `${weekday} ${day}${suffix} ${month} ${d.getFullYear()}`;
 
     return (
         <Link
@@ -67,7 +70,7 @@ function ReportRow({ report }) {
             className="flex items-center justify-between rounded border border-brown-700 bg-brown-800/40 px-4 py-3 transition-colors hover:border-amber-600/40 hover:bg-brown-800"
         >
             <span className="font-medium text-white">{report.title}</span>
-            <span className="text-sm text-gray-500">{date}</span>
+            <span className="text-sm text-gray-400">{date}</span>
         </Link>
     );
 }
@@ -155,26 +158,21 @@ export default function Show({ character, recent_reports }) {
 
                 {/* Meta card */}
                 <MetaCard>
-                    <MetaItem>
-                        <span className="inline-flex items-center gap-1.5">
-                            {character.playable_class?.icon_url && (
-                                <img
-                                    src={character.playable_class.icon_url}
-                                    alt={character.playable_class.name}
-                                    className="h-4 w-4 rounded"
-                                />
-                            )}
-                            Level {character.level}
-                            {character.playable_race?.name ? ` · ${character.playable_race.name}` : ""}
-                            {character.playable_class?.name ? ` · ${character.playable_class.name}` : ""}
-                        </span>
-                    </MetaItem>
-                    {spec && (
-                        <MetaItem icon="star">
+                    <MetaItem icon="level-up">Level {character.level}</MetaItem>
+                    {character.playable_race?.name && (
+                        <MetaItem icon={character.gender.toLowerCase()}>{character.playable_race.name}</MetaItem>
+                    )}
+                    {character.playable_class?.name && (
+                        <MetaItem>
                             <span className="inline-flex items-center gap-1.5">
-                                <SpecIcon specialization={spec} playableClass={character.playable_class} size={4} />
-                                {spec.name}
-                                <span className="text-xs text-gray-500">raid spec</span>
+                                {character.playable_class.icon_url && (
+                                    <img
+                                        src={character.playable_class.icon_url}
+                                        alt={character.playable_class.name}
+                                        className="h-4 w-4 rounded"
+                                    />
+                                )}
+                                {character.playable_class.name}
                             </span>
                         </MetaItem>
                     )}

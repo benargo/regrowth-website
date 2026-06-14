@@ -73,7 +73,7 @@ class CharacterController extends Controller
             ], 303);
         }
 
-        $character->load(['playableClass', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
+        $character->load(['playableClass', 'playableRace', 'rank', 'specializations', 'linkedCharacters.playableClass', 'linkedCharacters.rank']);
 
         if (! $character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION)) {
             try {
