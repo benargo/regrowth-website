@@ -10,9 +10,11 @@ use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class ZoneTest extends ModelTestCase
 {
     protected function modelClass(): string

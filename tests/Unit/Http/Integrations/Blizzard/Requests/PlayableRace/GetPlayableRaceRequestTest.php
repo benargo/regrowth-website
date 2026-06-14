@@ -5,11 +5,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableRace;
 use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetPlayableRaceRequestTest extends BlizzardTestCase
 {
     #[Test]
@@ -69,6 +71,7 @@ class GetPlayableRaceRequestTest extends BlizzardTestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_invalid_race_exception_on_404(): void
     {

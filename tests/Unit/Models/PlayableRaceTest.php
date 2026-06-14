@@ -5,9 +5,11 @@ namespace Tests\Unit\Models;
 use App\Enums\Faction;
 use App\Models\PlayableRace;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('characters')]
 class PlayableRaceTest extends ModelTestCase
 {
     protected function modelClass(): string

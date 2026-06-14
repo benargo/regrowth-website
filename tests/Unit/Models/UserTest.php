@@ -8,9 +8,11 @@ use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('auth')]
 class UserTest extends ModelTestCase
 {
     protected function modelClass(): string

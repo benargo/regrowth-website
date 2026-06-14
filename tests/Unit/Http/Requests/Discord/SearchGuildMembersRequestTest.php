@@ -3,9 +3,11 @@
 namespace Tests\Unit\Http\Requests\Discord;
 
 use App\Http\Requests\Discord\SearchGuildMembersRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class SearchGuildMembersRequestTest extends TestCase
 {
     private function makeRequest(array $params = []): SearchGuildMembersRequest

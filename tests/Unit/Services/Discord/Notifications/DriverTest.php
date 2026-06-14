@@ -19,9 +19,11 @@ use App\Services\Discord\Resources\Message;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class DriverTest extends TestCase
 {
     use RefreshDatabase;
@@ -475,6 +477,7 @@ class DriverTest extends TestCase
         ]);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function send_propagates_discord_request_exception_without_deleting_the_record(): void
     {

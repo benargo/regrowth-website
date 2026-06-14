@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Exceptions;
 use App\Http\Integrations\Blizzard\Exceptions\ApiException;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Saloon\Exceptions\Request\ClientException;
 use Saloon\Http\Response;
 
+#[Group('blizzard-integration')]
 class ApiExceptionTest extends TestCase
 {
     private Response $response;

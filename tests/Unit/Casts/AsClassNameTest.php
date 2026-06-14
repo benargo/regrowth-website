@@ -6,10 +6,12 @@ use App\Casts\AsClassName;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notification;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use stdClass;
 use Tests\TestCase;
 
+#[Group('characters')]
 class AsClassNameTest extends TestCase
 {
     #[Test]
@@ -56,6 +58,7 @@ class AsClassNameTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function set_throws_when_value_is_not_a_string(): void
     {
@@ -68,6 +71,7 @@ class AsClassNameTest extends TestCase
         $cast->set($model, 'notification_type', new stdClass, []);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function set_throws_when_class_does_not_exist(): void
     {

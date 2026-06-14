@@ -6,9 +6,11 @@ use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
 use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Illuminate\Contracts\Support\Arrayable;
 use JsonSerializable;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class ExpansionTest extends TestCase
 {
     /**

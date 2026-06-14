@@ -6,9 +6,12 @@ use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventCharacter;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
+#[Group('characters')]
 class EventCharacterTest extends ModelTestCase
 {
     protected function modelClass(): string

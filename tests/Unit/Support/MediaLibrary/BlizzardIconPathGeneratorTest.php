@@ -6,6 +6,7 @@ use App\Models\LootCouncil\Priority;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
@@ -15,6 +16,8 @@ use Tests\TestCase;
  * HasBlizzardIcons yet. Full end-to-end verification that PathGeneratorFactory::create()
  * dispatches to this generator is deferred to Task 6, once Priority implements the interface.
  */
+#[Group('media')]
+#[Group('blizzard-integration')]
 class BlizzardIconPathGeneratorTest extends TestCase
 {
     use RefreshDatabase;

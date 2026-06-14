@@ -10,9 +10,11 @@ use App\Services\Discord\Payloads\MessagePayload;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('discord-integration')]
 class DiscordNotificationTest extends ModelTestCase
 {
     protected function modelClass(): string

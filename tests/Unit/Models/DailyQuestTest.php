@@ -8,10 +8,12 @@ use App\Enums\Instance;
 use App\Models\DailyQuest;
 use App\Models\Item;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
+#[Group('daily-quests')]
 class DailyQuestTest extends ModelTestCase
 {
     protected function modelClass(): string

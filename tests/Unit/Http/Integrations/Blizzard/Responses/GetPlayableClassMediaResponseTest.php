@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Responses;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassMediaData;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
 use App\Http\Integrations\Blizzard\Responses\GetPlayableClassMediaResponse;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetPlayableClassMediaResponseTest extends BlizzardTestCase
 {
     private function fakeGetPlayableClassMediaRequest(array $assets = []): GetPlayableClassMediaResponse

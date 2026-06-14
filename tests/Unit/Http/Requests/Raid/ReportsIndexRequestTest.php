@@ -5,9 +5,12 @@ namespace Tests\Unit\Http\Requests\Raid;
 use App\Http\Requests\Raid\ReportsIndexRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class ReportsIndexRequestTest extends TestCase
 {
     private function makeRequest(array $params = []): ReportsIndexRequest

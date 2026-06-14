@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\RaidHelper\Pagination;
 
 use App\Http\Integrations\RaidHelper\Pagination\EventsPaginator;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockResponse;
@@ -13,6 +14,7 @@ use Saloon\Laravel\Facades\Saloon;
 use Saloon\PaginationPlugin\Contracts\Paginatable;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class EventsPaginatorTest extends TestCase
 {
     #[Test]

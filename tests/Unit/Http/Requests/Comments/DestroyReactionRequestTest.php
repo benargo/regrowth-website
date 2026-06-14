@@ -8,9 +8,11 @@ use App\Models\LootCouncil\CommentReaction;
 use Illuminate\Routing\Route;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Validator;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('loot')]
 class DestroyReactionRequestTest extends TestCase
 {
     private function makeRequest(): DestroyReactionRequest

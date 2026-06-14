@@ -11,6 +11,7 @@ use App\Http\Integrations\Blizzard\Responses\FetchAssetResponse;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use GuzzleHttp\Psr7\HttpFactory;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Contracts\ResponseMiddleware;
 use Saloon\Http\Faking\MockClient;
@@ -19,6 +20,7 @@ use Saloon\Http\PendingRequest;
 use Saloon\Http\Response;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class WriteMirrorToDiskTest extends TestCase
 {
     #[Test]
@@ -48,6 +50,7 @@ class WriteMirrorToDiskTest extends TestCase
         $this->assertSame('BINARY', $disk->get('blizzard-cdn/icons/56/foo.jpg'));
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_media_not_found_exception_on_404(): void
     {

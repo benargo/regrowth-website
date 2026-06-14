@@ -9,12 +9,14 @@ use App\Http\Integrations\Blizzard\Requests\Media\GetMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Integrations\Blizzard\Responses\GetMediaResponse;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetMediaResponseTest extends BlizzardTestCase
 {
     private function fakeGetMediaRequest(array $assets = []): GetMediaResponse

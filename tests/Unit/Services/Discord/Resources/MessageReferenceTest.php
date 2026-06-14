@@ -4,12 +4,14 @@ namespace Tests\Unit\Services\Discord\Resources;
 
 use App\Services\Discord\Enums\MessageReferenceType;
 use App\Services\Discord\Resources\MessageReference;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class MessageReferenceTest extends TestCase
 {
     #[Test]

@@ -5,12 +5,14 @@ namespace Tests\Unit\Services\Discord\Resources;
 use App\Services\Discord\Resources\Role;
 use App\Services\Discord\Resources\RoleColors;
 use App\Services\Discord\Resources\RoleTags;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class RoleTest extends TestCase
 {
     // ---------------------------------------------------------------------------

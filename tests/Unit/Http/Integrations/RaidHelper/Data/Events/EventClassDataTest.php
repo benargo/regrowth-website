@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Integrations\RaidHelper\Data\Events;
 
 use App\Http\Integrations\RaidHelper\Data\Events\EventClassData;
 use App\Http\Integrations\RaidHelper\Data\Events\EventSpecData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class EventClassDataTest extends TestCase
 {
     #[Test]

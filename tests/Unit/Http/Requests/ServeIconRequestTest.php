@@ -4,9 +4,12 @@ namespace Tests\Unit\Http\Requests;
 
 use App\Http\Requests\ServeIconRequest;
 use Illuminate\Routing\Route as RoutingRoute;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
+#[Group('media')]
 class ServeIconRequestTest extends TestCase
 {
     #[Test]

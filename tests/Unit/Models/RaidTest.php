@@ -14,9 +14,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class RaidTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -150,6 +152,7 @@ class RaidTest extends ModelTestCase
         $this->assertSame('8b7ed0', $raid->color);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function color_setter_throws_for_invalid_string(): void
     {

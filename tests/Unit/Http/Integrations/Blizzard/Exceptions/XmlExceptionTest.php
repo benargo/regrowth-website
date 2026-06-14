@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Exceptions;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Saloon\Exceptions\Request\ClientException;
 use Saloon\Http\Response;
 use Saloon\XmlWrangler\XmlReader;
 
+#[Group('blizzard-integration')]
 class XmlExceptionTest extends TestCase
 {
     private Response $response;

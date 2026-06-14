@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockResponse;
@@ -15,6 +16,7 @@ use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
 #[EagerlyMirrorsAssets]
+#[Group('blizzard-integration')]
 class StubItemMediaRequest extends Request
 {
     protected ?string $response = GetItemMediaResponse::class;

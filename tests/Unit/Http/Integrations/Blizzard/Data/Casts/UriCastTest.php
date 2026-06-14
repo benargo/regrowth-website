@@ -5,11 +5,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Casts;
 use App\Http\Integrations\Blizzard\Data\Casts\UriCast;
 use Illuminate\Support\Uri;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Support\Creation\CreationContext;
 use Spatie\LaravelData\Support\DataProperty;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class UriCastTest extends TestCase
 {
     #[Test]

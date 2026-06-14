@@ -7,11 +7,13 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\PendingRequest;
 use Saloon\Http\Response;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class FetchAssetResponseTest extends TestCase
 {
     #[Test]

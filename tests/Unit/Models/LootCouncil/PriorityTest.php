@@ -6,10 +6,12 @@ use App\Contracts\HasBlizzardIcons;
 use App\Models\Item;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
+#[Group('loot')]
 class PriorityTest extends ModelTestCase
 {
     protected function modelClass(): string

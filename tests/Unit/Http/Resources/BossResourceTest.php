@@ -7,9 +7,11 @@ use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class BossResourceTest extends TestCase
 {
     use RefreshDatabase;

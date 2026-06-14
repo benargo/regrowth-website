@@ -4,9 +4,11 @@ namespace Tests\Unit\Providers;
 
 use App\Models\Raids\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class AppServiceProviderTest extends TestCase
 {
     use RefreshDatabase;

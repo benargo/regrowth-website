@@ -8,9 +8,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class UpdateCompositionRequestTest extends TestCase
 {
     use RefreshDatabase;

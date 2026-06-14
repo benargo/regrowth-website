@@ -13,9 +13,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class PlannedAbsenceResourceTest extends TestCase
 {
     use RefreshDatabase;

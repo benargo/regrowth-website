@@ -13,9 +13,11 @@ use App\Services\Attendance\DataTable;
 use App\Services\Attendance\FiltersData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class DataTableTest extends TestCase
 {
     use RefreshDatabase;

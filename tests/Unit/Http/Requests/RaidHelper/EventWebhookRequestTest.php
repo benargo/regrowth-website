@@ -5,11 +5,14 @@ namespace Tests\Unit\Http\Requests\RaidHelper;
 use App\Http\Requests\RaidHelper\EventWebhookRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\EventWebhookBody;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class EventWebhookRequestTest extends TestCase
 {
     use EventWebhookBody;
@@ -34,6 +37,7 @@ class EventWebhookRequestTest extends TestCase
         $this->assertArrayHasKey('title', $validator->errors()->toArray());
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_requests_with_unknown_fields(): void
     {

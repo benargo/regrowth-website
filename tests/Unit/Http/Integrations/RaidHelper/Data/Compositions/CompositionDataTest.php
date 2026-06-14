@@ -7,9 +7,11 @@ use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionDividerData;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionGroupData;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionSlotData;
 use App\Http\Integrations\RaidHelper\Data\Events\EventClassData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class CompositionDataTest extends TestCase
 {
     #[Test]

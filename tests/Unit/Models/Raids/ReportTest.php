@@ -14,9 +14,12 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class ReportTest extends ModelTestCase
 {
     protected function modelClass(): string

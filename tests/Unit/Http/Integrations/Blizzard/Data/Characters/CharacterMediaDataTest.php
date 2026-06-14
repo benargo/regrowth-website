@@ -5,9 +5,11 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Characters;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class CharacterMediaDataTest extends TestCase
 {
     /**

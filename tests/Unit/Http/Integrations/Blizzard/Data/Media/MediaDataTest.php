@@ -4,10 +4,12 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Media;
 
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class MediaDataTest extends TestCase
 {
     #[Test]

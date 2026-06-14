@@ -8,10 +8,12 @@ use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class NotifiableChannelTest extends TestCase
 {
     private Discord&MockInterface $discord;
@@ -92,6 +94,7 @@ class NotifiableChannelTest extends TestCase
         $this->assertSame('777888999000111222', $notifiable->channel()->id);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_a_runtime_exception_when_the_config_key_has_no_channel_id(): void
     {
@@ -103,6 +106,7 @@ class NotifiableChannelTest extends TestCase
         NotifiableChannel::fromConfig('missing_key', $this->discord);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_a_runtime_exception_when_the_config_key_does_not_exist(): void
     {

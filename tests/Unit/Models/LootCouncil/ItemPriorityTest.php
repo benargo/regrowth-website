@@ -6,9 +6,11 @@ use App\Models\Item;
 use App\Models\LootCouncil\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('loot')]
 class ItemPriorityTest extends ModelTestCase
 {
     protected function modelClass(): string

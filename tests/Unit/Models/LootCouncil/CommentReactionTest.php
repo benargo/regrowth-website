@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('loot')]
 class CommentReactionTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -102,6 +104,7 @@ class CommentReactionTest extends ModelTestCase
         $this->assertTrue($reaction->user->is($user));
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_prevents_user_from_reacting_to_own_comment_via_model_validation(): void
     {
@@ -134,6 +137,7 @@ class CommentReactionTest extends ModelTestCase
         $this->assertSame($reactor->id, $reaction->user_id);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_prevents_self_reaction_when_updating_user_id(): void
     {
@@ -153,6 +157,7 @@ class CommentReactionTest extends ModelTestCase
         $reaction->save();
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_prevents_self_reaction_when_updating_comment_id(): void
     {
@@ -172,6 +177,7 @@ class CommentReactionTest extends ModelTestCase
         $reaction->save();
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function database_trigger_prevents_self_reaction_on_insert(): void
     {
@@ -194,6 +200,7 @@ class CommentReactionTest extends ModelTestCase
         ]);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function database_trigger_prevents_self_reaction_on_update(): void
     {

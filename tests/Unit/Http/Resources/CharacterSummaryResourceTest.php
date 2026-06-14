@@ -7,9 +7,11 @@ use App\Models\Character;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('characters')]
 class CharacterSummaryResourceTest extends TestCase
 {
     use RefreshDatabase;

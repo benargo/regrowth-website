@@ -5,9 +5,11 @@ namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use Illuminate\Contracts\Support\Arrayable;
 use JsonSerializable;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class DifficultyTest extends TestCase
 {
     #[Test]

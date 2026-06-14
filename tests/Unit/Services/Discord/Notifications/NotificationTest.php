@@ -13,9 +13,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class StubModelA extends Model
 {
     protected $table = 'stub_a';
@@ -287,6 +289,7 @@ class NotificationTest extends TestCase
         $this->assertTrue($model->is($user));
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_hydrates_or_fail_throws_when_the_model_is_missing(): void
     {
@@ -300,6 +303,7 @@ class NotificationTest extends TestCase
         ]);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_hydrates_or_fail_throws_when_the_reference_is_null(): void
     {

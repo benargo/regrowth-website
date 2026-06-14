@@ -9,9 +9,11 @@ use App\Services\WarcraftLogs\ValueObjects\FactionData;
 use App\Services\WarcraftLogs\ValueObjects\ServerData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class GuildTest extends TestCase
 {
     protected function fakeSuccessfulGuildResponse(array $guildData): void
@@ -115,6 +117,7 @@ class GuildTest extends TestCase
         });
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function constructor_throws_exception_when_guild_not_found(): void
     {
@@ -206,6 +209,7 @@ class GuildTest extends TestCase
         $this->assertEquals('Alliance', $guild->faction->name);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function accessing_invalid_property_throws_exception(): void
     {

@@ -5,9 +5,11 @@ namespace Tests\Unit\Http\Requests\PlannedAbsences;
 use App\Http\Requests\PlannedAbsences\StorePlannedAbsenceRequest;
 use App\Models\PlannedAbsence;
 use Illuminate\Validation\Rules\Exists;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class StorePlannedAbsenceRequestTest extends TestCase
 {
     private function makeRequest(array $data = []): StorePlannedAbsenceRequest
