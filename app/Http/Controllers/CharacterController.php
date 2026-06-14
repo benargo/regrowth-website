@@ -113,7 +113,7 @@ class CharacterController extends Controller
         return Inertia::render('Manage/Characters/Edit', [
             'character' => (new CharacterResource($character))->resolve($request),
             'specializations' => PlayableSpecializationResource::collection(
-                $character->playableClass->specializations
+                $character->playableClass->specializations()->orderBy('name')->get()
             )->resolve($request),
         ]);
     }
