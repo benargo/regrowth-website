@@ -4,6 +4,7 @@ namespace Tests\Feature\Characters;
 
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
+use App\Models\GuildRank;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
@@ -34,6 +35,43 @@ class RosterTest extends TestCase
     }
 
     #[Test]
+    public function index_passes_filters_prop_with_defaults(): void
+    {
+        $response = $this->get(route('characters.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Roster/Index')
+            ->has('filters')
+            ->where('filters.sort_column', 'rank')
+            ->where('filters.sort_direction', 'asc')
+            ->where('filters.search', null)
+            ->where('filters.class_ids', null)
+            ->where('filters.race_ids', null)
+            ->where('filters.rank_names', null)
+            ->where('filters.known_only', null)
+        );
+    }
+
+    #[Test]
+    public function index_passes_filters_prop_from_query_string(): void
+    {
+        $response = $this->get(route('characters.index', [
+            'filter[search]' => 'Ozona',
+            'filter[known_only]' => '1',
+            'sort_column' => 'name',
+            'sort_direction' => 'desc',
+        ]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Roster/Index')
+            ->where('filters.search', 'Ozona')
+            ->where('filters.known_only', '1')
+            ->where('filters.sort_column', 'name')
+            ->where('filters.sort_direction', 'desc')
+        );
+    }
+
+    #[Test]
     public function index_renders_with_characters(): void
     {
         $this->fakeRosterWithMembers([
@@ -59,6 +97,7 @@ class RosterTest extends TestCase
             ->has('classes')
             ->has('ranks')
             ->has('races')
+            ->has('filters')
             ->loadDeferredProps(fn (Assert $reload) => $reload->has('characters', 1))
         );
     }
@@ -66,7 +105,7 @@ class RosterTest extends TestCase
     #[Test]
     public function index_characters_deferred_prop_sets_is_known_based_on_database(): void
     {
-        Character::factory()->create(['id' => 52461508]);
+        Character::factory()->create(['id' => 52461508, 'is_main' => true]);
 
         $this->fakeRosterWithMembers([
             [
@@ -99,7 +138,9 @@ class RosterTest extends TestCase
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('characters', 2)
                 ->where('characters.0.character.is_known', true)
+                ->where('characters.0.character.is_main', true)
                 ->where('characters.1.character.is_known', false)
+                ->where('characters.1.character.is_main', false)
             )
         );
     }
@@ -107,6 +148,8 @@ class RosterTest extends TestCase
     #[Test]
     public function index_characters_deferred_prop_returns_flat_ids_without_realm(): void
     {
+        GuildRank::factory()->create(['position' => 9, 'name' => 'Warden']);
+
         $this->fakeRosterWithMembers([
             [
                 'character' => [
@@ -126,7 +169,7 @@ class RosterTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('characters', 1)
-                ->where('characters.0.rank', 9)
+                ->where('characters.0.rank', 'Warden')
                 ->where('characters.0.character.id', 52461508)
                 ->where('characters.0.character.name', 'Ozona')
                 ->where('characters.0.character.slug', 'ozona')
@@ -137,6 +180,21 @@ class RosterTest extends TestCase
                 ->missing('characters.0.character.playable_class')
                 ->missing('characters.0.character.playable_race')
             )
+        );
+    }
+
+    #[Test]
+    public function index_passes_ranks_prop_as_deduplicated_names(): void
+    {
+        GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
+        GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
+        GuildRank::factory()->create(['position' => 2, 'name' => 'Officer']);
+
+        $response = $this->get(route('characters.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Roster/Index')
+            ->where('ranks', ['Guild Master', 'Officer'])
         );
     }
 

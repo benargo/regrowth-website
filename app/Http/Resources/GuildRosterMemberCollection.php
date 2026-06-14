@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
 use App\Models\Character;
+use App\Models\GuildRank;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Collection;
@@ -17,6 +18,9 @@ class GuildRosterMemberCollection extends ResourceCollection
     /** @var Collection<int, Character> */
     private Collection $knownCharacters;
 
+    /** @var array<int, string> */
+    private array $rankNames;
+
     /** @param  list<GuildRosterMemberData>  $resource */
     public function __construct(array $resource)
     {
@@ -28,6 +32,12 @@ class GuildRosterMemberCollection extends ResourceCollection
             ->with('specializations')
             ->get()
             ->keyBy('id');
+
+        $this->rankNames = GuildRank::select('position', 'name')
+            ->orderBy('position')
+            ->get()
+            ->pluck('name', 'position')
+            ->all();
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -51,11 +61,12 @@ class GuildRosterMemberCollection extends ResourceCollection
                         'playable_class_id' => $member->character->playableClass->id,
                         'playable_race_id' => $member->character->playableRace->id,
                         'is_known' => $character !== null,
+                        'is_main' => $character?->is_main ?? false,
                         'specializations' => $character !== null
                             ? PlayableSpecializationResource::collection($character->specializations)->resolve($request)
                             : [],
                     ],
-                    'rank' => $member->rank,
+                    'rank' => $this->rankNames[$member->rank] ?? null,
                 ];
             })->values()->all();
     }

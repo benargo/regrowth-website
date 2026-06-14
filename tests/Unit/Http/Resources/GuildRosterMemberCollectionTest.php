@@ -8,6 +8,7 @@ use App\Http\Integrations\Blizzard\Data\Shared\HrefData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use App\Http\Resources\GuildRosterMemberCollection;
 use App\Models\Character;
+use App\Models\GuildRank;
 use App\Models\PlayableSpecialization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -32,12 +33,15 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertArrayHasKey('playable_class_id', $result[0]['character']);
         $this->assertArrayHasKey('playable_race_id', $result[0]['character']);
         $this->assertArrayHasKey('is_known', $result[0]['character']);
+        $this->assertArrayHasKey('is_main', $result[0]['character']);
         $this->assertArrayHasKey('specializations', $result[0]['character']);
     }
 
     #[Test]
     public function it_returns_correct_scalar_values(): void
     {
+        GuildRank::factory()->create(['position' => 9, 'name' => 'Warden']);
+
         $result = (new GuildRosterMemberCollection([$this->makeMember(
             id: 52461508,
             name: 'Ozona',
@@ -52,7 +56,15 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertSame(60, $result[0]['character']['level']);
         $this->assertSame(8, $result[0]['character']['playable_class_id']);
         $this->assertSame(7, $result[0]['character']['playable_race_id']);
-        $this->assertSame(9, $result[0]['rank']);
+        $this->assertSame('Warden', $result[0]['rank']);
+    }
+
+    #[Test]
+    public function it_returns_null_rank_name_when_no_matching_guild_rank_exists(): void
+    {
+        $result = (new GuildRosterMemberCollection([$this->makeMember(rank: 9)]))->toArray(new Request);
+
+        $this->assertNull($result[0]['rank']);
     }
 
     #[Test]
@@ -80,6 +92,34 @@ class GuildRosterMemberCollectionTest extends TestCase
         $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
 
         $this->assertTrue($result[0]['character']['is_known']);
+    }
+
+    #[Test]
+    public function it_returns_is_main_true_when_character_is_flagged_as_main(): void
+    {
+        Character::factory()->create(['id' => 52461508, 'is_main' => true]);
+
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
+
+        $this->assertTrue($result[0]['character']['is_main']);
+    }
+
+    #[Test]
+    public function it_returns_is_main_false_when_character_is_not_flagged_as_main(): void
+    {
+        Character::factory()->create(['id' => 52461508, 'is_main' => false]);
+
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 52461508)]))->toArray(new Request);
+
+        $this->assertFalse($result[0]['character']['is_main']);
+    }
+
+    #[Test]
+    public function it_returns_is_main_false_for_unknown_character(): void
+    {
+        $result = (new GuildRosterMemberCollection([$this->makeMember(id: 99999999)]))->toArray(new Request);
+
+        $this->assertFalse($result[0]['character']['is_main']);
     }
 
     #[Test]
@@ -127,6 +167,9 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_sorts_by_rank_then_level_descending_then_name(): void
     {
+        GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
+        GuildRank::factory()->create(['position' => 2, 'name' => 'Raider']);
+
         $members = [
             $this->makeMember(id: 1, name: 'Zara', level: 70, rank: 2),
             $this->makeMember(id: 2, name: 'Aaron', level: 70, rank: 1),
@@ -138,11 +181,11 @@ class GuildRosterMemberCollectionTest extends TestCase
         $result = (new GuildRosterMemberCollection($members))->toArray(new Request);
 
         $this->assertSame([
-            ['name' => 'Aaron', 'rank' => 1],
-            ['name' => 'Bob', 'rank' => 1],
-            ['name' => 'Mia', 'rank' => 2],
-            ['name' => 'Zara', 'rank' => 2],
-            ['name' => 'Carl', 'rank' => 2],
+            ['name' => 'Aaron', 'rank' => 'Officer'],
+            ['name' => 'Bob', 'rank' => 'Officer'],
+            ['name' => 'Mia', 'rank' => 'Raider'],
+            ['name' => 'Zara', 'rank' => 'Raider'],
+            ['name' => 'Carl', 'rank' => 'Raider'],
         ], array_map(fn ($r) => ['name' => $r['character']['name'], 'rank' => $r['rank']], $result));
     }
 
