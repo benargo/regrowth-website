@@ -5,9 +5,11 @@ namespace Tests\Unit\Casts;
 use App\Casts\AsBinaryColor;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class AsBinaryColorTest extends TestCase
 {
     // ==================== get ====================
@@ -135,6 +137,7 @@ class AsBinaryColorTest extends TestCase
         $this->assertSame(hex2bin('226e73'), $result);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function set_throws_for_invalid_string(): void
     {
@@ -146,6 +149,7 @@ class AsBinaryColorTest extends TestCase
         $cast->set($model, 'color', 'not-a-color', []);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function set_throws_for_rgb_string_with_out_of_range_values(): void
     {

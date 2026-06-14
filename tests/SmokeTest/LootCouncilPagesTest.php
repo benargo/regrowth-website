@@ -15,12 +15,14 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('loot')]
 class LootCouncilPagesTest extends TestCase
 {
     use RefreshDatabase;
@@ -95,6 +97,7 @@ class LootCouncilPagesTest extends TestCase
         return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function loot_index_loads(): void
     {
@@ -108,6 +111,7 @@ class LootCouncilPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function loot_raid_page_loads(): void
     {
@@ -121,6 +125,7 @@ class LootCouncilPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function loot_comments_page_loads(): void
     {
@@ -132,6 +137,7 @@ class LootCouncilPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function loot_item_show_page_loads(): void
     {
@@ -147,6 +153,7 @@ class LootCouncilPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function loot_item_edit_page_loads(): void
     {

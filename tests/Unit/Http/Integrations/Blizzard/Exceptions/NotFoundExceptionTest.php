@@ -4,11 +4,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Exceptions;
 
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\NotFoundException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Saloon\Exceptions\Request\Statuses\NotFoundException as Base;
 use Saloon\Http\Response;
 
+#[Group('blizzard-integration')]
 class ConcreteNotFoundException extends NotFoundException {}
 
 class NotFoundExceptionTest extends TestCase

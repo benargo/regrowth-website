@@ -28,12 +28,13 @@ use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 use Saloon\RateLimitPlugin\Limit;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class BlizzardConnectorTest extends TestCase
 {
     // ==================== resolveBaseUrl ====================
 
     #[Test]
-    #[Group('resolve-base-url')]
+    #[Group('happy-path')]
     public function resolves_base_url_from_region(): void
     {
         $this->assertSame('https://eu.api.blizzard.com', $this->makeConnector(Region::EU)->resolveBaseUrl());
@@ -45,7 +46,7 @@ class BlizzardConnectorTest extends TestCase
     // ==================== namespace lookup ====================
 
     #[Test]
-    #[Group('namespace')]
+    #[Group('happy-path')]
     public function namespace_returns_derived_value_for_anniversary(): void
     {
         $connector = $this->makeConnector(Region::EU, GameVersion::Anniversary);
@@ -56,7 +57,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('namespace')]
+    #[Group('happy-path')]
     public function namespace_returns_derived_value_for_retail(): void
     {
         $connector = $this->makeConnector(Region::EU, GameVersion::Retail);
@@ -67,7 +68,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('namespace')]
+    #[Group('happy-path')]
     public function namespace_throws_for_unknown_kind(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -79,7 +80,7 @@ class BlizzardConnectorTest extends TestCase
     // ==================== locale validation ====================
 
     #[Test]
-    #[Group('locale-validation')]
+    #[Group('validation')]
     public function constructor_rejects_a_locale_unsupported_by_the_region(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -100,7 +101,7 @@ class BlizzardConnectorTest extends TestCase
     // ==================== default slugs ====================
 
     #[Test]
-    #[Group('default-slugs')]
+    #[Group('happy-path')]
     public function it_exposes_the_configured_default_realm_slug(): void
     {
         $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
@@ -109,7 +110,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('default-slugs')]
+    #[Group('happy-path')]
     public function it_exposes_the_configured_default_guild_slug(): void
     {
         $connector = $this->makeConnector(defaultRealmSlug: 'thunderstrike', defaultGuildSlug: 'regrowth');
@@ -120,7 +121,7 @@ class BlizzardConnectorTest extends TestCase
     // ==================== OAuth + token caching ====================
 
     #[Test]
-    #[Group('oauth')]
+    #[Group('happy-path')]
     public function authenticates_outgoing_requests_with_cached_oauth_token(): void
     {
         $mock = Saloon::fake([
@@ -141,7 +142,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('oauth')]
+    #[Group('happy-path')]
     public function reuses_cached_access_token_on_subsequent_requests(): void
     {
         Saloon::fake([
@@ -165,7 +166,7 @@ class BlizzardConnectorTest extends TestCase
     // ==================== Exception mapping ====================
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_character_not_found_on_blizzard_404_for_character_endpoint(): void
     {
         Saloon::fake([
@@ -184,7 +185,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_invalid_race_exception_on_blizzard_404_for_race_endpoint(): void
     {
         Saloon::fake([
@@ -203,7 +204,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_invalid_class_exception_on_blizzard_404_for_class_endpoint(): void
     {
         Saloon::fake([
@@ -222,7 +223,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_item_not_found_on_blizzard_404_for_item_endpoint(): void
     {
         Saloon::fake([
@@ -241,7 +242,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_rate_limited_on_429_with_retry_after(): void
     {
         Saloon::fake([
@@ -261,7 +262,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_blizzard_api_exception_for_other_failures(): void
     {
         Saloon::fake([
@@ -289,7 +290,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_blizzard_xml_exception_when_body_is_xml(): void
     {
         $xml = <<<'XML'
@@ -322,7 +323,7 @@ class BlizzardConnectorTest extends TestCase
     }
 
     #[Test]
-    #[Group('exception-mapping')]
+    #[Group('error-handling')]
     public function throws_blizzard_api_exception_without_crashing_when_body_is_non_json_non_xml(): void
     {
         Saloon::fake([
@@ -344,7 +345,7 @@ class BlizzardConnectorTest extends TestCase
     // ==================== Rate limits ====================
 
     #[Test]
-    #[Group('rate-limits')]
+    #[Group('error-handling')]
     public function the_per_second_limit_sleeps_instead_of_throwing(): void
     {
         $limits = $this->resolveLimits($this->makeConnector());

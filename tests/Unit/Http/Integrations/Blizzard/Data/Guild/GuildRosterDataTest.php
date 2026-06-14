@@ -6,9 +6,11 @@ use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterCharacterData;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class GuildRosterDataTest extends TestCase
 {
     /**

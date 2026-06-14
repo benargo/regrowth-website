@@ -7,10 +7,12 @@ use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use stdClass;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class AsDifficultyCollectionTest extends TestCase
 {
     private function sampleJson(): string
@@ -107,6 +109,7 @@ class AsDifficultyCollectionTest extends TestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function set_throws_invalid_argument_when_item_is_not_a_difficulty(): void
     {

@@ -13,10 +13,12 @@ use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class PublishAssignmentsControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -120,6 +122,7 @@ class PublishAssignmentsControllerTest extends TestCase
         });
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_when_user_cannot_update_event(): void
     {
@@ -129,6 +132,7 @@ class PublishAssignmentsControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_401_when_unauthenticated(): void
     {

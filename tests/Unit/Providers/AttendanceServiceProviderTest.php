@@ -5,9 +5,11 @@ namespace Tests\Unit\Providers;
 use App\Providers\AttendanceServiceProvider;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\DataTable;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class AttendanceServiceProviderTest extends TestCase
 {
     // ==================== provides ====================

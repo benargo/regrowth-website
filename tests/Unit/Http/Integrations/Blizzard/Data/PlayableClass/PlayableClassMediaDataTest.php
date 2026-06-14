@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\PlayableClass;
 
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassMediaData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class PlayableClassMediaDataTest extends TestCase
 {
     /**

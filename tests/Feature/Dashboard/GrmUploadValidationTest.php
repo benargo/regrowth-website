@@ -6,11 +6,13 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 
+#[Group('characters')]
 class GrmUploadValidationTest extends DashboardTestCase
 {
     #[Test]
@@ -23,6 +25,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function upload_forbids_guest_users(): void
     {
@@ -35,6 +38,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function upload_forbids_member_users(): void
     {
@@ -47,6 +51,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function upload_forbids_raider_users(): void
     {
@@ -131,6 +136,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $partialResponse->assertJsonPath('props.memberCount', 2);
     }
 
+    #[Group('validation')]
     #[Test]
     public function upload_validates_grm_data_required(): void
     {
@@ -140,6 +146,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionHasErrors(['grm_data']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function upload_validates_csv_has_header_and_data_rows(): void
     {
@@ -151,6 +158,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionHasErrors(['grm_data']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function upload_validates_required_headers_present(): void
     {
@@ -186,6 +194,7 @@ class GrmUploadValidationTest extends DashboardTestCase
         $response->assertSessionDoesntHaveErrors(['grm_data']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function upload_rejects_csv_without_valid_delimiter(): void
     {

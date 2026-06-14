@@ -5,9 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('auth')]
 class GuildRankDeleteTest extends DashboardTestCase
 {
     #[Test]
@@ -20,6 +22,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function delete_forbids_guest_users(): void
     {
@@ -31,6 +34,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function delete_forbids_member_users(): void
     {
@@ -42,6 +46,7 @@ class GuildRankDeleteTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function delete_forbids_raider_users(): void
     {

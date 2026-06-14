@@ -15,12 +15,14 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('loot')]
 class ItemShowTest extends TestCase
 {
     use RefreshDatabase;
@@ -91,6 +93,7 @@ class ItemShowTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function show_item_forbids_guest_users(): void
     {

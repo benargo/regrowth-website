@@ -6,10 +6,12 @@ use App\Http\Resources\PermissionGroupsResource;
 use App\Models\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class PermissionGroupsResourceTest extends TestCase
 {
     use RefreshDatabase;

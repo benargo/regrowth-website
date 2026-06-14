@@ -13,9 +13,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class FetchEventsTest extends TestCase
 {
     private Discord&MockInterface $discord;

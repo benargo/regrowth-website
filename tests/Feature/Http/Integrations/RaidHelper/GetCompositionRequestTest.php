@@ -5,12 +5,14 @@ namespace Tests\Feature\Http\Integrations\RaidHelper;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetCompositionRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Exceptions\Request\Statuses\NotFoundException;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class GetCompositionRequestTest extends TestCase
 {
     #[Test]
@@ -28,6 +30,7 @@ class GetCompositionRequestTest extends TestCase
         $this->assertTrue($dto->slots[0]->isConfirmed);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_not_found_when_the_composition_is_missing(): void
     {

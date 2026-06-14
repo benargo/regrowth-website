@@ -10,9 +10,12 @@ use App\Services\Discord\Resources\GuildMember;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('auth')]
+#[Group('discord-integration')]
 class DiscordAuthenticationTest extends DashboardTestCase
 {
     #[Test]

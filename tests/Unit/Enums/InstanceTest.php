@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\Instance;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('raiding')]
 class InstanceTest extends TestCase
 {
     #[Test]

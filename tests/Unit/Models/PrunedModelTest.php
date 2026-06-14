@@ -5,9 +5,11 @@ namespace Tests\Unit\Models;
 use App\Models\PrunedModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class PrunedModelTest extends TestCase
 {
     use RefreshDatabase;

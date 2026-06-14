@@ -10,12 +10,14 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
  * Concrete implementation for testing the abstract BaseService.
  */
+#[Group('warcraftlogs-integration')]
 class TestableWarcraftLogsService extends BaseService
 {
     public function publicQuery(string $query, array $variables = [], ?int $ttl = null, ?int $timeout = null): array
@@ -166,6 +168,7 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(['guild' => ['id' => 774848, 'name' => 'Test Guild']], $data);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function query_throws_on_graphql_errors(): void
     {
@@ -308,6 +311,7 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertEquals(0, $service->publicGetGuildId());
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function a_429_response_throws_rate_limited_exception(): void
     {
@@ -348,6 +352,7 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function subsequent_requests_throw_rate_limited_without_http_call(): void
     {
@@ -366,6 +371,7 @@ class WarcraftLogsServiceTest extends TestCase
         Http::assertNothingSent();
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function non_429_http_errors_are_rethrown(): void
     {

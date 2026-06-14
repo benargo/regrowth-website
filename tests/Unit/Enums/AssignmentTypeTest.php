@@ -7,8 +7,10 @@ use App\Models\Character;
 use App\Models\PlayableClass;
 use App\Models\Spell;
 use App\Models\TargetMarker;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('raiding')]
 class AssignmentTypeTest extends TestCase
 {
     public function test_has_all_expected_cases(): void

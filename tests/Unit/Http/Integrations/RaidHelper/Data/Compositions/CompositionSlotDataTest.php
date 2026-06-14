@@ -3,9 +3,11 @@
 namespace Tests\Unit\Http\Integrations\RaidHelper\Data\Compositions;
 
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionSlotData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class CompositionSlotDataTest extends TestCase
 {
     #[Test]

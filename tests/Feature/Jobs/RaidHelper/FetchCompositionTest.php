@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
@@ -18,6 +19,8 @@ use Saloon\RateLimitPlugin\Exceptions\RateLimitReachedException;
 use Saloon\RateLimitPlugin\Limit;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class FetchCompositionTest extends TestCase
 {
     use RefreshDatabase;
@@ -70,6 +73,7 @@ class FetchCompositionTest extends TestCase
         Queue::assertNotPushed(SyncComposition::class);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_fails_without_retry_when_the_event_model_does_not_exist(): void
     {

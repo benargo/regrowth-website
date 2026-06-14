@@ -5,9 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('auth')]
 class GuildRankPositionUpdateTest extends DashboardTestCase
 {
     #[Test]
@@ -22,6 +24,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_positions_forbids_guest_users(): void
     {
@@ -35,6 +38,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_positions_forbids_member_users(): void
     {
@@ -48,6 +52,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_positions_forbids_raider_users(): void
     {
@@ -73,6 +78,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_positions_validates_ranks_required(): void
     {
@@ -82,6 +88,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_positions_validates_ranks_must_be_array(): void
     {
@@ -93,6 +100,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_positions_validates_rank_id_required(): void
     {
@@ -106,6 +114,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.id']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_positions_validates_rank_id_exists(): void
     {
@@ -119,6 +128,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.id']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_positions_validates_position_required(): void
     {
@@ -133,6 +143,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.position']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_positions_validates_position_must_be_integer(): void
     {
@@ -147,6 +158,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['ranks.0.position']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_positions_validates_position_must_be_non_negative(): void
     {

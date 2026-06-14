@@ -4,9 +4,11 @@ namespace Tests\Unit\Services\Discord\Enums;
 
 use App\Services\Discord\Enums\MessageType;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('discord-integration')]
 class MessageTypeTest extends TestCase
 {
     #[Test]

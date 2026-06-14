@@ -5,9 +5,11 @@ namespace Tests\Unit\Models;
 use App\Models\Character;
 use App\Models\GuildRank;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('characters')]
 class GuildRankTest extends ModelTestCase
 {
     protected function modelClass(): string

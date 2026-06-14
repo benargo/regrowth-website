@@ -5,9 +5,11 @@ namespace Tests\Feature\Raiding;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class NextEventTest extends TestCase
 {
     use RefreshDatabase;

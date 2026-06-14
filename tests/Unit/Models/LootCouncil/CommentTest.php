@@ -7,9 +7,11 @@ use App\Models\LootCouncil\Comment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('loot')]
 class CommentTest extends ModelTestCase
 {
     protected function modelClass(): string

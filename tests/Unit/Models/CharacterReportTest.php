@@ -7,10 +7,13 @@ use App\Models\CharacterReport;
 use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionMethod;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('raiding')]
 class CharacterReportTest extends TestCase
 {
     use RefreshDatabase;

@@ -5,12 +5,14 @@ namespace Tests\Feature\Http\Integrations\RaidHelper;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetEventRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class GetEventRequestTest extends TestCase
 {
     #[Test]

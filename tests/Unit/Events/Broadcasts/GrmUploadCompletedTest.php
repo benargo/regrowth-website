@@ -3,9 +3,12 @@
 namespace Tests\Unit\Events\Broadcasts;
 
 use App\Events\Broadcasts\GrmUploadCompleted;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('broadcasting')]
 class GrmUploadCompletedTest extends TestCase
 {
     #[Test]

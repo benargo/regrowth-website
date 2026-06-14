@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Support;
 
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class MirrorPathsTest extends TestCase
 {
     #[Test]

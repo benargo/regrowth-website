@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\RaidBackground;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class RaidBackgroundTest extends TestCase
 {
     #[Test]

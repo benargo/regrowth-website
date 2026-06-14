@@ -4,9 +4,11 @@ namespace Tests\Unit\Facades;
 
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class BlizzardRenderPathTest extends TestCase
 {
     #[Test]

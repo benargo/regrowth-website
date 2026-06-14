@@ -8,9 +8,11 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('discord-integration')]
 class DiscordNotificationRelatedModelTest extends ModelTestCase
 {
     protected function modelClass(): string

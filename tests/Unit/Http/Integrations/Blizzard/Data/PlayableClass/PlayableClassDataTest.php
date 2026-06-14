@@ -5,9 +5,11 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\PlayableClass;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassData;
 use App\Http\Integrations\Blizzard\Data\Shared\HrefData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class PlayableClassDataTest extends TestCase
 {
     /**

@@ -5,11 +5,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Item;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetItemRequestTest extends BlizzardTestCase
 {
     #[Test]
@@ -79,6 +81,7 @@ class GetItemRequestTest extends BlizzardTestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_item_not_found_exception_on_404(): void
     {

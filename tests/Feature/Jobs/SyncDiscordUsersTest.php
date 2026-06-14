@@ -12,9 +12,12 @@ use App\Services\Discord\Resources\GuildMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
+#[Group('discord-integration')]
 class SyncDiscordUsersTest extends TestCase
 {
     use RefreshDatabase;

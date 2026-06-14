@@ -11,9 +11,12 @@ use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('daily-quests')]
+#[Group('discord-integration')]
 class DailyQuestsMessageTest extends TestCase
 {
     use RefreshDatabase;

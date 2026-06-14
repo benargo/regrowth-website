@@ -8,10 +8,12 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Support\DashboardTestCase;
 
+#[Group('raiding')]
 class BossStrategyControllerTest extends DashboardTestCase
 {
     #[Test]
@@ -66,6 +68,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function edit_requires_manage_boss_strategies_permission(): void
     {
@@ -185,6 +188,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $this->assertEquals($url1, $reorderedMedia[1]->getUrl());
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_requires_manage_boss_strategies_permission(): void
     {

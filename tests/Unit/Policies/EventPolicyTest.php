@@ -7,10 +7,12 @@ use App\Models\Event;
 use App\Models\User;
 use App\Policies\EventPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class EventPolicyTest extends TestCase
 {
     use RefreshDatabase;

@@ -13,18 +13,19 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('characters')]
 class FetchGuildRosterTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Group('listener-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new FetchGuildRoster);
     }
 
-    #[Group('listener-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_has_correct_tags(): void
     {

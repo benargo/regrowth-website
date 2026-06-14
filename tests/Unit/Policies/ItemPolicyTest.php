@@ -7,10 +7,12 @@ use App\Models\Item;
 use App\Models\User;
 use App\Policies\ItemPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class ItemPolicyTest extends TestCase
 {
     use RefreshDatabase;

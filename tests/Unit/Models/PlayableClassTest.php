@@ -4,9 +4,11 @@ namespace Tests\Unit\Models;
 
 use App\Models\PlayableClass;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('characters')]
 class PlayableClassTest extends ModelTestCase
 {
     protected function modelClass(): string

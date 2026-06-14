@@ -4,9 +4,11 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('platform')]
 class AddonSchemaControllerTest extends DashboardTestCase
 {
     // ==========================================
@@ -21,6 +23,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_schema_forbids_guest_users(): void
     {
@@ -31,6 +34,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_schema_forbids_member_users(): void
     {
@@ -41,6 +45,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_schema_forbids_raider_users(): void
     {

@@ -5,9 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('auth')]
 class GuildRankStoreTest extends DashboardTestCase
 {
     #[Test]
@@ -20,6 +22,7 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function store_forbids_guest_users(): void
     {
@@ -32,6 +35,7 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function store_forbids_member_users(): void
     {
@@ -44,6 +48,7 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function store_forbids_raider_users(): void
     {
@@ -67,6 +72,7 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_validates_name_required(): void
     {
@@ -76,6 +82,7 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_validates_name_must_be_string(): void
     {
@@ -87,6 +94,7 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_validates_name_max_length(): void
     {

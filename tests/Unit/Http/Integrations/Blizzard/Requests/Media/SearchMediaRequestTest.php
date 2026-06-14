@@ -3,11 +3,13 @@
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Media;
 
 use App\Http\Integrations\Blizzard\Requests\Media\SearchMediaRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class SearchMediaRequestTest extends BlizzardTestCase
 {
     private function emptySearchResponse(): MockResponse
@@ -19,6 +21,7 @@ class SearchMediaRequestTest extends BlizzardTestCase
         ], status: 200);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_when_tags_is_empty(): void
     {
@@ -28,6 +31,7 @@ class SearchMediaRequestTest extends BlizzardTestCase
         new SearchMediaRequest(tags: []);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_when_tags_contains_invalid_value(): void
     {

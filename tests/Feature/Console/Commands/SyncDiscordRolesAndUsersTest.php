@@ -6,9 +6,12 @@ use App\Jobs\SyncDiscordRoles;
 use App\Jobs\SyncDiscordUsers;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Support\Facades\Bus;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
+#[Group('discord-integration')]
 class SyncDiscordRolesAndUsersTest extends TestCase
 {
     #[Test]

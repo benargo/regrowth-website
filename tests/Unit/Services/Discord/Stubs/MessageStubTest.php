@@ -4,11 +4,13 @@ namespace Tests\Unit\Services\Discord\Stubs;
 
 use App\Services\Discord\Contracts\Resources\Message as MessageContract;
 use App\Services\Discord\Stubs\MessageStub;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class MessageStubTest extends TestCase
 {
     #[Test]

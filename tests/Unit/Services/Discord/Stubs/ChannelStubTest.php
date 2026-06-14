@@ -4,11 +4,13 @@ namespace Tests\Unit\Services\Discord\Stubs;
 
 use App\Services\Discord\Contracts\Resources\Channel as ChannelContract;
 use App\Services\Discord\Stubs\ChannelStub;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class ChannelStubTest extends TestCase
 {
     #[Test]

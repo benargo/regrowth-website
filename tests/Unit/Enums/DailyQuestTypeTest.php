@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\DailyQuestType;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('daily-quests')]
 class DailyQuestTypeTest extends TestCase
 {
     #[Test]

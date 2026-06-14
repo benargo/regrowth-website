@@ -7,9 +7,11 @@ use App\Models\DailyQuest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('daily-quests')]
 class StoreDailyQuestsRequestTest extends TestCase
 {
     use RefreshDatabase;

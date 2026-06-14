@@ -8,12 +8,14 @@ use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Uri;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class FetchIconRequestTest extends TestCase
 {
     #[Test]
@@ -51,6 +53,7 @@ class FetchIconRequestTest extends TestCase
         $this->assertSame('/eu/icons/56/foo.jpg', $request->resolveEndpoint());
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_a_uri_instance_with_a_non_blizzard_host(): void
     {
@@ -79,6 +82,7 @@ class FetchIconRequestTest extends TestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_non_blizzard_hosts(): void
     {
@@ -87,6 +91,7 @@ class FetchIconRequestTest extends TestCase
         new FetchIconRequest('https://example.com/icons/56/foo.jpg');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_urls_without_a_path(): void
     {
@@ -95,6 +100,7 @@ class FetchIconRequestTest extends TestCase
         new FetchIconRequest('https://render.worldofwarcraft.com');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_rejects_urls_whose_path_is_only_a_slash(): void
     {
