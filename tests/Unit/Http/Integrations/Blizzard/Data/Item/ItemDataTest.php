@@ -6,10 +6,12 @@ use App\Http\Integrations\Blizzard\Data\Item\InventoryTypeData;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use App\Http\Integrations\Blizzard\Data\Item\ItemQualityData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class ItemDataTest extends TestCase
 {
     /**

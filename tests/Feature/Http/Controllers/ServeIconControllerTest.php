@@ -7,11 +7,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
+#[Group('media')]
 class ServeIconControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -138,6 +141,7 @@ class ServeIconControllerTest extends TestCase
         Saloon::assertNothingSent();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_rejects_unsigned_urls(): void
     {
@@ -146,6 +150,7 @@ class ServeIconControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_rejects_tampered_signatures(): void
     {

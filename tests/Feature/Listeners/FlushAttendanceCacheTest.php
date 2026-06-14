@@ -9,9 +9,11 @@ use App\Events\ReportUpdated;
 use App\Listeners\FlushAttendanceCache;
 use App\Models\Raids\Report;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class FlushAttendanceCacheTest extends TestCase
 {
     protected function setUp(): void

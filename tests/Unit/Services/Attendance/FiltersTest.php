@@ -10,9 +10,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class FiltersTest extends TestCase
 {
     use RefreshDatabase;
@@ -316,6 +318,7 @@ class FiltersTest extends TestCase
         $this->assertNotNull($filters->sinceDate);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function validate_throws_a_validation_exception_for_invalid_input(): void
     {

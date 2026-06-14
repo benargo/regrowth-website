@@ -7,10 +7,12 @@ use App\Models\PlannedAbsence;
 use App\Models\User;
 use App\Policies\PlannedAbsencePolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class PlannedAbsencePolicyTest extends TestCase
 {
     use RefreshDatabase;

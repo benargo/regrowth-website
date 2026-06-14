@@ -8,12 +8,14 @@ use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('daily-quests')]
 class DailyQuestPagesTest extends TestCase
 {
     use RefreshDatabase;
@@ -39,6 +41,7 @@ class DailyQuestPagesTest extends TestCase
         ]);
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function daily_quests_form_page_loads(): void
     {
@@ -50,6 +53,7 @@ class DailyQuestPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function daily_quests_audit_page_loads(): void
     {
@@ -61,6 +65,7 @@ class DailyQuestPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function daily_quests_audit_page_requires_officer(): void
     {

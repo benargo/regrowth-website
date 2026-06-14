@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableClass;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassMediaData;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\LaravelData\Optional;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetPlayableClassMediaRequestTest extends BlizzardTestCase
 {
     #[Test]
@@ -80,6 +82,7 @@ class GetPlayableClassMediaRequestTest extends BlizzardTestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_invalid_class_exception_on_404(): void
     {

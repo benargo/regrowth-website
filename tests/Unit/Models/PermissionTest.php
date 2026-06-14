@@ -7,9 +7,11 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('auth')]
 class PermissionTest extends ModelTestCase
 {
     protected function modelClass(): string

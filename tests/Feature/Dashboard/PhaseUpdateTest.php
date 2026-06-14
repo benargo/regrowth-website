@@ -6,9 +6,11 @@ use App\Events\AddonSettingsProcessed;
 use App\Models\Phase;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('raiding')]
 class PhaseUpdateTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -30,6 +32,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_phase_forbids_guest_users(): void
     {
@@ -43,6 +46,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_phase_forbids_member_users(): void
     {
@@ -56,6 +60,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_phase_forbids_raider_users(): void
     {
@@ -123,6 +128,7 @@ class PhaseUpdateTest extends DashboardTestCase
         $this->assertNull($phase->start_date);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_phase_validates_date_format(): void
     {

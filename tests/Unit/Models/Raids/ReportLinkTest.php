@@ -7,10 +7,13 @@ use App\Events\ReportLinkSaved;
 use App\Models\Raids\Report;
 use App\Models\Raids\ReportLink;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class ReportLinkTest extends TestCase
 {
     #[Test]

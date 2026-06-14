@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\AllianceRaces;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('characters')]
 class AllianceRacesTest extends TestCase
 {
     // ==================== cases ====================

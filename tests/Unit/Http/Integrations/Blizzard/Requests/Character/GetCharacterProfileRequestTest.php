@@ -4,12 +4,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterProfileData;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\LaravelData\Optional;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetCharacterProfileRequestTest extends BlizzardTestCase
 {
     #[Test]

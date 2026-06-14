@@ -6,9 +6,11 @@ use App\Http\Requests\CreateSpellRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\Rules\Enum;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class CreateSpellRequestTest extends TestCase
 {
     use RefreshDatabase;

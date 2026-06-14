@@ -9,9 +9,12 @@ use App\Models\Zone;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class IndexTest extends TestCase
 {
     use RefreshDatabase;
@@ -324,6 +327,7 @@ class IndexTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['filter.zone_ids', 'filter.guild_tag_ids', 'filter.days', 'filter.since_date', 'filter.before_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_zone_ids_with_invalid_format(): void
     {
@@ -334,6 +338,7 @@ class IndexTest extends TestCase
         $response->assertSessionHasErrors(['filter.zone_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_guild_tag_ids_with_invalid_format(): void
     {
@@ -344,6 +349,7 @@ class IndexTest extends TestCase
         $response->assertSessionHasErrors(['filter.guild_tag_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_days_with_invalid_format(): void
     {
@@ -354,6 +360,7 @@ class IndexTest extends TestCase
         $response->assertSessionHasErrors(['filter.days']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_days_outside_valid_range(): void
     {
@@ -374,6 +381,7 @@ class IndexTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['filter.days']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_invalid_since_date(): void
     {
@@ -384,6 +392,7 @@ class IndexTest extends TestCase
         $response->assertSessionHasErrors(['filter.since_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_since_date_in_the_future(): void
     {
@@ -395,6 +404,7 @@ class IndexTest extends TestCase
         $response->assertSessionHasErrors(['filter.since_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_invalid_before_date(): void
     {
@@ -405,6 +415,7 @@ class IndexTest extends TestCase
         $response->assertSessionHasErrors(['filter.before_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function index_rejects_before_date_in_the_future(): void
     {

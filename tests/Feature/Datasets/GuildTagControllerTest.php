@@ -9,9 +9,12 @@ use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class GuildTagControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -36,6 +39,7 @@ class GuildTagControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_count_attendance_forbids_guest_users(): void
     {
@@ -49,6 +53,7 @@ class GuildTagControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_count_attendance_forbids_member_users(): void
     {
@@ -62,6 +67,7 @@ class GuildTagControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_count_attendance_forbids_raider_users(): void
     {
@@ -125,6 +131,7 @@ class GuildTagControllerTest extends TestCase
         $this->assertFalse($tag->count_attendance);
     }
 
+    #[Group('validation')]
     #[Test]
     public function toggle_count_attendance_validates_count_attendance_is_required(): void
     {
@@ -136,6 +143,7 @@ class GuildTagControllerTest extends TestCase
         $response->assertSessionHasErrors(['count_attendance']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function toggle_count_attendance_validates_count_attendance_must_be_boolean(): void
     {

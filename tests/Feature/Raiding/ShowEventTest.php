@@ -16,10 +16,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class ShowEventTest extends TestCase
 {
     use RefreshDatabase;
@@ -326,6 +328,7 @@ class ShowEventTest extends TestCase
         $response->assertOk();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_denies_guest_access_to_an_old_event(): void
     {
@@ -336,6 +339,7 @@ class ShowEventTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_denies_authenticated_user_without_permission_access_to_old_event(): void
     {

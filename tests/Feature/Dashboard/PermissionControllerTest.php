@@ -6,9 +6,11 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('auth')]
 class PermissionControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -32,6 +34,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function index_forbids_guest_users(): void
     {
@@ -42,6 +45,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function index_forbids_member_users(): void
     {
@@ -52,6 +56,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function index_forbids_raider_users(): void
     {
@@ -78,6 +83,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function show_group_forbids_non_officer_users(): void
     {
@@ -158,6 +164,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_forbids_non_officer_users(): void
     {
@@ -219,6 +226,7 @@ class PermissionControllerTest extends DashboardTestCase
         $this->assertFalse($role->hasPermissionTo('comment-on-loot-items'));
     }
 
+    #[Group('validation')]
     #[Test]
     public function toggle_validates_discord_role_id_is_required(): void
     {
@@ -234,6 +242,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['discord_role_id']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function toggle_validates_discord_role_id_must_exist(): void
     {
@@ -266,6 +275,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertNotFound();
     }
 
+    #[Group('validation')]
     #[Test]
     public function toggle_validates_enabled_is_required(): void
     {
@@ -282,6 +292,7 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['enabled']);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_forbids_non_admin_from_modifying_their_highest_role(): void
     {

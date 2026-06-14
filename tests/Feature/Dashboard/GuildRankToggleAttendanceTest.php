@@ -5,9 +5,12 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('auth')]
+#[Group('raiding')]
 class GuildRankToggleAttendanceTest extends DashboardTestCase
 {
     #[Test]
@@ -22,6 +25,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_count_attendance_forbids_guest_users(): void
     {
@@ -35,6 +39,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_count_attendance_forbids_member_users(): void
     {
@@ -48,6 +53,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function toggle_count_attendance_forbids_raider_users(): void
     {
@@ -105,6 +111,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $this->assertFalse($rank->count_attendance);
     }
 
+    #[Group('validation')]
     #[Test]
     public function toggle_count_attendance_validates_count_attendance_is_required(): void
     {
@@ -115,6 +122,7 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertSessionHasErrors(['count_attendance']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function toggle_count_attendance_validates_count_attendance_must_be_boolean(): void
     {

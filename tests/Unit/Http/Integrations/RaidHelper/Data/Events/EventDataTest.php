@@ -10,9 +10,11 @@ use App\Http\Integrations\RaidHelper\Data\Events\SignUpData;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class EventDataTest extends TestCase
 {
     use RefreshDatabase;

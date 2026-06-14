@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\AffectType;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('raiding')]
 class AffectTypeTest extends TestCase
 {
     // ==================== cases ====================

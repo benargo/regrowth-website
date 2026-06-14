@@ -4,9 +4,11 @@ namespace Tests\Feature\Events;
 
 use App\Events\LootCouncilCacheFlushed;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('loot')]
 class LootCouncilCacheFlushedTest extends TestCase
 {
     #[Test]

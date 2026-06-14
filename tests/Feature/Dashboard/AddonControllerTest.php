@@ -10,11 +10,13 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\DashboardTestCase;
 
+#[Group('platform')]
 class AddonControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -71,6 +73,7 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_forbids_guest_users(): void
     {
@@ -81,6 +84,7 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_forbids_member_users(): void
     {
@@ -91,6 +95,7 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_forbids_raider_users(): void
     {
@@ -120,6 +125,7 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_json_forbids_guest_users(): void
     {
@@ -130,6 +136,7 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_json_forbids_member_users(): void
     {
@@ -140,6 +147,7 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function export_json_forbids_raider_users(): void
     {

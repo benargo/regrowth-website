@@ -6,9 +6,11 @@ use App\Services\WarcraftLogs\AuthenticationHandler;
 use App\Services\WarcraftLogs\Enums\Endpoints;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class ClientAuthenticationTest extends TestCase
 {
     private string $tokenUrl;

@@ -5,9 +5,11 @@ namespace Tests\Unit\Events;
 use App\Events\ModelPruned;
 use App\Models\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class ModelPrunedTest extends TestCase
 {
     use RefreshDatabase;

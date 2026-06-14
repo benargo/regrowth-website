@@ -9,9 +9,12 @@ use App\Events\ReportUpdated;
 use App\Listeners\FlushReportsCache;
 use App\Models\Raids\Report;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class FlushReportsCacheTest extends TestCase
 {
     protected function setUp(): void

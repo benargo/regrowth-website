@@ -8,12 +8,14 @@ use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Uri;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Contracts\RequestMiddleware;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class MergeUriQueryTest extends TestCase
 {
     #[Test]

@@ -7,9 +7,12 @@ use App\Models\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class UpdateCompositionControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -39,6 +42,7 @@ class UpdateCompositionControllerTest extends TestCase
         Bus::assertDispatched(SyncComposition::class, fn ($job) => $job->raidHelperEventId === 'comp-111');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_rejects_requests_with_an_invalid_authorization_header(): void
     {

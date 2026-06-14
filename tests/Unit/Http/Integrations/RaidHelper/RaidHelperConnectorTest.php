@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\RaidHelper;
 
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\Statuses\InternalServerErrorException;
@@ -17,6 +18,7 @@ use Saloon\RateLimitPlugin\Limit;
 use Saloon\RateLimitPlugin\Stores\MemoryStore;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class RaidHelperConnectorTest extends TestCase
 {
     #[Test]
@@ -41,6 +43,7 @@ class RaidHelperConnectorTest extends TestCase
         $this->assertSame('111222333444555666', $this->makeConnector()->serverId());
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_not_found_exception_on_a_404(): void
     {
@@ -53,6 +56,7 @@ class RaidHelperConnectorTest extends TestCase
         $this->makeConnector()->send(new ConnectorProbeRequest);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_request_exception_on_a_generic_server_error(): void
     {
@@ -67,6 +71,7 @@ class RaidHelperConnectorTest extends TestCase
 
     // ==================== Rate limits ====================
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_rate_limit_reached_on_a_429_with_retry_after_header(): void
     {
@@ -79,6 +84,7 @@ class RaidHelperConnectorTest extends TestCase
         $this->makeConnector()->send(new ConnectorProbeRequest);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_rate_limit_reached_on_a_429_with_no_retry_after_header(): void
     {
@@ -147,6 +153,7 @@ class RaidHelperConnectorTest extends TestCase
         $this->assertProactiveLimitBlocks(limit: 200, seconds: 3600);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_enforces_the_1000_per_86400s_tier(): void
     {

@@ -6,10 +6,13 @@ use App\Models\Character;
 use App\Support\MediaLibrary\CharacterMediaPathGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
 
+#[Group('media')]
+#[Group('characters')]
 class CharacterMediaPathGeneratorTest extends TestCase
 {
     use RefreshDatabase;

@@ -15,9 +15,11 @@ use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('daily-quests')]
 class DailyQuestsControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -41,6 +43,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
         $response->assertRedirect(route('login'));
     }
 
+    #[Group('authorization')]
     #[Test]
     public function form_requires_set_daily_quests_permission(): void
     {
@@ -137,6 +140,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
         $response->assertRedirect(route('login'));
     }
 
+    #[Group('authorization')]
     #[Test]
     public function store_requires_set_daily_quests_permission(): void
     {
@@ -173,6 +177,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
         Queue::assertPushed(SendQueuedNotifications::class, fn ($job) => $job->notification instanceof DailyQuestsMessage);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_a_quest_submitted_under_the_wrong_type(): void
     {

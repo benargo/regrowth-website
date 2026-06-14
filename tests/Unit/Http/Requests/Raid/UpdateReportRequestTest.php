@@ -7,9 +7,12 @@ use App\Models\Raids\Report;
 use Illuminate\Routing\Route;
 use Illuminate\Validation\Rules\In;
 use Illuminate\Validation\Rules\NotIn;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class UpdateReportRequestTest extends TestCase
 {
     private function makeRequest(string $reportId = 'some-uuid'): UpdateReportRequest

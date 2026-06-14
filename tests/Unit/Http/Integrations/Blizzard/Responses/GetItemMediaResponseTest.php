@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Responses;
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetItemMediaResponseTest extends BlizzardTestCase
 {
     private function fakeGetItemMediaRequest(array $assets = []): GetItemMediaResponse

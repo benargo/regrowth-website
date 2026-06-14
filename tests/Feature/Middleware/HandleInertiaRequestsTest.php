@@ -8,9 +8,11 @@ use App\Models\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class HandleInertiaRequestsTest extends TestCase
 {
     use RefreshDatabase;

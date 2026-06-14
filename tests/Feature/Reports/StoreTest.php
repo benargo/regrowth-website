@@ -10,10 +10,13 @@ use App\Models\Raids\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class StoreTest extends TestCase
 {
     use RefreshDatabase;
@@ -56,6 +59,7 @@ class StoreTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function store_forbids_users_without_manage_reports(): void
     {
@@ -224,6 +228,7 @@ class StoreTest extends TestCase
 
     // ==================== Validation ====================
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_non_loot_councillor_character_for_loot_councillor_ids(): void
     {
@@ -240,6 +245,7 @@ class StoreTest extends TestCase
         $response->assertSessionHasErrors(['loot_councillor_ids.0']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_missing_title(): void
     {
@@ -255,6 +261,7 @@ class StoreTest extends TestCase
         $response->assertSessionHasErrors(['title']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_end_time_before_start_time(): void
     {
@@ -270,6 +277,7 @@ class StoreTest extends TestCase
         $response->assertSessionHasErrors(['end_time']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_invalid_guild_tag_id(): void
     {
@@ -285,6 +293,7 @@ class StoreTest extends TestCase
         $response->assertSessionHasErrors(['guild_tag_id']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_nonexistent_character_id(): void
     {
@@ -300,6 +309,7 @@ class StoreTest extends TestCase
         $response->assertSessionHasErrors(['character_ids.0']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_nonexistent_linked_report_id(): void
     {
@@ -315,6 +325,7 @@ class StoreTest extends TestCase
         $response->assertSessionHasErrors(['linked_report_ids.0']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_invalid_zone_id(): void
     {

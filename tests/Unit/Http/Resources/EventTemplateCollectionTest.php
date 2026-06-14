@@ -7,9 +7,11 @@ use App\Models\Event;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class EventTemplateCollectionTest extends TestCase
 {
     use RefreshDatabase;

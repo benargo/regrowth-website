@@ -5,9 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildRank;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('auth')]
 class GuildRankUpdateTest extends DashboardTestCase
 {
     #[Test]
@@ -22,6 +24,7 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_forbids_guest_users(): void
     {
@@ -35,6 +38,7 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_forbids_member_users(): void
     {
@@ -48,6 +52,7 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_forbids_raider_users(): void
     {
@@ -73,6 +78,7 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_validates_name_required(): void
     {
@@ -83,6 +89,7 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_validates_name_must_be_string(): void
     {
@@ -95,6 +102,7 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_validates_name_max_length(): void
     {

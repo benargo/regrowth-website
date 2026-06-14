@@ -6,10 +6,12 @@ use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Payloads\ChannelMessagesQueryString;
 use App\Services\Discord\Resources\Message;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class ChannelMessagesQueryStringTest extends TestCase
 {
     #[Test]
@@ -77,6 +79,7 @@ class ChannelMessagesQueryStringTest extends TestCase
         $this->assertSame(100, $payload->limit);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_fails_when_around_and_before_are_both_provided(): void
     {
@@ -88,6 +91,7 @@ class ChannelMessagesQueryStringTest extends TestCase
         ]);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_fails_when_around_and_after_are_both_provided(): void
     {
@@ -99,6 +103,7 @@ class ChannelMessagesQueryStringTest extends TestCase
         ]);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_fails_when_before_and_after_are_both_provided(): void
     {
@@ -110,6 +115,7 @@ class ChannelMessagesQueryStringTest extends TestCase
         ]);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_fails_when_all_three_are_provided(): void
     {

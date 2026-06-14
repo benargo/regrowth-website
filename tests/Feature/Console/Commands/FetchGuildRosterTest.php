@@ -6,9 +6,12 @@ use App\Jobs\FetchGuildRoster;
 use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\RateLimiter;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('blizzard-integration')]
 class FetchGuildRosterTest extends TestCase
 {
     protected function tearDown(): void

@@ -9,9 +9,11 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('loot')]
 class ResolveCommentControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -29,6 +31,7 @@ class ResolveCommentControllerTest extends TestCase
     // Authentication tests
     // ==========================================
 
+    #[Group('authorization')]
     #[Test]
     public function resolve_requires_authentication(): void
     {
@@ -39,6 +42,7 @@ class ResolveCommentControllerTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function resolve_forbidden_without_mark_as_resolved_permission(): void
     {

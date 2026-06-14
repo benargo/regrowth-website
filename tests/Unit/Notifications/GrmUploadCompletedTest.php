@@ -7,9 +7,12 @@ use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel as ChannelResource;
 use App\Services\Discord\Resources\Embed;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('discord-integration')]
 class GrmUploadCompletedTest extends TestCase
 {
     private function makeNotifiable(): NotifiableChannel

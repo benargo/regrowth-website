@@ -16,12 +16,14 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('loot')]
 class ItemEditTest extends TestCase
 {
     use RefreshDatabase;
@@ -107,6 +109,7 @@ class ItemEditTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function edit_item_forbids_guest_users(): void
     {
@@ -118,6 +121,7 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function edit_item_forbids_member_users(): void
     {
@@ -129,6 +133,7 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function edit_item_forbids_raider_users(): void
     {
@@ -214,6 +219,7 @@ class ItemEditTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_priorities_forbids_non_officers(): void
     {
@@ -270,6 +276,7 @@ class ItemEditTest extends TestCase
         $this->assertFalse($item->priorities->contains('id', $priority1->id));
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_priorities_validates_priority_ids(): void
     {
@@ -285,6 +292,7 @@ class ItemEditTest extends TestCase
         $response->assertSessionHasErrors(['priorities.0.priority_id']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_priorities_validates_weights(): void
     {
@@ -355,6 +363,7 @@ class ItemEditTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_notes_forbids_guest_users(): void
     {
@@ -368,6 +377,7 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_notes_forbids_member_users(): void
     {
@@ -381,6 +391,7 @@ class ItemEditTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_notes_forbids_raider_users(): void
     {
@@ -457,6 +468,7 @@ class ItemEditTest extends TestCase
         $this->assertEquals('', $item->notes);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_notes_validates_max_length(): void
     {
@@ -486,6 +498,7 @@ class ItemEditTest extends TestCase
         $this->assertEquals(5000, strlen($item->notes));
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_notes_validates_notes_is_string(): void
     {

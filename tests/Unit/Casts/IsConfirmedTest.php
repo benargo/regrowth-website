@@ -3,11 +3,13 @@
 namespace Tests\Unit\Casts;
 
 use App\Casts\IsConfirmed;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Support\Creation\CreationContext;
 use Spatie\LaravelData\Support\DataProperty;
 use Tests\TestCase;
 
+#[Group('raidhelper-integration')]
 class IsConfirmedTest extends TestCase
 {
     #[Test]

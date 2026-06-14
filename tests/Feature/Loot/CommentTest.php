@@ -20,12 +20,16 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('loot')]
+#[Group('discord-integration')]
+#[Group('blizzard-integration')]
 class CommentTest extends TestCase
 {
     use RefreshDatabase;
@@ -105,6 +109,7 @@ class CommentTest extends TestCase
     // Authorization tests for creating comments
     // ==========================================
 
+    #[Group('authorization')]
     #[Test]
     public function guest_users_cannot_create_comments(): void
     {
@@ -119,6 +124,7 @@ class CommentTest extends TestCase
         $this->assertDatabaseMissing('lootcouncil_comments', ['body' => 'Test comment']);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function member_users_cannot_create_comments(): void
     {
@@ -173,6 +179,7 @@ class CommentTest extends TestCase
     // Validation tests
     // ==========================================
 
+    #[Group('validation')]
     #[Test]
     public function comment_creation_fails_with_empty_body(): void
     {
@@ -187,6 +194,7 @@ class CommentTest extends TestCase
         $this->assertDatabaseCount('lootcouncil_comments', 0);
     }
 
+    #[Group('validation')]
     #[Test]
     public function comment_creation_fails_with_body_too_short(): void
     {
@@ -201,6 +209,7 @@ class CommentTest extends TestCase
         $this->assertDatabaseCount('lootcouncil_comments', 0);
     }
 
+    #[Group('validation')]
     #[Test]
     public function comment_creation_fails_with_body_too_long(): void
     {
@@ -235,6 +244,7 @@ class CommentTest extends TestCase
         $this->assertSoftDeleted('lootcouncil_comments', ['id' => $comment->id]);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function raiders_cannot_delete_other_users_comments(): void
     {
@@ -310,6 +320,7 @@ class CommentTest extends TestCase
         $response->assertRedirect();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function raiders_cannot_edit_other_users_comments(): void
     {
@@ -426,6 +437,7 @@ class CommentTest extends TestCase
         ]);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function raiders_cannot_edit_resolved_comments(): void
     {
@@ -750,6 +762,7 @@ class CommentTest extends TestCase
     // Index page authorization tests
     // ==========================================
 
+    #[Group('authorization')]
     #[Test]
     public function guest_users_cannot_access_comments_index(): void
     {
@@ -760,6 +773,7 @@ class CommentTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function member_users_cannot_access_comments_index(): void
     {
@@ -770,6 +784,7 @@ class CommentTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function raider_users_cannot_access_comments_index(): void
     {

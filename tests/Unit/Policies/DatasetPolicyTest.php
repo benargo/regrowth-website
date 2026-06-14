@@ -7,10 +7,12 @@ use App\Models\GuildRank;
 use App\Models\User;
 use App\Policies\DatasetPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class DatasetPolicyTest extends TestCase
 {
     use RefreshDatabase;

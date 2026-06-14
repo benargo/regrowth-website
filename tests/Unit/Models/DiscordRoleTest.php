@@ -8,9 +8,11 @@ use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('discord-integration')]
 class DiscordRoleTest extends ModelTestCase
 {
     protected function modelClass(): string

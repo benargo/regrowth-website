@@ -5,11 +5,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetCharacterMediaRequestTest extends BlizzardTestCase
 {
     /**
@@ -87,6 +89,7 @@ class GetCharacterMediaRequestTest extends BlizzardTestCase
         });
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_character_not_found_exception_on_404(): void
     {
