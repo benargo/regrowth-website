@@ -14,14 +14,6 @@ import SortableTable from "@/Components/SortableTable";
 import { decodeFilter } from "@/Helpers/EncodeFilter";
 import raidSpec from "@/Helpers/RaidSpec";
 
-const COLUMNS = [
-    { key: "name", label: "Name" },
-    { key: "level", label: "Level" },
-    { key: "race", label: "Race" },
-    { key: "class", label: "Class" },
-    { key: "rank", label: "Rank" },
-];
-
 function CharacterRowCells({ character, spec }) {
     return (
         <>
@@ -297,7 +289,8 @@ export default function Index({ characters, classes, ranks, races, filters }) {
                                 <div className="hidden overflow-x-auto md:block">
                                     <SortableTable
                                         columns={["name", "level", "race", "class", "rank"]}
-                                        defaultSortColumn="rank"
+                                        sortColumn={sortColumn}
+                                        sortDirection={sortDirection}
                                         onSort={(col, dir) => {
                                             setSortColumn(col);
                                             setSortDirection(dir);

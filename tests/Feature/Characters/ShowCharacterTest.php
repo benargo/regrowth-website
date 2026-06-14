@@ -98,6 +98,23 @@ class ShowCharacterTest extends TestCase
         );
     }
 
+    #[Test]
+    public function show_renders_when_character_gender_is_null(): void
+    {
+        $character = Character::factory()->withPlayableClass()->withRank()->withPlayableRace()->create(['gender' => null]);
+
+        $response = $this->get(route('characters.show', [
+            'character' => $character,
+            'slug' => $this->characterSlug($character),
+        ]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Roster/Characters/Show')
+            ->where('character.gender', null)
+        );
+    }
+
     // ==================== Portrait dispatch ====================
 
     #[Test]

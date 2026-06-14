@@ -14,7 +14,7 @@ class PlayableSpecializationResource extends JsonResource
             'name' => $this->name,
             'role' => $this->role->value,
             'icon_url' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
-            'role_icon_url' => asset($this->role->icon()),
+            'role_icon_url' => $this->role->icon(),
             'is_raid_spec' => $this->whenPivotLoaded('pivot_character_specializations', fn () => (bool) $this->pivot->is_raid_spec),
         ];
     }

@@ -55,7 +55,7 @@ class PlayableSpecializationResourceTest extends TestCase
 
         $array = (new PlayableSpecializationResource($spec))->resolve(new Request);
 
-        $this->assertSame(asset($spec->role->icon()), $array['role_icon_url']);
+        $this->assertSame($spec->role->icon(), $array['role_icon_url']);
     }
 
     #[Test]

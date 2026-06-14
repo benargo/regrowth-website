@@ -2,7 +2,6 @@ import { Link, useForm } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import FormContainer from "@/Components/FormContainer";
-import FormField from "@/Components/FormField";
 import PrimaryButton from "@/Components/PrimaryButton";
 import InputError from "@/Components/InputError";
 import Icon from "@/Components/FontAwesome/Icon";

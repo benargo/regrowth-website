@@ -429,7 +429,7 @@ class AttachPortraitToCharacterTest extends TestCase
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Saloon::assertSent(function (FetchCharacterPortraitRequest $request, Response $response): bool {
-            return $response->getPendingRequest()->query()->get('alt') !== null;
+            return $response->getPendingRequest()->query()->get('alt') === '/shadow/avatar/2-1.jpg';
         });
     }
 
@@ -449,7 +449,7 @@ class AttachPortraitToCharacterTest extends TestCase
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Saloon::assertSent(function (FetchCharacterPortraitRequest $request, Response $response): bool {
-            return $response->getPendingRequest()->query()->get('alt') !== null;
+            return $response->getPendingRequest()->query()->get('alt') === '/shadow/avatar/1-0.jpg';
         });
     }
 

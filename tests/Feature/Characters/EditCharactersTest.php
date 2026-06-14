@@ -248,7 +248,10 @@ class EditCharactersTest extends TestCase
             'is_loot_councillor' => false,
         ]);
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('characters.show', [
+            'character' => $character,
+            'slug' => $character->slug,
+        ]));
         $this->assertDatabaseEmpty('pivot_character_specializations');
     }
 
@@ -269,5 +272,61 @@ class EditCharactersTest extends TestCase
             'id' => $character->id,
             'is_loot_councillor' => true,
         ]);
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function update_requires_is_loot_councillor(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create();
+
+        $response = $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => [],
+            // is_loot_councillor intentionally omitted
+        ]);
+
+        $response->assertSessionHasErrors('is_loot_councillor');
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function update_rejects_non_boolean_is_loot_councillor(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create();
+
+        $response = $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => [],
+            'is_loot_councillor' => 'not-a-boolean',
+        ]);
+
+        $response->assertSessionHasErrors('is_loot_councillor');
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function update_requires_specialization_ids_to_be_present(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create();
+
+        $response = $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            // specialization_ids intentionally omitted
+            'is_loot_councillor' => false,
+        ]);
+
+        $response->assertSessionHasErrors('specialization_ids');
+    }
+
+    #[Group('validation')]
+    #[Test]
+    public function update_rejects_non_array_specialization_ids(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create();
+
+        $response = $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => 'not-an-array',
+            'is_loot_councillor' => false,
+        ]);
+
+        $response->assertSessionHasErrors('specialization_ids');
     }
 }

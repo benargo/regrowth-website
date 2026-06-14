@@ -160,7 +160,7 @@ export default function Show({ character, recent_reports }) {
                 <MetaCard>
                     <MetaItem icon="level-up">Level {character.level}</MetaItem>
                     {character.playable_race?.name && (
-                        <MetaItem icon={character.gender.toLowerCase()}>{character.playable_race.name}</MetaItem>
+                        <MetaItem icon={character.gender?.toLowerCase()}>{character.playable_race.name}</MetaItem>
                     )}
                     {character.playable_class?.name && (
                         <MetaItem>

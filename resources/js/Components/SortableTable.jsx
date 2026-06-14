@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
 
 function columnLabel(key) {
@@ -37,9 +36,9 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
 
 export default function SortableTable({
     columns,
+    sortColumn,
+    sortDirection,
     onSort,
-    defaultSortColumn,
-    defaultSortDirection = "asc",
     className,
     children,
 }) {
@@ -47,21 +46,11 @@ export default function SortableTable({
         throw new Error("SortableTable: a 'columns' prop is required.");
     }
 
-    const initialColumn = defaultSortColumn ?? (columns?.[0] ?? "");
-    const [sortColumn, setSortColumn] = useState(initialColumn);
-    const [sortDirection, setSortDirection] = useState(defaultSortDirection);
-
     const handleSort = (column) => {
-        const newDirection = sortColumn === column ? (sortDirection === "asc" ? "desc" : "asc") : "asc";
-        setSortColumn(column);
-        setSortDirection(newDirection);
+        const newDirection =
+            sortColumn === column ? (sortDirection === "asc" ? "desc" : "asc") : "asc";
+        onSort(column, newDirection);
     };
-
-    useEffect(() => {
-        if (onSort) {
-            onSort(sortColumn, sortDirection);
-        }
-    }, [sortColumn, sortDirection]);
 
     return (
         <div role="table" className={`table w-full text-left${className ? ` ${className}` : ""}`}>
