@@ -102,7 +102,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                         value={query}
                         onChange={handleQueryChange}
                         placeholder="Search icons…"
-                        className="w-full rounded border border-brown-600 bg-brown-800 py-2 pl-8 pr-3 text-sm text-white placeholder-brown-500 focus:border-amber-500 focus:outline-none"
+                        className="w-full rounded border border-brown-600 bg-brown-800 py-2 pl-8 pr-3 text-sm text-white placeholder-brown-500 focus:border-amber-500 focus:outline-hidden"
                         autoFocus
                     />
                 </div>
@@ -134,7 +134,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                                 >
                                     <span className="sr-only">{icon.name}</span>
                                     <Tooltip text={icon.name}>
-                                        <img src={icon.url} alt={icon.name} className="h-8 w-8 rounded-sm" />
+                                        <img src={icon.url} alt={icon.name} className="h-8 w-8 rounded-xs" />
                                     </Tooltip>
                                     {isSelected && (
                                         <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-green-500 shadow">

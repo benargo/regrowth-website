@@ -9,6 +9,13 @@
         },
         "saloon": {
             "url": "https://docs.saloon.dev/~gitbook/mcp"
+        },
+        "tailwindcss-server": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "tailwindcss-mcp-server"
+            ]
         }
     }
 }

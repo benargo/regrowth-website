@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\Gender;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
@@ -60,6 +61,26 @@ class CharacterResourceTest extends TestCase
         $this->assertSame($character->level, $array['level']);
         $this->assertTrue($array['is_main']);
         $this->assertFalse($array['is_loot_councillor']);
+    }
+
+    #[Test]
+    public function it_includes_gender_key(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertArrayHasKey('gender', $array);
+    }
+
+    #[Test]
+    public function it_returns_gender_enum_value_when_set(): void
+    {
+        $character = Character::factory()->create(['gender' => Gender::MALE]);
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertSame(Gender::MALE, $array['gender']);
     }
 
     #[Test]

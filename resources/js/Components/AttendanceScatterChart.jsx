@@ -57,7 +57,7 @@ function PointShape({ cx, cy, payload }) {
             height={size.height}
             overflow="visible"
         >
-            <div ref={divRef} className={`bg-${colorClass} inline-flex rounded-sm`}>
+            <div ref={divRef} className={`bg-${colorClass} inline-flex rounded-xs`}>
                 <Link
                     href={route("raiding.attendance.matrix", { character: point.character.id })}
                     className="inline-flex items-center gap-1 p-1"
@@ -66,7 +66,7 @@ function PointShape({ cx, cy, payload }) {
                         <img
                             src={point.character.playable_class.icon_url}
                             alt={point.character.playable_class.name}
-                            className="inline-block h-4 w-4 rounded-sm"
+                            className="inline-block h-4 w-4 rounded-xs"
                         />
                     )}
                     <span className="hidden whitespace-nowrap text-sm text-gray-900 lg:inline">

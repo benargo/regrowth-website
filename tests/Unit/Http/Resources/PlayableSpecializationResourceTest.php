@@ -29,6 +29,7 @@ class PlayableSpecializationResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('role', $array);
         $this->assertArrayHasKey('icon_url', $array);
+        $this->assertArrayHasKey('role_icon_url', $array);
     }
 
     #[Test]
@@ -44,6 +45,19 @@ class PlayableSpecializationResourceTest extends TestCase
         $this->assertSame($spec->id, $array['id']);
         $this->assertSame('Holy', $array['name']);
         $this->assertSame(PlayableSpecRole::healer->value, $array['role']);
+    }
+
+    #[Test]
+    public function it_returns_role_icon_url(): void
+    {
+        $class = PlayableClass::factory()->create();
+        $spec = PlayableSpecialization::factory()
+            ->for($class, 'playableClass')
+            ->create(['role' => PlayableSpecRole::healer]);
+
+        $array = (new PlayableSpecializationResource($spec))->resolve(new Request);
+
+        $this->assertSame($spec->role->icon(), $array['role_icon_url']);
     }
 
     #[Test]

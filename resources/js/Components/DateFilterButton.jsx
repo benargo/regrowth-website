@@ -79,7 +79,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
                         min={min}
                         max={max ?? defaultMax}
                         onChange={(e) => setDraft(e.target.value)}
-                        className="block w-full bg-brown-800/50 text-white [color-scheme:dark]"
+                        className="block w-full bg-brown-800/50 text-white scheme-dark"
                     />
                     <div className="mt-6 flex justify-between gap-3">
                         <button

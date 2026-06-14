@@ -221,7 +221,7 @@ export default function Create() {
                                     setGuildTagId(e.target.value);
                                     setErrors((prev) => ({ ...prev, guild_tag_id: null }));
                                 }}
-                                className="w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                className="w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                             >
                                 <option value="">Select a tag…</option>
                                 {guildTags.map((tag) => (
@@ -238,7 +238,7 @@ export default function Create() {
                                 <select
                                     value={selectedExpansionId}
                                     onChange={handleExpansionChange}
-                                    className="w-48 shrink-0 rounded border border-amber-600 bg-brown-800 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    className="w-48 shrink-0 rounded border border-amber-600 bg-brown-800 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                                 >
                                     {expansions.map((exp) => (
                                         <option key={exp.id} value={exp.id}>
@@ -276,7 +276,7 @@ export default function Create() {
                                             <img
                                                 src={c.playable_class.icon_url}
                                                 alt={c.playable_class.name}
-                                                className="h-4 w-4 rounded-sm"
+                                                className="h-4 w-4 rounded-xs"
                                             />
                                         )}
                                         {c.name}
@@ -297,7 +297,7 @@ export default function Create() {
                                                     <img
                                                         src={character.playable_class.icon_url}
                                                         alt={character.playable_class.name}
-                                                        className="h-4 w-4 rounded-sm"
+                                                        className="h-4 w-4 rounded-xs"
                                                     />
                                                 )}
                                                 {character.name}

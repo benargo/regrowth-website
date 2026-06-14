@@ -310,7 +310,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="flex-1 rounded border border-amber-500 bg-brown-800 px-2 py-0.5 text-sm text-amber-400 focus:outline-none"
+                            className="flex-1 rounded border border-amber-500 bg-brown-800 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -1140,7 +1140,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                                     type="text"
                                     value={data.title}
                                     onChange={(e) => setData("title", e.target.value)}
-                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-amber-500 focus:outline-none"
+                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-amber-500 focus:outline-hidden"
                                     placeholder="Template name"
                                 />
                             </Tooltip>

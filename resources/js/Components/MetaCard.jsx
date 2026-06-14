@@ -3,7 +3,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 export function MetaItem({ icon, children }) {
     return (
         <div className="flex items-center gap-2 text-sm text-gray-300">
-            <Icon icon={icon} style="solid" className="w-4 text-amber-500" />
+            {icon && <Icon icon={icon} style="solid" className="w-4 text-amber-500" />}
             {children}
         </div>
     );
