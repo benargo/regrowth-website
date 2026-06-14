@@ -7,6 +7,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
@@ -14,6 +15,8 @@ use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('blizzard-integration')]
 class RosterTest extends TestCase
 {
     use HasBlizzardTokenMock;

@@ -9,10 +9,12 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('characters')]
 class EditCharactersTest extends TestCase
 {
     use RefreshDatabase;
@@ -43,6 +45,7 @@ class EditCharactersTest extends TestCase
     // Edit
     // =========================================================================
 
+    #[Group('authorization')]
     #[Test]
     public function edit_requires_authentication(): void
     {
@@ -56,6 +59,7 @@ class EditCharactersTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function edit_requires_update_characters_permission(): void
     {
@@ -98,6 +102,7 @@ class EditCharactersTest extends TestCase
     // Update
     // =========================================================================
 
+    #[Group('authorization')]
     #[Test]
     public function update_requires_authentication(): void
     {
@@ -112,6 +117,7 @@ class EditCharactersTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_requires_update_characters_permission(): void
     {
@@ -186,6 +192,7 @@ class EditCharactersTest extends TestCase
         ]);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_rejects_spec_from_different_class(): void
     {
@@ -206,6 +213,7 @@ class EditCharactersTest extends TestCase
         $response->assertSessionHasErrors('specialization_ids.0');
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_rejects_raid_spec_not_in_selected(): void
     {

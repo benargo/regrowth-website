@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
@@ -19,6 +20,8 @@ use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('blizzard-integration')]
 class ShowCharacterTest extends TestCase
 {
     use HasBlizzardTokenMock;
@@ -136,6 +139,7 @@ class ShowCharacterTest extends TestCase
         Bus::assertNotDispatched(AttachPortraitToCharacter::class);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function show_does_not_error_and_does_not_dispatch_when_blizzard_media_request_fails(): void
     {

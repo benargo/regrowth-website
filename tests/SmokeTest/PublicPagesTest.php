@@ -6,15 +6,18 @@ use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use App\Models\Character;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('platform')]
 class PublicPagesTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[Group('happy-path')]
     #[Test]
     public function home_page_loads(): void
     {
@@ -24,6 +27,7 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function roster_page_loads(): void
     {
@@ -42,6 +46,7 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function character_show_page_loads(): void
     {
@@ -56,6 +61,7 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function battlenet_usage_page_loads(): void
     {
@@ -65,6 +71,7 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function privacy_policy_page_loads(): void
     {
@@ -74,6 +81,7 @@ class PublicPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function daily_quests_page_loads(): void
     {

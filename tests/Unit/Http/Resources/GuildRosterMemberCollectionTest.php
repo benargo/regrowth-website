@@ -13,13 +13,17 @@ use App\Models\PlayableSpecialization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Uri;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('blizzard-integration')]
 class GuildRosterMemberCollectionTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_expected_keys(): void
     {
@@ -37,6 +41,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertArrayHasKey('specializations', $result[0]['character']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_correct_scalar_values(): void
     {
@@ -59,6 +64,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertSame('Warden', $result[0]['rank']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_null_rank_name_when_no_matching_guild_rank_exists(): void
     {
@@ -67,6 +73,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertNull($result[0]['rank']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_excludes_realm(): void
     {
@@ -75,6 +82,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertArrayNotHasKey('realm', $result[0]['character']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_excludes_nested_key_hrefs(): void
     {
@@ -84,6 +92,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertArrayNotHasKey('playable_race', $result[0]['character']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_is_known_true_when_character_exists_in_database(): void
     {
@@ -94,6 +103,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertTrue($result[0]['character']['is_known']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_is_main_true_when_character_is_flagged_as_main(): void
     {
@@ -104,6 +114,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertTrue($result[0]['character']['is_main']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_is_main_false_when_character_is_not_flagged_as_main(): void
     {
@@ -114,6 +125,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertFalse($result[0]['character']['is_main']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_is_main_false_for_unknown_character(): void
     {
@@ -122,6 +134,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertFalse($result[0]['character']['is_main']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_is_known_false_when_character_does_not_exist_in_database(): void
     {
@@ -130,6 +143,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertFalse($result[0]['character']['is_known']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_empty_specializations_for_unknown_character(): void
     {
@@ -138,6 +152,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertSame([], $result[0]['character']['specializations']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_specializations_for_known_character(): void
     {
@@ -154,6 +169,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertTrue($result[0]['character']['specializations'][0]['is_raid_spec']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_returns_empty_specializations_for_known_character_with_no_specs(): void
     {
@@ -164,6 +180,7 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertSame([], $result[0]['character']['specializations']);
     }
 
+    #[Group('contract')]
     #[Test]
     public function it_sorts_by_rank_then_level_descending_then_name(): void
     {

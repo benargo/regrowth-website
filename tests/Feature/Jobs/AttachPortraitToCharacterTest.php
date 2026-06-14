@@ -28,6 +28,8 @@ use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('blizzard-integration')]
 class AttachPortraitToCharacterTest extends TestCase
 {
     use HasBlizzardTokenMock;
@@ -41,14 +43,14 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Job Contract ====================
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new AttachPortraitToCharacter(1, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'));
     }
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_has_three_total_attempts(): void
     {
@@ -57,7 +59,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(3, $job->tries);
     }
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_has_five_minute_backoff_between_attempts(): void
     {
@@ -66,7 +68,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame([300, 300], $job->backoff());
     }
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_has_the_correct_tags(): void
     {
@@ -77,7 +79,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Middleware ====================
 
-    #[Group('middleware')]
+    #[Group('contract')]
     #[Test]
     public function it_applies_without_overlapping_middleware(): void
     {
@@ -88,7 +90,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertInstanceOf(WithoutOverlapping::class, $middleware[0]);
     }
 
-    #[Group('middleware')]
+    #[Group('contract')]
     #[Test]
     public function it_scopes_the_overlap_lock_to_the_character(): void
     {
@@ -105,7 +107,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertNotSame($middlewareA->key, $middlewareB->key);
     }
 
-    #[Group('middleware')]
+    #[Group('contract')]
     #[Test]
     public function it_releases_the_overlapping_job_after_sixty_seconds(): void
     {
@@ -119,7 +121,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Handle ====================
 
-    #[Group('handle')]
+    #[Group('happy-path')]
     #[Test]
     public function it_fetches_the_portrait_and_attaches_media_to_the_character(): void
     {
@@ -142,7 +144,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(HasCharacterMedia::DEFAULT_MEDIA_SIZE, $media->getCustomProperty('size'));
     }
 
-    #[Group('handle')]
+    #[Group('happy-path')]
     #[Test]
     public function it_is_idempotent_and_skips_attachment_when_portrait_already_present(): void
     {
@@ -164,7 +166,7 @@ class AttachPortraitToCharacterTest extends TestCase
         Saloon::assertSentCount(3);
     }
 
-    #[Group('handle')]
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_when_the_asset_fetch_returns_a_non_200(): void
     {
@@ -185,7 +187,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Uri Input ====================
 
-    #[Group('uri-input')]
+    #[Group('happy-path')]
     #[Test]
     public function it_accepts_a_uri_instance_for_the_asset_url(): void
     {
@@ -205,7 +207,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame('51042439-avatar.jpg', $media->file_name);
     }
 
-    #[Group('uri-input')]
+    #[Group('happy-path')]
     #[Test]
     public function it_round_trips_through_queue_serialization_with_a_uri_asset_url(): void
     {
@@ -231,7 +233,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Filename ====================
 
-    #[Group('filename')]
+    #[Group('happy-path')]
     #[Test]
     public function it_derives_the_filename_from_the_url_stripping_query_strings(): void
     {
@@ -253,7 +255,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Gender ====================
 
-    #[Group('gender')]
+    #[Group('happy-path')]
     #[Test]
     public function it_syncs_male_gender_from_the_blizzard_profile_when_gender_is_null(): void
     {
@@ -273,7 +275,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(Gender::MALE, $character->fresh()->gender);
     }
 
-    #[Group('gender')]
+    #[Group('happy-path')]
     #[Test]
     public function it_syncs_female_gender_from_the_blizzard_profile_when_gender_is_null(): void
     {
@@ -293,7 +295,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(Gender::FEMALE, $character->fresh()->gender);
     }
 
-    #[Group('gender')]
+    #[Group('happy-path')]
     #[Test]
     public function it_does_not_overwrite_gender_when_already_set(): void
     {
@@ -312,7 +314,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(Gender::FEMALE, $character->fresh()->gender);
     }
 
-    #[Group('gender')]
+    #[Group('happy-path')]
     #[Test]
     public function it_syncs_gender_even_when_portrait_is_already_attached(): void
     {
@@ -345,7 +347,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(Gender::MALE, $character->fresh()->gender);
     }
 
-    #[Group('gender')]
+    #[Group('error-handling')]
     #[Test]
     public function it_skips_gender_sync_silently_when_the_profile_api_returns_an_error(): void
     {
@@ -366,7 +368,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertTrue($character->fresh()->hasMedia(HasCharacterMedia::MEDIA_COLLECTION));
     }
 
-    #[Group('gender')]
+    #[Group('error-handling')]
     #[Test]
     public function it_skips_gender_sync_silently_when_the_profile_returns_an_unrecognised_gender_value(): void
     {
@@ -387,7 +389,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertTrue($character->fresh()->hasMedia(HasCharacterMedia::MEDIA_COLLECTION));
     }
 
-    #[Group('gender')]
+    #[Group('happy-path')]
     #[Test]
     public function it_does_not_fire_character_updated_event_when_saving_gender(): void
     {
@@ -411,7 +413,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Fallback URL ====================
 
-    #[Group('fallback-url')]
+    #[Group('happy-path')]
     #[Test]
     public function it_appends_the_fallback_alt_parameter_to_the_portrait_request(): void
     {
@@ -431,7 +433,7 @@ class AttachPortraitToCharacterTest extends TestCase
         });
     }
 
-    #[Group('fallback-url')]
+    #[Group('happy-path')]
     #[Test]
     public function it_uses_male_gender_id_zero_in_the_fallback_parameter(): void
     {
@@ -451,7 +453,7 @@ class AttachPortraitToCharacterTest extends TestCase
         });
     }
 
-    #[Group('fallback-url')]
+    #[Group('happy-path')]
     #[Test]
     public function it_omits_the_fallback_parameter_when_gender_is_null(): void
     {
@@ -474,7 +476,7 @@ class AttachPortraitToCharacterTest extends TestCase
         });
     }
 
-    #[Group('fallback-url')]
+    #[Group('happy-path')]
     #[Test]
     public function it_omits_the_fallback_parameter_when_race_id_is_null(): void
     {
@@ -494,7 +496,7 @@ class AttachPortraitToCharacterTest extends TestCase
         });
     }
 
-    #[Group('fallback-url')]
+    #[Group('happy-path')]
     #[Test]
     public function it_still_derives_the_filename_without_the_fallback_query_string(): void
     {
@@ -515,7 +517,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
     // ==================== Broadcast ====================
 
-    #[Group('broadcast')]
+    #[Group('broadcasting')]
     #[Test]
     public function it_dispatches_character_portrait_attached_after_successfully_attaching_media(): void
     {
@@ -534,7 +536,7 @@ class AttachPortraitToCharacterTest extends TestCase
         Event::assertDispatched(CharacterPortraitAttached::class, fn ($e) => $e->characterId === $character->id);
     }
 
-    #[Group('broadcast')]
+    #[Group('broadcasting')]
     #[Test]
     public function it_does_not_dispatch_character_portrait_attached_when_portrait_already_present(): void
     {

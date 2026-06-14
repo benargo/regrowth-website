@@ -25,19 +25,21 @@ use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\HasBlizzardTokenMock;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('blizzard-integration')]
 class FetchGuildRosterTest extends TestCase
 {
     use HasBlizzardTokenMock;
     use RefreshDatabase;
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_has_the_correct_tags(): void
     {
         $this->assertSame(['blizzard'], (new FetchGuildRoster)->tags());
     }
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_applies_rate_limited_with_redis_middleware(): void
     {
@@ -47,21 +49,21 @@ class FetchGuildRosterTest extends TestCase
         $this->assertInstanceOf(RateLimitedWithRedis::class, $middleware[0]);
     }
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_implements_should_queue(): void
     {
         $this->assertInstanceOf(ShouldQueue::class, new FetchGuildRoster);
     }
 
-    #[Group('job-contract')]
+    #[Group('contract')]
     #[Test]
     public function it_uses_batchable(): void
     {
         $this->assertContains(Batchable::class, class_uses_recursive(FetchGuildRoster::class));
     }
 
-    #[Group('handle')]
+    #[Group('happy-path')]
     #[Test]
     public function it_fetches_the_roster_via_saloon(): void
     {
@@ -80,7 +82,7 @@ class FetchGuildRosterTest extends TestCase
         Saloon::assertSent(GetGuildRosterRequest::class);
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_creates_a_new_character_from_roster_member(): void
     {
@@ -105,7 +107,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_updates_an_existing_character_from_roster_member(): void
     {
@@ -131,7 +133,7 @@ class FetchGuildRosterTest extends TestCase
         ]);
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_associates_an_existing_local_playable_class(): void
     {
@@ -152,7 +154,7 @@ class FetchGuildRosterTest extends TestCase
         $this->assertSame(5, Character::find(1)->playableClass->id);
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_saves_the_character_without_a_class_when_not_in_the_local_table(): void
     {
@@ -176,7 +178,7 @@ class FetchGuildRosterTest extends TestCase
         $this->assertNull($character->playableClass);
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_skips_members_below_level_60(): void
     {
@@ -194,7 +196,7 @@ class FetchGuildRosterTest extends TestCase
         $this->assertDatabaseMissing('characters', ['id' => 55]);
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_stores_playable_race_from_profile_data(): void
     {
@@ -218,7 +220,7 @@ class FetchGuildRosterTest extends TestCase
         $this->assertSame('Gnome', $character->playableRace->name);
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_touches_every_character_present_in_the_roster(): void
     {
@@ -260,7 +262,7 @@ class FetchGuildRosterTest extends TestCase
         );
     }
 
-    #[Group('character-synchronisation')]
+    #[Group('happy-path')]
     #[Test]
     public function it_does_not_dispatch_character_updated_when_syncing(): void
     {
@@ -281,7 +283,7 @@ class FetchGuildRosterTest extends TestCase
         Event::assertNotDispatched(CharacterUpdated::class);
     }
 
-    #[Group('gender')]
+    #[Group('happy-path')]
     #[Test]
     public function it_stores_male_gender_from_the_character_profile(): void
     {
@@ -300,7 +302,7 @@ class FetchGuildRosterTest extends TestCase
         $this->assertSame(Gender::MALE, Character::find(1)->gender);
     }
 
-    #[Group('gender')]
+    #[Group('happy-path')]
     #[Test]
     public function it_stores_female_gender_from_the_character_profile(): void
     {
