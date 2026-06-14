@@ -167,7 +167,7 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData((d) => ({ ...d, name: e.target.value }))}
-                            className="w-full rounded border border-brown-600 bg-brown-800 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-none"
+                            className="w-full rounded border border-brown-600 bg-brown-800 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-hidden"
                             required
                         />
                         {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
@@ -180,7 +180,7 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
                         <select
                             value={formData.type}
                             onChange={(e) => setFormData((d) => ({ ...d, type: e.target.value }))}
-                            className={`w-full rounded border border-${formData.type ? "affect-" + formData.type.toLowerCase() : "brown-600"} bg-${formData.type ? "affect-" + formData.type.toLowerCase() + "/20" : "brown-800"} px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-none`}
+                            className={`w-full rounded border border-${formData.type ? "affect-" + formData.type.toLowerCase() : "brown-600"} bg-${formData.type ? "affect-" + formData.type.toLowerCase() + "/20" : "brown-800"} px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-hidden`}
                         >
                             {AFFECT_TYPES.map((t) => (
                                 <option key={t} value={t}>
@@ -379,7 +379,7 @@ export default function AssignmentCellEditor({
             );
         }
         if (opt.iconUrl) {
-            return <img src={opt.iconUrl} alt="" className="h-6 w-6 shrink-0 rounded-sm" />;
+            return <img src={opt.iconUrl} alt="" className="h-6 w-6 shrink-0 rounded-xs" />;
         }
         return <span className="h-6 w-6 shrink-0" />;
     };
@@ -392,7 +392,7 @@ export default function AssignmentCellEditor({
                         {displaySlug ? (
                             <TargetMarker marker={displaySlug} />
                         ) : (
-                            <img src={displayIconUrl} alt="" className="h-6 w-6 rounded-sm" />
+                            <img src={displayIconUrl} alt="" className="h-6 w-6 rounded-xs" />
                         )}
                     </span>
                 )}
@@ -409,7 +409,7 @@ export default function AssignmentCellEditor({
                     onFocus={openDropdown}
                     onKeyDown={handleKeyDown}
                     placeholder="Type to search…"
-                    className={`w-full bg-transparent py-2.5 pr-7 text-sm placeholder-brown-600 transition-colors focus:bg-brown-800/60 focus:outline-none ${textClass} ${
+                    className={`w-full bg-transparent py-2.5 pr-7 text-sm placeholder-brown-600 transition-colors focus:bg-brown-800/60 focus:outline-hidden ${textClass} ${
                         displayIconUrl || displaySlug ? "pl-10" : "pl-3"
                     }`}
                 />

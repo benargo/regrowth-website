@@ -11,7 +11,7 @@ export default function Alert({ type = "info", children }) {
     return (
         <div className={`border-l-4 p-4 ${typeClasses[type] || typeClasses.info}`} role="alert">
             <div className="flex items-center">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                     {type === "info" && <Icon icon="info-circle" style="solid" />}
                     {type === "success" && <Icon icon="check-circle" style="solid" />}
                     {type === "warning" && <Icon icon="exclamation-triangle" style="solid" />}

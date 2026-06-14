@@ -81,7 +81,7 @@ export default function UserSearch({ value, onSelect, error }) {
                     value={query}
                     onChange={handleInputChange}
                     placeholder="Search by username or nickname..."
-                    className="w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-amber-500"
                 />
                 {isLoading && (
                     <div className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />

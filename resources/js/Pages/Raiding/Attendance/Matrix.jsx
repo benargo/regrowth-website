@@ -147,12 +147,12 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                             >
                                 <td className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
                                     <div className="flex flex-col gap-1 lg:flex-row lg:gap-2">
-                                        <p className="flex flex-grow-0 flex-row items-center font-semibold">
+                                        <p className="flex grow-0 flex-row items-center font-semibold">
                                             {row.playable_class && (
                                                 <img
                                                     src={row.playable_class.icon_url}
                                                     alt={row.playable_class.name}
-                                                    className="mr-2 inline-block hidden h-4 w-4 rounded-sm md:inline-flex"
+                                                    className="mr-2 inline-block hidden h-4 w-4 rounded-xs md:inline-flex"
                                                 />
                                             )}
                                             {row.name}

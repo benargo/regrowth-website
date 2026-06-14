@@ -149,7 +149,7 @@ export default function AddonSettings({ settings, characters }) {
                                 type="text"
                                 list="member-list"
                                 placeholder="Add councillor by name..."
-                                className="h-12 flex-1 rounded-md border border-brown-800 bg-brown-800/50 p-2 text-white focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600"
+                                className="h-12 flex-1 rounded-md border border-brown-800 bg-brown-800/50 p-2 text-white focus:border-amber-600 focus:outline-hidden focus:ring-2 focus:ring-amber-600"
                                 value={newCouncillorName}
                                 onChange={(e) => setNewCouncillorName(e.target.value)}
                                 onKeyDown={(e) => {

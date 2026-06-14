@@ -39,7 +39,7 @@ function DraggablePriorityItem({ priority, onRemove }) {
             {...attributes}
             {...listeners}
         >
-            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
             <button
                 type="button"
@@ -60,7 +60,7 @@ function PriorityOverlay({ priority }) {
 
     return (
         <div className="flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6 shadow-lg">
-            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
         </div>
     );
@@ -191,7 +191,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                                     className="flex items-center gap-2 rounded-md border border-primary/50 bg-brown-800 p-3 text-left transition-colors hover:bg-brown-700"
                                 >
                                     {priority.media && (
-                                        <img src={priority.media} alt="" className="h-5 w-5 rounded-sm" />
+                                        <img src={priority.media} alt="" className="h-5 w-5 rounded-xs" />
                                     )}
                                     <span className="text-sm">{priority.title}</span>
                                 </button>

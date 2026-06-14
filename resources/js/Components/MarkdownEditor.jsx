@@ -417,7 +417,7 @@ export default function MarkdownEditor({
                     onChange={handleChange}
                     placeholder={computedPlaceholder}
                     rows={rows}
-                    className="w-full resize-none border-none bg-brown p-2 text-white placeholder-gray-500 focus:outline-none focus:ring-0"
+                    className="w-full resize-none border-none bg-brown p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
                 />
             </div>
             <div>

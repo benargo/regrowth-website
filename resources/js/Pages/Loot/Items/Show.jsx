@@ -12,7 +12,7 @@ import PageContainer from "@/Components/PageContainer";
 function PriorityItem({ priority }) {
     return (
         <div className="md:w-50 flex w-full items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6">
-            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
         </div>
     );
