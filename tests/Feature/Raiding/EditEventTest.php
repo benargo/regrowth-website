@@ -15,10 +15,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class EditEventTest extends TestCase
 {
     use RefreshDatabase;
@@ -151,6 +153,7 @@ class EditEventTest extends TestCase
         );
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_on_edit_when_user_cannot_update_event(): void
     {

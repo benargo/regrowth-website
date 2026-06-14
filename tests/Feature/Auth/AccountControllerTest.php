@@ -8,9 +8,11 @@ use App\Models\PlannedAbsence;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
 class AccountControllerTest extends TestCase
 {
     use RefreshDatabase;

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
@@ -25,6 +26,7 @@ class OtherDiscordNotification extends Notification
     }
 }
 
+#[Group('daily-quests')]
 class DailyQuestsAuditControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -44,6 +46,7 @@ class DailyQuestsAuditControllerTest extends DashboardTestCase
         $response->assertRedirect(route('login'));
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_requires_audit_daily_quests_permission(): void
     {

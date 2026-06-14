@@ -5,9 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\User;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('raiding')]
 class PhaseGuildTagsUpdateTest extends DashboardTestCase
 {
     #[Test]
@@ -22,6 +24,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_guild_tags_forbids_guest_users(): void
     {
@@ -35,6 +38,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_guild_tags_forbids_member_users(): void
     {
@@ -48,6 +52,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_guild_tags_forbids_raider_users(): void
     {
@@ -127,6 +132,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $this->assertNull($tag2->tbc_phase_id);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_guild_tags_validates_guild_tag_ids_is_required(): void
     {
@@ -137,6 +143,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_guild_tags_validates_guild_tag_ids_must_be_array(): void
     {
@@ -149,6 +156,7 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertSessionHasErrors(['guild_tag_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_guild_tags_validates_guild_tag_ids_must_exist(): void
     {

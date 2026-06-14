@@ -11,11 +11,13 @@ use Database\Seeders\CharacterSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('characters')]
 class CharacterSeederTest extends TestCase
 {
     use RefreshDatabase;

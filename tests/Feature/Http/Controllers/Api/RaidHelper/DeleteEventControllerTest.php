@@ -5,10 +5,13 @@ namespace Tests\Feature\Http\Controllers\Api\RaidHelper;
 use App\Jobs\RaidHelper\DeleteEvent;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\EventWebhookBody;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('raidhelper-integration')]
 class DeleteEventControllerTest extends TestCase
 {
     use EventWebhookBody;
@@ -34,6 +37,7 @@ class DeleteEventControllerTest extends TestCase
         Bus::assertDispatched(DeleteEvent::class, fn ($job) => $job->raidHelperEventId === '111222333444555001');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_rejects_requests_with_an_invalid_authorization_header(): void
     {

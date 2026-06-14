@@ -9,9 +9,12 @@ use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('broadcasting')]
+#[Group('auth')]
 class ChannelAuthTest extends TestCase
 {
     use RefreshDatabase;
@@ -53,6 +56,7 @@ class ChannelAuthTest extends TestCase
         $this->authChannel($user, "private-event.{$event->id}")->assertOk();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function unauthenticated_user_cannot_join_private_event_channel(): void
     {
@@ -78,6 +82,7 @@ class ChannelAuthTest extends TestCase
         $response->assertJsonStructure(['auth', 'channel_data']);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function user_without_manage_raid_plans_cannot_join_presence_editors_channel(): void
     {
@@ -87,6 +92,7 @@ class ChannelAuthTest extends TestCase
         $this->authChannel($user, "presence-event.{$event->id}.editors")->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function unauthenticated_user_cannot_join_presence_editors_channel(): void
     {
@@ -129,6 +135,7 @@ class ChannelAuthTest extends TestCase
         $this->authChannel($user, "private-boss.{$boss->id}")->assertOk();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function unauthenticated_user_cannot_join_private_boss_channel(): void
     {

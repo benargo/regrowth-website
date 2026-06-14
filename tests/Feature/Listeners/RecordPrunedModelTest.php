@@ -6,9 +6,11 @@ use App\Events\ModelPruned;
 use App\Models\Event;
 use App\Models\PrunedModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class RecordPrunedModelTest extends TestCase
 {
     use RefreshDatabase;

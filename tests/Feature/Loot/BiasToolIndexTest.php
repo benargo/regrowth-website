@@ -8,9 +8,11 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('loot')]
 class BiasToolIndexTest extends TestCase
 {
     use RefreshDatabase;
@@ -33,6 +35,7 @@ class BiasToolIndexTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function loot_index_forbids_guest_users(): void
     {
@@ -43,6 +46,7 @@ class BiasToolIndexTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function loot_index_forbids_users_with_no_roles(): void
     {

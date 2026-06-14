@@ -12,10 +12,12 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class ApplyTemplateTest extends TestCase
 {
     use RefreshDatabase;
@@ -118,6 +120,7 @@ class ApplyTemplateTest extends TestCase
         ]);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_for_users_without_update_permission(): void
     {

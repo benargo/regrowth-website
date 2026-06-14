@@ -14,10 +14,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class PlannedAbsenceControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -164,6 +166,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function create_returns_403_without_create_permission(): void
     {
@@ -321,6 +324,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function edit_requires_authorization(): void
     {
@@ -496,6 +500,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     // ==================== store: Access Control ====================
 
+    #[Group('authorization')]
     #[Test]
     public function store_requires_authentication(): void
     {
@@ -504,6 +509,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function store_requires_authorization(): void
     {
@@ -681,6 +687,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     // ==================== store: Validation ====================
 
+    #[Group('validation')]
     #[Test]
     public function store_requires_character(): void
     {
@@ -695,6 +702,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertJsonValidationErrors(['character']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_requires_start_date(): void
     {
@@ -710,6 +718,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertJsonValidationErrors(['start_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_requires_reason(): void
     {
@@ -725,6 +734,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertJsonValidationErrors(['reason']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_validates_end_date_must_be_after_start_date(): void
     {
@@ -742,6 +752,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertJsonValidationErrors(['end_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_validates_character_name_max_length(): void
     {
@@ -757,6 +768,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertJsonValidationErrors(['character']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_validates_character_name_no_spaces(): void
     {
@@ -772,6 +784,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertJsonValidationErrors(['character']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_validates_character_name_no_numbers(): void
     {
@@ -789,6 +802,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     // ==================== update: Access Control ====================
 
+    #[Group('authorization')]
     #[Test]
     public function update_requires_authentication(): void
     {
@@ -799,6 +813,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_requires_authorization(): void
     {
@@ -812,6 +827,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_forbids_character_change_without_update_permission(): void
     {
@@ -967,6 +983,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     // ==================== update: Validation ====================
 
+    #[Group('validation')]
     #[Test]
     public function update_validates_end_date_must_be_after_start_date(): void
     {
@@ -981,6 +998,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertJsonValidationErrors(['end_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_validates_character_must_exist(): void
     {
@@ -997,6 +1015,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     // ==================== destroy: Access Control ====================
 
+    #[Group('authorization')]
     #[Test]
     public function destroy_requires_authentication(): void
     {
@@ -1007,6 +1026,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function destroy_requires_authorization(): void
     {
@@ -1044,6 +1064,7 @@ class PlannedAbsenceControllerTest extends TestCase
         $this->assertSoftDeleted('planned_absences', ['id' => $absence->id]);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function destroy_owner_cannot_delete_another_users_absence(): void
     {
@@ -1080,6 +1101,7 @@ class PlannedAbsenceControllerTest extends TestCase
 
     // ==================== store: Character Not Found ====================
 
+    #[Group('validation')]
     #[Test]
     public function store_redirects_back_with_error_when_character_name_matches_nothing(): void
     {

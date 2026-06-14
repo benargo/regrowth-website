@@ -7,12 +7,15 @@ use App\Http\Integrations\Blizzard\Requests\Media\SearchMediaRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
+#[Group('media')]
 class BlizzardMediaControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -61,6 +64,7 @@ class BlizzardMediaControllerTest extends TestCase
 
     // ─── authentication ────────────────────────────────────────────────────────
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_401_when_unauthenticated(): void
     {

@@ -11,9 +11,12 @@ use App\Services\Discord\Resources\RoleColors;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
+#[Group('discord-integration')]
 class SyncDiscordRolesTest extends TestCase
 {
     use RefreshDatabase;

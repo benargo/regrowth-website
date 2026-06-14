@@ -6,9 +6,12 @@ use App\Models\Character;
 use App\Models\User;
 use App\Services\WarcraftLogs\GuildTags;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('platform')]
+#[Group('loot')]
 class AddonSettingsCouncillorTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -39,6 +42,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function add_councillor_forbids_guest_users(): void
     {
@@ -51,6 +55,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function add_councillor_forbids_member_users(): void
     {
@@ -63,6 +68,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function add_councillor_forbids_raider_users(): void
     {
@@ -103,6 +109,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $this->assertTrue($character->is_loot_councillor);
     }
 
+    #[Group('validation')]
     #[Test]
     public function add_councillor_validates_character_name_is_required(): void
     {
@@ -112,6 +119,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertSessionHasErrors(['character_name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function add_councillor_validates_character_name_must_be_string(): void
     {
@@ -123,6 +131,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertSessionHasErrors(['character_name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function add_councillor_validates_character_name_must_exist(): void
     {
@@ -165,6 +174,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function remove_councillor_forbids_guest_users(): void
     {
@@ -176,6 +186,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function remove_councillor_forbids_member_users(): void
     {
@@ -187,6 +198,7 @@ class AddonSettingsCouncillorTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function remove_councillor_forbids_raider_users(): void
     {

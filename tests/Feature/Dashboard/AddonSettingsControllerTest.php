@@ -9,9 +9,11 @@ use App\Models\User;
 use App\Services\WarcraftLogs\GuildTags;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('platform')]
 class AddonSettingsControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -40,6 +42,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function settings_forbids_guest_users(): void
     {
@@ -50,6 +53,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function settings_forbids_member_users(): void
     {
@@ -60,6 +64,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function settings_forbids_raider_users(): void
     {
@@ -203,6 +208,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function add_councillor_forbids_guest_users(): void
     {
@@ -216,6 +222,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function add_councillor_forbids_member_users(): void
     {
@@ -229,6 +236,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function add_councillor_forbids_raider_users(): void
     {
@@ -254,6 +262,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    #[Group('validation')]
     #[Test]
     public function add_councillor_requires_character_name(): void
     {
@@ -262,6 +271,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['character_name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function add_councillor_requires_character_name_to_be_string(): void
     {
@@ -272,6 +282,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertSessionHasErrors(['character_name']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function add_councillor_requires_character_to_exist(): void
     {
@@ -340,6 +351,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function remove_councillor_forbids_guest_users(): void
     {
@@ -351,6 +363,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function remove_councillor_forbids_member_users(): void
     {
@@ -362,6 +375,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function remove_councillor_forbids_raider_users(): void
     {

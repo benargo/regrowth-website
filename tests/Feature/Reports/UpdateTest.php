@@ -9,10 +9,13 @@ use App\Models\Raids\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class UpdateTest extends TestCase
 {
     use RefreshDatabase;
@@ -45,6 +48,7 @@ class UpdateTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_returns_forbidden_without_manage_reports(): void
     {
@@ -73,6 +77,7 @@ class UpdateTest extends TestCase
         $response->assertRedirect();
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_rejects_invalid_action(): void
     {
@@ -87,6 +92,7 @@ class UpdateTest extends TestCase
         $response->assertSessionHasErrors(['links.action']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_rejects_empty_link_ids_for_create_action(): void
     {
@@ -101,6 +107,7 @@ class UpdateTest extends TestCase
         $response->assertSessionHasErrors(['links.link_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_rejects_missing_link_ids_for_create_action(): void
     {
@@ -115,6 +122,7 @@ class UpdateTest extends TestCase
         $response->assertSessionHasErrors(['links.link_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_rejects_nonexistent_report_id(): void
     {
@@ -129,6 +137,7 @@ class UpdateTest extends TestCase
         $response->assertSessionHasErrors(['links.link_ids.0']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_rejects_current_report_in_link_ids(): void
     {
@@ -332,6 +341,7 @@ class UpdateTest extends TestCase
 
     // ==================== loot_councillors ====================
 
+    #[Group('validation')]
     #[Test]
     public function update_loot_councillors_rejects_invalid_action(): void
     {
@@ -347,6 +357,7 @@ class UpdateTest extends TestCase
         $response->assertSessionHasErrors(['loot_councillors.action']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function update_loot_councillors_create_rejects_character_without_loot_councillor_flag(): void
     {

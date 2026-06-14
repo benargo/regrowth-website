@@ -18,12 +18,14 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('loot')]
 class CommentReactionTest extends TestCase
 {
     use RefreshDatabase;
@@ -104,6 +106,7 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function users_cannot_react_to_their_own_comments(): void
     {
@@ -139,6 +142,7 @@ class CommentReactionTest extends TestCase
         $this->assertDatabaseCount('lootcouncil_comments_reactions', 0);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function guest_users_cannot_react_to_comments(): void
     {
@@ -203,6 +207,7 @@ class CommentReactionTest extends TestCase
     // Model validation tests
     // ==========================================
 
+    #[Group('error-handling')]
     #[Test]
     public function model_prevents_user_from_reacting_to_own_comment_directly(): void
     {
@@ -221,6 +226,7 @@ class CommentReactionTest extends TestCase
         ]);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function user_cannot_react_to_same_comment_twice(): void
     {
