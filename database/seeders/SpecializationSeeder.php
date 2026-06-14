@@ -92,10 +92,8 @@ class SpecializationSeeder extends Seeder implements HasBlizzardIcons
                 $model = PlayableSpecialization::updateOrCreate(
                     [
                         'playable_class_id' => $playableClass->id,
-                        'name' => $spec['name'],
-                    ],
-                    [
                         'role' => $spec['role'],
+                        'name' => $spec['name'],
                     ]
                 );
 
