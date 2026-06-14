@@ -215,7 +215,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
-        $this->assertDatabaseCount('character_links', 2);
+        $this->assertDatabaseCount('character_links', 4);
     }
 
     #[Test]
@@ -348,8 +348,8 @@ class ProcessGrmUploadTest extends TestCase
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
-        // Should still only have one link
-        $this->assertDatabaseCount('character_links', 1);
+        // One link per direction; no duplicates created
+        $this->assertDatabaseCount('character_links', 2);
     }
 
     #[Test]
