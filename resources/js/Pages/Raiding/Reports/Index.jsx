@@ -101,7 +101,7 @@ export default function Index({ reports, zones, guildTags, filters, earliestDate
                         <div className="mb-4 flex justify-end">
                             <Link
                                 href={route("raiding.reports.create")}
-                                className="inline-flex items-center gap-2 rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold uppercase tracking-widest text-white transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                                className="inline-flex items-center gap-2 rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold uppercase tracking-widest text-white transition hover:bg-amber-700 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
                             >
                                 <Icon icon="plus" style="solid" className="h-4" />
                                 Create a manual report

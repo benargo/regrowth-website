@@ -51,7 +51,7 @@ export default function Master({ title, children }) {
 
                     {/* Mobile menu button */}
                     <button
-                        className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-brown-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white lg:hidden"
+                        className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-brown-700 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-white lg:hidden"
                         type="button"
                         onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                         aria-controls="mobile-menu"
@@ -73,7 +73,7 @@ export default function Master({ title, children }) {
                     {/* Desktop menu */}
                     <div className="hidden lg:ml-10 lg:flex lg:flex-1 lg:items-center lg:justify-between">
                         <div className="flex gap-4 space-x-1">
-                            <NavLink href={route("roster")}>
+                            <NavLink href={route("characters.index")}>
                                 <Icon icon="users" style="solid" className="mr-2 h-6" />
                                 Roster
                             </NavLink>
@@ -164,7 +164,7 @@ export default function Master({ title, children }) {
                 {/* Mobile menu */}
                 <div className={`${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`} id="mobile-menu">
                     <div className="space-y-1 px-2 pb-3 pt-2">
-                        <ResponsiveNavLink href={route("roster")}>
+                        <ResponsiveNavLink href={route("characters.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>

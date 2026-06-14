@@ -100,7 +100,7 @@ function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
                     onChange={handleInputChange}
                     onBlur={handleInputBlur}
                     onKeyDown={handleKeyDown}
-                    className="mr-2 flex-auto rounded border border-amber-600 bg-brown-800 px-2 py-0.5 text-left text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mr-2 flex-auto rounded border border-amber-600 bg-brown-800 px-2 py-0.5 text-left text-white focus:outline-hidden focus:ring-1 focus:ring-amber-500"
                 />
             ) : (
                 <span
@@ -198,7 +198,7 @@ function NewRankInput({ nextPosition, onSave, isSaving }) {
                 onKeyDown={handleKeyDown}
                 placeholder="Add new rank..."
                 disabled={isSaving}
-                className="text-grey-400 placeholder-grey-600 mr-2 flex-auto border-none bg-transparent px-2 py-0.5 text-left focus:text-white focus:outline-none"
+                className="text-grey-400 placeholder-grey-600 mr-2 flex-auto border-none bg-transparent px-2 py-0.5 text-left focus:text-white focus:outline-hidden"
             />
             {isSaving && (
                 <span className="flex-none">

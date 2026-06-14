@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
+use App\Events\Broadcasts\CharacterPortraitAttached;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Middleware\MergeUriQuery;
@@ -84,6 +85,8 @@ class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
             ->usingFileName($fileName)
             ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
             ->toMediaCollection(self::MEDIA_COLLECTION);
+
+        CharacterPortraitAttached::dispatch($character->id);
     }
 
     /**

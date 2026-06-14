@@ -57,7 +57,7 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                                     <div className="flex-auto">
                                         <Link
                                             href={route("management.grm-upload.form")}
-                                            className="inline-flex items-center rounded-md border border-transparent bg-red-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-25"
+                                            className="inline-flex items-center rounded-md border border-transparent bg-red-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-red-800 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-25"
                                         >
                                             <Icon icon="file-upload" style="solid" className="mr-2" />
                                             <span className="whitespace-nowrap">Upload GRM Data</span>
@@ -83,7 +83,7 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                                     <div className="flex-initial">
                                         <Link
                                             href={route("management.grm-upload.form")}
-                                            className="inline-flex items-center rounded-md border border-transparent bg-yellow-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-yellow-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-25"
+                                            className="inline-flex items-center rounded-md border border-transparent bg-yellow-600 p-4 text-sm font-semibold text-white transition duration-150 ease-in-out hover:bg-yellow-800 focus:outline-hidden focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-25"
                                         >
                                             <Icon icon="file-upload" style="solid" className="mr-2" />
                                             <span className="whitespace-nowrap">Upload GRM Data</span>
