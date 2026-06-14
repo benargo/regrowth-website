@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import LevelRangeFilter from "@/Components/LevelRangeFilter";
 import { Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
@@ -17,8 +18,13 @@ import raidSpec from "@/Helpers/RaidSpec";
 function CharacterRowCells({ character, spec }) {
     return (
         <>
-            <div role="cell" className={`table-cell align-middle px-4 py-3${character.is_known ? " border-l-2 border-l-amber-600/60" : ""}`}>
-                <span className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-gray-400"}`}>
+            <div
+                role="cell"
+                className={`border-b-brown-800 table-cell border-b px-4 align-middle py-3${character.is_known ? " border-l-2 border-l-amber-600/60" : ""}`}
+            >
+                <span
+                    className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-gray-400"}`}
+                >
                     {character.name}
                     {character.is_main && (
                         <Pill bgColor="bg-amber-700" textColor="text-amber-200">
@@ -27,19 +33,25 @@ function CharacterRowCells({ character, spec }) {
                     )}
                 </span>
             </div>
-            <div role="cell" className="table-cell align-middle px-4 py-3 text-gray-300">{character.level}</div>
-            <div role="cell" className="table-cell align-middle px-4 py-3 text-gray-300">{character.playable_race?.name ?? "—"}</div>
-            <div role="cell" className="table-cell align-middle px-4 py-3">
-                <span className="inline-flex items-center gap-2">
+            <div role="cell" className="border-b-brown-800 table-cell border-b px-4 py-3 align-middle text-gray-300">
+                {character.level}
+            </div>
+            <div role="cell" className="border-b-brown-800 table-cell border-b px-4 py-3 align-middle text-gray-300">
+                {character.playable_race?.name ?? "—"}
+            </div>
+            <div role="cell" className="border-b-brown-800 table-cell border-b px-4 py-3 align-middle">
+                <div className="flex flex-row items-center gap-2">
                     <SpecIcon specialization={spec} playableClass={character.playable_class} />
                     <span className="text-gray-300">
                         {character.playable_class
                             ? `${spec?.name ? `${spec.name} ` : ""}${character.playable_class.name}`
                             : "—"}
                     </span>
-                </span>
+                </div>
             </div>
-            <div role="cell" className="table-cell align-middle px-4 py-3 text-gray-300">{character.rank ?? "—"}</div>
+            <div role="cell" className="border-b-brown-800 table-cell border-b px-4 py-3 align-middle text-gray-300">
+                {character.rank ?? "—"}
+            </div>
         </>
     );
 }
@@ -52,7 +64,7 @@ function CharacterRow({ character }) {
             <Link
                 role="row"
                 href={route("characters.show", { character: character.id, slug: character.slug })}
-                className="table-row border-b border-b-brown-700/50 transition-colors hover:bg-brown-800/50"
+                className="border-b-brown-700/50 hover:bg-brown-800/50 table-row border-b transition-colors"
             >
                 <CharacterRowCells character={character} spec={spec} />
             </Link>
@@ -60,7 +72,7 @@ function CharacterRow({ character }) {
     }
 
     return (
-        <div role="row" className="table-row border-b border-brown-700/50">
+        <div role="row" className="border-brown-700/50 table-row border-b">
             <CharacterRowCells character={character} spec={spec} />
         </div>
     );
@@ -104,41 +116,37 @@ function CharacterCard({ character }) {
                     character: character.id,
                     slug: character.slug,
                 })}
-                className="block rounded-lg border-l-2 border-amber-600/60 border-y border-r border-brown-700 bg-brown-800/50 p-4 transition-colors hover:border-amber-600/40"
+                className="border-brown-700 bg-brown-800/50 block rounded-lg border-y border-r border-l-2 border-amber-600/60 p-4 transition-colors hover:border-amber-600/40"
             >
                 {cardContent}
             </Link>
         );
     }
 
-    return (
-        <div className="block rounded-lg border border-brown-700 bg-brown-800/50 p-4">
-            {cardContent}
-        </div>
-    );
+    return <div className="border-brown-700 bg-brown-800/50 block rounded-lg border p-4">{cardContent}</div>;
 }
 
 function IndexSkeleton() {
     return (
         <div className="animate-pulse">
             <div className="mb-8 space-y-6">
-                <div className="h-10 rounded bg-brown-800"></div>
+                <div className="bg-brown-800 h-10 rounded"></div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="h-10 rounded bg-brown-800"></div>
+                        <div key={i} className="bg-brown-800 h-10 rounded"></div>
                     ))}
                 </div>
-                <div className="h-5 w-48 rounded bg-brown-800"></div>
+                <div className="bg-brown-800 h-5 w-48 rounded"></div>
             </div>
             <div className="hidden md:block">
-                <div className="mb-2 h-12 rounded bg-brown-800/50"></div>
+                <div className="bg-brown-800/50 mb-2 h-12 rounded"></div>
                 {[...Array(10)].map((_, i) => (
-                    <div key={i} className="mb-1 h-14 rounded bg-brown-800/30"></div>
+                    <div key={i} className="bg-brown-800/30 mb-1 h-14 rounded"></div>
                 ))}
             </div>
             <div className="space-y-4 md:hidden">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-24 rounded-lg bg-brown-800/50"></div>
+                    <div key={i} className="bg-brown-800/50 h-24 rounded-lg"></div>
                 ))}
             </div>
         </div>
@@ -159,20 +167,22 @@ export default function Index({ characters, classes, ranks, races }) {
     const [storedRanks, setSelectedRanks] = useLocalStorage("roster.rank_names", null);
     const [showKnownOnly, setShowKnownOnly] = useLocalStorage("roster.known_only", false);
     const [showMainOnly, setShowMainOnly] = useLocalStorage("roster.main_only", false);
+    const [levelMin, setLevelMin] = useLocalStorage("roster.level_min", null);
+    const [levelMax, setLevelMax] = useLocalStorage("roster.level_max", null);
 
-    const selectedClasses = useMemo(
-        () => storedClasses ?? (classes ?? []).map((c) => c.id),
-        [storedClasses, classes],
-    );
-    const selectedRaces = useMemo(
-        () => storedRaces ?? (races ?? []).map((r) => r.id),
-        [storedRaces, races],
-    );
-    const selectedRanks = useMemo(() => storedRanks ?? (ranks ?? []), [storedRanks, ranks]);
+    const selectedClasses = useMemo(() => storedClasses ?? (classes ?? []).map((c) => c.id), [storedClasses, classes]);
+    const selectedRaces = useMemo(() => storedRaces ?? (races ?? []).map((r) => r.id), [storedRaces, races]);
+    const selectedRanks = useMemo(() => storedRanks ?? ranks ?? [], [storedRanks, ranks]);
 
     const classById = useMemo(() => new Map((classes ?? []).map((c) => [c.id, c])), [classes]);
     const raceById = useMemo(() => new Map((races ?? []).map((r) => [r.id, r])), [races]);
     const rankOrder = useMemo(() => ranks ?? [], [ranks]);
+
+    const { levelDataMin, levelDataMax } = useMemo(() => {
+        if (!Array.isArray(characters)) return { levelDataMin: 1, levelDataMax: 80 };
+        const levels = characters.map(({ character }) => character.level ?? 0);
+        return { levelDataMin: Math.min(...levels), levelDataMax: Math.max(...levels) };
+    }, [characters]);
 
     const filteredAndSorted = useMemo(() => {
         if (!Array.isArray(characters)) return [];
@@ -195,6 +205,12 @@ export default function Index({ characters, classes, ranks, races }) {
                     return false;
                 }
                 if (selectedRanks && !selectedRanks.includes(c.rank)) {
+                    return false;
+                }
+                if (levelMin !== null && c.level < levelMin) {
+                    return false;
+                }
+                if (levelMax !== null && c.level > levelMax) {
                     return false;
                 }
                 if (showKnownOnly && !c.is_known) {
@@ -237,7 +253,22 @@ export default function Index({ characters, classes, ranks, races }) {
                 if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
                 return 0;
             });
-    }, [characters, classById, raceById, rankOrder, searchQuery, selectedClasses, selectedRaces, selectedRanks, showKnownOnly, showMainOnly, sortColumn, sortDirection]);
+    }, [
+        characters,
+        classById,
+        raceById,
+        rankOrder,
+        searchQuery,
+        selectedClasses,
+        selectedRaces,
+        selectedRanks,
+        levelMin,
+        levelMax,
+        showKnownOnly,
+        showMainOnly,
+        sortColumn,
+        sortDirection,
+    ]);
 
     return (
         <Master title="Guild Roster">
@@ -251,22 +282,30 @@ export default function Index({ characters, classes, ranks, races }) {
                             <SearchInput value={searchQuery} onChange={setSearchQuery} />
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <FilterDropdown
-                                    label={{singular: "Class", plural: "Classes"}}
+                                    label={{ singular: "Class", plural: "Classes" }}
                                     options={classes ?? []}
                                     selected={selectedClasses ?? []}
                                     onChange={setSelectedClasses}
                                 />
                                 <FilterDropdown
-                                    label={{singular: "Race", plural: "Races"}}
+                                    label={{ singular: "Race", plural: "Races" }}
                                     options={races ?? []}
                                     selected={selectedRaces ?? []}
                                     onChange={setSelectedRaces}
                                 />
                                 <FilterDropdown
-                                    label={{singular: "Rank", plural: "Ranks"}}
+                                    label={{ singular: "Rank", plural: "Ranks" }}
                                     options={(ranks ?? []).map((name) => ({ id: name, name }))}
                                     selected={selectedRanks ?? []}
                                     onChange={setSelectedRanks}
+                                />
+                                <LevelRangeFilter
+                                    minLevel={levelMin}
+                                    maxLevel={levelMax}
+                                    onMinChange={setLevelMin}
+                                    onMaxChange={setLevelMax}
+                                    dataMin={levelDataMin}
+                                    dataMax={levelDataMax}
                                 />
                                 <Can permission="update-characters">
                                     <ToggleFilter
@@ -283,8 +322,8 @@ export default function Index({ characters, classes, ranks, races }) {
                             </div>
                         </div>
                         <p className="mb-4 text-sm text-gray-200">
-                                Showing {filteredAndSorted.length} of {characters.length} characters
-                            </p>
+                            Showing {filteredAndSorted.length} of {characters.length} characters
+                        </p>
 
                         {filteredAndSorted.length === 0 ? (
                             <EmptyState message="No characters match your filters." />
