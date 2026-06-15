@@ -4,12 +4,13 @@ use App\Jobs\BuildAddonExportFile;
 use App\Jobs\DeleteStaleDailyQuestsMessage;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
+use App\Jobs\SyncDiscordRoles;
 use Illuminate\Support\Facades\Schedule;
 
 /**
  * Synchronise Discord roles every hour to ensure we have the latest roles and permissions.
  */
-Schedule::command('app:sync-discord')->hourly()->name('sync-discord');
+Schedule::job(new SyncDiscordRoles)->hourly()->name('sync-discord-roles');
 
 /**
  * Reconcile events with the Raid Helper API every six hours as a backstop for missed webhooks.
@@ -29,7 +30,9 @@ Schedule::job(new FetchGuildRoster)->everySixHours()->name('fetch-guild-roster')
  *
  * The twiceDailyAt arguments indicate this job will run at 16:30 and 23:30 every day.
  */
-Schedule::command('app:refresh-warcraft-logs-reports --latest')->twiceDailyAt(16, 23, 30)->name('refresh-warcraft-logs-reports');
+Schedule::command('app:refresh-warcraft-logs-reports --latest')
+    ->twiceDailyAt(16, 23, 30)
+    ->name('refresh-warcraft-logs-reports');
 
 /**
  * Reset daily quests at 3:00 AM server time.
