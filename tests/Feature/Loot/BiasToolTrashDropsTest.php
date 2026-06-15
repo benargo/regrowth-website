@@ -6,10 +6,8 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
-use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
@@ -34,9 +32,6 @@ class BiasToolTrashDropsTest extends TestCase
         parent::setUp();
 
         $this->mockItemService();
-
-        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
-        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
     }
 
     protected function mockItemService(): void

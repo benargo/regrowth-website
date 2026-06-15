@@ -89,12 +89,10 @@ export default function Master({ title, children }) {
                                 <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                                 Raiding
                             </NavLink>
-                            <Can permission="view-loot-bias-tool">
-                                <NavLink href={route("loot.index")}>
-                                    <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                    Loot Bias
-                                </NavLink>
-                            </Can>
+                            <NavLink href={route("loot.index")}>
+                                <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                                Loot Bias
+                            </NavLink>
                             <NavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                                 <Icon icon="discord" style="brands" className="mr-2 h-6" />
                                 Discord
@@ -182,12 +180,10 @@ export default function Master({ title, children }) {
                             <Icon icon="dragon" style="solid" className="mr-2 h-6" />
                             Raiding
                         </ResponsiveNavLink>
-                        <Can permission="view-loot-bias-tool">
-                            <ResponsiveNavLink href={route("loot.index")}>
-                                <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                Loot Bias
-                            </ResponsiveNavLink>
-                        </Can>
+                        <ResponsiveNavLink href={route("loot.index")}>
+                            <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                            Loot Bias
+                        </ResponsiveNavLink>
                         <ResponsiveNavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             Discord

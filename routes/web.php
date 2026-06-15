@@ -51,7 +51,7 @@ Route::patch('/manage/characters/{character}', [CharacterController::class, 'upd
 /**
  * Loot Bias Tools
  */
-Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
     Route::get('/', [LootController::class, 'index'])->name('index');
     Route::get('/raids/{raid}/{name?}', ShowRaidController::class)->name('raids.show');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');

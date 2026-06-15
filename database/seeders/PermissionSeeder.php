@@ -24,7 +24,6 @@ class PermissionSeeder extends Seeder
         ['name' => 'edit-items', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
         ['name' => 'mark-comment-as-resolved', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
         ['name' => 'react-to-comments', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
-        ['name' => 'view-loot-bias-tool', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
         ['name' => 'view-all-comments', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
 
         /**

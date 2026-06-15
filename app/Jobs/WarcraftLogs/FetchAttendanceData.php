@@ -10,10 +10,13 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+#[Tries(3)]
 class FetchAttendanceData implements ShouldQueue
 {
     use Batchable, Queueable;
@@ -30,7 +33,7 @@ class FetchAttendanceData implements ShouldQueue
      */
     public function middleware(): array
     {
-        return [new SkipIfBatchCancelled];
+        return [new SkipIfBatchCancelled, (new WithoutOverlapping)->dontRelease()];
     }
 
     /**

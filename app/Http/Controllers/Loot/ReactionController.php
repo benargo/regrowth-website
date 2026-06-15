@@ -9,7 +9,9 @@ use App\Models\LootCouncil\CommentReaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 
+#[Middleware('auth')]
 class ReactionController extends Controller
 {
     /**

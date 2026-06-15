@@ -6,9 +6,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
-use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
@@ -31,17 +29,7 @@ class ItemShowTest extends TestCase
     {
         parent::setUp();
 
-        $this->setUpPermissions();
         $this->mockBlizzardServices();
-    }
-
-    protected function setUpPermissions(): void
-    {
-        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
-
-        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
-        DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 3, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
-        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
     }
 
     protected function mockBlizzardServices(): void
@@ -84,25 +72,25 @@ class ItemShowTest extends TestCase
     }
 
     #[Test]
-    public function show_item_requires_authentication(): void
+    public function show_item_allows_unauthenticated_users(): void
     {
         $item = $this->createTestItem();
 
         $response = $this->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
-        $response->assertRedirect('/login');
+        $response->assertOk();
     }
 
     #[Group('authorization')]
     #[Test]
-    public function show_item_forbids_guest_users(): void
+    public function show_item_allows_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
 
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
 
-        $response->assertForbidden();
+        $response->assertOk();
     }
 
     #[Test]

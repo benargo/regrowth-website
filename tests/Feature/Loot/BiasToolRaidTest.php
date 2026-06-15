@@ -6,10 +6,8 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
-use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\LootCouncil\Priority;
-use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
@@ -34,11 +32,6 @@ class BiasToolRaidTest extends TestCase
         parent::setUp();
 
         $this->mockItemService();
-
-        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
-        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
-        DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
-        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
     }
 
     protected function mockItemService(): void
@@ -70,37 +63,37 @@ class BiasToolRaidTest extends TestCase
     }
 
     #[Test]
-    public function loot_raid_requires_authentication(): void
+    public function loot_raid_allows_unauthenticated_users(): void
     {
         $raid = Raid::factory()->create();
 
         $response = $this->get($this->raidUrl($raid));
 
-        $response->assertRedirect('/login');
+        $response->assertOk();
     }
 
     #[Group('authorization')]
     #[Test]
-    public function loot_raid_forbids_guest_users(): void
+    public function loot_raid_allows_guest_users(): void
     {
         $user = User::factory()->guest()->create();
         $raid = Raid::factory()->create();
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
-        $response->assertForbidden();
+        $response->assertOk();
     }
 
     #[Group('authorization')]
     #[Test]
-    public function loot_raid_forbids_users_with_no_roles(): void
+    public function loot_raid_allows_users_with_no_roles(): void
     {
         $user = User::factory()->noRoles()->create();
         $raid = Raid::factory()->create();
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
-        $response->assertForbidden();
+        $response->assertOk();
     }
 
     #[Test]

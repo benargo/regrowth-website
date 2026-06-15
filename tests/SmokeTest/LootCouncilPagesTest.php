@@ -33,14 +33,10 @@ class LootCouncilPagesTest extends TestCase
 
         $this->mockBlizzardServices();
 
-        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
         $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
         $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
 
-        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
-
         $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
-        $officerRole->givePermissionTo($viewLootBiasTool);
         $officerRole->givePermissionTo($viewAllComments);
         $officerRole->givePermissionTo($editItems);
     }
@@ -95,6 +91,14 @@ class LootCouncilPagesTest extends TestCase
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
         return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+    }
+
+    #[Test]
+    public function loot_index_allows_unauthenticated_users(): void
+    {
+        $response = $this->get(route('loot.index'));
+
+        $response->assertOk();
     }
 
     #[Group('happy-path')]

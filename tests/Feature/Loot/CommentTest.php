@@ -72,21 +72,16 @@ class CommentTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $viewLootBiasTool = Permission::firstOrCreate(['name' => 'view-loot-bias-tool', 'guard_name' => 'web']);
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
         $deleteAnyComment = Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']);
         $editAnyComment = Permission::firstOrCreate(['name' => 'edit-any-comment', 'guard_name' => 'web']);
         $markCommentAsResolved = Permission::firstOrCreate(['name' => 'mark-comment-as-resolved', 'guard_name' => 'web']);
 
-        DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 2, 'is_visible' => true])->givePermissionTo($viewLootBiasTool);
-
         $raiderRole = DiscordRole::firstOrCreate(['id' => '1265247017215594496'], ['name' => 'Raider', 'position' => 4, 'is_visible' => true]);
-        $raiderRole->givePermissionTo($viewLootBiasTool);
         $raiderRole->givePermissionTo($commentOnLootItems);
 
         $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
-        $officerRole->givePermissionTo($viewLootBiasTool);
         $officerRole->givePermissionTo($commentOnLootItems);
         $officerRole->givePermissionTo($viewAllComments);
         $officerRole->givePermissionTo($deleteAnyComment);

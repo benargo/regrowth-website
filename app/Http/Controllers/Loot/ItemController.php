@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -25,7 +26,6 @@ use Inertia\Response as InertiaResponse;
 class ItemController extends Controller
 {
     /** Display a specific loot item. */
-    #[Authorize('view', 'item')]
     public function show(BlizzardConnector $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
         $slug = $this->resolveItemSlug($blizzard, $item);
@@ -43,6 +43,7 @@ class ItemController extends Controller
     }
 
     /** Show the form for editing a specific loot item. */
+    #[Middleware('auth')]
     #[Authorize('update', 'item')]
     public function edit(BlizzardConnector $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
     {
@@ -66,6 +67,7 @@ class ItemController extends Controller
     }
 
     /** Redirect to the edit page for a specific loot item. */
+    #[Middleware('auth')]
     #[Authorize('update', 'item')]
     public function redirectToEdit(BlizzardConnector $blizzard, Item $item): RedirectResponse
     {
@@ -73,6 +75,7 @@ class ItemController extends Controller
     }
 
     /** Update the officers' notes for a specific loot item. */
+    #[Middleware('auth')]
     #[Authorize('update', 'item')]
     public function updateNotes(UpdateItemNotesRequest $request, Item $item): RedirectResponse
     {
@@ -83,6 +86,7 @@ class ItemController extends Controller
     }
 
     /** Update the priorities for a specific loot item. */
+    #[Middleware('auth')]
     #[Authorize('update', 'item')]
     public function updatePriorities(UpdateItemPrioritiesRequest $request, Item $item): RedirectResponse
     {

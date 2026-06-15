@@ -11,6 +11,8 @@ use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
 use App\Services\WarcraftLogs\ValueObjects\PlayerAttendanceData;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Attributes\Tries;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\LazyCollection;
 use Mockery;
@@ -286,6 +288,29 @@ class FetchAttendanceDataTest extends TestCase
 
         $this->assertDatabaseHas('pivot_characters_raid_reports', ['raid_report_id' => $report->id]);
         $this->assertDatabaseCount('pivot_characters_raid_reports', 1);
+    }
+
+    // ==========================================
+    // Concurrency & Resilience
+    // ==========================================
+
+    #[Test]
+    public function it_uses_without_overlapping_middleware_to_prevent_concurrent_execution(): void
+    {
+        $job = new FetchAttendanceData;
+        $middlewareClasses = array_map(fn ($m) => get_class($m), $job->middleware());
+
+        $this->assertContains(WithoutOverlapping::class, $middlewareClasses);
+    }
+
+    #[Test]
+    public function it_retries_three_times_via_tries_attribute(): void
+    {
+        $reflection = new \ReflectionClass(FetchAttendanceData::class);
+        $attributes = $reflection->getAttributes(Tries::class);
+
+        $this->assertNotEmpty($attributes, 'Expected #[Tries] attribute on FetchAttendanceData');
+        $this->assertSame(3, $attributes[0]->newInstance()->tries);
     }
 
     #[Test]

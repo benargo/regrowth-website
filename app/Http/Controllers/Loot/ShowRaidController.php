@@ -12,13 +12,11 @@ use App\Models\Raid;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
-#[Authorize('viewAny', Item::class)]
 class ShowRaidController extends Controller
 {
     use QueriesLootCouncilCache;

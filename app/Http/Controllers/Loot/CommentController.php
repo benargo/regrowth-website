@@ -14,9 +14,11 @@ use App\Services\Discord\Notifications\NotifiableChannel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
+#[Middleware('auth')]
 class CommentController extends Controller
 {
     public function __construct(
