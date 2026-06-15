@@ -93,7 +93,7 @@ class UpdateCompositionRequestTest extends TestCase
             $this->assertSame(400, $e->getResponse()->getStatusCode());
         }
 
-        Log::shouldHaveReceived('debug')
+        Log::shouldHaveReceived('warning')
             ->once()
             ->withArgs(fn (string $message, array $context) => $message === 'Raid Helper webhook failed validation'
                 && $context['request'] === UpdateCompositionRequest::class

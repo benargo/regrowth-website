@@ -68,7 +68,7 @@ class EventWebhookRequestTest extends TestCase
             $this->assertSame(400, $e->getStatusCode());
         }
 
-        Log::shouldHaveReceived('debug')
+        Log::shouldHaveReceived('warning')
             ->once()
             ->withArgs(fn (string $message, array $context) => $message === 'Raid Helper webhook contained unexpected keys'
                 && $context['request'] === EventWebhookRequest::class
