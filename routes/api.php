@@ -28,7 +28,7 @@ Route::post('/spells', [SpellController::class, 'store'])->name('api.spells.stor
 
 Route::prefix('/raidhelper')->group(function () {
     Route::post('/event-create', SyncEventController::class);
-    Route::post('/event-edit', SyncEventController::class);
+    Route::post('/event-update', SyncEventController::class);
     Route::post('/event-delete', DeleteEventController::class);
     Route::post('/comp-update', UpdateCompositionController::class);
 });

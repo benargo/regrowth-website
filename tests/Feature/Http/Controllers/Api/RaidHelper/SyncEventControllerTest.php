@@ -59,7 +59,7 @@ class SyncEventControllerTest extends TestCase
     {
         return [
             'event-create' => ['/api/raidhelper/event-create'],
-            'event-edit' => ['/api/raidhelper/event-edit'],
+            'event-update' => ['/api/raidhelper/event-update'],
         ];
     }
 }
