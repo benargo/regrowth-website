@@ -3,7 +3,7 @@
 namespace Tests\Feature\Console\Commands;
 
 use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUsers;
+use App\Jobs\SyncDiscordUser;
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -38,6 +38,6 @@ class SyncDiscordTest extends TestCase
 
         $this->artisan('sync:discord');
 
-        Bus::assertNotDispatched(SyncDiscordUsers::class);
+        Bus::assertNotDispatched(SyncDiscordUser::class);
     }
 }

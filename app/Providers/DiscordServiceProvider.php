@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUsers;
+use App\Jobs\SyncDiscordUser;
+use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Discord\Provider as DiscordProvider;
@@ -50,7 +52,8 @@ class DiscordServiceProvider extends ServiceProvider
 
         Queue::after(function (JobProcessed $event) {
             if ($event->job->resolveName() === SyncDiscordRoles::class) {
-                SyncDiscordUsers::dispatch();
+                $jobs = User::all()->map(fn (User $user) => new SyncDiscordUser($user->id));
+                Bus::batch($jobs)->dispatch();
             }
         });
     }

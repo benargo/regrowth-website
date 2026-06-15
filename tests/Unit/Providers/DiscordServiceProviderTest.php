@@ -3,8 +3,10 @@
 namespace Tests\Unit\Providers;
 
 use App\Jobs\SyncDiscordRoles;
-use App\Jobs\SyncDiscordUsers;
+use App\Jobs\SyncDiscordUser;
+use App\Models\User;
 use Illuminate\Contracts\Queue\Job;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
@@ -13,10 +15,14 @@ use Tests\TestCase;
 
 class DiscordServiceProviderTest extends TestCase
 {
+    use RefreshDatabase;
+
     #[Test]
     public function it_dispatches_sync_discord_users_when_sync_discord_roles_job_completes(): void
     {
         Bus::fake();
+
+        User::factory()->create();
 
         $job = $this->createStub(Job::class);
         $job->method('resolveName')->willReturn(SyncDiscordRoles::class);
@@ -25,7 +31,7 @@ class DiscordServiceProviderTest extends TestCase
 
         event(new JobProcessed('sync', $job));
 
-        Bus::assertDispatched(SyncDiscordUsers::class);
+        Bus::assertBatched(fn ($batch) => $batch->jobs->contains(fn ($j) => $j instanceof SyncDiscordUser));
     }
 
     #[Test]
@@ -38,6 +44,6 @@ class DiscordServiceProviderTest extends TestCase
 
         event(new JobProcessed('sync', $job));
 
-        Bus::assertNotDispatched(SyncDiscordUsers::class);
+        Bus::assertNothingBatched();
     }
 }
