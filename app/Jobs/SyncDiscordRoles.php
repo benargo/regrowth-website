@@ -28,7 +28,7 @@ class SyncDiscordRoles implements ShouldQueue
     public function middleware(): array
     {
         return [
-            new WithoutOverlapping,
+            (new WithoutOverlapping)->dontRelease(),
         ];
     }
 

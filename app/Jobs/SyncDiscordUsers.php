@@ -31,7 +31,7 @@ class SyncDiscordUsers implements ShouldQueue
     {
         return [
             new SkipIfBatchCancelled,
-            new WithoutOverlapping,
+            (new WithoutOverlapping)->dontRelease(),
         ];
     }
 
