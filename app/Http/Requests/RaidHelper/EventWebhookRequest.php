@@ -25,7 +25,7 @@ class EventWebhookRequest extends RaidHelperWebhookRequest
             'leaderName' => ['required', 'string'],
             'channelId' => ['required', 'string'],
             'title' => ['required', 'string'],
-            'description' => ['required', 'string'],
+            'description' => ['nullable', 'string'],
             'startTime' => ['required', 'integer', 'before:endTime', 'after_or_equal:closingTime'],
             'endTime' => ['required', 'integer', 'after:startTime'],
             'closingTime' => ['nullable', 'integer', 'before_or_equal:startTime'],

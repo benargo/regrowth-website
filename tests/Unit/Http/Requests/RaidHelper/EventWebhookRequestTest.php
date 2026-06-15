@@ -76,6 +76,17 @@ class EventWebhookRequestTest extends TestCase
     }
 
     #[Test]
+    public function it_passes_validation_when_description_is_null(): void
+    {
+        $body = $this->eventBody;
+        $body['description'] = null;
+
+        $validator = $this->validate($body);
+
+        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
+    }
+
+    #[Test]
     public function it_fails_validation_when_id_is_missing(): void
     {
         $body = $this->eventBody;
