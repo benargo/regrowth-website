@@ -117,6 +117,39 @@ fake()->word()
 fake()->randomDigit()
 ```
 
+## Test Groups
+
+Every test class **must** have at least one domain `#[Group]` attribute. Behaviour groups are optional and applied at method level where useful.
+
+Group names and definitions are the canonical vocabulary in `test-groups-vocabulary.md` (sibling file). Do not invent new group names.
+
+```php
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
+
+#[Group('raiding')]
+class PhaseTest extends TestCase
+{
+    #[Test]
+    #[Group('happy-path')]
+    public function it_shows_a_phase(): void
+    {
+        // ...
+    }
+
+    #[Test]
+    #[Group('authorization')]
+    public function it_denies_guests(): void
+    {
+        // ...
+    }
+}
+```
+
+- **Domain groups** go on the **class**. Add more than one only when the subject genuinely spans domains.
+- **Behaviour groups** go on **methods**. Add them only where the behaviour axis is selective — not on every method.
+- Run a group with: `vendor/bin/sail artisan test --group=<name> --compact`
+
 ## Helper Methods
 
 Place all private/protected helper methods at the **bottom** of the test class, after all `#[Test]` methods:
