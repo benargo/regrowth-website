@@ -4,6 +4,7 @@
 .env.backup
 .env.production
 .github
+.graphifyignore
 .phpactor.json
 .phpunit.result.cache
 /.claude/worktrees
