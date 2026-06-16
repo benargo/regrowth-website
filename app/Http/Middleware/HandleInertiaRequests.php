@@ -2,12 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Resources\PhaseResource;
 use App\Http\Resources\UserPermissionResource;
 use App\Http\Resources\UserResource;
-use App\Models\Phase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -36,16 +33,6 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        $phases = PhaseResource::collection(
-            Phase::hydrate(
-                Cache::remember(
-                    'phases:index',
-                    now()->addYear(),
-                    fn () => Phase::all()->toArray()
-                )
-            )
-        )->toArray($request);
-
         return [
             ...parent::share($request),
             'auth' => [
@@ -57,7 +44,6 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'success' => fn () => $request->session()->get('success'),
             ],
-            'phases' => $phases,
         ];
     }
 }

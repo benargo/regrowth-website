@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Dashboard;
+namespace Tests\Feature\Phases;
 
 use App\Events\AddonSettingsProcessed;
 use App\Models\Phase;
@@ -10,8 +10,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('phases')]
 #[Group('raiding')]
-class PhaseUpdateTest extends DashboardTestCase
+class UpdatePhaseTest extends DashboardTestCase
 {
     protected function setUp(): void
     {
@@ -20,6 +21,7 @@ class PhaseUpdateTest extends DashboardTestCase
         Event::fake(AddonSettingsProcessed::class);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_phase_requires_authentication(): void
     {

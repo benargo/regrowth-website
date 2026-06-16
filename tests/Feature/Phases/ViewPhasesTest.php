@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Dashboard;
+namespace Tests\Feature\Phases;
 
 use App\Models\GuildTag;
 use App\Models\Phase;
@@ -8,8 +8,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('phases')]
 #[Group('raiding')]
-class PhaseViewTest extends DashboardTestCase
+class ViewPhasesTest extends DashboardTestCase
 {
     #[Test]
     public function manage_phases_page_loads_with_phase_that_has_start_date(): void

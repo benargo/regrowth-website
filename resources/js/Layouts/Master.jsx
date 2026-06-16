@@ -41,17 +41,13 @@ export default function Master({ title, children }) {
                         className="flex flex-row items-center border-b border-transparent p-1 text-lg font-bold text-white transition-colors hover:border-white"
                         href="/"
                     >
-                        <img
-                            src="/images/guild_emblem.webp"
-                            alt="Guild Emblem"
-                            className="mr-1 inline-block max-h-[32px]"
-                        />
+                        <img src="/images/guild_emblem.webp" alt="Guild Emblem" className="mr-1 inline-block max-h-8" />
                         Regrowth
                     </Link>
 
                     {/* Mobile menu button */}
                     <button
-                        className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-brown-700 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-white lg:hidden"
+                        className="hover:bg-brown-700 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
                         type="button"
                         onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                         aria-controls="mobile-menu"
@@ -161,13 +157,13 @@ export default function Master({ title, children }) {
 
                 {/* Mobile menu */}
                 <div className={`${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`} id="mobile-menu">
-                    <div className="space-y-1 px-2 pb-3 pt-2">
+                    <div className="space-y-1 px-2 pt-2 pb-3">
                         <ResponsiveNavLink href={route("characters.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route("daily-quests.index")}>
-                            <span className="mr-2 inline-flex w-[20px] justify-center">
+                            <span className="mr-2 inline-flex w-5 justify-center">
                                 <img
                                     src="/images/icon_quest.webp"
                                     alt="Quest start icon"
@@ -190,7 +186,7 @@ export default function Master({ title, children }) {
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-t border-amber-700 pb-3 pt-4">
+                    <div className="border-t border-amber-700 pt-4 pb-3">
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
