@@ -19,9 +19,9 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\Loot\CommentController;
 use App\Http\Controllers\Loot\ItemController;
-use App\Http\Controllers\Loot\LootController;
 use App\Http\Controllers\Loot\ReactionController;
 use App\Http\Controllers\Loot\ShowRaidController;
+use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
@@ -52,7 +52,7 @@ Route::patch('/manage/characters/{character}', [CharacterController::class, 'upd
  * Loot Bias Tools
  */
 Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
-    Route::get('/', [LootController::class, 'index'])->name('index');
+    Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
     Route::get('/raids/{raid}/{name?}', ShowRaidController::class)->name('raids.show');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
     Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->name('items.notes.store');
