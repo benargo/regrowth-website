@@ -134,17 +134,15 @@ class BiasToolRaidTest extends TestCase
     public function loot_raid_renders_raid_page_with_correct_props(): void
     {
         $user = User::factory()->member()->create();
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $raid = Raid::factory()->create();
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Raids/Show')
-            ->has('phases')
-            ->where('selected_phase_id', $phase->id)
-            ->where('selected_raid_id', $raid->id)
+            ->missing('selected_phase_id')
+            ->missing('selected_raid_id')
         );
     }
 
@@ -247,15 +245,4 @@ class BiasToolRaidTest extends TestCase
         $partialResponse->assertJsonPath('props.boss_items.data.bossId', $boss->id);
     }
 
-    #[Test]
-    public function loot_raid_stores_last_visited_raid_in_session(): void
-    {
-        $user = User::factory()->member()->create();
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-
-        $response = $this->actingAs($user)->get($this->raidUrl($raid));
-
-        $response->assertSessionHas("loot.last_visited_raid.{$phase->id}", $raid->id);
-    }
 }

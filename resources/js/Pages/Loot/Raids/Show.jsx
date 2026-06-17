@@ -27,19 +27,19 @@ function BossesSkeleton() {
     );
 }
 
-function BossesList({ bosses, selectedRaid, loadedBoss, onBossExpand, getItemsForBoss }) {
+function BossesList({ bosses, loadedBoss, onBossExpand, getItemsForBoss }) {
     return (
         <div className="flex flex-col gap-4">
             {bosses.map((boss) => {
                 const isTrash = boss.id < 0;
                 return (
                     <Collapsible
-                        key={`${selectedRaid}-${boss.id}`}
+                        key={boss.id}
                         title={boss.name}
                         onExpand={() => onBossExpand(boss.id)}
                         loading={loadedBoss === boss.id}
                         skeleton={<BossItemsSkeleton />}
-                        sessionKey={`loot_bias_expanded_${selectedRaid}_${boss.id}`}
+                        sessionKey={`loot_bias_expanded_${boss.id}`}
                         className="border-amber-600"
                         headerClassName="hover:bg-amber-600/10"
                         bodyClassName="border-amber-600"
@@ -206,29 +206,7 @@ function BossItems({ items, grouped = true }) {
     );
 }
 
-export default function Index({ phases, selected_phase_id, bosses, selected_raid_id, boss_items }) {
-    const [selectedPhase, setSelectedPhase] = useState(selected_phase_id);
-    const [selectedRaid, setSelectedRaid] = useState(selected_raid_id);
-    const [lastVisitedRaids, setLastVisitedRaids] = useState(() => {
-        const result = {};
-        try {
-            phases.forEach((phase) => {
-                const stored = sessionStorage.getItem(`loot_last_visited_raid_${phase.id}`);
-                if (stored !== null) {
-                    result[phase.id] = JSON.parse(stored);
-                }
-            });
-        } catch {}
-        result[selected_phase_id] = selected_raid_id;
-        return result;
-    });
-
-    useEffect(() => {
-        try {
-            sessionStorage.setItem(`loot_last_visited_raid_${selected_phase_id}`, JSON.stringify(selected_raid_id));
-        } catch {}
-        setLastVisitedRaids((prev) => ({ ...prev, [selected_phase_id]: selected_raid_id }));
-    }, [selected_phase_id, selected_raid_id]);
+export default function Index({ bosses, boss_items }) {
     const [loadedItems, setLoadedItems] = useState(() => {
         if (boss_items?.data?.bossId != null) {
             return { [boss_items.data.bossId]: boss_items.data.items ?? [] };
@@ -325,7 +303,6 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
                 <Deferred data="bosses" fallback={<BossesSkeleton />}>
                     <BossesList
                         bosses={bosses}
-                        selectedRaid={selectedRaid}
                         loadedBoss={loadedBoss}
                         onBossExpand={handleBossExpand}
                         getItemsForBoss={getItemsForBoss}

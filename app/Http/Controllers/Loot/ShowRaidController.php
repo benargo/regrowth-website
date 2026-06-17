@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers\Loot;
 
-use App\Http\Controllers\Concerns\QueriesLootCouncilCache;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
 use App\Models\Item;
-use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
@@ -19,8 +17,6 @@ use Inertia\Response as InertiaResponse;
 
 class ShowRaidController extends Controller
 {
-    use QueriesLootCouncilCache;
-
     /**
      * Display the loot council view for a specific raid, including its bosses and items.
      */
@@ -36,20 +32,7 @@ class ShowRaidController extends Controller
             return redirect()->route('loot.raids.show', ['raid' => $raid->id, 'name' => Str::slug($raid->name)]);
         }
 
-        // Store the last visited raid for the raid's phase in the session, so we can redirect back to it when visiting the phase overview.
-        $request->session()->put("loot.last_visited_raid.{$raid->phase_id}", $raid->id);
-
-        // Preload phases to ensure we have the latest data for the active raid's phase (in case it was just switched)
-        $phases = Phase::hydrate(
-            Cache::tags(['db', 'lootcouncil'])->remember('phases:with_raids', now()->addYear(), function () {
-                return Phase::with('raids')->get()->toArray();
-            })
-        );
-
         return Inertia::render('Loot/Raids/Show', [
-            'phases' => $phases,
-            'selected_phase_id' => $raid->phase_id,
-            'selected_raid_id' => (int) $raid->id,
             'bosses' => Inertia::defer(fn () => $this->getBossesForRaid($raid)),
             // Only load boss items when explicitly requested via partial reload
             'boss_items' => Inertia::optional(fn () => $this->getItemsForBoss(
