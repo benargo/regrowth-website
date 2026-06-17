@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\UpdatePhaseGuildTagsRequest;
 use App\Http\Requests\Dashboard\UpdatePhaseStartDateRequest;
+use App\Http\Resources\PhaseResource;
 use App\Http\Resources\WarcraftLogs\GuildTagResource;
 use App\Models\GuildTag;
 use App\Models\Phase;
@@ -30,7 +31,7 @@ class PhaseController extends Controller
         $currentPhase = $phases->firstWhere('start_date', '<=', now());
 
         return Inertia::render('Manage/Phases/Index', [
-            'phases' => $phases->toResourceCollection($request),
+            'phases' => PhaseResource::collection($phases)->resolve($request),
             'current_phase' => $currentPhase?->id ?? null,
             'all_guild_tags' => Inertia::defer(fn () => $this->buildAllGuildTags()),
         ]);
