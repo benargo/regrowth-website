@@ -5,6 +5,7 @@ import Collapsible from "@/Components/Collapsible";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import PageContainer from "@/Components/PageContainer";
+import ToolNav from "@/Components/ToolNav";
 
 function BossItemsSkeleton() {
     return (
@@ -28,7 +29,7 @@ function BossesSkeleton() {
 
 function BossesList({ bosses, selectedRaid, loadedBoss, onBossExpand, getItemsForBoss }) {
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
             {bosses.map((boss) => {
                 const isTrash = boss.id < 0;
                 return (
@@ -70,7 +71,7 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="text-center italic text-gray-500 lg:text-right">MS &gt; OS</p>;
+        return <p className="text-center text-gray-500 italic lg:text-right">MS &gt; OS</p>;
     }
 
     // Sort by weight (ascending) and group by weight
@@ -105,24 +106,22 @@ function PriorityDisplay({ priorities }) {
 }
 
 function ItemRow({ item }) {
+    const href = route("loot.items.show", { item: item.id, name: item.slug });
+
     return (
-        <Link
-            href={route("loot.items.show", { item: item.id, name: item.slug })}
-            className="flex flex-wrap items-center gap-4 rounded bg-brown-800/50 p-2 transition-colors hover:bg-brown-800/70"
+        <div
+            onClick={() => router.visit(href)}
+            className="bg-brown-800/50 hover:bg-brown-800/70 flex cursor-pointer flex-wrap items-center gap-4 rounded p-2 transition-colors"
         >
             {item.icon && (
                 <a
-                    href={route("loot.items.show", { item: item.id, name: item.slug })}
+                    href={href}
                     data-wowhead={`item=${item.id}&domain=tbc`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <img
-                        src={item.icon}
-                        alt={item.name}
-                        className="h-8 w-8 rounded"
-                        data-wowhead={`item=${item.id}&domain=tbc`}
-                    />
+                    <img src={item.icon} alt={item.name} className="h-8 w-8 rounded" />
                 </a>
             )}
             <div className="w-48 flex-initial text-left lg:flex-1">
@@ -143,16 +142,16 @@ function ItemRow({ item }) {
                     )}
                 </div>
             </div>
-            <div className="mx-auto flex-auto lg:mb-0 lg:mr-0">
+            <div className="mx-auto flex-auto lg:mr-0 lg:mb-0">
                 <PriorityDisplay priorities={item.priorities} />
             </div>
-        </Link>
+        </div>
     );
 }
 
 function BossItems({ items, grouped = true }) {
     if (!items || items.length === 0) {
-        return <p className="italic text-gray-500">No items configured for this boss.</p>;
+        return <p className="text-gray-500 italic">No items configured for this boss.</p>;
     }
 
     if (!grouped) {
@@ -207,132 +206,6 @@ function BossItems({ items, grouped = true }) {
     );
 }
 
-function MegaMenu({ phases, selectedPhase, selectedRaid, onPhaseSelect, onPhaseChange, onRaidChange }) {
-    const [phaseOpen, setPhaseOpen] = useState(false);
-    const [raidOpen, setRaidOpen] = useState(false);
-    const lastPhaseTapRef = useRef({ id: null, time: 0 });
-    const singleTapTimeoutRef = useRef(null);
-
-    useEffect(() => {
-        return () => clearTimeout(singleTapTimeoutRef.current);
-    }, []);
-
-    const currentPhase = phases.find((p) => p.id === selectedPhase);
-    const currentRaids = Object.values(currentPhase?.raids ?? {});
-    const currentRaid = currentPhase?.raids[selectedRaid];
-
-    const handlePhaseTap = (phaseId) => {
-        const now = Date.now();
-
-        if (lastPhaseTapRef.current.id === phaseId && now - lastPhaseTapRef.current.time < 500) {
-            clearTimeout(singleTapTimeoutRef.current);
-            lastPhaseTapRef.current = { id: null, time: 0 };
-            onPhaseChange(phaseId);
-            setPhaseOpen(false);
-            return;
-        }
-
-        lastPhaseTapRef.current = { id: phaseId, time: now };
-        clearTimeout(singleTapTimeoutRef.current);
-        singleTapTimeoutRef.current = setTimeout(() => {
-            onPhaseSelect(phaseId);
-            setPhaseOpen(false);
-            lastPhaseTapRef.current = { id: null, time: 0 };
-        }, 300);
-    };
-
-    const handleRaidTap = (raidId) => {
-        onRaidChange(raidId);
-        setRaidOpen(false);
-    };
-
-    return (
-        <div className="animate-in fade-in mb-8 flex flex-col gap-3 duration-300 md:hidden">
-            {/* Phase dropdown */}
-            <div className="relative">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setPhaseOpen(!phaseOpen);
-                        setRaidOpen(false);
-                    }}
-                    aria-expanded={phaseOpen}
-                    className={`flex w-full items-center justify-between rounded border border-amber-600 px-4 py-2 transition-colors ${
-                        phaseOpen ? "bg-amber-600 text-white" : "text-amber-600 hover:bg-amber-600/20"
-                    }`}
-                >
-                    <span>{currentPhase ? `Phase ${currentPhase.id}` : "Select Phase"}</span>
-                    <Icon
-                        icon="chevron-down"
-                        style="solid"
-                        className={`transition-transform duration-300 ${phaseOpen ? "rotate-180" : ""}`}
-                    />
-                </button>
-                {phaseOpen && <div className="fixed inset-0 z-40" onClick={() => setPhaseOpen(false)} />}
-                {phaseOpen && (
-                    <div className="absolute left-0 z-50 mt-1 w-full rounded-md border border-amber-600 bg-brown shadow-lg">
-                        {phases.map((phase) => (
-                            <button
-                                key={phase.id}
-                                type="button"
-                                onClick={() => handlePhaseTap(phase.id)}
-                                className={`w-full px-4 py-2 text-left transition-colors ${
-                                    selectedPhase === phase.id
-                                        ? "bg-amber-600/30 text-white"
-                                        : "text-amber-600 hover:bg-amber-600/10"
-                                }`}
-                            >
-                                Phase {phase.id}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Raid dropdown */}
-            <div className="relative">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setRaidOpen(!raidOpen);
-                        setPhaseOpen(false);
-                    }}
-                    aria-expanded={raidOpen}
-                    className={`flex w-full items-center justify-between rounded border border-amber-600 px-4 py-2 transition-colors ${
-                        raidOpen ? "bg-amber-600 text-white" : "text-amber-600 hover:bg-amber-600/20"
-                    }`}
-                >
-                    <span>{currentRaid ? currentRaid.name : "Select Raid"}</span>
-                    <Icon
-                        icon="chevron-down"
-                        style="solid"
-                        className={`transition-transform duration-300 ${raidOpen ? "rotate-180" : ""}`}
-                    />
-                </button>
-                {raidOpen && <div className="fixed inset-0 z-40" onClick={() => setRaidOpen(false)} />}
-                {raidOpen && (
-                    <div className="absolute left-0 z-50 mt-1 w-full rounded-md border border-amber-600 bg-brown shadow-lg">
-                        {currentRaids.map((raid) => (
-                            <button
-                                key={raid.id}
-                                type="button"
-                                onClick={() => handleRaidTap(raid.id)}
-                                className={`w-full px-4 py-2 text-left transition-colors ${
-                                    selectedRaid === raid.id
-                                        ? "bg-amber-600/30 text-white"
-                                        : "text-amber-600 hover:bg-amber-600/10"
-                                }`}
-                            >
-                                {raid.name}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
 export default function Index({ phases, selected_phase_id, bosses, selected_raid_id, boss_items }) {
     const [selectedPhase, setSelectedPhase] = useState(selected_phase_id);
     const [selectedRaid, setSelectedRaid] = useState(selected_raid_id);
@@ -356,11 +229,13 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
         } catch {}
         setLastVisitedRaids((prev) => ({ ...prev, [selected_phase_id]: selected_raid_id }));
     }, [selected_phase_id, selected_raid_id]);
-    const [loadedItems, setLoadedItems] = useState({});
+    const [loadedItems, setLoadedItems] = useState(() => {
+        if (boss_items?.data?.bossId != null) {
+            return { [boss_items.data.bossId]: boss_items.data.items ?? [] };
+        }
+        return {};
+    });
     const [loadedBoss, setloadedBoss] = useState(null);
-
-    const currentPhase = phases.find((p) => p.id === selectedPhase);
-    const raids = Object.values(currentPhase?.raids ?? {});
 
     // Refs to access current values inside callbacks and effects without stale closures
     const loadedItemsRef = useRef(loadedItems);
@@ -382,11 +257,12 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
             preserveState: true,
             preserveScroll: true,
             onSuccess: (page) => {
-                const bossItemsData = page.props.boss_items.data;
-                if (bossItemsData?.bossId) {
+                const bossItems = page.props.boss_items;
+                if (bossItems?.data?.bossId != null) {
+                    // BossItemsResource shape: { data: { bossId, items: [...] } }
                     setLoadedItems((prev) => ({
                         ...prev,
-                        [bossItemsData.bossId]: bossItemsData.items,
+                        [bossItems.data.bossId]: bossItems.data.items ?? [],
                     }));
                 }
                 loadedBossRef.current = null;
@@ -413,55 +289,6 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
         }
     }, [loadedBoss]);
 
-    const handlePhaseChange = (phaseId) => {
-        const phaseRaids = phases.find((p) => p.id === phaseId)?.raids ?? {};
-        const lastRaidId = lastVisitedRaids[phaseId];
-        const targetRaid = lastRaidId && phaseRaids[lastRaidId] ? phaseRaids[lastRaidId] : Object.values(phaseRaids)[0];
-
-        if (!targetRaid) {
-            return;
-        }
-
-        setSelectedPhase(phaseId);
-        setSelectedRaid(targetRaid.id);
-        setLoadedItems({});
-        setloadedBoss(null);
-        loadQueueRef.current = [];
-
-        router.visit(route("loot.raids.show", { raid: targetRaid.id, name: targetRaid.slug }));
-    };
-
-    const handlePhaseSelect = (phaseId) => {
-        const phaseRaids = phases.find((p) => p.id === phaseId)?.raids ?? {};
-        const lastRaidId = lastVisitedRaids[phaseId];
-        const targetRaid = lastRaidId && phaseRaids[lastRaidId] ? phaseRaids[lastRaidId] : Object.values(phaseRaids)[0];
-
-        setSelectedPhase(phaseId);
-        setSelectedRaid(targetRaid?.id ?? null);
-        setLoadedItems({});
-        setloadedBoss(null);
-        loadQueueRef.current = [];
-    };
-
-    const handleRaidChange = (raidId) => {
-        const raid = currentPhase?.raids[raidId];
-
-        if (!raid) {
-            return;
-        }
-
-        setSelectedRaid(raidId);
-        try {
-            sessionStorage.setItem(`loot_last_visited_raid_${selectedPhase}`, JSON.stringify(raidId));
-        } catch {}
-        setLastVisitedRaids((prev) => ({ ...prev, [selectedPhase]: raidId }));
-        setLoadedItems({});
-        setloadedBoss(null);
-        loadQueueRef.current = [];
-
-        router.visit(route("loot.raids.show", { raid: raidId, name: raid.slug }));
-    };
-
     const handleBossExpand = (bossId) => {
         if (loadedItemsRef.current[bossId] || loadedBossRef.current === bossId) {
             return;
@@ -484,61 +311,17 @@ export default function Index({ phases, selected_phase_id, bosses, selected_raid
     return (
         <Master title="Loot Bias">
             <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
+            <ToolNav>
+                <Link
+                    href={route("loot.index")}
+                    className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                >
+                    <Icon icon="arrow-left" style="solid" className="mr-2" />
+                    <span>Loot bias tool</span>
+                </Link>
+            </ToolNav>
             {/* Content */}
             <PageContainer>
-                {/* Mobile navigation */}
-                <MegaMenu
-                    phases={phases}
-                    selectedPhase={selectedPhase}
-                    selectedRaid={selectedRaid}
-                    onPhaseSelect={handlePhaseSelect}
-                    onPhaseChange={handlePhaseChange}
-                    onRaidChange={handleRaidChange}
-                />
-
-                {/* Desktop navigation */}
-                <div className="animate-in fade-in mb-8 hidden flex-wrap gap-2 duration-300 md:flex">
-                    {phases.map((phase) => (
-                        <button
-                            key={phase.id}
-                            onClick={() => handlePhaseChange(phase.id)}
-                            className={`rounded border px-4 py-2 transition-colors ${
-                                selectedPhase === phase.id
-                                    ? "border-amber-600 bg-amber-600 text-white"
-                                    : "border-amber-600 text-amber-600 hover:bg-amber-600/20"
-                            }`}
-                            title={`View loot for phase ${phase.id}`}
-                        >
-                            Phase {phase.id}
-                        </button>
-                    ))}
-                </div>
-                <div className="mb-8 hidden flex-wrap gap-2 md:flex">
-                    {raids?.map((raid) => (
-                        <button
-                            key={raid.id}
-                            onClick={() => handleRaidChange(raid.id)}
-                            className={`rounded border px-4 py-2 transition-colors ${
-                                selectedRaid === raid.id
-                                    ? "border-amber-600 bg-amber-600 text-white"
-                                    : "border-amber-600 text-amber-600 hover:bg-amber-600/20"
-                            }`}
-                        >
-                            {raid.name}
-                        </button>
-                    ))}
-                </div>
-                {currentPhase?.start_date && (
-                    <p className="mb-4 text-sm text-gray-400">
-                        Phase {currentPhase.id}{" "}
-                        {new Date(currentPhase.start_date) > new Date() ? "starts on" : "started"}{" "}
-                        {new Date(currentPhase.start_date).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                        })}
-                    </p>
-                )}
                 <Deferred data="bosses" fallback={<BossesSkeleton />}>
                     <BossesList
                         bosses={bosses}
