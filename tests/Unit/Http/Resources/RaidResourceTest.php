@@ -102,50 +102,6 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_items_when_loaded(): void
-    {
-        $raid = Raid::factory()->withItems(2)->create();
-        $raid->load('items');
-
-        $array = (new RaidResource($raid))->toArray(new Request);
-
-        $this->assertArrayHasKey('items', $array);
-        $this->assertCount(2, $array['items']);
-    }
-
-    #[Test]
-    public function it_excludes_items_when_not_loaded(): void
-    {
-        $raid = Raid::factory()->withItems(2)->create();
-
-        $array = (new RaidResource($raid))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('items', $array);
-    }
-
-    #[Test]
-    public function it_includes_comments_when_loaded(): void
-    {
-        $raid = Raid::factory()->withComments(2)->create();
-        $raid->load('comments');
-
-        $array = (new RaidResource($raid))->toArray(new Request);
-
-        $this->assertArrayHasKey('comments', $array);
-        $this->assertCount(2, $array['comments']);
-    }
-
-    #[Test]
-    public function it_excludes_comments_when_not_loaded(): void
-    {
-        $raid = Raid::factory()->withComments(2)->create();
-
-        $array = (new RaidResource($raid))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('comments', $array);
-    }
-
-    #[Test]
     public function it_returns_slug(): void
     {
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
