@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Http\Resources\PermissionGroupsResource;
 use App\Models\User;
-use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -18,15 +16,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    public function register(): void
-    {
-        /**
-         * Permission groups
-         */
-        $this->app->bind(PermissionGroupsResource::class, function () {
-            return new PermissionGroupsResource(collect(PermissionSeeder::groups()));
-        });
-    }
+    public function register(): void {}
 
     /**
      * Bootstrap any application services.
