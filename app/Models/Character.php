@@ -99,16 +99,6 @@ class Character extends Model implements HasCharacterMedia, HasMedia
         );
     }
 
-    /**
-     * Get the main character from the linked characters.
-     */
-    protected function mainCharacter(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->linkedCharacters()->where('is_main', true)->first(),
-        );
-    }
-
     // ========== Relationships ============
 
     /**
@@ -143,6 +133,14 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     public function linkedCharacters(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'character_links', 'linked_character_id', 'character_id');
+    }
+
+    /**
+     * Get the main character from the linked characters.
+     */
+    public function mainCharacter(): BelongsToMany
+    {
+        return $this->linkedCharacters()->where('is_main', true)->limit(1);
     }
 
     /**

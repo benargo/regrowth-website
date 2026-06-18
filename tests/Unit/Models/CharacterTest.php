@@ -211,6 +211,25 @@ class CharacterTest extends ModelTestCase
     // main_character
 
     #[Test]
+    public function main_character_returns_belongs_to_many_relationship(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsToMany::class, $character->mainCharacter());
+    }
+
+    #[Test]
+    public function main_character_is_limited_to_one_result(): void
+    {
+        $character = new Character;
+
+        $sql = $character->mainCharacter()->toSql();
+
+        $this->assertStringContainsString('row_number', $sql);
+        $this->assertStringContainsString('<= 1', $sql);
+    }
+
+    #[Test]
     public function main_character_returns_linked_character_with_is_main_true(): void
     {
         $mainCharacter = $this->factory()->main()->create(['name' => 'MainChar']);
@@ -218,28 +237,28 @@ class CharacterTest extends ModelTestCase
 
         $altCharacter->linkedCharacters()->attach($mainCharacter->id);
 
-        $this->assertNotNull($altCharacter->mainCharacter);
-        $this->assertSame($mainCharacter->id, $altCharacter->mainCharacter->id);
-        $this->assertTrue($altCharacter->mainCharacter->is_main);
+        $this->assertCount(1, $altCharacter->mainCharacter);
+        $this->assertSame($mainCharacter->id, $altCharacter->mainCharacter->first()->id);
+        $this->assertTrue($altCharacter->mainCharacter->first()->is_main);
     }
 
     #[Test]
-    public function main_character_returns_null_when_no_linked_characters_exist(): void
+    public function main_character_returns_empty_collection_when_no_linked_characters_exist(): void
     {
         $character = $this->create();
 
-        $this->assertNull($character->mainCharacter);
+        $this->assertCount(0, $character->mainCharacter);
     }
 
     #[Test]
-    public function main_character_returns_null_when_no_linked_character_is_main(): void
+    public function main_character_returns_empty_collection_when_no_linked_character_is_main(): void
     {
         $linkedCharacter = $this->create(['name' => 'LinkedChar', 'is_main' => false]);
         $character = $this->create(['name' => 'Character']);
 
         $character->linkedCharacters()->attach($linkedCharacter->id);
 
-        $this->assertNull($character->mainCharacter);
+        $this->assertCount(0, $character->mainCharacter);
     }
 
     // planned_absences
