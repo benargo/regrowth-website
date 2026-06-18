@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
 use App\Policies\DatasetPolicy;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,17 +13,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+#[Fillable(['position', 'name', 'count_attendance'])]
+#[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
 class GuildRank extends Model implements DatasetModel
 {
     use HasFactory;
-
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'guild_ranks';
 
     /**
      * The model's default values for attributes.
@@ -40,17 +37,6 @@ class GuildRank extends Model implements DatasetModel
     protected $casts = [
         'position' => 'integer',
         'count_attendance' => 'boolean',
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'position',
-        'name',
-        'count_attendance',
     ];
 
     /**
