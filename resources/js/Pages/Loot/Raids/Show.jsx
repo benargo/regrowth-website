@@ -1,31 +1,11 @@
 import Master from "@/Layouts/Master";
 import { useState, useRef, useEffect } from "react";
-import { router, Link, Deferred } from "@inertiajs/react";
+import { router, Link } from "@inertiajs/react";
 import Collapsible from "@/Components/Collapsible";
 import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import PageContainer from "@/Components/PageContainer";
 import ToolNav from "@/Components/ToolNav";
-
-function BossItemsSkeleton() {
-    return (
-        <div className="animate-pulse space-y-2">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded bg-amber-600/20" />
-            ))}
-        </div>
-    );
-}
-
-function BossesSkeleton() {
-    return (
-        <div className="flex animate-pulse flex-col gap-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-14 rounded-md border border-amber-600/30 bg-amber-600/10" />
-            ))}
-        </div>
-    );
-}
 
 function BossesList({ bosses, loadedBoss, onBossExpand, getItemsForBoss }) {
     return (
@@ -38,11 +18,8 @@ function BossesList({ bosses, loadedBoss, onBossExpand, getItemsForBoss }) {
                         title={boss.name}
                         onExpand={() => onBossExpand(boss.id)}
                         loading={loadedBoss === boss.id}
-                        skeleton={<BossItemsSkeleton />}
                         sessionKey={`loot_bias_expanded_${boss.id}`}
-                        className="border-amber-600"
-                        headerClassName="hover:bg-amber-600/10"
-                        bodyClassName="border-amber-600"
+                        style="amber"
                         headerRight={
                             boss.comments_count > 0 && (
                                 <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
@@ -206,7 +183,8 @@ function BossItems({ items, grouped = true }) {
     );
 }
 
-export default function Index({ bosses, boss_items }) {
+export default function Index({ raid, boss_items }) {
+    const bosses = [...(raid.data.bosses ?? [])].sort((a, b) => (a.encounter_order ?? 999) - (b.encounter_order ?? 999));
     const [loadedItems, setLoadedItems] = useState(() => {
         if (boss_items?.data?.bossId != null) {
             return { [boss_items.data.bossId]: boss_items.data.items ?? [] };
@@ -300,14 +278,12 @@ export default function Index({ bosses, boss_items }) {
             </ToolNav>
             {/* Content */}
             <PageContainer>
-                <Deferred data="bosses" fallback={<BossesSkeleton />}>
-                    <BossesList
-                        bosses={bosses}
-                        loadedBoss={loadedBoss}
-                        onBossExpand={handleBossExpand}
-                        getItemsForBoss={getItemsForBoss}
-                    />
-                </Deferred>
+                <BossesList
+                    bosses={bosses}
+                    loadedBoss={loadedBoss}
+                    onBossExpand={handleBossExpand}
+                    getItemsForBoss={getItemsForBoss}
+                />
             </PageContainer>
         </Master>
     );

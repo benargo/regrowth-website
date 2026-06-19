@@ -551,9 +551,7 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
             key={boss.id}
             title={boss.name}
             sessionKey={`event_boss_expanded_${raid.slug}_${boss.id}`}
-            className="border-amber-600/40"
-            headerClassName="hover:bg-amber-600/10"
-            bodyClassName="border-amber-600/40"
+            style="amber"
         >
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col gap-3">

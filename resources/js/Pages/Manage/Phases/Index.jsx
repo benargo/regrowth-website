@@ -171,13 +171,12 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
         <Master title="Manage TBC Phases">
             <SharedHeader title="Manage TBC Phases" backgroundClass="bg-officer-meeting" />
             <PageContainer>
+                <div className="flex flex-col gap-4">
                 {phases?.map((phase) => (
                     <Collapsible
                         key={phase.id}
                         title={`Phase ${phase.number}`}
-                        className="my-4 border-amber-600"
-                        headerClassName="hover:bg-amber-600/10"
-                        bodyClassName="border-amber-600"
+                        style="amber"
                         headerRight={
                             phase.id === current_phase && (
                                 <div className="rounded-md bg-green-600 px-2 py-1 text-xs font-semibold text-white">
@@ -295,6 +294,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                         </div>
                     </Collapsible>
                 ))}
+                </div>
             </PageContainer>
 
             {/* Edit Start Date Modal */}
