@@ -4,7 +4,6 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Enums\RaidBackground;
 use App\Http\Resources\RaidResource;
-use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -58,25 +57,25 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_phase_when_loaded(): void
+    public function it_includes_phase_number_when_phase_loaded(): void
     {
         $raid = Raid::factory()->create();
         $raid->load('phase');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertArrayHasKey('phase', $array);
-        $this->assertInstanceOf(Phase::class, $array['phase']);
+        $this->assertArrayHasKey('phase_number', $array);
+        $this->assertSame($raid->phase->number, $array['phase_number']);
     }
 
     #[Test]
-    public function it_excludes_phase_when_not_loaded(): void
+    public function it_excludes_phase_number_when_phase_not_loaded(): void
     {
         $raid = Raid::factory()->create();
 
         $array = (new RaidResource($raid))->resolve(new Request);
 
-        $this->assertArrayNotHasKey('phase', $array);
+        $this->assertArrayNotHasKey('phase_number', $array);
     }
 
     #[Test]

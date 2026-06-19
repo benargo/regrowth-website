@@ -69,14 +69,12 @@ class BiasToolIndexTest extends TestCase
 
         $response->assertInertia(fn ($page) => $page
             ->component('Loot/Index')
-            ->has('raids', 2, fn ($r) => $r
+            ->has('raids.data', 2, fn ($r) => $r
                 ->has('name')
                 ->has('slug')
+                ->has('color')
                 ->has('background')
-                ->has('phase', fn ($p) => $p
-                    ->has('number')
-                    ->etc()
-                )
+                ->has('phase_number')
                 ->etc()
             )
         );

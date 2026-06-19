@@ -22,8 +22,8 @@ class RaidResource extends JsonResource
             'background' => $this->background_css_class?->value,
             'max_players' => $this->max_players,
             'max_loot_councillors' => $this->max_loot_councillors,
-            'phase' => $this->whenLoaded('phase'),
-            'bosses' => $this->whenLoaded('bosses'),
+            'phase_number' => $this->whenLoaded('phase', fn () => data_get($this, 'phase.number')),
+            'bosses' => $this->whenLoaded('bosses', fn () => BossResource::collection($this->bosses)),
         ];
     }
 }
