@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
@@ -80,15 +80,6 @@ class CommentCacheTest extends TestCase
         $officerRole->givePermissionTo($editItems);
     }
 
-    protected function createItem(): Item
-    {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
-    }
-
     // ==========================================
     // Comment visibility tests
     // ==========================================
@@ -163,5 +154,14 @@ class CommentCacheTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('Comment to be deleted');
+    }
+
+    protected function createItem(): Item
+    {
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+
+        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 }

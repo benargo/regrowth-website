@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
@@ -24,7 +24,7 @@ use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 #[Group('loot')]
-class ItemEditTest extends TestCase
+class EditItemPageTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -34,64 +34,6 @@ class ItemEditTest extends TestCase
 
         $this->setUpPermissions();
         $this->mockBlizzardServices();
-    }
-
-    protected function setUpPermissions(): void
-    {
-        $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
-
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true]);
-        $officerRole->givePermissionTo($editItems);
-    }
-
-    protected function mockBlizzardServices(): void
-    {
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
-                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
-                $segments = explode('/', trim($path, '/'));
-                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
-
-                return MockResponse::make(body: [
-                    'id' => $itemId,
-                    'name' => "Test Item {$itemId}",
-                    'quality' => ['type' => 'UNCOMMON', 'name' => 'Uncommon'],
-                    'level' => 1,
-                    'required_level' => 1,
-                    'media' => ['key' => ['href' => "https://example.test/media/{$itemId}"]],
-                    'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
-                    'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'Sword', 'id' => 7],
-                    'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
-                    'purchase_price' => 0,
-                    'sell_price' => 0,
-                ], status: 200);
-            },
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
-    }
-
-    protected function createTestItem(): Item
-    {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
-    }
-
-    /**
-     * Generate the edit URL with the name in the correct path position.
-     * The route helper puts optional parameters in query string, but we need it in the path.
-     */
-    protected function editUrl(Item $item, ?string $name = null): string
-    {
-        $slug = $name ?? 'test-item-'.$item->id;
-
-        return "/loot/items/{$item->id}/{$slug}/edit";
     }
 
     #[Test]
@@ -159,7 +101,6 @@ class ItemEditTest extends TestCase
 
         $response = $this->actingAs($user)->get($this->editUrl($item, 'wrong-slug'));
 
-        // The controller uses route() which generates query string format, so we match that
         $response->assertRedirect(route('loot.items.edit', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
         $response->assertStatus(303);
     }
@@ -520,5 +461,63 @@ class ItemEditTest extends TestCase
 
         $item->refresh();
         $this->assertEquals('Updated notes', $item->notes);
+    }
+
+    protected function setUpPermissions(): void
+    {
+        $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
+
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 5, 'is_visible' => true]);
+        $officerRole->givePermissionTo($editItems);
+    }
+
+    protected function createTestItem(): Item
+    {
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+
+        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+    }
+
+    /**
+     * Generate the edit URL with the name in the correct path position.
+     * The route helper puts optional parameters in query string, but we need it in the path.
+     */
+    protected function editUrl(Item $item, ?string $name = null): string
+    {
+        $slug = $name ?? 'test-item-'.$item->id;
+
+        return "/loot/items/{$item->id}/{$slug}/edit";
+    }
+
+    protected function mockBlizzardServices(): void
+    {
+        Storage::fake('public');
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
+                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
+                $segments = explode('/', trim($path, '/'));
+                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
+
+                return MockResponse::make(body: [
+                    'id' => $itemId,
+                    'name' => "Test Item {$itemId}",
+                    'quality' => ['type' => 'UNCOMMON', 'name' => 'Uncommon'],
+                    'level' => 1,
+                    'required_level' => 1,
+                    'media' => ['key' => ['href' => "https://example.test/media/{$itemId}"]],
+                    'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+                    'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'Sword', 'id' => 7],
+                    'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
+                    'purchase_price' => 0,
+                    'sell_price' => 0,
+                ], status: 200);
+            },
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
     }
 }

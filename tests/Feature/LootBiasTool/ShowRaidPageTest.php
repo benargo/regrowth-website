@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
 use App\Models\Item;
+use App\Models\LootCouncil\Comment;
 use App\Models\LootCouncil\Priority;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -23,7 +24,7 @@ use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 #[Group('loot')]
-class BiasToolRaidTest extends TestCase
+class ShowRaidPageTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -32,34 +33,6 @@ class BiasToolRaidTest extends TestCase
         parent::setUp();
 
         $this->mockItemService();
-    }
-
-    protected function mockItemService(): void
-    {
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
-                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
-                $segments = explode('/', trim($path, '/'));
-                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
-
-                return MockResponse::make(body: [
-                    'id' => $itemId,
-                    'name' => "Test Item {$itemId}",
-                ], status: 200);
-            },
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
-    }
-
-    protected function raidUrl(Raid $raid, ?string $name = null): string
-    {
-        $name ??= Str::slug($raid->name);
-
-        return "/loot/raids/{$raid->id}/{$name}";
     }
 
     #[Test]
@@ -245,4 +218,143 @@ class BiasToolRaidTest extends TestCase
         $partialResponse->assertJsonPath('props.boss_items.data.bossId', $boss->id);
     }
 
+    #[Test]
+    public function it_includes_trash_boss_when_items_have_no_boss(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        Boss::factory()->create(['raid_id' => $raid->id, 'name' => 'Real Boss']);
+
+        Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('bosses')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('bosses', 2)
+                ->where('bosses.1.name', 'Trash drops')
+                ->where('bosses.1.id', -1 * $raid->id)
+            )
+        );
+    }
+
+    #[Test]
+    public function it_does_not_include_trash_boss_when_no_items_without_boss(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $boss = Boss::factory()->create(['raid_id' => $raid->id, 'name' => 'Real Boss']);
+
+        Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('bosses')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('bosses', 1)
+            )
+        );
+    }
+
+    #[Test]
+    public function it_returns_empty_resource_for_null_boss_id(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        Boss::factory()->create(['raid_id' => $raid->id]);
+
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
+        $pageData = $response->viewData('page');
+
+        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid), [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $pageData['version'],
+            'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
+            'X-Inertia-Partial-Data' => 'boss_items',
+        ]);
+
+        $partialResponse->assertOk();
+        $partialResponse->assertJsonPath('props.boss_items.data.bossId', null);
+    }
+
+    #[Test]
+    public function it_returns_trash_items_for_negative_boss_id(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        Boss::factory()->create(['raid_id' => $raid->id]);
+
+        Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
+        $pageData = $response->viewData('page');
+
+        $negativeBossId = -1 * $raid->id;
+        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid)."?boss_id={$negativeBossId}", [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $pageData['version'],
+            'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
+            'X-Inertia-Partial-Data' => 'boss_items',
+        ]);
+
+        $partialResponse->assertOk();
+        $partialResponse->assertJsonPath('props.boss_items.data.bossId', $negativeBossId);
+    }
+
+    #[Test]
+    public function trash_boss_includes_comment_count(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+
+        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+        Comment::factory()->count(3)->create(['item_id' => $item->id]);
+
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->missing('bosses')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('bosses.0.comments_count', 3)
+            )
+        );
+    }
+
+    protected function mockItemService(): void
+    {
+        Storage::fake('public');
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
+                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
+                $segments = explode('/', trim($path, '/'));
+                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
+
+                return MockResponse::make(body: [
+                    'id' => $itemId,
+                    'name' => "Test Item {$itemId}",
+                ], status: 200);
+            },
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+    }
+
+    protected function raidUrl(Raid $raid, ?string $name = null): string
+    {
+        $name ??= Str::slug($raid->name);
+
+        return "/loot/raids/{$raid->id}/{$name}";
+    }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
@@ -46,36 +46,6 @@ class CommentReactionTest extends TestCase
 
         $memberRole = DiscordRole::firstOrCreate(['id' => '829022020301094922'], ['name' => 'Member', 'position' => 3, 'is_visible' => true]);
         $memberRole->givePermissionTo($reactToComments);
-    }
-
-    protected function mockItemService(): void
-    {
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
-                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
-                $segments = explode('/', trim($path, '/'));
-                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
-
-                return MockResponse::make(body: [
-                    'id' => $itemId,
-                    'name' => "Test Item {$itemId}",
-                ], status: 200);
-            },
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
-    }
-
-    protected function createItem(): Item
-    {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 
     // ==========================================
@@ -245,5 +215,35 @@ class CommentReactionTest extends TestCase
             'comment_id' => $comment->id,
             'user_id' => $reactingUser->id,
         ]);
+    }
+
+    protected function mockItemService(): void
+    {
+        Storage::fake('public');
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
+            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
+                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
+                $segments = explode('/', trim($path, '/'));
+                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
+
+                return MockResponse::make(body: [
+                    'id' => $itemId,
+                    'name' => "Test Item {$itemId}",
+                ], status: 200);
+            },
+            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+    }
+
+    protected function createItem(): Item
+    {
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+
+        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
@@ -89,15 +89,6 @@ class CommentTest extends TestCase
         $officerRole->givePermissionTo($markCommentAsResolved);
 
         DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true])->givePermissionTo($viewAllComments);
-    }
-
-    protected function createItem(): Item
-    {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 
     // ==========================================
@@ -900,5 +891,14 @@ class CommentTest extends TestCase
             ->where('comments.data.0.id', $newComment->id)
             ->where('comments.data.1.id', $oldComment->id)
         );
+    }
+
+    protected function createItem(): Item
+    {
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+
+        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 }

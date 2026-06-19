@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Events\ItemPrioritySaved;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;

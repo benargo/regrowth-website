@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Models\Phase;
 use App\Models\Raid;
@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 #[Group('loot')]
-class BiasToolIndexTest extends TestCase
+class LandingPageTest extends TestCase
 {
     use RefreshDatabase;
 
