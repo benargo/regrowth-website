@@ -3,8 +3,8 @@
 namespace Tests\Unit\Http\Requests\Comments;
 
 use App\Http\Requests\Comments\DestroyReactionRequest;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use Illuminate\Routing\Route;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Validator;

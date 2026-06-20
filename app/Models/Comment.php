@@ -1,19 +1,20 @@
 <?php
 
-namespace App\Models\LootCouncil;
+namespace App\Models;
 
 use App\Events\CommentCreated;
 use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
-use App\Models\Item;
-use App\Models\User;
-use Database\Factories\LootCouncil\CommentFactory;
+use Database\Factories\CommentFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[Fillable(['commentable_id', 'commentable_type', 'user_id', 'body', 'is_resolved', 'deleted_by'])]
 class Comment extends Model
 {
     /** @use HasFactory<CommentFactory> */
@@ -22,28 +23,10 @@ class Comment extends Model
     use SoftDeletes;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'lootcouncil_comments';
-
-    /**
      * The model's default values for attributes.
      */
     protected $attributes = [
         'is_resolved' => false,
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'item_id',
-        'user_id',
-        'body',
-        'is_resolved',
-        'deleted_by',
     ];
 
     /**
@@ -65,6 +48,16 @@ class Comment extends Model
     ];
 
     /**
+     * Get the parent commentable model.
+     *
+     * @return MorphTo<Model, $this>
+     */
+    public function commentable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
      * Get the user who deleted this comment.
      *
      * @return BelongsTo<User, $this>
@@ -75,19 +68,9 @@ class Comment extends Model
     }
 
     /**
-     * Get the item that this comment belongs to.
-     *
-     * @return BelongsTo<Item, $this>
-     */
-    public function item(): BelongsTo
-    {
-        return $this->belongsTo(Item::class);
-    }
-
-    /**
      * Get the reactions for this comment.
      *
-     * @return HasMany<CommentReaction>
+     * @return HasMany<CommentReaction, $this>
      */
     public function reactions(): HasMany
     {

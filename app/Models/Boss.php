@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use App\Models\LootCouncil\Comment;
 use Database\Factories\BossFactory;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
@@ -129,10 +128,11 @@ class Boss extends Model implements HasMedia
     /**
      * Get the comments for the items that drop from this boss.
      *
-     * @return HasManyThrough<Comment>
+     * @return HasManyThrough<Comment, Item, $this>
      */
     public function comments(): HasManyThrough
     {
-        return $this->hasManyThrough(Comment::class, Item::class, 'boss_id', 'item_id');
+        return $this->hasManyThrough(Comment::class, Item::class, 'boss_id', 'commentable_id')
+            ->where('commentable_type', Item::class);
     }
 }

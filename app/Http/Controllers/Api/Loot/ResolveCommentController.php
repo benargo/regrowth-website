@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Loot;
 
 use App\Http\Controllers\Controller;
-use App\Models\LootCouncil\Comment;
+use App\Models\Comment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
@@ -17,7 +17,8 @@ class ResolveCommentController extends Controller
     {
         $newComment = DB::transaction(function () use ($comment) {
             $newComment = new Comment([
-                'item_id' => $comment->item_id,
+                'commentable_id' => $comment->commentable_id,
+                'commentable_type' => $comment->commentable_type,
                 'user_id' => $comment->user_id,
                 'body' => $comment->body,
                 'is_resolved' => true,

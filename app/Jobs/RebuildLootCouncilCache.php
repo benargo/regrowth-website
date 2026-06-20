@@ -4,8 +4,8 @@ namespace App\Jobs;
 
 use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\LootPriority;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -76,7 +76,8 @@ class RebuildLootCouncilCache implements ShouldQueue
                     ->get();
 
                 $commentCounts = Comment::query()
-                    ->join('items', 'items.id', '=', 'lootcouncil_comments.item_id')
+                    ->join('items', 'items.id', '=', 'comments.commentable_id')
+                    ->where('comments.commentable_type', Item::class)
                     ->whereNotNull('items.boss_id')
                     ->selectRaw('items.boss_id, count(*) as comments_count')
                     ->groupBy('items.boss_id')

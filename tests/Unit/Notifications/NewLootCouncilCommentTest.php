@@ -3,7 +3,7 @@
 namespace Tests\Unit\Notifications;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Models\LootCouncil\Comment;
+use App\Models\Comment;
 use App\Notifications\NewLootCouncilComment;
 use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
@@ -60,7 +60,7 @@ class NewLootCouncilCommentTest extends TestCase
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
 
-        $this->assertStringContainsString("Item #{$comment->item->id}", $message->embeds[0]->description);
+        $this->assertStringContainsString("Item #{$comment->commentable_id}", $message->embeds[0]->description);
     }
 
     #[Test]

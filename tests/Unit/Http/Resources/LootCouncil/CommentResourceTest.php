@@ -6,10 +6,10 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -120,20 +120,26 @@ class CommentResourceTest extends TestCase
     public function it_returns_item_id_when_item_not_loaded(): void
     {
         $item = Item::factory()->create();
-        $comment = Comment::factory()->create(['item_id' => $item->id]);
+        $comment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
 
         $resource = new CommentResource($comment);
         $array = $resource->toArray(new Request);
 
-        $this->assertSame($item->id, $array['item']);
+        $this->assertSame((string) $item->id, $array['item']);
     }
 
     #[Test]
     public function it_returns_full_item_data_when_item_is_loaded(): void
     {
         $item = Item::factory()->create();
-        $comment = Comment::factory()->create(['item_id' => $item->id]);
-        $comment->load('item');
+        $comment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
+        $comment->load('commentable');
 
         $resource = new CommentResource($comment);
         $array = $resource->toArray(new Request);

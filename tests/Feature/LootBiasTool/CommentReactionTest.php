@@ -6,10 +6,10 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -59,14 +59,15 @@ class CommentReactionTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
         $reactingUser = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
         $response = $this->actingAs($reactingUser)->post(route('loot.comments.reactions.store', $comment));
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('lootcouncil_comments_reactions', [
+        $this->assertDatabaseHas('pivot_comments_reactions', [
             'comment_id' => $comment->id,
             'user_id' => $reactingUser->id,
         ]);
@@ -79,14 +80,15 @@ class CommentReactionTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
         ]);
 
         $response = $this->actingAs($user)->post(route('loot.comments.reactions.store', $comment));
 
         $response->assertForbidden();
-        $this->assertDatabaseMissing('lootcouncil_comments_reactions', [
+        $this->assertDatabaseMissing('pivot_comments_reactions', [
             'comment_id' => $comment->id,
             'user_id' => $user->id,
         ]);
@@ -98,14 +100,15 @@ class CommentReactionTest extends TestCase
         $item = $this->createItem();
         $commentAuthor = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
         $response = $this->post(route('loot.comments.reactions.store', $comment));
 
         $response->assertRedirect(route('login'));
-        $this->assertDatabaseCount('lootcouncil_comments_reactions', 0);
+        $this->assertDatabaseCount('pivot_comments_reactions', 0);
     }
 
     #[Group('authorization')]
@@ -116,14 +119,15 @@ class CommentReactionTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
         $guestUser = User::factory()->guest()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
         $response = $this->actingAs($guestUser)->post(route('loot.comments.reactions.store', $comment));
 
         $response->assertForbidden();
-        $this->assertDatabaseMissing('lootcouncil_comments_reactions', [
+        $this->assertDatabaseMissing('pivot_comments_reactions', [
             'comment_id' => $comment->id,
             'user_id' => $guestUser->id,
         ]);
@@ -136,14 +140,15 @@ class CommentReactionTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
         $memberUser = User::factory()->member()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
         $response = $this->actingAs($memberUser)->post(route('loot.comments.reactions.store', $comment));
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('lootcouncil_comments_reactions', [
+        $this->assertDatabaseHas('pivot_comments_reactions', [
             'comment_id' => $comment->id,
             'user_id' => $memberUser->id,
         ]);
@@ -156,14 +161,15 @@ class CommentReactionTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
         $officerUser = User::factory()->officer()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
         $response = $this->actingAs($officerUser)->post(route('loot.comments.reactions.store', $comment));
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('lootcouncil_comments_reactions', [
+        $this->assertDatabaseHas('pivot_comments_reactions', [
             'comment_id' => $comment->id,
             'user_id' => $officerUser->id,
         ]);
@@ -180,7 +186,8 @@ class CommentReactionTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
         ]);
 
@@ -200,7 +207,8 @@ class CommentReactionTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
         $reactingUser = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 

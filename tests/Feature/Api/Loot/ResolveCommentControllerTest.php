@@ -3,8 +3,8 @@
 namespace Tests\Feature\Api\Loot;
 
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
@@ -66,7 +66,8 @@ class ResolveCommentControllerTest extends TestCase
         $item = $this->createItem();
         $author = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $author->id,
             'body' => 'Comment to resolve',
             'is_resolved' => false,
@@ -77,13 +78,14 @@ class ResolveCommentControllerTest extends TestCase
 
         $response->assertOk();
 
-        $this->assertSoftDeleted('lootcouncil_comments', [
+        $this->assertSoftDeleted('comments', [
             'id' => $comment->id,
             'body' => 'Comment to resolve',
         ]);
 
-        $this->assertDatabaseHas('lootcouncil_comments', [
-            'item_id' => $item->id,
+        $this->assertDatabaseHas('comments', [
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $author->id,
             'body' => 'Comment to resolve',
             'is_resolved' => true,
@@ -98,7 +100,8 @@ class ResolveCommentControllerTest extends TestCase
         $author = User::factory()->raider()->create();
         $originalTime = now()->subDays(3);
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $author->id,
             'created_at' => $originalTime,
         ]);
@@ -106,7 +109,7 @@ class ResolveCommentControllerTest extends TestCase
         $this->actingAs($user)
             ->postJson(route('api.loot.comments.resolve', $comment));
 
-        $newComment = Comment::where('item_id', $item->id)
+        $newComment = Comment::where('commentable_id', (string) $item->id)->where('commentable_type', Item::class)
             ->where('is_resolved', true)
             ->whereNull('deleted_at')
             ->first();
@@ -127,7 +130,7 @@ class ResolveCommentControllerTest extends TestCase
             ->postJson(route('api.loot.comments.resolve', $comment))
             ->assertOk();
 
-        $this->assertSoftDeleted('lootcouncil_comments', [
+        $this->assertSoftDeleted('comments', [
             'id' => $comment->id,
             'deleted_by' => null,
         ]);
@@ -150,13 +153,13 @@ class ResolveCommentControllerTest extends TestCase
             // expected
         }
 
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'id' => $comment->id,
             'is_resolved' => false,
             'deleted_at' => null,
         ]);
-        $this->assertDatabaseMissing('lootcouncil_comments', [
-            'item_id' => $comment->item_id,
+        $this->assertDatabaseMissing('comments', [
+            'commentable_id' => $comment->commentable_id,
             'is_resolved' => true,
         ]);
     }

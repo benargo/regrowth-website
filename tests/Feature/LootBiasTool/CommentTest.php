@@ -6,9 +6,9 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -107,7 +107,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertForbidden();
-        $this->assertDatabaseMissing('lootcouncil_comments', ['body' => 'Test comment']);
+        $this->assertDatabaseMissing('comments', ['body' => 'Test comment']);
     }
 
     #[Group('authorization')]
@@ -122,7 +122,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertForbidden();
-        $this->assertDatabaseMissing('lootcouncil_comments', ['body' => 'Test comment']);
+        $this->assertDatabaseMissing('comments', ['body' => 'Test comment']);
     }
 
     #[Test]
@@ -136,10 +136,11 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'body' => 'Test comment from raider',
             'user_id' => $user->id,
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
         ]);
     }
 
@@ -154,10 +155,11 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'body' => 'Test comment from officer',
             'user_id' => $user->id,
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
         ]);
     }
 
@@ -177,7 +179,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('body');
-        $this->assertDatabaseCount('lootcouncil_comments', 0);
+        $this->assertDatabaseCount('comments', 0);
     }
 
     #[Group('validation')]
@@ -192,7 +194,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('body');
-        $this->assertDatabaseCount('lootcouncil_comments', 0);
+        $this->assertDatabaseCount('comments', 0);
     }
 
     #[Group('validation')]
@@ -207,7 +209,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('body');
-        $this->assertDatabaseCount('lootcouncil_comments', 0);
+        $this->assertDatabaseCount('comments', 0);
     }
 
     // ==========================================
@@ -220,14 +222,15 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
         ]);
 
         $response = $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
 
         $response->assertRedirect();
-        $this->assertSoftDeleted('lootcouncil_comments', ['id' => $comment->id]);
+        $this->assertSoftDeleted('comments', ['id' => $comment->id]);
     }
 
     #[Group('authorization')]
@@ -238,14 +241,15 @@ class CommentTest extends TestCase
         $raider = User::factory()->raider()->create();
         $otherUser = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $otherUser->id,
         ]);
 
         $response = $this->actingAs($raider)->delete(route('loot.comments.destroy', [$item, $comment]));
 
         $response->assertForbidden();
-        $this->assertNotSoftDeleted('lootcouncil_comments', ['id' => $comment->id]);
+        $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
     }
 
     #[Test]
@@ -255,14 +259,15 @@ class CommentTest extends TestCase
         $officer = User::factory()->officer()->create();
         $otherUser = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $otherUser->id,
         ]);
 
         $response = $this->actingAs($officer)->delete(route('loot.comments.destroy', [$item, $comment]));
 
         $response->assertRedirect();
-        $this->assertSoftDeleted('lootcouncil_comments', ['id' => $comment->id]);
+        $this->assertSoftDeleted('comments', ['id' => $comment->id]);
     }
 
     #[Test]
@@ -272,13 +277,14 @@ class CommentTest extends TestCase
         $officer = User::factory()->officer()->create();
         $commentAuthor = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
         $this->actingAs($officer)->delete(route('loot.comments.destroy', [$item, $comment]));
 
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'id' => $comment->id,
             'deleted_by' => $officer->id,
         ]);
@@ -294,7 +300,8 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Original comment',
         ]);
@@ -314,7 +321,8 @@ class CommentTest extends TestCase
         $raider = User::factory()->raider()->create();
         $otherUser = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $otherUser->id,
             'body' => 'Original comment',
         ]);
@@ -332,7 +340,8 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Original comment',
         ]);
@@ -343,14 +352,15 @@ class CommentTest extends TestCase
         ]);
 
         // Original comment should be soft deleted
-        $this->assertSoftDeleted('lootcouncil_comments', [
+        $this->assertSoftDeleted('comments', [
             'id' => $originalId,
             'body' => 'Original comment',
         ]);
 
         // New comment should exist with updated body
-        $this->assertDatabaseHas('lootcouncil_comments', [
-            'item_id' => $item->id,
+        $this->assertDatabaseHas('comments', [
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Updated comment',
         ]);
@@ -363,7 +373,8 @@ class CommentTest extends TestCase
         $user = User::factory()->raider()->create();
         $originalTime = now()->subDays(5);
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Original comment',
             'created_at' => $originalTime,
@@ -387,7 +398,8 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Original comment',
         ]);
@@ -397,7 +409,7 @@ class CommentTest extends TestCase
             'body' => 'Updated comment',
         ]);
 
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'id' => $originalId,
             'deleted_by' => $user->id,
         ]);
@@ -417,7 +429,7 @@ class CommentTest extends TestCase
             'body' => 'Test comment',
         ]);
 
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'body' => 'Test comment',
             'is_resolved' => false,
         ]);
@@ -430,7 +442,8 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->resolved()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Original resolved comment',
         ]);
@@ -440,7 +453,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertForbidden();
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'id' => $comment->id,
             'body' => 'Original resolved comment',
         ]);
@@ -453,7 +466,8 @@ class CommentTest extends TestCase
         $raider = User::factory()->raider()->create();
         $officer = User::factory()->officer()->create();
         $comment = Comment::factory()->resolved()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $raider->id,
             'body' => 'Original resolved comment',
         ]);
@@ -463,7 +477,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('lootcouncil_comments', [
+        $this->assertDatabaseHas('comments', [
             'body' => 'Updated by officer',
         ]);
     }
@@ -475,7 +489,8 @@ class CommentTest extends TestCase
         $raider = User::factory()->raider()->create();
         $officer = User::factory()->officer()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $raider->id,
             'is_resolved' => false,
         ]);
@@ -485,7 +500,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $newComment = Comment::where('item_id', $item->id)->whereNull('deleted_at')->first();
+        $newComment = Comment::where('commentable_id', (string) $item->id)->where('commentable_type', Item::class)->whereNull('deleted_at')->first();
         $this->assertTrue($newComment->is_resolved);
     }
 
@@ -496,7 +511,8 @@ class CommentTest extends TestCase
         $raider = User::factory()->raider()->create();
         $officer = User::factory()->officer()->create();
         $comment = Comment::factory()->resolved()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $raider->id,
         ]);
 
@@ -505,7 +521,7 @@ class CommentTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $newComment = Comment::where('item_id', $item->id)->whereNull('deleted_at')->first();
+        $newComment = Comment::where('commentable_id', (string) $item->id)->where('commentable_type', Item::class)->whereNull('deleted_at')->first();
         $this->assertFalse($newComment->is_resolved);
     }
 
@@ -515,7 +531,8 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'is_resolved' => false,
         ]);
@@ -528,7 +545,7 @@ class CommentTest extends TestCase
 
         // The request succeeds but is_resolved should remain false (the controller preserves it)
         $response->assertRedirect();
-        $newComment = Comment::where('item_id', $item->id)->whereNull('deleted_at')->first();
+        $newComment = Comment::where('commentable_id', (string) $item->id)->where('commentable_type', Item::class)->whereNull('deleted_at')->first();
         // Since markAsResolved policy isn't checked in the controller directly,
         // the is_resolved value will be set to true, but per the policy intent,
         // raiders shouldn't be able to mark as resolved.
@@ -544,7 +561,8 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $officer = User::factory()->officer()->create();
         $comment = Comment::factory()->resolved()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $officer->id,
             'body' => 'Original comment',
         ]);
@@ -568,7 +586,8 @@ class CommentTest extends TestCase
         $user = User::factory()->member()->create();
         $commentAuthor = User::factory()->raider()->create();
         Comment::factory()->count(3)->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
@@ -616,7 +635,8 @@ class CommentTest extends TestCase
         $user = User::factory()->member()->create();
         $commentAuthor = User::factory()->raider()->create();
         Comment::factory()->count(15)->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
@@ -638,14 +658,16 @@ class CommentTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
 
         $oldComment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
             'body' => 'Old comment',
             'created_at' => now()->subDays(5),
         ]);
 
         $newComment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
             'body' => 'New comment',
             'created_at' => now(),
@@ -666,7 +688,8 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
         ]);
 
@@ -687,13 +710,15 @@ class CommentTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
 
         Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
             'is_resolved' => false,
         ]);
 
         Comment::factory()->resolved()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
@@ -713,7 +738,8 @@ class CommentTest extends TestCase
         $officer = User::factory()->officer()->create();
         $commentAuthor = User::factory()->raider()->create();
         Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
@@ -732,7 +758,8 @@ class CommentTest extends TestCase
         $raider = User::factory()->raider()->create();
         $commentAuthor = User::factory()->raider()->create();
         Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
@@ -815,11 +842,13 @@ class CommentTest extends TestCase
 
         // Create 25 comments across two items
         Comment::factory()->count(15)->create([
-            'item_id' => $item1->id,
+            'commentable_id' => (string) $item1->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
         Comment::factory()->count(10)->create([
-            'item_id' => $item2->id,
+            'commentable_id' => (string) $item2->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
@@ -843,11 +872,13 @@ class CommentTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
 
         Comment::factory()->count(3)->create([
-            'item_id' => $item1->id,
+            'commentable_id' => (string) $item1->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
         Comment::factory()->count(2)->create([
-            'item_id' => $item2->id,
+            'commentable_id' => (string) $item2->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
         ]);
 
@@ -871,14 +902,16 @@ class CommentTest extends TestCase
         $commentAuthor = User::factory()->raider()->create();
 
         $oldComment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
             'body' => 'Old comment',
             'created_at' => now()->subDays(5),
         ]);
 
         $newComment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $commentAuthor->id,
             'body' => 'New comment',
             'created_at' => now(),

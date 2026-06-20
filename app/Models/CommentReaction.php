@@ -1,32 +1,25 @@
 <?php
 
-namespace App\Models\LootCouncil;
+namespace App\Models;
 
 use App\Events\CommentReactionCreated;
 use App\Events\CommentReactionDeleted;
-use App\Models\User;
-use Database\Factories\LootCouncil\CommentReactionFactory;
+use Database\Factories\CommentReactionFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 
+#[Table(name: 'pivot_comments_reactions')]
+#[Fillable(['comment_id', 'user_id'])]
+#[Hidden(['created_at', 'updated_at'])]
 class CommentReaction extends Model
 {
     /** @use HasFactory<CommentReactionFactory> */
     use HasFactory;
-
-    protected $table = 'lootcouncil_comments_reactions';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<string>
-     */
-    protected $fillable = [
-        'comment_id',
-        'user_id',
-    ];
 
     /**
      * The event map for the model.
@@ -44,7 +37,6 @@ class CommentReaction extends Model
     protected static function booted(): void
     {
         static::saving(function (CommentReaction $reaction) {
-            // Always fetch the comment by ID to handle cases where comment_id changed
             $comment = Comment::find($reaction->comment_id);
 
             if ($comment && $reaction->user_id === $comment->user_id) {
@@ -60,7 +52,7 @@ class CommentReaction extends Model
      *
      * @return BelongsTo<Comment, $this>
      */
-    public function comment()
+    public function comment(): BelongsTo
     {
         return $this->belongsTo(Comment::class);
     }
@@ -70,7 +62,7 @@ class CommentReaction extends Model
      *
      * @return BelongsTo<User, $this>
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

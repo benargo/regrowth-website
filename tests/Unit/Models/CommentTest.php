@@ -1,11 +1,12 @@
 <?php
 
-namespace Tests\Unit\Models\LootCouncil;
+namespace Tests\Unit\Models;
 
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,11 +21,11 @@ class CommentTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_lootcouncil_comments_table(): void
+    public function it_uses_comments_table(): void
     {
         $model = new Comment;
 
-        $this->assertSame('lootcouncil_comments', $model->getTable());
+        $this->assertSame('comments', $model->getTable());
     }
 
     #[Test]
@@ -42,7 +43,8 @@ class CommentTest extends ModelTestCase
         $model = new Comment;
 
         $this->assertFillable($model, [
-            'item_id',
+            'commentable_id',
+            'commentable_type',
             'user_id',
             'body',
             'is_resolved',
@@ -102,13 +104,15 @@ class CommentTest extends ModelTestCase
         $user = User::factory()->create();
 
         $comment = $this->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'This item should go to tanks first.',
         ]);
 
         $this->assertTableHas([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'This item should go to tanks first.',
         ]);
@@ -120,7 +124,8 @@ class CommentTest extends ModelTestCase
     {
         $comment = $this->create();
 
-        $this->assertNotNull($comment->item_id);
+        $this->assertNotNull($comment->commentable_id);
+        $this->assertNotNull($comment->commentable_type);
         $this->assertNotNull($comment->user_id);
         $this->assertNotNull($comment->body);
         $this->assertModelExists($comment);
@@ -152,13 +157,16 @@ class CommentTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_belongs_to_an_item(): void
+    public function it_belongs_to_a_commentable(): void
     {
         $item = Item::factory()->create();
-        $comment = $this->create(['item_id' => $item->id]);
+        $comment = $this->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
 
-        $this->assertRelation($comment, 'item', BelongsTo::class);
-        $this->assertTrue($comment->item->is($item));
+        $this->assertRelation($comment, 'commentable', MorphTo::class);
+        $this->assertTrue($comment->commentable->is($item));
     }
 
     #[Test]

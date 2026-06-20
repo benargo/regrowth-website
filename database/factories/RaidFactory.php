@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Enums\RaidBackground;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;

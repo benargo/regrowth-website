@@ -6,9 +6,9 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -111,7 +111,8 @@ class CommentCacheTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Original comment body',
         ]);
@@ -137,7 +138,8 @@ class CommentCacheTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
         $comment = Comment::factory()->create([
-            'item_id' => $item->id,
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
             'user_id' => $user->id,
             'body' => 'Comment to be deleted',
         ]);

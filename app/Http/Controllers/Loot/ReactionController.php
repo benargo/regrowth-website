@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Loot;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\DestroyReactionRequest;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;

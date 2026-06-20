@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Factories\LootCouncil;
+namespace Database\Factories;
 
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;

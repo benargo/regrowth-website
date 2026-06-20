@@ -5,8 +5,8 @@ namespace Tests\Unit\Http\Resources;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -286,7 +286,7 @@ class BossItemsResourceTest extends TestCase
     {
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
-        Comment::factory()->count(3)->create(['item_id' => $item->id]);
+        Comment::factory()->count(3)->for($item, 'commentable')->create();
 
         $items = $this->prepareItems([$item->id]);
 
@@ -333,8 +333,8 @@ class BossItemsResourceTest extends TestCase
         $boss = Boss::factory()->create();
         $item1 = Item::factory()->fromBoss($boss)->create();
         $item2 = Item::factory()->fromBoss($boss)->create();
-        Comment::factory()->count(2)->create(['item_id' => $item1->id]);
-        Comment::factory()->count(3)->create(['item_id' => $item2->id]);
+        Comment::factory()->count(2)->for($item1, 'commentable')->create();
+        Comment::factory()->count(3)->for($item2, 'commentable')->create();
 
         $items = $this->prepareItems([$item1->id, $item2->id]);
 

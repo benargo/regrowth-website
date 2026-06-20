@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Models\LootCouncil;
+namespace Tests\Unit\Models;
 
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\QueryException;
@@ -22,11 +22,11 @@ class CommentReactionTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_lootcouncil_comments_reactions_table(): void
+    public function it_uses_pivot_comments_reactions_table(): void
     {
         $model = new CommentReaction;
 
-        $this->assertSame('lootcouncil_comments_reactions', $model->getTable());
+        $this->assertSame('pivot_comments_reactions', $model->getTable());
     }
 
     #[Test]
@@ -191,7 +191,6 @@ class CommentReactionTest extends ModelTestCase
         $this->expectException(QueryException::class);
         $this->expectExceptionMessageMatches('/Users cannot react to their own comments/');
 
-        // Bypass the model's saving event by using query builder directly
         CommentReaction::query()->getQuery()->insert([
             'comment_id' => $comment->id,
             'user_id' => $user->id,
@@ -220,7 +219,6 @@ class CommentReactionTest extends ModelTestCase
         $this->expectException(QueryException::class);
         $this->expectExceptionMessageMatches('/Users cannot react to their own comments/');
 
-        // Bypass the model's saving event by using query builder directly
         CommentReaction::query()->getQuery()
             ->where('id', $reaction->id)
             ->update(['user_id' => $commentAuthor->id]);

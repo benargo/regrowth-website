@@ -3,8 +3,8 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\ItemCollection;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Group;
@@ -71,8 +71,8 @@ class ItemCollectionTest extends TestCase
         $item1 = Item::factory()->create();
         $item2 = Item::factory()->create();
 
-        Comment::factory()->count(3)->for($item1)->create();
-        Comment::factory()->count(3)->for($item2)->create();
+        Comment::factory()->count(3)->for($item1, 'commentable')->create();
+        Comment::factory()->count(3)->for($item2, 'commentable')->create();
 
         $item1->loadCount('comments');
         $item2->loadCount('comments');

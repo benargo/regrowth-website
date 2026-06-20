@@ -3,10 +3,10 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;

@@ -6,8 +6,8 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\LootPriority;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -317,7 +317,10 @@ class ShowRaidPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
 
         $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
-        Comment::factory()->count(3)->create(['item_id' => $item->id]);
+        Comment::factory()->count(3)->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
 

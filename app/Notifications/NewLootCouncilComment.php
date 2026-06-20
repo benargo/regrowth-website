@@ -5,7 +5,7 @@ namespace App\Notifications;
 use App\Facades\Blizzard;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Models\LootCouncil\Comment;
+use App\Models\Comment;
 use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
@@ -27,7 +27,7 @@ class NewLootCouncilComment extends Notification
         /** @var Comment $comment */
         $comment = $this->hydrateOrFail($this->relatedModel(Comment::class));
 
-        $item = $comment->item;
+        $item = $comment->commentable;
         $user = $comment->user;
         $itemName = $this->resolveItemName($item->id);
 

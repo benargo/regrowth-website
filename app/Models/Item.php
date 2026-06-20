@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -87,11 +87,11 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
     /**
      * Get the comments for this item.
      *
-     * @return HasMany<LootCouncil\Comment, $this>
+     * @return MorphMany<Comment, $this>
      */
-    public function comments(): HasMany
+    public function comments(): MorphMany
     {
-        return $this->hasMany(LootCouncil\Comment::class);
+        return $this->morphMany(Comment::class, 'commentable');
     }
 
     /**
