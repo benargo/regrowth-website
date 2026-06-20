@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Models\LootCouncil;
+namespace Tests\Unit\Models;
 
 use App\Models\Item;
-use App\Models\LootCouncil\ItemPriority;
+use App\Models\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use PHPUnit\Framework\Attributes\Group;
@@ -19,11 +19,11 @@ class ItemPriorityTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_lootcouncil_item_priorities_table(): void
+    public function it_uses_pivot_items_priorities_table(): void
     {
         $model = new ItemPriority;
 
-        $this->assertSame('lootcouncil_item_priorities', $model->getTable());
+        $this->assertSame('pivot_items_priorities', $model->getTable());
     }
 
     #[Test]

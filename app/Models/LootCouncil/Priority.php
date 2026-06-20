@@ -52,7 +52,7 @@ class Priority extends Model implements HasBlizzardIcons, HasMedia
      */
     public function items(): BelongsToMany
     {
-        return $this->belongsToMany(Item::class, 'lootcouncil_item_priorities', 'priority_id', 'item_id')
+        return $this->belongsToMany(Item::class, 'pivot_items_priorities', 'priority_id', 'item_id')
             ->withPivot('weight')
             ->withTimestamps();
     }

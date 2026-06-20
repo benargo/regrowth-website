@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\Item;
-use App\Models\LootCouncil\ItemPriority;
+use App\Models\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;

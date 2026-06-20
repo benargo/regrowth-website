@@ -7,7 +7,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Item;
-use App\Models\LootCouncil\ItemPriority;
+use App\Models\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use App\Models\Raids\Report;
 use App\Services\Attendance\Calculator;

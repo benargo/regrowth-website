@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Factories\LootCouncil;
+namespace Database\Factories;
 
 use App\Models\Item;
-use App\Models\LootCouncil\ItemPriority;
+use App\Models\ItemPriority;
 use App\Models\LootCouncil\Priority;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
