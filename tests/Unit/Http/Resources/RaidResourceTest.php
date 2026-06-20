@@ -163,6 +163,40 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_true_for_has_trash_items_when_trash_items_exist(): void
+    {
+        $raid = Raid::factory()->withItems(2)->create();
+        $raid->loadExists('trashItems');
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayHasKey('has_trash_items', $array);
+        $this->assertTrue($array['has_trash_items']);
+    }
+
+    #[Test]
+    public function it_returns_false_for_has_trash_items_when_no_trash_items_exist(): void
+    {
+        $raid = Raid::factory()->create();
+        $raid->loadExists('trashItems');
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayHasKey('has_trash_items', $array);
+        $this->assertFalse($array['has_trash_items']);
+    }
+
+    #[Test]
+    public function it_excludes_has_trash_items_when_exists_not_loaded(): void
+    {
+        $raid = Raid::factory()->withItems(2)->create();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('has_trash_items', $array);
+    }
+
+    #[Test]
     public function it_returns_all_expected_keys(): void
     {
         $raid = Raid::factory()->create();
