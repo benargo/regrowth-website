@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Item;
 use App\Models\ItemPriority;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,7 +29,7 @@ class ItemPriorityFactory extends Factory
     {
         return [
             'item_id' => Item::factory(),
-            'priority_id' => Priority::factory(),
+            'priority_id' => LootPriority::factory(),
             'weight' => fake()->numberBetween(1, 100),
         ];
     }

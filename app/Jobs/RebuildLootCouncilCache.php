@@ -6,7 +6,7 @@ use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -59,7 +59,7 @@ class RebuildLootCouncilCache implements ShouldQueue
 
     public function rebuildPrioritiesCache(): void
     {
-        Cache::tags(['db', 'lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray());
+        Cache::tags(['db', 'lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => LootPriority::all()->map->getAttributes()->toArray());
 
         Log::info('LootCouncil priorities cache rebuilt.');
     }

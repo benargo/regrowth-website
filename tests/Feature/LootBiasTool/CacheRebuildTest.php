@@ -10,7 +10,7 @@ use App\Jobs\RebuildLootCouncilCache;
 use App\Listeners\FlushLootCouncilCache;
 use App\Models\Boss;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
@@ -82,7 +82,7 @@ class CacheRebuildTest extends TestCase
     #[Test]
     public function rebuild_job_populates_priorities_cache(): void
     {
-        Priority::factory()->count(3)->create();
+        LootPriority::factory()->count(3)->create();
 
         Cache::tags(['db', 'lootcouncil'])->flush();
         $this->assertFalse(Cache::tags(['db', 'lootcouncil'])->has('priorities:all'));

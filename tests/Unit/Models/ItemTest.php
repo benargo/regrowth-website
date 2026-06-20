@@ -6,7 +6,7 @@ use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
 use App\Models\Boss;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -231,7 +231,7 @@ class ItemTest extends ModelTestCase
     public function it_belongs_to_many_priorities(): void
     {
         $item = $this->create();
-        $priorities = Priority::factory()->count(3)->create();
+        $priorities = LootPriority::factory()->count(3)->create();
 
         foreach ($priorities as $priority) {
             $item->priorities()->attach($priority->id, ['weight' => 100]);
@@ -247,7 +247,7 @@ class ItemTest extends ModelTestCase
     public function it_has_weight_on_priority_pivot(): void
     {
         $item = $this->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $item->priorities()->attach($priority->id, ['weight' => 50]);
 

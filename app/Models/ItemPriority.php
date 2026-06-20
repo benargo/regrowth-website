@@ -47,10 +47,10 @@ class ItemPriority extends Pivot
     /**
      * Get the priority.
      *
-     * @return BelongsTo<LootCouncil\Priority, $this>
+     * @return BelongsTo<LootPriority, $this>
      */
     public function priority(): BelongsTo
     {
-        return $this->belongsTo(LootCouncil\Priority::class);
+        return $this->belongsTo(LootPriority::class);
     }
 }

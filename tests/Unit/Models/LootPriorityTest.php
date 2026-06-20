@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Unit\Models\LootCouncil;
+namespace Tests\Unit\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -12,25 +12,25 @@ use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
 #[Group('loot')]
-class PriorityTest extends ModelTestCase
+class LootPriorityTest extends ModelTestCase
 {
     protected function modelClass(): string
     {
-        return Priority::class;
+        return LootPriority::class;
     }
 
     #[Test]
-    public function it_uses_lootcouncil_priorities_table(): void
+    public function it_uses_loot_priorities_table(): void
     {
-        $model = new Priority;
+        $model = new LootPriority;
 
-        $this->assertSame('lootcouncil_priorities', $model->getTable());
+        $this->assertSame('loot_priorities', $model->getTable());
     }
 
     #[Test]
     public function it_uses_auto_incrementing_id(): void
     {
-        $model = new Priority;
+        $model = new LootPriority;
 
         $this->assertSame('id', $model->getKeyName());
         $this->assertTrue($model->getIncrementing());
@@ -39,7 +39,7 @@ class PriorityTest extends ModelTestCase
     #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
-        $model = new Priority;
+        $model = new LootPriority;
 
         $this->assertFillable($model, [
             'title',
@@ -62,19 +62,19 @@ class PriorityTest extends ModelTestCase
     #[Test]
     public function it_implements_has_media(): void
     {
-        $this->assertInstanceOf(HasMedia::class, new Priority);
+        $this->assertInstanceOf(HasMedia::class, new LootPriority);
     }
 
     #[Test]
     public function it_implements_has_blizzard_icons(): void
     {
-        $this->assertInstanceOf(HasBlizzardIcons::class, new Priority);
+        $this->assertInstanceOf(HasBlizzardIcons::class, new LootPriority);
     }
 
     #[Test]
     public function it_registers_blizzard_icons_collection(): void
     {
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $collections = $priority->getRegisteredMediaCollections();
 

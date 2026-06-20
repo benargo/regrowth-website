@@ -12,7 +12,7 @@ use App\Http\Resources\ItemResource;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -55,8 +55,8 @@ class ItemController extends Controller
 
         $this->loadItemWithRelations($item);
 
-        $allPriorities = Priority::hydrate(
-            Cache::tags(['db', 'lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => Priority::all()->map->getAttributes()->toArray())
+        $allPriorities = LootPriority::hydrate(
+            Cache::tags(['db', 'lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => LootPriority::all()->map->getAttributes()->toArray())
         );
 
         return Inertia::render('Loot/Items/Edit', [

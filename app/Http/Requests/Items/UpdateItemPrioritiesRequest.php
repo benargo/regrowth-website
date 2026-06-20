@@ -16,7 +16,7 @@ class UpdateItemPrioritiesRequest extends FormRequest
     {
         return [
             'priorities' => ['present', 'array'],
-            'priorities.*.priority_id' => ['required', 'integer', 'exists:lootcouncil_priorities,id'],
+            'priorities.*.priority_id' => ['required', 'integer', 'exists:loot_priorities,id'],
             'priorities.*.weight' => ['required', 'integer', 'min:0'],
         ];
     }

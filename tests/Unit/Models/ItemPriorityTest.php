@@ -4,7 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\Item;
 use App\Models\ItemPriority;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -51,7 +51,7 @@ class ItemPriorityTest extends ModelTestCase
     public function it_can_be_created_with_required_attributes(): void
     {
         $item = Item::factory()->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $itemPriority = $this->create([
             'item_id' => $item->id,
@@ -117,7 +117,7 @@ class ItemPriorityTest extends ModelTestCase
     #[Test]
     public function it_belongs_to_a_priority(): void
     {
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         $itemPriority = $this->create(['priority_id' => $priority->id]);
 
         $this->assertRelation($itemPriority, 'priority', BelongsTo::class);

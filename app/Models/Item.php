@@ -107,11 +107,11 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
     /**
      * Get the priorities for this item.
      *
-     * @return BelongsToMany<LootCouncil\Priority, $this>
+     * @return BelongsToMany<LootPriority, $this>
      */
     public function priorities(): BelongsToMany
     {
-        return $this->belongsToMany(LootCouncil\Priority::class, 'pivot_items_priorities', 'item_id', 'priority_id')
+        return $this->belongsToMany(LootPriority::class, 'pivot_items_priorities', 'item_id', 'priority_id')
             ->using(ItemPriority::class)
             ->withPivot('weight')
             ->withTimestamps();

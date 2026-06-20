@@ -1,22 +1,22 @@
 <?php
 
-namespace Database\Factories\LootCouncil;
+namespace Database\Factories;
 
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @extends Factory<Priority>
+ * @extends Factory<LootPriority>
  */
-class PriorityFactory extends Factory
+class LootPriorityFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var class-string<Model>
      */
-    protected $model = Priority::class;
+    protected $model = LootPriority::class;
 
     /**
      * Define the model's default state.

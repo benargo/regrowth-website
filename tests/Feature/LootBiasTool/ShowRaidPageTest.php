@@ -8,7 +8,7 @@ use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
@@ -187,7 +187,7 @@ class ShowRaidPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
         $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 100]);
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));

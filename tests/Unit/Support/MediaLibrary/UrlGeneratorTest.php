@@ -122,14 +122,14 @@ class UrlGeneratorTest extends TestCase
 /**
  * Lightweight test double that implements HasBlizzardIcons so the positive-branch
  * of UrlGenerator can be exercised before any production model adopts
- * the interface. Backed by the `lootcouncil_priorities` table (title + type columns);
+ * the interface. Backed by the `loot_priorities` table (title + type columns);
  * reuses an existing migrated table with compatible columns to avoid a throwaway migration.
  */
 class BlizzardIconStubModel extends Model implements HasBlizzardIcons, HasMedia
 {
     use InteractsWithMedia;
 
-    protected $table = 'lootcouncil_priorities';
+    protected $table = 'loot_priorities';
 
     public $timestamps = true;
 

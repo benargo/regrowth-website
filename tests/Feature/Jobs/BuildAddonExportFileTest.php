@@ -8,7 +8,7 @@ use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Item;
 use App\Models\ItemPriority;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Raids\Report;
 use App\Services\Attendance\Calculator;
 use Carbon\Carbon;
@@ -132,8 +132,8 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_only_includes_priorities_with_items(): void
     {
-        $priorityWithItems = Priority::factory()->create(['title' => 'Tank']);
-        $priorityWithoutItems = Priority::factory()->create(['title' => 'Healer']);
+        $priorityWithItems = LootPriority::factory()->create(['title' => 'Tank']);
+        $priorityWithoutItems = LootPriority::factory()->create(['title' => 'Healer']);
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priorityWithItems->id]);
 
@@ -148,7 +148,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_priority_icon_from_media(): void
     {
-        $priority = Priority::factory()->create(['title' => 'Tank']);
+        $priority = LootPriority::factory()->create(['title' => 'Tank']);
         $priority->addMediaFromString('BINARY')
             ->usingFileName('spell_nature_strength.jpg')
             ->toMediaCollection('blizzard_icons');
@@ -165,7 +165,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_returns_null_icon_when_no_media_attached(): void
     {
-        $priority = Priority::factory()->create(['title' => 'Tank']);
+        $priority = LootPriority::factory()->create(['title' => 'Tank']);
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
@@ -179,7 +179,7 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_includes_priority_id_and_name(): void
     {
-        $priority = Priority::factory()->create(['title' => 'Warlock']);
+        $priority = LootPriority::factory()->create(['title' => 'Warlock']);
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
@@ -194,8 +194,8 @@ class BuildAddonExportFileTest extends TestCase
     #[Test]
     public function it_excludes_meme_type_priorities(): void
     {
-        $standardPriority = Priority::factory()->create(['type' => 'Role', 'title' => 'Tank']);
-        $memePriority = Priority::factory()->create(['type' => 'Meme', 'title' => 'Disenchant']);
+        $standardPriority = LootPriority::factory()->create(['type' => 'Role', 'title' => 'Tank']);
+        $memePriority = LootPriority::factory()->create(['type' => 'Meme', 'title' => 'Disenchant']);
         $item = Item::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
@@ -217,7 +217,7 @@ class BuildAddonExportFileTest extends TestCase
     {
         $itemWithPriorities = Item::factory()->create();
         $itemWithoutPriorities = Item::factory()->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $itemWithPriorities->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -232,7 +232,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_includes_item_priorities_with_weight(): void
     {
         $item = Item::factory()->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create([
             'item_id' => $item->id,
             'priority_id' => $priority->id,
@@ -251,8 +251,8 @@ class BuildAddonExportFileTest extends TestCase
     public function it_excludes_meme_priorities_from_item_priorities(): void
     {
         $item = Item::factory()->create();
-        $standardPriority = Priority::factory()->create(['type' => 'Spec', 'title' => 'Fire Mage']);
-        $memePriority = Priority::factory()->create(['type' => 'Meme', 'title' => 'Bakas']);
+        $standardPriority = LootPriority::factory()->create(['type' => 'Spec', 'title' => 'Fire Mage']);
+        $memePriority = LootPriority::factory()->create(['type' => 'Meme', 'title' => 'Bakas']);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $standardPriority->id]);
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $memePriority->id]);
 
@@ -273,7 +273,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_wowhead_links(): void
     {
         $item = Item::factory()->create(['notes' => 'Get !wh[Thunderfury](item=19019) from the boss']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -287,7 +287,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_markdown_links(): void
     {
         $item = Item::factory()->create(['notes' => 'Check [this guide](https://example.com) for details']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -301,7 +301,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_bold_formatting(): void
     {
         $item = Item::factory()->create(['notes' => 'This is **very important** information']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -315,7 +315,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_italic_formatting(): void
     {
         $item = Item::factory()->create(['notes' => 'This is *emphasized* text']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -329,7 +329,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_underline_formatting(): void
     {
         $item = Item::factory()->create(['notes' => 'This is __underlined__ text']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -343,7 +343,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_inline_code(): void
     {
         $item = Item::factory()->create(['notes' => 'Use the `command` here']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -357,7 +357,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_headers(): void
     {
         $item = Item::factory()->create(['notes' => '## Section Title']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -371,7 +371,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_cleans_notes_by_removing_strikethrough(): void
     {
         $item = Item::factory()->create(['notes' => 'This is ~~deleted~~ text']);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -385,7 +385,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_returns_null_for_null_notes(): void
     {
         $item = Item::factory()->create(['notes' => null]);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
@@ -399,7 +399,7 @@ class BuildAddonExportFileTest extends TestCase
     public function it_normalizes_whitespace_in_notes(): void
     {
         $item = Item::factory()->create(['notes' => "Multiple   spaces\nand\nnewlines"]);
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         ItemPriority::factory()->create(['item_id' => $item->id, 'priority_id' => $priority->id]);
 
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));

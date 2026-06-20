@@ -6,7 +6,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Resources\ItemResource;
 use App\Models\Boss;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -305,7 +305,7 @@ class ItemResourceTest extends TestCase
     public function it_includes_priorities_when_loaded(): void
     {
         $item = Item::factory()->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 1]);
         $item->load('priorities');
 
@@ -320,7 +320,7 @@ class ItemResourceTest extends TestCase
     public function it_excludes_priorities_when_not_loaded(): void
     {
         $item = Item::factory()->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 1]);
 
         $resource = new ItemResource($item);

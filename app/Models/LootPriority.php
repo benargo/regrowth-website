@@ -1,37 +1,23 @@
 <?php
 
-namespace App\Models\LootCouncil;
+namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
-use App\Models\Item;
-use Database\Factories\LootCouncil\PriorityFactory;
+use Database\Factories\LootPriorityFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Priority extends Model implements HasBlizzardIcons, HasMedia
+#[Fillable(['title', 'type'])]
+#[Hidden(['created_at', 'updated_at'])]
+class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 {
-    /** @use HasFactory<PriorityFactory> */
+    /** @use HasFactory<LootPriorityFactory> */
     use HasFactory, InteractsWithMedia;
-
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'lootcouncil_priorities';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'title',
-        'type',
-    ];
 
     // ============ Media ============
 

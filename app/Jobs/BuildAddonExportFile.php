@@ -6,7 +6,7 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\Item;
 use App\Models\ItemPriority;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;
@@ -78,7 +78,7 @@ class BuildAddonExportFile implements ShouldQueue
      */
     protected function buildPriorities(): Collection
     {
-        return Priority::has('items')->where('type', '!=', 'Meme')->with('media')->get()->map(function (Priority $priority) {
+        return LootPriority::has('items')->where('type', '!=', 'Meme')->with('media')->get()->map(function (LootPriority $priority) {
             $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
 
             return [

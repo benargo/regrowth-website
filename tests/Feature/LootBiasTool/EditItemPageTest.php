@@ -8,7 +8,7 @@ use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -125,9 +125,9 @@ class EditItemPageTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
-        $priority1 = Priority::factory()->role()->create(['title' => 'Tank']);
-        $priority2 = Priority::factory()->role()->create(['title' => 'Healer']);
-        $priority3 = Priority::factory()->role()->create(['title' => 'DPS']);
+        $priority1 = LootPriority::factory()->role()->create(['title' => 'Tank']);
+        $priority2 = LootPriority::factory()->role()->create(['title' => 'Healer']);
+        $priority3 = LootPriority::factory()->role()->create(['title' => 'DPS']);
 
         $item->priorities()->attach($priority1->id, ['weight' => 0]);
         $item->priorities()->attach($priority2->id, ['weight' => 1]);
@@ -174,7 +174,7 @@ class EditItemPageTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
@@ -190,9 +190,9 @@ class EditItemPageTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
-        $priority1 = Priority::factory()->create();
-        $priority2 = Priority::factory()->create();
-        $priority3 = Priority::factory()->create();
+        $priority1 = LootPriority::factory()->create();
+        $priority2 = LootPriority::factory()->create();
+        $priority3 = LootPriority::factory()->create();
 
         $item->priorities()->attach($priority1->id, ['weight' => 0]);
 
@@ -234,7 +234,7 @@ class EditItemPageTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $response = $this->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
@@ -250,7 +250,7 @@ class EditItemPageTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $item->priorities()->attach($priority->id, ['weight' => 0]);
 
@@ -268,8 +268,8 @@ class EditItemPageTest extends TestCase
     {
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
-        $priority1 = Priority::factory()->create();
-        $priority2 = Priority::factory()->create();
+        $priority1 = LootPriority::factory()->create();
+        $priority2 = LootPriority::factory()->create();
 
         $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [

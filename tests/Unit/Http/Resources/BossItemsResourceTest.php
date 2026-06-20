@@ -7,7 +7,7 @@ use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -244,7 +244,7 @@ class BossItemsResourceTest extends TestCase
     {
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 1]);
 
         $items = $this->prepareItems([$item->id]);
