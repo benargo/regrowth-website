@@ -6,6 +6,9 @@ use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
 use App\Events\ItemSaved;
 use Database\Factories\ItemFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,24 +18,14 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[Fillable(['raid_id', 'boss_id', 'name', 'quality', 'group', 'notes'])]
+#[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
 class Item extends Model implements HasBlizzardIcons, HasMedia
 {
     /** @use HasFactory<ItemFactory> */
-    use HasFactory, InteractsWithMedia;
+    use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'raid_id',
-        'boss_id',
-        'name',
-        'quality',
-        'group',
-        'notes',
-    ];
+    use InteractsWithMedia;
 
     /**
      * The attributes that should be cast to native types.
@@ -54,29 +47,26 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
 
     // ============ Custom attributes ============
 
-    /**
-     * Get the slug for this item based on its name.
-     */
-    public function getSlugAttribute(): string
+    protected function slug(): Attribute
     {
-        return Str::slug($this->name ?? '');
+        return Attribute::make(
+            get: fn () => Str::slug($this->name ?? ''),
+        );
     }
 
-    /**
-     * Get the Wowhead URL for this item.
-     */
-    public function getWowheadUrlAttribute(): string
+    protected function wowheadUrl(): Attribute
     {
-        $base = "https://www.wowhead.com/tbc/item={$this->id}";
+        return Attribute::make(
+            get: function () {
+                $base = "https://www.wowhead.com/tbc/item={$this->id}";
 
-        return $this->name ? $base.'/'.$this->slug : $base;
+                return $this->name ? "{$base}/{$this->slug}" : $base;
+            },
+        );
     }
 
     // ============ Media ============
 
-    /**
-     * Register media collections for the model.
-     */
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('blizzard_icons')->singleFile();

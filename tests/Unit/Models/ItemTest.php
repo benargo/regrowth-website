@@ -57,6 +57,18 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_expected_hidden_attributes(): void
+    {
+        $model = new Item;
+
+        $this->assertHidden($model, [
+            'wowhead_url',
+            'created_at',
+            'updated_at',
+        ]);
+    }
+
+    #[Test]
     public function it_can_be_created_without_raid_id(): void
     {
         $item = $this->create(['raid_id' => null]);
