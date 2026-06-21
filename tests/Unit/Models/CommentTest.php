@@ -5,14 +5,38 @@ namespace Tests\Unit\Models;
 use App\Casts\AsClassName;
 use App\Casts\AsKeyType;
 use App\Models\Comment;
-use App\Models\Item;
 use App\Models\User;
+use Database\Factories\ItemFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
+
+/**
+ * Minimal stub used to test the polymorphic `commentable` relationship
+ * without coupling this unit test to any real domain model.
+ */
+class CommentableStub extends Model
+{
+    use HasFactory;
+
+    protected $table = 'items';
+
+    protected static function newFactory(): ItemFactory
+    {
+        return ItemFactory::new();
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+}
 
 #[Group('loot')]
 class CommentTest extends ModelTestCase
@@ -122,19 +146,19 @@ class CommentTest extends ModelTestCase
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
-        $item = Item::factory()->create();
+        $stub = CommentableStub::factory()->create();
         $user = User::factory()->create();
 
         $comment = $this->create([
-            'commentable_id' => (string) $item->id,
-            'commentable_type' => Item::class,
+            'commentable_id' => (string) $stub->id,
+            'commentable_type' => CommentableStub::class,
             'user_id' => $user->id,
             'body' => 'This item should go to tanks first.',
         ]);
 
         $this->assertTableHas([
-            'commentable_id' => (string) $item->id,
-            'commentable_type' => Item::class,
+            'commentable_id' => (string) $stub->id,
+            'commentable_type' => CommentableStub::class,
             'user_id' => $user->id,
             'body' => 'This item should go to tanks first.',
         ]);
@@ -181,14 +205,14 @@ class CommentTest extends ModelTestCase
     #[Test]
     public function it_belongs_to_a_commentable(): void
     {
-        $item = Item::factory()->create();
+        $stub = CommentableStub::factory()->create();
         $comment = $this->create([
-            'commentable_id' => (string) $item->id,
-            'commentable_type' => Item::class,
+            'commentable_id' => (string) $stub->id,
+            'commentable_type' => CommentableStub::class,
         ]);
 
         $this->assertRelation($comment, 'commentable', MorphTo::class);
-        $this->assertTrue($comment->commentable->is($item));
+        $this->assertTrue($comment->commentable->is($stub));
     }
 
     #[Test]
