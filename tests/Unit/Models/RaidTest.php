@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -390,6 +391,21 @@ class RaidTest extends ModelTestCase
         $this->assertRelation($raid, 'comments', HasManyThrough::class);
         $this->assertCount(2, $raid->comments);
         $this->assertInstanceOf(Comment::class, $raid->comments->first());
+    }
+
+    #[Test]
+    public function comments_are_scoped_to_item_commentable_type(): void
+    {
+        $raid = $this->factory()->withComments(2)->create();
+        $item = $raid->items->first();
+
+        // Insert a comment with a different commentable_type pointing at the same item ID
+        Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => User::class,
+        ]);
+
+        $this->assertCount(2, $raid->comments);
     }
 
     // ==================== events ====================

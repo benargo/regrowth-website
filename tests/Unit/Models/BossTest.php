@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\Item;
 use App\Models\Raid;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -133,6 +134,21 @@ class BossTest extends ModelTestCase
         $this->assertRelation($boss, 'comments', HasManyThrough::class);
         $this->assertCount(2, $boss->comments);
         $this->assertInstanceOf(Comment::class, $boss->comments->first());
+    }
+
+    #[Test]
+    public function comments_are_scoped_to_item_commentable_type(): void
+    {
+        $boss = $this->factory()->withComments(2)->create();
+        $item = $boss->items->first();
+
+        // Insert a comment with a different commentable_type pointing at the same item ID
+        Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => User::class,
+        ]);
+
+        $this->assertCount(2, $boss->comments);
     }
 
     #[Test]
