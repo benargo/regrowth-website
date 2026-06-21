@@ -2,9 +2,6 @@
 
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Models\Comment;
 use App\Models\CommentReaction;
@@ -16,17 +13,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Storage;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('loot')]
 class CommentResourceTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -34,27 +30,9 @@ class CommentResourceTest extends TestCase
         parent::setUp();
 
         Queue::fake();
-        $this->mockBlizzardServices();
+        $this->mockItemService();
         $this->mockCacheService();
         $this->setUpPermissions();
-    }
-
-    protected function mockBlizzardServices(): void
-    {
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(body: [
-                'name' => 'Test Item',
-                'item_class' => ['name' => 'Armor'],
-                'item_subclass' => ['name' => 'Plate'],
-                'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
-                'inventory_type' => ['name' => 'Head'],
-            ], status: 200),
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
     }
 
     protected function mockCacheService(): void

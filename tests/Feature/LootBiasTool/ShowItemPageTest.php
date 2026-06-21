@@ -2,34 +2,32 @@
 
 namespace Tests\Feature\LootBiasTool;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
-use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('loot')]
 class ShowItemPageTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockBlizzardServices();
+        $this->mockItemService();
     }
 
     #[Test]
@@ -172,35 +170,5 @@ class ShowItemPageTest extends TestCase
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
         return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
-    }
-
-    protected function mockBlizzardServices(): void
-    {
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
-                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
-                $segments = explode('/', trim($path, '/'));
-                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
-
-                return MockResponse::make(body: [
-                    'id' => $itemId,
-                    'name' => "Test Item {$itemId}",
-                    'quality' => ['type' => 'UNCOMMON', 'name' => 'Uncommon'],
-                    'level' => 1,
-                    'required_level' => 1,
-                    'media' => ['key' => ['href' => "https://example.test/media/{$itemId}"]],
-                    'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
-                    'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'Sword', 'id' => 7],
-                    'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
-                    'purchase_price' => 0,
-                    'sell_price' => 0,
-                ], status: 200);
-            },
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
     }
 }

@@ -2,32 +2,28 @@
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Resources\BossResource;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
-use Tests\Support\Blizzard\HasBlizzardTokenMock;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class BossResourceTest extends TestCase
 {
-    use HasBlizzardTokenMock;
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockBlizzardServices();
+        $this->mockItemService();
     }
 
     #[Test]
@@ -182,23 +178,5 @@ class BossResourceTest extends TestCase
         $this->assertArrayHasKey('notes', $array);
         $this->assertArrayHasKey('images', $array);
         $this->assertArrayHasKey('encounter_order', $array);
-    }
-
-    protected function mockBlizzardServices(array $itemData = []): void
-    {
-        Storage::fake('public');
-
-        $defaultItemData = [
-            'name' => 'Test Item',
-            'item_class' => ['name' => 'Armor'],
-            'item_subclass' => ['name' => 'Plate'],
-            'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
-            'inventory_type' => ['name' => 'Head'],
-        ];
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
-            GetItemRequest::class => MockResponse::make(body: array_merge($defaultItemData, $itemData), status: 200),
-        ]);
     }
 }

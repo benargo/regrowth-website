@@ -10,42 +10,25 @@ use App\Models\LootPriority;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('loot')]
 class ItemResourceTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockBlizzardServices();
-    }
-
-    protected function mockBlizzardServices(array $itemData = []): void
-    {
-        Storage::fake('public');
-
-        $defaultItemData = [
-            'name' => 'Test Item',
-            'item_class' => ['name' => 'Armor'],
-            'item_subclass' => ['name' => 'Plate'],
-            'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
-            'inventory_type' => ['name' => 'Head'],
-        ];
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(body: array_merge($defaultItemData, $itemData), status: 200),
-        ]);
+        $this->mockItemService();
     }
 
     #[Test]
@@ -147,7 +130,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_name_from_blizzard_api(): void
     {
-        $this->mockBlizzardServices(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
+        $this->mockItemService(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
         $item = Item::factory()->create();
 
         $resource = new ItemResource($item);
@@ -203,7 +186,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_item_class(): void
     {
-        $this->mockBlizzardServices(['item_class' => ['name' => 'Weapon']]);
+        $this->mockItemService(['item_class' => ['name' => 'Weapon']]);
         $item = Item::factory()->create();
 
         $resource = new ItemResource($item);
@@ -215,7 +198,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_item_subclass(): void
     {
-        $this->mockBlizzardServices(['item_subclass' => ['name' => 'Sword']]);
+        $this->mockItemService(['item_subclass' => ['name' => 'Sword']]);
         $item = Item::factory()->create();
 
         $resource = new ItemResource($item);
@@ -227,7 +210,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_quality(): void
     {
-        $this->mockBlizzardServices(['quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary']]);
+        $this->mockItemService(['quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary']]);
         $item = Item::factory()->create();
 
         $resource = new ItemResource($item);
@@ -239,7 +222,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_inventory_type(): void
     {
-        $this->mockBlizzardServices(['inventory_type' => ['name' => 'Two-Hand']]);
+        $this->mockItemService(['inventory_type' => ['name' => 'Two-Hand']]);
         $item = Item::factory()->create();
 
         $resource = new ItemResource($item);
@@ -273,7 +256,7 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_wowhead_url_with_item_name(): void
     {
-        $this->mockBlizzardServices(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
+        $this->mockItemService(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
         $item = Item::factory()->create(['id' => 19019]);
 
         $resource = new ItemResource($item);

@@ -2,9 +2,6 @@
 
 namespace Tests\Feature\LootBiasTool;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\CommentReaction;
@@ -16,18 +13,16 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Http\PendingRequest;
-use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('loot')]
 class CommentReactionTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -222,27 +217,6 @@ class CommentReactionTest extends TestCase
         CommentReaction::factory()->create([
             'comment_id' => $comment->id,
             'user_id' => $reactingUser->id,
-        ]);
-    }
-
-    protected function mockItemService(): void
-    {
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
-                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
-                $segments = explode('/', trim($path, '/'));
-                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
-
-                return MockResponse::make(body: [
-                    'id' => $itemId,
-                    'name' => "Test Item {$itemId}",
-                ], status: 200);
-            },
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 
