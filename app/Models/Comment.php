@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\AsClassName;
+use App\Casts\AsKeyType;
 use App\Events\CommentCreated;
 use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
@@ -33,6 +35,8 @@ class Comment extends Model
      * The attributes that should be cast to native types.
      */
     protected $casts = [
+        'commentable_id' => AsKeyType::class,
+        'commentable_type' => AsClassName::class,
         'is_resolved' => 'boolean',
     ];
 

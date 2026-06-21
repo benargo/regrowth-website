@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Models;
 
+use App\Casts\AsClassName;
+use App\Casts\AsKeyType;
 use App\Models\Comment;
 use App\Models\Item;
 use App\Models\User;
@@ -58,6 +60,26 @@ class CommentTest extends ModelTestCase
         $model = new Comment;
 
         $this->assertFalse($model->is_resolved);
+    }
+
+    #[Test]
+    public function it_casts_commentable_id_with_as_key_type(): void
+    {
+        $model = new Comment;
+
+        $this->assertCasts($model, [
+            'commentable_id' => AsKeyType::class,
+        ]);
+    }
+
+    #[Test]
+    public function it_casts_commentable_type_with_as_class_name(): void
+    {
+        $model = new Comment;
+
+        $this->assertCasts($model, [
+            'commentable_type' => AsClassName::class,
+        ]);
     }
 
     #[Test]
