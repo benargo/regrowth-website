@@ -33,6 +33,6 @@ class ItemCollection extends ResourceCollection
             return null;
         }
 
-        return (int) $this->collection->sum('comments_count');
+        return (int) $counted->sum('comments_count');
     }
 }
