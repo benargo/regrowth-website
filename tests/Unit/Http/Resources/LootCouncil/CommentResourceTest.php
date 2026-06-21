@@ -128,7 +128,7 @@ class CommentResourceTest extends TestCase
         $resource = new CommentResource($comment);
         $array = $resource->toArray(new Request);
 
-        $this->assertSame((string) $item->id, $array['item']);
+        $this->assertSame($item->id, $array['item']);
     }
 
     #[Test]
@@ -147,6 +147,24 @@ class CommentResourceTest extends TestCase
         $this->assertIsArray($array['item']);
         $this->assertSame($item->id, $array['item']['id']);
         $this->assertArrayHasKey('name', $array['item']);
+    }
+
+    #[Test]
+    public function it_returns_null_when_commentable_is_loaded_but_model_has_been_deleted(): void
+    {
+        $item = Item::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
+
+        $item->forceDelete();
+        $comment->load('commentable');
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertNull($array['item']);
     }
 
     #[Test]

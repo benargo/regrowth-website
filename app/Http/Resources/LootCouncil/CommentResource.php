@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\LootCouncil;
 
-use App\Http\Resources\ItemResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -46,7 +45,11 @@ class CommentResource extends JsonResource
             return $this->commentable_id;
         }
 
-        return (new ItemResource($this->commentable))->toArray(request());
+        if ($this->commentable === null) {
+            return null;
+        }
+
+        return $this->commentable->toResource()->toArray(request());
     }
 
     /**
