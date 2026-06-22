@@ -4,6 +4,9 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Enums\RaidBackground;
 use App\Http\Resources\RaidResource;
+use App\Models\Boss;
+use App\Models\Comment;
+use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -216,6 +219,25 @@ class RaidResourceTest extends TestCase
         $array = (new RaidResource($raid))->resolve(new Request);
 
         $this->assertArrayNotHasKey('trash_comments_count', $array);
+    }
+
+    #[Test]
+    public function it_counts_only_trash_item_comments_excluding_boss_item_comments(): void
+    {
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+
+        $trashItem = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+        $bossItem = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+
+        Comment::factory()->count(3)->create(['commentable_id' => (string) $trashItem->id, 'commentable_type' => Item::class]);
+        Comment::factory()->count(5)->create(['commentable_id' => (string) $bossItem->id, 'commentable_type' => Item::class]);
+
+        $raid->loadCount(['comments as trash_comments_count' => fn ($q) => $q->whereNull('items.boss_id')]);
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertSame(3, $array['trash_comments_count']);
     }
 
     #[Test]
