@@ -5,7 +5,6 @@ namespace Tests\SmokeTest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
-use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
@@ -86,11 +85,10 @@ class LootCouncilPagesTest extends TestCase
 
     protected function createTestItem(): Item
     {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+        $item = Item::factory()->fromBoss()->create();
+        $item->update(['name' => "Test Item {$item->id}"]);
 
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        return $item->fresh();
     }
 
     #[Test]
@@ -150,7 +148,7 @@ class LootCouncilPagesTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('loot.items.show', [
             'item' => $item->id,
-            'name' => 'test-item-'.$item->id,
+            'slug' => $item->slug,
         ]));
 
         $response->assertOk();
@@ -166,7 +164,7 @@ class LootCouncilPagesTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('loot.items.edit', [
             'item' => $item->id,
-            'name' => 'test-item-'.$item->id,
+            'slug' => 'test-item-'.$item->id,
         ]));
 
         $response->assertOk();

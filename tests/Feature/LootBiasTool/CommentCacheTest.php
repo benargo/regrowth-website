@@ -5,13 +5,10 @@ namespace Tests\Feature\LootBiasTool;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
-use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
-use App\Models\Phase;
-use App\Models\Raid;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel as DiscordChannel;
@@ -91,7 +88,7 @@ class CommentCacheTest extends TestCase
         $user = User::factory()->raider()->create();
 
         // First request shows no comments
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         // Create a new comment
         $this->actingAs($user)->post(route('loot.items.comments.store', $item), [
@@ -99,7 +96,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Next request should show the new comment
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertSee('Brand new comment');
@@ -118,7 +115,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // First request populates the page
-        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         // Update the comment
         $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
@@ -126,7 +123,7 @@ class CommentCacheTest extends TestCase
         ]);
 
         // Next request should show the updated comment
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertSee('Updated comment body');
@@ -145,14 +142,14 @@ class CommentCacheTest extends TestCase
         ]);
 
         // First request shows the comment
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
         $response->assertSee('Comment to be deleted');
 
         // Delete the comment
         $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
 
         // Next request should not show the deleted comment
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertDontSee('Comment to be deleted');
@@ -160,10 +157,6 @@ class CommentCacheTest extends TestCase
 
     protected function createItem(): Item
     {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        return Item::factory()->fromBoss()->withName('Test Item')->create();
     }
 }

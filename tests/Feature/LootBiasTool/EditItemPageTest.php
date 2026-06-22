@@ -96,7 +96,7 @@ class EditItemPageTest extends TestCase
 
         $response = $this->actingAs($user)->get($this->editUrl($item, 'wrong-slug'));
 
-        $response->assertRedirect(route('loot.items.edit', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item->id, 'slug' => 'test-item-'.$item->id]));
         $response->assertStatus(303);
     }
 
@@ -171,13 +171,13 @@ class EditItemPageTest extends TestCase
         $item = $this->createTestItem();
         $priority = LootPriority::factory()->create();
 
-        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority->id, 'weight' => 0],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]));
     }
 
     #[Test]
@@ -191,14 +191,14 @@ class EditItemPageTest extends TestCase
 
         $item->priorities()->attach($priority1->id, ['weight' => 0]);
 
-        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority2->id, 'weight' => 0],
                 ['priority_id' => $priority3->id, 'weight' => 1],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]));
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);
@@ -249,11 +249,11 @@ class EditItemPageTest extends TestCase
 
         $item->priorities()->attach($priority->id, ['weight' => 0]);
 
-        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]));
         $item->refresh();
         $this->assertCount(0, $item->priorities);
     }
@@ -266,14 +266,14 @@ class EditItemPageTest extends TestCase
         $priority1 = LootPriority::factory()->create();
         $priority2 = LootPriority::factory()->create();
 
-        $response = $this->from(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
+        $response = $this->from(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]))->actingAs($user)->put(route('loot.items.priorities.update', $item), [
             'priorities' => [
                 ['priority_id' => $priority1->id, 'weight' => 0],
                 ['priority_id' => $priority2->id, 'weight' => 0],
             ],
         ]);
 
-        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'name' => 'test-item-'.$item->id]));
+        $response->assertRedirect(route('loot.items.edit', ['item' => $item, 'slug' => 'test-item-'.$item->id]));
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);
@@ -472,7 +472,10 @@ class EditItemPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item->update(['name' => "Test Item {$item->id}"]);
+
+        return $item->fresh();
     }
 
     /**

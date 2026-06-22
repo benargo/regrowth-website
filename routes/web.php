@@ -56,9 +56,8 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
     Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->name('items.notes.store');
     Route::put('/items/{item}/priorities', [ItemController::class, 'updatePriorities'])->name('items.priorities.update');
-    Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit']);
-    Route::get('/items/{item}/{name?}', [ItemController::class, 'show'])->name('items.show');
-    Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->name('items.edit');
+    Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
+    Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
 
     // Comment routes
     Route::get('/comments', [CommentController::class, 'index'])->name('comments.index');

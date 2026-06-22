@@ -8,70 +8,82 @@ use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Requests\Items\UpdateItemNotesRequest;
 use App\Http\Requests\Items\UpdateItemPrioritiesRequest;
+use App\Http\Resources\BossResource;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\LootCouncil\CommentResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
+use App\Http\Resources\RaidResource;
 use App\Models\Item;
 use App\Models\LootPriority;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
 class ItemController extends Controller
 {
     /** Display a specific loot item. */
-    public function show(BlizzardConnector $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
-    {
-        $slug = $this->resolveItemSlug($blizzard, $item);
+    public function show(
+        BlizzardConnector $blizzardConnector,
+        Request $request,
+        Item $item,
+        ?string $slug = null
+    ): InertiaResponse|RedirectResponse {
+        $correctSlug = $item->slug ?: "item-{$item->id}";
 
-        if ($name !== $slug) {
-            return redirect()->route('loot.items.show', ['item' => $item->id, 'name' => $slug], 303);
+        if ($correctSlug !== $slug) {
+            return redirect()->route('loot.items.show', ['item' => $item->id, 'slug' => $correctSlug], 303);
         }
 
-        $this->loadItemWithRelations($item);
+        try {
+            $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->id))->dto();
+            $item->fillBlizzardData($blizzardItem);
+        } catch (ItemNotFoundException) {
+            // We can continue without the filled in data.
+        }
+
+        $item->load(['priorities' => fn ($q) => $q->orderByPivot('weight', 'desc')]);
 
         return Inertia::render('Loot/Items/Show', [
+            'raid' => new RaidResource($item->raid()->first()),
+            'boss' => new BossResource($item->boss()->first()),
             'item' => new ItemResource($item),
-            'comments' => CommentResource::collection($this->paginateComments($item)),
+            'comments' => CommentResource::collection($item->comments()->with('user')->latest()->paginate(10)),
         ]);
     }
 
     /** Show the form for editing a specific loot item. */
     #[Middleware('auth')]
     #[Authorize('update', 'item')]
-    public function edit(BlizzardConnector $blizzard, Request $request, Item $item, ?string $name = null): InertiaResponse|RedirectResponse
-    {
-        $slug = $this->resolveItemSlug($blizzard, $item);
+    public function edit(
+        BlizzardConnector $blizzardConnector,
+        Request $request,
+        Item $item,
+        ?string $slug = null
+    ): InertiaResponse|RedirectResponse {
+        $correctSlug = $item->slug ?: "item-{$item->id}";
 
-        if ($name !== $slug) {
-            return redirect()->route('loot.items.edit', ['item' => $item->id, 'name' => $slug], 303);
+        if ($correctSlug !== $slug) {
+            return redirect()->route('loot.items.edit', ['item' => $item->id, 'slug' => $correctSlug], 303);
         }
 
-        $this->loadItemWithRelations($item);
+        try {
+            $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->id))->dto();
+            $item->fillBlizzardData($blizzardItem);
+        } catch (ItemNotFoundException) {
+            // We can continue without the filled in data.
+        }
 
-        $allPriorities = LootPriority::hydrate(
-            Cache::tags(['db', 'lootcouncil'])->remember('priorities:all', now()->addYear(), fn () => LootPriority::all()->map->getAttributes()->toArray())
-        );
+        $item->load(['priorities' => fn ($q) => $q->orderByPivot('weight', 'desc')]);
 
         return Inertia::render('Loot/Items/Edit', [
+            'raid' => new RaidResource($item->raid()->first()),
             'item' => new ItemResource($item),
-            'allPriorities' => PriorityResource::collection($allPriorities),
-            'comments' => CommentResource::collection($this->paginateComments($item)),
+            'allPriorities' => PriorityResource::collection(LootPriority::all()),
+            'comments' => CommentResource::collection($item->comments()->with('user')->latest()->paginate(10)),
         ]);
-    }
-
-    /** Redirect to the edit page for a specific loot item. */
-    #[Middleware('auth')]
-    #[Authorize('update', 'item')]
-    public function redirectToEdit(BlizzardConnector $blizzard, Item $item): RedirectResponse
-    {
-        return redirect()->route('loot.items.edit', ['item' => $item->id, 'name' => $this->resolveItemSlug($blizzard, $item)], 303);
     }
 
     /** Update the officers' notes for a specific loot item. */
@@ -97,31 +109,5 @@ class ItemController extends Controller
         $item->priorities()->sync($priorities);
 
         return redirect()->back();
-    }
-
-    /** Resolve the slug for a loot item, using the Blizzard API if necessary. */
-    private function resolveItemSlug(BlizzardConnector $blizzard, Item $item): string
-    {
-        try {
-            return Str::slug($blizzard->send(new GetItemRequest($item->id))->dto()->name);
-        } catch (ItemNotFoundException) {
-            return "item-{$item->id}";
-        }
-    }
-
-    /** Load the item's priorities, raid, and boss relationships. */
-    private function loadItemWithRelations(Item $item): void
-    {
-        $item->load([
-            'priorities' => fn ($q) => $q->orderByPivot('weight', 'desc'),
-            'raid',
-            'boss',
-        ]);
-    }
-
-    /** Return a paginated, chronological collection of the item's comments with their authors. */
-    private function paginateComments(Item $item): LengthAwarePaginator
-    {
-        return $item->comments()->with('user')->latest()->paginate(10);
     }
 }
