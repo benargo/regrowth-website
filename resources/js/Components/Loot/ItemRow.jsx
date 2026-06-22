@@ -3,7 +3,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import InlinePriorityDisplay from "@/Components/Loot/InlinePriorityDisplay";
 
 export default function ItemRow({ item, weightThreshold }) {
-    const href = route("loot.items.show", { item: item.id, name: item.slug });
+    const href = route("loot.items.show", { item: item.id, slug: item.slug });
     const labelComments = item.comments_count === 1 ? "comment" : "comments";
 
     return (

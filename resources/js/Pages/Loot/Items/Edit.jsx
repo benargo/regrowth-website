@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
     DndContext,
     DragOverlay,
@@ -16,11 +16,14 @@ import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
-import Notes from "@/Components/Loot/Notes";
+import MarkdownEditor from "@/Components/MarkdownEditor";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
+
+const ALLOWED_FORMATS = ["bold", "italic", "underline", "link", "wowheadLink"];
+const VALIDATION_RULES = ["noLineBreaks"];
 
 function DraggablePriorityItem({ priority, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: priority.id });
@@ -419,6 +422,39 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
         })),
     });
 
+    const [notesValidationError, setNotesValidationError] = useState(null);
+    const {
+        data: notesData,
+        setData: setNotesData,
+        post: postNotes,
+        processing: notesProcessing,
+        errors: notesErrors,
+        reset: resetNotes,
+        setDefaults: setNotesDefaults,
+    } = useForm({ notes: item.data.notes || "" });
+
+    useEffect(() => {
+        setNotesDefaults({ notes: item.data.notes || "" });
+        setNotesData("notes", item.data.notes || "");
+    }, [item.data.notes]);
+
+    const handleNotesValidationChange = useCallback((error) => {
+        setNotesValidationError(error);
+    }, []);
+
+    function submitNotes(e) {
+        e.preventDefault();
+        if (notesValidationError) {
+            return;
+        }
+        postNotes(route("loot.items.notes.store", { item: item.data.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setNotesValidationError(null);
+            },
+        });
+    }
+
     const isFirstRender = useRef(true);
     const debounceTimer = useRef(null);
     // Auto-save when priorities change
@@ -464,7 +500,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
-                        href={route("loot.items.show", { item: item.data.id, name: item.data.slug })}
+                        href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}
                         className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
@@ -494,7 +530,47 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
 
                 {/* Notes Section */}
-                <Notes notes={item.data.notes} itemId={item.data.id} canEdit="true" />
+                <form onSubmit={submitNotes} className="mt-8">
+                    <h2 className="mb-2 text-xl font-bold">Officers&rsquo; notes</h2>
+                    <p className="text-md mb-4 text-gray-400">
+                        Notes are unique to each loot item. If you change what another officer has written, it will
+                        overwrite their notes.
+                    </p>
+                    <MarkdownEditor
+                        value={notesData.notes}
+                        onChange={(value) => setNotesData("notes", value)}
+                        allowedFormats={ALLOWED_FORMATS}
+                        validationRules={VALIDATION_RULES}
+                        rows={2}
+                        error={notesErrors.notes}
+                        onValidationChange={handleNotesValidationChange}
+                        className="mb-1"
+                    />
+                    <div className="mb-4 flex flex-col justify-between gap-4 md:flex-row">
+                        <div className="flex items-center justify-between gap-4 md:order-2">
+                            <button
+                                type="submit"
+                                disabled={notesProcessing || notesValidationError}
+                                className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden active:bg-amber-800 ${
+                                    (notesProcessing || notesValidationError) && "opacity-25"
+                                }`}
+                            >
+                                <Icon icon="save" style="solid" className="mr-1" />{" "}
+                                {notesProcessing ? "Saving..." : "Save notes"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => resetNotes("notes")}
+                                disabled={notesProcessing}
+                                className={`hover:bg-brown-700 focus:bg-brown-700 focus:ring-brown-500 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden ${
+                                    notesProcessing && "opacity-25"
+                                }`}
+                            >
+                                <Icon icon="trash" style="solid" className="mr-1" /> Reset notes
+                            </button>
+                        </div>
+                    </div>
+                </form>
 
                 {/* Comments Section */}
                 <CommentsSection comments={comments} itemId={item.data.id} canCreate="true" />

@@ -49,7 +49,7 @@ export default function Comments({ comments }) {
                             {Object.entries(groupedComments).map(([itemId, group]) => (
                                 <section key={itemId}>
                                     <Link
-                                        href={route("loot.items.show", { item: group.item.id, name: group.item.slug })}
+                                        href={route("loot.items.show", { item: group.item.id, slug: group.item.slug })}
                                         className="mb-4 flex items-center gap-3 transition-colors hover:text-amber-300"
                                         data-wowhead={`item=${group.item.id}&domain=tbc`}
                                     >
