@@ -24,6 +24,7 @@ class RaidResource extends JsonResource
             'max_loot_councillors' => $this->max_loot_councillors,
             'phase_number' => $this->whenLoaded('phase', fn () => data_get($this, 'phase.number')),
             'has_trash_items' => $this->whenExistsLoaded('trashItems'),
+            'trash_comments_count' => $this->whenCounted('trash_comments_count'),
             'bosses' => $this->whenLoaded('bosses', fn () => BossResource::collection($this->bosses)),
         ];
     }

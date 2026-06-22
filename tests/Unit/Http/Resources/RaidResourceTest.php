@@ -197,6 +197,28 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_trash_comments_count_when_counted(): void
+    {
+        $raid = Raid::factory()->create();
+        $raid->loadCount(['comments as trash_comments_count' => fn ($q) => $q->whereNull('items.boss_id')]);
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayHasKey('trash_comments_count', $array);
+        $this->assertSame((int) $raid->trash_comments_count, $array['trash_comments_count']);
+    }
+
+    #[Test]
+    public function it_excludes_trash_comments_count_when_not_counted(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('trash_comments_count', $array);
+    }
+
+    #[Test]
     public function it_returns_all_expected_keys(): void
     {
         $raid = Raid::factory()->create();
