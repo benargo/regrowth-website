@@ -218,6 +218,7 @@ class ShowRaidPageTest extends TestCase
         $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
         $priority = LootPriority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 100]);
+        Comment::factory()->count(2)->create(['commentable_id' => (string) $item->id, 'commentable_type' => Item::class]);
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
         $response->assertOk();
@@ -233,14 +234,9 @@ class ShowRaidPageTest extends TestCase
         ]);
 
         $partialResponse->assertOk();
-        $partialResponse->assertJsonStructure([
-            'props' => [
-                'boss_items' => [
-                    (string) $boss->id => ['data'],
-                ],
-            ],
-        ]);
         $partialResponse->assertJsonPath("props.boss_items.{$boss->id}.data.0.id", $item->id);
+        $partialResponse->assertJsonPath("props.boss_items.{$boss->id}.data.0.comments_count", 2);
+        $partialResponse->assertJsonPath("props.boss_items.{$boss->id}.data.0.priorities.0.id", $priority->id);
     }
 
     #[Test]

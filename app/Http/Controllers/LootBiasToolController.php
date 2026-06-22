@@ -14,6 +14,9 @@ use Inertia\Response;
 
 class LootBiasToolController extends Controller
 {
+    /** @var int */
+    private const PRIORITY_WEIGHT_THRESHOLD = 2;
+
     public function index(): Response
     {
         $raids = RaidResource::collection(
@@ -32,17 +35,17 @@ class LootBiasToolController extends Controller
         }
 
         if (Str::slug($raid->name) !== $name) {
-            return redirect()->route('loot.raids.show', ['raid' => $raid->id, 'name' => Str::slug($raid->name)]);
+            return redirect()->route('loot.raids.show', ['raid' => $raid->id, 'name' => Str::slug($raid->name)], 303);
         }
 
         $raid->loadExists('trashItems');
         $raid->loadCount(['comments as trash_comments_count' => fn ($q) => $q->whereNull('items.boss_id')]);
-        $raid->bosses->each(fn (Boss $boss) => $boss->loadCount('comments'));
+        $raid->load(['bosses' => fn ($q) => $q->orderBy('encounter_order')->withCount('comments')]);
 
         return Inertia::render('Loot/Raids/Show', [
             'raid' => new RaidResource($raid),
-            'priority_weight_threshold' => 2,
-            'boss_items' => $raid->bosses->mapWithKeys(function (Boss $boss, int $key) {
+            'priority_weight_threshold' => self::PRIORITY_WEIGHT_THRESHOLD,
+            'boss_items' => $raid->bosses->mapWithKeys(function (Boss $boss) {
                 return [$boss->id => Inertia::optional(function () use ($boss) {
                     return ItemResource::collection(
                         $boss->items()
@@ -53,7 +56,9 @@ class LootBiasToolController extends Controller
                 })];
             })->all(),
             'trash_items' => Inertia::optional(function () use ($raid) {
-                if ($raid->trashItems()->exists()) {
+                $raid->loadExists('trashItems');
+
+                if ($raid->trash_items_exists) {
                     return ItemResource::collection(
                         $raid->trashItems()
                             ->withCount('comments')
