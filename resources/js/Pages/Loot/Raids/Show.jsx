@@ -6,161 +6,45 @@ import SharedHeader from "@/Components/SharedHeader";
 import Icon from "@/Components/FontAwesome/Icon";
 import PageContainer from "@/Components/PageContainer";
 import ToolNav from "@/Components/ToolNav";
+import ItemRow from "@/Components/Loot/ItemRow";
 
-function BossesList({ bosses, loadedBoss, onBossExpand, getItemsForBoss }) {
-    return (
-        <div className="flex flex-col gap-4">
-            {bosses.map((boss) => {
-                const isTrash = boss.id < 0;
-                return (
-                    <Collapsible
-                        key={boss.id}
-                        title={boss.name}
-                        onExpand={() => onBossExpand(boss.id)}
-                        loading={loadedBoss === boss.id}
-                        sessionKey={`loot_bias_expanded_${boss.id}`}
-                        style="amber"
-                        headerRight={
-                            boss.comments_count > 0 && (
-                                <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
-                                    <Icon icon="comments" style="solid" className="h-4 w-4" />
-                                    {boss.comments_count}
-                                </span>
-                            )
-                        }
-                    >
-                        <BossItems items={getItemsForBoss(boss.id)} grouped={!isTrash} />
-                    </Collapsible>
-                );
-            })}
-        </div>
+function prepareItems(rawItems) {
+    const [groupedItems, ungroupedItems] = rawItems.reduce(
+        ([g, u], item) => (item.group ? [[...g, item], u] : [g, [...u, item]]),
+        [[], []],
     );
-}
+    ungroupedItems.sort((a, b) => a.name.localeCompare(b.name));
 
-function PriorityItem({ priority }) {
-    return (
-        <span className="inline-flex items-center gap-1">
-            {priority.media && <img src={priority.media} alt="" className="h-4 w-4" />}
-            <span>{priority.title}</span>
-        </span>
-    );
-}
-
-function PriorityDisplay({ priorities }) {
-    if (!priorities || priorities.length === 0) {
-        return <p className="text-center text-gray-500 italic lg:text-right">MS &gt; OS</p>;
-    }
-
-    // Sort by weight (ascending) and group by weight
-    const sorted = [...priorities].sort((a, b) => a.weight - b.weight);
-    const grouped = sorted.reduce((acc, priority) => {
-        const weight = priority.weight;
-        if (!acc[weight]) {
-            acc[weight] = [];
+    const groups = groupedItems.reduce((acc, item) => {
+        if (!acc[item.group]) {
+            acc[item.group] = [];
         }
-        acc[weight].push(priority);
+        acc[item.group].push(item);
         return acc;
     }, {});
 
-    // Build display: join same-weight with " = ", different weights with " > "
-    const weights = Object.keys(grouped).sort((a, b) => a - b);
+    Object.values(groups).forEach((group) => group.sort((a, b) => a.name.localeCompare(b.name)));
 
-    return (
-        <span className="flex flex-col items-center gap-1 lg:flex-row lg:justify-end">
-            {weights.map((weight, weightIndex) => (
-                <span key={weight} className="flex flex-col items-center gap-1 lg:flex-row">
-                    {weightIndex > 0 && <span className="mx-1 text-xl font-bold text-amber-600">&gt;</span>}
-                    {grouped[weight].map((priority, index) => (
-                        <span key={priority.id} className="flex flex-col items-center gap-1 lg:flex-row">
-                            {index > 0 && <span className="mx-1 text-xl font-bold text-amber-600">=</span>}
-                            <PriorityItem priority={priority} />
-                        </span>
-                    ))}
-                </span>
-            ))}
-        </span>
-    );
+    return { groups, ungroupedItems };
 }
 
-function ItemRow({ item }) {
-    const href = route("loot.items.show", { item: item.id, name: item.slug });
-
-    return (
-        <div
-            onClick={() => router.visit(href)}
-            className="bg-brown-800/50 hover:bg-brown-800/70 flex cursor-pointer flex-wrap items-center gap-4 rounded p-2 transition-colors"
-        >
-            {item.icon && (
-                <a
-                    href={href}
-                    data-wowhead={`item=${item.id}&domain=tbc`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <img src={item.icon} alt={item.name} className="h-8 w-8 rounded" />
-                </a>
-            )}
-            <div className="w-48 flex-initial text-left lg:flex-1">
-                <h4 className="text-md mb-1 font-bold">{item.name}</h4>
-                <div className="flex flex-col items-start gap-1 lg:flex-row lg:items-center lg:gap-2">
-                    <p className="text-sm text-gray-400">Item ID: {item.id}</p>
-                    {item.commentsCount > 0 && (
-                        <p className="inline-flex items-center gap-1 text-xs">
-                            <Icon icon="comments" style="solid" className="h-3 w-3" />
-                            {item.commentsCount} comment{item.commentsCount > 1 ? "s" : ""}
-                        </p>
-                    )}
-                    {item.hasNotes && (
-                        <p className="inline-flex items-center gap-1 text-xs">
-                            <Icon icon="sticky-note" style="solid" className="h-3 w-3" />
-                            Notes
-                        </p>
-                    )}
-                </div>
-            </div>
-            <div className="mx-auto flex-auto lg:mr-0 lg:mb-0">
-                <PriorityDisplay priorities={item.priorities} />
-            </div>
-        </div>
-    );
-}
-
-function BossItems({ items, grouped = true }) {
-    if (!items || items.length === 0) {
+function BossItems({ prepared, weightThreshold }) {
+    if (!prepared) {
         return <p className="text-gray-500 italic">No items configured for this boss.</p>;
     }
 
-    if (!grouped) {
+    const { groups, ungroupedItems } = prepared;
+    const groupNames = Object.keys(groups);
+
+    if (groupNames.length === 0) {
         return (
             <div className="space-y-2">
-                {items.map((item) => (
-                    <ItemRow key={item.id} item={item} />
+                {ungroupedItems.map((item) => (
+                    <ItemRow key={item.id} item={item} weightThreshold={weightThreshold} />
                 ))}
             </div>
         );
     }
-
-    // Separate grouped and ungrouped items
-    const groupedItems = items.filter((item) => item.group);
-    const ungroupedItems = items.filter((item) => !item.group).sort((a, b) => a.name.localeCompare(b.name));
-
-    // Group items by their group name and sort within each group
-    const groups = groupedItems.reduce((acc, item) => {
-        const groupName = item.group;
-        if (!acc[groupName]) {
-            acc[groupName] = [];
-        }
-        acc[groupName].push(item);
-        return acc;
-    }, {});
-
-    // Sort items within each group by name
-    Object.keys(groups).forEach((groupName) => {
-        groups[groupName].sort((a, b) => a.name.localeCompare(b.name));
-    });
-
-    const groupNames = Object.keys(groups);
 
     return (
         <div className="space-y-4">
@@ -168,14 +52,14 @@ function BossItems({ items, grouped = true }) {
                 <div key={groupName} className="mb-8 space-y-2">
                     <h4 className="text-sm font-semibold text-amber-500">{groupName}</h4>
                     {groups[groupName].map((item) => (
-                        <ItemRow key={item.id} item={item} />
+                        <ItemRow key={item.id} item={item} weightThreshold={weightThreshold} />
                     ))}
                 </div>
             ))}
             {ungroupedItems.length > 0 && (
                 <div className="space-y-2">
                     {ungroupedItems.map((item) => (
-                        <ItemRow key={item.id} item={item} />
+                        <ItemRow key={item.id} item={item} weightThreshold={weightThreshold} />
                     ))}
                 </div>
             )}
@@ -183,15 +67,24 @@ function BossItems({ items, grouped = true }) {
     );
 }
 
-export default function Index({ raid, boss_items }) {
-    const bosses = [...(raid.data.bosses ?? [])].sort((a, b) => (a.encounter_order ?? 999) - (b.encounter_order ?? 999));
+export default function Index({ raid, boss_items, trash_items, priority_weight_threshold }) {
+    const bosses = [...(raid.data.bosses ?? [])].sort(
+        (a, b) => (a.encounter_order ?? 999) - (b.encounter_order ?? 999),
+    );
     const [loadedItems, setLoadedItems] = useState(() => {
-        if (boss_items?.data?.bossId != null) {
-            return { [boss_items.data.bossId]: boss_items.data.items ?? [] };
+        const initial = {};
+        if (boss_items) {
+            Object.entries(boss_items).forEach(([bossId, collection]) => {
+                if (collection?.data) {
+                    initial[bossId] = prepareItems(collection.data);
+                }
+            });
         }
-        return {};
+        return initial;
     });
     const [loadedBoss, setloadedBoss] = useState(null);
+    const [trashItems, setTrashItems] = useState(trash_items?.data ? prepareItems(trash_items.data) : null);
+    const [loadingTrash, setLoadingTrash] = useState(false);
 
     // Refs to access current values inside callbacks and effects without stale closures
     const loadedItemsRef = useRef(loadedItems);
@@ -200,7 +93,7 @@ export default function Index({ raid, boss_items }) {
     loadedBossRef.current = loadedBoss;
 
     // Queue of boss IDs waiting to have their items fetched
-    const loadQueueRef = useRef([]);
+    const loadQueueRef = useRef(new Set());
 
     // Stable ref to the fetch function so it can be called from the queue effect
     const doLoadBossRef = useRef(null);
@@ -208,19 +101,12 @@ export default function Index({ raid, boss_items }) {
         loadedBossRef.current = bossId;
         setloadedBoss(bossId);
         router.reload({
-            only: ["boss_items"],
-            data: { boss_id: bossId },
+            only: [`boss_items.${bossId}`],
             preserveState: true,
             preserveScroll: true,
             onSuccess: (page) => {
-                const bossItems = page.props.boss_items;
-                if (bossItems?.data?.bossId != null) {
-                    // BossItemsResource shape: { data: { bossId, items: [...] } }
-                    setLoadedItems((prev) => ({
-                        ...prev,
-                        [bossItems.data.bossId]: bossItems.data.items ?? [],
-                    }));
-                }
+                const items = page.props.boss_items?.[bossId]?.data ?? [];
+                setLoadedItems((prev) => ({ ...prev, [bossId]: prepareItems(items) }));
                 loadedBossRef.current = null;
                 setloadedBoss(null);
             },
@@ -236,8 +122,9 @@ export default function Index({ raid, boss_items }) {
         if (loadedBoss !== null) {
             return;
         }
-        while (loadQueueRef.current.length > 0) {
-            const nextBossId = loadQueueRef.current.shift();
+        while (loadQueueRef.current.size > 0) {
+            const [nextBossId] = loadQueueRef.current;
+            loadQueueRef.current.delete(nextBossId);
             if (!loadedItemsRef.current[nextBossId]) {
                 doLoadBossRef.current(nextBossId);
                 break;
@@ -251,22 +138,37 @@ export default function Index({ raid, boss_items }) {
         }
 
         if (loadedBossRef.current !== null) {
-            if (!loadQueueRef.current.includes(bossId)) {
-                loadQueueRef.current.push(bossId);
-            }
+            loadQueueRef.current.add(bossId);
             return;
         }
 
         doLoadBossRef.current(bossId);
     };
 
+    const handleTrashExpand = () => {
+        if (trashItems !== null || loadingTrash) {
+            return;
+        }
+        setLoadingTrash(true);
+        router.reload({
+            only: ["trash_items"],
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: (page) => {
+                setTrashItems(prepareItems(page.props.trash_items?.data ?? []));
+                setLoadingTrash(false);
+            },
+            onError: () => setLoadingTrash(false),
+        });
+    };
+
     const getItemsForBoss = (bossId) => {
-        return loadedItems[bossId] ?? [];
+        return loadedItems[bossId] ?? null;
     };
 
     return (
-        <Master title="Loot Bias">
-            <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
+        <Master title={`Loot Bias - ${raid.data.name}`}>
+            <SharedHeader backgroundClass={raid.data.background ?? "bg-ssctk"} title="Loot Bias" subtitle={raid.data.name} />
             <ToolNav>
                 <Link
                     href={route("loot.index")}
@@ -278,12 +180,49 @@ export default function Index({ raid, boss_items }) {
             </ToolNav>
             {/* Content */}
             <PageContainer>
-                <BossesList
-                    bosses={bosses}
-                    loadedBoss={loadedBoss}
-                    onBossExpand={handleBossExpand}
-                    getItemsForBoss={getItemsForBoss}
-                />
+                <div className="flex flex-col gap-4">
+                    {bosses.map((boss) => (
+                        <Collapsible
+                            key={boss.id}
+                            title={boss.name}
+                            onExpand={() => handleBossExpand(boss.id)}
+                            loading={loadedBoss === boss.id}
+                            sessionKey={`loot_bias_expanded_${boss.id}`}
+                            style="amber"
+                            headerRight={
+                                boss.comments_count > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
+                                        <Icon icon="comments" style="solid" className="h-4 w-4" />
+                                        {boss.comments_count}
+                                    </span>
+                                )
+                            }
+                        >
+                            <BossItems prepared={getItemsForBoss(boss.id)} weightThreshold={priority_weight_threshold} />
+                        </Collapsible>
+                    ))}
+                </div>
+                {raid.data.has_trash_items && (
+                    <div className="mt-6">
+                        <Collapsible
+                            title="Trash"
+                            onExpand={handleTrashExpand}
+                            loading={loadingTrash}
+                            sessionKey={`loot_bias_expanded_trash_${raid.data.id}`}
+                            style="amber"
+                            headerRight={
+                                raid.data.trash_comments_count > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-600">
+                                        <Icon icon="comments" style="solid" className="h-4 w-4" />
+                                        {raid.data.trash_comments_count}
+                                    </span>
+                                )
+                            }
+                        >
+                            <BossItems prepared={trashItems} weightThreshold={priority_weight_threshold} />
+                        </Collapsible>
+                    </div>
+                )}
             </PageContainer>
         </Master>
     );
