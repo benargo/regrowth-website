@@ -109,13 +109,61 @@ class ShowRaidPageTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Raids/Show')
+            ->missing('bosses')
             ->missing('selected_phase_id')
             ->missing('selected_raid_id')
         );
     }
 
     #[Test]
-    public function loot_raid_defers_bosses(): void
+    public function loot_raid_includes_raid_prop(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Raids/Show')
+            ->has('raid.data', fn (Assert $raidProp) => $raidProp
+                ->where('id', $raid->id)
+                ->where('name', $raid->name)
+                ->where('slug', $raid->slug)
+                ->etc()
+            )
+        );
+    }
+
+    #[Test]
+    public function loot_raid_includes_bosses_with_comments_count_in_raid_prop(): void
+    {
+        $user = User::factory()->member()->create();
+        $phase = Phase::factory()->started()->create();
+        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        Comment::factory()->count(3)->create(['commentable_id' => (string) $item->id, 'commentable_type' => Item::class]);
+
+        $response = $this->actingAs($user)->get($this->raidUrl($raid));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Raids/Show')
+            ->has('raid.data.bosses.0', fn (Assert $bossProp) => $bossProp
+                ->where('id', $boss->id)
+                ->where('name', $boss->name)
+                ->where('slug', $boss->slug)
+                ->where('encounter_order', $boss->encounter_order)
+                ->where('comments_count', 3)
+                ->etc()
+            )
+        );
+    }
+
+    #[Test]
+    public function loot_raid_includes_bosses_in_raid_prop(): void
     {
         $user = User::factory()->member()->create();
         $raid = Raid::factory()->create();
@@ -127,33 +175,7 @@ class ShowRaidPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Raids/Show')
             ->missing('bosses')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('bosses')
-            )
-        );
-    }
-
-    #[Test]
-    public function loot_raid_bosses_are_ordered_by_encounter_order(): void
-    {
-        $user = User::factory()->member()->create();
-        $raid = Raid::factory()->create();
-
-        Boss::factory()->create(['raid_id' => $raid->id, 'encounter_order' => 3, 'name' => 'Third Boss']);
-        Boss::factory()->create(['raid_id' => $raid->id, 'encounter_order' => 1, 'name' => 'First Boss']);
-        Boss::factory()->create(['raid_id' => $raid->id, 'encounter_order' => 2, 'name' => 'Second Boss']);
-
-        $response = $this->actingAs($user)->get($this->raidUrl($raid));
-
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->missing('bosses')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('bosses', 3)
-                ->where('bosses.0.name', 'First Boss')
-                ->where('bosses.1.name', 'Second Boss')
-                ->where('bosses.2.name', 'Third Boss')
-            )
+            ->has('raid.data.bosses')
         );
     }
 
@@ -166,12 +188,24 @@ class ShowRaidPageTest extends TestCase
         Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
+        $pageData = $response->viewData('page');
 
+        // boss_items is present as a keyed object; each boss key is null until a partial reload fetches it
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Raids/Show')
-            ->missing('boss_items')
+            ->has('boss_items')
         );
+
+        // Verify via a partial request that the key resolves to null when not specifically requested
+        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid), [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $pageData['version'],
+            'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
+            'X-Inertia-Partial-Data' => 'raid',
+        ]);
+        $partialResponse->assertOk();
+        $partialResponse->assertJsonMissingPath('props.boss_items');
     }
 
     #[Test]
@@ -189,32 +223,28 @@ class ShowRaidPageTest extends TestCase
         $response->assertOk();
 
         $pageData = $response->viewData('page');
-        $this->assertArrayNotHasKey('boss_items', $pageData['props']);
+        $this->assertNull($pageData['props']['boss_items'][(string) $boss->id] ?? null);
 
-        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid)."?boss_id={$boss->id}", [
+        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid), [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
             'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
-            'X-Inertia-Partial-Data' => 'boss_items',
+            'X-Inertia-Partial-Data' => "boss_items.{$boss->id}",
         ]);
 
         $partialResponse->assertOk();
         $partialResponse->assertJsonStructure([
             'props' => [
                 'boss_items' => [
-                    'data' => [
-                        'bossId',
-                        'items',
-                        'commentsCount',
-                    ],
+                    (string) $boss->id => ['data'],
                 ],
             ],
         ]);
-        $partialResponse->assertJsonPath('props.boss_items.data.bossId', $boss->id);
+        $partialResponse->assertJsonPath("props.boss_items.{$boss->id}.data.0.id", $item->id);
     }
 
     #[Test]
-    public function it_includes_trash_boss_when_items_have_no_boss(): void
+    public function it_flags_has_trash_items_when_items_have_no_boss(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -227,17 +257,12 @@ class ShowRaidPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('bosses')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('bosses', 2)
-                ->where('bosses.1.name', 'Trash drops')
-                ->where('bosses.1.id', -1 * $raid->id)
-            )
+            ->where('raid.data.has_trash_items', true)
         );
     }
 
     #[Test]
-    public function it_does_not_include_trash_boss_when_no_items_without_boss(): void
+    public function it_does_not_flag_has_trash_items_when_no_items_without_boss(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -250,20 +275,17 @@ class ShowRaidPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('bosses')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('bosses', 1)
-            )
+            ->where('raid.data.has_trash_items', false)
         );
     }
 
     #[Test]
-    public function it_returns_empty_resource_for_null_boss_id(): void
+    public function boss_items_returns_empty_collection_when_boss_has_no_items(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        Boss::factory()->create(['raid_id' => $raid->id]);
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
         $pageData = $response->viewData('page');
@@ -272,40 +294,44 @@ class ShowRaidPageTest extends TestCase
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
             'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
-            'X-Inertia-Partial-Data' => 'boss_items',
+            'X-Inertia-Partial-Data' => "boss_items.{$boss->id}",
         ]);
 
         $partialResponse->assertOk();
-        $partialResponse->assertJsonPath('props.boss_items.data.bossId', null);
+        $partialResponse->assertJsonPath("props.boss_items.{$boss->id}.data", []);
     }
 
     #[Test]
-    public function it_returns_trash_items_for_negative_boss_id(): void
+    public function trash_items_are_loaded_via_partial_reload(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         Boss::factory()->create(['raid_id' => $raid->id]);
 
-        Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
         $pageData = $response->viewData('page');
 
-        $negativeBossId = -1 * $raid->id;
-        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid)."?boss_id={$negativeBossId}", [
+        $partialResponse = $this->actingAs($user)->get($this->raidUrl($raid), [
             'X-Inertia' => 'true',
             'X-Inertia-Version' => $pageData['version'],
             'X-Inertia-Partial-Component' => 'Loot/Raids/Show',
-            'X-Inertia-Partial-Data' => 'boss_items',
+            'X-Inertia-Partial-Data' => 'trash_items',
         ]);
 
         $partialResponse->assertOk();
-        $partialResponse->assertJsonPath('props.boss_items.data.bossId', $negativeBossId);
+        $partialResponse->assertJsonStructure([
+            'props' => [
+                'trash_items' => ['data'],
+            ],
+        ]);
+        $partialResponse->assertJsonPath('props.trash_items.data.0.id', $item->id);
     }
 
     #[Test]
-    public function trash_boss_includes_comment_count(): void
+    public function trash_comments_count_is_included_in_raid_prop(): void
     {
         $user = User::factory()->member()->create();
         $phase = Phase::factory()->started()->create();
@@ -321,10 +347,7 @@ class ShowRaidPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->missing('bosses')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('bosses.0.comments_count', 3)
-            )
+            ->where('raid.data.trash_comments_count', 3)
         );
     }
 
