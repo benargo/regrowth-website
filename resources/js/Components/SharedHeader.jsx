@@ -1,14 +1,12 @@
-export default function SharedHeader({ title, subtitle, backgroundClass = 'bg-masthead' }) {
+export default function SharedHeader({ title, subtitle, backgroundClass = "bg-masthead" }) {
     return (
-        <header className={`${backgroundClass} h-64 md:h-96 text-white`}>
-            <div className="w-full h-full px-4 bg-black/50 py-8 flex items-center">
-                <div className="container mx-auto text-center">
-                    <h1 className="text-4xl font-bold">
+        <header className={`${backgroundClass} h-64 text-white md:h-96`}>
+            <div className="flex h-full w-full items-center bg-black/50 px-4 py-8">
+                <div className="container mx-auto">
+                    <h1 className="text-center text-4xl font-bold">
                         {title}
+                        {subtitle && <span className="mt-2 block text-xl text-gray-300">{subtitle}</span>}
                     </h1>
-                    {subtitle && (
-                        <p className="mt-2 text-xl text-gray-300">{subtitle}</p>
-                    )}
                 </div>
             </div>
         </header>

@@ -68,9 +68,7 @@ function BossItems({ prepared, weightThreshold }) {
 }
 
 export default function Index({ raid, boss_items, trash_items, priority_weight_threshold }) {
-    const bosses = [...(raid.data.bosses ?? [])].sort(
-        (a, b) => (a.encounter_order ?? 999) - (b.encounter_order ?? 999),
-    );
+    const bosses = raid.data.bosses ?? [];
     const [loadedItems, setLoadedItems] = useState(() => {
         const initial = {};
         if (boss_items) {
@@ -83,7 +81,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
         return initial;
     });
     const [loadedBoss, setloadedBoss] = useState(null);
-    const [trashItems, setTrashItems] = useState(trash_items?.data ? prepareItems(trash_items.data) : null);
+    const [trashItems, setTrashItems] = useState(() => (trash_items?.data ? prepareItems(trash_items.data) : null));
     const [loadingTrash, setLoadingTrash] = useState(false);
 
     // Refs to access current values inside callbacks and effects without stale closures
