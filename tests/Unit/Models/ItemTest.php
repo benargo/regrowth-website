@@ -4,6 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
+use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootPriority;
@@ -327,6 +328,78 @@ class ItemTest extends ModelTestCase
         $item = $this->factory()->withQuality(ItemQuality::RARE)->create();
 
         $this->assertSame(ItemQuality::RARE, $item->quality);
+    }
+
+    #[Test]
+    public function fill_blizzard_data_sets_name_and_blizzard_attributes(): void
+    {
+        $item = $this->create(['name' => null]);
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $item->fillBlizzardData($data);
+
+        $this->assertSame('Thunderfury, Blessed Blade of the Windseeker', $item->name);
+        $this->assertSame('Weapon', $item->itemClass['name']);
+        $this->assertSame('One-Handed Sword', $item->itemSubclass['name']);
+        $this->assertSame('One-Hand', $item->inventoryType['name']);
+    }
+
+    #[Test]
+    public function fill_blizzard_data_returns_the_same_model_instance(): void
+    {
+        $item = $this->create();
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $result = $item->fillBlizzardData($data);
+
+        $this->assertSame($item, $result);
+    }
+
+    #[Test]
+    public function fill_blizzard_data_does_not_persist_to_database(): void
+    {
+        $item = $this->create(['name' => null]);
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $item->fillBlizzardData($data);
+
+        $this->assertNull($item->fresh()->name);
     }
 
     #[Test]

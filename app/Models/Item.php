@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
 use App\Events\ItemSaved;
+use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use Database\Factories\ItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -63,6 +64,18 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
                 return $this->name ? "{$base}/{$this->slug}" : $base;
             },
         );
+    }
+
+    // ============ Blizzard data ============
+
+    public function fillBlizzardData(ItemData $data): static
+    {
+        return $this->forceFill([
+            'name' => $data->name,
+            'inventoryType' => ['name' => $data->inventoryType->name],
+            'itemClass' => ['name' => $data->itemClass->name],
+            'itemSubclass' => ['name' => $data->itemSubclass->name],
+        ]);
     }
 
     // ============ Media ============
