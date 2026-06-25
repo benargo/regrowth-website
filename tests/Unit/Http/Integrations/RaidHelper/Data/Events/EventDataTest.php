@@ -250,10 +250,10 @@ class EventDataTest extends TestCase
         $this->assertArrayHasKey('endTime', $rules);
         $this->assertArrayHasKey('closingTime', $rules);
 
-        $this->assertContains('before:endTime', $rules['startTime']);
+        $this->assertContains('before_or_equal:endTime', $rules['startTime']);
         $this->assertContains('after_or_equal:closingTime', $rules['startTime']);
-        $this->assertContains('after:startTime', $rules['endTime']);
-        $this->assertContains('after:closingTime', $rules['endTime']);
+        $this->assertContains('after_or_equal:startTime', $rules['endTime']);
+        $this->assertContains('after_or_equal:closingTime', $rules['endTime']);
         $this->assertContains('before_or_equal:startTime', $rules['closingTime']);
     }
 

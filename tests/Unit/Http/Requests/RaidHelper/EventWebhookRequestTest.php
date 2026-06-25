@@ -138,6 +138,32 @@ class EventWebhookRequestTest extends TestCase
         $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
     }
 
+    #[Test]
+    public function it_passes_validation_when_start_and_end_time_are_equal(): void
+    {
+        $body = $this->eventBody;
+        $body['startTime'] = 1782496800;
+        $body['endTime'] = 1782496800;
+        $body['closingTime'] = null;
+
+        $validator = $this->validate($body);
+
+        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
+    }
+
+    #[Test]
+    public function it_fails_validation_when_start_time_is_after_end_time(): void
+    {
+        $body = $this->eventBody;
+        $body['startTime'] = 1700007200;
+        $body['endTime'] = 1700000000;
+
+        $validator = $this->validate($body);
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('startTime', $validator->errors()->toArray());
+    }
+
     private function makeRequest(): EventWebhookRequest
     {
         return EventWebhookRequest::create('/', 'POST');
