@@ -2,7 +2,7 @@ import { Link } from "@inertiajs/react";
 
 export default function ItemDetailsCard({ item }) {
     return (
-        <div className="flex flex-col items-start gap-2 md:gap-6 lg:flex-row">
+        <div className="flex flex-col items-start gap-2 md:flex-row md:gap-6">
             <div className="h-12 w-12 flex-none md:h-24 md:w-24">
                 <a
                     href={item.wowhead?.url}
@@ -13,7 +13,7 @@ export default function ItemDetailsCard({ item }) {
                     <img src={item.icon} alt={item.name} className="box-shadow h-12 w-12 rounded-lg md:h-24 md:w-24" />
                 </a>
             </div>
-            <div className="flex w-full flex-initial flex-col">
+            <div className="flex-1">
                 <h2 className={`text-2xl font-bold text-quality-${item.quality?.name?.toLowerCase() || "common"} mb-2`}>
                     {item.name}
                 </h2>
@@ -47,24 +47,24 @@ export default function ItemDetailsCard({ item }) {
                             </p>
                         )}
                     </div>
-                    {/* Wowhead Link */}
-                    <div className="mt-3 flex-auto md:mt-0 md:text-right">
-                        <a
-                            href={item.wowhead?.url}
-                            data-wowhead={`item=${item.id}&domain=tbc`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-wowhead inline-block rounded-md px-4 py-2 font-medium text-white transition-opacity hover:opacity-90"
-                        >
-                            <img
-                                src="/images/logo_wowhead_white.webp"
-                                alt="Wowhead Logo"
-                                className="-mt-1 mr-2 inline-block h-5 w-5"
-                            />
-                            View on Wowhead
-                        </a>
-                    </div>
                 </div>
+            </div>
+            {/* Wowhead Link */}
+            <div className="flex-initial">
+                <a
+                    href={item.wowhead?.url}
+                    data-wowhead={`item=${item.id}&domain=tbc`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-wowhead inline-block rounded-md px-4 py-2 font-medium text-white transition-opacity hover:opacity-90"
+                >
+                    <img
+                        src="/images/logo_wowhead_white.webp"
+                        alt="Wowhead Logo"
+                        className="-mt-1 mr-2 inline-block h-5 w-5"
+                    />
+                    View on Wowhead
+                </a>
             </div>
         </div>
     );
