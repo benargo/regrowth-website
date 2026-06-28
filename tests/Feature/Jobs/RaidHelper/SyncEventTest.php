@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\RaidHelper;
 
+use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Jobs\RaidHelper\FetchComposition;
@@ -150,7 +151,7 @@ class SyncEventTest extends TestCase
         $event->characters()->attach($slotted->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
 
@@ -182,7 +183,7 @@ class SyncEventTest extends TestCase
         $event->characters()->attach($removed->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 
@@ -204,7 +205,7 @@ class SyncEventTest extends TestCase
         $event->characters()->attach($slotted->id, [
             'slot_number' => 2,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
 

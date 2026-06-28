@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\RaidHelper;
 
+use App\Enums\SignupStatus;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 class UpdateCompositionRequest extends RaidHelperWebhookRequest
 {
@@ -52,7 +54,7 @@ class UpdateCompositionRequest extends RaidHelperWebhookRequest
             'slots.*.classEmoteId' => ['required', 'string'],
             'slots.*.specName' => ['required', 'string'],
             'slots.*.specEmoteId' => ['required', 'string'],
-            'slots.*.isConfirmed' => ['required', 'string', 'in:confirmed,unconfirmed'],
+            'slots.*.isConfirmed' => ['required', 'string', Rule::enum(SignupStatus::class)],
             'slots.*.color' => ['required', 'string'],
         ];
     }

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\RaidBackground;
+use App\Enums\SignupStatus;
 use App\Models\Character;
 use App\Models\Event;
 use Carbon\Carbon;
@@ -76,7 +77,7 @@ class EventFactory extends Factory
 
             $event->characters()->attach($character->id, [
                 'is_leader' => true,
-                'is_confirmed' => true,
+                'signup_status' => SignupStatus::Confirmed->value,
             ]);
         });
     }
@@ -91,7 +92,7 @@ class EventFactory extends Factory
 
             $event->characters()->attach($character->id, [
                 'is_loot_councillor' => true,
-                'is_confirmed' => true,
+                'signup_status' => SignupStatus::Confirmed->value,
             ]);
         });
     }

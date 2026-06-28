@@ -89,7 +89,7 @@ class EventResource extends JsonResource
                         'position' => $character->rank?->position,
                     ],
                     'slot_number' => $character->pivot->slot_number,
-                    'is_confirmed' => $character->pivot->is_confirmed,
+                    'signup_status' => $character->pivot->signup_status,
                     'is_leader' => $character->pivot->is_leader,
                     'is_loot_councillor' => $character->pivot->is_loot_councillor,
                     'is_loot_master' => $character->pivot->is_loot_master,

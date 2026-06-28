@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\RaidHelper\Data\Compositions;
 
+use App\Enums\SignupStatus;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionDividerData;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionGroupData;
@@ -46,7 +47,7 @@ class CompositionDataTest extends TestCase
         $this->assertCount(1, $dto->slots);
         $this->assertInstanceOf(CompositionSlotData::class, $dto->slots[0]);
         $this->assertSame('slot-abc-123', $dto->slots[0]->id);
-        $this->assertTrue($dto->slots[0]->isConfirmed);
+        $this->assertSame(SignupStatus::Confirmed, $dto->slots[0]->isConfirmed);
     }
 
     #[Test]

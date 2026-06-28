@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\DiscordRole;
@@ -157,7 +158,7 @@ class ShowEventTest extends TestCase
         $event->characters()->attach($character->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
         ]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
@@ -182,13 +183,13 @@ class ShowEventTest extends TestCase
         $event->characters()->attach($inComp->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
         $event->characters()->attach($benched->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 
@@ -228,13 +229,13 @@ class ShowEventTest extends TestCase
         $event->characters()->attach($inComp->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
         $event->characters()->attach($benched->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 

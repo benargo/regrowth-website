@@ -2,7 +2,7 @@
 
 namespace App\Http\Integrations\RaidHelper\Data\Compositions;
 
-use App\Casts\IsConfirmed;
+use App\Enums\SignupStatus;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Attributes\WithCast;
@@ -44,12 +44,11 @@ class CompositionSlotData extends Data
         #[StringType]
         public readonly string $specEmoteId,
 
-        /** @var bool Whether the sign-up in this slot has been confirmed */
-        #[WithCast(IsConfirmed::class)]
-        public readonly bool $isConfirmed,
-
         /** @var string The color associated with this slot */
         #[StringType]
         public readonly string $color,
+
+        /** @var SignupStatus The sign-up status for this slot */
+        public readonly SignupStatus $isConfirmed = SignupStatus::DEFAULT,
     ) {}
 }

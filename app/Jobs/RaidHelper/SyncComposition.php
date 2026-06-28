@@ -65,7 +65,7 @@ class SyncComposition implements ShouldQueue
             $slottedSync[$character->id] = [
                 'slot_number' => $slot->slotNumber,
                 'group_number' => $slot->groupNumber,
-                'is_confirmed' => $slot->isConfirmed,
+                'signup_status' => $slot->isConfirmed,
                 'is_benched' => false,
             ];
         }

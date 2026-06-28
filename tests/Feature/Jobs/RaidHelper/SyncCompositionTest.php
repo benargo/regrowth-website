@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\RaidHelper;
 
+use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionSlotData;
@@ -53,7 +54,7 @@ class SyncCompositionTest extends TestCase
                 classEmoteId: '123',
                 specName: 'Arms',
                 specEmoteId: '456',
-                isConfirmed: true,
+                isConfirmed: SignupStatus::Confirmed,
                 color: '0,0,0',
             ),
         ]);
@@ -65,8 +66,37 @@ class SyncCompositionTest extends TestCase
         $this->assertNotNull($pivot);
         $this->assertEquals(3, $pivot->slot_number);
         $this->assertEquals(1, $pivot->group_number);
-        $this->assertTrue((bool) $pivot->is_confirmed);
+        $this->assertSame(SignupStatus::Confirmed, $pivot->signup_status);
         $this->assertFalse((bool) $pivot->is_benched);
+    }
+
+    #[Test]
+    public function it_syncs_a_cancelled_slot(): void
+    {
+        $event = Event::factory()->create(['raid_helper_event_id' => '111222333444555001']);
+        $character = Character::factory()->create(['name' => 'Arthas']);
+
+        $data = $this->minimalCompositionData([
+            new CompositionSlotData(
+                id: 'slot-1',
+                name: 'Arthas',
+                groupNumber: 1,
+                slotNumber: 3,
+                className: 'Warrior',
+                classEmoteId: '123',
+                specName: 'Arms',
+                specEmoteId: '456',
+                isConfirmed: SignupStatus::Cancelled,
+                color: '0,0,0',
+            ),
+        ]);
+
+        SyncComposition::dispatchSync('111222333444555001', $data);
+
+        $pivot = $event->characters()->where('character_id', $character->id)->first()?->pivot;
+
+        $this->assertNotNull($pivot);
+        $this->assertSame(SignupStatus::Cancelled, $pivot->signup_status);
     }
 
     #[Test]
@@ -78,7 +108,7 @@ class SyncCompositionTest extends TestCase
         $event->characters()->attach($benched->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 
@@ -101,7 +131,7 @@ class SyncCompositionTest extends TestCase
         $event->characters()->attach($slotted->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
 

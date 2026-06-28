@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Integrations\RaidHelper;
 
+use App\Enums\SignupStatus;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionData;
 use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use App\Http\Integrations\RaidHelper\Requests\GetCompositionRequest;
@@ -27,7 +28,7 @@ class GetCompositionRequestTest extends TestCase
         $this->assertInstanceOf(CompositionData::class, $dto);
         $this->assertCount(1, $dto->slots);
         $this->assertSame('Arthas', $dto->slots[0]->name);
-        $this->assertTrue($dto->slots[0]->isConfirmed);
+        $this->assertSame(SignupStatus::Confirmed, $dto->slots[0]->isConfirmed);
     }
 
     #[Group('error-handling')]

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs\RaidHelper;
 
+use App\Enums\SignupStatus;
 use App\Jobs\RaidHelper\DeleteEvent;
 use App\Models\Character;
 use App\Models\Event;
@@ -45,7 +46,7 @@ class DeleteEventTest extends TestCase
         $event->characters()->attach($character->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 

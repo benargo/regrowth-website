@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Enums\RaidBackground;
+use App\Enums\SignupStatus;
 use App\Http\Resources\EventResource;
 use App\Models\Boss;
 use App\Models\Character;
@@ -313,7 +314,7 @@ class EventResourceTest extends TestCase
         $event->characters()->attach($character->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_leader' => false,
             'is_loot_councillor' => false,
             'is_loot_master' => false,
@@ -336,7 +337,8 @@ class EventResourceTest extends TestCase
         $this->assertArrayNotHasKey('id', $char['rank']);
         $this->assertArrayNotHasKey('count_attendance', $char['rank']);
         $this->assertSame(1, $char['slot_number']);
-        $this->assertTrue($char['is_confirmed']);
+        $this->assertSame(SignupStatus::Confirmed, $char['signup_status']);
+        $this->assertArrayNotHasKey('is_confirmed', $char);
         $this->assertArrayHasKey('is_leader', $char);
         $this->assertArrayHasKey('is_loot_councillor', $char);
         $this->assertArrayHasKey('is_loot_master', $char);
@@ -378,13 +380,13 @@ class EventResourceTest extends TestCase
         $event->characters()->attach($inComp->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
         $event->characters()->attach($benchedChar->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 
@@ -405,7 +407,7 @@ class EventResourceTest extends TestCase
         $event->characters()->attach($benchedChar->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 

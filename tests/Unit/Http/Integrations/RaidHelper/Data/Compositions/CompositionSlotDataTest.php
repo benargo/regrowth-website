@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\RaidHelper\Data\Compositions;
 
+use App\Enums\SignupStatus;
 use App\Http\Integrations\RaidHelper\Data\Compositions\CompositionSlotData;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,7 +24,7 @@ class CompositionSlotDataTest extends TestCase
         $this->assertSame('1234567890', $dto->classEmoteId);
         $this->assertSame('Protection', $dto->specName);
         $this->assertSame('9876543210', $dto->specEmoteId);
-        $this->assertTrue($dto->isConfirmed);
+        $this->assertSame(SignupStatus::Confirmed, $dto->isConfirmed);
         $this->assertSame('#c69b3a', $dto->color);
     }
 
@@ -31,11 +32,33 @@ class CompositionSlotDataTest extends TestCase
     public function it_casts_unconfirmed_slot(): void
     {
         $data = $this->sampleApiResponse();
-        $data['isConfirmed'] = 'denied';
+        $data['isConfirmed'] = 'unconfirmed';
 
         $dto = CompositionSlotData::from($data);
 
-        $this->assertFalse($dto->isConfirmed);
+        $this->assertSame(SignupStatus::Unconfirmed, $dto->isConfirmed);
+    }
+
+    #[Test]
+    public function it_casts_cancelled_slot(): void
+    {
+        $data = $this->sampleApiResponse();
+        $data['isConfirmed'] = 'cancelled';
+
+        $dto = CompositionSlotData::from($data);
+
+        $this->assertSame(SignupStatus::Cancelled, $dto->isConfirmed);
+    }
+
+    #[Test]
+    public function it_defaults_signup_status_to_unconfirmed_when_is_confirmed_is_absent(): void
+    {
+        $data = $this->sampleApiResponse();
+        unset($data['isConfirmed']);
+
+        $dto = CompositionSlotData::from($data);
+
+        $this->assertSame(SignupStatus::Unconfirmed, $dto->isConfirmed);
     }
 
     /**

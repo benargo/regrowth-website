@@ -102,11 +102,11 @@ class UpdateCompositionRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_passes_validation_when_slot_is_confirmed_is_a_string(): void
+    public function it_passes_validation_when_slot_is_confirmed_is_a_valid_signup_status(): void
     {
         Event::factory()->create(['raid_helper_event_id' => 'comp-111']);
 
-        foreach (['confirmed', 'unconfirmed'] as $value) {
+        foreach (['confirmed', 'unconfirmed', 'cancelled'] as $value) {
             $body = $this->minimalCompBody();
             $body['slots'] = [$this->minimalSlot(['isConfirmed' => $value])];
 
@@ -114,6 +114,20 @@ class UpdateCompositionRequestTest extends TestCase
 
             $this->assertTrue($validator->passes(), "Expected '{$value}' to pass but got: ".implode(' ', $validator->errors()->all()));
         }
+    }
+
+    #[Test]
+    public function it_fails_validation_when_slot_is_confirmed_is_an_invalid_value(): void
+    {
+        Event::factory()->create(['raid_helper_event_id' => 'comp-111']);
+
+        $body = $this->minimalCompBody();
+        $body['slots'] = [$this->minimalSlot(['isConfirmed' => 'bogus'])];
+
+        $validator = $this->validate($body);
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('slots.0.isConfirmed', $validator->errors()->toArray());
     }
 
     #[Test]

@@ -2,18 +2,24 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\SignupStatus;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventCharacter;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionMethod;
 use Tests\Support\ModelTestCase;
 
 #[Group('raiding')]
 #[Group('characters')]
 class EventCharacterTest extends ModelTestCase
 {
+    use RefreshDatabase;
+
     protected function modelClass(): string
     {
         return Event::class;
@@ -27,7 +33,7 @@ class EventCharacterTest extends ModelTestCase
         $event->characters()->attach($character->id, $overrides);
 
         return $event->characters()->withPivot([
-            'slot_number', 'group_number', 'is_confirmed', 'is_leader', 'is_loot_councillor', 'is_loot_master',
+            'slot_number', 'group_number', 'signup_status', 'is_leader', 'is_loot_councillor', 'is_loot_master',
         ])->first()->pivot;
     }
 
@@ -56,7 +62,7 @@ class EventCharacterTest extends ModelTestCase
             'slot_number',
             'group_number',
             'is_benched',
-            'is_confirmed',
+            'signup_status',
             'is_leader',
             'is_loot_councillor',
             'is_loot_master',
@@ -71,7 +77,7 @@ class EventCharacterTest extends ModelTestCase
         $this->assertCasts($pivot, [
             'slot_number' => 'integer',
             'group_number' => 'integer',
-            'is_confirmed' => 'boolean',
+            'signup_status' => SignupStatus::class,
             'is_leader' => 'boolean',
             'is_loot_councillor' => 'boolean',
             'is_loot_master' => 'boolean',
@@ -79,11 +85,18 @@ class EventCharacterTest extends ModelTestCase
     }
 
     #[Test]
+    public function signup_status_defaults_to_unconfirmed(): void
+    {
+        $pivot = new EventCharacter;
+
+        $this->assertSame(SignupStatus::Unconfirmed, $pivot->signup_status);
+    }
+
+    #[Test]
     public function boolean_flags_default_to_false(): void
     {
         $pivot = new EventCharacter;
 
-        $this->assertFalse($pivot->is_confirmed);
         $this->assertFalse($pivot->is_leader);
         $this->assertFalse($pivot->is_loot_councillor);
         $this->assertFalse($pivot->is_loot_master);
@@ -110,9 +123,17 @@ class EventCharacterTest extends ModelTestCase
     #[Test]
     public function it_can_be_set_as_confirmed(): void
     {
-        $pivot = $this->createPivot(['is_confirmed' => true]);
+        $pivot = $this->createPivot(['signup_status' => SignupStatus::Confirmed->value]);
 
-        $this->assertTrue($pivot->is_confirmed);
+        $this->assertSame(SignupStatus::Confirmed, $pivot->signup_status);
+    }
+
+    #[Test]
+    public function it_can_be_set_as_cancelled(): void
+    {
+        $pivot = $this->createPivot(['signup_status' => SignupStatus::Cancelled->value]);
+
+        $this->assertSame(SignupStatus::Cancelled, $pivot->signup_status);
     }
 
     #[Test]
@@ -137,5 +158,63 @@ class EventCharacterTest extends ModelTestCase
         $pivot = $this->createPivot(['is_loot_master' => true]);
 
         $this->assertTrue($pivot->is_loot_master);
+    }
+
+    #[Test]
+    public function it_hides_created_at(): void
+    {
+        $pivot = new EventCharacter;
+
+        $this->assertContains('created_at', $pivot->getHidden());
+    }
+
+    #[Test]
+    public function it_does_not_hide_updated_at(): void
+    {
+        $pivot = new EventCharacter;
+
+        $this->assertNotContains('updated_at', $pivot->getHidden());
+    }
+
+    // ==================== event ====================
+
+    #[Test]
+    public function event_method_returns_belongs_to(): void
+    {
+        $returnType = (new ReflectionMethod(EventCharacter::class, 'event'))->getReturnType();
+
+        $this->assertSame(BelongsTo::class, $returnType->getName());
+    }
+
+    #[Test]
+    public function event_relation_returns_the_associated_event(): void
+    {
+        $pivot = $this->createPivot();
+
+        $eventCharacter = EventCharacter::where('event_id', $pivot->event_id)->first();
+
+        $this->assertInstanceOf(Event::class, $eventCharacter->event);
+        $this->assertSame($pivot->event_id, $eventCharacter->event->id);
+    }
+
+    // ==================== character ====================
+
+    #[Test]
+    public function character_method_returns_belongs_to(): void
+    {
+        $returnType = (new ReflectionMethod(EventCharacter::class, 'character'))->getReturnType();
+
+        $this->assertSame(BelongsTo::class, $returnType->getName());
+    }
+
+    #[Test]
+    public function character_relation_returns_the_associated_character(): void
+    {
+        $pivot = $this->createPivot();
+
+        $eventCharacter = EventCharacter::where('character_id', $pivot->character_id)->first();
+
+        $this->assertInstanceOf(Character::class, $eventCharacter->character);
+        $this->assertSame($pivot->character_id, $eventCharacter->character->id);
     }
 }

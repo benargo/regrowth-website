@@ -2,6 +2,7 @@
 
 namespace App\Jobs\RaidHelper;
 
+use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Http\Resources\EventCompositionResource;
@@ -106,7 +107,7 @@ class SyncEvent implements ShouldQueue
                 $characterSync[$character->id] = [
                     'slot_number' => null,
                     'group_number' => null,
-                    'is_confirmed' => false,
+                    'signup_status' => SignupStatus::Unconfirmed,
                     'is_benched' => true,
                 ];
             });

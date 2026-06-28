@@ -4,6 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
+use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
@@ -322,7 +323,7 @@ class EventTest extends ModelTestCase
         $event->characters()->attach($character->id, [
             'slot_number' => 3,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
         ]);
 
         $pivot = $event->characters->first()->pivot;
@@ -330,7 +331,7 @@ class EventTest extends ModelTestCase
         $this->assertInstanceOf(EventCharacter::class, $pivot);
         $this->assertSame(3, $pivot->slot_number);
         $this->assertSame(1, $pivot->group_number);
-        $this->assertTrue($pivot->is_confirmed);
+        $this->assertSame(SignupStatus::Confirmed, $pivot->signup_status);
     }
 
     #[Test]
