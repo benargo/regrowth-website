@@ -94,7 +94,7 @@ export default function Show({ item, raid, boss, comments }) {
                 <div className="flex items-center space-x-4">
                     <Can permission="edit-items">
                         <Link
-                            href={route("loot.items.edit", { item: item.data.id, name: item.data.slug })}
+                            href={route("loot.items.edit", { item: item.data.id, slug: item.data.slug })}
                             className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                         >
                             <Icon icon="edit" style="solid" className="mr-2" />
