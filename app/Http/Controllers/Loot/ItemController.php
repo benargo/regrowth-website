@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Requests\Items\UpdateItemNotesRequest;
-use App\Http\Requests\Items\UpdateItemPrioritiesRequest;
 use App\Http\Resources\BossResource;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\LootCouncil\CommentResource;
@@ -84,30 +82,5 @@ class ItemController extends Controller
             'allPriorities' => PriorityResource::collection(LootPriority::all()),
             'comments' => CommentResource::collection($item->comments()->with('user')->latest()->paginate(10)),
         ]);
-    }
-
-    /** Update the officers' notes for a specific loot item. */
-    #[Middleware('auth')]
-    #[Authorize('update', 'item')]
-    public function updateNotes(UpdateItemNotesRequest $request, Item $item): RedirectResponse
-    {
-        $item->notes = $request->validated('notes');
-        $item->save();
-
-        return redirect()->back();
-    }
-
-    /** Update the priorities for a specific loot item. */
-    #[Middleware('auth')]
-    #[Authorize('update', 'item')]
-    public function updatePriorities(UpdateItemPrioritiesRequest $request, Item $item): RedirectResponse
-    {
-        $priorities = collect($request->validated('priorities'))
-            ->mapWithKeys(fn ($p) => [$p['priority_id'] => ['weight' => $p['weight']]])
-            ->all();
-
-        $item->priorities()->sync($priorities);
-
-        return redirect()->back();
     }
 }

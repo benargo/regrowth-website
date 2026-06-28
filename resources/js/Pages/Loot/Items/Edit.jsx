@@ -11,7 +11,8 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Deferred, Link, useForm } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
+import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
 import CommentsSection from "@/Components/Loot/CommentsSection";
@@ -415,7 +416,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
 export default function ItemEdit({ item, allPriorities: allPrioritiesResource, comments }) {
     const allPriorities = allPrioritiesResource.data;
 
-    const { data, setData, put, processing, isDirty } = useForm({
+    const { data, setData } = useForm({
         priorities: item.data.priorities.map((p) => ({
             priority_id: p.id,
             weight: p.weight,
@@ -423,18 +424,14 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
     });
 
     const [notesValidationError, setNotesValidationError] = useState(null);
-    const {
-        data: notesData,
-        setData: setNotesData,
-        post: postNotes,
-        processing: notesProcessing,
-        errors: notesErrors,
-        reset: resetNotes,
-        setDefaults: setNotesDefaults,
-    } = useForm({ notes: item.data.notes || "" });
+    const [notesError, setNotesError] = useState(null);
+    const [saving, setSaving] = useState(false);
+
+    const { data: notesData, setData: setNotesData, reset: resetNotes } = useForm({
+        notes: item.data.notes || "",
+    });
 
     useEffect(() => {
-        setNotesDefaults({ notes: item.data.notes || "" });
         setNotesData("notes", item.data.notes || "");
     }, [item.data.notes]);
 
@@ -442,46 +439,83 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
         setNotesValidationError(error);
     }, []);
 
-    function submitNotes(e) {
-        e.preventDefault();
-        if (notesValidationError) {
-            return;
+    const saveItem = useCallback(async (payload) => {
+        setSaving(true);
+        try {
+            await window.axios.patch(route("api.loot.items.update", { item: item.data.id }), payload);
+            setNotesError(null);
+        } catch (error) {
+            if (error.response?.data?.errors?.notes) {
+                setNotesError(error.response.data.errors.notes[0]);
+            }
+        } finally {
+            setSaving(false);
         }
-        postNotes(route("loot.items.notes.store", { item: item.data.id }), {
-            preserveScroll: true,
-            onSuccess: () => {
-                setNotesValidationError(null);
-            },
-        });
-    }
+    }, [item.data.id]);
+
+    const notesFocused = useRef(false);
+
+    useItemChannel(item.data.id, ({ notes, priorities }) => {
+        if (!notesFocused.current && notes !== undefined) {
+            setNotesData("notes", notes ?? "");
+        }
+        if (priorities !== undefined) {
+            setData(
+                "priorities",
+                priorities.map((p) => ({ priority_id: p.id, weight: p.weight })),
+            );
+        }
+    });
 
     const isFirstRender = useRef(true);
-    const debounceTimer = useRef(null);
-    // Auto-save when priorities change
+    const prioritiesDebounce = useRef(null);
+
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
             return;
         }
 
-        if (debounceTimer.current) {
-            clearTimeout(debounceTimer.current);
+        if (prioritiesDebounce.current) {
+            clearTimeout(prioritiesDebounce.current);
         }
 
-        if (!isDirty) return;
-
-        debounceTimer.current = setTimeout(() => {
-            put(route("loot.items.priorities.update", { item: item.data.id }), {
-                preserveScroll: true,
-            });
+        prioritiesDebounce.current = setTimeout(() => {
+            saveItem({ priorities: data.priorities });
         }, 1000);
 
         return () => {
-            if (debounceTimer.current) {
-                clearTimeout(debounceTimer.current);
+            if (prioritiesDebounce.current) {
+                clearTimeout(prioritiesDebounce.current);
             }
         };
     }, [data.priorities]);
+
+    const isFirstNotesRender = useRef(true);
+    const notesDebounce = useRef(null);
+
+    useEffect(() => {
+        if (isFirstNotesRender.current) {
+            isFirstNotesRender.current = false;
+            return;
+        }
+
+        if (notesDebounce.current) {
+            clearTimeout(notesDebounce.current);
+        }
+
+        if (notesValidationError) return;
+
+        notesDebounce.current = setTimeout(() => {
+            saveItem({ notes: notesData.notes });
+        }, 1000);
+
+        return () => {
+            if (notesDebounce.current) {
+                clearTimeout(notesDebounce.current);
+            }
+        };
+    }, [notesData.notes]);
 
     const prioritiesWithDetails = useMemo(() => {
         return data.priorities.map((p) => {
@@ -508,7 +542,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                     </Link>
                 </div>
                 <div className="flex space-x-4">
-                    <AutoSaveLabel processing={processing} />
+                    <AutoSaveLabel processing={saving} />
                 </div>
             </ToolNav>
             {/* Content */}
@@ -530,47 +564,36 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
 
                 {/* Notes Section */}
-                <form onSubmit={submitNotes} className="mt-8">
+                <div className="mt-8">
                     <h2 className="mb-2 text-xl font-bold">Officers&rsquo; notes</h2>
                     <p className="text-md mb-4 text-gray-400">
                         Notes are unique to each loot item. If you change what another officer has written, it will
                         overwrite their notes.
                     </p>
-                    <MarkdownEditor
-                        value={notesData.notes}
-                        onChange={(value) => setNotesData("notes", value)}
-                        allowedFormats={ALLOWED_FORMATS}
-                        validationRules={VALIDATION_RULES}
-                        rows={2}
-                        error={notesErrors.notes}
-                        onValidationChange={handleNotesValidationChange}
-                        className="mb-1"
-                    />
+                    <div onFocus={() => (notesFocused.current = true)} onBlur={() => (notesFocused.current = false)}>
+                        <MarkdownEditor
+                            value={notesData.notes}
+                            onChange={(value) => setNotesData("notes", value)}
+                            allowedFormats={ALLOWED_FORMATS}
+                            validationRules={VALIDATION_RULES}
+                            rows={2}
+                            error={notesError}
+                            onValidationChange={handleNotesValidationChange}
+                            className="mb-1"
+                        />
+                    </div>
                     <div className="mb-4 flex flex-col justify-between gap-4 md:flex-row">
                         <div className="flex items-center justify-between gap-4 md:order-2">
                             <button
-                                type="submit"
-                                disabled={notesProcessing || notesValidationError}
-                                className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden active:bg-amber-800 ${
-                                    (notesProcessing || notesValidationError) && "opacity-25"
-                                }`}
-                            >
-                                <Icon icon="save" style="solid" className="mr-1" />{" "}
-                                {notesProcessing ? "Saving..." : "Save notes"}
-                            </button>
-                            <button
                                 type="button"
                                 onClick={() => resetNotes("notes")}
-                                disabled={notesProcessing}
-                                className={`hover:bg-brown-700 focus:bg-brown-700 focus:ring-brown-500 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden ${
-                                    notesProcessing && "opacity-25"
-                                }`}
+                                className="hover:bg-brown-700 focus:bg-brown-700 focus:ring-brown-500 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
                             >
                                 <Icon icon="trash" style="solid" className="mr-1" /> Reset notes
                             </button>
                         </div>
                     </div>
-                </form>
+                </div>
 
                 {/* Comments Section */}
                 <CommentsSection comments={comments} itemId={item.data.id} canCreate="true" />

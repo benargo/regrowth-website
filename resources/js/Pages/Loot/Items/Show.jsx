@@ -1,5 +1,7 @@
+import { useState } from "react";
 import Master from "@/Layouts/Master";
 import { Deferred, Link } from "@inertiajs/react";
+import useItemChannel from "@/Hooks/useItemChannel";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
@@ -73,6 +75,18 @@ function PriorityDisplay({ priorities }) {
 }
 
 export default function Show({ item, raid, boss, comments }) {
+    const [notes, setNotes] = useState(item.data.notes);
+    const [priorities, setPriorities] = useState(item.data.priorities);
+
+    useItemChannel(item.data.id, (payload) => {
+        if (payload.notes !== undefined) {
+            setNotes(payload.notes);
+        }
+        if (payload.priorities !== undefined) {
+            setPriorities(payload.priorities);
+        }
+    });
+
     return (
         <Master title={item.data.name}>
             <SharedHeader
@@ -111,9 +125,9 @@ export default function Show({ item, raid, boss, comments }) {
 
                 <h2 className="mb-4 text-xl font-bold">Loot Biases</h2>
                 {/* Biases List */}
-                {item.data.priorities.length > 0 ? (
+                {priorities.length > 0 ? (
                     <div className="w-full">
-                        <PriorityDisplay priorities={item.data.priorities} />
+                        <PriorityDisplay priorities={priorities} />
                         <p className="mt-4 text-gray-400">
                             Beyond the above biases, this item will be distributed <strong>MS &gt; OS</strong>.
                         </p>
@@ -126,10 +140,10 @@ export default function Show({ item, raid, boss, comments }) {
                 )}
 
                 {/* Notes Section */}
-                {item.data.notes && (
+                {notes && (
                     <div className="mt-8">
                         <h2 className="mb-6 text-xl font-bold">Officers&rsquo; Notes</h2>
-                        <FormattedMarkdown>{item.data.notes}</FormattedMarkdown>
+                        <FormattedMarkdown>{notes}</FormattedMarkdown>
                     </div>
                 )}
 

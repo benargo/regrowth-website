@@ -5,7 +5,7 @@ namespace App\Http\Requests\Items;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateItemPrioritiesRequest extends FormRequest
+class UpdateItemRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -15,7 +15,8 @@ class UpdateItemPrioritiesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'priorities' => ['present', 'array'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'priorities' => ['sometimes', 'array'],
             'priorities.*.priority_id' => ['required', 'integer', 'exists:loot_priorities,id'],
             'priorities.*.weight' => ['required', 'integer', 'min:0'],
         ];
