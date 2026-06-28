@@ -105,7 +105,7 @@ class EventWebhookRequest extends RaidHelperWebhookRequest
             'advancedSettings.applyUnregister' => ['nullable', 'boolean'],
             'advancedSettings.applySpecreset' => ['nullable', 'string'],
             'advancedSettings.specSaving' => ['nullable', 'boolean'],
-            'advancedSettings.fontStyle' => ['nullable', 'integer', 'min:0'],
+            'advancedSettings.fontStyle' => ['nullable', 'string'],
             'advancedSettings.altNames' => ['nullable', 'boolean'],
             'advancedSettings.defaultsPreReq' => ['nullable', 'boolean'],
             'advancedSettings.showOnOverview' => ['nullable', 'boolean'],

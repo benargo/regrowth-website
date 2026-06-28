@@ -92,9 +92,9 @@ class EventAdvancedSettingsData extends Data
         #[Nullable, BooleanType]
         public readonly ?bool $specSaving = null,
 
-        /** @var int|null The font style for the event title */
-        #[Nullable, IntegerType, Min(0)]
-        public readonly ?int $fontStyle = null,
+        /** @var string|null The font style for the event title (boolean or string from API) */
+        #[Nullable, StringType]
+        public readonly ?string $fontStyle = null,
 
         /** @var bool|null Whether members will be allowed to enter a custom name when signing up */
         #[Nullable, BooleanType]

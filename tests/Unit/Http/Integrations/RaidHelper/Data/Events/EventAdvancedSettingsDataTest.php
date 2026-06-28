@@ -55,7 +55,7 @@ class EventAdvancedSettingsDataTest extends TestCase
             'limitPerUser' => 1,
             'specsPerSignup' => 2,
             'lowerLimit' => 10,
-            'fontStyle' => 1,
+            'fontStyle' => 'bold',
             'tpWinMin' => 3,
         ]);
 
@@ -65,7 +65,7 @@ class EventAdvancedSettingsDataTest extends TestCase
         $this->assertSame(1, $settings->limitPerUser);
         $this->assertSame(2, $settings->specsPerSignup);
         $this->assertSame(10, $settings->lowerLimit);
-        $this->assertSame(1, $settings->fontStyle);
+        $this->assertSame('bold', $settings->fontStyle);
         $this->assertSame(3, $settings->tpWinMin);
     }
 
