@@ -50,13 +50,13 @@ export default function CommentForm({ itemId, commentId = null, initialBody = ""
                 rows={4}
                 error={errors.body}
                 onValidationChange={handleValidationChange}
-                className="mb-1"
+                className="mb-2"
             />
             <div className="flex gap-2">
                 <button
                     type="submit"
                     disabled={processing || validationError}
-                    className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 ${
+                    className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden active:bg-amber-800 ${
                         (processing || validationError) && "opacity-25"
                     }`}
                 >

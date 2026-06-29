@@ -5,13 +5,10 @@ namespace Tests\Feature\LootBiasTool;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
-use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
-use App\Models\Phase;
-use App\Models\Raid;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel as DiscordChannel;
@@ -591,7 +588,7 @@ class CommentTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -606,7 +603,7 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -620,7 +617,7 @@ class CommentTest extends TestCase
         $item = $this->createItem();
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -640,7 +637,7 @@ class CommentTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -673,7 +670,7 @@ class CommentTest extends TestCase
             'created_at' => now(),
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -693,7 +690,7 @@ class CommentTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -722,7 +719,7 @@ class CommentTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -743,7 +740,7 @@ class CommentTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $response = $this->actingAs($officer)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($officer)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -763,7 +760,7 @@ class CommentTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $response = $this->actingAs($raider)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($raider)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
@@ -928,10 +925,6 @@ class CommentTest extends TestCase
 
     protected function createItem(): Item
     {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        return Item::factory()->fromBoss()->withName('Test Item')->create();
     }
 }

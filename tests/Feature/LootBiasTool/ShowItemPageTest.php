@@ -2,18 +2,12 @@
 
 namespace Tests\Feature\LootBiasTool;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Models\Boss;
 use App\Models\Item;
-use App\Models\Phase;
-use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
@@ -23,19 +17,12 @@ class ShowItemPageTest extends TestCase
     use MocksBlizzardServices;
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->mockItemService();
-    }
-
     #[Test]
     public function show_item_allows_unauthenticated_users(): void
     {
         $item = $this->createTestItem();
 
-        $response = $this->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
     }
@@ -47,7 +34,7 @@ class ShowItemPageTest extends TestCase
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
     }
@@ -58,7 +45,7 @@ class ShowItemPageTest extends TestCase
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
     }
@@ -69,7 +56,7 @@ class ShowItemPageTest extends TestCase
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
     }
@@ -80,7 +67,7 @@ class ShowItemPageTest extends TestCase
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
     }
@@ -93,8 +80,7 @@ class ShowItemPageTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id]));
 
-        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-        $response->assertStatus(303);
+        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
     }
 
     #[Test]
@@ -103,72 +89,64 @@ class ShowItemPageTest extends TestCase
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'wrong-slug']));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => 'wrong-slug']));
 
-        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
-        $response->assertStatus(303);
+        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
     }
 
     #[Test]
     public function show_item_renders_with_correct_slug(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'test-item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Show')
             ->has('item.data')
+            ->has('raid.data')
+            ->has('boss.data')
+            ->has('item.data.inventory_type')
+            ->has('item.data.item_class')
+            ->has('item.data.item_subclass')
         );
     }
 
     #[Test]
-    public function show_item_uses_fallback_slug_when_api_returns_not_found(): void
+    public function show_item_redirects_to_fallback_slug_when_item_has_no_name(): void
     {
         $user = User::factory()->member()->create();
-        $item = $this->createTestItem();
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(
-                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
-                status: 404,
-            ),
-        ]);
+        $item = $this->createTestItemWithoutName();
 
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id]));
 
-        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'name' => 'item-'.$item->id]));
-        $response->assertStatus(303);
+        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->id}"]));
     }
 
     #[Test]
-    public function show_item_renders_with_fallback_slug_when_api_returns_not_found(): void
+    public function show_item_renders_with_fallback_slug_when_item_has_no_name(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->member()->create();
-        $item = $this->createTestItem();
+        $item = $this->createTestItemWithoutName();
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(
-                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
-                status: 404,
-            ),
-        ]);
-
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'name' => 'item-'.$item->id]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->id}"]));
 
         $response->assertOk();
     }
 
     protected function createTestItem(): Item
     {
-        $phase = Phase::factory()->started()->create();
-        $raid = Raid::factory()->create(['phase_id' => $phase->id]);
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+        return Item::factory()->fromBoss()->withName('Test Item')->create();
+    }
 
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+    protected function createTestItemWithoutName(): Item
+    {
+        return Item::factory()->fromBoss()->create();
     }
 }

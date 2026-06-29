@@ -4,6 +4,8 @@ namespace App\Casts;
 
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class AsKeyType implements CastsAttributes
 {
@@ -16,9 +18,12 @@ class AsKeyType implements CastsAttributes
             return null;
         }
 
-        $keyType = $this->resolveKeyType($attributes);
+        $keyType = $this->resolveKeyType($key, $attributes);
 
-        return $keyType === 'int' ? (int) $value : (string) $value;
+        return match ($keyType) {
+            'int', 'integer' => (int) $value,
+            default => (string) $value,
+        };
     }
 
     /**
@@ -36,9 +41,10 @@ class AsKeyType implements CastsAttributes
     /**
      * @param  array<string, mixed>  $attributes
      */
-    private function resolveKeyType(array $attributes): string
+    private function resolveKeyType(string $key, array $attributes): string
     {
-        $type = $attributes['commentable_type'] ?? null;
+        $typeColumn = Str::replaceEnd('_id', '_type', $key);
+        $type = Arr::get($attributes, $typeColumn);
 
         if ($type === null || ! class_exists($type)) {
             return 'string';

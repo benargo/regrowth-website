@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 #[Signature('app:migrate-media-model-types')]
-#[Description('Update stale media model_type values from App\Models\LootCouncil\Priority to App\Models\LootPriority.')]
+#[Description('Rename App\Models\LootCouncil\Priority to App\Models\LootPriority in the media table model_type column.')]
 class MigrateMediaModelTypes extends Command
 {
     public function handle(): void

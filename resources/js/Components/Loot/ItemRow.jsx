@@ -3,7 +3,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import InlinePriorityDisplay from "@/Components/Loot/InlinePriorityDisplay";
 
 export default function ItemRow({ item, weightThreshold }) {
-    const href = route("loot.items.show", { item: item.id, name: item.slug });
+    const href = route("loot.items.show", { item: item.id, slug: item.slug });
     const labelComments = item.comments_count === 1 ? "comment" : "comments";
 
     return (
@@ -19,10 +19,10 @@ export default function ItemRow({ item, weightThreshold }) {
                         {item.comments_count > 0 && (
                             <p className="inline-flex items-center gap-1 text-xs">
                                 <Icon icon="comments" style="solid" className="h-3 w-3" />
-                                {item.comments_count + " " + labelComments}
+                                {`${item.comments_count} ${labelComments}`}
                             </p>
                         )}
-                        {"notes" in item && (
+                        {item.notes && (
                             <p className="inline-flex items-center gap-1 text-xs">
                                 <Icon icon="sticky-note" style="solid" className="h-3 w-3" />
                                 Notes

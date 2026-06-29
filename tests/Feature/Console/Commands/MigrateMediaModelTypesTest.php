@@ -14,6 +14,22 @@ class MigrateMediaModelTypesTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
+    public function it_has_the_correct_signature(): void
+    {
+        $this->artisan('app:migrate-media-model-types --help')
+            ->expectsOutputToContain('app:migrate-media-model-types')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
+    public function it_has_the_correct_description(): void
+    {
+        $this->artisan('help app:migrate-media-model-types')
+            ->expectsOutputToContain('Rename App\Models\LootCouncil\Priority to App\Models\LootPriority in the media table model_type column.')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
     public function it_updates_stale_loot_council_priority_model_types(): void
     {
         DB::table('media')->insert([
