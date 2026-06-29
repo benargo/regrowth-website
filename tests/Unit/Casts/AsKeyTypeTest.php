@@ -28,6 +28,24 @@ class AsKeyTypeTest extends TestCase
     }
 
     #[Test]
+    public function get_returns_integer_when_commentable_type_has_integer_key_type(): void
+    {
+        $integerKeyedModel = new class extends Model
+        {
+            protected $keyType = 'integer';
+        };
+
+        $cast = new AsKeyType;
+        $model = $this->createStub(Model::class);
+
+        $result = $cast->get($model, 'commentable_id', '42', [
+            'commentable_type' => $integerKeyedModel::class,
+        ]);
+
+        $this->assertSame(42, $result);
+    }
+
+    #[Test]
     public function get_returns_string_when_commentable_type_is_string_keyed_model(): void
     {
         $stringKeyedModel = new class extends Model
