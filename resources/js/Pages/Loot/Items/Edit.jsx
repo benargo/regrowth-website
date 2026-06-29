@@ -489,7 +489,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 clearTimeout(prioritiesDebounce.current);
             }
         };
-    }, [data.priorities]);
+    }, [data.priorities, saveItem]);
 
     const isFirstNotesRender = useRef(true);
     const notesDebounce = useRef(null);
@@ -515,7 +515,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 clearTimeout(notesDebounce.current);
             }
         };
-    }, [notesData.notes]);
+    }, [notesData.notes, saveItem]);
 
     const prioritiesWithDetails = useMemo(() => {
         return data.priorities.map((p) => {

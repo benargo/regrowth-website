@@ -110,6 +110,9 @@ class ShowItemPageTest extends TestCase
             ->has('item.data')
             ->has('raid.data')
             ->has('boss.data')
+            ->has('item.data.inventory_type')
+            ->has('item.data.item_class')
+            ->has('item.data.item_subclass')
         );
     }
 

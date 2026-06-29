@@ -56,8 +56,6 @@ class LootBiasToolController extends Controller
                 })];
             })->all(),
             'trash_items' => Inertia::optional(function () use ($raid) {
-                $raid->loadExists('trashItems');
-
                 if ($raid->trash_items_exists) {
                     return ItemResource::collection(
                         $raid->trashItems()
