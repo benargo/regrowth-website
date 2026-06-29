@@ -63,7 +63,7 @@ class RecordPrunedModelTest extends TestCase
         ModelPruned::dispatch($event);
         ModelPruned::dispatch($event);
 
-        $this->assertDatabaseCount('pruned_models', 1);
+        $this->assertCount(1, PrunedModel::where('id', $event->id)->where('type', Event::class)->get());
     }
 
     #[Test]
