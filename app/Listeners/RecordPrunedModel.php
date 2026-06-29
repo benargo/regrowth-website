@@ -15,7 +15,7 @@ class RecordPrunedModel
      */
     public function handle(ModelPruned $event): void
     {
-        PrunedModel::create([
+        PrunedModel::firstOrCreate([
             'id' => $event->model->getKey(),
             'type' => get_class($event->model),
         ]);

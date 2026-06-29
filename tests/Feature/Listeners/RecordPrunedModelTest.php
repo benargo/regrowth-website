@@ -56,6 +56,17 @@ class RecordPrunedModelTest extends TestCase
     }
 
     #[Test]
+    public function it_is_idempotent_when_dispatched_twice_for_the_same_model(): void
+    {
+        $event = Event::factory()->create();
+
+        ModelPruned::dispatch($event);
+        ModelPruned::dispatch($event);
+
+        $this->assertDatabaseCount('pruned_models', 1);
+    }
+
+    #[Test]
     public function it_handles_multiple_pruned_models_with_same_type(): void
     {
         $event1 = Event::factory()->create();
