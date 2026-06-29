@@ -49,4 +49,4 @@ Schedule::job(new BuildAddonExportFile)->dailyAt('03:15')->name('build-addon-exp
 /**
  * This should be the last job to run each day.
  */
-Schedule::command('model:prune')->dailyAt('06:00')->name('model-prune');
+// Schedule::command('model:prune')->dailyAt('06:00')->name('model-prune');
