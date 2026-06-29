@@ -36,9 +36,9 @@ class EventData extends Data
         #[StringType]
         public readonly string $title,
 
-        /** @var string The event description */
-        #[StringType]
-        public readonly string $description,
+        /** @var string|null The event description */
+        #[Nullable, StringType]
+        public readonly ?string $description,
 
         /** @var CarbonInterface The unix timestamp of when this event will start */
         #[WithCast(DateTimeInterfaceCast::class, format: 'U', type: Carbon::class)]

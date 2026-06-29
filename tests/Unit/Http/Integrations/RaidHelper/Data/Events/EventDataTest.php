@@ -336,6 +336,14 @@ class EventDataTest extends TestCase
     }
 
     #[Test]
+    public function it_accepts_null_description(): void
+    {
+        $event = EventData::from($this->listingPayload(['description' => null]));
+
+        $this->assertNull($event->description);
+    }
+
+    #[Test]
     public function it_casts_sign_up_count_string_to_integer(): void
     {
         $event = EventData::from($this->listingPayload(['signUpCount' => '16']));
