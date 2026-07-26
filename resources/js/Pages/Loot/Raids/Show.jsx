@@ -7,7 +7,6 @@ import Icon from "@/Components/FontAwesome/Icon";
 import PageContainer from "@/Components/PageContainer";
 import ToolNav from "@/Components/ToolNav";
 import ItemRow from "@/Components/Loot/ItemRow";
-import SearchBar from "@/Components/Search/SearchBar";
 
 function prepareItems(rawItems) {
     const [groupedItems, ungroupedItems] = rawItems.reduce(
@@ -179,9 +178,6 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
             </ToolNav>
             {/* Content */}
             <PageContainer>
-                <div className="mb-6 max-w-xl">
-                    <SearchBar weightThreshold={priority_weight_threshold} />
-                </div>
                 <div className="flex flex-col gap-4">
                     {bosses.map((boss) => (
                         <Collapsible
