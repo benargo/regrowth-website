@@ -6,6 +6,7 @@ use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class AsKeyType implements CastsAttributes
 {
@@ -35,6 +36,12 @@ class AsKeyType implements CastsAttributes
             return null;
         }
 
+        $keyType = $this->resolveKeyType($key, $attributes);
+
+        if (in_array($keyType, ['int', 'integer'], true) && ! is_numeric($value)) {
+            throw new InvalidArgumentException("Value [{$value}] is not a valid key for an integer-keyed model.");
+        }
+
         return (string) $value;
     }
 
@@ -46,7 +53,7 @@ class AsKeyType implements CastsAttributes
         $typeColumn = Str::replaceEnd('_id', '_type', $key);
         $type = Arr::get($attributes, $typeColumn);
 
-        if ($type === null || ! class_exists($type)) {
+        if ($type === null || ! class_exists($type) || ! is_subclass_of($type, Model::class)) {
             return 'string';
         }
 
