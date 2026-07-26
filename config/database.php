@@ -132,6 +132,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Driver Behaviours
+    |--------------------------------------------------------------------------
+    |
+    | Database behaviours that only some drivers support, each mapped to the
+    | drivers that support it. Code that depends on a behaviour checks the
+    | current connection's driver against the relevant list and degrades
+    | gracefully when it is absent.
+    |
+    | Supported behaviours:
+    |
+    |   full_text - FULLTEXT indexes and whereFullText() queries. Models that
+    |               offer full text search fall back to a LIKE match on any
+    |               driver not listed, such as SQLite used by the test suite.
+    |
+    */
+
+    'behaviours' => [
+        'full_text' => ['mysql', 'mariadb', 'pgsql'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Redis Databases
     |--------------------------------------------------------------------------
     |
