@@ -24,11 +24,14 @@ use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('Home'))->name('home');
+
+Route::get('/search', SearchController::class)->name('search');
 
 /**
  * Guild Roster
