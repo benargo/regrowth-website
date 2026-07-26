@@ -14,7 +14,16 @@ class SearchRequest extends FormRequest
     {
         return [
             'q' => ['required', 'string', 'min:2', 'max:100'],
+            'raid_id' => ['sometimes', 'nullable', 'integer', 'exists:raids,id'],
         ];
+    }
+
+    /**
+     * The raid to scope results to, or null when searching unscoped.
+     */
+    public function raidId(): ?int
+    {
+        return $this->filled('raid_id') ? (int) $this->input('raid_id') : null;
     }
 
     /**

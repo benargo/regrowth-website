@@ -19,6 +19,30 @@ class SearchRequestTest extends TestCase
     }
 
     #[Test]
+    public function it_allows_raid_id_to_be_omitted(): void
+    {
+        $rules = (new SearchRequest)->rules();
+
+        $this->assertSame(['sometimes', 'nullable', 'integer', 'exists:raids,id'], $rules['raid_id']);
+    }
+
+    #[Test]
+    public function raid_id_returns_null_when_absent(): void
+    {
+        $request = SearchRequest::create('/api/search', 'GET', ['q' => 'archbishop']);
+
+        $this->assertNull($request->raidId());
+    }
+
+    #[Test]
+    public function raid_id_returns_an_integer_when_present(): void
+    {
+        $request = SearchRequest::create('/api/search', 'GET', ['q' => 'archbishop', 'raid_id' => '5']);
+
+        $this->assertSame(5, $request->raidId());
+    }
+
+    #[Test]
     public function it_squishes_and_lowercases_q(): void
     {
         $request = SearchRequest::create('/api/search', 'GET', ['q' => '  ArcH   Bishop  ']);
