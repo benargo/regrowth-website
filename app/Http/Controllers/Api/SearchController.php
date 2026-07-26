@@ -31,20 +31,20 @@ class SearchController extends Controller
         $payload = Cache::tags(['db', 'lootcouncil'])->remember(
             $key,
             now()->addMinutes(5),
-            function () use ($query, $raidId): array {
+            function () use ($query, $raidId, $request): array {
                 $matches = Item::query()
                     ->matchingName($query)
-                    ->when($raidId, fn ($q, $id) => $q->where('raid_id', $id))
-                    ->orderBy('name');
+                    ->when($raidId, fn ($q, $id) => $q->where('raid_id', $id));
 
                 $items = (clone $matches)
+                    ->orderBy('name')
                     ->with(['raid', 'boss', 'media'])
                     ->withCount('comments')
                     ->take(self::LIMIT)
                     ->get();
 
                 return [
-                    'data' => ItemResource::collection($items)->resolve(),
+                    'data' => ItemResource::collection($items)->resolve($request),
                     'total' => $matches->count(),
                 ];
             }

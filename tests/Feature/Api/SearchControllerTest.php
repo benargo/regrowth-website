@@ -183,6 +183,18 @@ class SearchControllerTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    #[Test]
+    public function it_returns_has_notes_instead_of_notes(): void
+    {
+        $item = $this->createItem('Archbishop\'s Slippers');
+        $item->update(['notes' => 'Best in slot for warriors']);
+
+        $this->getJson(route('api.search', ['q' => 'slipper']))
+            ->assertOk()
+            ->assertJsonPath('data.0.has_notes', true)
+            ->assertJsonMissingPath('data.0.notes');
+    }
+
     // ==========================================
     // Caching
     // ==========================================

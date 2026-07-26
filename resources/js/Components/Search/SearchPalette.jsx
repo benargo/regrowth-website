@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
-import { router, usePage } from "@inertiajs/react";
-import axios from "axios";
+import { router, usePage, useHttp } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import SearchResultRow from "@/Components/Search/SearchResultRow";
 import useDebouncedValue from "@/Hooks/useDebouncedValue";
@@ -35,13 +34,13 @@ export default function SearchPalette({ open, onClose }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [total, setTotal] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [scopeDismissed, setScopeDismissed] = useState(false);
 
     const inputRef = useRef(null);
     const listRef = useRef(null);
-    const abortRef = useRef(null);
+
+    const http = useHttp({ q: "", raid_id: null });
 
     const debouncedQuery = useDebouncedValue(query, 300);
     const activeRaidId = scopeDismissed ? null : (raidScope?.id ?? null);
@@ -59,41 +58,27 @@ export default function SearchPalette({ open, onClose }) {
     }, [open]);
 
     useEffect(() => {
-        abortRef.current?.abort();
-
         const trimmed = debouncedQuery.trim();
         if (trimmed.length < MIN_QUERY_LENGTH) {
             setResults([]);
             setTotal(0);
-            setIsLoading(false);
             return;
         }
 
-        const controller = new AbortController();
-        abortRef.current = controller;
-        setIsLoading(true);
-
-        axios
-            .get(route("api.search"), {
-                params: { q: trimmed, raid_id: activeRaidId },
-                signal: controller.signal,
-            })
-            .then((res) => {
-                setResults(res.data.data ?? []);
-                setTotal(res.data.total ?? 0);
+        http.setData({ q: trimmed, raid_id: activeRaidId });
+        http.get(route("api.search"), {
+            onSuccess: (data) => {
+                setResults(data.data ?? []);
+                setTotal(data.total ?? 0);
                 setHighlightedIndex(-1);
-            })
-            .catch((err) => {
-                if (!axios.isCancel(err)) {
-                    setResults([]);
-                    setTotal(0);
-                }
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setIsLoading(false);
-            });
+            },
+            onError: () => {
+                setResults([]);
+                setTotal(0);
+            },
+        });
 
-        return () => controller.abort();
+        return () => http.cancel();
     }, [debouncedQuery, activeRaidId]);
 
     useEffect(() => {
@@ -173,13 +158,13 @@ export default function SearchPalette({ open, onClose }) {
                         )}
                     </div>
 
-                    {isLoading && <ResultSkeleton />}
+                    {http.processing && <ResultSkeleton />}
 
-                    {!isLoading && query.trim().length >= MIN_QUERY_LENGTH && results.length === 0 && (
+                    {!http.processing && query.trim().length >= MIN_QUERY_LENGTH && results.length === 0 && (
                         <p className="px-4 py-6 text-center text-sm text-gray-400">No items found</p>
                     )}
 
-                    {!isLoading && results.length > 0 && (
+                    {!http.processing && results.length > 0 && (
                         <div
                             ref={listRef}
                             id="search-palette-listbox"
@@ -198,7 +183,7 @@ export default function SearchPalette({ open, onClose }) {
                         </div>
                     )}
 
-                    {!isLoading && query.trim().length >= MIN_QUERY_LENGTH && total > 0 && (
+                    {!http.processing && query.trim().length >= MIN_QUERY_LENGTH && total > 0 && (
                         <button
                             type="button"
                             onClick={goToResults}
