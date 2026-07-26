@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel as ChannelResource;
+use Carbon\Carbon;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -234,6 +235,90 @@ class DailyQuestsControllerTest extends DashboardTestCase
             ->where('hasNotification', true)
             ->missing('quests')
         );
+    }
+
+    #[Test]
+    public function index_includes_a_notification_created_exactly_at_the_4am_lower_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::yesterday()->setTime(4, 0, 0),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', true)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
+    }
+
+    #[Test]
+    public function index_excludes_a_notification_created_one_second_before_the_4am_lower_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::yesterday()->setTime(3, 59, 59),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', false)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
+    }
+
+    #[Test]
+    public function index_includes_a_notification_created_exactly_at_the_upper_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::tomorrow()->setTime(3, 59, 59),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', true)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
+    }
+
+    #[Test]
+    public function index_excludes_a_notification_created_one_second_after_the_upper_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::tomorrow()->setTime(4, 0, 0),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', false)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
     }
 
     #[Test]
