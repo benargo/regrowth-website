@@ -57,7 +57,7 @@ class BossStrategyControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function officers_see_the_management_index_via_the_raiding_route(): void
+    public function officers_see_the_raiding_index_via_the_raiding_route(): void
     {
         Phase::factory()->create();
         Boss::factory()->for(Raid::factory())->create();
@@ -66,7 +66,7 @@ class BossStrategyControllerTest extends DashboardTestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Manage/BossStrategies/Index')
+            ->component('Raiding/BossStrategies/Index')
             ->has('bosses')
             ->has('phases')
         );
