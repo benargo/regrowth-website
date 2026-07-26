@@ -9,7 +9,7 @@ import ToggleFilter from "@/Components/ToggleFilter";
 import EmptyState from "@/Components/EmptyState";
 import Pill from "@/Components/Pill";
 import SpecIcon from "@/Components/Characters/SpecIcon";
-import SearchInput from "@/Components/SearchInput";
+import SearchInput from "@/Components/Search/SearchInput";
 import { Can } from "@/Components/Authorizable";
 import SortableTable from "@/Components/SortableTable";
 import useLocalStorage from "@/Hooks/useLocalStorage";
