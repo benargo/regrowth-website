@@ -68,6 +68,10 @@ services:
                 - ping
             retries: 3
             timeout: 5s
+    # Unused. Item search currently runs as a direct MySQL FULLTEXT query
+    # (see Item::searchByName). This container is kept as scaffolding for a
+    # future move to Laravel Scout + Meilisearch, which would add relevance
+    # tuning, typo tolerance, and cross-model search (Raid, Boss).
     meilisearch:
         image: 'getmeili/meilisearch:latest'
         ports:
