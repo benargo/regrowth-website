@@ -19,7 +19,7 @@ class UpdateBossStrategyRequest extends FormRequest
             'images' => ['nullable', 'array'],
             'images.*' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
             'deleted_images' => ['nullable', 'array'],
-            'deleted_images.*' => ['nullable', 'string', 'url'],
+            'deleted_images.*' => ['nullable', 'string'],
             'image_order' => ['nullable', 'array'],
             'image_order.*' => ['nullable', 'string'],
         ];
