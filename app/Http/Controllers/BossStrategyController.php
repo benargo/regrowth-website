@@ -13,7 +13,6 @@ use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-#[Authorize('view-officer-dashboard')]
 class BossStrategyController extends Controller
 {
     /**
@@ -23,9 +22,23 @@ class BossStrategyController extends Controller
     {
         $phases = Phase::with(['raids'])->orderBy('number')->get();
 
-        return Inertia::render('Manage/BossStrategies/Index', [
+        $view = $request->user()?->can('view-officer-dashboard')
+            ? 'Manage/BossStrategies/Index'
+            : 'Raiding/BossStrategies/Index';
+
+        return Inertia::render($view, [
             'bosses' => new RaidBossesCollection(Boss::orderBy('raid_id')->orderBy('encounter_order')->get()),
             'phases' => PhaseResource::collection($phases)->resolve($request),
+        ]);
+    }
+
+    /**
+     * Show a boss's strategy.
+     */
+    public function show(Boss $boss, string $slug)
+    {
+        return Inertia::render('Raiding/BossStrategies/Show', [
+            'boss' => $boss->load('raid')->toResource(),
         ]);
     }
 

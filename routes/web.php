@@ -3,7 +3,6 @@
 use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
-use App\Http\Controllers\BossStrategiesController;
 use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\DailyQuestsAuditController;
@@ -95,8 +94,8 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->name('plans.apply-template');
 
     // Boss strategies routes
-    Route::get('/boss-strategies', [BossStrategiesController::class, 'index'])->name('boss-strategies.index');
-    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategiesController::class, 'show'])->name('boss-strategies.show');
+    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
+    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'show'])->name('boss-strategies.show');
 
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
