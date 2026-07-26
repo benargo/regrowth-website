@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Cache;
 class SearchController extends Controller
 {
     /** @var int */
-    private const LIMIT = 5;
+    private const LIMIT = 8;
 
     /**
      * Return the top matching items for the search overlay.
@@ -25,16 +25,20 @@ class SearchController extends Controller
     public function __invoke(SearchRequest $request): JsonResponse
     {
         $query = $request->string('q')->toString();
-        $key = 'search:'.md5($query).':'.self::LIMIT;
+        $raidId = $request->raidId();
+        $key = 'search:'.md5($query).':'.self::LIMIT.':raid:'.($raidId ?? 'all');
 
         $payload = Cache::tags(['db', 'lootcouncil'])->remember(
             $key,
             now()->addMinutes(5),
-            function () use ($query): array {
-                $matches = Item::query()->matchingName($query)->orderBy('name');
+            function () use ($query, $raidId): array {
+                $matches = Item::query()
+                    ->matchingName($query)
+                    ->when($raidId, fn ($q, $id) => $q->where('raid_id', $id))
+                    ->orderBy('name');
 
                 $items = (clone $matches)
-                    ->with(['raid', 'boss', 'media', 'priorities'])
+                    ->with(['raid', 'boss', 'media'])
                     ->withCount('comments')
                     ->take(self::LIMIT)
                     ->get();
