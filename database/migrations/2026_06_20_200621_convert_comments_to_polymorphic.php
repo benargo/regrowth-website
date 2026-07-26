@@ -17,8 +17,11 @@ return new class extends Migration
                 $table->dropForeign(['item_id']);
             } else {
                 $itemForeignKey = collect(Schema::getForeignKeys('comments'))
-                    ->firstWhere('columns', ['item_id'])['name'];
-                $table->dropForeign($itemForeignKey);
+                    ->firstWhere('columns', ['item_id']);
+
+                if ($itemForeignKey !== null) {
+                    $table->dropForeign($itemForeignKey['name']);
+                }
             }
             $table->string('commentable_id')->nullable()->after('id');
             $table->string('commentable_type')->nullable()->after('commentable_id');
