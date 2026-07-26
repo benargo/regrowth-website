@@ -26,6 +26,7 @@ class ItemResource extends JsonResource
             'item_subclass' => $this->whenHas('itemSubclass', fn () => data_get($this, 'itemSubclass.name')),
             'notes' => $this->whenNotNull($this->notes),
             'quality' => $this->whenHas('quality'),
+            'quality_border_class' => $this->whenHas('quality', fn () => $this->quality->cssClass('border')),
             'wowhead' => ['url' => $this->wowheadUrl],
             'boss' => $this->whenLoaded('boss', fn () => new BossResource($this->boss)),
             'comments' => $this->whenLoaded('comments', fn () => CommentResource::collection($this->comments)),

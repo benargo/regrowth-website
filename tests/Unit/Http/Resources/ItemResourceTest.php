@@ -246,6 +246,16 @@ class ItemResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_quality_border_class_from_model(): void
+    {
+        $item = Item::factory()->withQuality(ItemQuality::EPIC)->create();
+
+        $array = (new ItemResource($item))->toArray(new Request);
+
+        $this->assertSame('border-quality-epic', $array['quality_border_class']);
+    }
+
+    #[Test]
     public function it_returns_icon_url(): void
     {
         $item = Item::factory()->create();
@@ -325,6 +335,7 @@ class ItemResourceTest extends TestCase
         $this->assertArrayHasKey('item_class', $array);
         $this->assertArrayHasKey('item_subclass', $array);
         $this->assertArrayHasKey('quality', $array);
+        $this->assertArrayHasKey('quality_border_class', $array);
         $this->assertArrayHasKey('wowhead', $array);
         $this->assertArrayHasKey('url', $array['wowhead']);
         $this->assertArrayHasKey('boss', $array);
