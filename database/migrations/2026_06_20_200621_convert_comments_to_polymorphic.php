@@ -25,14 +25,20 @@ return new class extends Migration
             $table->index(['commentable_type', 'commentable_id']);
         });
 
-        DB::table('comments')->update([
-            'commentable_id' => DB::raw('CAST(item_id AS CHAR)'),
-            'commentable_type' => 'App\\Models\\Item',
-        ]);
+        DB::table('comments')->orderBy('id')->chunkById(200, function ($comments) {
+            foreach ($comments as $comment) {
+                DB::table('comments')
+                    ->where('id', $comment->id)
+                    ->update([
+                        'commentable_id' => (string) $comment->item_id,
+                        'commentable_type' => 'App\\Models\\Item',
+                    ]);
+            }
+        });
 
         Schema::table('comments', function (Blueprint $table) {
-            $table->string('commentable_id')->notNull()->change();
-            $table->string('commentable_type')->notNull()->change();
+            $table->string('commentable_id')->change();
+            $table->string('commentable_type')->change();
             $table->dropColumn('item_id');
         });
     }
@@ -48,7 +54,14 @@ return new class extends Migration
 
         DB::table('comments')
             ->where('commentable_type', 'App\\Models\\Item')
-            ->update(['item_id' => DB::raw('CAST(commentable_id AS UNSIGNED)')]);
+            ->orderBy('id')
+            ->chunkById(200, function ($comments) {
+                foreach ($comments as $comment) {
+                    DB::table('comments')
+                        ->where('id', $comment->id)
+                        ->update(['item_id' => (int) $comment->commentable_id]);
+                }
+            });
 
         Schema::table('comments', function (Blueprint $table) {
             $table->unsignedBigInteger('item_id')->notNull()->change();
