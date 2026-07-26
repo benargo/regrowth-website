@@ -41,6 +41,52 @@ class BossStrategyControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    public function guests_can_view_the_raiding_index(): void
+    {
+        Phase::factory()->create();
+        Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->get(route('raiding.boss-strategies.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Raiding/BossStrategies/Index')
+            ->has('bosses')
+            ->has('phases')
+        );
+    }
+
+    #[Test]
+    public function officers_see_the_management_index_via_the_raiding_route(): void
+    {
+        Phase::factory()->create();
+        Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->actingAs($this->officer)->get(route('raiding.boss-strategies.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Manage/BossStrategies/Index')
+            ->has('bosses')
+            ->has('phases')
+        );
+    }
+
+    #[Test]
+    public function guests_can_view_a_boss_strategy(): void
+    {
+        $boss = Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->get(route('raiding.boss-strategies.show', ['boss' => $boss, 'slug' => $boss->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Raiding/BossStrategies/Show')
+            ->has('boss')
+        );
+    }
+
+    #[Test]
     public function edit_returns_boss_with_raid(): void
     {
         $boss = Boss::factory()->for(Raid::factory())->create();
@@ -143,19 +189,19 @@ class BossStrategyControllerTest extends DashboardTestCase
         $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
         $boss = Boss::factory()->for(Raid::factory())->create();
 
-        // Add media to boss
         $file = UploadedFile::fake()->image('strategy.png', 800, 600);
         $boss->addMedia($file)->toMediaCollection();
-        $initialCount = $boss->getMedia()->count();
+        $this->assertCount(1, $boss->refresh()->getMedia());
+
+        $mediaUrl = $boss->getFirstMedia()->getUrl();
 
         $response = $this->actingAs($user)->patch(
             route('management.boss-strategies.update', ['boss' => $boss]),
-            ['deleted_images' => []]
+            ['deleted_images' => [$mediaUrl]]
         );
 
         $response->assertRedirect();
-        // Media deletion requires exact URL matching which is difficult to test reliably
-        // The important part is that the endpoint accepts the deleted_images array
+        $this->assertCount(0, $boss->refresh()->getMedia());
     }
 
     #[Test]
@@ -275,6 +321,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         );
 
         $response->assertRedirect();
+        $this->assertCount(0, $boss->refresh()->getMedia());
     }
 
     #[Test]

@@ -77,16 +77,12 @@ export default function Master({ title, children }) {
                             aria-expanded={showingNavigationDropdown}
                             aria-label="Toggle navigation"
                         >
-                            <Icon
-                                icon="bars"
-                                style="regular"
-                                className={`${showingNavigationDropdown ? "hidden" : "block"} h-6 w-6`}
-                            />
-                            <Icon
-                                icon="times"
-                                style="regular"
-                                className={`${showingNavigationDropdown ? "block" : "hidden"} h-6 w-6`}
-                            />
+                            <span className={showingNavigationDropdown ? "hidden" : "block"}>
+                                <Icon icon="bars" style="regular" className="h-6 w-6" />
+                            </span>
+                            <span className={showingNavigationDropdown ? "block" : "hidden"}>
+                                <Icon icon="times" style="regular" className="h-6 w-6" />
+                            </span>
                         </button>
                     </div>
 
@@ -96,14 +92,6 @@ export default function Master({ title, children }) {
                             <NavLink href={route("characters.index")}>
                                 <Icon icon="users" style="solid" className="mr-2 h-6" />
                                 Roster
-                            </NavLink>
-                            <NavLink href={route("daily-quests.index")}>
-                                <img
-                                    src="/images/icon_quest.webp"
-                                    alt="Quest start icon"
-                                    className="mr-2 inline-block h-4 px-1"
-                                />
-                                Daily Quests
                             </NavLink>
                             <NavLink href={route("raiding.index")}>
                                 <Icon icon="dragon" style="solid" className="mr-2 h-6" />
@@ -123,11 +111,11 @@ export default function Master({ title, children }) {
                             <button
                                 type="button"
                                 onClick={() => setSearchOpen(true)}
-                                className="hover:bg-brown-700 flex items-center gap-2 rounded border border-amber-600 bg-brown-800 px-3 py-1.5 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
+                                className="hover:bg-brown-700 border-brown-600 bg-brown-800 flex min-h-6 items-center gap-2 rounded border px-3 py-1.5 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
                             >
                                 <Icon icon="search" style="solid" className="h-4 w-4" />
                                 <span>Search</span>
-                                <span className="rounded bg-brown-700 px-1.5 py-0.5 text-xs text-gray-500">⌘K</span>
+                                <span className="bg-brown-700 rounded px-1.5 py-0.5 text-xs text-gray-500">⌘K</span>
                             </button>
                             {user ? (
                                 <Dropdown>
@@ -194,16 +182,6 @@ export default function Master({ title, children }) {
                         <ResponsiveNavLink href={route("characters.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route("daily-quests.index")}>
-                            <span className="mr-2 inline-flex w-5 justify-center">
-                                <img
-                                    src="/images/icon_quest.webp"
-                                    alt="Quest start icon"
-                                    className="inline-block h-4 px-1"
-                                />
-                            </span>
-                            Daily Quests
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route("raiding.index")}>
                             <Icon icon="dragon" style="solid" className="mr-2 h-6" />

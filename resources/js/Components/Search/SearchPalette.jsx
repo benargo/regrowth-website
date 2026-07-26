@@ -12,10 +12,10 @@ function ResultSkeleton() {
         <div className="animate-pulse space-y-1 p-2">
             {[0, 1, 2].map((i) => (
                 <div key={i} className="flex items-center gap-4 rounded p-2">
-                    <div className="h-8 w-8 flex-none rounded bg-brown-700" />
+                    <div className="bg-brown-700 h-8 w-8 flex-none rounded" />
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <div className="h-3 w-1/3 rounded bg-brown-700" />
-                        <div className="h-4 w-2/3 rounded bg-brown-700" />
+                        <div className="bg-brown-700 h-3 w-1/3 rounded" />
+                        <div className="bg-brown-700 h-4 w-2/3 rounded" />
                     </div>
                 </div>
             ))}
@@ -83,7 +83,9 @@ export default function SearchPalette({ open, onClose }) {
 
     useEffect(() => {
         if (highlightedIndex < 0) return;
-        listRef.current?.querySelector(`#search-palette-option-${highlightedIndex}`)?.scrollIntoView({ block: "nearest" });
+        listRef.current
+            ?.querySelector(`#search-palette-option-${highlightedIndex}`)
+            ?.scrollIntoView({ block: "nearest" });
     }, [highlightedIndex]);
 
     const goToResults = () => {
@@ -126,7 +128,7 @@ export default function SearchPalette({ open, onClose }) {
             <div className="fixed inset-0 z-10 flex items-start justify-center overflow-y-auto px-4 pt-[10vh] pb-6">
                 <DialogPanel
                     transition
-                    className="w-full max-w-2xl transform overflow-hidden rounded-lg border border-primary bg-brown bg-brown-texture shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:opacity-0 data-closed:scale-95"
+                    className="border-primary bg-brown bg-brown-texture w-full max-w-2xl transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:scale-95 data-closed:opacity-0"
                 >
                     <div className="flex items-center gap-2 border-b border-amber-600/50 px-4 py-3">
                         <Icon icon="search" style="solid" className="h-4 w-4 flex-none text-gray-400" />
@@ -136,7 +138,7 @@ export default function SearchPalette({ open, onClose }) {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Search items..."
+                            placeholder="Search..."
                             role="combobox"
                             aria-expanded={results.length > 0}
                             aria-controls="search-palette-listbox"

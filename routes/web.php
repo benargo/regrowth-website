@@ -93,6 +93,10 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->name('plans.edit');
     Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->name('plans.apply-template');
 
+    // Boss strategies routes
+    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
+    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'show'])->name('boss-strategies.show');
+
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
