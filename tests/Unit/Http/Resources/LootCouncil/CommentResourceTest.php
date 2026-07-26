@@ -2,31 +2,27 @@
 
 namespace Tests\Unit\Http\Resources\LootCouncil;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Storage;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('loot')]
 class CommentResourceTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -34,27 +30,9 @@ class CommentResourceTest extends TestCase
         parent::setUp();
 
         Queue::fake();
-        $this->mockBlizzardServices();
+        $this->mockItemService();
         $this->mockCacheService();
         $this->setUpPermissions();
-    }
-
-    protected function mockBlizzardServices(): void
-    {
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(body: [
-                'name' => 'Test Item',
-                'item_class' => ['name' => 'Armor'],
-                'item_subclass' => ['name' => 'Plate'],
-                'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
-                'inventory_type' => ['name' => 'Head'],
-            ], status: 200),
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
     }
 
     protected function mockCacheService(): void
@@ -120,7 +98,10 @@ class CommentResourceTest extends TestCase
     public function it_returns_item_id_when_item_not_loaded(): void
     {
         $item = Item::factory()->create();
-        $comment = Comment::factory()->create(['item_id' => $item->id]);
+        $comment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
 
         $resource = new CommentResource($comment);
         $array = $resource->toArray(new Request);
@@ -132,8 +113,11 @@ class CommentResourceTest extends TestCase
     public function it_returns_full_item_data_when_item_is_loaded(): void
     {
         $item = Item::factory()->create();
-        $comment = Comment::factory()->create(['item_id' => $item->id]);
-        $comment->load('item');
+        $comment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
+        $comment->load('commentable');
 
         $resource = new CommentResource($comment);
         $array = $resource->toArray(new Request);
@@ -141,6 +125,24 @@ class CommentResourceTest extends TestCase
         $this->assertIsArray($array['item']);
         $this->assertSame($item->id, $array['item']['id']);
         $this->assertArrayHasKey('name', $array['item']);
+    }
+
+    #[Test]
+    public function it_returns_null_when_commentable_is_loaded_but_model_has_been_deleted(): void
+    {
+        $item = Item::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+        ]);
+
+        $item->forceDelete();
+        $comment->load('commentable');
+
+        $resource = new CommentResource($comment);
+        $array = $resource->toArray(new Request);
+
+        $this->assertNull($array['item']);
     }
 
     #[Test]

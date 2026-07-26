@@ -19,7 +19,7 @@ class PriorityResource extends JsonResource
             'title' => $this->title,
             'type' => $this->type,
             'media' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
-            'weight' => $this->whenPivotLoaded('lootcouncil_item_priorities', fn () => $this->pivot->weight),
+            'weight' => $this->whenPivotLoaded('pivot_items_priorities', fn () => $this->pivot->weight),
         ];
     }
 }

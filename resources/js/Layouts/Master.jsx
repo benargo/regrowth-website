@@ -8,6 +8,7 @@ import Pill from "@/Components/Pill";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import { Can } from "@/Components/Authorizable";
 import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
+import SearchPalette from "@/Components/Search/SearchPalette";
 
 export default function Master({ title, children }) {
     const { auth, flash } = usePage().props;
@@ -17,6 +18,7 @@ export default function Master({ title, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [flashError, setFlashError] = useState(flash?.error);
     const [flashSuccess, setFlashSuccess] = useState(flash?.success);
+    const [searchOpen, setSearchOpen] = useState(false);
 
     useEffect(() => {
         document.body.classList.add("bg-brown", "bg-brown-texture");
@@ -31,6 +33,18 @@ export default function Master({ title, children }) {
         setFlashSuccess(flash?.success);
     }, [flash?.error, flash?.success]);
 
+    // Ctrl/Cmd+K opens the search palette from anywhere in the app.
+    useEffect(() => {
+        const handler = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+                e.preventDefault();
+                setSearchOpen(true);
+            }
+        };
+        document.addEventListener("keydown", handler);
+        return () => document.removeEventListener("keydown", handler);
+    }, []);
+
     return (
         <>
             <Head title={title} />
@@ -41,34 +55,40 @@ export default function Master({ title, children }) {
                         className="flex flex-row items-center border-b border-transparent p-1 text-lg font-bold text-white transition-colors hover:border-white"
                         href="/"
                     >
-                        <img
-                            src="/images/guild_emblem.webp"
-                            alt="Guild Emblem"
-                            className="mr-1 inline-block max-h-[32px]"
-                        />
+                        <img src="/images/guild_emblem.webp" alt="Guild Emblem" className="mr-1 inline-block max-h-8" />
                         Regrowth
                     </Link>
 
-                    {/* Mobile menu button */}
-                    <button
-                        className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-brown-700 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-white lg:hidden"
-                        type="button"
-                        onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
-                        aria-controls="mobile-menu"
-                        aria-expanded={showingNavigationDropdown}
-                        aria-label="Toggle navigation"
-                    >
-                        <Icon
-                            icon="bars"
-                            style="regular"
-                            className={`${showingNavigationDropdown ? "hidden" : "block"} h-6 w-6`}
-                        />
-                        <Icon
-                            icon="times"
-                            style="regular"
-                            className={`${showingNavigationDropdown ? "block" : "hidden"} h-6 w-6`}
-                        />
-                    </button>
+                    {/* Mobile search + menu buttons */}
+                    <div className="ml-auto flex items-center gap-1 lg:hidden">
+                        <button
+                            className="hover:bg-brown-700 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset"
+                            type="button"
+                            onClick={() => setSearchOpen(true)}
+                            aria-label="Search"
+                        >
+                            <Icon icon="search" style="regular" className="h-6 w-6" />
+                        </button>
+                        <button
+                            className="hover:bg-brown-700 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset"
+                            type="button"
+                            onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
+                            aria-controls="mobile-menu"
+                            aria-expanded={showingNavigationDropdown}
+                            aria-label="Toggle navigation"
+                        >
+                            <Icon
+                                icon="bars"
+                                style="regular"
+                                className={`${showingNavigationDropdown ? "hidden" : "block"} h-6 w-6`}
+                            />
+                            <Icon
+                                icon="times"
+                                style="regular"
+                                className={`${showingNavigationDropdown ? "block" : "hidden"} h-6 w-6`}
+                            />
+                        </button>
+                    </div>
 
                     {/* Desktop menu */}
                     <div className="hidden lg:ml-10 lg:flex lg:flex-1 lg:items-center lg:justify-between">
@@ -99,7 +119,16 @@ export default function Master({ title, children }) {
                             </NavLink>
                         </div>
 
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setSearchOpen(true)}
+                                className="hover:bg-brown-700 flex items-center gap-2 rounded border border-amber-600 bg-brown-800 px-3 py-1.5 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
+                            >
+                                <Icon icon="search" style="solid" className="h-4 w-4" />
+                                <span>Search</span>
+                                <span className="rounded bg-brown-700 px-1.5 py-0.5 text-xs text-gray-500">⌘K</span>
+                            </button>
                             {user ? (
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -161,13 +190,13 @@ export default function Master({ title, children }) {
 
                 {/* Mobile menu */}
                 <div className={`${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`} id="mobile-menu">
-                    <div className="space-y-1 px-2 pb-3 pt-2">
+                    <div className="space-y-1 px-2 pt-2 pb-3">
                         <ResponsiveNavLink href={route("characters.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
                             Roster
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route("daily-quests.index")}>
-                            <span className="mr-2 inline-flex w-[20px] justify-center">
+                            <span className="mr-2 inline-flex w-5 justify-center">
                                 <img
                                     src="/images/icon_quest.webp"
                                     alt="Quest start icon"
@@ -184,13 +213,24 @@ export default function Master({ title, children }) {
                             <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
                             Loot Bias
                         </ResponsiveNavLink>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowingNavigationDropdown(false);
+                                setSearchOpen(true);
+                            }}
+                            className="flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                        >
+                            <Icon icon="search" style="solid" className="mr-2 h-6" />
+                            Search
+                        </button>
                         <ResponsiveNavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             Discord
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-t border-amber-700 pb-3 pt-4">
+                    <div className="border-t border-amber-700 pt-4 pb-3">
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
@@ -344,6 +384,8 @@ export default function Master({ title, children }) {
                     </div>
                 </footer>
             </div>
+
+            <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
         </>
     );
 }

@@ -11,14 +11,13 @@ export default function BossStrategiesIndex({ bosses, phases }) {
         <Master title="Boss Strategies">
             <SharedHeader title="Boss Strategies" backgroundClass="bg-karazhan" />
             <PageContainer>
+                <div className="flex flex-col gap-4">
                 {phases?.map((phase) => (
                     <Collapsible
                         key={phase.id}
                         sessionKey={`boss_strategies:phase_${phase.number}`}
                         title={`Phase ${phase.number}`}
-                        className="my-4 border-amber-600"
-                        headerClassName="hover:bg-amber-600/10"
-                        bodyClassName="border-amber-600"
+                        style="amber"
                     >
                         <div className="flex flex-wrap gap-4">
                             {Object.values(phase.raids).map((raid) => (
@@ -46,6 +45,7 @@ export default function BossStrategiesIndex({ bosses, phases }) {
                         </div>
                     </Collapsible>
                 ))}
+                </div>
             </PageContainer>
         </Master>
     );

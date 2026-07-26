@@ -20,9 +20,7 @@ function BossSection({ boss, onStrategyChanged }) {
         <Collapsible
             title={boss.name}
             sessionKey={`event_boss_expanded_${boss.slug}_${boss.id}`}
-            className="border-amber-600"
-            headerClassName="hover:bg-amber-600/10"
-            bodyClassName="border-amber-600"
+            style="amber"
         >
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col items-center gap-2 text-center">

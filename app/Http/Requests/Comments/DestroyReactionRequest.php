@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Comments;
 
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\CommentReaction;
+use App\Models\Comment;
+use App\Models\CommentReaction;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;

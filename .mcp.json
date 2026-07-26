@@ -4,6 +4,10 @@
             "command": "vendor/bin/sail",
             "args": ["artisan", "boost:mcp"]
         },
+        "laravel-inertia": {
+            "type": "http",
+            "url": "https://inertiajs.com/docs/mcp"
+        },
         "saloon": {
             "type": "http",
             "url": "https://docs.saloon.dev/~gitbook/mcp"

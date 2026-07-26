@@ -7,6 +7,8 @@ use App\Events\AddonSettingsProcessed;
 use App\Helpers\Database\Eloquent\Traits\HasManyKeyBy;
 use App\Policies\DatasetPolicy;
 use Database\Factories\PhaseFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,36 +16,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
+#[Fillable(['number', 'description', 'start_date'])]
+#[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
 class Phase extends Model implements DatasetModel
 {
     /** @use HasFactory<PhaseFactory> */
-    use HasFactory, HasManyKeyBy;
+    use HasFactory;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'phases';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'number',
-        'description',
-        'start_date',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<string>
-     */
-    protected $hidden = ['created_at', 'updated_at'];
+    use HasManyKeyBy;
 
     /**
      * Get the attributes that should be cast.

@@ -3,18 +3,28 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\BossResource;
+use App\Http\Resources\ItemResource;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class BossResourceTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->mockItemService();
+    }
 
     #[Test]
     public function it_returns_id(): void
@@ -75,10 +85,11 @@ class BossResourceTest extends TestCase
         $boss = Boss::factory()->withItems(2)->create();
         $boss->load('items');
 
-        $array = (new BossResource($boss))->toArray(new Request);
+        $array = (new BossResource($boss))->resolve(new Request);
 
         $this->assertArrayHasKey('items', $array);
         $this->assertCount(2, $array['items']);
+        $this->assertInstanceOf(ItemResource::class, $array['items'][0]);
     }
 
     #[Test]
@@ -89,28 +100,6 @@ class BossResourceTest extends TestCase
         $array = (new BossResource($boss))->resolve(new Request);
 
         $this->assertArrayNotHasKey('items', $array);
-    }
-
-    #[Test]
-    public function it_includes_comments_when_loaded(): void
-    {
-        $boss = Boss::factory()->withComments(2)->create();
-        $boss->load('comments');
-
-        $array = (new BossResource($boss))->toArray(new Request);
-
-        $this->assertArrayHasKey('comments', $array);
-        $this->assertCount(2, $array['comments']);
-    }
-
-    #[Test]
-    public function it_excludes_comments_when_not_loaded(): void
-    {
-        $boss = Boss::factory()->withComments(2)->create();
-
-        $array = (new BossResource($boss))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('comments', $array);
     }
 
     #[Test]
@@ -153,6 +142,28 @@ class BossResourceTest extends TestCase
         $this->assertArrayHasKey('images', $array);
         $this->assertIsArray($array['images']);
         $this->assertEmpty($array['images']);
+    }
+
+    #[Test]
+    public function it_returns_comments_count_when_counted(): void
+    {
+        $boss = Boss::factory()->create();
+        $boss->loadCount('comments');
+
+        $array = (new BossResource($boss))->toArray(new Request);
+
+        $this->assertArrayHasKey('comments_count', $array);
+        $this->assertSame(0, $array['comments_count']);
+    }
+
+    #[Test]
+    public function it_excludes_comments_count_when_not_counted(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $array = (new BossResource($boss))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('comments_count', $array);
     }
 
     #[Test]

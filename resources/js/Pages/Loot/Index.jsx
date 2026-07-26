@@ -8,8 +8,8 @@ export default function Index({ raids }) {
         <Master title="Loot Bias">
             <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
             <PageContainer>
-                <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    {raids.map((raid) => (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {raids.data.map((raid) => (
                         <RaidCard key={raid.id} raid={raid} />
                     ))}
                 </div>

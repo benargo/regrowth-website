@@ -12,14 +12,14 @@ use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
-use Tests\Support\Blizzard\HasBlizzardTokenMock;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('characters')]
 #[Group('blizzard-integration')]
 class RosterTest extends TestCase
 {
-    use HasBlizzardTokenMock;
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void

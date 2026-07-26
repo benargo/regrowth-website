@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
     DndContext,
     DragOverlay,
@@ -11,16 +11,20 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Deferred, Link, useForm } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
+import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
-import Notes from "@/Components/Loot/Notes";
+import MarkdownEditor from "@/Components/MarkdownEditor";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
+
+const ALLOWED_FORMATS = ["bold", "italic", "underline", "link", "wowheadLink"];
+const VALIDATION_RULES = ["noLineBreaks"];
 
 function DraggablePriorityItem({ priority, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: priority.id });
@@ -412,40 +416,106 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
 export default function ItemEdit({ item, allPriorities: allPrioritiesResource, comments }) {
     const allPriorities = allPrioritiesResource.data;
 
-    const { data, setData, put, processing, isDirty } = useForm({
+    const { data, setData } = useForm({
         priorities: item.data.priorities.map((p) => ({
             priority_id: p.id,
             weight: p.weight,
         })),
     });
 
+    const [notesValidationError, setNotesValidationError] = useState(null);
+    const [notesError, setNotesError] = useState(null);
+    const [saving, setSaving] = useState(false);
+
+    const { data: notesData, setData: setNotesData, reset: resetNotes } = useForm({
+        notes: item.data.notes || "",
+    });
+
+    useEffect(() => {
+        setNotesData("notes", item.data.notes || "");
+    }, [item.data.notes]);
+
+    const handleNotesValidationChange = useCallback((error) => {
+        setNotesValidationError(error);
+    }, []);
+
+    const saveItem = useCallback(async (payload) => {
+        setSaving(true);
+        try {
+            await window.axios.patch(route("api.loot.items.update", { item: item.data.id }), payload);
+            setNotesError(null);
+        } catch (error) {
+            if (error.response?.data?.errors?.notes) {
+                setNotesError(error.response.data.errors.notes[0]);
+            }
+        } finally {
+            setSaving(false);
+        }
+    }, [item.data.id]);
+
+    const notesFocused = useRef(false);
+
+    useItemChannel(item.data.id, ({ notes, priorities }) => {
+        if (!notesFocused.current && notes !== undefined) {
+            setNotesData("notes", notes ?? "");
+        }
+        if (priorities !== undefined) {
+            setData(
+                "priorities",
+                priorities.map((p) => ({ priority_id: p.id, weight: p.weight })),
+            );
+        }
+    });
+
     const isFirstRender = useRef(true);
-    const debounceTimer = useRef(null);
-    // Auto-save when priorities change
+    const prioritiesDebounce = useRef(null);
+
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
             return;
         }
 
-        if (debounceTimer.current) {
-            clearTimeout(debounceTimer.current);
+        if (prioritiesDebounce.current) {
+            clearTimeout(prioritiesDebounce.current);
         }
 
-        if (!isDirty) return;
-
-        debounceTimer.current = setTimeout(() => {
-            put(route("loot.items.priorities.update", { item: item.data.id }), {
-                preserveScroll: true,
-            });
+        prioritiesDebounce.current = setTimeout(() => {
+            saveItem({ priorities: data.priorities });
         }, 1000);
 
         return () => {
-            if (debounceTimer.current) {
-                clearTimeout(debounceTimer.current);
+            if (prioritiesDebounce.current) {
+                clearTimeout(prioritiesDebounce.current);
             }
         };
-    }, [data.priorities]);
+    }, [data.priorities, saveItem]);
+
+    const isFirstNotesRender = useRef(true);
+    const notesDebounce = useRef(null);
+
+    useEffect(() => {
+        if (isFirstNotesRender.current) {
+            isFirstNotesRender.current = false;
+            return;
+        }
+
+        if (notesDebounce.current) {
+            clearTimeout(notesDebounce.current);
+        }
+
+        if (notesValidationError) return;
+
+        notesDebounce.current = setTimeout(() => {
+            saveItem({ notes: notesData.notes });
+        }, 1000);
+
+        return () => {
+            if (notesDebounce.current) {
+                clearTimeout(notesDebounce.current);
+            }
+        };
+    }, [notesData.notes, saveItem]);
 
     const prioritiesWithDetails = useMemo(() => {
         return data.priorities.map((p) => {
@@ -464,7 +534,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
-                        href={route("loot.items.show", { item: item.data.id, name: item.data.slug })}
+                        href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}
                         className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
@@ -472,7 +542,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                     </Link>
                 </div>
                 <div className="flex space-x-4">
-                    <AutoSaveLabel processing={processing} />
+                    <AutoSaveLabel processing={saving} />
                 </div>
             </ToolNav>
             {/* Content */}
@@ -494,7 +564,36 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
 
                 {/* Notes Section */}
-                <Notes notes={item.data.notes} itemId={item.data.id} canEdit="true" />
+                <div className="mt-8">
+                    <h2 className="mb-2 text-xl font-bold">Officers&rsquo; notes</h2>
+                    <p className="text-md mb-4 text-gray-400">
+                        Notes are unique to each loot item. If you change what another officer has written, it will
+                        overwrite their notes.
+                    </p>
+                    <div onFocus={() => (notesFocused.current = true)} onBlur={() => (notesFocused.current = false)}>
+                        <MarkdownEditor
+                            value={notesData.notes}
+                            onChange={(value) => setNotesData("notes", value)}
+                            allowedFormats={ALLOWED_FORMATS}
+                            validationRules={VALIDATION_RULES}
+                            rows={2}
+                            error={notesError}
+                            onValidationChange={handleNotesValidationChange}
+                            className="mb-1"
+                        />
+                    </div>
+                    <div className="mb-4 flex flex-col justify-between gap-4 md:flex-row">
+                        <div className="flex items-center justify-between gap-4 md:order-2">
+                            <button
+                                type="button"
+                                onClick={() => resetNotes("notes")}
+                                className="hover:bg-brown-700 focus:bg-brown-700 focus:ring-brown-500 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+                            >
+                                <Icon icon="trash" style="solid" className="mr-1" /> Reset notes
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Comments Section */}
                 <CommentsSection comments={comments} itemId={item.data.id} canCreate="true" />

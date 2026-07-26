@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use App\Models\LootCouncil\Comment;
 use Database\Factories\RaidFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -139,10 +138,11 @@ class Raid extends Model
     /**
      * Get the comments for the items that drop from this raid (including trash drops).
      *
-     * @return HasManyThrough<Comment, Item>
+     * @return HasManyThrough<Comment, Item, $this>
      */
     public function comments(): HasManyThrough
     {
-        return $this->hasManyThrough(Comment::class, Item::class, 'raid_id', 'item_id');
+        return $this->hasManyThrough(Comment::class, Item::class, 'raid_id', 'commentable_id')
+            ->where('commentable_type', Item::class);
     }
 }

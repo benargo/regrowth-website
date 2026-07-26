@@ -11,6 +11,19 @@ function DefaultSkeleton() {
     );
 }
 
+const STYLES = {
+    amber: {
+        border: "border-amber-600",
+        header: "hover:bg-amber-600/10",
+        body: "border-amber-600",
+    },
+    gray: {
+        border: "border-gray-400",
+        header: "hover:bg-gray-400/10",
+        body: "border-gray-400",
+    },
+};
+
 export default function Collapsible({
     title,
     children,
@@ -21,10 +34,10 @@ export default function Collapsible({
     loading = false,
     skeleton,
     headerRight,
-    className = "",
-    headerClassName = "",
-    bodyClassName = "",
+    style = "amber",
 }) {
+    const styles = STYLES[style] ?? STYLES.amber;
+
     const [expanded, setExpanded] = useState(() => {
         if (sessionKey) {
             try {
@@ -67,10 +80,10 @@ export default function Collapsible({
     const loadingSkeleton = skeleton || <DefaultSkeleton />;
 
     return (
-        <div className={`rounded-md border ${className}`}>
+        <div className={`rounded-md border ${styles.border}`}>
             <button
                 onClick={handleToggle}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${headerClassName}`}
+                className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${styles.header}`}
             >
                 <span
                     className={`flex items-center justify-items-center transition-transform duration-500 ${expanded ? "-rotate-180" : ""}`}
@@ -81,7 +94,7 @@ export default function Collapsible({
                 {headerRight && <span className="ml-auto">{headerRight}</span>}
             </button>
             {expanded && (
-                <div className={`border-t px-4 py-3 ${bodyClassName}`}>
+                <div className={`border-t px-4 py-3 ${styles.body}`}>
                     {loading ? loadingSkeleton : children || loadingSkeleton}
                 </div>
             )}

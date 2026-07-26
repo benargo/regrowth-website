@@ -11,7 +11,7 @@ import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { decodeFilter, encodeFilter } from "@/Helpers/EncodeFilter";
 import RankLabel from "@/Components/GuildRanks/RankLabel";
 import FilterDropdown from "@/Components/FilterDropdown";
-import SearchInput from "@/Components/SearchInput";
+import SearchInput from "@/Components/Search/SearchInput";
 import ToggleFilter from "@/Components/ToggleFilter";
 
 // ─── Matrix components ────────────────────────────────────────────────────────
@@ -26,30 +26,30 @@ function MatrixSkeleton() {
                 <thead className="border-b border-amber-600/30">
                     <tr>
                         <th className="px-4 py-3">
-                            <div className="h-4 w-32 rounded bg-brown-700" />
+                            <div className="bg-brown-700 h-4 w-32 rounded" />
                         </th>
                         <th className="px-4 py-3">
-                            <div className="h-4 w-12 rounded bg-brown-700" />
+                            <div className="bg-brown-700 h-4 w-12 rounded" />
                         </th>
                         {fakeCols.map((_, i) => (
                             <th key={i} className="px-3 py-3">
-                                <div className="mx-auto h-4 w-10 rounded bg-brown-700" />
+                                <div className="bg-brown-700 mx-auto h-4 w-10 rounded" />
                             </th>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-brown-700">
+                <tbody className="divide-brown-700 divide-y">
                     {fakeRows.map((_, i) => (
                         <tr key={i}>
                             <td className="px-4 py-2">
-                                <div className="h-4 w-28 rounded bg-brown-700" />
+                                <div className="bg-brown-700 h-4 w-28 rounded" />
                             </td>
                             <td className="px-4 py-2">
-                                <div className="mx-auto h-4 w-12 rounded bg-brown-700" />
+                                <div className="bg-brown-700 mx-auto h-4 w-12 rounded" />
                             </td>
                             {fakeCols.map((_, j) => (
                                 <td key={j} className="px-3 py-2">
-                                    <div className="mx-auto h-4 w-4 rounded bg-brown-700" />
+                                    <div className="bg-brown-700 mx-auto h-4 w-4 rounded" />
                                 </td>
                             ))}
                         </tr>
@@ -117,7 +117,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                         <th className="bg-brown-900 px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-0 md:z-20">
                             Name
                         </th>
-                        <th className="hidden bg-brown-900 px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-[max-content] md:z-20 md:table-cell">
+                        <th className="bg-brown-900 hidden px-4 py-3 text-left text-sm font-semibold text-amber-500 md:sticky md:left-[max-content] md:z-20 md:table-cell">
                             Rank
                         </th>
                         <th className="bg-brown-900 px-4 py-3 text-right text-sm font-semibold text-amber-500 lg:sticky lg:z-20">
@@ -126,7 +126,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                         {raids.map((raid) => (
                             <th
                                 key={raid.id}
-                                className="whitespace-nowrap px-3 py-3 text-center text-sm font-semibold text-amber-500"
+                                className="px-3 py-3 text-center text-sm font-semibold whitespace-nowrap text-amber-500"
                             >
                                 <Tooltip text={raid.zoneName} position="bottom">
                                     <p>{raid.dayOfWeek}</p>
@@ -136,13 +136,13 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-brown-700">
+                <tbody className="divide-brown-700 divide-y">
                     {rows.map((row) => {
                         const cachedNames = attendanceNamesCache.current[row.id];
                         return (
                             <tr
                                 key={row.name}
-                                className="transition-colors hover:bg-brown-800/50"
+                                className="hover:bg-brown-800/50 transition-colors"
                                 onMouseEnter={() => fetchAttendanceNames(row.id)}
                             >
                                 <td className="bg-brown-900 px-4 py-2 text-sm font-medium text-white md:sticky md:z-10">
@@ -152,17 +152,17 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                                 <img
                                                     src={row.playable_class.icon_url}
                                                     alt={row.playable_class.name}
-                                                    className="mr-2 inline-block hidden h-4 w-4 rounded-xs md:inline-flex"
+                                                    className="mr-2 hidden inline-block h-4 w-4 rounded-xs md:inline-flex"
                                                 />
                                             )}
                                             {row.name}
                                         </p>
                                     </div>
                                 </td>
-                                <td className="hidden whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 md:table-cell lg:sticky lg:z-10">
+                                <td className="bg-brown-900 hidden px-4 py-2 text-right text-sm whitespace-nowrap text-gray-300 md:table-cell lg:sticky lg:z-10">
                                     <RankLabel rank={rankMap[row.rank_id]} />
                                 </td>
-                                <td className="whitespace-nowrap bg-brown-900 px-4 py-2 text-right text-sm text-gray-300 lg:sticky lg:z-10">
+                                <td className="bg-brown-900 px-4 py-2 text-right text-sm whitespace-nowrap text-gray-300 lg:sticky lg:z-10">
                                     <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
                                     <span className="inline md:hidden">{row.percentage.toFixed(0)}%</span>
                                 </td>
@@ -172,7 +172,9 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                             value={value}
                                             names={cachedNames?.[idx] ?? []}
                                             plannedAbsence={
-                                                row.planned_absences?.[idx] ? absenceMap[row.planned_absences[idx]] : null
+                                                row.planned_absences?.[idx]
+                                                    ? absenceMap[row.planned_absences[idx]]
+                                                    : null
                                             }
                                         />
                                     </td>
@@ -252,11 +254,11 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                 ),
             );
 
-            fetch(`${route('api.attendance.names')}?${params}`, {
+            fetch(`${route("api.attendance.names")}?${params}`, {
                 headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                    'X-Requested-With': 'XMLHttpRequest',
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content ?? "",
+                    "X-Requested-With": "XMLHttpRequest",
                 },
             })
                 .then((r) => (r.ok ? r.json() : null))
@@ -334,11 +336,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                 <div className="mb-6 space-y-3">
                     {/* Row 1: Client-side filters */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <SearchInput
-                            value={characterName}
-                            onChange={setCharacterName}
-                            placeholder="Search by name…"
-                        />
+                        <SearchInput value={characterName} onChange={setCharacterName} placeholder="Search by name…" />
                         <FilterDropdown
                             label={{ singular: "Rank", plural: "Ranks" }}
                             options={ranks}
@@ -349,9 +347,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                             label={{ singular: "Class", plural: "Classes" }}
                             options={availableClasses}
                             selected={effectiveClassIds}
-                            onChange={(ids) =>
-                                setSelectedClassIds(ids.length === availableClasses.length ? null : ids)
-                            }
+                            onChange={(ids) => setSelectedClassIds(ids.length === availableClasses.length ? null : ids)}
                         />
                     </div>
 
@@ -375,12 +371,7 @@ export default function Matrix({ matrix, ranks, zones, guildTags, filters, earli
                             onChange={setBeforeDate}
                             min={earliestDate}
                         />
-                        <DateFilterButton
-                            label="After"
-                            value={sinceDate}
-                            onChange={setSinceDate}
-                            min={earliestDate}
-                        />
+                        <DateFilterButton label="After" value={sinceDate} onChange={setSinceDate} min={earliestDate} />
                         <ToggleFilter
                             label="Combine linked characters"
                             value={includeLinkedCharacters}

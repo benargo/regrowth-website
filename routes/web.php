@@ -19,17 +19,19 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\Loot\CommentController;
 use App\Http\Controllers\Loot\ItemController;
-use App\Http\Controllers\Loot\LootController;
 use App\Http\Controllers\Loot\ReactionController;
-use App\Http\Controllers\Loot\ShowRaidController;
+use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('Home'))->name('home');
+
+Route::get('/search', SearchController::class)->name('search');
 
 /**
  * Guild Roster
@@ -52,14 +54,11 @@ Route::patch('/manage/characters/{character}', [CharacterController::class, 'upd
  * Loot Bias Tools
  */
 Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
-    Route::get('/', [LootController::class, 'index'])->name('index');
-    Route::get('/raids/{raid}/{name?}', ShowRaidController::class)->name('raids.show');
+    Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
+    Route::get('/raids/{raid}/{name?}', [LootBiasToolController::class, 'showRaid'])->name('raids.show');
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
-    Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->name('items.notes.store');
-    Route::put('/items/{item}/priorities', [ItemController::class, 'updatePriorities'])->name('items.priorities.update');
-    Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit']);
-    Route::get('/items/{item}/{name?}', [ItemController::class, 'show'])->name('items.show');
-    Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->name('items.edit');
+    Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
+    Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
 
     // Comment routes
     Route::get('/comments', [CommentController::class, 'index'])->name('comments.index');

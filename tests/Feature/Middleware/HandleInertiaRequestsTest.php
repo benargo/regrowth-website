@@ -215,20 +215,14 @@ class HandleInertiaRequestsTest extends TestCase
     }
 
     #[Test]
-    public function it_shares_phases_with_inertia(): void
+    public function shared_props_do_not_include_phases(): void
     {
-        $phases = Phase::factory()->count(3)->create();
+        Phase::factory()->create();
+        $user = User::factory()->member()->create();
 
-        $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('phases', 3)
-            );
-    }
+        $response = $this->actingAs($user)->get(route('loot.index'));
 
-    #[Test]
-    public function it_shares_empty_phases_when_none_exist(): void
-    {
-        $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('phases', 0)
-            );
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->missing('phases'));
     }
 }

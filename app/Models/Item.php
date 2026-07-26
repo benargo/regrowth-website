@@ -5,34 +5,30 @@ namespace App\Models;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
 use App\Events\ItemSaved;
+use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use Database\Factories\ItemFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[Fillable(['raid_id', 'boss_id', 'name', 'quality', 'group', 'notes'])]
+#[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
 class Item extends Model implements HasBlizzardIcons, HasMedia
 {
     /** @use HasFactory<ItemFactory> */
-    use HasFactory, InteractsWithMedia;
+    use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'raid_id',
-        'boss_id',
-        'name',
-        'quality',
-        'group',
-        'notes',
-    ];
+    use InteractsWithMedia;
 
     /**
      * The attributes that should be cast to native types.
@@ -52,31 +48,64 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
         'saved' => ItemSaved::class,
     ];
 
-    // ============ Custom attributes ============
+    /**
+     * The database drivers that support FULLTEXT indexes, read from
+     * config('database.behaviours.full_text') when the model boots.
+     *
+     * @var array<int, string>
+     */
+    protected static array $fullTextDrivers = [];
 
     /**
-     * Get the slug for this item based on its name.
+     * Read the FULLTEXT-capable drivers from configuration.
      */
-    public function getSlugAttribute(): string
+    protected static function booted(): void
     {
-        return Str::slug($this->name ?? '');
+        static::bootFullTextDrivers();
     }
 
     /**
-     * Get the Wowhead URL for this item.
+     * Populate the FULLTEXT-capable drivers from configuration.
      */
-    public function getWowheadUrlAttribute(): string
+    public static function bootFullTextDrivers(): void
     {
-        $base = "https://www.wowhead.com/tbc/item={$this->id}";
+        static::$fullTextDrivers = config('database.behaviours.full_text', []);
+    }
 
-        return $this->name ? $base.'/'.$this->slug : $base;
+    // ============ Custom attributes ============
+
+    protected function slug(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => Str::slug($this->name ?? ''),
+        );
+    }
+
+    protected function wowheadUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $base = "https://www.wowhead.com/tbc/item={$this->id}";
+
+                return $this->name ? "{$base}/{$this->slug}" : $base;
+            },
+        );
+    }
+
+    // ============ Blizzard data ============
+
+    public function fillBlizzardData(ItemData $data): static
+    {
+        return $this->forceFill([
+            'name' => $data->name,
+            'inventoryType' => ['name' => $data->inventoryType->name],
+            'itemClass' => ['name' => $data->itemClass->name],
+            'itemSubclass' => ['name' => $data->itemSubclass->name],
+        ]);
     }
 
     // ============ Media ============
 
-    /**
-     * Register media collections for the model.
-     */
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('blizzard_icons')->singleFile();
@@ -97,11 +126,11 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
     /**
      * Get the comments for this item.
      *
-     * @return HasMany<LootCouncil\Comment, $this>
+     * @return MorphMany<Comment, $this>
      */
-    public function comments(): HasMany
+    public function comments(): MorphMany
     {
-        return $this->hasMany(LootCouncil\Comment::class);
+        return $this->morphMany(Comment::class, 'commentable');
     }
 
     /**
@@ -117,13 +146,61 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
     /**
      * Get the priorities for this item.
      *
-     * @return BelongsToMany<LootCouncil\Priority, $this>
+     * @return BelongsToMany<LootPriority, $this>
      */
     public function priorities(): BelongsToMany
     {
-        return $this->belongsToMany(LootCouncil\Priority::class, 'lootcouncil_item_priorities', 'item_id', 'priority_id')
-            ->using(LootCouncil\ItemPriority::class)
+        return $this->belongsToMany(LootPriority::class, 'pivot_items_priorities', 'item_id', 'priority_id')
+            ->using(ItemPriority::class)
             ->withPivot('weight')
             ->withTimestamps();
+    }
+
+    // ============ Search ============
+
+    /**
+     * Constrain the query to items whose name matches the given term, using the
+     * FULLTEXT index on drivers that support it (MariaDB, MySQL, PostgreSQL) and
+     * LIKE elsewhere (SQLite, used by the test suite).
+     *
+     * Items are created before Blizzard data fills their name, so nameless rows
+     * exist in the table and must never surface as results.
+     *
+     * Uses whereFullText()'s boolean mode with a trailing wildcard on
+     * MariaDB/MySQL rather than the default natural language mode, which only
+     * matches whole words and ignores terms shorter than the server's
+     * ft_min_word_len (4 by default) — silently dropping short queries like
+     * "arc" against "Archbishop's Slippers". Boolean mode with a `*` suffix does
+     * prefix matching instead, which is what a search-as-you-type box needs.
+     * PostgreSQL's whereFullText() has no boolean/prefix mode equivalent, so it
+     * is passed the plain term and matched via to_tsvector/plainto_tsquery.
+     *
+     * The term is expected to already be sanitised (see SearchRequest) — this
+     * scope only decides how to match it, not how to clean it.
+     *
+     * The drivers considered FULLTEXT-capable are read from
+     * config('database.behaviours.full_text') when the model boots.
+     */
+    #[Scope]
+    protected function matchingName(Builder $query, string $term): void
+    {
+        $query->whereNotNull('name');
+
+        $driver = $this->getConnection()->getDriverName();
+
+        if (! in_array($driver, static::$fullTextDrivers, true)) {
+            $query->where('name', 'like', '%'.$term.'%');
+
+            return;
+        }
+
+        if ($driver === 'pgsql') {
+            $query->whereFullText('name', $term);
+
+            return;
+        }
+
+        $boolean = implode(' ', array_map(fn (string $word): string => $word.'*', explode(' ', $term)));
+        $query->whereFullText('name', $boolean, ['mode' => 'boolean']);
     }
 }

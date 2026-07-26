@@ -41,7 +41,7 @@ function GuildTagsList({ allGuildTags, selectedTagIds, onToggleTag }) {
                         type="checkbox"
                         checked={selectedTagIds.includes(tag.id)}
                         onChange={() => onToggleTag(tag.id)}
-                        className="h-4 w-4 rounded border-amber-600 bg-brown-800/50 text-amber-600 focus:ring-amber-500"
+                        className="bg-brown-800/50 h-4 w-4 rounded border-amber-600 text-amber-600 focus:ring-amber-500"
                     />
                     <span className="text-white">{tag.name}</span>
                 </label>
@@ -171,13 +171,12 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
         <Master title="Manage TBC Phases">
             <SharedHeader title="Manage TBC Phases" backgroundClass="bg-officer-meeting" />
             <PageContainer>
+                <div className="flex flex-col gap-4">
                 {phases?.map((phase) => (
                     <Collapsible
                         key={phase.id}
                         title={`Phase ${phase.number}`}
-                        className="my-4 border-amber-600"
-                        headerClassName="hover:bg-amber-600/10"
-                        bodyClassName="border-amber-600"
+                        style="amber"
                         headerRight={
                             phase.id === current_phase && (
                                 <div className="rounded-md bg-green-600 px-2 py-1 text-xs font-semibold text-white">
@@ -271,7 +270,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                                                         onChange={() =>
                                                             toggleCountAttendance(tag.id, tag.count_attendance)
                                                         }
-                                                        className="h-4 w-4 rounded border-amber-600 bg-brown-800/50 text-amber-600 focus:ring-amber-500"
+                                                        className="bg-brown-800/50 h-4 w-4 rounded border-amber-600 text-amber-600 focus:ring-amber-500"
                                                     />
                                                 </span>
                                             </div>
@@ -295,14 +294,13 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                         </div>
                     </Collapsible>
                 ))}
+                </div>
             </PageContainer>
 
             {/* Edit Start Date Modal */}
             <Modal show={editingPhase !== null} onClose={closeModal} maxWidth="md">
                 <form onSubmit={handleSubmit} className="p-6">
-                    <h2 className="text-lg font-bold font-medium text-white">
-                        Edit Phase {editingPhase?.id} Start Date
-                    </h2>
+                    <h2 className="text-lg font-bold text-white">Edit Phase {editingPhase?.id} Start Date</h2>
                     <p className="mt-1 text-sm text-white">
                         Enter the start date and time in Europe/Paris timezone (server time).
                     </p>
@@ -313,7 +311,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                             type="datetime-local"
                             value={data.start_date}
                             onChange={(e) => setData("start_date", e.target.value)}
-                            className="mt-1 block w-full bg-brown-800/50 text-white"
+                            className="bg-brown-800/50 mt-1 block w-full text-white"
                         />
                         <InputError message={errors.start_date} className="mt-2" />
                     </div>
@@ -331,7 +329,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
             {/* Edit Guild Tags Modal */}
             <Modal show={editingTagsPhase !== null} onClose={closeTagsModal} maxWidth="md">
                 <form onSubmit={handleTagsSubmit} className="p-6">
-                    <h2 className="text-lg font-bold font-medium text-white">
+                    <h2 className="text-lg font-bold text-white">
                         Manage Warcraft Logs Tags for Phase {editingTagsPhase?.id}
                     </h2>
                     <p className="mt-1 text-sm text-white">

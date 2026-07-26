@@ -5,43 +5,32 @@ namespace Tests\Unit\Http\Resources;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Resources\BossItemsResource;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('loot')]
 #[Group('raiding')]
 class BossItemsResourceTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockBlizzardServices();
-    }
-
-    protected function mockBlizzardServices(array $itemData = []): void
-    {
-        Storage::fake('public');
-
-        $defaultItemData = ['name' => 'Test Item'];
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(body: array_merge($defaultItemData, $itemData), status: 200),
-        ]);
+        $this->mockItemService();
     }
 
     protected function createResourceData(int $bossId, $items): array
@@ -177,7 +166,7 @@ class BossItemsResourceTest extends TestCase
     #[Test]
     public function it_returns_name_from_blizzard_api(): void
     {
-        $this->mockBlizzardServices(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
+        $this->mockItemService(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
 
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
@@ -244,7 +233,7 @@ class BossItemsResourceTest extends TestCase
     {
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 1]);
 
         $items = $this->prepareItems([$item->id]);
@@ -286,7 +275,7 @@ class BossItemsResourceTest extends TestCase
     {
         $boss = Boss::factory()->create();
         $item = Item::factory()->fromBoss($boss)->create();
-        Comment::factory()->count(3)->create(['item_id' => $item->id]);
+        Comment::factory()->count(3)->for($item, 'commentable')->create();
 
         $items = $this->prepareItems([$item->id]);
 
@@ -333,8 +322,8 @@ class BossItemsResourceTest extends TestCase
         $boss = Boss::factory()->create();
         $item1 = Item::factory()->fromBoss($boss)->create();
         $item2 = Item::factory()->fromBoss($boss)->create();
-        Comment::factory()->count(2)->create(['item_id' => $item1->id]);
-        Comment::factory()->count(3)->create(['item_id' => $item2->id]);
+        Comment::factory()->count(2)->for($item1, 'commentable')->create();
+        Comment::factory()->count(3)->for($item2, 'commentable')->create();
 
         $items = $this->prepareItems([$item1->id, $item2->id]);
 

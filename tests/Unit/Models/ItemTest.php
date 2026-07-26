@@ -4,15 +4,17 @@ namespace Tests\Unit\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
+use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use App\Models\Boss;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
@@ -53,6 +55,18 @@ class ItemTest extends ModelTestCase
             'quality',
             'group',
             'notes',
+        ]);
+    }
+
+    #[Test]
+    public function it_has_expected_hidden_attributes(): void
+    {
+        $model = new Item;
+
+        $this->assertHidden($model, [
+            'wowhead_url',
+            'created_at',
+            'updated_at',
         ]);
     }
 
@@ -219,7 +233,7 @@ class ItemTest extends ModelTestCase
     public function it_belongs_to_many_priorities(): void
     {
         $item = $this->create();
-        $priorities = Priority::factory()->count(3)->create();
+        $priorities = LootPriority::factory()->count(3)->create();
 
         foreach ($priorities as $priority) {
             $item->priorities()->attach($priority->id, ['weight' => 100]);
@@ -235,7 +249,7 @@ class ItemTest extends ModelTestCase
     public function it_has_weight_on_priority_pivot(): void
     {
         $item = $this->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $item->priorities()->attach($priority->id, ['weight' => 50]);
 
@@ -318,6 +332,78 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
+    public function fill_blizzard_data_sets_name_and_blizzard_attributes(): void
+    {
+        $item = $this->create(['name' => null]);
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $item->fillBlizzardData($data);
+
+        $this->assertSame('Thunderfury, Blessed Blade of the Windseeker', $item->name);
+        $this->assertSame('Weapon', $item->itemClass['name']);
+        $this->assertSame('One-Handed Sword', $item->itemSubclass['name']);
+        $this->assertSame('One-Hand', $item->inventoryType['name']);
+    }
+
+    #[Test]
+    public function fill_blizzard_data_returns_the_same_model_instance(): void
+    {
+        $item = $this->create();
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $result = $item->fillBlizzardData($data);
+
+        $this->assertSame($item, $result);
+    }
+
+    #[Test]
+    public function fill_blizzard_data_does_not_persist_to_database(): void
+    {
+        $item = $this->create(['name' => null]);
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $item->fillBlizzardData($data);
+
+        $this->assertNull($item->fresh()->name);
+    }
+
+    #[Test]
     public function it_implements_media_library_contracts(): void
     {
         $model = new Item;
@@ -346,5 +432,69 @@ class ItemTest extends ModelTestCase
         // singleFile() collection keeps only the most recent media item.
         $this->assertCount(1, $item->getMedia('blizzard_icons'));
         $this->assertSame('inv_sword_05.jpg', $item->getFirstMedia('blizzard_icons')->file_name);
+    }
+
+    // ==========================================
+    // Search
+    // ==========================================
+
+    #[Test]
+    public function matching_name_matches_case_insensitively(): void
+    {
+        $match = Item::factory()->withName('Archbishop\'s Slippers')->create();
+
+        $results = Item::query()->matchingName('ARCHBISHOP')->get();
+
+        $this->assertCount(1, $results);
+        $this->assertTrue($results->contains('id', $match->id));
+    }
+
+    #[Test]
+    public function matching_name_matches_a_partial_name(): void
+    {
+        $match = Item::factory()->withName('Archbishop\'s Slippers')->create();
+        Item::factory()->withName('Thunderfury')->create();
+
+        $results = Item::query()->matchingName('slipper')->get();
+
+        $this->assertCount(1, $results);
+        $this->assertTrue($results->contains('id', $match->id));
+    }
+
+    #[Test]
+    public function matching_name_excludes_items_with_a_null_name(): void
+    {
+        Item::factory()->create();
+
+        $this->assertCount(0, Item::query()->matchingName('anything')->get());
+    }
+
+    #[Test]
+    public function matching_name_uses_the_full_text_drivers_read_from_config(): void
+    {
+        // The suite runs on SQLite, so treating it as FULLTEXT-capable forces the
+        // whereFullText() branch, proving the scope reads the config rather than a
+        // hardcoded list. SQLite's grammar cannot compile that clause, so the
+        // resulting exception is the assertion.
+        config(['database.behaviours.full_text' => ['sqlite']]);
+        Item::bootFullTextDrivers();
+
+        try {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('does not support fulltext search');
+
+            Item::query()->matchingName('slipper')->toSql();
+        } finally {
+            // The static property outlives the test, unlike the config value, so
+            // it must be restored or every later test sees SQLite as FULLTEXT.
+            config(['database.behaviours.full_text' => ['mysql', 'mariadb', 'pgsql']]);
+            Item::bootFullTextDrivers();
+        }
+    }
+
+    #[Test]
+    public function matching_name_falls_back_to_like_when_the_driver_is_not_full_text_capable(): void
+    {
+        $this->assertStringContainsString('like', Item::query()->matchingName('slipper')->toSql());
     }
 }

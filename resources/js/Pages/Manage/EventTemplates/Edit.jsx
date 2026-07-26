@@ -530,9 +530,7 @@ function BossSection({ boss, raid, commonContainerProps, groupsByBossId, assignm
             key={boss.id}
             title={boss.name}
             sessionKey={`template_boss_expanded_${raid.slug}_${boss.id}`}
-            className="border-amber-600/40"
-            headerClassName="hover:bg-amber-600/10"
-            bodyClassName="border-amber-600/40"
+            style="amber"
         >
             <div className="flex flex-col gap-3">
                 <GroupContainer

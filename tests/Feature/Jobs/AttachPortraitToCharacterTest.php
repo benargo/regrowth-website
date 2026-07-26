@@ -25,14 +25,14 @@ use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
-use Tests\Support\Blizzard\HasBlizzardTokenMock;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('characters')]
 #[Group('blizzard-integration')]
 class AttachPortraitToCharacterTest extends TestCase
 {
-    use HasBlizzardTokenMock;
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void

@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\LootCouncil;
 
-use App\Http\Resources\ItemResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -20,7 +19,7 @@ class CommentResource extends JsonResource
         return [
             'id' => $this->id,
             'body' => $this->body,
-            'item' => $this->getRelation('item'),
+            'item' => $this->getCommentable(),
             'user' => $this->getRelation('user'),
             'reactions' => $this->getReactions($request),
             'is_resolved' => $this->is_resolved,
@@ -36,6 +35,24 @@ class CommentResource extends JsonResource
     }
 
     /**
+     * Get the commentable model's data if loaded, otherwise return the commentable_id.
+     *
+     * @return array<string, mixed>|string|null
+     */
+    protected function getCommentable(): mixed
+    {
+        if (! $this->relationLoaded('commentable')) {
+            return $this->commentable_id;
+        }
+
+        if ($this->commentable === null) {
+            return null;
+        }
+
+        return $this->commentable->toResource()->toArray(request());
+    }
+
+    /**
      * Get a related model's data if it's loaded, otherwise return the foreign key ID.
      *
      * @return array<string, mixed>|string|int
@@ -47,7 +64,6 @@ class CommentResource extends JsonResource
         }
 
         return match ($relation) {
-            'item' => (new ItemResource($this->item))->toArray(request()),
             'user' => (new UserResource($this->user))->toArray(request()),
             default => $this->{$relation},
         };

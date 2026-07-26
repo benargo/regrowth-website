@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Http\Requests\Comments\UpdateCommentRequest;
 use App\Http\Resources\LootCouncil\CommentResource;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Notifications\NewLootCouncilComment;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Notifications\NotifiableChannel;
@@ -31,7 +31,7 @@ class CommentController extends Controller
     #[Authorize('viewAny', Comment::class)]
     public function index(): Response
     {
-        $comments = Comment::with(['user', 'item'])
+        $comments = Comment::with(['user', 'commentable'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -51,7 +51,7 @@ class CommentController extends Controller
             'body' => $request->validated('body'),
         ]);
 
-        $comment->load(['user', 'item']);
+        $comment->load(['user', 'commentable']);
 
         NotifiableChannel::fromConfig('lootcouncil', $this->discord)->notify(
             new NewLootCouncilComment($comment)
@@ -68,7 +68,8 @@ class CommentController extends Controller
     {
         // Create new comment with original timestamp
         $newComment = new Comment([
-            'item_id' => $comment->item_id,
+            'commentable_id' => $comment->commentable_id,
+            'commentable_type' => $comment->commentable_type,
             'user_id' => $comment->user_id,
             'body' => $request->validated('body', $comment->body), // Preserve original body if not provided
             'is_resolved' => $request->validated('isResolved', $comment->is_resolved), // Preserve resolved status if not provided
