@@ -2,12 +2,15 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Item;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
@@ -138,6 +141,31 @@ class ShowItemPageTest extends TestCase
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->id}"]));
 
         $response->assertOk();
+    }
+
+    #[Test]
+    public function show_item_renders_using_db_data_when_blizzard_api_returns_not_found(): void
+    {
+        $this->mockItemService();
+
+        $user = User::factory()->member()->create();
+        $item = $this->createTestItem();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            GetItemRequest::class => MockResponse::make(
+                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                status: 404,
+            ),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Items/Show')
+            ->where('item.data.name', $item->name)
+        );
     }
 
     protected function createTestItem(): Item

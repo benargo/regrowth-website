@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Item;
@@ -14,6 +15,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
@@ -135,6 +138,29 @@ class EditItemPageTest extends TestCase
             ->has('item.data')
             ->has('item.data.priorities', 2)
             ->has('allPriorities.data', 3)
+        );
+    }
+
+    #[Test]
+    public function edit_item_renders_using_db_data_when_blizzard_api_returns_not_found(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            GetItemRequest::class => MockResponse::make(
+                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                status: 404,
+            ),
+        ]);
+
+        $response = $this->actingAs($user)->get($this->editUrl($item));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Items/Edit')
+            ->where('item.data.name', $item->name)
         );
     }
 
