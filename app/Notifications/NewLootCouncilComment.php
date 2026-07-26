@@ -62,13 +62,10 @@ class NewLootCouncilComment extends Notification
      */
     public function shouldSend(object $notifiable, string $channel): bool
     {
-        try {
-            $this->toMessage();
+        /** @var Comment $comment */
+        $comment = $this->hydrateOrFail($this->relatedModel(Comment::class));
 
-            return true;
-        } catch (LogicException) {
-            return false;
-        }
+        return $comment->commentable instanceof Item;
     }
 
     /**
