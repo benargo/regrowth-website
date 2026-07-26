@@ -109,6 +109,20 @@ class SearchPageTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_has_notes_instead_of_notes(): void
+    {
+        $item = $this->createItem('Archbishop\'s Slippers');
+        $item->update(['notes' => 'Best in slot for warriors']);
+
+        $this->get(route('search', ['q' => 'slipper']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('results.data.0.has_notes', true)
+                ->missing('results.data.0.notes')
+            );
+    }
+
+    #[Test]
     public function it_scopes_results_to_the_given_raid(): void
     {
         $raidA = Raid::factory()->create(['phase_id' => Phase::factory()->started()->create()->id]);

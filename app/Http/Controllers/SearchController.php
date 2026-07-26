@@ -33,7 +33,7 @@ class SearchController extends Controller
             ->withQueryString();
 
         return Inertia::render('Search', [
-            'results' => ItemResource::collection($results),
+            'results' => ItemResource::collection($results)->toResponse($request)->getData(true),
             'q' => $query,
             'scoped_raid' => $raidId ? new RaidResource(Raid::find($raidId)) : null,
         ]);

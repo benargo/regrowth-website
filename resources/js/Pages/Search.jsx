@@ -6,6 +6,7 @@ import Pagination from "@/Components/Pagination";
 
 export default function Index({ results, q, scoped_raid }) {
     const items = results.data ?? [];
+    const meta = results.meta ?? {};
 
     return (
         <Master title={`Search results for "${q}"`}>
@@ -13,7 +14,7 @@ export default function Index({ results, q, scoped_raid }) {
             <PageContainer>
                 <div className="mb-4 flex items-center gap-3">
                     <p className="text-sm text-gray-400">
-                        {results.meta.total} {results.meta.total === 1 ? "result" : "results"} for &ldquo;{q}&rdquo;
+                        {meta.total} {meta.total === 1 ? "result" : "results"} for &ldquo;{q}&rdquo;
                     </p>
                     {scoped_raid?.data && (
                         <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-500">
@@ -32,7 +33,7 @@ export default function Index({ results, q, scoped_raid }) {
                     </div>
                 )}
 
-                <Pagination links={results.meta.links} meta={results.meta} itemName="items" />
+                <Pagination links={meta.links} meta={meta} itemName="items" />
             </PageContainer>
         </Master>
     );
