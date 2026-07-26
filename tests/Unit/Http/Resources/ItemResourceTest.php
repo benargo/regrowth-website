@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Enums\ItemQuality;
+use App\Http\Requests\SearchRequest;
 use App\Http\Resources\ItemResource;
 use App\Models\Boss;
 use App\Models\Item;
@@ -169,6 +170,28 @@ class ItemResourceTest extends TestCase
 
         $array = (new ItemResource($item))->resolve(new Request);
 
+        $this->assertArrayNotHasKey('notes', $array);
+    }
+
+    #[Test]
+    public function it_returns_has_notes_true_instead_of_notes_when_resolved_via_search_request(): void
+    {
+        $item = Item::factory()->withNotes('Best in slot for warriors')->create();
+
+        $array = (new ItemResource($item))->resolve(new SearchRequest);
+
+        $this->assertTrue($array['has_notes']);
+        $this->assertArrayNotHasKey('notes', $array);
+    }
+
+    #[Test]
+    public function it_returns_has_notes_false_when_notes_not_set_and_resolved_via_search_request(): void
+    {
+        $item = Item::factory()->create(['notes' => null]);
+
+        $array = (new ItemResource($item))->resolve(new SearchRequest);
+
+        $this->assertFalse($array['has_notes']);
         $this->assertArrayNotHasKey('notes', $array);
     }
 

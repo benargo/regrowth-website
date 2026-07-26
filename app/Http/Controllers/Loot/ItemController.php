@@ -29,20 +29,11 @@ class ItemController extends Controller
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $correctSlug = $item->slug ?: "item-{$item->id}";
-
-        if ($correctSlug !== $slug) {
-            return redirect()->route('loot.items.show', ['item' => $item->id, 'slug' => $correctSlug], 303);
+        if ($redirect = $this->redirectForSlugMismatch($item, $slug, 'loot.items.show')) {
+            return $redirect;
         }
 
-        try {
-            $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->id))->dto();
-            $item->fillBlizzardData($blizzardItem);
-        } catch (ItemNotFoundException) {
-            // We can continue without the filled in data.
-        }
-
-        $item->load(['priorities' => fn ($q) => $q->orderByPivot('weight', 'desc')]);
+        $this->loadBlizzardDataAndPriorities($blizzardConnector, $item);
 
         return Inertia::render('Loot/Items/Show', [
             'raid' => new RaidResource($item->raid()->first()),
@@ -61,12 +52,33 @@ class ItemController extends Controller
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $correctSlug = $item->slug ?: "item-{$item->id}";
-
-        if ($correctSlug !== $slug) {
-            return redirect()->route('loot.items.edit', ['item' => $item->id, 'slug' => $correctSlug], 303);
+        if ($redirect = $this->redirectForSlugMismatch($item, $slug, 'loot.items.edit')) {
+            return $redirect;
         }
 
+        $this->loadBlizzardDataAndPriorities($blizzardConnector, $item);
+
+        return Inertia::render('Loot/Items/Edit', [
+            'raid' => new RaidResource($item->raid()->first()),
+            'item' => new ItemResource($item),
+            'allPriorities' => PriorityResource::collection(LootPriority::all()),
+            'comments' => CommentResource::collection($item->comments()->with('user')->latest()->paginate(10)),
+        ]);
+    }
+
+    private function redirectForSlugMismatch(Item $item, ?string $slug, string $routeName): ?RedirectResponse
+    {
+        $correctSlug = $item->slug ?: "item-{$item->id}";
+
+        if ($correctSlug === $slug) {
+            return null;
+        }
+
+        return redirect()->route($routeName, ['item' => $item->id, 'slug' => $correctSlug], 303);
+    }
+
+    private function loadBlizzardDataAndPriorities(BlizzardConnector $blizzardConnector, Item $item): void
+    {
         try {
             $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->id))->dto();
             $item->fillBlizzardData($blizzardItem);
@@ -75,12 +87,5 @@ class ItemController extends Controller
         }
 
         $item->load(['priorities' => fn ($q) => $q->orderByPivot('weight', 'desc')]);
-
-        return Inertia::render('Loot/Items/Edit', [
-            'raid' => new RaidResource($item->raid()->first()),
-            'item' => new ItemResource($item),
-            'allPriorities' => PriorityResource::collection(LootPriority::all()),
-            'comments' => CommentResource::collection($item->comments()->with('user')->latest()->paginate(10)),
-        ]);
     }
 }

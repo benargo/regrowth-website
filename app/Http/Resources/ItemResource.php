@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Requests\SearchRequest;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -24,7 +25,8 @@ class ItemResource extends JsonResource
             'inventory_type' => $this->whenHas('inventoryType', fn () => data_get($this, 'inventoryType.name')),
             'item_class' => $this->whenHas('itemClass', fn () => data_get($this, 'itemClass.name')),
             'item_subclass' => $this->whenHas('itemSubclass', fn () => data_get($this, 'itemSubclass.name')),
-            'notes' => $this->whenNotNull($this->notes),
+            'notes' => $this->when(! $request instanceof SearchRequest, fn () => $this->whenNotNull($this->notes)),
+            'has_notes' => $this->when($request instanceof SearchRequest, fn () => filled($this->notes)),
             'quality' => $this->whenHas('quality'),
             'quality_border_class' => $this->whenHas('quality', fn () => $this->quality->cssClass('border')),
             'wowhead' => ['url' => $this->wowheadUrl],
