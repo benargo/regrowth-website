@@ -15,6 +15,7 @@
 /.phpunit.cache
 /.playwright
 /.playwright-cli
+/.playwright-mcp
 /.vscode
 /.zed
 /auth.json
