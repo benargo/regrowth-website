@@ -7,6 +7,7 @@ use App\Models\Character;
 use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Models\LootPriority;
+use App\Models\Phase;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;
@@ -62,6 +63,7 @@ class BuildAddonExportFile implements ShouldQueue
             'system' => [
                 'date_generated' => Carbon::now()->unix(),
             ],
+            'phases' => $this->buildPhases(),
             'priorities' => $this->buildPriorities(),
             'items' => $this->buildItems(),
             'players' => $this->buildPlayerAttendance($calculator),
@@ -71,6 +73,20 @@ class BuildAddonExportFile implements ShouldQueue
         Storage::disk('local')->put('addon/export.json', json_encode($data));
 
         Log::info('Addon export data file built successfully.');
+    }
+
+    /**
+     * Build a list of raid phases with their start times.
+     */
+    protected function buildPhases(): Collection
+    {
+        return Phase::orderBy('number')->get()->map(function (Phase $phase) {
+            return [
+                'id' => $phase->id,
+                'number' => $phase->number,
+                'start_date' => $phase->start_date?->unix(),
+            ];
+        });
     }
 
     /**
@@ -116,7 +132,7 @@ class BuildAddonExportFile implements ShouldQueue
                 'id' => $stats->character->id,
                 'name' => $stats->character->name,
                 'attendance' => [
-                    'first_attendance' => $stats->firstAttendance->copy()->setTimezone(config('app.timezone'))->toIso8601String(),
+                    'first_attendance' => $stats->firstAttendance->unix(),
                     'attended' => $stats->reportsAttended,
                     'total' => $stats->totalReports,
                     'percentage' => $stats->percentage,

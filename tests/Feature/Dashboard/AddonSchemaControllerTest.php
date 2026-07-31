@@ -109,6 +109,20 @@ class AddonSchemaControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    public function export_schema_defines_phases_properties(): void
+    {
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('schema.properties.phases')
+            ->where('schema.properties.phases.type', 'array')
+            ->has('schema.properties.phases.items.properties.id')
+            ->has('schema.properties.phases.items.properties.number')
+            ->has('schema.properties.phases.items.properties.start_date')
+        );
+    }
+
+    #[Test]
     public function export_schema_defines_priorities_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
@@ -157,6 +171,17 @@ class AddonSchemaControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    public function export_schema_defines_player_first_attendance_as_integer(): void
+    {
+        $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
+
+        $schema = $response->original->getData()['page']['props']['schema'];
+        $firstAttendance = $schema['properties']['players']['items']['properties']['attendance']['properties']['first_attendance'];
+
+        $this->assertSame(['integer', 'null'], $firstAttendance['type']);
+    }
+
+    #[Test]
     public function export_schema_defines_councillors_properties(): void
     {
         $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
@@ -171,12 +196,12 @@ class AddonSchemaControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function export_schema_id_contains_version_1_2_0(): void
+    public function export_schema_id_contains_version_2_0_0(): void
     {
         $response = $this->actingAs($this->officer)->get(route('management.addon.export.schema'));
 
         $schema = $response->original->getData()['page']['props']['schema'];
 
-        $this->assertStringContainsString('v=1.2.0', $schema['$id']);
+        $this->assertStringContainsString('v=2.0.0', $schema['$id']);
     }
 }

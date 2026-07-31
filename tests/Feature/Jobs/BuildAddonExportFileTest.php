@@ -9,6 +9,7 @@ use App\Models\GuildTag;
 use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Models\LootPriority;
+use App\Models\Phase;
 use App\Models\Raids\Report;
 use App\Services\Attendance\Calculator;
 use Carbon\Carbon;
@@ -94,6 +95,7 @@ class BuildAddonExportFileTest extends TestCase
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $this->assertArrayHasKey('system', $data);
+        $this->assertArrayHasKey('phases', $data);
         $this->assertArrayHasKey('priorities', $data);
         $this->assertArrayHasKey('items', $data);
         $this->assertArrayHasKey('players', $data);
@@ -119,10 +121,56 @@ class BuildAddonExportFileTest extends TestCase
         app(BuildAddonExportFile::class)->handle(app(Calculator::class));
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $this->assertEmpty($data['phases']);
         $this->assertEmpty($data['priorities']);
         $this->assertEmpty($data['items']);
         $this->assertEmpty($data['players']);
         $this->assertEmpty($data['councillors']);
+    }
+
+    // ==========================================
+    // Phase Data Tests
+    // ==========================================
+
+    #[Test]
+    public function it_includes_phase_id_number_and_start_date(): void
+    {
+        $phase = Phase::factory()->create(['number' => 2, 'start_date' => Carbon::parse('2025-01-15 20:00:00')]);
+
+        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+
+        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $phaseData = collect($data['phases'])->firstWhere('id', $phase->id);
+        $this->assertNotNull($phaseData);
+        $this->assertEquals(2, $phaseData['number']);
+        $this->assertIsInt($phaseData['start_date']);
+        $this->assertEquals($phase->start_date->unix(), $phaseData['start_date']);
+    }
+
+    #[Test]
+    public function it_returns_null_for_phase_without_start_date(): void
+    {
+        $phase = Phase::factory()->unscheduled()->create();
+
+        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+
+        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $phaseData = collect($data['phases'])->firstWhere('id', $phase->id);
+        $this->assertNull($phaseData['start_date']);
+    }
+
+    #[Test]
+    public function it_orders_phases_by_number(): void
+    {
+        Phase::factory()->create(['number' => 3]);
+        Phase::factory()->create(['number' => 1]);
+        Phase::factory()->create(['number' => 2]);
+
+        app(BuildAddonExportFile::class)->handle(app(Calculator::class));
+
+        $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
+        $numbers = collect($data['phases'])->pluck('number')->toArray();
+        $this->assertEquals([1, 2, 3], $numbers);
     }
 
     // ==========================================
@@ -502,7 +550,7 @@ class BuildAddonExportFileTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_first_attendance_date(): void
+    public function it_includes_first_attendance_date_as_unix_timestamp(): void
     {
         $rank = GuildRank::factory()->create();
         $character = Character::factory()->create(['name' => 'TestPlayer', 'rank_id' => $rank->id]);
@@ -514,7 +562,8 @@ class BuildAddonExportFileTest extends TestCase
 
         $data = json_decode(Storage::disk('local')->get('addon/export.json'), true);
         $playerData = collect($data['players'])->firstWhere('name', 'TestPlayer');
-        $this->assertNotNull($playerData['attendance']['first_attendance']);
+        $this->assertIsInt($playerData['attendance']['first_attendance']);
+        $this->assertEquals($report->start_time->unix(), $playerData['attendance']['first_attendance']);
     }
 
     #[Test]
