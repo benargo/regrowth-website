@@ -19,7 +19,7 @@
 /.vscode
 /.zed
 /auth.json
-/docs/superpowers
+/docs
 /graphify-out
 /node_modules
 /public/build
