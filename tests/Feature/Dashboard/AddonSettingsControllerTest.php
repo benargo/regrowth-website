@@ -5,10 +5,9 @@ namespace Tests\Feature\Dashboard;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
+use App\Models\Phase;
 use App\Models\User;
-use App\Services\WarcraftLogs\GuildTags;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
@@ -16,20 +15,6 @@ use Tests\Support\DashboardTestCase;
 #[Group('platform')]
 class AddonSettingsControllerTest extends DashboardTestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Mock GuildTags to return empty tags by default
-        // This prevents API calls during tests that don't specifically test guild tags
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect())
-            ->byDefault();
-
-        $this->app->instance(GuildTags::class, $guildTags);
-    }
-
     // ==========================================
     // Settings Endpoint Tests
     // ==========================================
@@ -96,13 +81,43 @@ class AddonSettingsControllerTest extends DashboardTestCase
     #[Test]
     public function settings_includes_councillors_in_settings(): void
     {
-        $councillor = Character::factory()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
+        Character::factory()->main()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('settings.councillors', 1)
-            ->where('settings.councillors.0.name', 'SettingsCouncillor')
+            ->has('councillors.data', 1)
+            ->where('councillors.data.0.name', 'SettingsCouncillor')
+        );
+    }
+
+    #[Test]
+    public function settings_councillors_meta_reports_total_mains_and_alts(): void
+    {
+        Character::factory()->main()->lootCouncillor()->withUniqueName()->create();
+        Character::factory()->main()->lootCouncillor()->withUniqueName()->create();
+        Character::factory()->lootCouncillor()->withUniqueName()->create();
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('councillors.meta.total', 3)
+            ->where('councillors.meta.mains', 2)
+            ->where('councillors.meta.alts', 1)
+        );
+    }
+
+    #[Test]
+    public function settings_councillors_data_excludes_alts(): void
+    {
+        Character::factory()->main()->lootCouncillor()->create(['name' => 'MainCouncillor']);
+        Character::factory()->lootCouncillor()->create(['name' => 'AltCouncillor']);
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('councillors.data', 1)
+            ->where('councillors.data.0.name', 'MainCouncillor')
         );
     }
 
@@ -117,35 +132,54 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
         // Note: GuildRank model transforms names to title case
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('settings.ranks', 1)
-            ->where('settings.ranks.0.name', 'Test Rank')
+            ->has('ranks.data', 1)
+            ->where('ranks.data.0.name', 'Test Rank')
         );
     }
 
     #[Test]
     public function settings_includes_guild_tags_in_settings(): void
     {
-        $tag = GuildTag::factory()->countsAttendance()->create(['name' => 'TestTag']);
-
-        // Mock the WarcraftLogs GuildService to return our tag
-        $guildTags = Mockery::mock(GuildTags::class);
-        $guildTags->shouldReceive('toCollection')
-            ->andReturn(collect([$tag]));
-        $this->app->instance(GuildTags::class, $guildTags);
+        GuildTag::factory()->countsAttendance()->create(['name' => 'TestTag']);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('settings.tags', 1)
-            ->where('settings.tags.0.name', 'TestTag')
-            ->where('settings.tags.0.count_attendance', true)
+            ->has('tags.data', 1)
+            ->where('tags.data.0.name', 'TestTag')
+            ->where('tags.data.0.count_attendance', true)
+        );
+    }
+
+    #[Test]
+    public function settings_guild_tags_include_phase_number_when_tag_has_a_phase(): void
+    {
+        $phase = Phase::factory()->create(['number' => 2]);
+        GuildTag::factory()->withPhase($phase)->create();
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('tags.data.0.phaseNumber', 2)
+        );
+    }
+
+    #[Test]
+    public function settings_guild_tags_have_null_phase_number_when_tag_has_no_phase(): void
+    {
+        GuildTag::factory()->withoutPhase()->create();
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('tags.data.0.phaseNumber', null)
         );
     }
 
     #[Test]
     public function settings_includes_characters_as_deferred_prop(): void
     {
-        Character::factory()->create(['name' => 'DeferredCharacter']);
+        Character::factory()->main()->create(['name' => 'DeferredCharacter']);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
@@ -159,16 +193,35 @@ class AddonSettingsControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function settings_councillors_are_ordered_by_name(): void
+    public function settings_characters_excludes_alts(): void
     {
-        Character::factory()->lootCouncillor()->create(['name' => 'Zoe']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Alice']);
-        Character::factory()->lootCouncillor()->create(['name' => 'Mike']);
+        Character::factory()->main()->create(['name' => 'MainCharacter']);
+        Character::factory()->create(['name' => 'AltCharacter', 'is_main' => false]);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('settings.councillors', function ($councillors) {
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('characters', function ($characters) {
+                    $names = collect($characters)->pluck('name')->toArray();
+
+                    return $names === ['MainCharacter'];
+                })
+            )
+        );
+    }
+
+    #[Test]
+    public function settings_councillors_are_ordered_by_name(): void
+    {
+        Character::factory()->main()->lootCouncillor()->create(['name' => 'Zoe']);
+        Character::factory()->main()->lootCouncillor()->create(['name' => 'Alice']);
+        Character::factory()->main()->lootCouncillor()->create(['name' => 'Mike']);
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('councillors.data', function ($councillors) {
                 $names = collect($councillors)->pluck('name')->toArray();
 
                 return $names === ['Alice', 'Mike', 'Zoe'];
@@ -189,257 +242,10 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
         // Note: GuildRank model transforms names to title case
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('settings.ranks', 3)
-            ->where('settings.ranks.0.name', 'Guild Master')
-            ->where('settings.ranks.1.name', 'Officer')
-            ->where('settings.ranks.2.name', 'Member')
+            ->has('ranks.data', 3)
+            ->where('ranks.data.0.name', 'Guild Master')
+            ->where('ranks.data.1.name', 'Officer')
+            ->where('ranks.data.2.name', 'Member')
         );
-    }
-
-    // ==========================================
-    // Add Councillor Endpoint Tests
-    // ==========================================
-
-    #[Test]
-    public function add_councillor_requires_authentication(): void
-    {
-        $response = $this->post(route('management.addon.settings.councillors.add'));
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function add_councillor_forbids_guest_users(): void
-    {
-        $user = User::factory()->guest()->create();
-        $character = Character::factory()->create(['name' => 'TestChar']);
-
-        $response = $this->actingAs($user)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => $character->name,
-        ]);
-
-        $response->assertForbidden();
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function add_councillor_forbids_member_users(): void
-    {
-        $user = User::factory()->member()->create();
-        $character = Character::factory()->create(['name' => 'TestChar']);
-
-        $response = $this->actingAs($user)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => $character->name,
-        ]);
-
-        $response->assertForbidden();
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function add_councillor_forbids_raider_users(): void
-    {
-        $user = User::factory()->raider()->create();
-        $character = Character::factory()->create(['name' => 'TestChar']);
-
-        $response = $this->actingAs($user)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => $character->name,
-        ]);
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function add_councillor_allows_officer_users(): void
-    {
-        $character = Character::factory()->create(['name' => 'TestChar']);
-
-        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => $character->name,
-        ]);
-
-        $response->assertRedirect();
-    }
-
-    #[Group('validation')]
-    #[Test]
-    public function add_councillor_requires_character_name(): void
-    {
-        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), []);
-
-        $response->assertSessionHasErrors(['character_name']);
-    }
-
-    #[Group('validation')]
-    #[Test]
-    public function add_councillor_requires_character_name_to_be_string(): void
-    {
-        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => 12345,
-        ]);
-
-        $response->assertSessionHasErrors(['character_name']);
-    }
-
-    #[Group('validation')]
-    #[Test]
-    public function add_councillor_requires_character_to_exist(): void
-    {
-        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => 'NonExistentCharacter',
-        ]);
-
-        $response->assertSessionHasErrors(['character_name']);
-    }
-
-    #[Test]
-    public function add_councillor_sets_character_as_loot_councillor(): void
-    {
-        $character = Character::factory()->create(['name' => 'NewCouncillor', 'is_loot_councillor' => false]);
-
-        $this->assertFalse($character->is_loot_councillor);
-
-        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => $character->name,
-        ]);
-
-        $response->assertRedirect();
-        $this->assertTrue($character->fresh()->is_loot_councillor);
-    }
-
-    #[Test]
-    public function add_councillor_redirects_back(): void
-    {
-        $character = Character::factory()->create(['name' => 'TestChar']);
-
-        $response = $this->actingAs($this->officer)
-            ->from(route('management.addon.settings'))
-            ->post(route('management.addon.settings.councillors.add'), [
-                'character_name' => $character->name,
-            ]);
-
-        $response->assertRedirect(route('management.addon.settings'));
-    }
-
-    #[Test]
-    public function add_councillor_is_idempotent(): void
-    {
-        $character = Character::factory()->lootCouncillor()->create(['name' => 'AlreadyCouncillor']);
-
-        $this->assertTrue($character->is_loot_councillor);
-
-        $response = $this->actingAs($this->officer)->post(route('management.addon.settings.councillors.add'), [
-            'character_name' => $character->name,
-        ]);
-
-        $response->assertRedirect();
-        $this->assertTrue($character->fresh()->is_loot_councillor);
-    }
-
-    // ==========================================
-    // Remove Councillor Endpoint Tests
-    // ==========================================
-
-    #[Test]
-    public function remove_councillor_requires_authentication(): void
-    {
-        $character = Character::factory()->lootCouncillor()->create();
-
-        $response = $this->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function remove_councillor_forbids_guest_users(): void
-    {
-        $user = User::factory()->guest()->create();
-        $character = Character::factory()->lootCouncillor()->create();
-
-        $response = $this->actingAs($user)->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertForbidden();
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function remove_councillor_forbids_member_users(): void
-    {
-        $user = User::factory()->member()->create();
-        $character = Character::factory()->lootCouncillor()->create();
-
-        $response = $this->actingAs($user)->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertForbidden();
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function remove_councillor_forbids_raider_users(): void
-    {
-        $user = User::factory()->raider()->create();
-        $character = Character::factory()->lootCouncillor()->create();
-
-        $response = $this->actingAs($user)->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertForbidden();
-    }
-
-    #[Test]
-    public function remove_councillor_allows_officer_users(): void
-    {
-        $character = Character::factory()->lootCouncillor()->create();
-
-        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertRedirect();
-    }
-
-    #[Test]
-    public function remove_councillor_unsets_character_as_loot_councillor(): void
-    {
-        $character = Character::factory()->lootCouncillor()->create(['name' => 'RemoveMe']);
-
-        $this->assertTrue($character->is_loot_councillor);
-
-        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertRedirect();
-        $this->assertFalse($character->fresh()->is_loot_councillor);
-    }
-
-    #[Test]
-    public function remove_councillor_redirects_back(): void
-    {
-        $character = Character::factory()->lootCouncillor()->create();
-
-        $response = $this->actingAs($this->officer)
-            ->from(route('management.addon.settings'))
-            ->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertRedirect(route('management.addon.settings'));
-    }
-
-    #[Test]
-    public function remove_councillor_returns_404_for_nonexistent_character(): void
-    {
-        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', 99999));
-
-        $response->assertNotFound();
-    }
-
-    #[Test]
-    public function remove_councillor_is_idempotent(): void
-    {
-        $character = Character::factory()->create(['name' => 'NotCouncillor', 'is_loot_councillor' => false]);
-
-        $this->assertFalse($character->is_loot_councillor);
-
-        $response = $this->actingAs($this->officer)->delete(route('management.addon.settings.councillors.remove', $character));
-
-        $response->assertRedirect();
-        $this->assertFalse($character->fresh()->is_loot_councillor);
     }
 }

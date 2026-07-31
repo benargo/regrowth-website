@@ -3,54 +3,48 @@ import { router } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import Alert from "@/Components/Alert";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
+import Autocomplete from "@/Components/Autocomplete";
 import Checkbox from "@/Components/Checkbox";
 import Icon from "@/Components/FontAwesome/Icon";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import TabNav from "@/Components/TabNav";
+import parseAutocompleteSelection from "@/Helpers/ParseAutocompleteSelection";
 
-export default function AddonSettings({ settings, characters }) {
-    const [councillors, setCouncillors] = useState(settings.councillors || []);
-    const [ranks, setRanks] = useState(settings.ranks || []);
-    const [tags, setTags] = useState(settings.tags || []);
-    const [newCouncillorName, setNewCouncillorName] = useState("");
+export default function AddonSettings({ councillors: councillorsProp, ranks: ranksProp, tags: tagsProp, characters }) {
+    const [ranks, setRanks] = useState(ranksProp?.data ?? []);
+    const [tags, setTags] = useState(tagsProp?.data ?? []);
+    const [characterSearch, setCharacterSearch] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const handleAddCouncillor = () => {
-        if (!newCouncillorName.trim() || isProcessing) return;
+    // Rendered straight from props so the redirect-back refresh is the single
+    // source of truth for the councillor list.
+    const councillors = councillorsProp?.data ?? [];
+    const councillorCounts = councillorsProp?.meta ?? { total: 0, mains: 0, alts: 0 };
+    const councillorIds = new Set(councillors.map((c) => c.id));
+    const availableCharacters = (characters ?? []).filter((c) => !councillorIds.has(c.id));
+
+    const setLootCouncillor = (characterId, isLootCouncillor) => {
+        if (isProcessing) return;
         setIsProcessing(true);
-        router.post(
-            route("management.addon.settings.councillors.add"),
-            {
-                character_name: newCouncillorName,
-            },
+        router.patch(
+            route("characters.update", characterId),
+            { is_loot_councillor: isLootCouncillor },
             {
                 preserveScroll: true,
-                onSuccess: (page) => {
-                    setCouncillors(page.props.settings.councillors);
-                    setNewCouncillorName("");
-                    setIsProcessing(false);
-                },
-                onError: () => {
-                    setIsProcessing(false);
-                },
+                onSuccess: () => setCharacterSearch(""),
+                onFinish: () => setIsProcessing(false),
             },
         );
     };
 
-    const handleRemoveCouncillor = (characterId) => {
-        if (isProcessing) return;
-        setIsProcessing(true);
-        router.delete(route("management.addon.settings.councillors.remove", characterId), {
-            preserveScroll: true,
-            onSuccess: (page) => {
-                setCouncillors(page.props.settings.councillors);
-                setIsProcessing(false);
-            },
-            onError: () => {
-                setIsProcessing(false);
-            },
-        });
+    const handleAutocompleteChange = (value) => {
+        const characterId = parseAutocompleteSelection(value);
+        if (characterId) {
+            setLootCouncillor(characterId, true);
+        } else {
+            setCharacterSearch(value);
+        }
     };
 
     const handleToggleRankAttendance = (rankId, currentValue) => {
@@ -62,7 +56,7 @@ export default function AddonSettings({ settings, characters }) {
             {
                 preserveScroll: true,
                 onSuccess: (page) => {
-                    setRanks(page.props.settings.ranks);
+                    setRanks(page.props.ranks.data);
                 },
             },
         );
@@ -77,7 +71,7 @@ export default function AddonSettings({ settings, characters }) {
             {
                 preserveScroll: true,
                 onSuccess: (page) => {
-                    setTags(page.props.settings.tags);
+                    setTags(page.props.tags.data);
                 },
             },
         );
@@ -119,6 +113,10 @@ export default function AddonSettings({ settings, characters }) {
                         <p className="text-mb mb-1 text-gray-200">
                             Configure which guild members are part of the loot council.
                         </p>
+                        <p className="mb-1 text-sm text-gray-400">
+                            {councillorCounts.total} total ({councillorCounts.mains} mains, {councillorCounts.alts}{" "}
+                            alts)
+                        </p>
                         {councillors.length > 0 ? (
                             <div className="mt-4">
                                 {councillors.map((councillor) => (
@@ -129,7 +127,7 @@ export default function AddonSettings({ settings, characters }) {
                                         <div className="flex-none">
                                             <button
                                                 className="flex h-12 w-12 items-center justify-center rounded bg-red-600 font-bold text-white hover:bg-red-800"
-                                                onClick={() => handleRemoveCouncillor(councillor.id)}
+                                                onClick={() => setLootCouncillor(councillor.id, false)}
                                                 disabled={isProcessing}
                                             >
                                                 <Icon icon="trash-alt" style="solid" />
@@ -144,36 +142,16 @@ export default function AddonSettings({ settings, characters }) {
                                 No loot councillors configured.
                             </p>
                         )}
-                        <div className="mt-4 flex flex-row items-center gap-4">
-                            <input
-                                type="text"
-                                list="member-list"
-                                placeholder="Add councillor by name..."
-                                className="h-12 flex-1 rounded-md border border-brown-800 bg-brown-800/50 p-2 text-white focus:border-amber-600 focus:outline-hidden focus:ring-2 focus:ring-amber-600"
-                                value={newCouncillorName}
-                                onChange={(e) => setNewCouncillorName(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        handleAddCouncillor();
-                                    }
-                                }}
-                                disabled={isProcessing}
+                        <div className="mt-4">
+                            <Autocomplete
+                                value={characterSearch}
+                                onChange={handleAutocompleteChange}
+                                options={availableCharacters}
+                                placeholder="Add councillor by name…"
+                                getOptionValue={(character) => String(character.id)}
+                                getSearchableText={(character) => character.name}
+                                renderOption={(character) => character.name}
                             />
-                            <datalist id="member-list">
-                                {characters?.length > 0 &&
-                                    characters?.map((character) => (
-                                        <option key={character.id} value={character.name} />
-                                    ))}
-                            </datalist>
-                            <button
-                                className="h-12 w-12 flex-none rounded-md border border-green-800 bg-green-600 font-bold text-white hover:bg-green-800"
-                                onClick={handleAddCouncillor}
-                                disabled={isProcessing}
-                            >
-                                <Icon icon="plus" style="solid" />
-                                <span className="sr-only">Add Councillor</span>
-                            </button>
                         </div>
                     </div>
                     <div className="mb-4 rounded-lg border border-amber-600 p-4">

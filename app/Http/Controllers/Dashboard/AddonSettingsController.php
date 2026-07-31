@@ -3,14 +3,10 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Dashboard\AddCouncillorRequest;
-use App\Http\Requests\Dashboard\RemoveCouncillorRequest;
+use App\Http\Resources\LootCouncillorCollection;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
-use App\Models\Phase;
-use App\Services\WarcraftLogs\GuildTags;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
@@ -18,68 +14,23 @@ use Inertia\Inertia;
 #[Authorize('view-officer-dashboard')]
 class AddonSettingsController extends Controller
 {
-    public function __construct(
-        protected GuildTags $guildTags,
-    ) {}
-
     /**
      * Render the addon settings page.
      */
-    public function index(Request $request)
+    public function __invoke(Request $request)
     {
         $councillors = Character::where('is_loot_councillor', true)
+            ->with('rank')
             ->orderBy('name')
             ->get();
 
-        $tags = $this->guildTags
-            ->toCollection()
-            ->map(function (GuildTag $tag) {
-                $phase = null;
-                if ($tag->phase instanceof Phase) {
-                    $phase = $tag->phase->number;
-                }
-
-                return [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                    'count_attendance' => $tag->count_attendance,
-                    'phaseNumber' => $phase,
-                ];
-            })
-            ->values()
-            ->toArray();
-
         return Inertia::render('Manage/Addon/Settings', [
-            'settings' => [
-                'councillors' => $councillors,
-                'ranks' => GuildRank::orderBy('position')->get(),
-                'tags' => $tags,
-            ],
-            'characters' => Inertia::defer(fn () => Character::with('rank')->orderBy('name')->get()),
+            'councillors' => new LootCouncillorCollection($councillors),
+            'ranks' => GuildRank::orderBy('position')->get()->toResourceCollection(),
+            'tags' => GuildTag::with('phase')->orderBy('name')->get()->toResourceCollection(),
+            'characters' => Inertia::defer(function () {
+                return Character::where('is_main', true)->with('rank')->orderBy('name')->get();
+            }),
         ]);
-    }
-
-    /**
-     * Add a councillor to the list of loot councillors.
-     */
-    #[Authorize('edit-datasets')]
-    public function addCouncillor(AddCouncillorRequest $request): RedirectResponse
-    {
-        $character = Character::where('name', $request->validated('character_name'))->firstOrFail();
-
-        $character->update(['is_loot_councillor' => true]);
-
-        return back();
-    }
-
-    /**
-     * Remove a councillor from the list of loot councillors.
-     */
-    #[Authorize('edit-datasets')]
-    public function removeCouncillor(RemoveCouncillorRequest $request, Character $character): RedirectResponse
-    {
-        $character->update(['is_loot_councillor' => false]);
-
-        return back();
     }
 }
