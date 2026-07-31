@@ -7,6 +7,7 @@ use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -88,6 +89,36 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->has('councillors.data', 1)
             ->where('councillors.data.0.name', 'SettingsCouncillor')
+        );
+    }
+
+    #[Test]
+    public function settings_councillors_include_portrait_url_when_media_attached(): void
+    {
+        Storage::fake('public');
+
+        $character = Character::factory()->main()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->withCustomProperties(['size' => 135])
+            ->toMediaCollection(Character::MEDIA_COLLECTION);
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('councillors.data.0.portrait_url', fn ($url) => str_contains($url, 'character_15678.jpg'))
+        );
+    }
+
+    #[Test]
+    public function settings_councillors_have_null_portrait_url_when_no_media_attached(): void
+    {
+        Character::factory()->main()->lootCouncillor()->create(['name' => 'SettingsCouncillor']);
+
+        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('councillors.data.0.portrait_url', null)
         );
     }
 

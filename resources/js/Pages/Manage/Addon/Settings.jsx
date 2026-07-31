@@ -121,8 +121,17 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             <div className="mt-4">
                                 {councillors.map((councillor) => (
                                     <div key={councillor.id} className="mb-2 flex flex-row items-center gap-4">
-                                        <div className="flex h-12 flex-1 items-center rounded-md border border-brown-800 bg-brown-800/30 p-2">
-                                            {councillor.name}
+                                        <div className="border-brown-800 bg-brown-800/30 flex h-12 flex-1 items-center gap-3 rounded-md border p-2">
+                                            {councillor.portrait_url ? (
+                                                <img
+                                                    src={councillor.portrait_url}
+                                                    alt={councillor.name}
+                                                    className="h-8 w-8 rounded border border-amber-600/30"
+                                                />
+                                            ) : (
+                                                <div className="h-8 w-8 rounded border border-amber-600/30 bg-gray-700" />
+                                            )}
+                                            <span>{councillor.name}</span>
                                         </div>
                                         <div className="flex-none">
                                             <button
@@ -138,7 +147,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                                 ))}
                             </div>
                         ) : (
-                            <p className="my-2 rounded-md border border-brown-800 p-2 text-sm text-gray-400">
+                            <p className="border-brown-800 my-2 rounded-md border p-2 text-sm text-gray-400">
                                 No loot councillors configured.
                             </p>
                         )}
@@ -166,13 +175,13 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             The fewer ranks you select, the more responsive the addon will be.
                         </p>
                         {ranks.length > 0 ? (
-                            <div className="mt-4 rounded-md border border-brown-800">
+                            <div className="border-brown-800 mt-4 rounded-md border">
                                 {ranks.map((rank) => (
                                     <div
                                         key={rank.id}
-                                        className="flex flex-row items-center border-b border-b-brown-800 first:rounded-t-md last:rounded-b-md"
+                                        className="border-b-brown-800 flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
                                     >
-                                        <div className="mr-2 flex h-12 w-12 items-center justify-center border border-brown-800 bg-brown-800/50 p-2">
+                                        <div className="border-brown-800 bg-brown-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
                                             <Checkbox
                                                 checked={rank.count_attendance}
                                                 onChange={() =>
@@ -198,13 +207,13 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             Select which Warcraft Logs tags should be used for attendance calculations.
                         </p>
                         {tags.length > 0 ? (
-                            <div className="mt-4 rounded-md border border-brown-800">
+                            <div className="border-brown-800 mt-4 rounded-md border">
                                 {tags.map((tag) => (
                                     <div
                                         key={tag.id}
-                                        className="flex flex-row items-center border-b border-b-brown-800 first:rounded-t-md last:rounded-b-md"
+                                        className="border-b-brown-800 flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
                                     >
-                                        <div className="mr-2 flex h-12 w-12 items-center justify-center border border-brown-800 bg-brown-800/50 p-2">
+                                        <div className="border-brown-800 bg-brown-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
                                             <Checkbox
                                                 checked={tag.count_attendance}
                                                 onChange={() => handleToggleTagAttendance(tag.id, tag.count_attendance)}

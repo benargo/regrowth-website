@@ -20,7 +20,7 @@ class AddonSettingsController extends Controller
     public function __invoke(Request $request)
     {
         $councillors = Character::where('is_loot_councillor', true)
-            ->with('rank')
+            ->with(['rank', 'media'])
             ->orderBy('name')
             ->get();
 
