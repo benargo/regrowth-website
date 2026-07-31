@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\LootCouncillorCollection;
 use App\Models\Character;
 use App\Models\GuildRank;
@@ -10,6 +11,7 @@ use App\Models\GuildTag;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Inertia\Inertia;
+use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
 class AddonSettingsController extends Controller
@@ -17,7 +19,7 @@ class AddonSettingsController extends Controller
     /**
      * Render the addon settings page.
      */
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): Response
     {
         $councillors = Character::where('is_loot_councillor', true)
             ->with(['rank', 'media'])
@@ -29,7 +31,9 @@ class AddonSettingsController extends Controller
             'ranks' => GuildRank::orderBy('position')->get()->toResourceCollection(),
             'tags' => GuildTag::orderBy('name')->get()->toResourceCollection(),
             'characters' => Inertia::defer(function () {
-                return Character::where('is_main', true)->with('rank')->orderBy('name')->get();
+                return CharacterSummaryResource::collection(
+                    Character::where('is_main', true)->with('rank')->orderBy('name')->get()
+                );
             }),
         ]);
     }

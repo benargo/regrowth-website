@@ -122,24 +122,24 @@ class CharacterController extends Controller
     public function update(UpdateCharacterRequest $request, Character $character): RedirectResponse
     {
         DB::transaction(function () use ($character, $request) {
-            if ($request->has('specialization_ids')) {
-                $raidSpecId = $request->input('raid_specialization_id');
-
-                $syncPayload = collect($request->input('specialization_ids', []))
-                    ->mapWithKeys(fn ($id) => [$id => ['is_raid_spec' => (int) $id === (int) $raidSpecId]])
-                    ->all();
-
-                $character->specializations()->sync($syncPayload);
-            }
-
             if ($request->has('is_loot_councillor')) {
                 $isLootCouncillor = $request->boolean('is_loot_councillor');
 
                 $character->update(['is_loot_councillor' => $isLootCouncillor]);
                 $character->linkedCharacters()->update(['is_loot_councillor' => $isLootCouncillor]);
             }
+
+            if ($request->has('specializations')) {
+                $raidSpecId = $request->input('specializations.raid_specialization_id');
+
+                $syncPayload = collect($request->input('specializations.specialization_ids', []))
+                    ->mapWithKeys(fn ($id) => [$id => ['is_raid_spec' => (int) $id === (int) $raidSpecId]])
+                    ->all();
+
+                $character->specializations()->sync($syncPayload);
+            }
         });
 
-        return back();
+        return back()->with('success', 'Character updated.');
     }
 }

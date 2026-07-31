@@ -19,9 +19,11 @@ function SectionHeading({ children }) {
 
 export default function Edit({ character, specializations }) {
     const { data, setData, patch, processing, errors } = useForm({
-        specialization_ids: character.specializations?.map((s) => s.id) ?? [],
-        raid_specialization_id: character.specializations?.find((s) => s.is_raid_spec)?.id ?? null,
         is_loot_councillor: character.is_loot_councillor ?? false,
+        specializations: {
+            specialization_ids: character.specializations?.map((s) => s.id) ?? [],
+            raid_specialization_id: character.specializations?.find((s) => s.is_raid_spec)?.id ?? null,
+        },
     });
 
     function handleSubmit(e) {
@@ -30,29 +32,35 @@ export default function Edit({ character, specializations }) {
     }
 
     function toggleSpec(specId) {
-        const isCurrentlySelected = data.specialization_ids.includes(specId);
+        const isCurrentlySelected = data.specializations.specialization_ids.includes(specId);
         const newIds = isCurrentlySelected
-            ? data.specialization_ids.filter((id) => id !== specId)
-            : [...data.specialization_ids, specId];
+            ? data.specializations.specialization_ids.filter((id) => id !== specId)
+            : [...data.specializations.specialization_ids, specId];
 
         const newRaidId =
-            isCurrentlySelected && data.raid_specialization_id === specId
+            isCurrentlySelected && data.specializations.raid_specialization_id === specId
                 ? null
-                : data.raid_specialization_id;
+                : data.specializations.raid_specialization_id;
 
         setData((prev) => ({
             ...prev,
-            specialization_ids: newIds,
-            raid_specialization_id: newRaidId,
+            specializations: {
+                ...prev.specializations,
+                specialization_ids: newIds,
+                raid_specialization_id: newRaidId,
+            },
         }));
     }
 
     function setRaidSpec(specId) {
-        setData("raid_specialization_id", specId === data.raid_specialization_id ? null : specId);
+        setData(
+            "specializations.raid_specialization_id",
+            specId === data.specializations.raid_specialization_id ? null : specId,
+        );
     }
 
-    const specErrors = data.specialization_ids
-        ?.map((_, i) => errors[`specialization_ids.${i}`])
+    const specErrors = data.specializations.specialization_ids
+        ?.map((_, i) => errors[`specializations.specialization_ids.${i}`])
         .filter(Boolean);
 
     return (
@@ -113,8 +121,8 @@ export default function Edit({ character, specializations }) {
                                         <SpecRow
                                             key={spec.id}
                                             spec={spec}
-                                            isSelected={data.specialization_ids.includes(spec.id)}
-                                            isRaidSpec={data.raid_specialization_id === spec.id}
+                                            isSelected={data.specializations.specialization_ids.includes(spec.id)}
+                                            isRaidSpec={data.specializations.raid_specialization_id === spec.id}
                                             onToggle={() => toggleSpec(spec.id)}
                                             onSetRaid={() => setRaidSpec(spec.id)}
                                         />
@@ -129,11 +137,14 @@ export default function Edit({ character, specializations }) {
                             {specErrors?.length > 0 && (
                                 <InputError message={specErrors[0]} className="mt-2" />
                             )}
-                            {errors.specialization_ids && (
-                                <InputError message={errors.specialization_ids} className="mt-2" />
+                            {errors["specializations.specialization_ids"] && (
+                                <InputError message={errors["specializations.specialization_ids"]} className="mt-2" />
                             )}
-                            {errors.raid_specialization_id && (
-                                <InputError message={errors.raid_specialization_id} className="mt-2" />
+                            {errors["specializations.raid_specialization_id"] && (
+                                <InputError
+                                    message={errors["specializations.raid_specialization_id"]}
+                                    className="mt-2"
+                                />
                             )}
                         </section>
 

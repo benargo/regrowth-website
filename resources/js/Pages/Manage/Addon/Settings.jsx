@@ -16,13 +16,14 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
     const [tags, setTags] = useState(tagsProp?.data ?? []);
     const [characterSearch, setCharacterSearch] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
+    const [autoSaveKey, setAutoSaveKey] = useState(0);
 
     // Rendered straight from props so the redirect-back refresh is the single
     // source of truth for the councillor list.
     const councillors = councillorsProp?.data ?? [];
     const councillorCounts = councillorsProp?.meta ?? { total: 0, mains: 0, alts: 0 };
     const councillorIds = new Set(councillors.map((c) => c.id));
-    const availableCharacters = (characters ?? []).filter((c) => !councillorIds.has(c.id));
+    const availableCharacters = (characters?.data ?? []).filter((c) => !councillorIds.has(c.id));
 
     const setLootCouncillor = (characterId, isLootCouncillor) => {
         if (isProcessing) return;
@@ -32,7 +33,15 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
             { is_loot_councillor: isLootCouncillor },
             {
                 preserveScroll: true,
-                onSuccess: () => setCharacterSearch(""),
+                onSuccess: (page) => {
+                    setCharacterSearch("");
+                    if (!page.props.flash?.success) {
+                        // Remount AutoSaveLabel so its internal processing-transition
+                        // never renders "Saved" for a request that didn't succeed.
+                        setAutoSaveKey((key) => key + 1);
+                    }
+                },
+                onError: () => setAutoSaveKey((key) => key + 1),
                 onFinish: () => setIsProcessing(false),
             },
         );
@@ -95,7 +104,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                         This page allows you to configure various settings for the addon. Changes you make will be saved
                         automatically.
                     </p>
-                    <AutoSaveLabel processing={isProcessing} />
+                    <AutoSaveLabel key={autoSaveKey} processing={isProcessing} />
                 </div>
                 <div className="my-6 md:mx-20">
                     <Alert type="info">

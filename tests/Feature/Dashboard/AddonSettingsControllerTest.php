@@ -191,8 +191,8 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->missing('characters')
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->has('characters')
-                ->where('characters', fn ($characters) => collect($characters)->contains('name', 'DeferredCharacter'))
+                ->has('characters.data')
+                ->where('characters.data', fn ($characters) => collect($characters)->contains('name', 'DeferredCharacter'))
             )
         );
     }
@@ -207,7 +207,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload
-                ->where('characters', function ($characters) {
+                ->where('characters.data', function ($characters) {
                     $names = collect($characters)->pluck('name')->toArray();
 
                     return $names === ['MainCharacter'];
