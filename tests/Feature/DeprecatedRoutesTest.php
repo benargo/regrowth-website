@@ -15,7 +15,7 @@ class DeprecatedRoutesTest extends DashboardTestCase
     public function add_councillor_endpoint_is_gone(): void
     {
         $response = $this->actingAs($this->officer)
-            ->post('/addon/settings/councillors', [
+            ->post('/manage/addon/settings/councillors', [
                 'character_name' => 'Anyone',
             ]);
 
@@ -29,7 +29,7 @@ class DeprecatedRoutesTest extends DashboardTestCase
         $character = Character::factory()->lootCouncillor()->create();
 
         $response = $this->actingAs($this->officer)
-            ->delete("/addon/settings/councillors/{$character->id}");
+            ->delete("/manage/addon/settings/councillors/{$character->id}");
 
         $response->assertGone();
     }
