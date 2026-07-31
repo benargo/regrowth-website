@@ -118,9 +118,7 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/addon/export', [AddonController::class, 'exportBase64'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
     Route::get('/addon/export/schema', AddonSchemaController::class)->name('addon.export.schema');
-    Route::get('/addon/settings', [AddonSettingsController::class, 'index'])->name('addon.settings');
-    Route::post('/addon/settings/councillors', [AddonSettingsController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
-    Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
+    Route::get('/addon/settings', AddonSettingsController::class)->name('addon.settings');
 
     /**
      * Boss strategies management
@@ -211,3 +209,4 @@ Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.n
 
 require __DIR__.'/assets.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/deprecated.php';
