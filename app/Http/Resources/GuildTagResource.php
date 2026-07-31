@@ -13,6 +13,7 @@ class GuildTagResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'count_attendance' => $this->count_attendance,
+            'phase_number' => $this->whenLoaded('phase', fn () => $this->phase?->number),
         ];
     }
 }
