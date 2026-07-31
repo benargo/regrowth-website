@@ -420,6 +420,27 @@ class EditCharactersTest extends TestCase
     }
 
     #[Test]
+    public function update_does_not_affect_unlinked_characters(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create(['is_loot_councillor' => false]);
+        $unrelated = Character::factory()->create(['is_loot_councillor' => false]);
+
+        $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => [],
+            'is_loot_councillor' => true,
+        ]);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => $character->id,
+            'is_loot_councillor' => true,
+        ]);
+        $this->assertDatabaseHas('characters', [
+            'id' => $unrelated->id,
+            'is_loot_councillor' => false,
+        ]);
+    }
+
+    #[Test]
     public function update_does_not_touch_linked_characters_when_field_is_absent(): void
     {
         $character = Character::factory()->withPlayableClass()->lootCouncillor()->create();
