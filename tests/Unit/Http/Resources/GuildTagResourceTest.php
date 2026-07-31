@@ -75,7 +75,7 @@ class GuildTagResourceTest extends TestCase
 
         $array = (new GuildTagResource($guildTag))->resolve(new Request);
 
-        $this->assertSame(['id', 'name', 'count_attendance', 'phaseNumber'], array_keys($array));
+        $this->assertSame(['id', 'name', 'count_attendance', 'phase_number'], array_keys($array));
     }
 
     #[Test]
@@ -86,8 +86,8 @@ class GuildTagResourceTest extends TestCase
 
         $array = (new GuildTagResource($guildTag))->resolve(new Request);
 
-        $this->assertArrayHasKey('phaseNumber', $array);
-        $this->assertSame($guildTag->phase->number, $array['phaseNumber']);
+        $this->assertArrayHasKey('phase_number', $array);
+        $this->assertSame($guildTag->phase->number, $array['phase_number']);
     }
 
     #[Test]
@@ -98,8 +98,8 @@ class GuildTagResourceTest extends TestCase
 
         $array = (new GuildTagResource($guildTag))->resolve(new Request);
 
-        $this->assertArrayHasKey('phaseNumber', $array);
-        $this->assertNull($array['phaseNumber']);
+        $this->assertArrayHasKey('phase_number', $array);
+        $this->assertNull($array['phase_number']);
     }
 
     #[Test]
@@ -109,6 +109,6 @@ class GuildTagResourceTest extends TestCase
 
         $array = (new GuildTagResource($guildTag))->resolve(new Request);
 
-        $this->assertArrayNotHasKey('phaseNumber', $array);
+        $this->assertArrayNotHasKey('phase_number', $array);
     }
 }
