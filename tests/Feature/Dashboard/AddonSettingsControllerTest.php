@@ -5,7 +5,6 @@ namespace Tests\Feature\Dashboard;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
-use App\Models\Phase;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -179,31 +178,6 @@ class AddonSettingsControllerTest extends DashboardTestCase
             ->has('tags.data', 1)
             ->where('tags.data.0.name', 'TestTag')
             ->where('tags.data.0.count_attendance', true)
-        );
-    }
-
-    #[Test]
-    public function settings_guild_tags_include_phase_number_when_tag_has_a_phase(): void
-    {
-        $phase = Phase::factory()->create(['number' => 2]);
-        GuildTag::factory()->withPhase($phase)->create();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('tags.data.0.phaseNumber', 2)
-        );
-    }
-
-    #[Test]
-    public function settings_guild_tags_have_null_phase_number_when_tag_has_no_phase(): void
-    {
-        GuildTag::factory()->withoutPhase()->create();
-
-        $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->where('tags.data.0.phaseNumber', null)
         );
     }
 
