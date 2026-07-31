@@ -17,15 +17,15 @@ class UpdateCharacterRequest extends FormRequest
         $character = $this->route('character');
 
         return [
-            'specialization_ids' => ['present', 'array'],
+            'specialization_ids' => ['sometimes', 'array'],
             // Class-scoped exists rule prevents assigning a specialization
             // that does not belong to this character's class.
             'specialization_ids.*' => [
                 'integer',
                 Rule::exists('playable_specializations', 'id')->where('playable_class_id', $character->playable_class_id),
             ],
-            'raid_specialization_id' => ['nullable', 'integer'],
-            'is_loot_councillor' => ['required', 'boolean'],
+            'raid_specialization_id' => ['sometimes', 'nullable', 'integer'],
+            'is_loot_councillor' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -35,6 +35,12 @@ class UpdateCharacterRequest extends FormRequest
             $raid = $this->input('raid_specialization_id');
 
             if ($raid === null) {
+                return;
+            }
+
+            // Only cross-check when the caller also supplied the spec list;
+            // a partial payload has nothing to check the raid spec against.
+            if (! $this->has('specialization_ids')) {
                 return;
             }
 

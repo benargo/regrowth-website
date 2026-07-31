@@ -248,10 +248,7 @@ class EditCharactersTest extends TestCase
             'is_loot_councillor' => false,
         ]);
 
-        $response->assertRedirect(route('characters.show', [
-            'character' => $character,
-            'slug' => $character->slug,
-        ]));
+        $response->assertRedirect();
         $this->assertDatabaseEmpty('pivot_character_specializations');
     }
 
@@ -276,16 +273,21 @@ class EditCharactersTest extends TestCase
 
     #[Group('validation')]
     #[Test]
-    public function update_requires_is_loot_councillor(): void
+    public function update_accepts_payload_without_is_loot_councillor(): void
     {
-        $character = Character::factory()->withPlayableClass()->create();
+        $character = Character::factory()->withPlayableClass()->create(['is_loot_councillor' => true]);
 
         $response = $this->actingAs($this->officer())->patch(route('characters.update', $character), [
             'specialization_ids' => [],
             // is_loot_councillor intentionally omitted
         ]);
 
-        $response->assertSessionHasErrors('is_loot_councillor');
+        $response->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('characters', [
+            'id' => $character->id,
+            'is_loot_councillor' => true,
+        ]);
     }
 
     #[Group('validation')]
@@ -304,16 +306,24 @@ class EditCharactersTest extends TestCase
 
     #[Group('validation')]
     #[Test]
-    public function update_requires_specialization_ids_to_be_present(): void
+    public function update_accepts_payload_without_specialization_ids(): void
     {
-        $character = Character::factory()->withPlayableClass()->create();
+        $class = PlayableClass::factory()->create();
+        $specialization = PlayableSpecialization::factory()->for($class, 'playableClass')->create();
+        $character = Character::factory()->withPlayableClass($class)->create();
+        $character->specializations()->sync([$specialization->id => ['is_raid_spec' => true]]);
 
         $response = $this->actingAs($this->officer())->patch(route('characters.update', $character), [
             // specialization_ids intentionally omitted
-            'is_loot_councillor' => false,
+            'is_loot_councillor' => true,
         ]);
 
-        $response->assertSessionHasErrors('specialization_ids');
+        $response->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('pivot_character_specializations', [
+            'character_id' => $character->id,
+            'playable_specialization_id' => $specialization->id,
+        ]);
     }
 
     #[Group('validation')]
@@ -328,5 +338,103 @@ class EditCharactersTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('specialization_ids');
+    }
+
+    #[Test]
+    public function update_redirects_back_to_the_referring_page(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create();
+
+        $referer = route('management.addon.settings');
+
+        $response = $this->actingAs($this->officer())
+            ->from($referer)
+            ->patch(route('characters.update', $character), [
+                'is_loot_councillor' => true,
+            ]);
+
+        $response->assertRedirect($referer);
+    }
+
+    #[Test]
+    public function update_does_not_unset_loot_councillor_when_field_is_absent(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create(['is_loot_councillor' => true]);
+
+        $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => [],
+        ]);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => $character->id,
+            'is_loot_councillor' => true,
+        ]);
+    }
+
+    #[Test]
+    public function update_propagates_loot_councillor_true_to_linked_characters(): void
+    {
+        $character = Character::factory()->withPlayableClass()->create(['is_loot_councillor' => false]);
+        $alt = Character::factory()->create(['is_loot_councillor' => false]);
+
+        $character->linkedCharacters()->attach($alt);
+        $alt->linkedCharacters()->attach($character);
+
+        $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => [],
+            'is_loot_councillor' => true,
+        ]);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => $character->id,
+            'is_loot_councillor' => true,
+        ]);
+        $this->assertDatabaseHas('characters', [
+            'id' => $alt->id,
+            'is_loot_councillor' => true,
+        ]);
+    }
+
+    #[Test]
+    public function update_propagates_loot_councillor_false_to_linked_characters(): void
+    {
+        $character = Character::factory()->withPlayableClass()->lootCouncillor()->create();
+        $alt = Character::factory()->lootCouncillor()->create();
+
+        $character->linkedCharacters()->attach($alt);
+        $alt->linkedCharacters()->attach($character);
+
+        $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => [],
+            'is_loot_councillor' => false,
+        ]);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => $character->id,
+            'is_loot_councillor' => false,
+        ]);
+        $this->assertDatabaseHas('characters', [
+            'id' => $alt->id,
+            'is_loot_councillor' => false,
+        ]);
+    }
+
+    #[Test]
+    public function update_does_not_touch_linked_characters_when_field_is_absent(): void
+    {
+        $character = Character::factory()->withPlayableClass()->lootCouncillor()->create();
+        $alt = Character::factory()->lootCouncillor()->create();
+
+        $character->linkedCharacters()->attach($alt);
+        $alt->linkedCharacters()->attach($character);
+
+        $this->actingAs($this->officer())->patch(route('characters.update', $character), [
+            'specialization_ids' => [],
+        ]);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => $alt->id,
+            'is_loot_councillor' => true,
+        ]);
     }
 }

@@ -112,29 +112,34 @@ class CharacterController extends Controller
     /**
      * Persist character edits.
      *
-     * Syncs the character's specializations pivot, marking the chosen raid spec
-     * via the `is_raid_spec` pivot column. Both the sync and the loot-councillor
-     * update run inside a transaction so the two writes succeed or fail together.
+     * Accepts partial payloads: each field is written only when the caller
+     * supplied it, so the addon settings page can toggle the loot-councillor
+     * flag without owning the character's specializations. Both writes run
+     * inside a transaction so they succeed or fail together.
      */
     #[Middleware('auth')]
     #[Authorize('update', 'character')]
     public function update(UpdateCharacterRequest $request, Character $character): RedirectResponse
     {
-        $specializationIds = $request->input('specialization_ids', []);
-        $raidSpecId = $request->input('raid_specialization_id');
+        DB::transaction(function () use ($character, $request) {
+            if ($request->has('specialization_ids')) {
+                $raidSpecId = $request->input('raid_specialization_id');
 
-        $syncPayload = collect($specializationIds)
-            ->mapWithKeys(fn ($id) => [$id => ['is_raid_spec' => (int) $id === (int) $raidSpecId]])
-            ->all();
+                $syncPayload = collect($request->input('specialization_ids', []))
+                    ->mapWithKeys(fn ($id) => [$id => ['is_raid_spec' => (int) $id === (int) $raidSpecId]])
+                    ->all();
 
-        DB::transaction(function () use ($character, $syncPayload, $request) {
-            $character->specializations()->sync($syncPayload);
-            $character->update(['is_loot_councillor' => $request->boolean('is_loot_councillor')]);
+                $character->specializations()->sync($syncPayload);
+            }
+
+            if ($request->has('is_loot_councillor')) {
+                $isLootCouncillor = $request->boolean('is_loot_councillor');
+
+                $character->update(['is_loot_councillor' => $isLootCouncillor]);
+                $character->linkedCharacters()->update(['is_loot_councillor' => $isLootCouncillor]);
+            }
         });
 
-        return redirect()->route('characters.show', [
-            'character' => $character,
-            'slug' => $character->slug,
-        ]);
+        return back();
     }
 }
