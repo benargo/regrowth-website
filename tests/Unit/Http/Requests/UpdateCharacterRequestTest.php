@@ -22,14 +22,58 @@ class UpdateCharacterRequestTest extends TestCase
     // ==================== rules ====================
 
     #[Test]
-    public function rules_specialization_ids_is_sometimes_array_and_not_required(): void
+    public function rules_is_loot_councillor_is_sometimes_boolean(): void
     {
         $rules = $this->makeRequest()->rules();
 
-        $this->assertArrayHasKey('specialization_ids', $rules);
-        $this->assertContains('sometimes', $rules['specialization_ids']);
-        $this->assertContains('array', $rules['specialization_ids']);
-        $this->assertNotContains('required', $rules['specialization_ids']);
+        $this->assertArrayHasKey('is_loot_councillor', $rules);
+        $this->assertContains('sometimes', $rules['is_loot_councillor']);
+        $this->assertContains('boolean', $rules['is_loot_councillor']);
+        $this->assertNotContains('required', $rules['is_loot_councillor']);
+    }
+
+    #[Test]
+    public function rules_specializations_is_sometimes_array(): void
+    {
+        $rules = $this->makeRequest()->rules();
+
+        $this->assertArrayHasKey('specializations', $rules);
+        $this->assertContains('sometimes', $rules['specializations']);
+        $this->assertContains('array', $rules['specializations']);
+        $this->assertNotContains('required', $rules['specializations']);
+    }
+
+    #[Test]
+    public function rules_specialization_ids_is_not_required_when_specializations_is_absent(): void
+    {
+        $validator = $this->validate($this->character(), []);
+
+        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
+    }
+
+    #[Test]
+    public function rules_specialization_ids_must_be_present_when_specializations_is_sent(): void
+    {
+        $validator = $this->validate($this->character(), [
+            'specializations' => [
+                'raid_specialization_id' => null,
+            ],
+        ]);
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('specializations.specialization_ids', $validator->errors()->toArray());
+    }
+
+    #[Test]
+    public function rules_specialization_ids_accepts_empty_array_when_specializations_is_sent(): void
+    {
+        $validator = $this->validate($this->character(), [
+            'specializations' => [
+                'specialization_ids' => [],
+            ],
+        ]);
+
+        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
     }
 
     #[Test]
@@ -39,9 +83,9 @@ class UpdateCharacterRequestTest extends TestCase
 
         $rules = $this->makeRequest($character)->rules();
 
-        $this->assertArrayHasKey('specialization_ids.*', $rules);
-        $this->assertContains('integer', $rules['specialization_ids.*']);
-        $this->assertTrue(collect($rules['specialization_ids.*'])->contains(fn ($rule) => $rule instanceof Exists));
+        $this->assertArrayHasKey('specializations.specialization_ids.*', $rules);
+        $this->assertContains('integer', $rules['specializations.specialization_ids.*']);
+        $this->assertTrue(collect($rules['specializations.specialization_ids.*'])->contains(fn ($rule) => $rule instanceof Exists));
     }
 
     #[Test]
@@ -51,7 +95,9 @@ class UpdateCharacterRequestTest extends TestCase
         $spec = PlayableSpecialization::factory()->for($class, 'playableClass')->create();
         $character = Character::factory()->withPlayableClass($class)->create();
 
-        $validator = $this->validate($character, ['specialization_ids' => [$spec->id]]);
+        $validator = $this->validate($character, [
+            'specializations' => ['specialization_ids' => [$spec->id]],
+        ]);
 
         $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
     }
@@ -65,10 +111,12 @@ class UpdateCharacterRequestTest extends TestCase
         $otherClass = PlayableClass::factory()->create();
         $otherSpec = PlayableSpecialization::factory()->for($otherClass, 'playableClass')->create();
 
-        $validator = $this->validate($character, ['specialization_ids' => [$otherSpec->id]]);
+        $validator = $this->validate($character, [
+            'specializations' => ['specialization_ids' => [$otherSpec->id]],
+        ]);
 
         $this->assertTrue($validator->fails());
-        $this->assertArrayHasKey('specialization_ids.0', $validator->errors()->toArray());
+        $this->assertArrayHasKey('specializations.specialization_ids.0', $validator->errors()->toArray());
     }
 
     #[Test]
@@ -76,22 +124,11 @@ class UpdateCharacterRequestTest extends TestCase
     {
         $rules = $this->makeRequest()->rules();
 
-        $this->assertArrayHasKey('raid_specialization_id', $rules);
-        $this->assertContains('sometimes', $rules['raid_specialization_id']);
-        $this->assertContains('nullable', $rules['raid_specialization_id']);
-        $this->assertContains('integer', $rules['raid_specialization_id']);
-        $this->assertNotContains('required', $rules['raid_specialization_id']);
-    }
-
-    #[Test]
-    public function rules_is_loot_councillor_is_sometimes_boolean(): void
-    {
-        $rules = $this->makeRequest()->rules();
-
-        $this->assertArrayHasKey('is_loot_councillor', $rules);
-        $this->assertContains('sometimes', $rules['is_loot_councillor']);
-        $this->assertContains('boolean', $rules['is_loot_councillor']);
-        $this->assertNotContains('required', $rules['is_loot_councillor']);
+        $this->assertArrayHasKey('specializations.raid_specialization_id', $rules);
+        $this->assertContains('sometimes', $rules['specializations.raid_specialization_id']);
+        $this->assertContains('nullable', $rules['specializations.raid_specialization_id']);
+        $this->assertContains('integer', $rules['specializations.raid_specialization_id']);
+        $this->assertNotContains('required', $rules['specializations.raid_specialization_id']);
     }
 
     // ==================== withValidator ====================
@@ -103,8 +140,10 @@ class UpdateCharacterRequestTest extends TestCase
         $character = Character::factory()->withPlayableClass()->create();
 
         $validator = $this->validate($character, [
-            'specialization_ids' => [],
-            'raid_specialization_id' => null,
+            'specializations' => [
+                'specialization_ids' => [],
+                'raid_specialization_id' => null,
+            ],
         ]);
 
         $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
@@ -112,17 +151,20 @@ class UpdateCharacterRequestTest extends TestCase
 
     #[Test]
     #[Group('validation')]
-    public function with_validator_skips_cross_check_when_specialization_ids_is_absent(): void
+    public function with_validator_fails_when_raid_specialization_id_sent_without_specialization_ids(): void
     {
         $class = PlayableClass::factory()->create();
         $spec = PlayableSpecialization::factory()->for($class, 'playableClass')->create();
         $character = Character::factory()->withPlayableClass($class)->create();
 
         $validator = $this->validate($character, [
-            'raid_specialization_id' => $spec->id,
+            'specializations' => [
+                'raid_specialization_id' => $spec->id,
+            ],
         ]);
 
-        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('specializations.specialization_ids', $validator->errors()->toArray());
     }
 
     #[Test]
@@ -134,8 +176,10 @@ class UpdateCharacterRequestTest extends TestCase
         $character = Character::factory()->withPlayableClass($class)->create();
 
         $validator = $this->validate($character, [
-            'specialization_ids' => [$spec->id],
-            'raid_specialization_id' => $spec->id,
+            'specializations' => [
+                'specialization_ids' => [$spec->id],
+                'raid_specialization_id' => $spec->id,
+            ],
         ]);
 
         $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
@@ -150,12 +194,19 @@ class UpdateCharacterRequestTest extends TestCase
         $character = Character::factory()->withPlayableClass($class)->create();
 
         $validator = $this->validate($character, [
-            'specialization_ids' => [$specs->get(0)->id],
-            'raid_specialization_id' => $specs->get(1)->id,
+            'specializations' => [
+                'specialization_ids' => [$specs->get(0)->id],
+                'raid_specialization_id' => $specs->get(1)->id,
+            ],
         ]);
 
         $this->assertTrue($validator->fails());
-        $this->assertArrayHasKey('raid_specialization_id', $validator->errors()->toArray());
+        $this->assertArrayHasKey('specializations.raid_specialization_id', $validator->errors()->toArray());
+    }
+
+    private function character(): Character
+    {
+        return Character::factory()->withPlayableClass()->create();
     }
 
     private function makeRequest(?Character $character = null): UpdateCharacterRequest
