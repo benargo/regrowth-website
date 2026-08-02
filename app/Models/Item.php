@@ -136,9 +136,7 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
 
     /**
      * Constrain the query to items whose name matches the given term, using the
-     * FULLTEXT index on drivers that support it (MariaDB, MySQL, PostgreSQL) and
-     * LIKE elsewhere (SQLite, used by the test suite) via whereFullText()'s
-     * per-grammar fallback.
+     * FULLTEXT index.
      *
      * Items are created before Blizzard data fills their name, so nameless rows
      * exist in the table and must never surface as results.
