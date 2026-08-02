@@ -134,6 +134,46 @@ class ItemResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_null_raid_when_item_has_no_raid_and_raid_is_loaded(): void
+    {
+        $item = Item::factory()->create(['raid_id' => null, 'boss_id' => null]);
+        $item->load('raid');
+
+        $array = (new ItemResource($item))->toArray(new Request);
+
+        $this->assertNull($array['raid']);
+    }
+
+    #[Test]
+    public function it_excludes_comments_when_not_loaded(): void
+    {
+        $item = Item::factory()->create();
+
+        $array = (new ItemResource($item))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('comments', $array);
+    }
+
+    #[Test]
+    public function it_nests_paginated_comments_with_links_and_meta(): void
+    {
+        $item = Item::factory()->fromBoss()->withName('Test Item')->create();
+
+        $item->setRelation(
+            'comments',
+            $item->comments()->with('user')->latest()->paginate(10),
+        );
+
+        $array = (new ItemResource($item))->resolve(new Request);
+
+        $this->assertArrayHasKey('comments', $array);
+        $this->assertArrayHasKey('data', $array['comments']);
+        $this->assertArrayHasKey('links', $array['comments']);
+        $this->assertArrayHasKey('meta', $array['comments']);
+        $this->assertSame(10, $array['comments']['meta']['per_page']);
+    }
+
+    #[Test]
     public function it_returns_group_when_set(): void
     {
         $item = Item::factory()->inGroup('Weapons')->create();

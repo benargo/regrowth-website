@@ -593,7 +593,7 @@ class CommentTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Show')
-            ->has('comments.data', 3)
+            ->has('item.data.comments.data', 3)
         );
     }
 
@@ -641,9 +641,9 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('comments.data', 10) // 10 per page
-            ->has('comments.links')
-            ->has('comments.meta')
+            ->has('item.data.comments.data', 10) // 10 per page
+            ->has('item.data.comments.links')
+            ->has('item.data.comments.meta')
         );
     }
 
@@ -674,8 +674,8 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('comments.data.0.id', $newComment->id)
-            ->where('comments.data.1.id', $oldComment->id)
+            ->where('item.data.comments.data.0.id', $newComment->id)
+            ->where('item.data.comments.data.1.id', $oldComment->id)
         );
     }
 
@@ -694,8 +694,8 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('comments.data.0.can.edit')
-            ->has('comments.data.0.can.delete')
+            ->has('item.data.comments.data.0.can.edit')
+            ->has('item.data.comments.data.0.can.delete')
         );
     }
 
@@ -723,8 +723,8 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('comments.data.0.is_resolved')
-            ->has('comments.data.1.is_resolved')
+            ->has('item.data.comments.data.0.is_resolved')
+            ->has('item.data.comments.data.1.is_resolved')
         );
     }
 
@@ -744,7 +744,7 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('comments.data.0.can.resolve', true)
+            ->where('item.data.comments.data.0.can.resolve', true)
         );
     }
 
@@ -764,7 +764,7 @@ class CommentTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('comments.data.0.can.resolve', false)
+            ->where('item.data.comments.data.0.can.resolve', false)
         );
     }
 

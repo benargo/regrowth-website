@@ -110,12 +110,21 @@ class ShowItemPageTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Show')
-            ->has('item.data')
-            ->has('raid.data')
-            ->has('boss.data')
-            ->has('item.data.inventory_type')
-            ->has('item.data.item_class')
-            ->has('item.data.item_subclass')
+            ->has('item.data', fn (Assert $prop) => $prop
+                ->where('id', $item->id)
+                ->has('raid')
+                ->has('boss')
+                ->has('comments.data')
+                ->has('comments.links')
+                ->has('comments.meta')
+                ->has('inventory_type')
+                ->has('item_class')
+                ->has('item_subclass')
+                ->etc()
+            )
+            ->missing('raid')
+            ->missing('boss')
+            ->missing('comments')
         );
     }
 
@@ -181,7 +190,8 @@ class ShowItemPageTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Show')
-            ->where('boss', null)
+            ->where('item.data.boss', null)
+            ->has('item.data.raid')
         );
     }
 

@@ -11,7 +11,7 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Link, useForm } from "@inertiajs/react";
+import { Link, router, useForm } from "@inertiajs/react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -158,8 +158,6 @@ function AddNewWeightRow({ weight, onAddClick }) {
 }
 
 function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
-    if (!isOpen) return null;
-
     const groupedPriorities = useMemo(() => {
         return priorities.reduce((acc, priority) => {
             const type = priority.type || "other";
@@ -170,6 +168,8 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
             return acc;
         }, {});
     }, [priorities]);
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -413,8 +413,9 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     );
 }
 
-export default function ItemEdit({ item, allPriorities: allPrioritiesResource, comments }) {
-    const allPriorities = allPrioritiesResource.data;
+export default function ItemEdit({ item, priorities: prioritiesResource }) {
+    const allPriorities = prioritiesResource.data;
+    const raid = item.data.raid;
 
     const { data, setData } = useForm({
         priorities: item.data.priorities.map((p) => ({
@@ -439,19 +440,20 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
         setNotesValidationError(error);
     }, []);
 
-    const saveItem = useCallback(async (payload) => {
-        setSaving(true);
-        try {
-            await window.axios.patch(route("api.loot.items.update", { item: item.data.id }), payload);
-            setNotesError(null);
-        } catch (error) {
-            if (error.response?.data?.errors?.notes) {
-                setNotesError(error.response.data.errors.notes[0]);
-            }
-        } finally {
-            setSaving(false);
-        }
-    }, [item.data.id]);
+    const saveItem = useCallback(
+        (payload) => {
+            router.patch(route("loot.items.update", { item: item.data.id }), payload, {
+                preserveScroll: true,
+                preserveState: true,
+                only: ["item"],
+                onStart: () => setSaving(true),
+                onSuccess: () => setNotesError(null),
+                onError: (errors) => setNotesError(errors.notes ?? null),
+                onFinish: () => setSaving(false),
+            });
+        },
+        [item.data.id],
+    );
 
     const notesFocused = useRef(false);
 
@@ -529,7 +531,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
 
     return (
         <Master title={`Editing ${item.data.name}`}>
-            <SharedHeader backgroundClass="bg-ssctk" title="Edit Loot Biases" />
+            <SharedHeader backgroundClass={raid?.background ?? "bg-ssctk"} title="Edit Loot Biases" subtitle={raid?.name} />
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">
@@ -596,7 +598,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
 
                 {/* Comments Section */}
-                <CommentsSection comments={comments} itemId={item.data.id} canCreate="true" />
+                <CommentsSection comments={item.data.comments} itemId={item.data.id} />
             </PageContainer>
         </Master>
     );

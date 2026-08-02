@@ -137,7 +137,28 @@ class EditItemPageTest extends TestCase
             ->component('Loot/Items/Edit')
             ->has('item.data')
             ->has('item.data.priorities', 2)
-            ->has('allPriorities.data', 3)
+            ->has('priorities.data', 3)
+            ->missing('allPriorities')
+        );
+    }
+
+    #[Test]
+    public function edit_item_renders_with_priorities_prop(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+
+        $response = $this->actingAs($user)->get($this->editUrl($item));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Items/Edit')
+            ->has('priorities.data')
+            ->has('item.data.raid')
+            ->has('item.data.comments.data')
+            ->missing('allPriorities')
+            ->missing('raid')
+            ->missing('comments')
         );
     }
 
