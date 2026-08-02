@@ -168,9 +168,31 @@ class ShowItemPageTest extends TestCase
         );
     }
 
+    #[Test]
+    public function show_item_renders_with_null_boss_when_item_has_no_boss(): void
+    {
+        $this->mockItemService();
+
+        $user = User::factory()->member()->create();
+        $item = $this->createTestItemWithoutBoss();
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Items/Show')
+            ->where('boss', null)
+        );
+    }
+
     protected function createTestItem(): Item
     {
         return Item::factory()->fromBoss()->withName('Test Item')->create();
+    }
+
+    protected function createTestItemWithoutBoss(): Item
+    {
+        return Item::factory()->withRaid()->trashDrop()->withName('Test Item')->create();
     }
 
     protected function createTestItemWithoutName(): Item

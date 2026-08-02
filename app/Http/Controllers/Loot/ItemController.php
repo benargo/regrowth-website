@@ -36,8 +36,8 @@ class ItemController extends Controller
         $this->loadBlizzardDataAndPriorities($blizzardConnector, $item);
 
         return Inertia::render('Loot/Items/Show', [
-            'raid' => new RaidResource($item->raid()->first()),
-            'boss' => new BossResource($item->boss()->first()),
+            'raid' => new RaidResource($item->raid),
+            'boss' => $item->boss ? new BossResource($item->boss) : null,
             'item' => new ItemResource($item),
             'comments' => CommentResource::collection($item->comments()->with('user')->latest()->paginate(10)),
         ]);
@@ -59,7 +59,7 @@ class ItemController extends Controller
         $this->loadBlizzardDataAndPriorities($blizzardConnector, $item);
 
         return Inertia::render('Loot/Items/Edit', [
-            'raid' => new RaidResource($item->raid()->first()),
+            'raid' => new RaidResource($item->raid),
             'item' => new ItemResource($item),
             'allPriorities' => PriorityResource::collection(LootPriority::all()),
             'comments' => CommentResource::collection($item->comments()->with('user')->latest()->paginate(10)),
