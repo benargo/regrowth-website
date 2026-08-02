@@ -260,7 +260,7 @@ class ReportResourceTest extends TestCase
         $playableClass = PlayableClass::factory()->create(['name' => 'Druid']);
         $character = Character::factory()->for($playableClass, 'playableClass')->create();
         $report = Report::factory()->create();
-        $report->characters()->attach($character, ['presence' => 'present', 'is_loot_councillor' => false]);
+        $report->characters()->attach($character, ['presence' => 1, 'is_loot_councillor' => false]);
         $report->load('characters.playableClass');
 
         $array = (new ReportResource($report))->toArray(new Request);

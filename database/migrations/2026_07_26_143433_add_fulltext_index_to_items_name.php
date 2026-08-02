@@ -9,8 +9,7 @@ return new class extends Migration
 {
     /**
      * Full-text indexes exist only on drivers listed in database.behaviours.full_text;
-     * SQLite (used by the test suite) has no FULLTEXT support. Item::matchingName()
-     * checks the same config and falls back to LIKE elsewhere.
+     * SQLite (used by the test suite) has no FULLTEXT support.
      */
     public function up(): void
     {

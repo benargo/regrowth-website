@@ -224,7 +224,7 @@ class CommentTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
+        $response = $this->actingAs($user)->delete(route('loot.comments.destroy', $comment));
 
         $response->assertRedirect();
         $this->assertSoftDeleted('comments', ['id' => $comment->id]);
@@ -243,7 +243,7 @@ class CommentTest extends TestCase
             'user_id' => $otherUser->id,
         ]);
 
-        $response = $this->actingAs($raider)->delete(route('loot.comments.destroy', [$item, $comment]));
+        $response = $this->actingAs($raider)->delete(route('loot.comments.destroy', $comment));
 
         $response->assertForbidden();
         $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
@@ -261,7 +261,7 @@ class CommentTest extends TestCase
             'user_id' => $otherUser->id,
         ]);
 
-        $response = $this->actingAs($officer)->delete(route('loot.comments.destroy', [$item, $comment]));
+        $response = $this->actingAs($officer)->delete(route('loot.comments.destroy', $comment));
 
         $response->assertRedirect();
         $this->assertSoftDeleted('comments', ['id' => $comment->id]);
@@ -279,7 +279,7 @@ class CommentTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $this->actingAs($officer)->delete(route('loot.comments.destroy', [$item, $comment]));
+        $this->actingAs($officer)->delete(route('loot.comments.destroy', $comment));
 
         $this->assertDatabaseHas('comments', [
             'id' => $comment->id,
@@ -303,7 +303,7 @@ class CommentTest extends TestCase
             'body' => 'Original comment',
         ]);
 
-        $response = $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
+        $response = $this->actingAs($user)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment',
         ]);
 
@@ -324,7 +324,7 @@ class CommentTest extends TestCase
             'body' => 'Original comment',
         ]);
 
-        $response = $this->actingAs($raider)->put(route('loot.comments.update', [$item, $comment]), [
+        $response = $this->actingAs($raider)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment',
         ]);
 
@@ -344,7 +344,7 @@ class CommentTest extends TestCase
         ]);
         $originalId = $comment->id;
 
-        $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
+        $this->actingAs($user)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment',
         ]);
 
@@ -377,7 +377,7 @@ class CommentTest extends TestCase
             'created_at' => $originalTime,
         ]);
 
-        $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
+        $this->actingAs($user)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment',
         ]);
 
@@ -402,7 +402,7 @@ class CommentTest extends TestCase
         ]);
         $originalId = $comment->id;
 
-        $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
+        $this->actingAs($user)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment',
         ]);
 
@@ -445,7 +445,7 @@ class CommentTest extends TestCase
             'body' => 'Original resolved comment',
         ]);
 
-        $response = $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
+        $response = $this->actingAs($user)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment',
         ]);
 
@@ -469,7 +469,7 @@ class CommentTest extends TestCase
             'body' => 'Original resolved comment',
         ]);
 
-        $response = $this->actingAs($officer)->put(route('loot.comments.update', [$item, $comment]), [
+        $response = $this->actingAs($officer)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated by officer',
         ]);
 
@@ -492,7 +492,7 @@ class CommentTest extends TestCase
             'is_resolved' => false,
         ]);
 
-        $response = $this->actingAs($officer)->put(route('loot.comments.update', [$item, $comment]), [
+        $response = $this->actingAs($officer)->put(route('loot.comments.update', $comment), [
             'isResolved' => true,
         ]);
 
@@ -513,7 +513,7 @@ class CommentTest extends TestCase
             'user_id' => $raider->id,
         ]);
 
-        $response = $this->actingAs($officer)->put(route('loot.comments.update', [$item, $comment]), [
+        $response = $this->actingAs($officer)->put(route('loot.comments.update', $comment), [
             'isResolved' => false,
         ]);
 
@@ -535,7 +535,7 @@ class CommentTest extends TestCase
         ]);
 
         // Raider tries to update only isResolved without changing body
-        $response = $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
+        $response = $this->actingAs($user)->put(route('loot.comments.update', $comment), [
             'body' => $comment->body,
             'isResolved' => true,
         ]);
@@ -564,7 +564,7 @@ class CommentTest extends TestCase
             'body' => 'Original comment',
         ]);
 
-        $this->actingAs($officer)->put(route('loot.comments.update', [$item, $comment]), [
+        $this->actingAs($officer)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment',
         ]);
 

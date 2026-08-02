@@ -10,11 +10,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\InteractsWithFullTextSearch;
 use Tests\TestCase;
 
 #[Group('loot')]
 class SearchPageTest extends TestCase
 {
+    use InteractsWithFullTextSearch;
     use RefreshDatabase;
 
     /**
@@ -75,31 +77,37 @@ class SearchPageTest extends TestCase
     #[Test]
     public function it_returns_matching_items(): void
     {
-        $item = $this->createItem('Archbishop\'s Slippers');
-        $this->createItem('Thunderfury');
-
-        $this->get(route('search', ['q' => 'slipper']))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 1)
-                ->where('results.data.0.id', $item->id)
-            );
+        $this->usingModel(Phase::class, Raid::class, Boss::class, Item::class)->withCommittedTransaction(
+            create: fn () => [
+                'match' => $this->createItem('Archbishop\'s Slippers'),
+                'decoy' => $this->createItem('Thunderfury'),
+            ],
+            assert: function (array $items) {
+                $this->get(route('search', ['q' => 'slipper']))
+                    ->assertOk()
+                    ->assertInertia(fn (Assert $page) => $page
+                        ->has('results.data', 1)
+                        ->where('results.data.0.id', $items['match']->id)
+                    );
+            },
+        );
     }
 
     #[Test]
     public function it_paginates_beyond_twenty_five_results(): void
     {
-        foreach (range(1, 30) as $i) {
-            $this->createItem("Slipper of Testing {$i}");
-        }
-
-        $this->get(route('search', ['q' => 'slipper']))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 25)
-                ->where('results.meta.total', 30)
-                ->where('results.meta.last_page', 2)
-            );
+        $this->usingModel(Phase::class, Raid::class, Boss::class, Item::class)->withCommittedTransaction(
+            create: fn () => array_map(fn (int $i) => $this->createItem("Slipper of Testing {$i}"), range(1, 30)),
+            assert: function (array $items) {
+                $this->get(route('search', ['q' => 'slipper']))
+                    ->assertOk()
+                    ->assertInertia(fn (Assert $page) => $page
+                        ->has('results.data', 25)
+                        ->where('results.meta.total', 30)
+                        ->where('results.meta.last_page', 2)
+                    );
+            },
+        );
     }
 
     #[Test]
@@ -111,33 +119,50 @@ class SearchPageTest extends TestCase
     #[Test]
     public function it_returns_has_notes_instead_of_notes(): void
     {
-        $item = $this->createItem('Archbishop\'s Slippers');
-        $item->update(['notes' => 'Best in slot for warriors']);
+        $this->usingModel(Phase::class, Raid::class, Boss::class, Item::class)->withCommittedTransaction(
+            create: function () {
+                $item = $this->createItem('Archbishop\'s Slippers');
+                $item->update(['notes' => 'Best in slot for warriors']);
 
-        $this->get(route('search', ['q' => 'slipper']))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('results.data.0.has_notes', true)
-                ->missing('results.data.0.notes')
-            );
+                return ['item' => $item];
+            },
+            assert: function (array $items) {
+                $this->get(route('search', ['q' => 'slipper']))
+                    ->assertOk()
+                    ->assertInertia(fn (Assert $page) => $page
+                        ->where('results.data.0.has_notes', true)
+                        ->missing('results.data.0.notes')
+                    );
+            },
+        );
     }
 
     #[Test]
     public function it_scopes_results_to_the_given_raid(): void
     {
-        $raidA = Raid::factory()->create(['phase_id' => Phase::factory()->started()->create()->id]);
-        $raidB = Raid::factory()->create(['phase_id' => $raidA->phase_id]);
+        $raidAId = null;
 
-        $itemA = $this->createItemForRaid('Slipper of Alpha', $raidA);
-        $this->createItemForRaid('Slipper of Beta', $raidB);
+        $this->usingModel(Phase::class, Raid::class, Boss::class, Item::class)->withCommittedTransaction(
+            create: function () use (&$raidAId) {
+                $raidA = Raid::factory()->create(['phase_id' => Phase::factory()->started()->create()->id]);
+                $raidB = Raid::factory()->create(['phase_id' => $raidA->phase_id]);
+                $raidAId = $raidA->id;
 
-        $this->get(route('search', ['q' => 'slipper', 'raid_id' => $raidA->id]))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 1)
-                ->where('results.data.0.id', $itemA->id)
-                ->where('scoped_raid.data.id', $raidA->id)
-            );
+                return [
+                    'itemA' => $this->createItemForRaid('Slipper of Alpha', $raidA),
+                    'itemB' => $this->createItemForRaid('Slipper of Beta', $raidB),
+                ];
+            },
+            assert: function (array $items) use (&$raidAId) {
+                $this->get(route('search', ['q' => 'slipper', 'raid_id' => $raidAId]))
+                    ->assertOk()
+                    ->assertInertia(fn (Assert $page) => $page
+                        ->has('results.data', 1)
+                        ->where('results.data.0.id', $items['itemA']->id)
+                        ->where('scoped_raid.data.id', $raidAId)
+                    );
+            },
+        );
     }
 
     #[Test]
@@ -155,18 +180,24 @@ class SearchPageTest extends TestCase
     #[Test]
     public function it_preserves_raid_id_across_pagination_links(): void
     {
-        $raid = Raid::factory()->create(['phase_id' => Phase::factory()->started()->create()->id]);
+        $raidId = null;
 
-        foreach (range(1, 30) as $i) {
-            $this->createItemForRaid("Slipper of Testing {$i}", $raid);
-        }
+        $this->usingModel(Phase::class, Raid::class, Boss::class, Item::class)->withCommittedTransaction(
+            create: function () use (&$raidId) {
+                $raid = Raid::factory()->create(['phase_id' => Phase::factory()->started()->create()->id]);
+                $raidId = $raid->id;
 
-        $this->get(route('search', ['q' => 'slipper', 'raid_id' => $raid->id]))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 25)
-                ->where('results.meta.total', 30)
-                ->where('results.meta.links.1.url', fn ($url) => str_contains($url, 'raid_id='.$raid->id))
-            );
+                return array_map(fn (int $i) => $this->createItemForRaid("Slipper of Testing {$i}", $raid), range(1, 30));
+            },
+            assert: function (array $items) use (&$raidId) {
+                $this->get(route('search', ['q' => 'slipper', 'raid_id' => $raidId]))
+                    ->assertOk()
+                    ->assertInertia(fn (Assert $page) => $page
+                        ->has('results.data', 25)
+                        ->where('results.meta.total', 30)
+                        ->where('results.meta.links.1.url', fn ($url) => str_contains($url, 'raid_id='.$raidId))
+                    );
+            },
+        );
     }
 }
