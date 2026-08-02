@@ -48,30 +48,6 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
         'saved' => ItemSaved::class,
     ];
 
-    /**
-     * The database drivers that support FULLTEXT indexes, read from
-     * config('database.behaviours.full_text') when the model boots.
-     *
-     * @var array<int, string>
-     */
-    protected static array $fullTextDrivers = [];
-
-    /**
-     * Read the FULLTEXT-capable drivers from configuration.
-     */
-    protected static function booted(): void
-    {
-        static::bootFullTextDrivers();
-    }
-
-    /**
-     * Populate the FULLTEXT-capable drivers from configuration.
-     */
-    public static function bootFullTextDrivers(): void
-    {
-        static::$fullTextDrivers = config('database.behaviours.full_text', []);
-    }
-
     // ============ Custom attributes ============
 
     protected function slug(): Attribute
@@ -161,46 +137,26 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
     /**
      * Constrain the query to items whose name matches the given term, using the
      * FULLTEXT index on drivers that support it (MariaDB, MySQL, PostgreSQL) and
-     * LIKE elsewhere (SQLite, used by the test suite).
+     * LIKE elsewhere (SQLite, used by the test suite) via whereFullText()'s
+     * per-grammar fallback.
      *
      * Items are created before Blizzard data fills their name, so nameless rows
      * exist in the table and must never surface as results.
      *
-     * Uses whereFullText()'s boolean mode with a trailing wildcard on
-     * MariaDB/MySQL rather than the default natural language mode, which only
-     * matches whole words and ignores terms shorter than the server's
-     * ft_min_word_len (4 by default) — silently dropping short queries like
-     * "arc" against "Archbishop's Slippers". Boolean mode with a `*` suffix does
-     * prefix matching instead, which is what a search-as-you-type box needs.
-     * PostgreSQL's whereFullText() has no boolean/prefix mode equivalent, so it
-     * is passed the plain term and matched via to_tsvector/plainto_tsquery.
+     * Uses whereFullText()'s boolean mode with a trailing wildcard rather than
+     * the default natural language mode, which only matches whole words —
+     * silently dropping partial matches like "slipper" against "Slippers".
+     * Boolean mode with a `*` suffix does prefix matching instead, which is
+     * what a search-as-you-type box needs.
      *
      * The term is expected to already be sanitised (see SearchRequest) — this
      * scope only decides how to match it, not how to clean it.
-     *
-     * The drivers considered FULLTEXT-capable are read from
-     * config('database.behaviours.full_text') when the model boots.
      */
     #[Scope]
     protected function matchingName(Builder $query, string $term): void
     {
-        $query->whereNotNull('name');
-
-        $driver = $this->getConnection()->getDriverName();
-
-        if (! in_array($driver, static::$fullTextDrivers, true)) {
-            $query->where('name', 'like', '%'.$term.'%');
-
-            return;
-        }
-
-        if ($driver === 'pgsql') {
-            $query->whereFullText('name', $term);
-
-            return;
-        }
-
         $boolean = implode(' ', array_map(fn (string $word): string => $word.'*', explode(' ', $term)));
-        $query->whereFullText('name', $boolean, ['mode' => 'boolean']);
+
+        $query->whereNotNull('name')->whereFullText('name', $boolean, ['mode' => 'boolean']);
     }
 }
