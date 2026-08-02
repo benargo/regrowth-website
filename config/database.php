@@ -106,15 +106,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | Database behaviours that only some drivers support, each mapped to the
-    | drivers that support it. Code that depends on a behaviour checks the
-    | current connection's driver against the relevant list and degrades
-    | gracefully when it is absent.
+    | drivers that support it. Migrations check the current connection's
+    | driver against the relevant list to decide whether to run.
     |
     | Supported behaviours:
     |
-    |   full_text - FULLTEXT indexes and whereFullText() queries. Models that
-    |               offer full text search fall back to a LIKE match on any
-    |               driver not listed, such as SQLite used by the test suite.
+    |   full_text - Whether to create FULLTEXT indexes. Used only by
+    |               migrations; skipped on drivers not listed, such as
+    |               SQLite used by the test suite.
     |
     */
 
