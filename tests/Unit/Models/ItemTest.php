@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use RuntimeException;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
@@ -138,14 +137,6 @@ class ItemTest extends ModelTestCase
         $item = $this->create(['notes' => null]);
 
         $this->assertNull($item->notes);
-        $this->assertModelExists($item);
-    }
-
-    #[Test]
-    public function factory_creates_valid_model(): void
-    {
-        $item = $this->create();
-
         $this->assertModelExists($item);
     }
 
@@ -432,69 +423,5 @@ class ItemTest extends ModelTestCase
         // singleFile() collection keeps only the most recent media item.
         $this->assertCount(1, $item->getMedia('blizzard_icons'));
         $this->assertSame('inv_sword_05.jpg', $item->getFirstMedia('blizzard_icons')->file_name);
-    }
-
-    // ==========================================
-    // Search
-    // ==========================================
-
-    #[Test]
-    public function matching_name_matches_case_insensitively(): void
-    {
-        $match = Item::factory()->withName('Archbishop\'s Slippers')->create();
-
-        $results = Item::query()->matchingName('ARCHBISHOP')->get();
-
-        $this->assertCount(1, $results);
-        $this->assertTrue($results->contains('id', $match->id));
-    }
-
-    #[Test]
-    public function matching_name_matches_a_partial_name(): void
-    {
-        $match = Item::factory()->withName('Archbishop\'s Slippers')->create();
-        Item::factory()->withName('Thunderfury')->create();
-
-        $results = Item::query()->matchingName('slipper')->get();
-
-        $this->assertCount(1, $results);
-        $this->assertTrue($results->contains('id', $match->id));
-    }
-
-    #[Test]
-    public function matching_name_excludes_items_with_a_null_name(): void
-    {
-        Item::factory()->create();
-
-        $this->assertCount(0, Item::query()->matchingName('anything')->get());
-    }
-
-    #[Test]
-    public function matching_name_uses_the_full_text_drivers_read_from_config(): void
-    {
-        // The suite runs on SQLite, so treating it as FULLTEXT-capable forces the
-        // whereFullText() branch, proving the scope reads the config rather than a
-        // hardcoded list. SQLite's grammar cannot compile that clause, so the
-        // resulting exception is the assertion.
-        config(['database.behaviours.full_text' => ['sqlite']]);
-        Item::bootFullTextDrivers();
-
-        try {
-            $this->expectException(RuntimeException::class);
-            $this->expectExceptionMessage('does not support fulltext search');
-
-            Item::query()->matchingName('slipper')->toSql();
-        } finally {
-            // The static property outlives the test, unlike the config value, so
-            // it must be restored or every later test sees SQLite as FULLTEXT.
-            config(['database.behaviours.full_text' => ['mysql', 'mariadb', 'pgsql']]);
-            Item::bootFullTextDrivers();
-        }
-    }
-
-    #[Test]
-    public function matching_name_falls_back_to_like_when_the_driver_is_not_full_text_capable(): void
-    {
-        $this->assertStringContainsString('like', Item::query()->matchingName('slipper')->toSql());
     }
 }

@@ -118,7 +118,7 @@ class CommentCacheTest extends TestCase
         $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
 
         // Update the comment
-        $this->actingAs($user)->put(route('loot.comments.update', [$item, $comment]), [
+        $this->actingAs($user)->put(route('loot.comments.update', $comment), [
             'body' => 'Updated comment body',
         ]);
 
@@ -146,7 +146,7 @@ class CommentCacheTest extends TestCase
         $response->assertSee('Comment to be deleted');
 
         // Delete the comment
-        $this->actingAs($user)->delete(route('loot.comments.destroy', [$item, $comment]));
+        $this->actingAs($user)->delete(route('loot.comments.destroy', $comment));
 
         // Next request should not show the deleted comment
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));

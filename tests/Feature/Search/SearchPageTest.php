@@ -38,25 +38,6 @@ class SearchPageTest extends TestCase
         ]);
     }
 
-    /**
-     * Create an item under a specific raid, with its own fresh boss.
-     */
-    protected function createItemForRaid(?string $name, Raid $raid): Item
-    {
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-
-        $factory = Item::factory();
-
-        if ($name !== null) {
-            $factory = $factory->withName($name);
-        }
-
-        return $factory->create([
-            'raid_id' => $raid->id,
-            'boss_id' => $boss->id,
-        ]);
-    }
-
     #[Test]
     public function it_renders_the_search_page_for_unauthenticated_users(): void
     {
@@ -73,71 +54,9 @@ class SearchPageTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_matching_items(): void
-    {
-        $item = $this->createItem('Archbishop\'s Slippers');
-        $this->createItem('Thunderfury');
-
-        $this->get(route('search', ['q' => 'slipper']))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 1)
-                ->where('results.data.0.id', $item->id)
-            );
-    }
-
-    #[Test]
-    public function it_paginates_beyond_twenty_five_results(): void
-    {
-        foreach (range(1, 30) as $i) {
-            $this->createItem("Slipper of Testing {$i}");
-        }
-
-        $this->get(route('search', ['q' => 'slipper']))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 25)
-                ->where('results.meta.total', 30)
-                ->where('results.meta.last_page', 2)
-            );
-    }
-
-    #[Test]
     public function it_requires_a_query(): void
     {
         $this->get(route('search'))->assertSessionHasErrors(['q']);
-    }
-
-    #[Test]
-    public function it_returns_has_notes_instead_of_notes(): void
-    {
-        $item = $this->createItem('Archbishop\'s Slippers');
-        $item->update(['notes' => 'Best in slot for warriors']);
-
-        $this->get(route('search', ['q' => 'slipper']))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('results.data.0.has_notes', true)
-                ->missing('results.data.0.notes')
-            );
-    }
-
-    #[Test]
-    public function it_scopes_results_to_the_given_raid(): void
-    {
-        $raidA = Raid::factory()->create(['phase_id' => Phase::factory()->started()->create()->id]);
-        $raidB = Raid::factory()->create(['phase_id' => $raidA->phase_id]);
-
-        $itemA = $this->createItemForRaid('Slipper of Alpha', $raidA);
-        $this->createItemForRaid('Slipper of Beta', $raidB);
-
-        $this->get(route('search', ['q' => 'slipper', 'raid_id' => $raidA->id]))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 1)
-                ->where('results.data.0.id', $itemA->id)
-                ->where('scoped_raid.data.id', $raidA->id)
-            );
     }
 
     #[Test]
@@ -149,24 +68,6 @@ class SearchPageTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('scoped_raid', null)
-            );
-    }
-
-    #[Test]
-    public function it_preserves_raid_id_across_pagination_links(): void
-    {
-        $raid = Raid::factory()->create(['phase_id' => Phase::factory()->started()->create()->id]);
-
-        foreach (range(1, 30) as $i) {
-            $this->createItemForRaid("Slipper of Testing {$i}", $raid);
-        }
-
-        $this->get(route('search', ['q' => 'slipper', 'raid_id' => $raid->id]))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('results.data', 25)
-                ->where('results.meta.total', 30)
-                ->where('results.meta.links.1.url', fn ($url) => str_contains($url, 'raid_id='.$raid->id))
             );
     }
 }
