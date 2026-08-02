@@ -30,7 +30,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel-echo (ECHO) - v2
 - prettier (PRETTIER) - v3
 - react (REACT) - v19
-- tailwindcss (TAILWINDCSS) - v3
+- tailwindcss (TAILWINDCSS) - v4
 
 ## Skills Activation
 
