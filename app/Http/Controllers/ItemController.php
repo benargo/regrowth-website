@@ -8,10 +8,12 @@ use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Requests\Items\UpdateItemRequest;
 use App\Http\Resources\ItemResource;
+use App\Http\Resources\LootCouncil\CommentResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\Item;
 use App\Models\LootPriority;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,7 @@ class ItemController extends Controller
 
         return Inertia::render('Loot/Items/Show', [
             'item' => new ItemResource($item),
+            'comments' => $this->buildCommentsProp($item),
         ]);
     }
 
@@ -54,6 +57,7 @@ class ItemController extends Controller
         return Inertia::render('Loot/Items/Edit', [
             'item' => new ItemResource($item),
             'priorities' => PriorityResource::collection(LootPriority::all()),
+            'comments' => $this->buildCommentsProp($item),
         ]);
     }
 
@@ -86,6 +90,7 @@ class ItemController extends Controller
         return Inertia::render('Loot/Items/Edit', [
             'item' => new ItemResource($item),
             'priorities' => PriorityResource::collection(LootPriority::all()),
+            'comments' => $this->buildCommentsProp($item),
         ]);
     }
 
@@ -119,9 +124,11 @@ class ItemController extends Controller
             'boss',
             'priorities' => fn ($query) => $query->orderByPivot('weight', 'desc'),
         ]);
+    }
 
-        $item->setRelation(
-            'comments',
+    private function buildCommentsProp(Item $item): AnonymousResourceCollection
+    {
+        return CommentResource::collection(
             $item->comments()->with('user')->latest()->paginate(10),
         );
     }

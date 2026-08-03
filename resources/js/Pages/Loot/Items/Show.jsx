@@ -74,7 +74,7 @@ function PriorityDisplay({ priorities }) {
     );
 }
 
-export default function Show({ item }) {
+export default function Show({ item, comments }) {
     const raid = item.data.raid;
     const [notes, setNotes] = useState(item.data.notes);
     const [priorities, setPriorities] = useState(item.data.priorities);
@@ -151,7 +151,7 @@ export default function Show({ item }) {
                 )}
 
                 {/* Comments Section */}
-                <CommentsSection comments={item.data.comments} itemId={item.data.id} />
+                <CommentsSection comments={comments} itemId={item.data.id} />
             </PageContainer>
         </Master>
     );

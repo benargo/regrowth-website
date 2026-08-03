@@ -413,7 +413,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     );
 }
 
-export default function ItemEdit({ item, priorities: prioritiesResource }) {
+export default function ItemEdit({ item, priorities: prioritiesResource, comments }) {
     const allPriorities = prioritiesResource.data;
     const raid = item.data.raid;
 
@@ -432,8 +432,12 @@ export default function ItemEdit({ item, priorities: prioritiesResource }) {
         notes: item.data.notes || "",
     });
 
+    const notesFocused = useRef(false);
+
     useEffect(() => {
-        setNotesData("notes", item.data.notes || "");
+        if (!notesFocused.current) {
+            setNotesData("notes", item.data.notes || "");
+        }
     }, [item.data.notes]);
 
     const handleNotesValidationChange = useCallback((error) => {
@@ -454,8 +458,6 @@ export default function ItemEdit({ item, priorities: prioritiesResource }) {
         },
         [item.data.id],
     );
-
-    const notesFocused = useRef(false);
 
     useItemChannel(item.data.id, ({ notes, priorities }) => {
         if (!notesFocused.current && notes !== undefined) {
@@ -598,7 +600,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource }) {
                 </div>
 
                 {/* Comments Section */}
-                <CommentsSection comments={item.data.comments} itemId={item.data.id} />
+                <CommentsSection comments={comments} itemId={item.data.id} />
             </PageContainer>
         </Master>
     );

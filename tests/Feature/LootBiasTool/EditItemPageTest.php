@@ -155,10 +155,9 @@ class EditItemPageTest extends TestCase
             ->component('Loot/Items/Edit')
             ->has('priorities.data')
             ->has('item.data.raid')
-            ->has('item.data.comments.data')
+            ->has('comments.data')
             ->missing('allPriorities')
             ->missing('raid')
-            ->missing('comments')
         );
     }
 

@@ -114,17 +114,16 @@ class ShowItemPageTest extends TestCase
                 ->where('id', $item->id)
                 ->has('raid')
                 ->has('boss')
-                ->has('comments.data')
-                ->has('comments.links')
-                ->has('comments.meta')
                 ->has('inventory_type')
                 ->has('item_class')
                 ->has('item_subclass')
                 ->etc()
             )
+            ->has('comments.data')
+            ->has('comments.links')
+            ->has('comments.meta')
             ->missing('raid')
             ->missing('boss')
-            ->missing('comments')
         );
     }
 
