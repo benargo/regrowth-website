@@ -3,6 +3,7 @@
 namespace Tests\Feature\LootBiasTool;
 
 use App\Events\Broadcasts\ItemUpdated;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Item;
@@ -13,8 +14,10 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 #[Group('loot')]
@@ -89,7 +92,11 @@ class UpdateItemTest extends TestCase
         $this->actingAs($user)
             ->from($this->editUrl($item))
             ->patch(route('loot.items.update', $item), ['notes' => 'Test notes'])
-            ->assertRedirect($this->editUrl($item));
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Loot/Items/Edit')
+                ->where('item.data.notes', 'Test notes')
+            );
     }
 
     // ==========================================
@@ -386,7 +393,7 @@ class UpdateItemTest extends TestCase
         $this->actingAs(User::factory()->officer()->create())
             ->from($this->editUrl($item))
             ->patch(route('loot.items.update', $item), ['notes' => 'Trash notes'])
-            ->assertRedirect();
+            ->assertOk();
 
         $this->assertDatabaseHas('items', ['id' => $item->id, 'notes' => 'Trash notes']);
     }
@@ -427,5 +434,25 @@ class UpdateItemTest extends TestCase
             ->assertSessionHasErrors('notes');
 
         Event::assertNotDispatched(ItemUpdated::class);
+    }
+
+    // ==========================================
+    // Blizzard API isolation
+    // ==========================================
+
+    #[Test]
+    public function update_does_not_call_blizzard_api(): void
+    {
+        Saloon::fake([]);
+
+        $user = User::factory()->officer()->create();
+        $item = $this->createItem();
+
+        $this->actingAs($user)
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'No Blizzard call'])
+            ->assertOk();
+
+        Saloon::assertNotSent(GetItemRequest::class);
     }
 }

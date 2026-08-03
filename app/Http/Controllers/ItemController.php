@@ -60,7 +60,7 @@ class ItemController extends Controller
     /** Update a loot item's notes and biases. */
     #[Middleware('auth')]
     #[Authorize('update', 'item')]
-    public function update(UpdateItemRequest $request, Item $item): RedirectResponse
+    public function update(UpdateItemRequest $request, Item $item): InertiaResponse
     {
         DB::transaction(function () use ($request, $item): void {
             if ($request->has('notes')) {
@@ -79,11 +79,14 @@ class ItemController extends Controller
             }
         });
 
-        $item->load(['priorities' => fn ($query) => $query->orderByPivot('weight', 'desc')]);
+        $this->loadItemRelations($item);
 
         broadcast(new ItemUpdated($item))->toOthers();
 
-        return back();
+        return Inertia::render('Loot/Items/Edit', [
+            'item' => new ItemResource($item),
+            'priorities' => PriorityResource::collection(LootPriority::all()),
+        ]);
     }
 
     private function redirectForSlugMismatch(Item $item, ?string $slug, string $routeName): ?RedirectResponse
@@ -106,6 +109,11 @@ class ItemController extends Controller
             // We can continue without the filled in data.
         }
 
+        $this->loadItemRelations($item);
+    }
+
+    private function loadItemRelations(Item $item): void
+    {
         $item->load([
             'raid',
             'boss',
