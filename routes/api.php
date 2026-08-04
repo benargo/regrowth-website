@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\Discord\GuildResourceController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
-use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\Loot\ResolveCommentController;
 use App\Http\Controllers\Api\RaidHelper\DeleteEventController;
 use App\Http\Controllers\Api\RaidHelper\SyncEventController;
@@ -35,11 +34,6 @@ Route::prefix('/raidhelper')->group(function () {
     Route::post('/event-update', SyncEventController::class);
     Route::post('/event-delete', DeleteEventController::class);
     Route::post('/comp-update', UpdateCompositionController::class);
-});
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::patch('/loot/items/{item}', [ItemController::class, 'update'])
-        ->name('api.loot.items.update');
 });
 
 Route::middleware(['auth:sanctum'])->prefix('/events/{event}')->group(function () {

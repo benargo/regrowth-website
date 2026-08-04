@@ -1,8 +1,9 @@
 <?php
 
-namespace Tests\Feature\Api\Loot;
+namespace Tests\Feature\LootBiasTool;
 
 use App\Events\Broadcasts\ItemUpdated;
+use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Item;
@@ -13,12 +14,14 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
 #[Group('loot')]
-class ItemControllerTest extends TestCase
+class UpdateItemTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -46,6 +49,11 @@ class ItemControllerTest extends TestCase
         return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
     }
 
+    protected function editUrl(Item $item): string
+    {
+        return route('loot.items.edit', ['item' => $item->id, 'slug' => $item->slug ?: "item-{$item->id}"]);
+    }
+
     // ==========================================
     // Authentication and authorization
     // ==========================================
@@ -56,8 +64,10 @@ class ItemControllerTest extends TestCase
     {
         $item = $this->createItem();
 
-        $this->patchJson(route('api.loot.items.update', $item), ['notes' => 'hello'])
-            ->assertUnauthorized();
+        $this->patch(route('loot.items.update', $item), ['notes' => 'hello'])
+            ->assertRedirect(route('login'));
+
+        $this->assertDatabaseMissing('items', ['id' => $item->id, 'notes' => 'hello']);
     }
 
     #[Group('authorization')]
@@ -68,7 +78,7 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => 'hello'])
+            ->patch(route('loot.items.update', $item), ['notes' => 'hello'])
             ->assertForbidden();
     }
 
@@ -80,8 +90,13 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => 'Test notes'])
-            ->assertOk();
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Test notes'])
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Loot/Items/Edit')
+                ->where('item.data.notes', 'Test notes')
+            );
     }
 
     // ==========================================
@@ -95,7 +110,8 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => 'New officer notes']);
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'New officer notes']);
 
         $this->assertDatabaseHas('items', ['id' => $item->id, 'notes' => 'New officer notes']);
     }
@@ -108,7 +124,8 @@ class ItemControllerTest extends TestCase
         $item->update(['notes' => 'Existing notes']);
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => null]);
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => null]);
 
         $item->refresh();
         $this->assertNull($item->notes);
@@ -122,7 +139,8 @@ class ItemControllerTest extends TestCase
         $item->update(['notes' => 'Existing notes']);
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => '']);
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => '']);
 
         $item->refresh();
         $this->assertEquals('', $item->notes);
@@ -136,9 +154,9 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => str_repeat('a', 5001)])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['notes']);
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => str_repeat('a', 5001)])
+            ->assertSessionHasErrors('notes');
     }
 
     #[Test]
@@ -148,8 +166,9 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => str_repeat('a', 5000)])
-            ->assertOk();
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => str_repeat('a', 5000)])
+            ->assertSessionHasNoErrors();
 
         $item->refresh();
         $this->assertEquals(5000, strlen($item->notes));
@@ -163,9 +182,9 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => ['array', 'of', 'values']])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['notes']);
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => ['array', 'of', 'values']])
+            ->assertSessionHasErrors('notes');
     }
 
     #[Test]
@@ -176,7 +195,8 @@ class ItemControllerTest extends TestCase
         $item->update(['notes' => 'Original notes']);
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => 'Updated notes']);
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Updated notes']);
 
         $item->refresh();
         $this->assertEquals('Updated notes', $item->notes);
@@ -198,13 +218,14 @@ class ItemControllerTest extends TestCase
         $item->priorities()->attach($priority1->id, ['weight' => 0]);
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), [
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
                 'priorities' => [
                     ['priority_id' => $priority2->id, 'weight' => 0],
                     ['priority_id' => $priority3->id, 'weight' => 1],
                 ],
             ])
-            ->assertOk();
+            ->assertSessionHasNoErrors();
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);
@@ -221,13 +242,13 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), [
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
                 'priorities' => [
                     ['priority_id' => 99999, 'weight' => 0],
                 ],
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['priorities.0.priority_id']);
+            ->assertSessionHasErrors('priorities.0.priority_id');
     }
 
     #[Group('validation')]
@@ -239,13 +260,13 @@ class ItemControllerTest extends TestCase
         $priority = LootPriority::factory()->create();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), [
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
                 'priorities' => [
                     ['priority_id' => $priority->id, 'weight' => -1],
                 ],
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['priorities.0.weight']);
+            ->assertSessionHasErrors('priorities.0.weight');
     }
 
     #[Test]
@@ -257,8 +278,9 @@ class ItemControllerTest extends TestCase
         $item->priorities()->attach($priority->id, ['weight' => 0]);
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['priorities' => []])
-            ->assertOk();
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['priorities' => []])
+            ->assertSessionHasNoErrors();
 
         $item->refresh();
         $this->assertCount(0, $item->priorities);
@@ -273,13 +295,14 @@ class ItemControllerTest extends TestCase
         $priority2 = LootPriority::factory()->create();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), [
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
                 'priorities' => [
                     ['priority_id' => $priority1->id, 'weight' => 0],
                     ['priority_id' => $priority2->id, 'weight' => 0],
                 ],
             ])
-            ->assertOk();
+            ->assertSessionHasNoErrors();
 
         $item->refresh();
         $this->assertCount(2, $item->priorities);
@@ -300,13 +323,14 @@ class ItemControllerTest extends TestCase
         $priority = LootPriority::factory()->create();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), [
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
                 'notes' => 'Combined save notes',
                 'priorities' => [
                     ['priority_id' => $priority->id, 'weight' => 0],
                 ],
             ])
-            ->assertOk();
+            ->assertSessionHasNoErrors();
 
         $item->refresh();
         $this->assertEquals('Combined save notes', $item->notes);
@@ -327,7 +351,8 @@ class ItemControllerTest extends TestCase
         $item->priorities()->attach($priority->id, ['weight' => 0]);
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => 'Notes only']);
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Notes only']);
 
         $item->refresh();
         $this->assertEquals('Notes only', $item->notes);
@@ -344,7 +369,8 @@ class ItemControllerTest extends TestCase
         $item->update(['notes' => 'Original notes']);
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), [
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
                 'priorities' => [
                     ['priority_id' => $priority->id, 'weight' => 0],
                 ],
@@ -353,6 +379,23 @@ class ItemControllerTest extends TestCase
         $item->refresh();
         $this->assertEquals('Original notes', $item->notes);
         $this->assertCount(1, $item->priorities);
+    }
+
+    // ==========================================
+    // Trash items (no boss)
+    // ==========================================
+
+    #[Test]
+    public function officers_can_update_a_trash_item_with_no_boss(): void
+    {
+        $item = Item::factory()->withRaid()->trashDrop()->withName('Trash Item')->create();
+
+        $this->actingAs(User::factory()->officer()->create())
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Trash notes'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('items', ['id' => $item->id, 'notes' => 'Trash notes']);
     }
 
     // ==========================================
@@ -368,8 +411,9 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => 'Broadcast test'])
-            ->assertOk();
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Broadcast test'])
+            ->assertSessionHasNoErrors();
 
         Event::assertDispatched(ItemUpdated::class, function (ItemUpdated $event) use ($item) {
             return $event->item->id === $item->id;
@@ -385,9 +429,30 @@ class ItemControllerTest extends TestCase
         $item = $this->createItem();
 
         $this->actingAs($user)
-            ->patchJson(route('api.loot.items.update', $item), ['notes' => str_repeat('a', 5001)])
-            ->assertUnprocessable();
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => str_repeat('a', 5001)])
+            ->assertSessionHasErrors('notes');
 
         Event::assertNotDispatched(ItemUpdated::class);
+    }
+
+    // ==========================================
+    // Blizzard API isolation
+    // ==========================================
+
+    #[Test]
+    public function update_does_not_call_blizzard_api(): void
+    {
+        Saloon::fake([]);
+
+        $user = User::factory()->officer()->create();
+        $item = $this->createItem();
+
+        $this->actingAs($user)
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'No Blizzard call'])
+            ->assertOk();
+
+        Saloon::assertNotSent(GetItemRequest::class);
     }
 }

@@ -642,8 +642,18 @@ class CommentTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->has('comments.data', 10) // 10 per page
-            ->has('comments.links')
-            ->has('comments.meta')
+            ->has('comments.meta.links', 4)
+            ->where('comments.meta.last_page', 2)
+            ->where('comments.meta.total', 15)
+            ->where('comments.meta.per_page', 10)
+        );
+
+        $secondPageResponse = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]).'?page=2');
+
+        $secondPageResponse->assertOk();
+        $secondPageResponse->assertInertia(fn (Assert $page) => $page
+            ->has('comments.data', 5)
+            ->where('comments.meta.current_page', 2)
         );
     }
 

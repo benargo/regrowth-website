@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Master from "@/Layouts/Master";
-import { Deferred, Link } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import CommentsSection from "@/Components/Loot/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -74,7 +74,8 @@ function PriorityDisplay({ priorities }) {
     );
 }
 
-export default function Show({ item, raid, boss, comments }) {
+export default function Show({ item, comments }) {
+    const raid = item.data.raid;
     const [notes, setNotes] = useState(item.data.notes);
     const [priorities, setPriorities] = useState(item.data.priorities);
 
@@ -90,21 +91,23 @@ export default function Show({ item, raid, boss, comments }) {
     return (
         <Master title={item.data.name}>
             <SharedHeader
-                backgroundClass={raid.data.background ?? "bg-ssctk"}
+                backgroundClass={raid?.background ?? "bg-ssctk"}
                 title="Loot Bias"
-                subtitle={raid.data.name}
+                subtitle={raid?.name}
             />
             {/* Tool navigation */}
             <ToolNav>
-                <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("loot.raids.show", { raid: raid.data.id, name: raid.data.slug })}
-                        className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
-                    >
-                        <Icon icon="arrow-left" style="solid" className="mr-2" />
-                        <span>Back to {raid.data.name} loot</span>
-                    </Link>
-                </div>
+                {raid && (
+                    <div className="flex-initial space-x-4">
+                        <Link
+                            href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}
+                            className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                        >
+                            <Icon icon="arrow-left" style="solid" className="mr-2" />
+                            <span>Back to {raid.name} loot</span>
+                        </Link>
+                    </div>
+                )}
                 <div className="flex items-center space-x-4">
                     <Can permission="edit-items">
                         <Link

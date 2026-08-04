@@ -29,7 +29,7 @@ export default function CommentsSection({ comments, itemId }) {
                         {comments.data.map((comment) => (
                             <CommentItem key={comment.id} comment={comment} itemId={itemId} />
                         ))}
-                        <Pagination links={comments.links} meta={comments.meta} itemName="comments" />
+                        <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
                     <p className="py-8 text-center text-gray-400">

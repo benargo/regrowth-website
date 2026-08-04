@@ -31,7 +31,6 @@ class ItemResource extends JsonResource
             'quality_border_class' => $this->whenHas('quality', fn () => $this->quality->cssClass('border')),
             'wowhead' => ['url' => $this->wowheadUrl],
             'boss' => $this->whenLoaded('boss', fn () => new BossResource($this->boss)),
-            'comments' => $this->whenLoaded('comments', fn () => CommentResource::collection($this->comments)),
             'comments_count' => $this->whenCounted('comments'),
             'priorities' => $this->whenLoaded('priorities', fn () => PriorityResource::collection($this->priorities)),
             'raid' => $this->whenLoaded('raid', fn () => new RaidResource($this->raid)),

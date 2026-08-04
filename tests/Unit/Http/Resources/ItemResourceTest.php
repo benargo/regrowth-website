@@ -134,6 +134,17 @@ class ItemResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_null_raid_when_item_has_no_raid_and_raid_is_loaded(): void
+    {
+        $item = Item::factory()->create(['raid_id' => null, 'boss_id' => null]);
+        $item->load('raid');
+
+        $array = (new ItemResource($item))->toArray(new Request);
+
+        $this->assertNull($array['raid']);
+    }
+
+    #[Test]
     public function it_returns_group_when_set(): void
     {
         $item = Item::factory()->inGroup('Weapons')->create();
