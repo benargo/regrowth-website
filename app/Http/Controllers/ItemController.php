@@ -12,6 +12,7 @@ use App\Http\Resources\LootCouncil\CommentResource;
 use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\Item;
 use App\Models\LootPriority;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -122,7 +123,7 @@ class ItemController extends Controller
         $item->load([
             'raid',
             'boss',
-            'priorities' => fn ($query) => $query->orderByPivot('weight', 'desc'),
+            'priorities' => fn (BelongsToMany $query) => $query->orderByPivot('weight', 'desc'),
         ]);
     }
 
