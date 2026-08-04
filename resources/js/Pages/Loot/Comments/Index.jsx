@@ -73,7 +73,7 @@ export default function Comments({ comments }) {
                                 </section>
                             ))}
                         </div>
-                        <Pagination links={comments.links} meta={comments.meta} itemName="comments" />
+                        <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
                     <p className="py-8 text-center text-gray-400">No comments yet.</p>
