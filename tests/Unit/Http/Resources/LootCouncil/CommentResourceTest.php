@@ -19,7 +19,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
-#[Group('loot')]
+#[Group('comments')]
 class CommentResourceTest extends TestCase
 {
     use MocksBlizzardServices;
@@ -33,43 +33,6 @@ class CommentResourceTest extends TestCase
         $this->mockItemService();
         $this->mockCacheService();
         $this->setUpPermissions();
-    }
-
-    protected function mockCacheService(): void
-    {
-        $realStore = Cache::store();
-
-        $cacheStore = Mockery::mock();
-        $cacheStore->shouldReceive('remember')
-            ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
-        $cacheStore->shouldReceive('flush')->andReturn(true);
-
-        $blizzardAuthStore = Mockery::mock();
-        $blizzardAuthStore->shouldReceive('get')->andReturn(null);
-        $blizzardAuthStore->shouldReceive('put')->andReturn(true);
-
-        Cache::shouldReceive('tags')
-            ->with(['db', 'lootcouncil'])
-            ->andReturn($cacheStore);
-
-        Cache::shouldReceive('tags')
-            ->with(['raiding', 'events'])
-            ->andReturn($cacheStore);
-
-        Cache::shouldReceive('tags')
-            ->with(['blizzard', 'api-auth'])
-            ->andReturn($blizzardAuthStore);
-
-        Cache::shouldReceive('store')
-            ->andReturn($realStore);
-    }
-
-    protected function setUpPermissions(): void
-    {
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-any-comment', 'guard_name' => 'web']));
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']));
-        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'mark-comment-as-resolved', 'guard_name' => 'web']));
     }
 
     #[Test]
@@ -217,6 +180,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_edit_false_for_guest_user(): void
     {
         $comment = Comment::factory()->create();
@@ -228,6 +192,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_delete_false_for_guest_user(): void
     {
         $comment = Comment::factory()->create();
@@ -239,6 +204,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_edit_true_for_comment_owner_who_is_officer(): void
     {
         $user = User::factory()->officer()->create();
@@ -254,6 +220,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_edit_true_for_comment_owner_who_is_raider(): void
     {
         $user = User::factory()->raider()->create();
@@ -269,6 +236,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_edit_true_for_officer_who_did_not_create_comment(): void
     {
         $officer = User::factory()->officer()->create();
@@ -285,6 +253,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_delete_true_for_officer(): void
     {
         $officer = User::factory()->officer()->create();
@@ -301,6 +270,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_delete_true_for_comment_owner_who_is_raider(): void
     {
         $user = User::factory()->raider()->create();
@@ -316,6 +286,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_delete_false_for_raider_who_did_not_create_comment(): void
     {
         $raider = User::factory()->raider()->create();
@@ -332,6 +303,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_resolve_false_for_guest_user(): void
     {
         $comment = Comment::factory()->create();
@@ -343,6 +315,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_resolve_false_for_raider(): void
     {
         $raider = User::factory()->raider()->create();
@@ -358,6 +331,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_resolve_true_for_officer(): void
     {
         $officer = User::factory()->officer()->create();
@@ -373,6 +347,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('resource')]
     public function it_returns_can_permissions_structure(): void
     {
         $comment = Comment::factory()->create();
@@ -387,6 +362,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('resource')]
     public function it_returns_all_expected_keys(): void
     {
         $comment = Comment::factory()->create();
@@ -457,6 +433,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_react_false_for_guest_user(): void
     {
         $comment = Comment::factory()->create();
@@ -468,6 +445,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_react_false_for_comment_owner(): void
     {
         $user = User::factory()->create();
@@ -483,13 +461,12 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('authorization')]
     public function it_returns_can_react_true_for_non_owner(): void
     {
-
         $commentOwner = User::factory()->create();
         $comment = Comment::factory()->create(['user_id' => $commentOwner->id]);
 
-        // Create a non-owner user with the react-to-comments permission
         $otherUser = User::factory()->create();
         $discordRole = $otherUser->discordRoles()->create([
             'id' => '1234567890',
@@ -512,6 +489,7 @@ class CommentResourceTest extends TestCase
     }
 
     #[Test]
+    #[Group('resource')]
     public function it_returns_can_permissions_structure_includes_react(): void
     {
         $comment = Comment::factory()->create();
@@ -521,5 +499,29 @@ class CommentResourceTest extends TestCase
 
         $this->assertArrayHasKey('can', $array);
         $this->assertArrayHasKey('react', $array['can']);
+    }
+
+    private function mockCacheService(): void
+    {
+        $realStore = Cache::store();
+
+        $blizzardAuthStore = Mockery::mock();
+        $blizzardAuthStore->shouldReceive('get')->andReturn(null);
+        $blizzardAuthStore->shouldReceive('put')->andReturn(true);
+
+        Cache::shouldReceive('tags')
+            ->with(['blizzard', 'api-auth'])
+            ->andReturn($blizzardAuthStore);
+
+        Cache::shouldReceive('store')
+            ->andReturn($realStore);
+    }
+
+    private function setUpPermissions(): void
+    {
+        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'edit-any-comment', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']));
+        $officerRole->givePermissionTo(Permission::firstOrCreate(['name' => 'mark-comment-as-resolved', 'guard_name' => 'web']));
     }
 }

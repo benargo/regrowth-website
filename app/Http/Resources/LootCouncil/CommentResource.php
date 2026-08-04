@@ -5,7 +5,6 @@ namespace App\Http\Resources\LootCouncil;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Cache;
 
 class CommentResource extends JsonResource
 {
@@ -76,12 +75,10 @@ class CommentResource extends JsonResource
      */
     protected function getReactions(Request $request): array
     {
-        return Cache::tags(['db', 'lootcouncil'])->remember("comment:#{$this->id}:reactions", now()->addMinutes(10), function () use ($request) {
-            return $this->reactions->map(fn ($reaction) => [
-                'id' => $reaction->id,
-                'user' => (new UserResource($reaction->user))->toArray($request),
-                'created_at' => $reaction->created_at,
-            ])->toArray();
-        });
+        return $this->reactions->map(fn ($reaction) => [
+            'id' => $reaction->id,
+            'user' => (new UserResource($reaction->user))->toArray($request),
+            'created_at' => $reaction->created_at,
+        ])->toArray();
     }
 }
