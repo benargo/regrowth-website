@@ -449,6 +449,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
             router.patch(route("loot.items.update", { item: item.data.id }), payload, {
                 preserveScroll: true,
                 preserveState: true,
+                preserveUrl: true,
                 only: ["item"],
                 onStart: () => setSaving(true),
                 onSuccess: () => setNotesError(null),
