@@ -82,6 +82,16 @@ class Comment extends Model
     }
 
     /**
+     * Get the prior bodies recorded for this comment.
+     *
+     * @return HasMany<CommentRevision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(CommentRevision::class, 'comment_id');
+    }
+
+    /**
      * Get the user who wrote this comment.
      *
      * @return BelongsTo<User, $this>
