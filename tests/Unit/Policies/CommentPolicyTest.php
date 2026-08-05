@@ -141,39 +141,6 @@ class CommentPolicyTest extends TestCase
         $this->assertTrue($this->policy->delete($officer, $comment));
     }
 
-    // ==================== react ====================
-
-    #[Test]
-    public function react_allows_a_permitted_user_on_someone_elses_comment(): void
-    {
-        $reactor = $this->userWithPermission('react-to-comments');
-        $author = $this->userWithoutPermission();
-        $comment = Comment::factory()->create(['user_id' => $author->id]);
-
-        $this->assertTrue($this->policy->react($reactor, $comment));
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function react_denies_reacting_to_your_own_comment(): void
-    {
-        $author = $this->userWithPermission('react-to-comments');
-        $comment = Comment::factory()->create(['user_id' => $author->id]);
-
-        $this->assertFalse($this->policy->react($author, $comment));
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function react_denies_a_user_without_the_permission(): void
-    {
-        $user = $this->userWithoutPermission();
-        $author = $this->userWithoutPermission();
-        $comment = Comment::factory()->create(['user_id' => $author->id]);
-
-        $this->assertFalse($this->policy->react($user, $comment));
-    }
-
     // ==================== markAsResolved ====================
 
     #[Test]

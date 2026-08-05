@@ -17,7 +17,7 @@ class ReactionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    #[Authorize('react', 'comment')]
+    #[Authorize('create', [CommentReaction::class, 'comment'])]
     public function store(Request $request, Comment $comment): RedirectResponse
     {
         $comment->reactions()->create([
@@ -30,7 +30,7 @@ class ReactionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    #[Authorize('react', 'comment')]
+    #[Authorize('delete', 'reaction')]
     public function destroy(DestroyReactionRequest $request, Comment $comment, CommentReaction $reaction): RedirectResponse
     {
         $reaction->delete();

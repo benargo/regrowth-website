@@ -61,16 +61,4 @@ class CommentPolicy extends AuthorizationPolicy
     {
         return $user->isAuthorizedTo('mark-comment-as-resolved');
     }
-
-    /**
-     * Determine if the user can react to a comment.
-     */
-    public function react(User $user, Comment $comment): bool
-    {
-        if ($comment->user_id === $user->id) {
-            return false; // Users cannot react to their own comments
-        }
-
-        return $user->isAuthorizedTo('react-to-comments');
-    }
 }
