@@ -98,6 +98,7 @@ services:
         volumes:
             - "sail-mariadb:/var/lib/mysql"
             - "./vendor/laravel/sail/database/mariadb/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh"
+            - "./docker/mariadb/create-sandbox-database.sh:/docker-entrypoint-initdb.d/11-create-sandbox-database.sh"
             - "./docker/mariadb/my.cnf:/etc/mysql/conf.d/99-logging.cnf:ro"
             - "sail-mariadb-logs:/var/log/mysql"
         networks:
