@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Resources\LootCouncil;
+namespace App\Http\Resources;
 
-use App\Http\Resources\UserResource;
+use App\Models\CommentReaction;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,7 +27,7 @@ class CommentResource extends JsonResource
             'can' => [
                 'edit' => $request->user()?->can('update', $this->resource) ?? false,
                 'delete' => $request->user()?->can('delete', $this->resource) ?? false, // Remove later
-                'react' => $request->user()?->can('react', $this->resource) ?? false,
+                'react' => $request->user()?->can('create', [CommentReaction::class, $this->resource]) ?? false,
                 'resolve' => $request->user()?->can('markAsResolved', $this->resource) ?? false, // Remove later
             ],
         ];
@@ -71,14 +71,20 @@ class CommentResource extends JsonResource
     /**
      * Get the comment's reactions with user data.
      *
+     * The `user` relation is loaded defensively here: CommentReactionResource
+     * guards it with whenLoaded, so an unloaded relation would omit the key
+     * and leave the frontend's avatar stack with `undefined`.
+     *
      * @return array<int, array<string, mixed>>
      */
     protected function getReactions(Request $request): array
     {
-        return $this->reactions->map(fn ($reaction) => [
-            'id' => $reaction->id,
-            'user' => (new UserResource($reaction->user))->toArray($request),
-            'created_at' => $reaction->created_at,
-        ])->toArray();
+        $reactions = $this->reactions;
+
+        if ($reactions->isNotEmpty() && ! $reactions->first()->relationLoaded('user')) {
+            $reactions->load('user');
+        }
+
+        return CommentReactionResource::collection($reactions)->resolve($request);
     }
 }

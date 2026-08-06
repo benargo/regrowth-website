@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Http\Resources\LootCouncil;
+namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\LootCouncil\CommentResource;
+use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\CommentReaction;
 use App\Models\DiscordRole;
@@ -411,6 +411,21 @@ class CommentResourceTest extends TestCase
         $this->assertArrayHasKey('id', $array['reactions'][0]);
         $this->assertArrayHasKey('user', $array['reactions'][0]);
         $this->assertSame('reactor', $array['reactions'][0]['user']['username']);
+    }
+
+    #[Test]
+    public function its_embedded_reactions_carry_the_comment_id(): void
+    {
+        $author = User::factory()->create();
+        $reactor = User::factory()->create();
+        $comment = Comment::factory()->create(['user_id' => $author->id]);
+        CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
+
+        $comment->load('reactions.user');
+
+        $array = (new CommentResource($comment))->toArray(new Request);
+
+        $this->assertSame($comment->id, $array['reactions'][0]['comment_id']);
     }
 
     #[Test]

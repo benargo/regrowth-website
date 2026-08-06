@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Http\Resources\LootCouncil;
+namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\LootCouncil\PriorityResource;
+use App\Http\Resources\PriorityResource;
 use App\Models\Item;
 use App\Models\LootPriority;
 use Illuminate\Foundation\Testing\RefreshDatabase;

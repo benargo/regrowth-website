@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Facades\Blizzard;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Resources\LootCouncil\PriorityResource;
 use App\Models\Item;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
