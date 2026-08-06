@@ -130,7 +130,7 @@ class ItemController extends Controller
     private function buildCommentsProp(Item $item): AnonymousResourceCollection
     {
         return CommentResource::collection(
-            $item->comments()->with('user')->latest()->paginate(10),
+            $item->comments()->with(['user', 'reactions.user'])->latest()->paginate(10),
         );
     }
 }
