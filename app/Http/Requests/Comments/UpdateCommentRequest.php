@@ -9,10 +9,19 @@ class UpdateCommentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * Setting `isResolved` requires `markAsResolved` in addition to `update`:
+     * passing `update` alone would otherwise let a raider resolve their own
+     * comment. `has()` rather than `filled()`, so un-resolving is gated too.
      */
     public function authorize(): bool
     {
         $comment = $this->route('comment');
+
+        if ($this->has('isResolved')) {
+            return $this->user()->can('update', $comment)
+                && $this->user()->can('markAsResolved', $comment);
+        }
 
         return $this->user()->can('update', $comment);
     }
