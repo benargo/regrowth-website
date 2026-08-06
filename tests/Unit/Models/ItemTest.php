@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\Commentable;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
@@ -9,6 +10,7 @@ use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootPriority;
 use App\Models\Raid;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
@@ -401,6 +403,18 @@ class ItemTest extends ModelTestCase
 
         $this->assertInstanceOf(HasMedia::class, $model);
         $this->assertInstanceOf(HasBlizzardIcons::class, $model);
+        $this->assertInstanceOf(Commentable::class, $model);
+    }
+
+    #[Test]
+    public function comment_channel_is_scoped_to_the_item_id(): void
+    {
+        $item = $this->create();
+
+        $channel = $item->commentChannel();
+
+        $this->assertInstanceOf(Channel::class, $channel);
+        $this->assertSame("item.{$item->id}", $channel->name);
     }
 
     #[Test]

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Contracts\Commentable;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
 use App\Events\ItemSaved;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use Database\Factories\ItemFactory;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -23,7 +25,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable(['raid_id', 'boss_id', 'name', 'quality', 'group', 'notes'])]
 #[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
-class Item extends Model implements HasBlizzardIcons, HasMedia
+class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
 {
     /** @use HasFactory<ItemFactory> */
     use HasFactory;
@@ -107,6 +109,14 @@ class Item extends Model implements HasBlizzardIcons, HasMedia
     public function comments(): MorphMany
     {
         return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * Get the channel that comments on this item broadcast on.
+     */
+    public function commentChannel(): Channel
+    {
+        return new Channel("item.{$this->id}");
     }
 
     /**
