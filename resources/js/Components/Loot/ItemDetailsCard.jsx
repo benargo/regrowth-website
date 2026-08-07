@@ -10,6 +10,7 @@ export default function ItemDetailsCard({ item }) {
                 iconUrl={item.icon}
                 itemQuality={item.quality_border_class}
                 size={12}
+                md:size={24}
             />
             <div className="flex-1">
                 <h2 className={`text-2xl font-bold text-quality-${item.quality?.name?.toLowerCase() || "common"} mb-2`}>
