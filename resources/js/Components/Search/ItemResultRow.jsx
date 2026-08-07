@@ -25,13 +25,13 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
                     <h4 className="text-md truncate font-bold text-white">{item.name}</h4>
                     <div className="flex items-center gap-2">
                         {item.comments_count > 0 && (
-                            <p className="inline-flex items-center gap-1 text-xs">
+                            <p className="inline-flex items-center gap-1 text-xs text-gray-200">
                                 <Icon icon="comments" style="solid" className="h-3 w-3" />
                                 {`${item.comments_count} ${labelComments}`}
                             </p>
                         )}
                         {item.notes && (
-                            <p className="inline-flex items-center gap-1 text-xs">
+                            <p className="inline-flex items-center gap-1 text-xs text-gray-200">
                                 <Icon icon="sticky-note" style="solid" className="h-3 w-3" />
                                 Notes
                             </p>
