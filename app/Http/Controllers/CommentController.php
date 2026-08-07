@@ -22,7 +22,7 @@ class CommentController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return Inertia::render('Loot/Comments/Index', [
+        return Inertia::render('Loot/Comments', [
             'comments' => CommentResource::collection($comments),
         ]);
     }

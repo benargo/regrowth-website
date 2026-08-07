@@ -38,7 +38,7 @@ class AllCommentsPageTest extends TestCase
     {
         $user = User::factory()->guest()->create();
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertForbidden();
     }
@@ -49,7 +49,7 @@ class AllCommentsPageTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertForbidden();
     }
@@ -60,7 +60,7 @@ class AllCommentsPageTest extends TestCase
     {
         $user = User::factory()->raider()->create();
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertForbidden();
     }
@@ -70,7 +70,7 @@ class AllCommentsPageTest extends TestCase
     {
         $user = User::factory()->member()->lootCouncillor()->create();
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertOk();
     }
@@ -80,7 +80,7 @@ class AllCommentsPageTest extends TestCase
     {
         $user = User::factory()->officer()->create();
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertOk();
     }
@@ -105,11 +105,11 @@ class AllCommentsPageTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Loot/Comments/Index')
+            ->component('Loot/Comments')
             ->has('comments.data', 20) // 20 per page
             ->has('comments.links')
             ->has('comments.meta')
@@ -135,11 +135,11 @@ class AllCommentsPageTest extends TestCase
             'user_id' => $commentAuthor->id,
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('Loot/Comments/Index')
+            ->component('Loot/Comments')
             ->has('comments.data', 5)
             ->has('comments.data.0.item')
             ->has('comments.data.0.user')
@@ -170,7 +170,7 @@ class AllCommentsPageTest extends TestCase
             'created_at' => now(),
         ]);
 
-        $response = $this->actingAs($user)->get(route('loot.comments.index'));
+        $response = $this->actingAs($user)->get(route('loot.comments'));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page

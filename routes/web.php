@@ -60,7 +60,7 @@ Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
 
     // Comment routes
-    Route::get('/comments', [CommentController::class, 'index'])->name('comments.index');
+    Route::get('/comments', [CommentController::class, 'index'])->name('comments');
 });
 
 /**
