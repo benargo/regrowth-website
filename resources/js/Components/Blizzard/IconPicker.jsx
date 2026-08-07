@@ -133,7 +133,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                                     title={icon.name}
                                 >
                                     <span className="sr-only">{icon.name}</span>
-                                    <Tooltip text={icon.name}>
+                                    <Tooltip body={icon.name}>
                                         <img src={icon.url} alt={icon.name} className="h-8 w-8 rounded-xs" />
                                     </Tooltip>
                                     {isSelected && (

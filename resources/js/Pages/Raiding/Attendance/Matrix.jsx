@@ -66,9 +66,12 @@ function AttendanceCell({ value, names, plannedAbsence }) {
         return (
             <Tooltip
                 body={
-                    plannedAbsence.reason ? <FormattedMarkdown>{plannedAbsence.reason}</FormattedMarkdown> : undefined
+                    plannedAbsence.reason ? (
+                        <FormattedMarkdown>{plannedAbsence.reason}</FormattedMarkdown>
+                    ) : (
+                        "Planned Absence"
+                    )
                 }
-                text={plannedAbsence.reason ? undefined : "Planned Absence"}
                 position="bottom"
             >
                 {icon}
@@ -81,7 +84,7 @@ function AttendanceCell({ value, names, plannedAbsence }) {
     if (value === 1) {
         icon = <Icon icon="check" style="solid" className="text-green-500" />;
         return (
-            <Tooltip text={names?.length > 0 ? names.join(", ") : undefined} position="bottom">
+            <Tooltip body={names?.length > 0 ? names.join(", ") : undefined} position="bottom">
                 {icon}
             </Tooltip>
         );
@@ -128,7 +131,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                 key={raid.id}
                                 className="px-3 py-3 text-center text-sm font-semibold whitespace-nowrap text-amber-500"
                             >
-                                <Tooltip text={raid.zoneName} position="bottom">
+                                <Tooltip body={raid.zoneName} position="bottom">
                                     <p>{raid.dayOfWeek}</p>
                                     <p>{raid.date}</p>
                                 </Tooltip>

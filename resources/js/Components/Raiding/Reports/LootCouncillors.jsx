@@ -158,7 +158,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                 </div>
                             </div>
                             {canManage && (
-                                <Tooltip text={"Remove " + character.name + " as councillor"} position="left">
+                                <Tooltip body={"Remove " + character.name + " as councillor"} position="left">
                                     <button
                                         type="button"
                                         disabled={processingIds.has(character.id)}

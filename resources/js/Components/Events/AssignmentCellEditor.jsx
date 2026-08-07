@@ -432,7 +432,7 @@ export default function AssignmentCellEditor({
                         <Icon icon="caret-down" style="solid" className="text-sm" />
                     </span>
                     <span className={open ? "" : "hidden"}>
-                        <Tooltip text="Clear content">
+                        <Tooltip body="Clear content">
                             <Icon icon="backspace" style="solid" className="text-sm" />
                         </Tooltip>
                     </span>

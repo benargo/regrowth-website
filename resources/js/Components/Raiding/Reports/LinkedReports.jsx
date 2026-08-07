@@ -485,7 +485,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                     ) : (
                                         <Can permission="manage-reports">
                                             <Tooltip
-                                                text={isManualLink ? "Remove link" : "Auto-linked – cannot be removed"}
+                                                body={isManualLink ? "Remove link" : "Auto-linked – cannot be removed"}
                                                 position="left"
                                             >
                                                 <button

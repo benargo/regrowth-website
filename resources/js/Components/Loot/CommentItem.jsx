@@ -152,7 +152,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                             <div className="flex flex-row items-center gap-1">
                                 {!comment.can.react && (
                                     <Tooltip
-                                        text={
+                                        body={
                                             !canReactToComments
                                                 ? "You do not have permission to react to comments."
                                                 : isOwnComment()
@@ -166,7 +166,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                                     </Tooltip>
                                 )}
                                 {comment.can.react && userHasReacted() && (
-                                    <Tooltip text="Click to remove your reaction.">
+                                    <Tooltip body="Click to remove your reaction.">
                                         <button
                                             className="text-amber-400 transition-colors hover:text-amber-300"
                                             onClick={handleReactionToggle}
@@ -176,7 +176,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                                     </Tooltip>
                                 )}
                                 {comment.can.react && !userHasReacted() && (
-                                    <Tooltip text="Click to like this comment.">
+                                    <Tooltip body="Click to like this comment.">
                                         <button
                                             className="text-white-400 transition-colors hover:text-gray-300"
                                             onClick={handleReactionToggle}
@@ -190,7 +190,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                                         {comment.reactions.map((reaction, index) => (
                                             <Tooltip
                                                 key={reaction.id}
-                                                text={reaction.user?.display_name}
+                                                body={reaction.user?.display_name}
                                                 style={{
                                                     marginLeft: index === 0 ? 0 : "-0.75rem",
                                                     zIndex: comment.reactions.length - index,

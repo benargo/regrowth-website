@@ -19,7 +19,7 @@ export default function RoleBadge({ role }) {
     }
 
     return (
-        <Tooltip text={roleNames[role]}>
+        <Tooltip body={roleNames[role]}>
             <span className="p-0.5 text-xs text-amber-400">
                 <Icon icon={icon} style="solid" />
             </span>

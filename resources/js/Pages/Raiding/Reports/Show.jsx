@@ -16,7 +16,7 @@ import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 
 function ViewOnWarcraftLogsLink({ code, children }) {
     return (
-        <Tooltip text="View on Warcraft Logs" position="top">
+        <Tooltip body="View on Warcraft Logs" position="top">
             <a
                 href={`https://fresh.warcraftlogs.com/reports/${code}`}
                 target="_blank"
