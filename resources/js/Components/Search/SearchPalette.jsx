@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { router, usePage, useHttp } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
-import SearchResultRow from "@/Components/Search/SearchResultRow";
+import ItemResultRow from "@/Components/Search/ItemResultRow";
 import useDebouncedValue from "@/Hooks/useDebouncedValue";
 
 const MIN_QUERY_LENGTH = 2;
@@ -174,7 +174,7 @@ export default function SearchPalette({ open, onClose }) {
                             className="max-h-96 space-y-1 overflow-auto p-2"
                         >
                             {results.map((item, index) => (
-                                <SearchResultRow
+                                <ItemResultRow
                                     key={item.id}
                                     item={item}
                                     index={index}

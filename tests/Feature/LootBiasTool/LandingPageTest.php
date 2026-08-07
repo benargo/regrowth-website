@@ -2,10 +2,15 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Models\Comment;
+use App\Models\CommentReaction;
+use App\Models\Item;
+use App\Models\ItemPriority;
 use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -77,6 +82,63 @@ class LandingPageTest extends TestCase
                 ->has('phase_number')
                 ->etc()
             )
+        );
+    }
+
+    #[Test]
+    public function loot_index_passes_stats_as_props(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $items = Item::factory()->count(2)->create();
+
+        // Two ItemPriority rows sharing the same item_id + weight but different priority_id,
+        // to prove priority_rows_count de-duplicates rather than counting raw pivot rows.
+        ItemPriority::factory()->for($items[0])->weight(50)->create();
+        ItemPriority::factory()->for($items[0])->weight(50)->create();
+        ItemPriority::factory()->for($items[1])->weight(30)->create();
+
+        $commenter1 = User::factory()->create();
+        $commenter2 = User::factory()->create();
+        $comment1 = Comment::factory()->for($items[0], 'commentable')->create(['user_id' => $commenter1->id]);
+        Comment::factory()->for($items[1], 'commentable')->create(['user_id' => $commenter1->id]);
+        Comment::factory()->for($items[1], 'commentable')->create(['user_id' => $commenter2->id]);
+
+        CommentReaction::factory()->forComment($comment1)->create();
+
+        $response = $this->actingAs($user)->get('/loot');
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Loot/Index')
+            ->where('stats.items_count', 2)
+            ->where('stats.priority_rows_count', 2)
+            ->where('stats.comments_count', 3)
+            ->where('stats.commenters_count', 2)
+            ->where('stats.reactions_count', 1)
+        );
+    }
+
+    #[Test]
+    public function loot_index_stats_are_cached_for_ten_minutes(): void
+    {
+        $user = User::factory()->member()->create();
+
+        Cache::tags(['lootcouncil'])->flush();
+        Item::factory()->count(1)->create();
+
+        $this->actingAs($user)->get('/loot');
+
+        $this->assertTrue(Cache::tags(['lootcouncil'])->has('loot:stats'));
+
+        $cached = Cache::tags(['lootcouncil'])->get('loot:stats');
+        $this->assertEquals(1, $cached['items_count']);
+
+        Item::factory()->count(1)->create();
+
+        $response = $this->actingAs($user)->get('/loot');
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('stats.items_count', 1)
         );
     }
 }

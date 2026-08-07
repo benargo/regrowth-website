@@ -1,18 +1,18 @@
 import { Link } from "@inertiajs/react";
+import ItemIcon from "@/Components/Items/ItemIcon";
 
 export default function ItemDetailsCard({ item }) {
     return (
         <div className="flex flex-col items-start gap-2 md:flex-row md:gap-6">
-            <div className="h-12 w-12 flex-none md:h-24 md:w-24">
-                <a
-                    href={item.wowhead?.url}
-                    data-wowhead={`item=${item.id}&domain=tbc`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img src={item.icon} alt={item.name} className="box-shadow h-12 w-12 rounded-lg md:h-24 md:w-24" />
-                </a>
-            </div>
+            <ItemIcon
+                itemId={item.id}
+                itemName={item.name}
+                iconUrl={item.icon}
+                itemQuality={item.quality_border_class}
+                size={12}
+                md:size={24}
+                wowheadUrl={item.wowhead?.url}
+            />
             <div className="flex-1">
                 <h2 className={`text-2xl font-bold text-quality-${item.quality?.name?.toLowerCase() || "common"} mb-2`}>
                     {item.name}

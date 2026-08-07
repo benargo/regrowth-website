@@ -1,17 +1,17 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-@plugin '@tailwindcss/forms';
+@plugin "@tailwindcss/forms";
 
 /* Scan Blade + JSX for class names (replaces v3 `content` array) */
-@source '../../resources/views/**/*.blade.php';
-@source '../../resources/js/**/*.jsx';
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@source "../../resources/views/**/*.blade.php";
+@source "../../resources/js/**/*.jsx";
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
 
 @theme {
     --font-sans:
-        'Figtree', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        "Figtree", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
 
     /* brown */
     --color-brown: #231a13;
@@ -81,6 +81,19 @@
     --color-wowhead-links: #ffd100;
 
     --color-primary: #f8b700;
+
+    --animate-fade-in-up: fade-in-up 0.4s ease-out backwards;
+
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(0.5rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 }
 
 /*
@@ -89,15 +102,18 @@
  * see them as literals, so `@source inline()` forces generation.
  * Brace-expansion mirrors the v3 safelist regex patterns.
  */
-@source inline('{bg,text,border}-affect-{curse,disease,magic,poison,physical}');
-@source inline('{bg,text,border}-discord-{officer,raider,member,lootcouncillor,guest}');
+@source inline("{bg,text,border}-affect-{curse,disease,magic,poison,physical}");
+@source inline("{bg,text,border}-discord-{officer,raider,member,lootcouncillor,guest}");
 @source inline(
-    '{bg,text,border}-guild-rank-{guild-master,officer,raider,trial-raider,warden,champion,veteran,member,initiate,inactive}'
+    "{bg,text,border}-guild-rank-{guild-master,officer,raider,trial-raider,warden,champion,veteran,member,initiate,inactive}"
 );
 @source inline(
-    '{bg,text,border}-playable-class-{death-knight,druid,hunter,mage,paladin,priest,rogue,shaman,warlock,warrior}'
+    "{bg,text,border}-playable-class-{death-knight,druid,hunter,mage,paladin,priest,rogue,shaman,warlock,warrior}"
 );
-@source inline('{bg,text,border}-quality-{poor,common,uncommon,rare,epic,legendary,artifact,heirloom}');
+@source inline("{bg,text,border}-quality-{poor,common,uncommon,rare,epic,legendary,artifact,heirloom}");
+
+/* Required by @/Components/Items/ItemIcon.jsx */
+@source inline("md:{w,h}-24");
 
 /* --- v4 compatibility: restore v3 default colors/behaviors --- */
 
@@ -125,7 +141,7 @@
 
     /* v3 buttons used cursor: pointer; v4 uses default */
     button:not(:disabled),
-    [role='button']:not(:disabled) {
+    [role="button"]:not(:disabled) {
         cursor: pointer;
     }
 }

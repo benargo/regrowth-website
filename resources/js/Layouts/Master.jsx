@@ -99,7 +99,7 @@ export default function Master({ title, children }) {
                             </NavLink>
                             <NavLink href={route("loot.index")}>
                                 <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                Loot Bias
+                                Loot
                             </NavLink>
                             <NavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
                                 <Icon icon="discord" style="brands" className="mr-2 h-6" />
@@ -189,7 +189,7 @@ export default function Master({ title, children }) {
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route("loot.index")}>
                             <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                            Loot Bias
+                            Loot
                         </ResponsiveNavLink>
                         <button
                             type="button"
