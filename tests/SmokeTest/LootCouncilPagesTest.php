@@ -32,11 +32,9 @@ class LootCouncilPagesTest extends TestCase
 
         $this->mockBlizzardServices();
 
-        $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
         $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
 
         $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
-        $officerRole->givePermissionTo($viewAllComments);
         $officerRole->givePermissionTo($editItems);
     }
 

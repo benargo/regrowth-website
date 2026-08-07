@@ -3,9 +3,7 @@
 namespace Tests\Feature\Comments;
 
 use App\Models\Comment;
-use App\Models\DiscordRole;
 use App\Models\Item;
-use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -19,50 +17,12 @@ class AllCommentsPageTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
-
-        DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true])
-            ->givePermissionTo($viewAllComments);
-
-        DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true])
-            ->givePermissionTo($viewAllComments);
-    }
-
-    #[Group('authorization')]
     #[Test]
-    public function guest_users_cannot_access_comments_index(): void
+    public function guest_users_can_access_comments_index(): void
     {
-        $user = User::factory()->guest()->create();
+        $response = $this->get(route('loot.comments'));
 
-        $response = $this->actingAs($user)->get(route('loot.comments'));
-
-        $response->assertForbidden();
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function member_users_cannot_access_comments_index(): void
-    {
-        $user = User::factory()->member()->create();
-
-        $response = $this->actingAs($user)->get(route('loot.comments'));
-
-        $response->assertForbidden();
-    }
-
-    #[Group('authorization')]
-    #[Test]
-    public function raider_users_cannot_access_comments_index(): void
-    {
-        $user = User::factory()->raider()->create();
-
-        $response = $this->actingAs($user)->get(route('loot.comments'));
-
-        $response->assertForbidden();
+        $response->assertOk();
     }
 
     #[Test]
