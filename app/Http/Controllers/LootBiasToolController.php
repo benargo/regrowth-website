@@ -5,9 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
+use App\Models\Comment;
+use App\Models\CommentReaction;
+use App\Models\Item;
+use App\Models\ItemPriority;
 use App\Models\Raid;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,6 +30,15 @@ class LootBiasToolController extends Controller
 
         return Inertia::render('Loot/Index', [
             'raids' => $raids,
+            'stats' => Cache::tags(['db', 'lootcouncil'])->remember('loot:stats', now()->addMinutes(10), function () {
+                return [
+                    'items_count' => Item::count(),
+                    'priority_rows_count' => ItemPriority::query()->distinct()->count(['item_id', 'weight']),
+                    'comments_count' => Comment::count(),
+                    'commenters_count' => Comment::distinct('user_id')->count('user_id'),
+                    'reactions_count' => CommentReaction::count(),
+                ];
+            }),
         ]);
     }
 
