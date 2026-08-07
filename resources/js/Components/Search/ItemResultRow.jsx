@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
+import ItemIcon from "@/Components/Items/ItemIcon";
 
 export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter }) {
     const href = route("loot.items.show", { item: item.id, slug: item.slug });
@@ -40,20 +41,15 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
                 </div>
             </Link>
             {item.icon && (
-                <a
-                    href={`https://www.wowhead.com/tbc/item=${item.id}`}
-                    data-wowhead={`item=${item.id}&domain=tbc`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    tabIndex={-1}
-                    className="absolute top-1/2 left-2 -translate-y-1/2"
-                >
-                    <img
-                        src={item.icon}
-                        alt={item.name}
-                        className={`h-8 w-8 rounded border-2 ${item.quality_border_class ?? "border-quality-common"}`}
+                <div className="absolute top-1/2 left-2 -translate-y-1/2">
+                    <ItemIcon
+                        itemId={item.id}
+                        itemName={item.name}
+                        iconUrl={item.icon}
+                        itemQuality={item.quality_border_class}
+                        size={8}
                     />
-                </a>
+                </div>
             )}
         </div>
     );

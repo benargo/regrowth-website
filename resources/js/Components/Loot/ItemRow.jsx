@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 import InlinePriorityDisplay from "@/Components/Loot/InlinePriorityDisplay";
+import ItemIcon from "@/Components/Items/ItemIcon";
 
 export default function ItemRow({ item, weightThreshold }) {
     const href = route("loot.items.show", { item: item.id, slug: item.slug });
@@ -31,19 +32,23 @@ export default function ItemRow({ item, weightThreshold }) {
                     </div>
                 </div>
                 <div className="ml-auto flex-1">
-                    <InlinePriorityDisplay itemId={item.id} priorities={item.priorities} weightThreshold={weightThreshold} />
+                    <InlinePriorityDisplay
+                        itemId={item.id}
+                        priorities={item.priorities}
+                        weightThreshold={weightThreshold}
+                    />
                 </div>
             </Link>
             {item.icon && (
-                <a
-                    href={`https://www.wowhead.com/tbc/item=${item.id}`}
-                    data-wowhead={`item=${item.id}&domain=tbc`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="absolute top-1/2 left-2 -translate-y-1/2"
-                >
-                    <img src={item.icon} alt={item.name} className="h-8 w-8 rounded" />
-                </a>
+                <div className="absolute top-1/2 left-2 -translate-y-1/2">
+                    <ItemIcon
+                        itemId={item.id}
+                        itemName={item.name}
+                        itemQuality={item.quality_border_class}
+                        iconUrl={item.icon}
+                        size={8}
+                    />
+                </div>
             )}
         </div>
     );
