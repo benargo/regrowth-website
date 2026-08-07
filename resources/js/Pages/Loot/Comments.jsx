@@ -6,6 +6,7 @@ import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import ItemIcon from "@/Components/Items/ItemIcon";
+import ToolNav from "@/Components/ToolNav";
 
 export default function Comments({ comments }) {
     // Group comments by item on the client side
@@ -25,20 +26,15 @@ export default function Comments({ comments }) {
         <Master title="All Comments">
             <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
 
-            {/* Tool navigation */}
-            <nav className="bg-brown-900 shadow">
-                <div className="container mx-auto px-4">
-                    <div className="flex min-h-12 items-center">
-                        <Link
-                            href={route("loot.index")}
-                            className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
-                        >
-                            <Icon icon="arrow-left" style="solid" className="mr-2" />
-                            <span>Back to Loot Bias</span>
-                        </Link>
-                    </div>
-                </div>
-            </nav>
+            <ToolNav>
+                <Link
+                    href={route("loot.index")}
+                    className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                >
+                    <Icon icon="arrow-left" style="solid" className="mr-2" />
+                    <span>Back to Loot Bias</span>
+                </Link>
+            </ToolNav>
 
             {/* Content */}
             <PageContainer>
@@ -51,9 +47,11 @@ export default function Comments({ comments }) {
                                 <section key={itemId}>
                                     <div className="relative mb-4">
                                         <Link
-                                            href={route("loot.items.show", { item: group.item.id, slug: group.item.slug })}
+                                            href={route("loot.items.show", {
+                                                item: group.item.id,
+                                                slug: group.item.slug,
+                                            })}
                                             className="flex items-center gap-3 transition-colors hover:text-amber-300"
-                                            data-wowhead={`item=${group.item.id}&domain=tbc`}
                                         >
                                             {group.item?.icon && <div className="h-8 w-8 flex-none" />}
                                             <h3 className="text-lg font-semibold text-amber-400 hover:text-amber-300">
@@ -65,6 +63,7 @@ export default function Comments({ comments }) {
                                                 <ItemIcon
                                                     itemId={group.item.id}
                                                     itemName={group.item.name}
+                                                    itemQuality={group.item.quality_border_class}
                                                     iconUrl={group.item.icon}
                                                     size={8}
                                                 />
