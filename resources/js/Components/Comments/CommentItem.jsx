@@ -2,7 +2,7 @@ import { useState } from "react";
 import { usePage } from "@inertiajs/react";
 import { usePermission } from "@/Components/Authorizable";
 import Checkbox from "@/Components/Checkbox";
-import CommentForm from "@/Components/Loot/CommentForm";
+import CommentForm from "@/Components/Comments/CommentForm";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import Icon from "@/Components/FontAwesome/Icon";

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import Master from "@/Layouts/Master";
 import { Link } from "@inertiajs/react";
 import useItemChannel from "@/Hooks/useItemChannel";
-import CommentsSection from "@/Components/Loot/CommentsSection";
+import CommentsSection from "@/Components/Comments/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";

@@ -1,6 +1,6 @@
 import Master from "@/Layouts/Master";
 import { Link } from "@inertiajs/react";
-import CommentItem from "@/Components/Loot/CommentItem";
+import CommentItem from "@/Components/Comments/CommentItem";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
