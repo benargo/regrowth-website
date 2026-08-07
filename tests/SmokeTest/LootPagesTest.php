@@ -29,7 +29,7 @@ class LootPagesTest extends TestCase
 
         $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
 
-        $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
+        $officerRole = DiscordRole::factory()->officer()->create();
         $officerRole->givePermissionTo($editItems);
     }
 
