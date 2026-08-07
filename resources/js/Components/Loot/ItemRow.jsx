@@ -47,6 +47,7 @@ export default function ItemRow({ item, weightThreshold }) {
                         itemQuality={item.quality_border_class}
                         iconUrl={item.icon}
                         size={8}
+                        wowheadUrl={item.wowhead?.url}
                     />
                 </div>
             )}

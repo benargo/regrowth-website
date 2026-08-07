@@ -11,6 +11,7 @@ export default function ItemDetailsCard({ item }) {
                 itemQuality={item.quality_border_class}
                 size={12}
                 md:size={24}
+                wowheadUrl={item.wowhead?.url}
             />
             <div className="flex-1">
                 <h2 className={`text-2xl font-bold text-quality-${item.quality?.name?.toLowerCase() || "common"} mb-2`}>

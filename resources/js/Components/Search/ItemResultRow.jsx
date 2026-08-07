@@ -48,6 +48,7 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
                         iconUrl={item.icon}
                         itemQuality={item.quality_border_class}
                         size={8}
+                        wowheadUrl={item.wowhead?.url}
                     />
                 </div>
             )}
