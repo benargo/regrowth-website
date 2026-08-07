@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Master from "@/Layouts/Master";
 import { Link } from "@inertiajs/react";
 import useItemChannel from "@/Hooks/useItemChannel";
-import CommentsSection from "@/Components/Loot/CommentsSection";
+import CommentsSection from "@/Components/Comments/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
 import FormattedMarkdown from "@/Components/FormattedMarkdown";
@@ -79,22 +79,32 @@ export default function Show({ item, comments }) {
     const [notes, setNotes] = useState(item.data.notes);
     const [priorities, setPriorities] = useState(item.data.priorities);
 
-    useItemChannel(item.data.id, (payload) => {
-        if (payload.notes !== undefined) {
-            setNotes(payload.notes);
-        }
-        if (payload.priorities !== undefined) {
-            setPriorities(payload.priorities);
-        }
-    });
+    const commentHandlers = useRef({});
+    const registerBroadcastHandlers = useCallback((handlers) => {
+        commentHandlers.current = handlers;
+    }, []);
+
+    useItemChannel(
+        item.data.id,
+        (payload) => {
+            if (payload.notes !== undefined) {
+                setNotes(payload.notes);
+            }
+            if (payload.priorities !== undefined) {
+                setPriorities(payload.priorities);
+            }
+        },
+        {
+            onCommentPosted: (payload) => commentHandlers.current.onCommentPosted?.(payload),
+            onCommentChanged: (payload) => commentHandlers.current.onCommentChanged?.(payload),
+            onCommentRemoved: (payload) => commentHandlers.current.onCommentRemoved?.(payload),
+            onCommentReactionChanged: (payload) => commentHandlers.current.onCommentReactionChanged?.(payload),
+        },
+    );
 
     return (
         <Master title={item.data.name}>
-            <SharedHeader
-                backgroundClass={raid?.background ?? "bg-ssctk"}
-                title="Loot Bias"
-                subtitle={raid?.name}
-            />
+            <SharedHeader backgroundClass={raid?.background ?? "bg-ssctk"} title="Loot Bias" subtitle={raid?.name} />
             {/* Tool navigation */}
             <ToolNav>
                 {raid && (
@@ -151,7 +161,11 @@ export default function Show({ item, comments }) {
                 )}
 
                 {/* Comments Section */}
-                <CommentsSection comments={comments} itemId={item.data.id} />
+                <CommentsSection
+                    comments={comments}
+                    itemId={item.data.id}
+                    registerBroadcastHandlers={registerBroadcastHandlers}
+                />
             </PageContainer>
         </Master>
     );

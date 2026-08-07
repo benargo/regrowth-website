@@ -15,7 +15,7 @@ import { Link, router, useForm } from "@inertiajs/react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
-import CommentsSection from "@/Components/Loot/CommentsSection";
+import CommentsSection from "@/Components/Comments/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import PageContainer from "@/Components/PageContainer";

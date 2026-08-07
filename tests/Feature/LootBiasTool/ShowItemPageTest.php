@@ -3,7 +3,11 @@
 namespace Tests\Feature\LootBiasTool;
 
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
+use App\Models\Comment;
+use App\Models\CommentReaction;
+use App\Models\DiscordRole;
 use App\Models\Item;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -19,6 +23,21 @@ class ShowItemPageTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+        $markCommentAsResolved = Permission::firstOrCreate(['name' => 'mark-comment-as-resolved', 'guard_name' => 'web']);
+
+        $raiderRole = DiscordRole::factory()->raider()->create();
+        $raiderRole->givePermissionTo($commentOnLootItems);
+
+        $officerRole = DiscordRole::factory()->officer()->create();
+        $officerRole->givePermissionTo($commentOnLootItems);
+        $officerRole->givePermissionTo($markCommentAsResolved);
+    }
 
     #[Test]
     public function show_item_allows_unauthenticated_users(): void
@@ -191,6 +210,259 @@ class ShowItemPageTest extends TestCase
             ->component('Loot/Items/Show')
             ->where('item.data.boss', null)
             ->has('item.data.raid')
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function show_item_eager_loads_reaction_users_for_comments(): void
+    {
+        $item = $this->createTestItem();
+        $author = User::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $author->id,
+        ]);
+        CommentReaction::factory()->forComment($comment)->byUser(User::factory()->create())->create();
+        CommentReaction::factory()->forComment($comment)->byUser(User::factory()->create())->create();
+
+        $response = $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('comments.data.0.reactions', 2)
+            ->has('comments.data.0.reactions.0.user')
+            ->has('comments.data.0.reactions.1.user')
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function item_show_page_includes_comments(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $user = User::factory()->member()->create();
+        $commentAuthor = User::factory()->raider()->create();
+        Comment::factory()->count(3)->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Items/Show')
+            ->has('comments.data', 3)
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function item_show_page_includes_can_create_comment_for_raiders(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $user = User::factory()->raider()->create();
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('auth.permissions', fn ($perms) => collect($perms)->contains('comment-on-loot-items'))
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function item_show_page_includes_can_create_comment_false_for_members(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $user = User::factory()->member()->create();
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('auth.permissions', fn ($perms) => ! collect($perms)->contains('comment-on-loot-items'))
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function comments_are_paginated(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $user = User::factory()->member()->create();
+        $commentAuthor = User::factory()->raider()->create();
+        Comment::factory()->count(15)->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('comments.data', 10) // 10 per page
+            ->has('comments.meta.links', 4)
+            ->where('comments.meta.last_page', 2)
+            ->where('comments.meta.total', 15)
+            ->where('comments.meta.per_page', 10)
+        );
+
+        $secondPageResponse = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]).'?page=2');
+
+        $secondPageResponse->assertOk();
+        $secondPageResponse->assertInertia(fn (Assert $page) => $page
+            ->has('comments.data', 5)
+            ->where('comments.meta.current_page', 2)
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function comments_are_ordered_by_latest(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $user = User::factory()->member()->create();
+        $commentAuthor = User::factory()->raider()->create();
+
+        $oldComment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+            'body' => 'Old comment',
+            'created_at' => now()->subDays(5),
+        ]);
+
+        $newComment = Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+            'body' => 'New comment',
+            'created_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('comments.data.0.id', $newComment->id)
+            ->where('comments.data.1.id', $oldComment->id)
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function comment_resource_includes_authorization_flags(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $user = User::factory()->raider()->create();
+        Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('comments.data.0.can.edit')
+            ->has('comments.data.0.can.delete')
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function comment_resource_includes_is_resolved(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $user = User::factory()->member()->create();
+        $commentAuthor = User::factory()->raider()->create();
+
+        Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+            'is_resolved' => false,
+        ]);
+
+        Comment::factory()->resolved()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('comments.data.0.is_resolved')
+            ->has('comments.data.1.is_resolved')
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function comment_resource_includes_can_resolve_for_officers(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $officer = User::factory()->officer()->create();
+        $commentAuthor = User::factory()->raider()->create();
+        Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+        ]);
+
+        $response = $this->actingAs($officer)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('comments.data.0.can.resolve', true)
+        );
+    }
+
+    #[Group('comments')]
+    #[Test]
+    public function comment_resource_includes_can_resolve_false_for_raiders(): void
+    {
+        $this->mockItemService();
+
+        $item = $this->createTestItem();
+        $raider = User::factory()->raider()->create();
+        $commentAuthor = User::factory()->raider()->create();
+        Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => Item::class,
+            'user_id' => $commentAuthor->id,
+        ]);
+
+        $response = $this->actingAs($raider)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('comments.data.0.can.resolve', false)
         );
     }
 

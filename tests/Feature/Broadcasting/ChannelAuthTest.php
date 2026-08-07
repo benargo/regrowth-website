@@ -37,14 +37,6 @@ class ChannelAuthTest extends TestCase
         require base_path('routes/channels.php');
     }
 
-    private function authChannel(User $user, string $channel): TestResponse
-    {
-        return $this->actingAs($user)->postJson('/api/broadcasting/auth', [
-            'socket_id' => '123.456',
-            'channel_name' => $channel,
-        ]);
-    }
-
     // ─── Private event channel ────────────────────────────────────────────────
 
     #[Test]
@@ -145,5 +137,13 @@ class ChannelAuthTest extends TestCase
             'socket_id' => '123.456',
             'channel_name' => "private-boss.{$boss->id}",
         ])->assertUnauthorized();
+    }
+
+    private function authChannel(User $user, string $channel): TestResponse
+    {
+        return $this->actingAs($user)->postJson('/api/broadcasting/auth', [
+            'socket_id' => '123.456',
+            'channel_name' => $channel,
+        ]);
     }
 }

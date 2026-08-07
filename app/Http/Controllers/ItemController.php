@@ -7,9 +7,9 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Requests\Items\UpdateItemRequest;
+use App\Http\Resources\CommentResource;
 use App\Http\Resources\ItemResource;
-use App\Http\Resources\LootCouncil\CommentResource;
-use App\Http\Resources\LootCouncil\PriorityResource;
+use App\Http\Resources\PriorityResource;
 use App\Models\Item;
 use App\Models\LootPriority;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -130,7 +130,7 @@ class ItemController extends Controller
     private function buildCommentsProp(Item $item): AnonymousResourceCollection
     {
         return CommentResource::collection(
-            $item->comments()->with('user')->latest()->paginate(10),
+            $item->comments()->with(['user', 'reactions.user'])->latest()->paginate(10),
         );
     }
 }

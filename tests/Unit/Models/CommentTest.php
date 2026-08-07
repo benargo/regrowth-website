@@ -5,11 +5,13 @@ namespace Tests\Unit\Models;
 use App\Casts\AsClassName;
 use App\Casts\AsKeyType;
 use App\Models\Comment;
+use App\Models\CommentRevision;
 use App\Models\User;
 use Database\Factories\ItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -39,6 +41,7 @@ class CommentableStub extends Model
 }
 
 #[Group('loot')]
+#[Group('comments')]
 class CommentTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -283,5 +286,29 @@ class CommentTest extends ModelTestCase
 
         $this->assertSame($deleter->id, $trashedComment->deleted_by);
         $this->assertTrue($trashedComment->deletedBy->is($deleter));
+    }
+
+    #[Test]
+    public function it_has_many_revisions(): void
+    {
+        $comment = $this->make();
+
+        $this->assertInstanceOf(HasMany::class, $comment->revisions());
+        $this->assertSame('comment_id', $comment->revisions()->getForeignKeyName());
+        $this->assertInstanceOf(CommentRevision::class, $comment->revisions()->getRelated());
+    }
+
+    #[Test]
+    public function its_revisions_are_returned_in_creation_order(): void
+    {
+        $comment = $this->create();
+
+        $first = CommentRevision::factory()->forComment($comment)->create(['body' => 'First body']);
+        $second = CommentRevision::factory()->forComment($comment)->create(['body' => 'Second body']);
+
+        $this->assertSame(
+            [$first->id, $second->id],
+            $comment->revisions()->orderBy('id')->pluck('id')->all()
+        );
     }
 }

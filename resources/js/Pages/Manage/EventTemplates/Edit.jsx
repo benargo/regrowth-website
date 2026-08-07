@@ -1130,7 +1130,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                 <form onSubmit={handleSubmit} className="mb-8">
                     <MetaCard>
                         <MetaItem icon="tag">
-                            <Tooltip text="Click to edit">
+                            <Tooltip body="Click to edit">
                                 <label className="sr-only" htmlFor="template-title">
                                     Template name
                                 </label>

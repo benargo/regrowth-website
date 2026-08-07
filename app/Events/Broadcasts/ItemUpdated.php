@@ -2,7 +2,7 @@
 
 namespace App\Events\Broadcasts;
 
-use App\Http\Resources\LootCouncil\PriorityResource;
+use App\Http\Resources\PriorityResource;
 use App\Models\Item;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;

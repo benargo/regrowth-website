@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossStrategyController;
 use App\Http\Controllers\CharacterController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DailyQuestsAuditController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
@@ -18,8 +19,6 @@ use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
 use App\Http\Controllers\ItemController;
-use App\Http\Controllers\Loot\CommentController;
-use App\Http\Controllers\Loot\ReactionController;
 use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
@@ -56,17 +55,12 @@ Route::patch('/manage/characters/{character}', [CharacterController::class, 'upd
 Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
     Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
     Route::get('/raids/{raid}/{name?}', [LootBiasToolController::class, 'showRaid'])->name('raids.show');
-    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
     Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
 
     // Comment routes
-    Route::get('/comments', [CommentController::class, 'index'])->name('comments.index');
-    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
-    Route::post('/comments/{comment}/reactions', [ReactionController::class, 'store'])->name('comments.reactions.store');
-    Route::delete('/comments/{comment}/reactions/{reaction}', [ReactionController::class, 'destroy'])->name('comments.reactions.destroy');
+    Route::get('/comments', [CommentController::class, 'index'])->name('comments');
 });
 
 /**
