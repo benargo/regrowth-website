@@ -30,7 +30,7 @@ class LootBiasToolController extends Controller
 
         return Inertia::render('Loot/Index', [
             'raids' => $raids,
-            'stats' => Cache::tags(['db', 'lootcouncil'])->remember('loot:stats', now()->addMinutes(10), function () {
+            'stats' => Cache::tags(['lootcouncil'])->remember('loot:stats', now()->addMinutes(10), function () {
                 return [
                     'items_count' => Item::count(),
                     'priority_rows_count' => ItemPriority::query()->distinct()->count(['item_id', 'weight']),

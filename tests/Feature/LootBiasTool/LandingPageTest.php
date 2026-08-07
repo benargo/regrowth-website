@@ -123,14 +123,14 @@ class LandingPageTest extends TestCase
     {
         $user = User::factory()->member()->create();
 
-        Cache::tags(['db', 'lootcouncil'])->flush();
+        Cache::tags(['lootcouncil'])->flush();
         Item::factory()->count(1)->create();
 
         $this->actingAs($user)->get('/loot');
 
-        $this->assertTrue(Cache::tags(['db', 'lootcouncil'])->has('loot:stats'));
+        $this->assertTrue(Cache::tags(['lootcouncil'])->has('loot:stats'));
 
-        $cached = Cache::tags(['db', 'lootcouncil'])->get('loot:stats');
+        $cached = Cache::tags(['lootcouncil'])->get('loot:stats');
         $this->assertEquals(1, $cached['items_count']);
 
         Item::factory()->count(1)->create();
