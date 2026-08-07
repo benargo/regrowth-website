@@ -1,7 +1,7 @@
 import { Link } from "@inertiajs/react";
 import Icon from "@/Components/FontAwesome/Icon";
 
-export default function SearchResultRow({ item, index, isHighlighted, onMouseEnter }) {
+export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter }) {
     const href = route("loot.items.show", { item: item.id, slug: item.slug });
     const breadcrumb = [item.raid?.name, item.boss?.name].filter(Boolean).join(" › ");
     const labelComments = item.comments_count === 1 ? "comment" : "comments";
