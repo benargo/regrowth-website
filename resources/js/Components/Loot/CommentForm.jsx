@@ -1,16 +1,28 @@
 import { useState, useCallback } from "react";
-import { useForm } from "@inertiajs/react";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import Icon from "@/Components/FontAwesome/Icon";
 
 const ALLOWED_FORMATS = ["bold", "italic", "bulletList", "numberedList", "wowheadLink"];
 const VALIDATION_RULES = ["noUnderline", "noRegularLinks"];
 
-export default function CommentForm({ itemId, commentId = null, initialBody = "", onSuccess = null, onCancel = null }) {
+/**
+ * Presentational comment composer.
+ *
+ * This component does not know any routes. The owning CommentsSection passes
+ * `onSubmit(body, { onSuccess, onError })` and decides which API endpoint the
+ * body goes to. `isEdit` only changes the button labels.
+ */
+export default function CommentForm({
+    onSubmit,
+    isEdit = false,
+    initialBody = "",
+    resetOnSuccess = false,
+    onCancel = null,
+}) {
+    const [body, setBody] = useState(initialBody);
     const [validationError, setValidationError] = useState(null);
-    const { data, setData, post, put, processing, errors, reset } = useForm({
-        body: initialBody,
-    });
+    const [serverError, setServerError] = useState(null);
+    const [processing, setProcessing] = useState(false);
 
     const handleValidationChange = useCallback((error) => {
         setValidationError(error);
@@ -19,36 +31,37 @@ export default function CommentForm({ itemId, commentId = null, initialBody = ""
     function submit(e) {
         e.preventDefault();
 
-        if (validationError) {
+        if (validationError || processing) {
             return;
         }
 
-        if (commentId) {
-            put(route("loot.comments.update", { comment: commentId }), {
-                preserveScroll: true,
-                onSuccess: () => onSuccess?.(),
-            });
-        } else {
-            post(route("loot.items.comments.store", { item: itemId }), {
-                preserveScroll: true,
-                onSuccess: () => {
-                    reset("body");
+        setServerError(null);
+        setProcessing(true);
+
+        onSubmit(body, {
+            onSuccess: () => {
+                setProcessing(false);
+                if (resetOnSuccess) {
+                    setBody("");
                     setValidationError(null);
-                    onSuccess?.();
-                },
-            });
-        }
+                }
+            },
+            onError: (errors) => {
+                setProcessing(false);
+                setServerError(errors?.body ?? "Something went wrong. Please try again.");
+            },
+        });
     }
 
     return (
         <form onSubmit={submit}>
             <MarkdownEditor
-                value={data.body}
-                onChange={(value) => setData("body", value)}
+                value={body}
+                onChange={setBody}
                 allowedFormats={ALLOWED_FORMATS}
                 validationRules={VALIDATION_RULES}
                 rows={4}
-                error={errors.body}
+                error={serverError}
                 onValidationChange={handleValidationChange}
                 className="mb-2"
             />
@@ -61,13 +74,7 @@ export default function CommentForm({ itemId, commentId = null, initialBody = ""
                     }`}
                 >
                     <Icon icon="paper-plane" style="solid" className="mr-1" />
-                    {processing
-                        ? commentId
-                            ? "Saving..."
-                            : "Posting..."
-                        : commentId
-                          ? "Save Changes"
-                          : "Post Comment"}
+                    {processing ? (isEdit ? "Saving..." : "Posting...") : isEdit ? "Save Changes" : "Post Comment"}
                 </button>
                 {onCancel && (
                     <button
