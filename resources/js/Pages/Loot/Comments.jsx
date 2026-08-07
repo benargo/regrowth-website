@@ -5,6 +5,7 @@ import Icon from "@/Components/FontAwesome/Icon";
 import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
+import ItemIcon from "@/Components/Items/ItemIcon";
 
 export default function Comments({ comments }) {
     // Group comments by item on the client side
@@ -48,23 +49,28 @@ export default function Comments({ comments }) {
                         <div className="space-y-8">
                             {Object.entries(groupedComments).map(([itemId, group]) => (
                                 <section key={itemId}>
-                                    <Link
-                                        href={route("loot.items.show", { item: group.item.id, slug: group.item.slug })}
-                                        className="mb-4 flex items-center gap-3 transition-colors hover:text-amber-300"
-                                        data-wowhead={`item=${group.item.id}&domain=tbc`}
-                                    >
+                                    <div className="relative mb-4">
+                                        <Link
+                                            href={route("loot.items.show", { item: group.item.id, slug: group.item.slug })}
+                                            className="flex items-center gap-3 transition-colors hover:text-amber-300"
+                                            data-wowhead={`item=${group.item.id}&domain=tbc`}
+                                        >
+                                            {group.item?.icon && <div className="h-8 w-8 flex-none" />}
+                                            <h3 className="text-lg font-semibold text-amber-400 hover:text-amber-300">
+                                                {group.item?.name ?? `Item #${itemId}`}
+                                            </h3>
+                                        </Link>
                                         {group.item?.icon && (
-                                            <img
-                                                src={group.item.icon}
-                                                alt={group.item.name}
-                                                className="h-8 w-8 rounded"
-                                                data-wowhead={`item=${group.item.id}&domain=tbc`}
-                                            />
+                                            <div className="absolute top-1/2 left-0 -translate-y-1/2">
+                                                <ItemIcon
+                                                    itemId={group.item.id}
+                                                    itemName={group.item.name}
+                                                    iconUrl={group.item.icon}
+                                                    size={8}
+                                                />
+                                            </div>
                                         )}
-                                        <h3 className="text-lg font-semibold text-amber-400 hover:text-amber-300">
-                                            {group.item?.name ?? `Item #${itemId}`}
-                                        </h3>
-                                    </Link>
+                                    </div>
                                     <div className="space-y-4">
                                         {group.comments.map((comment) => (
                                             <CommentItem key={comment.id} comment={comment} itemId={group.item.id} />
