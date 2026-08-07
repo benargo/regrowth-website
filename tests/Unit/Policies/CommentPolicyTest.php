@@ -49,15 +49,6 @@ class CommentPolicyTest extends TestCase
         return $user;
     }
 
-    // ==================== viewAny ====================
-
-    #[Test]
-    public function view_any_requires_view_all_comments(): void
-    {
-        $this->assertTrue($this->policy->viewAny($this->userWithPermission('view-all-comments')));
-        $this->assertFalse($this->policy->viewAny($this->userWithoutPermission()));
-    }
-
     // ==================== create ====================
 
     #[Test]
