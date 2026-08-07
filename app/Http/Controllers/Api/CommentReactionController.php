@@ -43,9 +43,9 @@ class CommentReactionController extends Controller
     #[Authorize('delete', 'reaction')]
     public function destroy(CommentReaction $reaction): Response
     {
-        broadcast(new CommentReactionChanged($reaction, 'deleted'))->toOthers();
-
         $reaction->delete();
+
+        broadcast(new CommentReactionChanged($reaction, 'deleted'))->toOthers();
 
         return response()->noContent();
     }
