@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\Broadcasts\CommentChanged;
+use App\Events\Broadcasts\CommentPosted;
+use App\Events\Broadcasts\CommentRemoved;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Http\Requests\Comments\UpdateCommentRequest;
@@ -44,6 +47,8 @@ class CommentController extends Controller
             new NewLootCouncilComment($comment)
         );
 
+        broadcast(new CommentPosted($comment))->toOthers();
+
         return CommentResource::make($comment)
             ->response()
             ->setStatusCode(201);
@@ -77,6 +82,8 @@ class CommentController extends Controller
 
         $comment->load(['user', 'commentable', 'reactions.user']);
 
+        broadcast(new CommentChanged($comment))->toOthers();
+
         return CommentResource::make($comment)->response();
     }
 
@@ -88,6 +95,8 @@ class CommentController extends Controller
     {
         $comment->update(['deleted_by' => $request->user()->id]);
         $comment->delete();
+
+        broadcast(new CommentRemoved($comment))->toOthers();
 
         return response()->noContent();
     }

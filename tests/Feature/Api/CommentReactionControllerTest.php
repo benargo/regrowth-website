@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Events\Broadcasts\CommentReactionChanged;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\CommentReaction;
@@ -12,6 +13,7 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Blizzard\MocksBlizzardServices;
@@ -245,6 +247,65 @@ class CommentReactionControllerTest extends TestCase
 
         $response->assertForbidden();
         $this->assertDatabaseHas('pivot_comments_reactions', ['id' => $reaction->id]);
+    }
+
+    // ==================== broadcasting ====================
+
+    #[Test]
+    #[Group('broadcasting')]
+    public function storing_a_reaction_broadcasts_reaction_changed_to_others(): void
+    {
+        Event::fake([CommentReactionChanged::class]);
+
+        $author = User::factory()->raider()->create();
+        $reactor = User::factory()->raider()->create();
+        $item = Item::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_type' => Item::class,
+            'commentable_id' => (string) $item->id,
+            'user_id' => $author->id,
+        ]);
+
+        $this->actingAs($reactor)
+            ->withHeader('X-Socket-ID', 'test-socket-id')
+            ->postJson(route('api.comments.reactions.store'), ['comment_id' => $comment->id])
+            ->assertCreated();
+
+        Event::assertDispatched(
+            CommentReactionChanged::class,
+            fn (CommentReactionChanged $event) => $event->reaction->comment_id === $comment->id
+                && $event->action === 'created'
+                && $event->socket === 'test-socket-id',
+        );
+    }
+
+    #[Test]
+    #[Group('broadcasting')]
+    public function destroying_a_reaction_broadcasts_reaction_changed_to_others(): void
+    {
+        Event::fake([CommentReactionChanged::class]);
+
+        $author = User::factory()->create();
+        $reactor = User::factory()->create();
+        $item = Item::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_type' => Item::class,
+            'commentable_id' => (string) $item->id,
+            'user_id' => $author->id,
+        ]);
+        $reaction = CommentReaction::factory()->forComment($comment)->byUser($reactor)->create();
+
+        $this->actingAs($reactor)
+            ->withHeader('X-Socket-ID', 'test-socket-id')
+            ->deleteJson(route('api.comments.reactions.destroy', $reaction))
+            ->assertNoContent();
+
+        Event::assertDispatched(
+            CommentReactionChanged::class,
+            fn (CommentReactionChanged $event) => $event->reaction->comment_id === $comment->id
+                && $event->action === 'deleted'
+                && $event->socket === 'test-socket-id',
+        );
     }
 
     // ==================== route separation ====================

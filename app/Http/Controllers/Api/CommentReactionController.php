@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\Broadcasts\CommentReactionChanged;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\StoreReactionRequest;
 use App\Http\Resources\CommentReactionResource;
@@ -29,6 +30,8 @@ class CommentReactionController extends Controller
 
         $reaction->load('user');
 
+        broadcast(new CommentReactionChanged($reaction, 'created'))->toOthers();
+
         return CommentReactionResource::make($reaction)
             ->response()
             ->setStatusCode(201);
@@ -40,6 +43,8 @@ class CommentReactionController extends Controller
     #[Authorize('delete', 'reaction')]
     public function destroy(CommentReaction $reaction): Response
     {
+        broadcast(new CommentReactionChanged($reaction, 'deleted'))->toOthers();
+
         $reaction->delete();
 
         return response()->noContent();

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Api;
 
+use App\Events\Broadcasts\CommentChanged;
+use App\Events\Broadcasts\CommentPosted;
+use App\Events\Broadcasts\CommentRemoved;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\CommentReaction;
@@ -18,6 +21,7 @@ use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel as DiscordChannel;
 use App\Services\Discord\Resources\Message as DiscordMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -821,6 +825,85 @@ class CommentControllerTest extends TestCase
             'id' => $comment->id,
             'deleted_by' => $officer->id,
         ]);
+    }
+
+    // ==================== broadcasting ====================
+
+    #[Test]
+    #[Group('broadcasting')]
+    public function storing_a_comment_broadcasts_comment_posted_to_others(): void
+    {
+        Event::fake([CommentPosted::class]);
+
+        $user = User::factory()->raider()->create();
+        $item = Item::factory()->create();
+
+        $this->actingAs($user)
+            ->withHeader('X-Socket-ID', 'test-socket-id')
+            ->postJson(route('api.comments.store'), [
+                'commentable_type' => Item::class,
+                'commentable_id' => (string) $item->id,
+                'body' => 'A brand new comment.',
+            ])
+            ->assertCreated();
+
+        Event::assertDispatched(
+            CommentPosted::class,
+            fn (CommentPosted $event) => $event->comment->commentable_id == $item->id
+                && $event->socket === 'test-socket-id',
+        );
+    }
+
+    #[Test]
+    #[Group('broadcasting')]
+    public function updating_a_comment_broadcasts_comment_changed_to_others(): void
+    {
+        Event::fake([CommentChanged::class]);
+
+        $user = User::factory()->create();
+        $item = Item::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_type' => Item::class,
+            'commentable_id' => (string) $item->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->withHeader('X-Socket-ID', 'test-socket-id')
+            ->patchJson(route('api.comments.update', $comment), ['body' => 'An edited body.'])
+            ->assertOk();
+
+        Event::assertDispatched(
+            CommentChanged::class,
+            fn (CommentChanged $event) => $event->comment->id === $comment->id
+                && $event->socket === 'test-socket-id',
+        );
+    }
+
+    #[Test]
+    #[Group('broadcasting')]
+    public function destroying_a_comment_broadcasts_comment_removed_to_others(): void
+    {
+        Event::fake([CommentRemoved::class]);
+
+        $user = User::factory()->create();
+        $item = Item::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_type' => Item::class,
+            'commentable_id' => (string) $item->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->withHeader('X-Socket-ID', 'test-socket-id')
+            ->deleteJson(route('api.comments.destroy', $comment))
+            ->assertNoContent();
+
+        Event::assertDispatched(
+            CommentRemoved::class,
+            fn (CommentRemoved $event) => $event->comment->id === $comment->id
+                && $event->socket === 'test-socket-id',
+        );
     }
 
     // ==================== helpers ====================
