@@ -259,6 +259,11 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
         return priorities.find((p) => p.id === activeId);
     }, [activeId, priorities]);
 
+    const collisionDetection = useCallback((args) => {
+        const pointerCollisions = pointerWithin(args);
+        return pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
+    }, []);
+
     const recalculateWeights = (updatedPriorities) => {
         const uniqueWeights = [...new Set(updatedPriorities.map((p) => p.weight))].sort((a, b) => a - b);
         return updatedPriorities.map((p) => ({
@@ -367,11 +372,6 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
             </div>
         );
     }
-
-    const collisionDetection = useCallback((args) => {
-        const pointerCollisions = pointerWithin(args);
-        return pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
-    }, []);
 
     return (
         <DndContext
