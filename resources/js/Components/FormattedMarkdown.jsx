@@ -29,7 +29,21 @@ export default function FormattedMarkdown({ children, className = "" }) {
             className={`prose prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0 max-w-none ${className}`}
         >
             <ReactMarkdown
-                allowedElements={["a", "code", "em", "h2", "h3", "li", "ol", "p", "pre", "strong", "u", "ul"]}
+                allowedElements={[
+                    "a",
+                    "blockquote",
+                    "code",
+                    "em",
+                    "h2",
+                    "h3",
+                    "li",
+                    "ol",
+                    "p",
+                    "pre",
+                    "strong",
+                    "u",
+                    "ul",
+                ]}
                 unwrapDisallowed={true}
                 components={{
                     a: ({ node, href, ...props }) => {
@@ -45,6 +59,12 @@ export default function FormattedMarkdown({ children, className = "" }) {
                             />
                         );
                     },
+                    blockquote: ({ node, ...props }) => (
+                        <blockquote
+                            className="my-2 border-l-4 border-amber-500/50 pl-4 italic text-gray-300"
+                            {...props}
+                        />
+                    ),
                     code: ({ node, inline, ...props }) =>
                         inline ? (
                             <code className="rounded bg-gray-900 px-1 py-0.5 font-mono text-sm" {...props} />
