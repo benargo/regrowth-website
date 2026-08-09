@@ -26,7 +26,6 @@ use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('comments')]
@@ -34,14 +33,12 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class CommentControllerTest extends TestCase
 {
-    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockItemService();
         $this->mockDiscordService();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
@@ -260,7 +257,7 @@ class CommentControllerTest extends TestCase
 
         $response->assertCreated();
         $response->assertJsonStructure([
-            'data' => ['id', 'body', 'item', 'user', 'reactions', 'is_resolved', 'created_at', 'updated_at', 'can'],
+            'data' => ['id', 'body', 'commentable', 'user', 'reactions', 'is_resolved', 'created_at', 'updated_at', 'permissions'],
         ]);
         $response->assertJsonPath('data.body', 'Freshly posted');
         $response->assertJsonPath('data.is_resolved', false);

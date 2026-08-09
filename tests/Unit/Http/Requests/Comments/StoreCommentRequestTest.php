@@ -14,11 +14,6 @@ use Tests\TestCase;
 #[Group('comments')]
 class StoreCommentRequestTest extends TestCase
 {
-    private function makeRequest(array $data = []): StoreCommentRequest
-    {
-        return StoreCommentRequest::create('/', 'POST', $data);
-    }
-
     #[Test]
     public function rules_require_a_body_within_length_bounds(): void
     {
@@ -75,5 +70,32 @@ class StoreCommentRequestTest extends TestCase
 
         $this->assertArrayHasKey('commentable_id', $rules);
         $this->assertContains('required', $rules['commentable_id']);
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function rules_allow_parent_id_to_be_omitted(): void
+    {
+        $rules = $this->makeRequest()->rules();
+
+        $this->assertArrayHasKey('parent_id', $rules);
+        $this->assertContains('nullable', $rules['parent_id']);
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function rules_require_parent_id_to_be_an_existing_comment(): void
+    {
+        $rules = $this->makeRequest()->rules();
+
+        $this->assertContains('integer', $rules['parent_id']);
+        $this->assertContains('exists:comments,id', $rules['parent_id']);
+    }
+
+    // ↓ Helpers
+
+    private function makeRequest(array $data = []): StoreCommentRequest
+    {
+        return StoreCommentRequest::create('/', 'POST', $data);
     }
 }
