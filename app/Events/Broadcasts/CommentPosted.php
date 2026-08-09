@@ -43,12 +43,18 @@ class CommentPosted implements ShouldBroadcastNow
     }
 
     /**
+     * Get the data to broadcast.
+     *
+     * `parent_id` is lifted to the top level so the client can route an
+     * incoming reply into its thread without unpacking the resource.
+     *
      * @return array<string, mixed>
      */
     public function broadcastWith(): array
     {
         return [
             'comment' => (new CommentResource($this->comment))->resolve(),
+            'parent_id' => $this->comment->parent_id,
         ];
     }
 }

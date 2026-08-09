@@ -41,12 +41,19 @@ class CommentRemoved implements ShouldBroadcastNow
     }
 
     /**
+     * Get the data to broadcast.
+     *
+     * A removed root becomes a tombstone in the list rather than vanishing,
+     * since its replies survive it; `is_root` tells the client which it is.
+     *
      * @return array<string, mixed>
      */
     public function broadcastWith(): array
     {
         return [
             'comment_id' => $this->comment->id,
+            'parent_id' => $this->comment->parent_id,
+            'is_root' => ! $this->comment->isReply(),
         ];
     }
 }

@@ -69,6 +69,30 @@ class CommentPostedTest extends TestCase
         $this->assertInstanceOf(ShouldBroadcastNow::class, new CommentPosted($comment));
     }
 
+    #[Test]
+    #[Group('contract')]
+    public function it_broadcasts_a_null_parent_id_for_a_root(): void
+    {
+        $comment = $this->commentOn($this->itemWithId(1));
+
+        $payload = (new CommentPosted($comment))->broadcastWith();
+
+        $this->assertArrayHasKey('parent_id', $payload);
+        $this->assertNull($payload['parent_id']);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function it_broadcasts_the_parent_id_for_a_reply(): void
+    {
+        $reply = $this->commentOn($this->itemWithId(1));
+        $reply->parent_id = 7;
+
+        $payload = (new CommentPosted($reply))->broadcastWith();
+
+        $this->assertSame(7, $payload['parent_id']);
+    }
+
     /**
      * Build an in-memory (unsaved) item with the given ID.
      */
