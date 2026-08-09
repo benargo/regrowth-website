@@ -26,6 +26,7 @@ export default function CommentThread({
     onDelete,
     onAddReaction,
     onRemoveReaction,
+    readOnly = false,
 }) {
     const [replyTarget, setReplyTarget] = useState(null);
     const isReplying = replyTarget !== null;
@@ -60,7 +61,8 @@ export default function CommentThread({
                 onDelete={onDelete}
                 onAddReaction={onAddReaction}
                 onRemoveReaction={onRemoveReaction}
-                onReply={() => handleReplyClick(comment)}
+                onReply={readOnly ? null : () => handleReplyClick(comment)}
+                readOnly={readOnly}
             />
 
             {(replyCount > 0 || isReplying) && (
@@ -92,7 +94,8 @@ export default function CommentThread({
                                 onDelete={onDelete}
                                 onAddReaction={onAddReaction}
                                 onRemoveReaction={onRemoveReaction}
-                                onReply={isThreadLocked ? null : () => handleReplyClick(reply)}
+                                onReply={readOnly || isThreadLocked ? null : () => handleReplyClick(reply)}
+                                readOnly={readOnly}
                             />
                         ))}
 
@@ -120,7 +123,7 @@ export default function CommentThread({
                         </button>
                     )}
 
-                    {isReplying && (
+                    {!readOnly && isReplying && (
                         <Can permission="comment-on-loot-items">
                             <CommentForm
                                 key={replyTarget?.id}

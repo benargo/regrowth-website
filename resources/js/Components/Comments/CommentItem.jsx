@@ -23,6 +23,7 @@ export default function CommentItem({
     onRemoveReaction,
     onReply = null,
     isReply = false,
+    readOnly = false,
 }) {
     const { auth } = usePage().props;
     const [isEditing, setIsEditing] = useState(false);
@@ -136,7 +137,7 @@ export default function CommentItem({
                 {/* Actions */}
                 {!isEditing && (
                     <div className="border-brown-700 mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
-                        {onReply && comment.permissions.reply && canReplyToComments && (
+                        {!readOnly && onReply && comment.permissions.reply && canReplyToComments && (
                             <button
                                 type="button"
                                 onClick={() => onReply()}
@@ -145,7 +146,7 @@ export default function CommentItem({
                                 <Icon icon="reply" style="solid" className="mr-1" /> Reply
                             </button>
                         )}
-                        {comment.permissions.edit && (
+                        {!readOnly && comment.permissions.edit && (
                             <button
                                 onClick={() => setIsEditing(true)}
                                 className="text-amber-400 transition-colors hover:text-amber-300"
@@ -153,7 +154,7 @@ export default function CommentItem({
                                 <Icon icon="edit" style="solid" className="mr-1" /> Edit
                             </button>
                         )}
-                        {comment.permissions.delete && (
+                        {!readOnly && comment.permissions.delete && (
                             <button
                                 onClick={() => setConfirmingDelete(true)}
                                 className="text-red-400 transition-colors hover:text-red-300"
@@ -162,7 +163,7 @@ export default function CommentItem({
                             </button>
                         )}
                         <div className="flex flex-col items-center gap-4 md:ml-auto md:flex-row">
-                            {!isReply && comment.permissions.resolve && (
+                            {!readOnly && !isReply && comment.permissions.resolve && (
                                 <span
                                     className={`flex items-center ${comment.is_resolved && "text-green-400 hover:text-green-600"}`}
                                 >
@@ -180,14 +181,14 @@ export default function CommentItem({
                                     </label>
                                 </span>
                             )}
-                            {!isReply && !comment.permissions.resolve && comment.is_resolved && (
+                            {!isReply && (readOnly || !comment.permissions.resolve) && comment.is_resolved && (
                                 <span className="flex items-center text-green-400">
                                     <Icon icon="check-circle" style="solid" className="mr-1" />
                                     Resolved
                                 </span>
                             )}
                             <div className="flex flex-row items-center gap-1">
-                                {!comment.permissions.react && (
+                                {!readOnly && !comment.permissions.react && (
                                     <Tooltip
                                         body={
                                             !canReactToComments
@@ -202,7 +203,7 @@ export default function CommentItem({
                                         </button>
                                     </Tooltip>
                                 )}
-                                {comment.permissions.react && userHasReacted() && (
+                                {!readOnly && comment.permissions.react && userHasReacted() && (
                                     <Tooltip body="Click to remove your reaction.">
                                         <button
                                             className="text-amber-400 transition-colors hover:text-amber-300"
@@ -212,7 +213,7 @@ export default function CommentItem({
                                         </button>
                                     </Tooltip>
                                 )}
-                                {comment.permissions.react && !userHasReacted() && (
+                                {!readOnly && comment.permissions.react && !userHasReacted() && (
                                     <Tooltip body="Click to like this comment.">
                                         <button
                                             className="text-white-400 transition-colors hover:text-gray-300"

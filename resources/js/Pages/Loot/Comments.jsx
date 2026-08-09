@@ -147,6 +147,7 @@ export default function Comments({ comments, replies }) {
                                                     hasMoreReplies={(comment.replies_count ?? 0) > thread.loadedCount}
                                                     onToggle={toggle}
                                                     onLoadMore={loadMoreReplies}
+                                                    readOnly
                                                 />
                                             );
                                         })}
