@@ -74,7 +74,7 @@ function PriorityDisplay({ priorities }) {
     );
 }
 
-export default function Show({ item, comments }) {
+export default function Show({ item, comments, replies }) {
     const raid = item.data.raid;
     const [notes, setNotes] = useState(item.data.notes);
     const [priorities, setPriorities] = useState(item.data.priorities);
@@ -163,6 +163,7 @@ export default function Show({ item, comments }) {
                 {/* Comments Section */}
                 <CommentsSection
                     comments={comments}
+                    replies={replies}
                     itemId={item.data.id}
                     registerBroadcastHandlers={registerBroadcastHandlers}
                 />

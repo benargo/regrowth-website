@@ -15,11 +15,20 @@ import Tooltip from "@/Components/Tooltip";
  * Fires no HTTP requests of its own — every mutation is delegated to the
  * callbacks handed down by CommentsSection, which owns the list state.
  */
-export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction, onRemoveReaction }) {
+export default function CommentItem({
+    comment,
+    onUpdate,
+    onDelete,
+    onAddReaction,
+    onRemoveReaction,
+    onReply = null,
+    isReply = false,
+}) {
     const { auth } = usePage().props;
     const [isEditing, setIsEditing] = useState(false);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const canReactToComments = usePermission("react-to-comments");
+    const canReplyToComments = usePermission("comment-on-loot-items");
 
     function formatDate(dateString) {
         const date = new Date(dateString);
@@ -63,19 +72,38 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
         }
     }
 
+    if (comment.is_deleted) {
+        return (
+            <div className={`border-brown-700 bg-brown-800/50 rounded-lg border border-dashed ${isReply ? "p-3" : "p-4"}`}>
+                <div className="flex items-center gap-3">
+                    <img
+                        src={comment.user.avatar}
+                        alt={comment.user.display_name}
+                        className={`rounded-full opacity-50 grayscale ${isReply ? "h-6 w-6" : "h-8 w-8"}`}
+                    />
+                    <span className="text-sm font-medium text-gray-400">{comment.user.display_name}</span>
+                    <span className="ml-auto text-sm text-gray-500">{formatDate(comment.created_at)}</span>
+                </div>
+                <p className="mt-2 text-sm text-gray-500 italic">[deleted]</p>
+            </div>
+        );
+    }
+
     return (
         <>
-            <div className="border-brown-700 bg-brown-800 rounded-lg border p-4">
+            <div className={`border-brown-700 bg-brown-800 rounded-lg border ${isReply ? "p-3" : "p-4"}`}>
                 {/* Header with user info and timestamp */}
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <img
                             src={comment.user.avatar}
                             alt={comment.user.display_name}
-                            className="h-8 w-8 rounded-full"
+                            className={`rounded-full ${isReply ? "h-6 w-6" : "h-8 w-8"}`}
                         />
                         <div>
-                            <span className="font-medium">{comment.user.display_name}</span>
+                            <span className={`font-medium ${isReply ? "text-sm" : ""}`}>
+                                {comment.user.display_name}
+                            </span>
                             {comment.user.highest_role && (
                                 <span className="mx-2">
                                     <Pill
@@ -108,7 +136,16 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                 {/* Actions */}
                 {!isEditing && (
                     <div className="border-brown-700 mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
-                        {comment.can.edit && (
+                        {onReply && comment.permissions.reply && canReplyToComments && (
+                            <button
+                                type="button"
+                                onClick={() => onReply()}
+                                className="text-amber-400 transition-colors hover:text-amber-300"
+                            >
+                                <Icon icon="reply" style="solid" className="mr-1" /> Reply
+                            </button>
+                        )}
+                        {comment.permissions.edit && (
                             <button
                                 onClick={() => setIsEditing(true)}
                                 className="text-amber-400 transition-colors hover:text-amber-300"
@@ -116,7 +153,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                                 <Icon icon="edit" style="solid" className="mr-1" /> Edit
                             </button>
                         )}
-                        {comment.can.delete && (
+                        {comment.permissions.delete && (
                             <button
                                 onClick={() => setConfirmingDelete(true)}
                                 className="text-red-400 transition-colors hover:text-red-300"
@@ -125,7 +162,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                             </button>
                         )}
                         <div className="flex flex-col items-center gap-4 md:ml-auto md:flex-row">
-                            {comment.can.resolve && (
+                            {!isReply && comment.permissions.resolve && (
                                 <span
                                     className={`flex items-center ${comment.is_resolved && "text-green-400 hover:text-green-600"}`}
                                 >
@@ -143,14 +180,14 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                                     </label>
                                 </span>
                             )}
-                            {!comment.can.resolve && comment.is_resolved && (
+                            {!isReply && !comment.permissions.resolve && comment.is_resolved && (
                                 <span className="flex items-center text-green-400">
                                     <Icon icon="check-circle" style="solid" className="mr-1" />
                                     Resolved
                                 </span>
                             )}
                             <div className="flex flex-row items-center gap-1">
-                                {!comment.can.react && (
+                                {!comment.permissions.react && (
                                     <Tooltip
                                         body={
                                             !canReactToComments
@@ -165,7 +202,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                                         </button>
                                     </Tooltip>
                                 )}
-                                {comment.can.react && userHasReacted() && (
+                                {comment.permissions.react && userHasReacted() && (
                                     <Tooltip body="Click to remove your reaction.">
                                         <button
                                             className="text-amber-400 transition-colors hover:text-amber-300"
@@ -175,7 +212,7 @@ export default function CommentItem({ comment, onUpdate, onDelete, onAddReaction
                                         </button>
                                     </Tooltip>
                                 )}
-                                {comment.can.react && !userHasReacted() && (
+                                {comment.permissions.react && !userHasReacted() && (
                                     <Tooltip body="Click to like this comment.">
                                         <button
                                             className="text-white-400 transition-colors hover:text-gray-300"

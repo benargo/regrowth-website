@@ -413,7 +413,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     );
 }
 
-export default function ItemEdit({ item, priorities: prioritiesResource, comments }) {
+export default function ItemEdit({ item, priorities: prioritiesResource, comments, replies }) {
     const allPriorities = prioritiesResource.data;
     const raid = item.data.raid;
 
@@ -601,7 +601,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 </div>
 
                 {/* Comments Section */}
-                <CommentsSection comments={comments} itemId={item.data.id} />
+                <CommentsSection comments={comments} replies={replies} itemId={item.data.id} />
             </PageContainer>
         </Master>
     );
