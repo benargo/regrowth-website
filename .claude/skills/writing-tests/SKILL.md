@@ -11,17 +11,19 @@ description: Use when writing, creating, or editing PHPUnit test classes in this
 
 ## Quick Reference
 
-| Rule | Detail |
-|------|--------|
-| Test annotation | `#[Test]` attribute — no `test_` prefix on method names |
-| Unit test location | Mirrors `app/`: `app/Foo/Bar.php` → `tests/Unit/Foo/BarTest.php` |
-| Database interaction | Must use `RefreshDatabase` trait |
-| Permissions in test | Clear Spatie cache in `setUp()` |
-| Model creation | Use factories; check states before manual setup |
-| Faker style | Match existing file convention (`$this->faker` or `fake()`) |
-| Create test file | `sail artisan make:test {Name}` (feature) or `--unit` (unit) |
-| Helper methods | Bottom of class, after all `#[Test]` methods |
-| Default test type | Feature test unless testing a single class in isolation |
+| Rule                 | Detail                                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| Test annotation      | `#[Test]` attribute — no `test_` prefix on method names                                           |
+| Unit test location   | Mirrors `app/`: `app/Foo/Bar.php` → `tests/Unit/Foo/BarTest.php`                                  |
+| Unit test isolation  | No `RefreshDatabase`, no factories, no real routes — mock every collaborator                      |
+| Request object       | Never mock `Illuminate\Http\Request` — construct it with `Request::create()`/`->create()` instead |
+| Database interaction | Feature tests only; must use `RefreshDatabase` trait                                              |
+| Permissions in test  | Clear Spatie cache in `setUp()`                                                                   |
+| Model creation       | Use factories; check states before manual setup                                                   |
+| Faker style          | Match existing file convention (`$this->faker` or `fake()`)                                       |
+| Create test file     | `sail artisan make:test {Name}` (feature) or `--unit` (unit)                                      |
+| Helper methods       | Bottom of class, after all `#[Test]` methods                                                      |
+| Default test type    | Feature test unless testing a single class in isolation                                           |
 
 ## Test Method Notation
 
@@ -54,9 +56,42 @@ vendor/bin/sail artisan make:test --unit Services/Blizzard/CharacterServiceTest
 
 Feature tests live under `tests/Feature/` and are the default for controller, route, and integration tests.
 
-## Database Tests
+## Unit Test Isolation
 
-Any test that reads from or writes to the database **must** use `RefreshDatabase`:
+`tests/Unit/**` tests must isolate the class under test completely. No `RefreshDatabase`, no factory `->create()`, no real Eloquent rows, no real registered app routes (from `web.php`/`api.php`), and no fake routes registered ad-hoc in the test either. This applies even when reaching for real infrastructure would be more convenient than mocking a collaborator properly.
+
+When an instruction says "mock X," that means mock exactly X — nothing else gets to be real just because it's inconvenient to mock. Before writing the test, identify every collaborator the class under test touches (model params, `$request->route()`, container-resolved helpers like `redirect()`/`route()`/`url()`) and mock or stub each one directly at that seam:
+
+```php
+// Wrong — reaches for real infra to sidestep mocking route()
+Route::get('/items/{item}', fn () => null)->name('items.show');
+$request = Request::create('/items/foo');
+
+// Right — mock only the named collaborator, stub the seam it needs
+$item = Mockery::mock(Item::class);
+$item->shouldReceive('getRouteKey')->andReturn('foo');
+```
+
+**Never mock `Illuminate\Http\Request`.** Laravel's own docs warn against mocking the `Request` facade, and the same reasoning applies to the `Request` object: it's a value object populated with real input, not a service with behaviour worth stubbing. Build a real instance instead:
+
+```php
+// Wrong — mocking Request hides real query/route/header behaviour behind fake expectations
+$request = Mockery::mock(Request::class);
+$request->shouldReceive('route')->andReturn($fakeRoute);
+
+// Right — construct a real Request with the input the test needs
+$request = Request::create('/items/foo', 'GET');
+```
+
+If a global helper (e.g. `redirect()->route()`) can't be reached through the primary mock alone, that's a signal to ask how the seam should be isolated — not license to substitute real infrastructure (DB, router, container singletons).
+
+If the class under test cannot be isolated without touching real infrastructure, it likely doesn't belong in `tests/Unit/` — write a feature test instead.
+
+**Testing middleware:** if the middleware resolves routes or redirects (`redirect()->route(...)`, `$request->route()->getName()`), read the sibling `middleware-feature-tests.md` before writing the test — it belongs in `tests/Feature/`, not `tests/Unit/`, and has its own gotchas around mocking `Route` vs `Request` and route-name resolution.
+
+## Database Tests (Feature Tests)
+
+Any feature test that reads from or writes to the database **must** use `RefreshDatabase`:
 
 ```php
 use Illuminate\Foundation\Testing\RefreshDatabase;
