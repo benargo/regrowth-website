@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,7 +28,12 @@ class CommentController extends Controller
      */
     public function index(Request $request): Response
     {
-        $comments = Comment::topLevel()
+        $comments = Comment::withTrashed()
+            ->topLevel()
+            ->where(fn (Builder $query) => $query
+                ->whereNull('deleted_at')
+                ->orWhereHas('replies')
+            )
             ->withCount('replies')
             ->with(['user', 'commentable', 'reactions.user'])
             ->orderByDesc('created_at')
@@ -79,7 +85,12 @@ class CommentController extends Controller
             return [];
         }
 
-        $rootIds = Comment::topLevel()
+        $rootIds = Comment::withTrashed()
+            ->topLevel()
+            ->where(fn (Builder $query) => $query
+                ->whereNull('deleted_at')
+                ->orWhereHas('replies')
+            )
             ->whereIn('id', $offsets->keys())
             ->pluck('id');
 

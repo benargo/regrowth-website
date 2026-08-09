@@ -189,6 +189,33 @@ class AllCommentsPageTest extends TestCase
     }
 
     #[Test]
+    public function a_trashed_root_with_live_replies_is_still_listed_as_a_tombstone(): void
+    {
+        $root = Comment::factory()->create();
+        Comment::factory()->replyTo($root)->create();
+        $root->delete();
+
+        $response = $this->actingAs(User::factory()->officer()->create())->get(route('loot.comments'));
+
+        $response->assertInertia(fn (AssertableJson $page) => $page
+            ->has('comments.data', 1)
+            ->where('comments.data.0.is_deleted', true)
+            ->where('comments.data.0.body', null)
+        );
+    }
+
+    #[Test]
+    public function a_trashed_root_with_no_live_replies_is_not_listed(): void
+    {
+        $root = Comment::factory()->create();
+        $root->delete();
+
+        $response = $this->actingAs(User::factory()->officer()->create())->get(route('loot.comments'));
+
+        $response->assertInertia(fn (AssertableJson $page) => $page->has('comments.data', 0));
+    }
+
+    #[Test]
     public function the_index_replies_prop_returns_the_next_page(): void
     {
         $root = Comment::factory()->create();
@@ -196,6 +223,23 @@ class AllCommentsPageTest extends TestCase
         $replies = collect(range(1, 8))->map(fn (int $index) => Comment::factory()
             ->replyTo($root)
             ->create(['created_at' => now()->subMinutes(100 - $index)]));
+
+        $response = $this->partialReload([$root->id => 5]);
+
+        $response->assertJsonCount(3, "props.replies.{$root->id}");
+        $response->assertJsonPath("props.replies.{$root->id}.0.id", $replies[5]->id);
+    }
+
+    #[Test]
+    public function the_index_replies_prop_still_paginates_a_tombstoned_root(): void
+    {
+        $root = Comment::factory()->create();
+
+        $replies = collect(range(1, 8))->map(fn (int $index) => Comment::factory()
+            ->replyTo($root)
+            ->create(['created_at' => now()->subMinutes(100 - $index)]));
+
+        $root->delete();
 
         $response = $this->partialReload([$root->id => 5]);
 
