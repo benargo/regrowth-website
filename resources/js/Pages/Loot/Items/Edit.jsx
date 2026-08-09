@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
     DndContext,
     DragOverlay,
-    closestCenter,
+    pointerWithin,
+    rectIntersection,
     PointerSensor,
     KeyboardSensor,
     useSensor,
@@ -80,7 +81,7 @@ function DroppableWeightRow({ weight, children, onAddClick }) {
     return (
         <div
             ref={setNodeRef}
-            className={`flex items-center justify-center transition-colors ${isOver ? "bg-amber-900/30" : ""}`}
+            className={`flex min-h-24 items-center justify-center transition-colors ${isOver ? "bg-amber-900/30" : ""}`}
         >
             <div className="w-12 flex-none text-4xl">{weight + 1}</div>
             <div className="ml-4 flex w-full flex-wrap items-center justify-center gap-4 py-4">
@@ -367,10 +368,15 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
         );
     }
 
+    const collisionDetection = useCallback((args) => {
+        const pointerCollisions = pointerWithin(args);
+        return pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
+    }, []);
+
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={collisionDetection}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >

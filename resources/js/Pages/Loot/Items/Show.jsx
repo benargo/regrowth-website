@@ -54,14 +54,14 @@ function PriorityDisplay({ priorities }) {
                         </div>
                         <div className="flex flex-1 flex-wrap items-center justify-center gap-2">
                             {grouped[weight].map((priority, index) => (
-                                <div key={`priority-${priority.id}`} className="flex items-center">
+                                <div key={`priority-${priority.id}`} className="flex items-center gap-2">
                                     {index > 0 && (
-                                        <div
+                                        <Icon
                                             key={`separator-${index}`}
-                                            className="mx-2 flex-none text-center text-2xl font-bold text-amber-600"
-                                        >
-                                            <Icon icon="equals" style="solid" />
-                                        </div>
+                                            icon="equals"
+                                            style="solid"
+                                            className="flex-none text-2xl font-bold text-amber-600"
+                                        />
                                     )}
                                     <PriorityItem priority={priority} />
                                 </div>
