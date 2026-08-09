@@ -12,6 +12,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 import { Link, router, useForm } from "@inertiajs/react";
+import { useSocketId } from "@laravel/echo-react";
 import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
@@ -444,9 +445,19 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
         setNotesValidationError(error);
     }, []);
 
+    /**
+     * `router.patch` doesn't attach `X-Socket-ID` automatically, so without
+     * this the sender's own `->toOthers()` broadcast would come back to it,
+     * get treated as an external change, and re-trigger another save —
+     * looping indefinitely. See CommentsSection.jsx for the same pattern.
+     */
+    const socketId = useSocketId();
+    const socketHeaders = useMemo(() => (socketId ? { "X-Socket-ID": socketId } : {}), [socketId]);
+
     const saveItem = useCallback(
         (payload) => {
             router.patch(route("loot.items.update", { item: item.data.id }), payload, {
+                headers: socketHeaders,
                 preserveScroll: true,
                 preserveState: true,
                 preserveUrl: true,
@@ -457,7 +468,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 onFinish: () => setSaving(false),
             });
         },
-        [item.data.id],
+        [item.data.id, socketHeaders],
     );
 
     useItemChannel(item.data.id, ({ notes, priorities }) => {
