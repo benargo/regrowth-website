@@ -16,13 +16,11 @@ use Illuminate\Support\Facades\Queue;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('comments')]
 class CommentResourceTest extends TestCase
 {
-    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -30,7 +28,6 @@ class CommentResourceTest extends TestCase
         parent::setUp();
 
         Queue::fake();
-        $this->mockItemService();
         $this->mockCacheService();
         $this->setUpPermissions();
     }
@@ -41,7 +38,7 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertSame($comment->id, $array['id']);
     }
@@ -52,13 +49,13 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->withBody('This is a test comment')->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertSame('This is a test comment', $array['body']);
     }
 
     #[Test]
-    public function it_returns_item_id_when_item_not_loaded(): void
+    public function it_omits_commentable_when_not_loaded(): void
     {
         $item = Item::factory()->create();
         $comment = Comment::factory()->create([
@@ -67,13 +64,13 @@ class CommentResourceTest extends TestCase
         ]);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertSame($item->id, $array['item']);
+        $this->assertArrayNotHasKey('commentable', $array);
     }
 
     #[Test]
-    public function it_returns_full_item_data_when_item_is_loaded(): void
+    public function it_returns_full_commentable_data_when_loaded(): void
     {
         $item = Item::factory()->create();
         $comment = Comment::factory()->create([
@@ -83,11 +80,11 @@ class CommentResourceTest extends TestCase
         $comment->load('commentable');
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertIsArray($array['item']);
-        $this->assertSame($item->id, $array['item']['id']);
-        $this->assertArrayHasKey('name', $array['item']);
+        $this->assertIsArray($array['commentable']);
+        $this->assertSame($item->id, $array['commentable']['id']);
+        $this->assertArrayHasKey('name', $array['commentable']);
     }
 
     #[Test]
@@ -103,21 +100,21 @@ class CommentResourceTest extends TestCase
         $comment->load('commentable');
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertNull($array['item']);
+        $this->assertNull($array['commentable']);
     }
 
     #[Test]
-    public function it_returns_user_id_when_user_not_loaded(): void
+    public function it_omits_user_when_not_loaded(): void
     {
         $user = User::factory()->create();
         $comment = Comment::factory()->create(['user_id' => $user->id]);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertSame($user->id, $array['user']);
+        $this->assertArrayNotHasKey('user', $array);
     }
 
     #[Test]
@@ -128,7 +125,7 @@ class CommentResourceTest extends TestCase
         $comment->load('user');
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertIsArray($array['user']);
         $this->assertSame($user->id, $array['user']['id']);
@@ -141,7 +138,7 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertEquals($comment->created_at, $array['created_at']);
     }
@@ -152,7 +149,7 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertEquals($comment->updated_at, $array['updated_at']);
     }
@@ -163,7 +160,7 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertFalse($array['is_resolved']);
     }
@@ -174,7 +171,7 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->resolved()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertTrue($array['is_resolved']);
     }
@@ -186,9 +183,9 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertFalse($array['can']['edit']);
+        $this->assertFalse($array['permissions']['edit']);
     }
 
     #[Test]
@@ -198,9 +195,9 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertFalse($array['can']['delete']);
+        $this->assertFalse($array['permissions']['delete']);
     }
 
     #[Test]
@@ -214,9 +211,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $user);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertTrue($array['can']['edit']);
+        $this->assertTrue($array['permissions']['edit']);
     }
 
     #[Test]
@@ -230,9 +227,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $user);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertTrue($array['can']['edit']);
+        $this->assertTrue($array['permissions']['edit']);
     }
 
     #[Test]
@@ -247,9 +244,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $officer);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertTrue($array['can']['edit']);
+        $this->assertTrue($array['permissions']['edit']);
     }
 
     #[Test]
@@ -264,9 +261,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $officer);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertTrue($array['can']['delete']);
+        $this->assertTrue($array['permissions']['delete']);
     }
 
     #[Test]
@@ -280,9 +277,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $user);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertTrue($array['can']['delete']);
+        $this->assertTrue($array['permissions']['delete']);
     }
 
     #[Test]
@@ -297,9 +294,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $raider);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertFalse($array['can']['delete']);
+        $this->assertFalse($array['permissions']['delete']);
     }
 
     #[Test]
@@ -309,9 +306,9 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertFalse($array['can']['resolve']);
+        $this->assertFalse($array['permissions']['resolve']);
     }
 
     #[Test]
@@ -325,9 +322,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $raider);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertFalse($array['can']['resolve']);
+        $this->assertFalse($array['permissions']['resolve']);
     }
 
     #[Test]
@@ -341,24 +338,25 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $officer);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertTrue($array['can']['resolve']);
+        $this->assertTrue($array['permissions']['resolve']);
     }
 
     #[Test]
     #[Group('resource')]
-    public function it_returns_can_permissions_structure(): void
+    public function it_returns_permissions_structure(): void
     {
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertArrayHasKey('can', $array);
-        $this->assertArrayHasKey('edit', $array['can']);
-        $this->assertArrayHasKey('delete', $array['can']);
-        $this->assertArrayHasKey('resolve', $array['can']);
+        $this->assertArrayHasKey('permissions', $array);
+        $this->assertArrayHasKey('edit', $array['permissions']);
+        $this->assertArrayHasKey('delete', $array['permissions']);
+        $this->assertArrayHasKey('resolve', $array['permissions']);
+        $this->assertArrayHasKey('reply', $array['permissions']);
     }
 
     #[Test]
@@ -366,31 +364,35 @@ class CommentResourceTest extends TestCase
     public function it_returns_all_expected_keys(): void
     {
         $comment = Comment::factory()->create();
+        $comment->load(['user', 'commentable', 'reactions', 'replies']);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertArrayHasKey('id', $array);
+        $this->assertArrayHasKey('parent_id', $array);
         $this->assertArrayHasKey('body', $array);
-        $this->assertArrayHasKey('item', $array);
+        $this->assertArrayHasKey('commentable', $array);
         $this->assertArrayHasKey('user', $array);
         $this->assertArrayHasKey('reactions', $array);
+        $this->assertArrayHasKey('replies', $array);
+        $this->assertArrayHasKey('replies_count', $array);
         $this->assertArrayHasKey('is_resolved', $array);
+        $this->assertArrayHasKey('is_deleted', $array);
         $this->assertArrayHasKey('created_at', $array);
         $this->assertArrayHasKey('updated_at', $array);
-        $this->assertArrayHasKey('can', $array);
+        $this->assertArrayHasKey('permissions', $array);
     }
 
     #[Test]
-    public function it_returns_empty_reactions_when_no_reactions_exist(): void
+    public function it_omits_reactions_when_not_loaded(): void
     {
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertIsArray($array['reactions']);
-        $this->assertEmpty($array['reactions']);
+        $this->assertArrayNotHasKey('reactions', $array);
     }
 
     #[Test]
@@ -404,7 +406,7 @@ class CommentResourceTest extends TestCase
         $comment->load('reactions.user');
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertIsArray($array['reactions']);
         $this->assertCount(1, $array['reactions']);
@@ -423,7 +425,7 @@ class CommentResourceTest extends TestCase
 
         $comment->load('reactions.user');
 
-        $array = (new CommentResource($comment))->toArray(new Request);
+        $array = (new CommentResource($comment))->resolve(new Request);
 
         $this->assertSame($comment->id, $array['reactions'][0]['comment_id']);
     }
@@ -442,7 +444,7 @@ class CommentResourceTest extends TestCase
         $comment->load('reactions.user');
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
         $this->assertCount(2, $array['reactions']);
     }
@@ -454,9 +456,9 @@ class CommentResourceTest extends TestCase
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertFalse($array['can']['react']);
+        $this->assertFalse($array['permissions']['react']);
     }
 
     #[Test]
@@ -470,9 +472,9 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $user);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertFalse($array['can']['react']);
+        $this->assertFalse($array['permissions']['react']);
     }
 
     #[Test]
@@ -498,22 +500,205 @@ class CommentResourceTest extends TestCase
         $request->setUserResolver(fn () => $otherUser);
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray($request);
+        $array = $resource->resolve($request);
 
-        $this->assertTrue($array['can']['react']);
+        $this->assertTrue($array['permissions']['react']);
     }
 
     #[Test]
     #[Group('resource')]
-    public function it_returns_can_permissions_structure_includes_react(): void
+    public function it_returns_permissions_structure_includes_react(): void
     {
         $comment = Comment::factory()->create();
 
         $resource = new CommentResource($comment);
-        $array = $resource->toArray(new Request);
+        $array = $resource->resolve(new Request);
 
-        $this->assertArrayHasKey('can', $array);
-        $this->assertArrayHasKey('react', $array['can']);
+        $this->assertArrayHasKey('permissions', $array);
+        $this->assertArrayHasKey('react', $array['permissions']);
+    }
+
+    #[Test]
+    #[Group('resource')]
+    public function it_returns_permissions_structure_includes_reply(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->resolve(new Request);
+
+        $this->assertArrayHasKey('permissions', $array);
+        $this->assertArrayHasKey('reply', $array['permissions']);
+    }
+
+    #[Test]
+    public function it_returns_a_null_parent_id_for_a_root(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->resolve(new Request);
+
+        $this->assertNull($array['parent_id']);
+    }
+
+    #[Test]
+    public function it_returns_the_parent_id_for_a_reply(): void
+    {
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+
+        $resource = new CommentResource($reply);
+        $array = $resource->resolve(new Request);
+
+        $this->assertEquals($root->id, $array['parent_id']);
+    }
+
+    #[Test]
+    public function it_returns_the_replies_count_from_the_loaded_count(): void
+    {
+        $root = Comment::factory()->create();
+        Comment::factory()->replyTo($root)->count(3)->create();
+
+        $loaded = Comment::withCount('replies')->find($root->id);
+
+        $resource = new CommentResource($loaded);
+        $array = $resource->resolve(new Request);
+
+        $this->assertSame(3, $array['replies_count']);
+    }
+
+    #[Test]
+    public function it_returns_a_zero_replies_count_when_the_count_is_not_loaded(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->resolve(new Request);
+
+        $this->assertSame(0, $array['replies_count']);
+    }
+
+    #[Test]
+    public function it_omits_replies_when_not_loaded(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->resolve(new Request);
+
+        $this->assertArrayNotHasKey('replies', $array);
+    }
+
+    #[Test]
+    public function it_returns_loaded_replies_oldest_first(): void
+    {
+        $root = Comment::factory()->create();
+        $older = Comment::factory()->replyTo($root)->create(['created_at' => now()->subHour()]);
+        $newer = Comment::factory()->replyTo($root)->create(['created_at' => now()]);
+
+        $loaded = Comment::with('replies')->find($root->id);
+
+        $resource = new CommentResource($loaded);
+        $array = $resource->resolve(new Request);
+
+        $this->assertCount(2, $array['replies']);
+        $this->assertEquals(
+            [$older->id, $newer->id],
+            array_column($array['replies'], 'id'),
+        );
+    }
+
+    #[Test]
+    public function it_reports_a_live_comment_as_not_deleted(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->resolve(new Request);
+
+        $this->assertFalse($array['is_deleted']);
+    }
+
+    #[Test]
+    public function it_masks_the_body_of_a_deleted_comment(): void
+    {
+        $comment = Comment::factory()->withBody('Secret body text.')->create();
+        $comment->delete();
+
+        $resource = new CommentResource($comment->fresh());
+        $array = $resource->resolve(new Request);
+
+        $this->assertTrue($array['is_deleted']);
+        $this->assertNull($array['body']);
+    }
+
+    #[Test]
+    #[Group('authorization')]
+    public function it_forces_every_permission_false_on_a_deleted_comment(): void
+    {
+        $comment = Comment::factory()->create();
+        $comment->delete();
+
+        $resource = new CommentResource($comment->fresh());
+        $array = $resource->resolve(new Request);
+
+        $this->assertSame(
+            ['edit' => false, 'delete' => false, 'react' => false, 'resolve' => false, 'reply' => false],
+            $array['permissions'],
+        );
+    }
+
+    #[Test]
+    public function it_keeps_the_author_and_timestamp_on_a_deleted_comment(): void
+    {
+        $comment = Comment::factory()->create();
+        $comment->load('user');
+        $comment->delete();
+
+        $resource = new CommentResource($comment->fresh()->load('user'));
+        $array = $resource->resolve(new Request);
+
+        $this->assertNotNull($array['user']);
+        $this->assertNotNull($array['created_at']);
+    }
+
+    #[Test]
+    #[Group('authorization')]
+    public function it_returns_can_reply_true_for_a_permitted_user(): void
+    {
+        $raider = User::factory()->raider()->create();
+        $discordRole = $raider->discordRoles()->create([
+            'id' => '1265247017215594497',
+            'name' => 'Test Reply Role',
+            'position' => 1,
+            'is_visible' => true,
+        ]);
+        $discordRole->permissions()->create([
+            'name' => 'comment-on-loot-items',
+            'guard_name' => 'web',
+        ]);
+        $comment = Comment::factory()->create();
+
+        $request = Request::create('/test');
+        $request->setUserResolver(fn () => $raider);
+
+        $resource = new CommentResource($comment);
+        $array = $resource->resolve($request);
+
+        $this->assertTrue($array['permissions']['reply']);
+    }
+
+    #[Test]
+    #[Group('authorization')]
+    public function it_returns_can_reply_false_for_guest_user(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $resource = new CommentResource($comment);
+        $array = $resource->resolve(new Request);
+
+        $this->assertFalse($array['permissions']['reply']);
     }
 
     private function mockCacheService(): void
