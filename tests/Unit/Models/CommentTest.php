@@ -311,4 +311,78 @@ class CommentTest extends ModelTestCase
             $comment->revisions()->orderBy('id')->pluck('id')->all()
         );
     }
+
+    #[Test]
+    public function it_has_no_parent_by_default(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $this->assertNull($comment->parent_id);
+        $this->assertNull($comment->parent);
+        $this->assertFalse($comment->isReply());
+    }
+
+    #[Test]
+    public function it_belongs_to_a_parent_comment(): void
+    {
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+
+        $this->assertTrue($reply->isReply());
+        $this->assertEquals($root->id, $reply->parent->id);
+    }
+
+    #[Test]
+    public function it_has_many_replies_ordered_oldest_first(): void
+    {
+        $root = Comment::factory()->create();
+
+        $older = Comment::factory()->replyTo($root)->create(['created_at' => now()->subHour()]);
+        $newer = Comment::factory()->replyTo($root)->create(['created_at' => now()]);
+
+        $replies = $root->replies()->get();
+
+        $this->assertCount(2, $replies);
+        $this->assertEquals([$older->id, $newer->id], $replies->pluck('id')->all());
+    }
+
+    #[Test]
+    public function top_level_scope_excludes_replies(): void
+    {
+        $root = Comment::factory()->create();
+        Comment::factory()->replyTo($root)->create();
+
+        $topLevel = Comment::topLevel()->get();
+
+        $this->assertCount(1, $topLevel);
+        $this->assertEquals($root->id, $topLevel->first()->id);
+    }
+
+    #[Test]
+    public function parent_id_is_not_mass_assignable(): void
+    {
+        $root = Comment::factory()->create();
+
+        $comment = Comment::create([
+            'commentable_id' => $root->commentable_id,
+            'commentable_type' => $root->commentable_type,
+            'user_id' => $root->user_id,
+            'body' => 'Mass assignment attempt.',
+            'parent_id' => $root->id,
+        ]);
+
+        $this->assertNull($comment->fresh()->parent_id);
+    }
+
+    #[Test]
+    public function deleting_a_root_leaves_its_replies_in_place(): void
+    {
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+
+        $root->delete();
+
+        $this->assertSoftDeleted('comments', ['id' => $root->id]);
+        $this->assertDatabaseHas('comments', ['id' => $reply->id, 'deleted_at' => null]);
+    }
 }

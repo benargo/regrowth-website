@@ -72,4 +72,23 @@ class CommentFactory extends Factory
             'is_resolved' => true,
         ]);
     }
+
+    /**
+     * Make the comment a reply to the given comment, inheriting its commentable.
+     *
+     * `parent_id` is not mass-assignable — that is what caps thread depth — so
+     * it is assigned directly on the instance rather than through the state
+     * array, which the fillable guard would drop.
+     */
+    public function replyTo(Comment $parent): static
+    {
+        return $this
+            ->state(fn (array $attributes) => [
+                'commentable_id' => $parent->commentable_id,
+                'commentable_type' => $parent->commentable_type,
+            ])
+            ->afterMaking(function (Comment $comment) use ($parent): void {
+                $comment->parent_id = $parent->id;
+            });
+    }
 }
