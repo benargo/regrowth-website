@@ -9,6 +9,8 @@ use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
 use Database\Factories\CommentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -72,6 +74,24 @@ class Comment extends Model
     }
 
     /**
+     * Determine whether this comment is a reply to another comment.
+     */
+    public function isReply(): bool
+    {
+        return $this->parent_id !== null;
+    }
+
+    /**
+     * Get the comment this comment replies to, if any.
+     *
+     * @return BelongsTo<Comment, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Comment::class, 'parent_id');
+    }
+
+    /**
      * Get the reactions for this comment.
      *
      * @return HasMany<CommentReaction, $this>
@@ -82,6 +102,19 @@ class Comment extends Model
     }
 
     /**
+     * Get the replies to this comment, oldest first.
+     *
+     * A discussion reads chronologically, which is deliberately the opposite
+     * of the top-level list's newest-first ordering.
+     *
+     * @return HasMany<Comment, $this>
+     */
+    public function replies(): HasMany
+    {
+        return $this->hasMany(Comment::class, 'parent_id')->oldest();
+    }
+
+    /**
      * Get the prior bodies recorded for this comment.
      *
      * @return HasMany<CommentRevision, $this>
@@ -89,6 +122,15 @@ class Comment extends Model
     public function revisions(): HasMany
     {
         return $this->hasMany(CommentRevision::class, 'comment_id');
+    }
+
+    /**
+     * Scope a query to only include top-level comments.
+     */
+    #[Scope]
+    protected function topLevel(Builder $query): void
+    {
+        $query->whereNull('parent_id');
     }
 
     /**

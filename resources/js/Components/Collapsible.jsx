@@ -1,16 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
 
-function DefaultSkeleton() {
-    return (
-        <div className="animate-pulse space-y-2">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded bg-gray-600/20" />
-            ))}
-        </div>
-    );
-}
-
 const STYLES = {
     amber: {
         border: "border-amber-600",
@@ -23,6 +13,16 @@ const STYLES = {
         body: "border-gray-400",
     },
 };
+
+export function RotatingChevron({ expanded = false, style = "solid" }) {
+    return (
+        <span
+            className={`flex items-center justify-items-center transition-transform duration-300 ${expanded ? "-rotate-180" : ""}`}
+        >
+            <Icon icon="chevron-down" style={style} />
+        </span>
+    );
+}
 
 export default function Collapsible({
     title,
@@ -79,17 +79,23 @@ export default function Collapsible({
 
     const loadingSkeleton = skeleton || <DefaultSkeleton />;
 
+    function DefaultSkeleton() {
+        return (
+            <div className="animate-pulse space-y-2">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-12 rounded bg-gray-600/20" />
+                ))}
+            </div>
+        );
+    }
+
     return (
         <div className={`rounded-md border ${styles.border}`}>
             <button
                 onClick={handleToggle}
                 className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${styles.header}`}
             >
-                <span
-                    className={`flex items-center justify-items-center transition-transform duration-500 ${expanded ? "-rotate-180" : ""}`}
-                >
-                    <Icon icon="chevron-down" style="solid" />
-                </span>
+                <RotatingChevron expanded={expanded} />
                 <h3 className="text-lg font-semibold">{title}</h3>
                 {headerRight && <span className="ml-auto">{headerRight}</span>}
             </button>

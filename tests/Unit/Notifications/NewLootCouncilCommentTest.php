@@ -9,9 +9,11 @@ use App\Notifications\NewLootCouncilComment;
 use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
+use App\Services\Discord\Resources\EmbedField;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
 #[Group('loot')]
@@ -53,6 +55,35 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertSame(5814783, $message->embeds[0]->color);
         $this->assertNotNull($message->embeds[0]->url);
         $this->assertNotNull($message->embeds[0]->timestamp);
+    }
+
+    #[Test]
+    public function it_omits_the_replies_field_when_reply_count_is_zero(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $notification = new NewLootCouncilComment($comment);
+        $message = $notification->toMessage();
+
+        $this->assertInstanceOf(Optional::class, $message->embeds[0]->fields);
+    }
+
+    #[Test]
+    public function it_includes_a_replies_field_when_reply_count_is_set(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $notification = (new NewLootCouncilComment($comment))->withReplyCount(3);
+        $message = $notification->toMessage();
+
+        $fields = $message->embeds[0]->fields;
+
+        $this->assertIsArray($fields);
+        $this->assertCount(1, $fields);
+        $this->assertInstanceOf(EmbedField::class, $fields[0]);
+        $this->assertSame('Replies', $fields[0]->name);
+        $this->assertSame('3', $fields[0]->value);
+        $this->assertTrue($fields[0]->inline);
     }
 
     #[Test]

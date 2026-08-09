@@ -58,12 +58,13 @@ class CommentBroadcastTest extends TestCase
 
         $payload = (new CommentPosted($comment))->broadcastWith();
 
-        $this->assertSame(['comment'], array_keys($payload));
+        $this->assertSame(['comment', 'parent_id'], array_keys($payload));
         $this->assertEquals($comment->id, $payload['comment']['id']);
         $this->assertEquals($comment->body, $payload['comment']['body']);
         $this->assertFalse($payload['comment']['is_resolved']);
         $this->assertArrayHasKey('reactions', $payload['comment']);
-        $this->assertArrayHasKey('can', $payload['comment']);
+        $this->assertArrayHasKey('permissions', $payload['comment']);
+        $this->assertNull($payload['parent_id']);
     }
 
     // ─── CommentChanged ──────────────────────────────────────────────────────
@@ -138,12 +139,12 @@ class CommentBroadcastTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function comment_removed_payload_carries_only_the_comment_id(): void
+    public function comment_removed_payload_carries_the_comment_id_parent_id_and_root_flag(): void
     {
         $comment = $this->commentOn(Item::factory()->create());
 
         $this->assertEquals(
-            ['comment_id' => $comment->id],
+            ['comment_id' => $comment->id, 'parent_id' => null, 'is_root' => true],
             (new CommentRemoved($comment))->broadcastWith(),
         );
     }

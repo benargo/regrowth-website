@@ -48,9 +48,31 @@ class CommentPolicy extends AuthorizationPolicy
 
     /**
      * Determine if the user can mark a comment as resolved.
+     *
+     * Resolution is a thread-level concept: only a root comment can be
+     * resolved, never an individual reply within the discussion.
      */
     public function markAsResolved(User $user, Comment $comment): bool
     {
+        if ($comment->isReply()) {
+            return false;
+        }
+
         return $user->isAuthorizedTo('mark-comment-as-resolved');
+    }
+
+    /**
+     * Determine if the user can reply to a comment.
+     *
+     * Replies need the same permission as any other comment; the only extra
+     * constraint is that a deleted comment's thread is closed to new replies.
+     */
+    public function reply(User $user, Comment $comment): bool
+    {
+        if ($comment->trashed()) {
+            return false;
+        }
+
+        return $user->isAuthorizedTo('comment-on-loot-items');
     }
 }

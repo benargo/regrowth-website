@@ -33,6 +33,7 @@ class StoreCommentRequest extends FormRequest
             'commentable_type' => ['required', 'string', Rule::in(self::ALLOWED_COMMENTABLE_TYPES)],
             'commentable_id' => ['required', Rule::exists($this->commentableTable(), 'id')],
             'body' => ['required', 'string', 'min:3', 'max:5000'],
+            'parent_id' => ['nullable', 'integer', 'exists:comments,id'],
         ];
     }
 
@@ -49,6 +50,7 @@ class StoreCommentRequest extends FormRequest
             'body.max' => 'Comment must not exceed 5000 characters.',
             'commentable_type.in' => 'Comments cannot be attached to that type of record.',
             'commentable_id.exists' => 'The record being commented on could not be found.',
+            'parent_id.exists' => 'The comment being replied to could not be found.',
         ];
     }
 

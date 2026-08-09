@@ -66,6 +66,14 @@ const ALL_FORMATS = {
         placeholder: "list item",
         hint: "1. numbered",
     },
+    quote: {
+        label: <Icon icon="quote-left" style="solid" />,
+        title: "Quote",
+        prefix: "> ",
+        suffix: "",
+        placeholder: "quote",
+        hint: "> quote",
+    },
     link: {
         label: <Icon icon="link" style="solid" />,
         title: "Link",
@@ -179,6 +187,7 @@ function generatePlaceholder(formatKeys) {
  * @param {string} [props.error] - External error message to display
  * @param {function} [props.onValidationChange] - Callback when validation state changes (receives error or null)
  * @param {string} [props.className] - Additional className for the container
+ * @param {boolean} [props.autoFocus] - Focus the textarea on mount
  */
 export default function MarkdownEditor({
     value,
@@ -190,6 +199,7 @@ export default function MarkdownEditor({
     error,
     onValidationChange,
     className = "",
+    autoFocus = false,
 }) {
     const textareaRef = useRef(null);
     const [validationError, setValidationError] = useState(null);
@@ -255,7 +265,14 @@ export default function MarkdownEditor({
         let newText;
         let newCursorPos;
 
-        if (selectedText) {
+        if (format.key === "quote" && selectedText.includes("\n")) {
+            const quotedText = selectedText
+                .split("\n")
+                .map((line) => (line.startsWith("> ") ? line : line.startsWith(">") ? "> " + line.slice(1) : "> " + line))
+                .join("\n");
+            newText = text.substring(0, start) + quotedText + text.substring(end);
+            newCursorPos = start + quotedText.length;
+        } else if (selectedText) {
             newText = text.substring(0, start) + format.prefix + selectedText + format.suffix + text.substring(end);
             newCursorPos = start + format.prefix.length + selectedText.length + format.suffix.length;
         } else {
@@ -365,11 +382,24 @@ export default function MarkdownEditor({
         onChange(newValue);
     }
 
+    function handleBlur() {
+        const normalized = value
+            .split("\n")
+            .map((line) => (/^>(?!\s|$)/.test(line) ? "> " + line.slice(1) : line))
+            .join("\n");
+
+        if (normalized !== value) {
+            const validationResult = validate(normalized);
+            setValidationError(validationResult);
+            onChange(normalized);
+        }
+    }
+
     const BUTTON_GROUPS = [
         ["heading2", "heading3"],
         ["bold", "italic", "underline"],
         ["bulletList", "numberedList"],
-        ["link", "wowheadLink"],
+        ["quote", "link", "wowheadLink"],
     ];
 
     const groupedButtons = BUTTON_GROUPS.map((keys) =>
@@ -415,8 +445,10 @@ export default function MarkdownEditor({
                     ref={textareaRef}
                     value={value}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder={computedPlaceholder}
                     rows={rows}
+                    autoFocus={autoFocus}
                     className="w-full resize-none border-none bg-brown p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
                 />
             </div>

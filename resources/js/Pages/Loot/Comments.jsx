@@ -1,20 +1,80 @@
+import { useCallback, useEffect, useState } from "react";
 import Master from "@/Layouts/Master";
-import { Link } from "@inertiajs/react";
-import CommentItem from "@/Components/Comments/CommentItem";
+import { Link, router, usePage } from "@inertiajs/react";
+import CommentThread from "@/Components/Comments/CommentThread";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pagination from "@/Components/Pagination";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import ItemIcon from "@/Components/Items/ItemIcon";
 import ToolNav from "@/Components/ToolNav";
+import useExpandedThreads from "@/Hooks/useExpandedThreads";
 
-export default function Comments({ comments }) {
+export default function Comments({ comments, replies }) {
+    const { auth } = usePage().props;
+    const { isExpanded, toggle } = useExpandedThreads(auth.user?.id);
+    const [threadCache, setThreadCache] = useState({});
+    const [loadingRoots, setLoadingRoots] = useState([]);
+
+    // Seed every thread from the eager first page that ships with `comments`.
+    useEffect(() => {
+        setThreadCache(
+            Object.fromEntries(
+                comments.data.map((comment) => [
+                    comment.id,
+                    { replies: comment.replies ?? [], loadedCount: (comment.replies ?? []).length },
+                ]),
+            ),
+        );
+    }, [comments]);
+
+    // Append each "load more" response; offsets only move forward.
+    useEffect(() => {
+        if (!replies) {
+            return;
+        }
+
+        setThreadCache((current) => {
+            const next = { ...current };
+
+            Object.entries(replies).forEach(([rootId, incoming]) => {
+                const existing = next[rootId] ?? { replies: [], loadedCount: 0 };
+                const known = new Set(existing.replies.map((reply) => reply.id));
+                const added = incoming.filter((reply) => !known.has(reply.id));
+
+                next[rootId] = {
+                    replies: [...existing.replies, ...added],
+                    loadedCount: existing.loadedCount + added.length,
+                };
+            });
+
+            return next;
+        });
+
+        setLoadingRoots([]);
+    }, [replies]);
+
+    const loadMoreReplies = useCallback(
+        (rootId) => {
+            setLoadingRoots([rootId]);
+
+            router.reload({
+                only: ["replies"],
+                data: { offsets: { [rootId]: threadCache[rootId]?.loadedCount ?? 0 } },
+                preserveUrl: true,
+                preserveScroll: true,
+                onError: () => setLoadingRoots([]),
+            });
+        },
+        [threadCache],
+    );
+
     // Group comments by item on the client side
     const groupedComments = comments.data.reduce((groups, comment) => {
-        const itemId = comment.item?.id ?? comment.item;
+        const itemId = comment.commentable?.id ?? comment.commentable;
         if (!groups[itemId]) {
             groups[itemId] = {
-                item: comment.item,
+                item: comment.commentable,
                 comments: [],
             };
         }
@@ -32,7 +92,7 @@ export default function Comments({ comments }) {
                     className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                 >
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
-                    <span>Back to Loot Bias</span>
+                    <span>Back to loot biases</span>
                 </Link>
             </ToolNav>
 
@@ -71,9 +131,26 @@ export default function Comments({ comments }) {
                                         )}
                                     </div>
                                     <div className="space-y-4">
-                                        {group.comments.map((comment) => (
-                                            <CommentItem key={comment.id} comment={comment} itemId={group.item.id} />
-                                        ))}
+                                        {group.comments.map((comment) => {
+                                            const thread = threadCache[comment.id] ?? {
+                                                replies: [],
+                                                loadedCount: 0,
+                                            };
+
+                                            return (
+                                                <CommentThread
+                                                    key={comment.id}
+                                                    comment={comment}
+                                                    replies={thread.replies}
+                                                    isExpanded={isExpanded(comment.id)}
+                                                    isLoadingReplies={loadingRoots.includes(comment.id)}
+                                                    hasMoreReplies={(comment.replies_count ?? 0) > thread.loadedCount}
+                                                    onToggle={toggle}
+                                                    onLoadMore={loadMoreReplies}
+                                                    readOnly
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 </section>
                             ))}

@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import MarkdownEditor from "@/Components/MarkdownEditor";
 import Icon from "@/Components/FontAwesome/Icon";
 
-const ALLOWED_FORMATS = ["bold", "italic", "bulletList", "numberedList", "wowheadLink"];
+const ALLOWED_FORMATS = ["bold", "italic", "bulletList", "numberedList", "quote", "wowheadLink"];
 const VALIDATION_RULES = ["noUnderline", "noRegularLinks"];
 
 /**
@@ -12,14 +12,50 @@ const VALIDATION_RULES = ["noUnderline", "noRegularLinks"];
  * `onSubmit(body, { onSuccess, onError })` and decides which API endpoint the
  * body goes to. `isEdit` only changes the button labels.
  */
+function SubmitLabel({ isEdit, isReply, processing }) {
+    if (processing) {
+        if (isEdit) {
+            return "Saving...";
+        }
+        if (isReply) {
+            return "Replying...";
+        }
+        return "Posting...";
+    }
+
+    if (isEdit) {
+        return "Save changes";
+    }
+    if (isReply) {
+        return "Post reply";
+    }
+    return "Post comment";
+}
+
+function buildQuotePrefix(quotedComment) {
+    if (!quotedComment) {
+        return "";
+    }
+
+    const quotedLines = quotedComment.body
+        .split("\n")
+        .map((line) => `> ${line}`)
+        .join("\n");
+
+    return `> **${quotedComment.user.display_name}:**\n${quotedLines}\n\n`;
+}
+
 export default function CommentForm({
     onSubmit,
     isEdit = false,
+    isReply = false,
     initialBody = "",
     resetOnSuccess = false,
     onCancel = null,
+    quotedComment = null,
+    autoFocus = false,
 }) {
-    const [body, setBody] = useState(initialBody);
+    const [body, setBody] = useState(initialBody || buildQuotePrefix(quotedComment));
     const [validationError, setValidationError] = useState(null);
     const [serverError, setServerError] = useState(null);
     const [processing, setProcessing] = useState(false);
@@ -64,6 +100,7 @@ export default function CommentForm({
                 error={serverError}
                 onValidationChange={handleValidationChange}
                 className="mb-2"
+                autoFocus={autoFocus}
             />
             <div className="flex gap-2">
                 <button
@@ -74,7 +111,7 @@ export default function CommentForm({
                     }`}
                 >
                     <Icon icon="paper-plane" style="solid" className="mr-1" />
-                    {processing ? (isEdit ? "Saving..." : "Posting...") : isEdit ? "Save Changes" : "Post Comment"}
+                    <SubmitLabel isEdit={isEdit} isReply={isReply} processing={processing} />
                 </button>
                 {onCancel && (
                     <button

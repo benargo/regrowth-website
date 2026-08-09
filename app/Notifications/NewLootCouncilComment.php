@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Comment;
 use App\Models\Item;
+use App\Notifications\Concerns\UpdatesExisting;
 use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
@@ -11,10 +12,27 @@ use LogicException;
 
 class NewLootCouncilComment extends Notification
 {
+    use UpdatesExisting;
+
+    /**
+     * The number of live replies to report on the embed.
+     */
+    protected int $replyCount = 0;
+
     public function __construct(Comment $comment)
     {
         $this->withRelatedModels([$comment])
             ->withSender($comment->user);
+    }
+
+    /**
+     * Set the live reply count reported by this notification's embed.
+     */
+    public function withReplyCount(int $count): self
+    {
+        $this->replyCount = $count;
+
+        return $this;
     }
 
     /**
@@ -46,14 +64,24 @@ class NewLootCouncilComment extends Notification
             'slug' => $item->slug,
         ]);
 
+        $embed = [
+            'title' => 'New comment received',
+            'url' => $itemUrl,
+            'color' => 5814783,
+            'description' => $description,
+            'timestamp' => $comment->created_at->toIso8601String(),
+        ];
+
+        if ($this->replyCount > 0) {
+            $embed['fields'] = [[
+                'name' => 'Replies',
+                'value' => (string) $this->replyCount,
+                'inline' => true,
+            ]];
+        }
+
         return MessagePayload::from([
-            'embeds' => [Embed::from([
-                'title' => 'New comment received',
-                'url' => $itemUrl,
-                'color' => 5814783,
-                'description' => $description,
-                'timestamp' => $comment->created_at->toIso8601String(),
-            ])],
+            'embeds' => [Embed::from($embed)],
         ]);
     }
 

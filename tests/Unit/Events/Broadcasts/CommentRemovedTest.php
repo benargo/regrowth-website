@@ -61,13 +61,13 @@ class CommentRemovedTest extends TestCase
 
     #[Test]
     #[Group('contract')]
-    public function it_broadcasts_only_the_comment_id(): void
+    public function it_broadcasts_the_comment_id_parent_id_and_root_flag(): void
     {
         $comment = $this->commentOn($this->itemWithId(1));
         $comment->id = 77;
 
         $this->assertSame(
-            ['comment_id' => 77],
+            ['comment_id' => 77, 'parent_id' => null, 'is_root' => true],
             (new CommentRemoved($comment))->broadcastWith(),
         );
     }
@@ -79,6 +79,31 @@ class CommentRemovedTest extends TestCase
         $comment = $this->commentOn($this->itemWithId(1));
 
         $this->assertInstanceOf(ShouldBroadcastNow::class, new CommentRemoved($comment));
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function it_broadcasts_a_removed_root_as_a_root(): void
+    {
+        $comment = $this->commentOn($this->itemWithId(1));
+
+        $payload = (new CommentRemoved($comment))->broadcastWith();
+
+        $this->assertNull($payload['parent_id']);
+        $this->assertTrue($payload['is_root']);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function it_broadcasts_a_removed_reply_with_its_root(): void
+    {
+        $reply = $this->commentOn($this->itemWithId(1));
+        $reply->parent_id = 7;
+
+        $payload = (new CommentRemoved($reply))->broadcastWith();
+
+        $this->assertSame(7, $payload['parent_id']);
+        $this->assertFalse($payload['is_root']);
     }
 
     /**

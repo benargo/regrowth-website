@@ -383,8 +383,8 @@ class ShowItemPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->has('comments.data.0.can.edit')
-            ->has('comments.data.0.can.delete')
+            ->has('comments.data.0.permissions.edit')
+            ->has('comments.data.0.permissions.delete')
         );
     }
 
@@ -439,7 +439,7 @@ class ShowItemPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('comments.data.0.can.resolve', true)
+            ->where('comments.data.0.permissions.resolve', true)
         );
     }
 
@@ -462,7 +462,7 @@ class ShowItemPageTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('comments.data.0.can.resolve', false)
+            ->where('comments.data.0.permissions.resolve', false)
         );
     }
 

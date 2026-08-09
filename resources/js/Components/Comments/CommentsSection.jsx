@@ -1,33 +1,39 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { router, useHttp } from "@inertiajs/react";
+import { router, useHttp, usePage } from "@inertiajs/react";
 import { useSocketId } from "@laravel/echo-react";
 import CommentForm from "./CommentForm";
-import CommentItem from "./CommentItem";
+import CommentThread from "./CommentThread";
 import Icon from "@/Components/FontAwesome/Icon";
 import Pagination from "@/Components/Pagination";
 import { Can, Cannot } from "@/Components/Authorizable";
+import useExpandedThreads from "@/Hooks/useExpandedThreads";
 
 /**
  * Merge incoming comment data over an existing comment while keeping the
- * viewer's own `can` flags.
+ * viewer's own `permissions` flags.
  *
- * `CommentResource` computes `can.edit` / `can.delete` / `can.react` /
- * `can.resolve` for whoever made the request. On a broadcast that is the
- * *acting* user, not the recipient — trusting it would show every viewer the
- * author's Edit and Delete buttons. On a `useHttp` response it is the current
- * user and would be safe, but this merge is applied uniformly so there is only
- * one rule to remember.
+ * `CommentResource` computes `permissions.edit` / `permissions.delete` /
+ * `permissions.react` / `permissions.resolve` for whoever made the request.
+ * On a broadcast that is the *acting* user, not the recipient — trusting it
+ * would show every viewer the author's Edit and Delete buttons. On a
+ * `useHttp` response it is the current user and would be safe, but this
+ * merge is applied uniformly so there is only one rule to remember.
  */
-function mergePreservingCan(existing, incoming) {
-    return { ...existing, ...incoming, can: existing.can };
+function mergePreservingPermissions(existing, incoming) {
+    return { ...existing, ...incoming, permissions: existing.permissions };
 }
 
-export default function CommentsSection({ comments, itemId, registerBroadcastHandlers = null }) {
+export default function CommentsSection({ comments, replies, itemId, registerBroadcastHandlers = null }) {
     const [items, setItems] = useState(comments.data);
     const [error, setError] = useState(null);
     const [newCommentCount, setNewCommentCount] = useState(0);
+    const [threadCache, setThreadCache] = useState({});
+    const [loadingRoots, setLoadingRoots] = useState([]);
 
     const currentPage = comments.meta.current_page;
+
+    const { auth } = usePage().props;
+    const { isExpanded, expand, toggle } = useExpandedThreads(auth.user?.id);
 
     const http = useHttp({});
 
@@ -48,6 +54,56 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
     useEffect(() => {
         setItems(comments.data);
     }, [comments]);
+
+    /**
+     * Seed each thread from the `comments` prop's eager first page of replies.
+     *
+     * This runs on every `comments` reload, including pagination, so replies
+     * pulled in by "load more" are deliberately dropped: a fresh page load
+     * always starts a thread back at its first page, matching the decision not
+     * to persist reply position.
+     */
+    useEffect(() => {
+        setThreadCache(
+            Object.fromEntries(
+                comments.data.map((comment) => [
+                    comment.id,
+                    { replies: comment.replies ?? [], loadedCount: (comment.replies ?? []).length },
+                ]),
+            ),
+        );
+    }, [comments]);
+
+    /**
+     * Merge a "load more" response by appending to each root's cached list.
+     *
+     * Offsets only ever move forward within a page view, so there is no
+     * overlap to reconcile — this is always an append, never a replace.
+     */
+    useEffect(() => {
+        if (!replies) {
+            return;
+        }
+
+        setThreadCache((current) => {
+            const next = { ...current };
+
+            Object.entries(replies).forEach(([rootId, incoming]) => {
+                const existing = next[rootId] ?? { replies: [], loadedCount: 0 };
+                const known = new Set(existing.replies.map((reply) => reply.id));
+                const added = incoming.filter((reply) => !known.has(reply.id));
+
+                next[rootId] = {
+                    replies: [...existing.replies, ...added],
+                    loadedCount: existing.loadedCount + added.length,
+                };
+            });
+
+            return next;
+        });
+
+        setLoadingRoots([]);
+    }, [replies]);
 
     const createComment = useCallback(
         (body, { onSuccess, onError }) => {
@@ -74,6 +130,119 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
         [http, itemId, socketHeaders],
     );
 
+    /**
+     * Expanding never fetches: the first page of every thread already shipped
+     * with `comments`, so the toggle only reveals what is cached. A thread with
+     * more replies than are loaded shows its "Load 5 more replies" control.
+     */
+    const toggleThread = useCallback((rootId) => toggle(rootId), [toggle]);
+
+    const loadMoreReplies = useCallback(
+        (rootId) => {
+            const rootIds = Array.isArray(rootId) ? rootId : [rootId];
+
+            setLoadingRoots(rootIds);
+
+            const offsets = Object.fromEntries(rootIds.map((id) => [id, threadCache[id]?.loadedCount ?? 0]));
+
+            router.reload({
+                only: ["replies"],
+                data: { offsets },
+                preserveUrl: true,
+                preserveScroll: true,
+                onError: () => {
+                    setLoadingRoots([]);
+                    setError("Those replies could not be loaded.");
+                },
+            });
+        },
+        [threadCache],
+    );
+
+    const createReply = useCallback(
+        (rootId, body, { onSuccess, onError } = {}) => {
+            setError(null);
+            http.setData({
+                commentable_type: "App\\Models\\Item",
+                commentable_id: String(itemId),
+                body,
+                parent_id: rootId,
+            });
+            http.post(route("api.comments.store"), {
+                headers: socketHeaders,
+                onSuccess: (response) => {
+                    const reply = response.data;
+
+                    setThreadCache((current) => {
+                        const existing = current[reply.parent_id] ?? { replies: [], loadedCount: 0 };
+
+                        if (existing.replies.some((cached) => cached.id === reply.id)) {
+                            return current;
+                        }
+
+                        return {
+                            ...current,
+                            [reply.parent_id]: {
+                                replies: [...existing.replies, reply],
+                                loadedCount: existing.loadedCount + 1,
+                            },
+                        };
+                    });
+
+                    setItems((current) =>
+                        current.map((comment) =>
+                            comment.id === reply.parent_id
+                                ? { ...comment, replies_count: (comment.replies_count ?? 0) + 1 }
+                                : comment,
+                        ),
+                    );
+
+                    // Posting a reply expands that thread for the poster, and
+                    // persists it — only for them.
+                    expand(reply.parent_id);
+
+                    onSuccess?.();
+                },
+                onError: (errors) => {
+                    setError(errors?.body ?? "Your reply could not be posted.");
+                    onError?.(errors);
+                },
+            });
+        },
+        [http, itemId, socketHeaders, expand],
+    );
+
+    /**
+     * Broadcast payloads carry `permissions` flags computed for the ACTING
+     * user, never the viewer. A comment arriving from a broadcast is shown
+     * with every permission denied; the viewer's real permissions are
+     * restored on the next page load or pagination reload, which come from
+     * CommentResource rendered for them. Also used to mask a deleted comment
+     * in place, where no action should be offered.
+     */
+    const denyAllPermissions = { edit: false, delete: false, react: false, resolve: false, reply: false };
+
+    /**
+     * Apply a transform to a comment wherever it lives — the top-level list or
+     * any thread's cached replies.
+     */
+    const updateCommentEverywhere = useCallback((commentId, transform) => {
+        setItems((current) => current.map((comment) => (comment.id === commentId ? transform(comment) : comment)));
+
+        setThreadCache((current) => {
+            const next = {};
+
+            Object.entries(current).forEach(([rootId, thread]) => {
+                next[rootId] = {
+                    ...thread,
+                    replies: thread.replies.map((reply) => (reply.id === commentId ? transform(reply) : reply)),
+                };
+            });
+
+            return next;
+        });
+    }, []);
+
     const updateComment = useCallback(
         (commentId, payload, { onSuccess, onError } = {}) => {
             setError(null);
@@ -81,10 +250,8 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
             http.patch(route("api.comments.update", { comment: commentId }), {
                 headers: socketHeaders,
                 onSuccess: (response) => {
-                    setItems((current) =>
-                        current.map((comment) =>
-                            comment.id === commentId ? mergePreservingCan(comment, response.data) : comment,
-                        ),
+                    updateCommentEverywhere(response.data.id, (comment) =>
+                        mergePreservingPermissions(comment, response.data),
                     );
                     onSuccess?.();
                 },
@@ -94,7 +261,50 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
                 },
             });
         },
-        [http, socketHeaders],
+        [http, socketHeaders, updateCommentEverywhere],
+    );
+
+    /**
+     * Remove a comment from local state — a root becomes a tombstone in place
+     * (its replies survive it), a reply is dropped from its thread's cache.
+     */
+    const removeCommentLocally = useCallback(
+        (commentId) => {
+            setItems((current) =>
+                current.map((comment) =>
+                    comment.id === commentId
+                        ? { ...comment, is_deleted: true, body: null, permissions: denyAllPermissions }
+                        : comment,
+                ),
+            );
+
+            setThreadCache((current) => {
+                const next = {};
+
+                Object.entries(current).forEach(([rootId, thread]) => {
+                    const remaining = thread.replies.filter((reply) => reply.id !== commentId);
+
+                    next[rootId] = {
+                        replies: remaining,
+                        loadedCount: Math.max(0, thread.loadedCount - (thread.replies.length - remaining.length)),
+                    };
+                });
+
+                return next;
+            });
+
+            setItems((current) =>
+                current.map((comment) => {
+                    const thread = threadCache[comment.id];
+                    const wasReply = thread?.replies.some((reply) => reply.id === commentId);
+
+                    return wasReply
+                        ? { ...comment, replies_count: Math.max(0, (comment.replies_count ?? 0) - 1) }
+                        : comment;
+                }),
+            );
+        },
+        [threadCache],
     );
 
     const deleteComment = useCallback(
@@ -104,12 +314,12 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
             http.delete(route("api.comments.destroy", { comment: commentId }), {
                 headers: socketHeaders,
                 onSuccess: () => {
-                    setItems((current) => current.filter((comment) => comment.id !== commentId));
+                    removeCommentLocally(commentId);
                 },
                 onHttpException: (httpResponse) => {
                     // 404 means it is already gone server-side — converge on that.
                     if (httpResponse.status === 404) {
-                        setItems((current) => current.filter((comment) => comment.id !== commentId));
+                        removeCommentLocally(commentId);
                         return false;
                     }
                     setError("That comment could not be deleted.");
@@ -117,7 +327,7 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
                 },
             });
         },
-        [http, socketHeaders],
+        [http, socketHeaders, removeCommentLocally],
     );
 
     const addReaction = useCallback(
@@ -127,18 +337,15 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
             http.post(route("api.comments.reactions.store"), {
                 headers: socketHeaders,
                 onSuccess: (response) => {
-                    setItems((current) =>
-                        current.map((comment) =>
-                            comment.id === commentId
-                                ? { ...comment, reactions: [...comment.reactions, response.data] }
-                                : comment,
-                        ),
-                    );
+                    updateCommentEverywhere(commentId, (comment) => ({
+                        ...comment,
+                        reactions: [...comment.reactions, response.data],
+                    }));
                 },
                 onError: () => setError("Your reaction could not be saved."),
             });
         },
-        [http, socketHeaders],
+        [http, socketHeaders, updateCommentEverywhere],
     );
 
     const removeReaction = useCallback(
@@ -148,21 +355,15 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
             http.delete(route("api.comments.reactions.destroy", { reaction: reactionId }), {
                 headers: socketHeaders,
                 onSuccess: () => {
-                    setItems((current) =>
-                        current.map((comment) =>
-                            comment.id === commentId
-                                ? {
-                                      ...comment,
-                                      reactions: comment.reactions.filter((reaction) => reaction.id !== reactionId),
-                                  }
-                                : comment,
-                        ),
-                    );
+                    updateCommentEverywhere(commentId, (comment) => ({
+                        ...comment,
+                        reactions: comment.reactions.filter((reaction) => reaction.id !== reactionId),
+                    }));
                 },
                 onError: () => setError("Your reaction could not be removed."),
             });
         },
-        [http, socketHeaders],
+        [http, socketHeaders, updateCommentEverywhere],
     );
 
     const goToPage = useCallback((page) => {
@@ -174,18 +375,41 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
         });
     }, []);
 
-    /**
-     * Broadcast payloads carry `can` flags computed for the ACTING user, never
-     * the viewer. A comment arriving from a broadcast is shown with every
-     * permission denied; the viewer's real permissions are restored on the next
-     * page load or pagination reload, which come from CommentResource rendered
-     * for them.
-     */
-    const denyAllCan = { edit: false, delete: false, react: false, resolve: false };
-
     const handleCommentPosted = useCallback(
         (payload) => {
             const incoming = payload.comment;
+
+            // A reply lands in its thread, never at the top of the list.
+            if (payload.parent_id) {
+                setItems((current) =>
+                    current.map((comment) =>
+                        comment.id === payload.parent_id
+                            ? { ...comment, replies_count: (comment.replies_count ?? 0) + 1 }
+                            : comment,
+                    ),
+                );
+
+                setThreadCache((current) => {
+                    const thread = current[payload.parent_id];
+
+                    // Only append into a thread that is already fully loaded up
+                    // to its count; otherwise the reply arrives out of order and
+                    // the bumped count alone tells the user there is more.
+                    if (!thread || thread.replies.some((reply) => reply.id === incoming.id)) {
+                        return current;
+                    }
+
+                    return {
+                        ...current,
+                        [payload.parent_id]: {
+                            replies: [...thread.replies, { ...incoming, permissions: denyAllPermissions }],
+                            loadedCount: thread.loadedCount + 1,
+                        },
+                    };
+                });
+
+                return;
+            }
 
             if (currentPage !== 1) {
                 setNewCommentCount((count) => count + 1);
@@ -196,30 +420,65 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
                 if (current.some((comment) => comment.id === incoming.id)) {
                     return current;
                 }
-                return [{ ...incoming, can: denyAllCan }, ...current];
+                return [{ ...incoming, permissions: denyAllPermissions }, ...current];
             });
         },
         [currentPage],
     );
 
-    const handleCommentChanged = useCallback((payload) => {
-        const incoming = payload.comment;
-        setItems((current) =>
-            current.map((comment) => (comment.id === incoming.id ? mergePreservingCan(comment, incoming) : comment)),
-        );
-    }, []);
+    const handleCommentChanged = useCallback(
+        (payload) => {
+            updateCommentEverywhere(payload.comment.id, (comment) =>
+                mergePreservingPermissions(comment, payload.comment),
+            );
+        },
+        [updateCommentEverywhere],
+    );
 
     const handleCommentRemoved = useCallback((payload) => {
-        setItems((current) => current.filter((comment) => comment.id !== payload.comment_id));
+        // A removed root becomes a tombstone rather than vanishing — its
+        // replies survive it and still need somewhere to hang.
+        if (payload.is_root) {
+            setItems((current) =>
+                current.map((comment) =>
+                    comment.id === payload.comment_id
+                        ? { ...comment, is_deleted: true, body: null, permissions: denyAllPermissions }
+                        : comment,
+                ),
+            );
+            return;
+        }
+
+        setItems((current) =>
+            current.map((comment) =>
+                comment.id === payload.parent_id
+                    ? { ...comment, replies_count: Math.max(0, (comment.replies_count ?? 0) - 1) }
+                    : comment,
+            ),
+        );
+
+        setThreadCache((current) => {
+            const thread = current[payload.parent_id];
+
+            if (!thread) {
+                return current;
+            }
+
+            const remaining = thread.replies.filter((reply) => reply.id !== payload.comment_id);
+
+            return {
+                ...current,
+                [payload.parent_id]: {
+                    replies: remaining,
+                    loadedCount: Math.max(0, thread.loadedCount - (thread.replies.length - remaining.length)),
+                },
+            };
+        });
     }, []);
 
-    const handleCommentReactionChanged = useCallback((payload) => {
-        setItems((current) =>
-            current.map((comment) => {
-                if (comment.id !== payload.comment_id) {
-                    return comment;
-                }
-
+    const handleCommentReactionChanged = useCallback(
+        (payload) => {
+            updateCommentEverywhere(payload.comment_id, (comment) => {
                 if (payload.action === "created") {
                     if (comment.reactions.some((reaction) => reaction.id === payload.reaction.id)) {
                         return comment;
@@ -231,9 +490,10 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
                     ...comment,
                     reactions: comment.reactions.filter((reaction) => reaction.id !== payload.reaction?.id),
                 };
-            }),
-        );
-    }, []);
+            });
+        },
+        [updateCommentEverywhere],
+    );
 
     // Hand the broadcast handlers up to the page, which owns the item channel
     // subscription. Re-registers whenever a handler identity changes so the
@@ -296,16 +556,27 @@ export default function CommentsSection({ comments, itemId, registerBroadcastHan
             <div className="space-y-4">
                 {items.length > 0 ? (
                     <>
-                        {items.map((comment) => (
-                            <CommentItem
-                                key={comment.id}
-                                comment={comment}
-                                onUpdate={updateComment}
-                                onDelete={deleteComment}
-                                onAddReaction={addReaction}
-                                onRemoveReaction={removeReaction}
-                            />
-                        ))}
+                        {items.map((comment) => {
+                            const thread = threadCache[comment.id] ?? { replies: [], loadedCount: 0 };
+
+                            return (
+                                <CommentThread
+                                    key={comment.id}
+                                    comment={comment}
+                                    replies={thread.replies}
+                                    isExpanded={isExpanded(comment.id)}
+                                    isLoadingReplies={loadingRoots.includes(comment.id)}
+                                    hasMoreReplies={(comment.replies_count ?? 0) > thread.loadedCount}
+                                    onToggle={toggleThread}
+                                    onLoadMore={loadMoreReplies}
+                                    onReply={createReply}
+                                    onUpdate={updateComment}
+                                    onDelete={deleteComment}
+                                    onAddReaction={addReaction}
+                                    onRemoveReaction={removeReaction}
+                                />
+                            );
+                        })}
                         <Pagination
                             links={comments.meta.links}
                             meta={comments.meta}

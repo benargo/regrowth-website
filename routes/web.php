@@ -202,6 +202,10 @@ Route::get('/info/privacy', function () {
 Route::get('/dashboard', fn () => redirect()->route('management.dashboard'));
 Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.next');
 
+if (app()->environment('testing')) {
+    Route::get('/test-route', fn () => response('ok'))->name('test-route');
+}
+
 require __DIR__.'/assets.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/deprecated.php';

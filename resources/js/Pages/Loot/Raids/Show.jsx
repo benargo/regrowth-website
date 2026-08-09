@@ -165,8 +165,12 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
     };
 
     return (
-        <Master title={`Loot Bias - ${raid.data.name}`}>
-            <SharedHeader backgroundClass={raid.data.background ?? "bg-ssctk"} title="Loot Bias" subtitle={raid.data.name} />
+        <Master title={`Loot biases - ${raid.data.name}`}>
+            <SharedHeader
+                backgroundClass={raid.data.background ?? "bg-ssctk"}
+                title="Loot biases"
+                subtitle={raid.data.name}
+            />
             <ToolNav>
                 <Link
                     href={route("loot.index")}
@@ -196,7 +200,10 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                                 )
                             }
                         >
-                            <BossItems prepared={getItemsForBoss(boss.id)} weightThreshold={priority_weight_threshold} />
+                            <BossItems
+                                prepared={getItemsForBoss(boss.id)}
+                                weightThreshold={priority_weight_threshold}
+                            />
                         </Collapsible>
                     ))}
                 </div>

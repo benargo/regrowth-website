@@ -153,4 +153,49 @@ class CommentPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->markAsResolved($author, $comment));
     }
+
+    #[Group('authorization')]
+    #[Test]
+    public function mark_as_resolved_is_denied_on_a_reply(): void
+    {
+        $officer = $this->userWithPermission('mark-comment-as-resolved');
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+
+        $this->assertTrue($this->policy->markAsResolved($officer, $root));
+        $this->assertFalse($this->policy->markAsResolved($officer, $reply));
+    }
+
+    // ==================== reply ====================
+
+    #[Group('authorization')]
+    #[Test]
+    public function a_permitted_user_may_reply_to_a_root(): void
+    {
+        $user = $this->userWithPermission('comment-on-loot-items');
+        $root = Comment::factory()->create();
+
+        $this->assertTrue($this->policy->reply($user, $root));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function a_user_without_comment_permission_may_not_reply(): void
+    {
+        $user = $this->userWithoutPermission();
+        $root = Comment::factory()->create();
+
+        $this->assertFalse($this->policy->reply($user, $root));
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function nobody_may_reply_to_a_deleted_comment(): void
+    {
+        $user = $this->userWithPermission('comment-on-loot-items');
+        $root = Comment::factory()->create();
+        $root->delete();
+
+        $this->assertFalse($this->policy->reply($user, $root->fresh()));
+    }
 }
