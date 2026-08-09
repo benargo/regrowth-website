@@ -91,6 +91,34 @@ class CommentReplyDiscordTest extends TestCase
     }
 
     #[Test]
+    public function replying_under_a_reply_whose_root_is_trashed_is_rejected(): void
+    {
+        $item = Item::factory()->create();
+        $root = Comment::factory()->create([
+            'commentable_id' => $item->id,
+            'commentable_type' => Item::class,
+        ]);
+        $reply = Comment::factory()->replyTo($root)->create();
+        $root->delete();
+
+        Bus::fake();
+        Notification::fake();
+
+        $this->actingAs(User::factory()->raider()->create())
+            ->postJson(route('api.comments.store'), [
+                'commentable_type' => Item::class,
+                'commentable_id' => (string) $item->id,
+                'body' => 'A reply under a trashed root.',
+                'parent_id' => $reply->id,
+            ])
+            ->assertNotFound();
+
+        $this->assertSame(2, Comment::withTrashed()->where('commentable_id', $item->id)->count());
+        Bus::assertNotDispatched(SyncCommentReplyCount::class);
+        Notification::assertNothingSent();
+    }
+
+    #[Test]
     public function deleting_a_reply_dispatches_a_sync_for_its_root(): void
     {
         $item = Item::factory()->create();
@@ -100,6 +128,30 @@ class CommentReplyDiscordTest extends TestCase
         ]);
         $author = User::factory()->raider()->create();
         $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
+
+        Bus::fake();
+
+        $this->actingAs($author)
+            ->deleteJson(route('api.comments.destroy', ['comment' => $reply->id]))
+            ->assertNoContent();
+
+        Bus::assertDispatched(
+            SyncCommentReplyCount::class,
+            fn (SyncCommentReplyCount $job) => $job->root->id === $root->id,
+        );
+    }
+
+    #[Test]
+    public function deleting_a_reply_under_a_tombstoned_root_still_dispatches_a_sync(): void
+    {
+        $item = Item::factory()->create();
+        $root = Comment::factory()->create([
+            'commentable_id' => $item->id,
+            'commentable_type' => Item::class,
+        ]);
+        $author = User::factory()->raider()->create();
+        $reply = Comment::factory()->replyTo($root)->create(['user_id' => $author->id]);
+        $root->delete();
 
         Bus::fake();
 

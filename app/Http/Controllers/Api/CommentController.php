@@ -81,7 +81,9 @@ class CommentController extends Controller
      *
      * Replying to a reply attaches the new comment to that reply's own root,
      * which makes depth >= 2 unreachable by construction rather than merely
-     * rejected by validation.
+     * rejected by validation. The root is re-checked for trashed-ness too:
+     * a live reply whose root has since been soft-deleted must not silently
+     * promote the new comment to a fresh root.
      */
     private function resolveThreadRoot(?int $parentId, Model $commentable): ?Comment
     {
@@ -100,7 +102,17 @@ class CommentController extends Controller
             abort(404);
         }
 
-        return $parent->isReply() ? $parent->parent : $parent;
+        if (! $parent->isReply()) {
+            return $parent;
+        }
+
+        $root = Comment::withTrashed()->find($parent->parent_id);
+
+        if ($root === null || $root->trashed()) {
+            abort(404);
+        }
+
+        return $root;
     }
 
     /**
@@ -145,7 +157,9 @@ class CommentController extends Controller
     #[Authorize('delete', 'comment')]
     public function destroy(Request $request, Comment $comment): Response
     {
-        $root = $comment->isReply() ? $comment->parent : null;
+        $root = $comment->isReply()
+            ? Comment::withTrashed()->find($comment->parent_id)
+            : null;
 
         $comment->update(['deleted_by' => $request->user()->id]);
         $comment->delete();
