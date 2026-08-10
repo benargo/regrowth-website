@@ -259,6 +259,43 @@ class AllCommentsPageTest extends TestCase
         $response->assertJsonMissingPath('props.replies.999999');
     }
 
+    #[Test]
+    public function the_index_lists_a_tombstoned_root_that_still_has_live_replies(): void
+    {
+        $user = User::factory()->officer()->create();
+        $root = Comment::factory()->create();
+        Comment::factory()->replyTo($root)->create();
+        $root->delete();
+
+        $response = $this->actingAs($user)->get(route('loot.comments'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Comments')
+            ->has('comments.data', 1)
+            ->where('comments.data.0.id', $root->id)
+            ->where('comments.data.0.is_deleted', true)
+            ->where('comments.data.0.body', null)
+            ->where('comments.data.0.replies_count', 1)
+        );
+    }
+
+    #[Test]
+    public function the_index_omits_a_tombstoned_root_with_no_live_replies(): void
+    {
+        $user = User::factory()->officer()->create();
+        $root = Comment::factory()->create();
+        $root->delete();
+
+        $response = $this->actingAs($user)->get(route('loot.comments'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Loot/Comments')
+            ->has('comments.data', 0)
+        );
+    }
+
     protected function createItem(): Item
     {
         return Item::factory()->fromBoss()->withName('Test Item')->create();
