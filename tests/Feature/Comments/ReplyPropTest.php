@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Comments;
 
+use App\Http\Controllers\ItemController;
 use App\Models\Comment;
 use App\Models\Item;
 use App\Services\Discord\Discord;
@@ -220,6 +221,27 @@ class ReplyPropTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(3, "props.replies.{$root->id}");
         $response->assertJsonPath("props.replies.{$root->id}.0.permissions.reply", false);
+    }
+
+    #[Test]
+    public function the_replies_prop_caps_the_number_of_requested_roots(): void
+    {
+        $item = Item::factory()->create();
+        $offsets = collect(range(1, 60))
+            ->mapWithKeys(function () use ($item): array {
+                $root = $this->rootOn($item);
+                Comment::factory()->replyTo($root)->create();
+
+                return [$root->id => 0];
+            })
+            ->all();
+
+        $response = $this->partialReload($item, $offsets);
+
+        $this->assertLessThanOrEqual(
+            ItemController::MAX_REPLY_ROOTS,
+            count($response->json('props.replies')),
+        );
     }
 
     // ↓ Helpers
