@@ -12,7 +12,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Log;
 
-class SyncCommentReplyCount implements ShouldQueue
+class RefreshCommentDiscordMessage implements ShouldQueue
 {
     use Queueable;
 
@@ -60,17 +60,9 @@ class SyncCommentReplyCount implements ShouldQueue
 
         NotifiableChannel::fromConfig('lootcouncil', $discord)->notify(
             (new NewLootCouncilComment($this->root))
-                ->withReplyCount($this->countFor($this->root))
+                ->withReplyCount($this->root->replies()->count())
                 ->updatesExisting($record),
         );
-    }
-
-    /**
-     * Count the root's live (non-trashed) replies.
-     */
-    public function countFor(Comment $root): int
-    {
-        return $root->replies()->count();
     }
 
     /**
@@ -92,7 +84,7 @@ class SyncCommentReplyCount implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error('SyncCommentReplyCount failed.', [
+        Log::error('RefreshCommentDiscordMessage failed.', [
             'comment_id' => $this->root->getKey(),
             'error' => $exception->getMessage(),
             'trace' => $exception->getTraceAsString(),

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Comments;
 
-use App\Jobs\SyncCommentReplyCount;
+use App\Jobs\RefreshCommentDiscordMessage;
 use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
@@ -84,8 +84,8 @@ class CommentReplyDiscordTest extends TestCase
             ->assertCreated();
 
         Bus::assertDispatched(
-            SyncCommentReplyCount::class,
-            fn (SyncCommentReplyCount $job) => $job->root->id === $root->id,
+            RefreshCommentDiscordMessage::class,
+            fn (RefreshCommentDiscordMessage $job) => $job->root->id === $root->id,
         );
         Notification::assertNothingSent();
     }
@@ -114,7 +114,7 @@ class CommentReplyDiscordTest extends TestCase
             ->assertNotFound();
 
         $this->assertSame(2, Comment::withTrashed()->where('commentable_id', $item->id)->count());
-        Bus::assertNotDispatched(SyncCommentReplyCount::class);
+        Bus::assertNotDispatched(RefreshCommentDiscordMessage::class);
         Notification::assertNothingSent();
     }
 
@@ -136,8 +136,8 @@ class CommentReplyDiscordTest extends TestCase
             ->assertNoContent();
 
         Bus::assertDispatched(
-            SyncCommentReplyCount::class,
-            fn (SyncCommentReplyCount $job) => $job->root->id === $root->id,
+            RefreshCommentDiscordMessage::class,
+            fn (RefreshCommentDiscordMessage $job) => $job->root->id === $root->id,
         );
     }
 
@@ -160,8 +160,8 @@ class CommentReplyDiscordTest extends TestCase
             ->assertNoContent();
 
         Bus::assertDispatched(
-            SyncCommentReplyCount::class,
-            fn (SyncCommentReplyCount $job) => $job->root->id === $root->id,
+            RefreshCommentDiscordMessage::class,
+            fn (RefreshCommentDiscordMessage $job) => $job->root->id === $root->id,
         );
     }
 
@@ -182,7 +182,7 @@ class CommentReplyDiscordTest extends TestCase
             ->deleteJson(route('api.comments.destroy', ['comment' => $root->id]))
             ->assertNoContent();
 
-        Bus::assertNotDispatched(SyncCommentReplyCount::class);
+        Bus::assertNotDispatched(RefreshCommentDiscordMessage::class);
     }
 
     // ↓ Helpers

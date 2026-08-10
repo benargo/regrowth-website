@@ -9,7 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Http\Requests\Comments\UpdateCommentRequest;
 use App\Http\Resources\CommentResource;
-use App\Jobs\SyncCommentReplyCount;
+use App\Jobs\RefreshCommentDiscordMessage;
 use App\Models\Comment;
 use App\Models\CommentRevision;
 use App\Notifications\NewLootCouncilComment;
@@ -58,7 +58,7 @@ class CommentController extends Controller
                 new NewLootCouncilComment($comment)
             );
         } else {
-            SyncCommentReplyCount::dispatch($root);
+            RefreshCommentDiscordMessage::dispatch($root);
         }
 
         broadcast(new CommentPosted($comment))->toOthers();
@@ -167,7 +167,7 @@ class CommentController extends Controller
         broadcast(new CommentRemoved($comment))->toOthers();
 
         if ($root !== null) {
-            SyncCommentReplyCount::dispatch($root);
+            RefreshCommentDiscordMessage::dispatch($root);
         }
 
         return response()->noContent();
