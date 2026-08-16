@@ -29,6 +29,14 @@ class ItemSeeder extends Seeder
     ) {}
 
     /**
+     * IDs of items skipped this run because their Blizzard item/media DTO
+     * fetch failed — their raids()->sync() did not run for them.
+     *
+     * @var array<int, int>
+     */
+    private array $skippedItemIds = [];
+
+    /**
      * Static loot table.
      *
      * `raid_ids` is a list because some trash items drop in more than one
@@ -751,6 +759,7 @@ class ItemSeeder extends Seeder
                 $mediaDto = $this->blizzard->send(new GetItemMediaRequest($item['id']))->dto();
             } catch (ItemNotFoundException|BlizzardRequestException|FatalRequestException $e) {
                 $this->command?->warn("  ⚠ [{$item['id']}] Skipped — {$e->getMessage()}");
+                $this->skippedItemIds[] = $item['id'];
 
                 continue;
             }
@@ -793,5 +802,13 @@ class ItemSeeder extends Seeder
 
             $this->command?->line("  <info>✓</info> [{$item['id']}] {$model->name}");
         }
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    public function skippedItemIds(): array
+    {
+        return $this->skippedItemIds;
     }
 }

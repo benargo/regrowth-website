@@ -144,6 +144,49 @@ class MigrateItemRaidRelationshipsTest extends TestCase
         $this->assertTrue(Schema::hasColumn('items', 'raid_id'));
     }
 
+    #[Test]
+    #[Group('failure-path')]
+    public function it_aborts_before_dropping_raid_id_when_the_seeder_skips_an_item(): void
+    {
+        $this->rewindBothMigrations();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(
+                body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
+                status: 200,
+            ),
+            GetItemRequest::class => function (PendingRequest $request): MockResponse {
+                $id = $this->extractItemIdFromRequest($request);
+
+                if ($id === 28453) {
+                    return MockResponse::make(
+                        body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+                        status: 404,
+                    );
+                }
+
+                return MockResponse::make(body: $this->makeItemResponse($id), status: 200);
+            },
+            GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
+                return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
+            },
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+
+        $this->artisan('app:migrate-item-raid-relationships')
+            ->expectsOutputToContain('28453')
+            ->assertExitCode(1);
+
+        $this->assertTrue(Schema::hasColumn('items', 'raid_id'));
+
+        $this->assertTrue(
+            DB::table('migrations')->where('migration', '2026_08_15_100000_create_pivot_items_raids_table')->exists()
+        );
+        $this->assertFalse(
+            DB::table('migrations')->where('migration', '2026_08_15_100001_drop_raid_id_from_items_table')->exists()
+        );
+    }
+
     // ↓ Helpers
 
     /**

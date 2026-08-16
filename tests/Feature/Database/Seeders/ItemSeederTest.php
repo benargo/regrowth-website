@@ -104,7 +104,7 @@ class ItemSeederTest extends TestCase
     /**
      * Seed with only the items needed for testing, to avoid processing all 684 items.
      */
-    private function seedWithLimitedItems(): void
+    private function seedWithLimitedItems(): ItemSeeder
     {
         $seeder = app(ItemSeeder::class);
 
@@ -115,6 +115,8 @@ class ItemSeederTest extends TestCase
         $reflection->setValue($seeder, array_slice($allItems, 0, 5));
 
         Model::unguarded(fn () => $seeder->run());
+
+        return $seeder;
     }
 
     // ==================== Seeder Behaviour ====================
@@ -263,12 +265,13 @@ class ItemSeederTest extends TestCase
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
-        $this->seedWithLimitedItems();
+        $seeder = $this->seedWithLimitedItems();
 
         // The failed item is not created — both API requests must succeed before the model is persisted
         $this->assertDatabaseMissing('items', ['id' => 28453]);
         // Other items still get name and icon
         $this->assertDatabaseHas('items', ['id' => 28454, 'name' => 'Item 28454']);
+        $this->assertSame([28453], $seeder->skippedItemIds());
     }
 
     #[Test]
