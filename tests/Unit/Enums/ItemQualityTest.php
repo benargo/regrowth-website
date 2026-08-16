@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 #[Group('loot')]
 class ItemQualityTest extends TestCase
 {
-    // ==================== cases ====================
-
     #[Test]
     public function it_has_exactly_eight_cases(): void
     {

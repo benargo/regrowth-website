@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 #[Group('raiding')]
 class AffectTypeTest extends TestCase
 {
-    // ==================== cases ====================
-
     #[Test]
     public function it_has_exactly_five_cases(): void
     {

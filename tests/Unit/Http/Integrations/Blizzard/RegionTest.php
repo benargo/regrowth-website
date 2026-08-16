@@ -10,8 +10,6 @@ use Tests\TestCase;
 #[Group('blizzard-integration')]
 class RegionTest extends TestCase
 {
-    // ==================== cases ====================
-
     #[Test]
     public function it_has_exactly_four_cases(): void
     {

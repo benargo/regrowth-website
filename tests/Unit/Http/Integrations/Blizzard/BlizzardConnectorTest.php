@@ -31,8 +31,6 @@ use Tests\TestCase;
 #[Group('blizzard-integration')]
 class BlizzardConnectorTest extends TestCase
 {
-    // ==================== resolveBaseUrl ====================
-
     #[Test]
     #[Group('happy-path')]
     public function resolves_base_url_from_region(): void

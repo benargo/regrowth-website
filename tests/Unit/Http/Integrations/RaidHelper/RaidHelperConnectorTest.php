@@ -126,6 +126,7 @@ class RaidHelperConnectorTest extends TestCase
     }
 
     // ==================== proactive limits ====================
+
     // Each test uses an anonymous subclass exposing only the tier under test so
     // tighter buckets cannot fire prematurely during the loop of a wider-tier test.
 

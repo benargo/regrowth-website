@@ -14,8 +14,6 @@ use Tests\TestCase;
 #[Group('loot')]
 class AsKeyTypeTest extends TestCase
 {
-    // ==================== get ====================
-
     #[Test]
     public function get_returns_integer_when_commentable_type_is_integer_keyed_model(): void
     {

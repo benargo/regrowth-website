@@ -11,8 +11,6 @@ use Tests\Support\DashboardTestCase;
 #[Group('platform')]
 class AddonSchemaControllerTest extends DashboardTestCase
 {
-    // ==================== export schema ====================
-
     #[Test]
     public function export_schema_requires_authentication(): void
     {

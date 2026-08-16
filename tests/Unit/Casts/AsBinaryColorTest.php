@@ -12,8 +12,6 @@ use Tests\TestCase;
 #[Group('platform')]
 class AsBinaryColorTest extends TestCase
 {
-    // ==================== get ====================
-
     #[Test]
     public function get_returns_null_when_value_is_null(): void
     {

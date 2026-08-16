@@ -17,8 +17,6 @@ use Tests\TestCase;
 #[Group('blizzard-integration')]
 class RenderConnectorTest extends TestCase
 {
-    // ==================== resolveBaseUrl ====================
-
     private function makeConnector(Region $region = Region::EU): RenderConnector
     {
         return new RenderConnector($region, Storage::fake('public'));
