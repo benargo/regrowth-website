@@ -118,7 +118,7 @@ class BlizzardConnectorTest extends TestCase
         $this->assertSame('regrowth', $connector->defaultGuildSlug());
     }
 
-    // ==================== oAuth + token caching ====================
+    // ==================== oauth + token caching ====================
 
     #[Test]
     #[Group('happy-path')]

@@ -22,7 +22,7 @@ class ShowTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==================== access control ====================
+    // ==================== show ====================
 
     #[Test]
     public function show_is_publicly_accessible(): void

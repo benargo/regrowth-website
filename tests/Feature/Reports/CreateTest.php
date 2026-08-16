@@ -40,7 +40,7 @@ class CreateTest extends TestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
-    // ==================== access control ====================
+    // ==================== create ====================
 
     #[Test]
     public function create_requires_authentication(): void

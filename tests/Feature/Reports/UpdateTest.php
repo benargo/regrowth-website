@@ -34,7 +34,7 @@ class UpdateTest extends TestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
-    // ==================== access control ====================
+    // ==================== update ====================
 
     #[Test]
     public function update_requires_authentication(): void

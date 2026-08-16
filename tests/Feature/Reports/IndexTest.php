@@ -19,7 +19,7 @@ class IndexTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==================== access control ====================
+    // ==================== index ====================
 
     #[Test]
     public function index_is_publicly_accessible(): void

@@ -49,7 +49,7 @@ class StoreTest extends TestCase
         ];
     }
 
-    // ==================== access control ====================
+    // ==================== store ====================
 
     #[Test]
     public function store_requires_authentication(): void

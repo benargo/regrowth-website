@@ -365,7 +365,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertDatabaseMissing('event_assignments', ['id' => $assignment->id]);
     }
 
-    // ==================== event::assignments() and Boss::assignments() ====================
+    // ==================== event::assignments() and boss::assignments() ====================
 
     #[Test]
     public function event_has_many_assignments(): void
