@@ -99,7 +99,6 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
             ['type' => 'Custom', 'title' => 'DPS Warrior', 'icon_name' => 'ability_rogue_ambush'],
 
             // Disenchant
-            ['type' => 'Meme', 'title' => 'Bakas', 'icon_name' => 'ui_embercourt-emoji-elated'],
             ['type' => 'Meme', 'title' => 'Disenchant', 'icon_name' => 'inv_enchant_voidcrystal'],
         ];
 
