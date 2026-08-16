@@ -74,8 +74,8 @@ function PriorityDisplay({ priorities }) {
     );
 }
 
-export default function Show({ item, comments, replies }) {
-    const raid = item.data.raid;
+export default function Show({ item, comments, replies, origin_raid_id: originRaidId }) {
+    const raid = item.data.raids?.find((r) => r.id === originRaidId) ?? item.data.raids?.[0] ?? null;
     const [notes, setNotes] = useState(item.data.notes);
     const [priorities, setPriorities] = useState(item.data.priorities);
 

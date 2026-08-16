@@ -4,7 +4,7 @@ import ItemIcon from "@/Components/Items/ItemIcon";
 
 export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter }) {
     const href = route("loot.items.show", { item: item.id, slug: item.slug });
-    const breadcrumb = [item.raid?.name, item.boss?.name].filter(Boolean).join(" › ");
+    const breadcrumb = [item.raids?.[0]?.name, item.boss?.name].filter(Boolean).join(" › ");
     const labelComments = item.comments_count === 1 ? "comment" : "comments";
 
     return (

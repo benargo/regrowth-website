@@ -420,9 +420,9 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     );
 }
 
-export default function ItemEdit({ item, priorities: prioritiesResource, comments, replies }) {
+export default function ItemEdit({ item, priorities: prioritiesResource, comments, replies, origin_raid_id: originRaidId }) {
     const allPriorities = prioritiesResource.data;
-    const raid = item.data.raid;
+    const raid = item.data.raids?.find((r) => r.id === originRaidId) ?? item.data.raids?.[0] ?? null;
 
     const { data, setData } = useForm({
         priorities: item.data.priorities.map((p) => ({
