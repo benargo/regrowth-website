@@ -32,7 +32,7 @@ class ItemResource extends JsonResource
             'boss' => $this->whenLoaded('boss', fn () => new BossResource($this->boss)),
             'comments_count' => $this->whenCounted('comments'),
             'priorities' => $this->whenLoaded('priorities', fn () => PriorityResource::collection($this->priorities)),
-            'raid' => $this->whenLoaded('raid', fn () => new RaidResource($this->raid)),
+            'raids' => $this->whenLoaded('raids', fn () => RaidResource::collection($this->raids)),
         ];
     }
 }
