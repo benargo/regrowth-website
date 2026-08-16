@@ -49,13 +49,12 @@ class ItemController extends Controller
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $this->loadItemData($blizzardConnector, $item);
+        $this->loadItemData($blizzardConnector, $item, $request->attributes->get('origin_raid_id'));
 
         return Inertia::render('Loot/Items/Show', [
             'item' => new ItemResource($item),
             'comments' => $this->buildCommentsProp($item),
             'replies' => Inertia::optional(fn () => $this->buildRepliesProp($item, $request)),
-            'origin_raid_id' => $request->attributes->get('origin_raid_id'),
         ]);
     }
 
@@ -70,19 +69,19 @@ class ItemController extends Controller
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $this->loadItemData($blizzardConnector, $item);
+        $this->loadItemData($blizzardConnector, $item, $request->attributes->get('origin_raid_id'));
 
         return Inertia::render('Loot/Items/Edit', [
             'item' => new ItemResource($item),
             'priorities' => PriorityResource::collection(LootPriority::all()),
             'comments' => $this->buildCommentsProp($item),
             'replies' => Inertia::optional(fn () => $this->buildRepliesProp($item, $request)),
-            'origin_raid_id' => $request->attributes->get('origin_raid_id'),
         ]);
     }
 
     /** Update a loot item's notes and biases. */
     #[Middleware('auth')]
+    #[Middleware(RemembersOriginRaid::class)]
     #[Authorize('update', 'item')]
     public function update(UpdateItemRequest $request, Item $item): InertiaResponse
     {
@@ -103,7 +102,7 @@ class ItemController extends Controller
             }
         });
 
-        $this->loadItemRelations($item);
+        $this->loadItemRelations($item, $request->attributes->get('origin_raid_id'));
 
         broadcast(new ItemUpdated($item))->toOthers();
 
@@ -115,7 +114,7 @@ class ItemController extends Controller
         ]);
     }
 
-    private function loadItemData(BlizzardConnector $blizzardConnector, Item $item): void
+    private function loadItemData(BlizzardConnector $blizzardConnector, Item $item, ?int $originRaidId): void
     {
         try {
             $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->id))->dto();
@@ -124,13 +123,26 @@ class ItemController extends Controller
             // We can continue without the filled in data.
         }
 
-        $this->loadItemRelations($item);
+        $this->loadItemRelations($item, $originRaidId);
     }
 
-    private function loadItemRelations(Item $item): void
+    /**
+     * Eager-load an item's relations, keeping at most one raid.
+     *
+     * When $originRaidId is given, load only the matching raid (the user's
+     * remembered origin raid). Otherwise load only the first raid by id, so
+     * the frontend always receives a single, deterministic raid rather than
+     * every raid a cross-raid trash item drops in.
+     */
+    private function loadItemRelations(Item $item, ?int $originRaidId): void
     {
         $item->load([
-            'raids',
+            'raids' => fn (BelongsToMany $query) => $query
+                ->when(
+                    $originRaidId,
+                    fn (Builder $q) => $q->where('raids.id', $originRaidId),
+                    fn (Builder $q) => $q->orderBy('raids.id')->limit(1),
+                ),
             'boss',
             'priorities' => fn (BelongsToMany $query) => $query->orderByPivot('weight', 'desc'),
         ]);

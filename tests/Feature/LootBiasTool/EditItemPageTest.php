@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
@@ -158,6 +159,40 @@ class EditItemPageTest extends TestCase
             ->has('comments.data')
             ->missing('allPriorities')
             ->missing('raids')
+        );
+    }
+
+    #[Test]
+    public function edit_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+        $otherRaid = Raid::factory()->create();
+        $item->raids()->attach($otherRaid->id);
+
+        $response = $this->actingAs($user)
+            ->withSession([SharesOriginRaidSession::SESSION_KEY => $otherRaid->id])
+            ->get($this->editUrl($item));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('item.data.raids.0.id', $otherRaid->id)
+        );
+    }
+
+    #[Test]
+    public function edit_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+        $originalRaidId = $item->raids()->first()->id;
+        $item->raids()->attach(Raid::factory()->create()->id);
+
+        $response = $this->actingAs($user)->get($this->editUrl($item));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('item.data.raids.0.id', $originalRaidId)
         );
     }
 

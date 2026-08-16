@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Events\Broadcasts\ItemUpdated;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Boss;
@@ -396,6 +397,45 @@ class UpdateItemTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseHas('items', ['id' => $item->id, 'notes' => 'Trash notes']);
+    }
+
+    // ==========================================
+    // Origin raid selection
+    // ==========================================
+
+    #[Test]
+    public function update_reloads_with_the_remembered_origin_raid(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createItem();
+        $otherRaid = Raid::factory()->create();
+        $item->raids()->attach($otherRaid->id);
+
+        $this->actingAs($user)
+            ->withSession([SharesOriginRaidSession::SESSION_KEY => $otherRaid->id])
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Origin raid test'])
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $otherRaid->id)
+            );
+    }
+
+    #[Test]
+    public function update_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createItem();
+        $originalRaidId = $item->raids()->first()->id;
+        $item->raids()->attach(Raid::factory()->create()->id);
+
+        $this->actingAs($user)
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Fallback raid test'])
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $originalRaidId)
+            );
     }
 
     // ==========================================

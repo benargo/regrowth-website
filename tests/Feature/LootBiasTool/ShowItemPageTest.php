@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Comment;
 use App\Models\CommentReaction;
@@ -468,7 +469,7 @@ class ShowItemPageTest extends TestCase
     }
 
     #[Test]
-    public function a_cross_raid_item_exposes_every_raid_to_the_page(): void
+    public function a_cross_raid_item_exposes_only_one_raid_to_the_page(): void
     {
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
@@ -480,7 +481,63 @@ class ShowItemPageTest extends TestCase
         $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->has('item.data.raids', 2)
+                ->has('item.data.raids', 1)
+            );
+    }
+
+    #[Test]
+    public function show_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+
+        $this->withSession([SharesOriginRaidSession::SESSION_KEY => $raids[1]->id])
+            ->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $raids[1]->id)
+            );
+    }
+
+    #[Test]
+    public function show_falls_back_to_the_first_raid_when_the_remembered_raid_does_not_apply(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $otherRaid = Raid::factory()->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+        $firstRaidId = $raids->sortBy('id')->first()->id;
+
+        $this->withSession([SharesOriginRaidSession::SESSION_KEY => $otherRaid->id])
+            ->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $firstRaidId)
+            );
+    }
+
+    #[Test]
+    public function show_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+        $firstRaidId = $raids->sortBy('id')->first()->id;
+
+        $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $firstRaidId)
             );
     }
 

@@ -42,6 +42,8 @@ class RemembersOriginRaid implements SharesOriginRaidSession
             return null;
         }
 
-        return $item->raids->contains('id', $raidId) ? (int) $raidId : null;
+        $raids = $item->relationLoaded('raids') ? $item->raids : $item->load('raids')->raids;
+
+        return $raids->contains('id', $raidId) ? (int) $raidId : null;
     }
 }
