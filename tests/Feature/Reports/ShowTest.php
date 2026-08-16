@@ -22,7 +22,7 @@ class ShowTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==================== Access Control ====================
+    // ==================== access control ====================
 
     #[Test]
     public function show_is_publicly_accessible(): void
@@ -45,7 +45,7 @@ class ShowTest extends TestCase
         $response->assertOk();
     }
 
-    // ==================== Page Props ====================
+    // ==================== page props ====================
 
     #[Test]
     public function show_renders_correct_inertia_component(): void

@@ -19,7 +19,7 @@ class IndexTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==================== Access Control ====================
+    // ==================== access control ====================
 
     #[Test]
     public function index_is_publicly_accessible(): void
@@ -39,7 +39,7 @@ class IndexTest extends TestCase
         $response->assertOk();
     }
 
-    // ==================== Deferred Prop ====================
+    // ==================== deferred prop ====================
 
     #[Test]
     public function reports_prop_is_deferred_and_not_in_initial_response(): void
@@ -117,7 +117,7 @@ class IndexTest extends TestCase
         );
     }
 
-    // ==================== Filter Props ====================
+    // ==================== filter props ====================
 
     #[Test]
     public function index_includes_filter_option_props(): void
@@ -142,7 +142,7 @@ class IndexTest extends TestCase
         );
     }
 
-    // ==================== Report Shape ====================
+    // ==================== report shape ====================
 
     #[Test]
     public function reports_data_contains_expected_fields(): void
@@ -174,7 +174,7 @@ class IndexTest extends TestCase
         );
     }
 
-    // ==================== Ordering ====================
+    // ==================== ordering ====================
 
     #[Test]
     public function reports_are_ordered_by_start_time_descending(): void
@@ -195,7 +195,7 @@ class IndexTest extends TestCase
         );
     }
 
-    // ==================== Filter Behavior ====================
+    // ==================== filter behavior ====================
 
     #[Test]
     public function zone_filter_limits_results_to_matching_zone(): void
@@ -315,7 +315,7 @@ class IndexTest extends TestCase
         );
     }
 
-    // ==================== Validation ====================
+    // ==================== validation ====================
 
     #[Test]
     public function index_accepts_omitted_optional_fields(): void
@@ -427,7 +427,7 @@ class IndexTest extends TestCase
         $response->assertSessionHasErrors(['filter.before_date']);
     }
 
-    // ==================== Earliest Date Prop ====================
+    // ==================== earliest date prop ====================
 
     #[Test]
     public function earliest_date_is_null_when_no_reports_exist(): void

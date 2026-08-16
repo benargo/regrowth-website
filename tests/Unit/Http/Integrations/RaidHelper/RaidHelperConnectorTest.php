@@ -69,7 +69,7 @@ class RaidHelperConnectorTest extends TestCase
         $this->makeConnector()->send(new ConnectorProbeRequest);
     }
 
-    // ==================== Rate limits ====================
+    // ==================== rate limits ====================
 
     #[Group('error-handling')]
     #[Test]
@@ -125,7 +125,7 @@ class RaidHelperConnectorTest extends TestCase
         $this->assertSame(200, $response->status());
     }
 
-    // ==================== Proactive limits ====================
+    // ==================== proactive limits ====================
     // Each test uses an anonymous subclass exposing only the tier under test so
     // tighter buckets cannot fire prematurely during the loop of a wider-tier test.
 

@@ -29,7 +29,7 @@ class CalculatorTest extends TestCase
         config(['app.timezone' => 'Europe/Paris']);
     }
 
-    // ==================== Helpers ====================
+    // ==================== helpers ====================
 
     protected function makeCalculator(): Calculator
     {

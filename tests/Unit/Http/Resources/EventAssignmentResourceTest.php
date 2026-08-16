@@ -48,7 +48,7 @@ class EventAssignmentResourceTest extends TestCase
         $this->assertSame(5, $array['sort_order']);
     }
 
-    // ============ Left side resolution ============
+    // ==================== left side resolution ====================
 
     #[Test]
     public function it_resolves_left_character_to_character_resource(): void
@@ -102,7 +102,7 @@ class EventAssignmentResourceTest extends TestCase
         $this->assertSame('3', $array['left']['data']);
     }
 
-    // ============ Right side resolution ============
+    // ==================== right side resolution ====================
 
     #[Test]
     public function it_resolves_right_character_to_character_resource(): void

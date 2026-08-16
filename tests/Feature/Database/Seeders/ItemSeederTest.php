@@ -119,7 +119,7 @@ class ItemSeederTest extends TestCase
         return $seeder;
     }
 
-    // ==================== Seeder Behaviour ====================
+    // ==================== seeder behaviour ====================
 
     #[Test]
     public function seeder_creates_items_with_name_and_icon_from_api(): void

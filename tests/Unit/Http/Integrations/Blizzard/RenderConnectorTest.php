@@ -44,7 +44,7 @@ class RenderConnectorTest extends TestCase
         $this->assertSame(Region::KR, $this->makeConnector(Region::KR)->getRegion());
     }
 
-    // ==================== Pipeline behaviour ====================
+    // ==================== send ====================
 
     #[Test]
     public function sends_unauthenticated_requests_against_the_render_host(): void

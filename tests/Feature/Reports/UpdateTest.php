@@ -34,7 +34,7 @@ class UpdateTest extends TestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
-    // ==================== Access Control ====================
+    // ==================== access control ====================
 
     #[Test]
     public function update_requires_authentication(): void
@@ -63,7 +63,7 @@ class UpdateTest extends TestCase
         $response->assertForbidden();
     }
 
-    // ==================== Validation ====================
+    // ==================== validation ====================
 
     #[Test]
     public function update_with_empty_payload_is_a_no_op(): void

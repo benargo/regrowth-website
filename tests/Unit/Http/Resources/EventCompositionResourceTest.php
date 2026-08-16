@@ -25,7 +25,7 @@ class EventCompositionResourceTest extends TestCase
         return (new EventCompositionResource($event))->toArray(new Request);
     }
 
-    // ============ Structure ============
+    // ==================== structure ====================
 
     #[Test]
     public function it_returns_only_groups_and_bench_keys(): void
@@ -56,7 +56,7 @@ class EventCompositionResourceTest extends TestCase
         $this->assertArrayNotHasKey('channel', $array);
     }
 
-    // ============ Groups ============
+    // ==================== groups ====================
 
     #[Test]
     public function it_returns_empty_groups_when_no_characters(): void
@@ -122,7 +122,7 @@ class EventCompositionResourceTest extends TestCase
         $this->assertSame([], $array['groups']);
     }
 
-    // ============ Bench ============
+    // ==================== bench ====================
 
     #[Test]
     public function it_returns_empty_bench_when_no_characters(): void

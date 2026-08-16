@@ -115,7 +115,7 @@ class ShowCharacterTest extends TestCase
         );
     }
 
-    // ==================== Portrait dispatch ====================
+    // ==================== portrait dispatch ====================
 
     #[Test]
     public function show_dispatches_portrait_job_when_character_has_no_media(): void
@@ -177,7 +177,7 @@ class ShowCharacterTest extends TestCase
         Bus::assertNotDispatched(AttachPortraitToCharacter::class);
     }
 
-    // ==================== Helpers ====================
+    // ==================== helpers ====================
 
     private function member(): User
     {

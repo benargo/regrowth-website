@@ -68,7 +68,7 @@ class RaidCollectionTest extends TestCase
         $this->assertSame('Raid 2', $array['data'][1]['name']);
     }
 
-    // ==================== Background Determination ====================
+    // ==================== background ====================
 
     #[Test]
     public function it_returns_karazhan_background_when_first_raid_has_karazhan_background(): void
@@ -145,7 +145,7 @@ class RaidCollectionTest extends TestCase
         $this->assertNull($array['background']);
     }
 
-    // ==================== Data Structure ====================
+    // ==================== shape ====================
 
     #[Test]
     public function it_returns_all_expected_keys(): void

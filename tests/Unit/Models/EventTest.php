@@ -85,7 +85,7 @@ class EventTest extends ModelTestCase
         $this->assertFalse($model->is_template);
     }
 
-    // ========== background_css_class ============
+    // ==================== background_css_class ====================
 
     #[Test]
     public function background_css_class_is_cast_to_raid_background_enum(): void
@@ -104,7 +104,7 @@ class EventTest extends ModelTestCase
         $this->assertNull($event->background_css_class);
     }
 
-    // ========== color ============
+    // ==================== color ====================
 
     #[Test]
     public function color_is_nullable(): void
@@ -164,7 +164,7 @@ class EventTest extends ModelTestCase
         $this->create(['color' => 'not-a-color']);
     }
 
-    // ========== is_template ============
+    // ==================== is_template ====================
 
     #[Test]
     public function template_factory_state_sets_is_template_true(): void

@@ -41,7 +41,7 @@ class AttendanceNamesControllerTest extends TestCase
         $this->officer = User::factory()->officer()->create();
     }
 
-    // ==================== Access Control ====================
+    // ==================== access control ====================
 
     #[Group('authorization')]
     #[Test]
@@ -71,7 +71,7 @@ class AttendanceNamesControllerTest extends TestCase
         $response->assertOk();
     }
 
-    // ==================== Core Behaviour ====================
+    // ==================== core behaviour ====================
 
     #[Test]
     public function returns_null_when_character_id_is_absent(): void

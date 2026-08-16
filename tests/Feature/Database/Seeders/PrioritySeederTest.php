@@ -167,7 +167,7 @@ class PrioritySeederTest extends TestCase
         Queue::assertNothingPushed();
     }
 
-    // ============ Helpers ============
+    // ==================== helpers ====================
 
     private function runSeeder(): void
     {

@@ -41,7 +41,7 @@ class AttachPortraitToCharacterTest extends TestCase
         Storage::fake('public');
     }
 
-    // ==================== Job Contract ====================
+    // ==================== job contract ====================
 
     #[Group('contract')]
     #[Test]
@@ -77,7 +77,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(['blizzard', 'character:42'], $job->tags());
     }
 
-    // ==================== Middleware ====================
+    // ==================== middleware ====================
 
     #[Group('contract')]
     #[Test]
@@ -119,7 +119,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame(60, $middleware->releaseAfter);
     }
 
-    // ==================== Handle ====================
+    // ==================== handle ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -185,7 +185,7 @@ class AttachPortraitToCharacterTest extends TestCase
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
     }
 
-    // ==================== Uri Input ====================
+    // ==================== uri input ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -231,7 +231,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame('51042439-avatar.jpg', $media->file_name);
     }
 
-    // ==================== Filename ====================
+    // ==================== filename ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -253,7 +253,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame('51042439-avatar.jpg', $media->file_name);
     }
 
-    // ==================== Gender ====================
+    // ==================== gender ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -411,7 +411,7 @@ class AttachPortraitToCharacterTest extends TestCase
         Event::assertNotDispatched(CharacterUpdated::class);
     }
 
-    // ==================== Fallback URL ====================
+    // ==================== fallback URL ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -515,7 +515,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $this->assertSame('51042439-avatar.jpg', $media->file_name);
     }
 
-    // ==================== Broadcast ====================
+    // ==================== broadcast ====================
 
     #[Group('broadcasting')]
     #[Test]
@@ -562,7 +562,7 @@ class AttachPortraitToCharacterTest extends TestCase
         Event::assertNotDispatched(CharacterPortraitAttached::class);
     }
 
-    // ==================== Helpers ====================
+    // ==================== helpers ====================
 
     /**
      * @return array<string, mixed>
