@@ -34,10 +34,6 @@ class DailyQuestsMessageTest extends TestCase
         config(['services.discord.roles.daily_quest_subscribers' => '999000111222333444']);
     }
 
-    // -------------------------------------------------------------------------
-    // via()
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function it_routes_through_the_discord_driver(): void
     {
@@ -46,9 +42,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
     }
 
-    // -------------------------------------------------------------------------
-    // toMessage() — content
-    // -------------------------------------------------------------------------
+    // ==================== message content and embed ====================
 
     #[Test]
     public function it_mentions_the_daily_quests_subscribers_role_in_the_message_content(): void
@@ -59,10 +53,6 @@ class DailyQuestsMessageTest extends TestCase
 
         $this->assertSame('<@&999000111222333444>', $payload->content);
     }
-
-    // -------------------------------------------------------------------------
-    // toMessage() — embed structure
-    // -------------------------------------------------------------------------
 
     #[Test]
     public function it_builds_an_embed_with_the_correct_title(): void
@@ -114,9 +104,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame(route('daily-quests.index'), $embed->url);
     }
 
-    // -------------------------------------------------------------------------
-    // toMessage() — embed fields
-    // -------------------------------------------------------------------------
+    // ==================== embed fields ====================
 
     #[Test]
     public function it_includes_a_field_for_each_non_null_quest(): void
@@ -183,9 +171,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame("The Black Morass ({$heroic->instance->value})", $field->value);
     }
 
-    // -------------------------------------------------------------------------
-    // toMessage() — footer
-    // -------------------------------------------------------------------------
+    // ==================== footer ====================
 
     #[Test]
     public function it_omits_the_footer_when_no_sender_is_provided(): void
@@ -210,9 +196,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertStringContainsString('Arthas', $footer->text);
     }
 
-    // -------------------------------------------------------------------------
-    // toDatabase()
-    // -------------------------------------------------------------------------
+    // ==================== database payload ====================
 
     #[Test]
     public function it_returns_the_correct_database_payload(): void
@@ -239,9 +223,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame($user->id, $data['created_by_user_id']);
     }
 
-    // -------------------------------------------------------------------------
-    // updates() / sender()
-    // -------------------------------------------------------------------------
+    // ==================== updates and sender ====================
 
     #[Test]
     public function it_returns_null_for_updates_when_none_provided(): void
@@ -279,9 +261,7 @@ class DailyQuestsMessageTest extends TestCase
         $this->assertSame($user->id, $notification->sender()->id);
     }
 
-    // -------------------------------------------------------------------------
-    // Serialization (for queue)
-    // -------------------------------------------------------------------------
+    // ==================== queue serialization ====================
 
     #[Test]
     public function it_renders_quest_fields_after_a_queue_round_trip(): void

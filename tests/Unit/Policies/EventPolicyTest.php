@@ -93,6 +93,8 @@ class EventPolicyTest extends TestCase
         $this->assertFalse($this->policy->view($user, $event));
     }
 
+    // ==================== view as guest ====================
+
     #[Test]
     public function it_allows_view_for_guest_on_recent_event(): void
     {
@@ -109,6 +111,8 @@ class EventPolicyTest extends TestCase
         $this->assertFalse($this->policy->view(null, $event));
     }
 
+    // ==================== view templates ====================
+
     #[Test]
     public function it_allows_view_templates_with_manage_raid_plans_permission(): void
     {
@@ -124,6 +128,8 @@ class EventPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->viewTemplates($user));
     }
+
+    // ==================== view template events ====================
 
     #[Test]
     public function it_allows_view_for_template_event_with_manage_raid_plans_permission(): void
@@ -151,6 +157,8 @@ class EventPolicyTest extends TestCase
         $this->assertFalse($this->policy->view(null, $event));
     }
 
+    // ==================== create ====================
+
     #[Test]
     public function it_allows_create_with_manage_raid_plans_permission(): void
     {
@@ -166,6 +174,8 @@ class EventPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->create($user));
     }
+
+    // ==================== update ====================
 
     #[Test]
     public function it_allows_update_with_manage_raid_plans_permission(): void
@@ -193,6 +203,8 @@ class EventPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->update($user, $event));
     }
+
+    // ==================== delete ====================
 
     #[Test]
     public function it_allows_delete_for_template_with_manage_raid_plans_permission(): void

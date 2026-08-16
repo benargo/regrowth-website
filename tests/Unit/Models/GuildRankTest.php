@@ -57,6 +57,8 @@ class GuildRankTest extends ModelTestCase
         $this->assertTrue($model->getIncrementing());
     }
 
+    // ==================== persistence ====================
+
     #[Test]
     public function it_can_create_a_guild_rank(): void
     {
@@ -84,6 +86,8 @@ class GuildRankTest extends ModelTestCase
         $this->assertSame('Officer', $guildRank->name);
     }
 
+    // ==================== count attendance ====================
+
     #[Test]
     public function count_attendance_defaults_to_true(): void
     {
@@ -103,6 +107,8 @@ class GuildRankTest extends ModelTestCase
 
         $this->assertFalse($guildRank->count_attendance);
     }
+
+    // ==================== position constraints ====================
 
     #[Test]
     public function it_enforces_unique_position_constraint(): void
@@ -132,6 +138,8 @@ class GuildRankTest extends ModelTestCase
         $this->assertNotNull($guildRank->created_at);
         $this->assertNotNull($guildRank->updated_at);
     }
+
+    // ==================== name casing ====================
 
     #[Test]
     public function it_converts_name_to_title_case(): void
@@ -166,6 +174,8 @@ class GuildRankTest extends ModelTestCase
         $this->assertSame('Senior Raider', $guildRank->name);
     }
 
+    // ==================== characters relationship ====================
+
     #[Test]
     public function characters_returns_has_many_relationship(): void
     {
@@ -193,6 +203,8 @@ class GuildRankTest extends ModelTestCase
 
         $this->assertCount(0, $guildRank->characters);
     }
+
+    // ==================== main characters relationship ====================
 
     #[Test]
     public function main_characters_returns_has_many_relationship(): void

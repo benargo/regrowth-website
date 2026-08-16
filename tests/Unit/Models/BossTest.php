@@ -55,6 +55,8 @@ class BossTest extends ModelTestCase
         ]);
     }
 
+    // ==================== persistence and factory ====================
+
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
@@ -105,6 +107,8 @@ class BossTest extends ModelTestCase
 
         $this->assertSame(5, $boss->encounter_order);
     }
+
+    // ==================== relationships ====================
 
     #[Test]
     public function it_belongs_to_a_raid(): void
@@ -169,6 +173,8 @@ class BossTest extends ModelTestCase
         $this->assertCount(2, $boss->comments);
     }
 
+    // ==================== media ====================
+
     #[Test]
     public function it_implements_has_media_interface(): void
     {
@@ -190,6 +196,8 @@ class BossTest extends ModelTestCase
         @unlink($testFile);
     }
 
+    // ==================== slug ====================
+
     #[Test]
     public function it_generates_slug_from_name(): void
     {
@@ -197,6 +205,8 @@ class BossTest extends ModelTestCase
 
         $this->assertSame('prince-malchezaar', $boss->slug);
     }
+
+    // ==================== assignments relationship ====================
 
     #[Test]
     public function it_has_many_assignments(): void

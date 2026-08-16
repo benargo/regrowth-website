@@ -61,6 +61,8 @@ class PlayableSpecializationTest extends ModelTestCase
         ]);
     }
 
+    // ==================== factory states ====================
+
     #[Test]
     public function factory_creates_valid_model(): void
     {
@@ -95,7 +97,7 @@ class PlayableSpecializationTest extends ModelTestCase
         $this->assertSame(PlayableSpecRole::damage, $specialisation->role);
     }
 
-    // playableClass
+    // ==================== playable class relationship ====================
 
     #[Test]
     public function playable_class_returns_belongs_to_relationship(): void
@@ -114,7 +116,7 @@ class PlayableSpecializationTest extends ModelTestCase
         $this->assertTrue($specialisation->playableClass->is($playableClass));
     }
 
-    // characters
+    // ==================== characters relationship ====================
 
     #[Test]
     public function characters_returns_belongs_to_many_relationship(): void

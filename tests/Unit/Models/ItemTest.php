@@ -70,6 +70,8 @@ class ItemTest extends ModelTestCase
         ]);
     }
 
+    // ==================== persistence and factory ====================
+
     #[Test]
     public function it_can_be_created_with_all_attributes(): void
     {
@@ -151,6 +153,8 @@ class ItemTest extends ModelTestCase
 
         $this->assertSame('Tank priority', $item->notes);
     }
+
+    // ==================== relationships ====================
 
     #[Test]
     public function it_belongs_to_a_boss(): void
@@ -261,6 +265,8 @@ class ItemTest extends ModelTestCase
         $this->assertSame($item->boss->raid_id, $item->raids->first()->id);
     }
 
+    // ==================== name, slug, wowhead url, and quality ====================
+
     #[Test]
     public function it_allows_null_name(): void
     {
@@ -333,6 +339,8 @@ class ItemTest extends ModelTestCase
 
         $this->assertSame(ItemQuality::RARE, $item->quality);
     }
+
+    // ==================== fill blizzard data and trash scope ====================
 
     #[Test]
     public function fill_blizzard_data_sets_name_and_blizzard_attributes(): void
@@ -419,6 +427,8 @@ class ItemTest extends ModelTestCase
         $this->assertTrue($trashItems->contains($trashItem));
         $this->assertFalse($trashItems->contains($bossItem));
     }
+
+    // ==================== media and commenting ====================
 
     #[Test]
     public function it_implements_media_library_contracts(): void

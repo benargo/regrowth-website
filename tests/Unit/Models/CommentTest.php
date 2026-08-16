@@ -109,6 +109,8 @@ class CommentTest extends ModelTestCase
         ]);
     }
 
+    // ==================== is_resolved ====================
+
     #[Test]
     public function it_casts_is_resolved_to_boolean(): void
     {
@@ -136,6 +138,8 @@ class CommentTest extends ModelTestCase
 
         $this->assertTrue($comment->is_resolved);
     }
+
+    // ==================== persistence and factory ====================
 
     #[Test]
     public function it_uses_soft_deletes(): void
@@ -205,6 +209,8 @@ class CommentTest extends ModelTestCase
         $this->assertNotEmpty($comment->body);
     }
 
+    // ==================== relationships ====================
+
     #[Test]
     public function it_belongs_to_a_commentable(): void
     {
@@ -237,6 +243,8 @@ class CommentTest extends ModelTestCase
         $this->assertRelation($comment, 'deletedBy', BelongsTo::class);
         $this->assertTrue($comment->deletedBy->is($deleter));
     }
+
+    // ==================== soft delete lifecycle ====================
 
     #[Test]
     public function it_can_be_soft_deleted(): void
@@ -288,6 +296,8 @@ class CommentTest extends ModelTestCase
         $this->assertTrue($trashedComment->deletedBy->is($deleter));
     }
 
+    // ==================== revisions ====================
+
     #[Test]
     public function it_has_many_revisions(): void
     {
@@ -311,6 +321,8 @@ class CommentTest extends ModelTestCase
             $comment->revisions()->orderBy('id')->pluck('id')->all()
         );
     }
+
+    // ==================== parent and reply threading ====================
 
     #[Test]
     public function it_has_no_parent_by_default(): void
@@ -385,6 +397,8 @@ class CommentTest extends ModelTestCase
         $this->assertSoftDeleted('comments', ['id' => $root->id]);
         $this->assertDatabaseHas('comments', ['id' => $reply->id, 'deleted_at' => null]);
     }
+
+    // ==================== listable roots scope ====================
 
     #[Test]
     public function listable_roots_includes_a_live_root(): void

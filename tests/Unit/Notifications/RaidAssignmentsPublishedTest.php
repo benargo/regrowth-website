@@ -32,10 +32,6 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->notifiable = new NotifiableChannel($channel);
     }
 
-    // -------------------------------------------------------------------------
-    // via()
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function it_routes_through_the_discord_driver(): void
     {
@@ -46,9 +42,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->assertContains(DiscordDriver::class, $notification->via($this->notifiable));
     }
 
-    // -------------------------------------------------------------------------
-    // ShouldBroadcast / broadcasting
-    // -------------------------------------------------------------------------
+    // ==================== broadcasting ====================
 
     #[Test]
     public function it_implements_should_broadcast(): void
@@ -111,9 +105,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->assertSame('AssignmentsPublished', (new RaidAssignmentsPublished($event))->broadcastType());
     }
 
-    // -------------------------------------------------------------------------
-    // toMessage() — embed structure
-    // -------------------------------------------------------------------------
+    // ==================== message embed ====================
 
     #[Test]
     public function it_builds_an_embed_with_the_correct_title(): void
@@ -155,10 +147,6 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->assertSame(route('raiding.plans.show', ['event' => $event->id]), $embed->url);
     }
 
-    // -------------------------------------------------------------------------
-    // toMessage() — color
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function it_uses_the_default_color_when_event_has_no_color(): void
     {
@@ -178,10 +166,6 @@ class RaidAssignmentsPublishedTest extends TestCase
 
         $this->assertSame(0x8B7ED0, $embed->color);
     }
-
-    // -------------------------------------------------------------------------
-    // toMessage() — footer
-    // -------------------------------------------------------------------------
 
     #[Test]
     public function it_omits_the_footer_when_no_sender_is_set(): void
@@ -204,10 +188,6 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->assertNotNull($embed->footer);
         $this->assertStringContainsString('Illidan', $embed->footer->text);
     }
-
-    // -------------------------------------------------------------------------
-    // toMessage() — image
-    // -------------------------------------------------------------------------
 
     #[Test]
     public function it_includes_the_blueprint_image_from_storage_when_available(): void
@@ -238,9 +218,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->assertStringContainsString('assignments_blueprint', $embed->image->url);
     }
 
-    // -------------------------------------------------------------------------
-    // toDatabase()
-    // -------------------------------------------------------------------------
+    // ==================== database payload ====================
 
     #[Test]
     public function it_returns_the_correct_database_payload_structure(): void
@@ -266,9 +244,7 @@ class RaidAssignmentsPublishedTest extends TestCase
         $this->assertSame($user->id, $data['created_by_user_id']);
     }
 
-    // -------------------------------------------------------------------------
-    // Serialization (for queue)
-    // -------------------------------------------------------------------------
+    // ==================== queue serialization ====================
 
     #[Test]
     public function it_can_be_serialized_for_the_queue(): void

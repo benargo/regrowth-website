@@ -59,6 +59,8 @@ class SpellTest extends ModelTestCase
         $this->assertSame(AffectType::class, $model->getCasts()['type']);
     }
 
+    // ==================== persistence ====================
+
     #[Test]
     public function it_can_be_created_with_factory(): void
     {

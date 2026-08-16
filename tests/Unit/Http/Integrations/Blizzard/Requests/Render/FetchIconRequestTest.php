@@ -82,6 +82,8 @@ class FetchIconRequestTest extends TestCase
         );
     }
 
+    // ==================== invalid urls ====================
+
     #[Group('error-handling')]
     #[Test]
     public function it_rejects_non_blizzard_hosts(): void
@@ -108,6 +110,8 @@ class FetchIconRequestTest extends TestCase
 
         new FetchIconRequest('https://render.worldofwarcraft.com/');
     }
+
+    // ==================== sending through connector ====================
 
     #[Test]
     public function it_sends_through_render_connector_to_the_given_url(): void
@@ -145,6 +149,8 @@ class FetchIconRequestTest extends TestCase
             $mock->getLastPendingRequest()->getUrl(),
         );
     }
+
+    // ==================== building endpoint from icon name ====================
 
     #[Test]
     public function it_builds_an_endpoint_from_an_icon_name_using_the_connectors_region(): void

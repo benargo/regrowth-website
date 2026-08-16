@@ -57,6 +57,8 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertNotNull($message->embeds[0]->timestamp);
     }
 
+    // ==================== replies field ====================
+
     #[Test]
     public function it_omits_the_replies_field_when_reply_count_is_zero(): void
     {
@@ -85,6 +87,8 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertSame('3', $fields[0]->value);
         $this->assertTrue($fields[0]->inline);
     }
+
+    // ==================== url and sender ====================
 
     #[Test]
     public function it_generates_url_with_slug_path_segment(): void
@@ -120,6 +124,8 @@ class NewLootCouncilCommentTest extends TestCase
 
         $this->assertTrue($notification->sender()->is($comment->user));
     }
+
+    // ==================== database payload and queue serialization ====================
 
     #[Test]
     public function it_returns_correct_database_payload(): void
@@ -161,6 +167,8 @@ class NewLootCouncilCommentTest extends TestCase
         );
     }
 
+    // ==================== should send ====================
+
     #[Test]
     public function it_should_send_when_commentable_is_an_item(): void
     {
@@ -197,6 +205,8 @@ class NewLootCouncilCommentTest extends TestCase
 
         (new NewLootCouncilComment($comment))->toMessage();
     }
+
+    // ==================== helpers ====================
 
     private function makeNotifiable(): NotifiableChannel
     {
