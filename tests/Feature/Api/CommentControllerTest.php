@@ -933,7 +933,7 @@ class CommentControllerTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
-        return Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        return Item::factory()->fromBoss($boss)->create();
     }
 
     /**

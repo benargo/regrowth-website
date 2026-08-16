@@ -203,7 +203,10 @@ class RaidResourceTest extends TestCase
     public function it_returns_trash_comments_count_when_counted(): void
     {
         $raid = Raid::factory()->create();
-        $raid->loadCount(['comments as trash_comments_count' => fn ($q) => $q->whereNull('items.boss_id')]);
+        $raid->trash_comments_count = Comment::query()
+            ->where('commentable_type', Item::class)
+            ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
+            ->count();
 
         $array = (new RaidResource($raid))->resolve(new Request);
 
@@ -227,13 +230,16 @@ class RaidResourceTest extends TestCase
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
-        $trashItem = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
-        $bossItem = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $trashItem = Item::factory()->trashDrop()->withRaid($raid)->create();
+        $bossItem = Item::factory()->fromBoss($boss)->create();
 
         Comment::factory()->count(3)->create(['commentable_id' => (string) $trashItem->id, 'commentable_type' => Item::class]);
         Comment::factory()->count(5)->create(['commentable_id' => (string) $bossItem->id, 'commentable_type' => Item::class]);
 
-        $raid->loadCount(['comments as trash_comments_count' => fn ($q) => $q->whereNull('items.boss_id')]);
+        $raid->trash_comments_count = Comment::query()
+            ->where('commentable_type', Item::class)
+            ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
+            ->count();
 
         $array = (new RaidResource($raid))->resolve(new Request);
 

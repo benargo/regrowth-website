@@ -34,11 +34,11 @@ class SearchController extends Controller
             function () use ($query, $raidId, $request): array {
                 $matches = Item::query()
                     ->matchingName($query)
-                    ->when($raidId, fn ($q, $id) => $q->where('raid_id', $id));
+                    ->when($raidId, fn ($q, $id) => $q->whereHas('raids', fn ($r) => $r->where('raids.id', $id)));
 
                 $items = (clone $matches)
                     ->orderBy('name')
-                    ->with(['raid', 'boss', 'media'])
+                    ->with(['raids', 'boss', 'media'])
                     ->withCount('comments')
                     ->take(self::LIMIT)
                     ->get();

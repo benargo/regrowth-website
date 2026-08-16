@@ -25,9 +25,9 @@ class SearchController extends Controller
 
         $results = Item::query()
             ->matchingName($query)
-            ->when($raidId, fn ($q, $id) => $q->where('raid_id', $id))
+            ->when($raidId, fn ($q, $id) => $q->whereHas('raids', fn ($r) => $r->where('raids.id', $id)))
             ->orderBy('name')
-            ->with(['raid', 'boss', 'media', 'priorities'])
+            ->with(['raids', 'boss', 'media', 'priorities'])
             ->withCount('comments')
             ->paginate(self::PER_PAGE)
             ->withQueryString();

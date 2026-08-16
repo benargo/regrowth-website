@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Comment;
 use App\Models\CommentReaction;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
+use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -131,7 +133,7 @@ class ShowItemPageTest extends TestCase
             ->component('Loot/Items/Show')
             ->has('item.data', fn (Assert $prop) => $prop
                 ->where('id', $item->id)
-                ->has('raid')
+                ->has('raids')
                 ->has('boss')
                 ->has('inventory_type')
                 ->has('item_class')
@@ -141,7 +143,7 @@ class ShowItemPageTest extends TestCase
             ->has('comments.data')
             ->has('comments.links')
             ->has('comments.meta')
-            ->missing('raid')
+            ->missing('raids')
             ->missing('boss')
         );
     }
@@ -209,7 +211,7 @@ class ShowItemPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Show')
             ->where('item.data.boss', null)
-            ->has('item.data.raid')
+            ->has('item.data.raids')
         );
     }
 
@@ -464,6 +466,79 @@ class ShowItemPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('comments.data.0.permissions.resolve', false)
         );
+    }
+
+    #[Test]
+    public function a_cross_raid_item_exposes_only_one_raid_to_the_page(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+
+        $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('item.data.raids', 1)
+            );
+    }
+
+    #[Test]
+    public function show_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+
+        $this->withSession([SharesOriginRaidSession::SESSION_KEY => $raids[1]->id])
+            ->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $raids[1]->id)
+            );
+    }
+
+    #[Test]
+    public function show_falls_back_to_the_first_raid_when_the_remembered_raid_does_not_apply(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $otherRaid = Raid::factory()->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+        $firstRaidId = $raids->sortBy('id')->first()->id;
+
+        $this->withSession([SharesOriginRaidSession::SESSION_KEY => $otherRaid->id])
+            ->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $firstRaidId)
+            );
+    }
+
+    #[Test]
+    public function show_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+        $firstRaidId = $raids->sortBy('id')->first()->id;
+
+        $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('item.data.raids.0.id', $firstRaidId)
+            );
     }
 
     protected function createTestItem(): Item

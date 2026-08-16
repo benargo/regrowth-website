@@ -23,7 +23,7 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['raid_id', 'boss_id', 'name', 'quality', 'group', 'notes'])]
+#[Fillable(['boss_id', 'name', 'quality', 'group', 'notes'])]
 #[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
 class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
 {
@@ -120,13 +120,17 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     }
 
     /**
-     * Get the raid that this item drops from.
+     * Get the raids that this item drops in.
      *
-     * @return BelongsTo<Raid, $this>
+     * Trash items can drop in more than one instance, so the link is a pivot
+     * rather than a foreign key on the item itself.
+     *
+     * @return BelongsToMany<Raid, $this>
      */
-    public function raid(): BelongsTo
+    public function raids(): BelongsToMany
     {
-        return $this->belongsTo(Raid::class);
+        return $this->belongsToMany(Raid::class, 'pivot_items_raids', 'item_id', 'raid_id')
+            ->withTimestamps();
     }
 
     /**
@@ -140,6 +144,17 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
             ->using(ItemPriority::class)
             ->withPivot('weight')
             ->withTimestamps();
+    }
+
+    // ============ Trash ============
+
+    /**
+     * Constrain the query to trash items (items without a boss).
+     */
+    #[Scope]
+    protected function trash(Builder $query): void
+    {
+        $query->whereNull('boss_id');
     }
 
     // ============ Search ============

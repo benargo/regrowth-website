@@ -29,10 +29,7 @@ class SearchPageFullTextTest extends FullTextTestCase
             $factory = $factory->withName($name);
         }
 
-        return $factory->create([
-            'raid_id' => $raid->id,
-            'boss_id' => $boss->id,
-        ]);
+        return $factory->fromBoss($boss)->create();
     }
 
     /**
@@ -48,10 +45,7 @@ class SearchPageFullTextTest extends FullTextTestCase
             $factory = $factory->withName($name);
         }
 
-        return $factory->create([
-            'raid_id' => $raid->id,
-            'boss_id' => $boss->id,
-        ]);
+        return $factory->fromBoss($boss)->create();
     }
 
     #[Test]

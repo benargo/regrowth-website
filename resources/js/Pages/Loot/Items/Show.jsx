@@ -10,6 +10,7 @@ import { Can } from "@/Components/Authorizable";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import ToolNav from "@/Components/ToolNav";
 import PageContainer from "@/Components/PageContainer";
+import getItemRaid from "@/Helpers/GetItemRaid";
 
 function PriorityItem({ priority }) {
     return (
@@ -75,7 +76,7 @@ function PriorityDisplay({ priorities }) {
 }
 
 export default function Show({ item, comments, replies }) {
-    const raid = item.data.raid;
+    const raid = getItemRaid(item);
     const [notes, setNotes] = useState(item.data.notes);
     const [priorities, setPriorities] = useState(item.data.priorities);
 

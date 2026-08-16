@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\RemembersCurrentRaid;
 use App\Http\Resources\ItemResource;
 use App\Http\Resources\RaidResource;
 use App\Models\Boss;
@@ -12,6 +13,7 @@ use App\Models\ItemPriority;
 use App\Models\Raid;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -42,6 +44,7 @@ class LootBiasToolController extends Controller
         ]);
     }
 
+    #[Middleware(RemembersCurrentRaid::class)]
     public function showRaid(Raid $raid, Request $request, ?string $name = null): Response|RedirectResponse
     {
         if (! $name) {
@@ -53,7 +56,10 @@ class LootBiasToolController extends Controller
         }
 
         $raid->loadExists('trashItems');
-        $raid->loadCount(['comments as trash_comments_count' => fn ($q) => $q->whereNull('items.boss_id')]);
+        $raid->trash_comments_count = Comment::query()
+            ->where('commentable_type', Item::class)
+            ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
+            ->count();
         $raid->load(['bosses' => fn ($q) => $q->orderBy('encounter_order')->withCount('comments')]);
 
         return Inertia::render('Loot/Raids/Show', [
