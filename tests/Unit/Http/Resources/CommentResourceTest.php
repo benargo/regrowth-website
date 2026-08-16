@@ -43,6 +43,8 @@ class CommentResourceTest extends TestCase
         $this->assertSame($comment->id, $array['id']);
     }
 
+    // ==================== body ====================
+
     #[Test]
     public function it_returns_body(): void
     {
@@ -53,6 +55,8 @@ class CommentResourceTest extends TestCase
 
         $this->assertSame('This is a test comment', $array['body']);
     }
+
+    // ==================== commentable relation ====================
 
     #[Test]
     public function it_omits_commentable_when_not_loaded(): void
@@ -105,6 +109,8 @@ class CommentResourceTest extends TestCase
         $this->assertNull($array['commentable']);
     }
 
+    // ==================== user relation ====================
+
     #[Test]
     public function it_omits_user_when_not_loaded(): void
     {
@@ -132,6 +138,8 @@ class CommentResourceTest extends TestCase
         $this->assertSame('testuser', $array['user']['username']);
     }
 
+    // ==================== timestamps ====================
+
     #[Test]
     public function it_returns_created_at_timestamp(): void
     {
@@ -154,6 +162,8 @@ class CommentResourceTest extends TestCase
         $this->assertEquals($comment->updated_at, $array['updated_at']);
     }
 
+    // ==================== resolved state ====================
+
     #[Test]
     public function it_returns_is_resolved_false_by_default(): void
     {
@@ -175,6 +185,8 @@ class CommentResourceTest extends TestCase
 
         $this->assertTrue($array['is_resolved']);
     }
+
+    // ==================== edit and delete permissions ====================
 
     #[Test]
     #[Group('authorization')]
@@ -299,6 +311,8 @@ class CommentResourceTest extends TestCase
         $this->assertFalse($array['permissions']['delete']);
     }
 
+    // ==================== resolve permission ====================
+
     #[Test]
     #[Group('authorization')]
     public function it_returns_can_resolve_false_for_guest_user(): void
@@ -343,6 +357,8 @@ class CommentResourceTest extends TestCase
         $this->assertTrue($array['permissions']['resolve']);
     }
 
+    // ==================== permissions structure and keys ====================
+
     #[Test]
     #[Group('resource')]
     public function it_returns_permissions_structure(): void
@@ -383,6 +399,8 @@ class CommentResourceTest extends TestCase
         $this->assertArrayHasKey('updated_at', $array);
         $this->assertArrayHasKey('permissions', $array);
     }
+
+    // ==================== reactions ====================
 
     #[Test]
     public function it_omits_reactions_when_not_loaded(): void
@@ -449,6 +467,8 @@ class CommentResourceTest extends TestCase
         $this->assertCount(2, $array['reactions']);
     }
 
+    // ==================== react permission ====================
+
     #[Test]
     #[Group('authorization')]
     public function it_returns_can_react_false_for_guest_user(): void
@@ -505,6 +525,8 @@ class CommentResourceTest extends TestCase
         $this->assertTrue($array['permissions']['react']);
     }
 
+    // ==================== permissions structure includes react and reply ====================
+
     #[Test]
     #[Group('resource')]
     public function it_returns_permissions_structure_includes_react(): void
@@ -531,6 +553,8 @@ class CommentResourceTest extends TestCase
         $this->assertArrayHasKey('reply', $array['permissions']);
     }
 
+    // ==================== parent id ====================
+
     #[Test]
     public function it_returns_a_null_parent_id_for_a_root(): void
     {
@@ -553,6 +577,8 @@ class CommentResourceTest extends TestCase
 
         $this->assertEquals($root->id, $array['parent_id']);
     }
+
+    // ==================== replies and replies count ====================
 
     #[Test]
     public function it_returns_the_replies_count_from_the_loaded_count(): void
@@ -609,6 +635,8 @@ class CommentResourceTest extends TestCase
         );
     }
 
+    // ==================== soft deletion ====================
+
     #[Test]
     public function it_reports_a_live_comment_as_not_deleted(): void
     {
@@ -663,6 +691,8 @@ class CommentResourceTest extends TestCase
         $this->assertNotNull($array['created_at']);
     }
 
+    // ==================== reply permission ====================
+
     #[Test]
     #[Group('authorization')]
     public function it_returns_can_reply_true_for_a_permitted_user(): void
@@ -700,6 +730,8 @@ class CommentResourceTest extends TestCase
 
         $this->assertFalse($array['permissions']['reply']);
     }
+
+    // ==================== helpers ====================
 
     private function mockCacheService(): void
     {

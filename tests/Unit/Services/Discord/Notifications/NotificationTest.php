@@ -89,10 +89,6 @@ class NotificationTest extends TestCase
         $this->notifiable = new NotifiableChannel($channel);
     }
 
-    // -------------------------------------------------------------------------
-    // via()
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function it_routes_through_the_discord_driver(): void
     {
@@ -101,9 +97,7 @@ class NotificationTest extends TestCase
         $this->assertContains(Driver::class, $notification->via($this->notifiable));
     }
 
-    // -------------------------------------------------------------------------
-    // withRelatedModels()
-    // -------------------------------------------------------------------------
+    // ==================== withRelatedModels ====================
 
     #[Test]
     public function it_returns_self_from_with_related_models(): void
@@ -126,9 +120,7 @@ class NotificationTest extends TestCase
         $this->assertSame($notification, $result);
     }
 
-    // -------------------------------------------------------------------------
-    // mapRelatedModels()
-    // -------------------------------------------------------------------------
+    // ==================== mapRelatedModels ====================
 
     #[Test]
     public function it_returns_empty_array_when_no_related_models_set(): void
@@ -231,9 +223,7 @@ class NotificationTest extends TestCase
         ], $result);
     }
 
-    // -------------------------------------------------------------------------
-    // hydrate()
-    // -------------------------------------------------------------------------
+    // ==================== hydrate ====================
 
     #[Test]
     public function it_hydrates_a_model_from_a_reference(): void
@@ -271,9 +261,7 @@ class NotificationTest extends TestCase
         $this->assertNull($model);
     }
 
-    // -------------------------------------------------------------------------
-    // hydrateOrFail()
-    // -------------------------------------------------------------------------
+    // ==================== hydrateOrFail ====================
 
     #[Test]
     public function it_hydrates_or_fail_returns_the_model_when_present(): void
@@ -314,9 +302,7 @@ class NotificationTest extends TestCase
         $notification->hydrateOrFailPublic(null);
     }
 
-    // -------------------------------------------------------------------------
-    // relatedModel()
-    // -------------------------------------------------------------------------
+    // ==================== relatedModel ====================
 
     #[Test]
     public function it_returns_the_first_related_reference_for_a_given_type(): void
@@ -349,9 +335,7 @@ class NotificationTest extends TestCase
         $this->assertNull($notification->relatedModelPublic(StubModelA::class));
     }
 
-    // -------------------------------------------------------------------------
-    // withSender()
-    // -------------------------------------------------------------------------
+    // ==================== withSender ====================
 
     #[Test]
     public function it_returns_self_from_with_sender(): void
@@ -364,9 +348,7 @@ class NotificationTest extends TestCase
         $this->assertSame($notification, $result);
     }
 
-    // -------------------------------------------------------------------------
-    // sender()
-    // -------------------------------------------------------------------------
+    // ==================== sender ====================
 
     #[Test]
     public function it_returns_null_sender_by_default(): void
@@ -386,9 +368,7 @@ class NotificationTest extends TestCase
         $this->assertSame($user, $notification->sender());
     }
 
-    // -------------------------------------------------------------------------
-    // ShouldQueue / Queueable
-    // -------------------------------------------------------------------------
+    // ==================== shouldQueue contract ====================
 
     #[Test]
     public function it_implements_should_queue(): void

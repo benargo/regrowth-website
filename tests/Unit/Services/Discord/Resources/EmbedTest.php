@@ -20,10 +20,6 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class EmbedTest extends TestCase
 {
-    // -------------------------------------------------------------------------
-    // EmbedFooter
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function embed_footer_can_be_constructed_directly(): void
     {
@@ -67,9 +63,7 @@ class EmbedTest extends TestCase
         $this->assertAllPropertiesReadonly(EmbedFooter::from(['text' => 'x']));
     }
 
-    // -------------------------------------------------------------------------
-    // EmbedMedia
-    // -------------------------------------------------------------------------
+    // ==================== embedMedia ====================
 
     #[Test]
     public function embed_media_can_be_constructed_directly(): void
@@ -144,9 +138,7 @@ class EmbedTest extends TestCase
         $this->assertAllPropertiesReadonly(EmbedMedia::from(['url' => 'https://example.com/img.png']));
     }
 
-    // -------------------------------------------------------------------------
-    // EmbedVideo
-    // -------------------------------------------------------------------------
+    // ==================== embedVideo ====================
 
     #[Test]
     public function embed_video_can_be_constructed_directly(): void
@@ -222,9 +214,7 @@ class EmbedTest extends TestCase
         $this->assertAllPropertiesReadonly(EmbedVideo::from([]));
     }
 
-    // -------------------------------------------------------------------------
-    // EmbedProvider
-    // -------------------------------------------------------------------------
+    // ==================== embedProvider ====================
 
     #[Test]
     public function embed_provider_can_be_constructed_directly(): void
@@ -265,9 +255,7 @@ class EmbedTest extends TestCase
         $this->assertAllPropertiesReadonly(EmbedProvider::from([]));
     }
 
-    // -------------------------------------------------------------------------
-    // EmbedAuthor
-    // -------------------------------------------------------------------------
+    // ==================== embedAuthor ====================
 
     #[Test]
     public function embed_author_can_be_constructed_directly(): void
@@ -317,9 +305,7 @@ class EmbedTest extends TestCase
         $this->assertAllPropertiesReadonly(EmbedAuthor::from(['name' => 'x']));
     }
 
-    // -------------------------------------------------------------------------
-    // EmbedField
-    // -------------------------------------------------------------------------
+    // ==================== embedField ====================
 
     #[Test]
     public function embed_field_can_be_constructed_directly(): void
@@ -359,9 +345,7 @@ class EmbedTest extends TestCase
         $this->assertAllPropertiesReadonly(EmbedField::from(['name' => 'x', 'value' => 'y']));
     }
 
-    // -------------------------------------------------------------------------
-    // Embed (main)
-    // -------------------------------------------------------------------------
+    // ==================== embed main construction and hydration ====================
 
     #[Test]
     public function embed_can_be_constructed_directly(): void
@@ -524,9 +508,7 @@ class EmbedTest extends TestCase
         $this->assertAllPropertiesReadonly(Embed::from([]));
     }
 
-    // -------------------------------------------------------------------------
-    // Helper
-    // -------------------------------------------------------------------------
+    // ==================== helpers ====================
 
     private function assertAllPropertiesReadonly(object $instance): void
     {

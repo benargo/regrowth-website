@@ -42,6 +42,8 @@ class ReportResourceTest extends TestCase
         $this->assertArrayHasKey('linked_reports', $array);
     }
 
+    // ==================== linked reports count ====================
+
     #[Test]
     public function it_includes_linked_reports_count_when_counted(): void
     {
@@ -58,6 +60,8 @@ class ReportResourceTest extends TestCase
         $this->assertSame(1, $array['linked_reports_count']);
     }
 
+    // ==================== scalar fields ====================
+
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
@@ -72,6 +76,8 @@ class ReportResourceTest extends TestCase
         $this->assertSame($report->end_time->toIso8601String(), $array['end_time']);
         $this->assertSame($report->duration, $array['duration']);
     }
+
+    // ==================== zone ====================
 
     #[Test]
     public function it_returns_zone_as_array(): void
@@ -92,6 +98,8 @@ class ReportResourceTest extends TestCase
 
         $this->assertSame(['id' => 0, 'name' => 'No zone'], $array['zone']);
     }
+
+    // ==================== guild tag relation ====================
 
     #[Test]
     public function it_omits_guild_tag_when_not_loaded(): void
@@ -116,6 +124,8 @@ class ReportResourceTest extends TestCase
         $this->assertSame($guildTag->id, $array['guild_tag']['id']);
         $this->assertSame($guildTag->name, $array['guild_tag']['name']);
     }
+
+    // ==================== characters relation ====================
 
     #[Test]
     public function it_omits_characters_when_not_loaded(): void
@@ -190,6 +200,8 @@ class ReportResourceTest extends TestCase
         $this->assertSame('Officer', $rankData['name']);
     }
 
+    // ==================== linked reports relation ====================
+
     #[Test]
     public function it_omits_linked_reports_when_not_loaded(): void
     {
@@ -220,6 +232,8 @@ class ReportResourceTest extends TestCase
         $this->assertArrayHasKey('zone', $linked);
         $this->assertArrayHasKey('pivot', $linked);
     }
+
+    // ==================== character playable class ====================
 
     #[Test]
     public function it_returns_playable_class_for_characters_when_loaded(): void
@@ -269,6 +283,8 @@ class ReportResourceTest extends TestCase
         $this->assertArrayHasKey('icon_url', $characterData['playable_class']);
         $this->assertArrayHasKey('slug', $characterData['playable_class']);
     }
+
+    // ==================== linked report pivot creator ====================
 
     #[Test]
     public function it_returns_linked_report_pivot_with_creator(): void

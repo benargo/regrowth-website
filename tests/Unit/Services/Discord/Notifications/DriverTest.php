@@ -63,10 +63,6 @@ class DriverTest extends TestCase
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // send — no existing message (create path)
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function it_creates_a_new_discord_message_when_no_updates_notification_exists(): void
     {
@@ -96,9 +92,7 @@ class DriverTest extends TestCase
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // send — existing message found (edit path)
-    // -------------------------------------------------------------------------
+    // ==================== send edits an existing message ====================
 
     #[Test]
     public function it_edits_the_existing_discord_message_when_a_message_id_is_known(): void
@@ -268,9 +262,7 @@ class DriverTest extends TestCase
         $this->driver->send($this->notifiable, $notification);
     }
 
-    // -------------------------------------------------------------------------
-    // send — existing message deleted (fallback create path)
-    // -------------------------------------------------------------------------
+    // ==================== send falls back to create when the message is gone ====================
 
     #[Test]
     public function it_deletes_the_stale_db_record_and_creates_a_new_message_when_the_discord_message_no_longer_exists(): void
@@ -356,9 +348,7 @@ class DriverTest extends TestCase
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // send — related models synced
-    // -------------------------------------------------------------------------
+    // ==================== related models sync ====================
 
     #[Test]
     public function it_syncs_related_models_when_creating_a_new_notification(): void
@@ -520,6 +510,8 @@ class DriverTest extends TestCase
             'model_id' => (string) $user->id,
         ]);
     }
+
+    // ==================== error propagation ====================
 
     #[Group('error-handling')]
     #[Test]

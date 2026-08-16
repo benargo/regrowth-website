@@ -117,6 +117,8 @@ class GuildTest extends TestCase
         });
     }
 
+    // ==================== guild not found ====================
+
     #[Group('error-handling')]
     #[Test]
     public function constructor_throws_exception_when_guild_not_found(): void
@@ -152,6 +154,8 @@ class GuildTest extends TestCase
         new Guild($config, $auth);
     }
 
+    // ==================== response caching ====================
+
     #[Test]
     public function constructor_caches_graphql_response(): void
     {
@@ -171,6 +175,8 @@ class GuildTest extends TestCase
 
         new Guild($config, $auth);
     }
+
+    // ==================== property access ====================
 
     #[Test]
     public function id_property_returns_guild_id(): void
@@ -209,6 +215,8 @@ class GuildTest extends TestCase
         $this->assertEquals('Alliance', $guild->faction->name);
     }
 
+    // ==================== invalid property access ====================
+
     #[Group('error-handling')]
     #[Test]
     public function accessing_invalid_property_throws_exception(): void
@@ -220,6 +228,8 @@ class GuildTest extends TestCase
 
         $guild->invalid;
     }
+
+    // ==================== container resolution ====================
 
     #[Test]
     public function guild_service_can_be_resolved_from_container(): void
@@ -234,6 +244,8 @@ class GuildTest extends TestCase
 
         $this->assertInstanceOf(Guild::class, $service);
     }
+
+    // ==================== toArray ====================
 
     #[Test]
     public function to_array_returns_array_with_all_properties(): void

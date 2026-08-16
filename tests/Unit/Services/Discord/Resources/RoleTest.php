@@ -15,10 +15,6 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class RoleTest extends TestCase
 {
-    // ---------------------------------------------------------------------------
-    // RoleColors
-    // ---------------------------------------------------------------------------
-
     #[Test]
     public function role_colors_can_be_constructed_directly(): void
     {
@@ -88,9 +84,7 @@ class RoleTest extends TestCase
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // RoleTags
-    // ---------------------------------------------------------------------------
+    // ==================== roleTags ====================
 
     #[Test]
     public function role_tags_can_be_constructed_directly(): void
@@ -189,9 +183,7 @@ class RoleTest extends TestCase
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // Role
-    // ---------------------------------------------------------------------------
+    // ==================== role construction ====================
 
     #[Test]
     public function role_can_be_constructed_directly(): void

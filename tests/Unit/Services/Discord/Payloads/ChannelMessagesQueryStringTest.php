@@ -30,6 +30,8 @@ class ChannelMessagesQueryStringTest extends TestCase
         $this->assertSame(50, $query->limit);
     }
 
+    // ==================== validateAndCreate defaults ====================
+
     #[Test]
     public function it_creates_with_no_parameters(): void
     {
@@ -71,6 +73,8 @@ class ChannelMessagesQueryStringTest extends TestCase
         $this->assertSame('123456789', $payload->after);
     }
 
+    // ==================== limit ====================
+
     #[Test]
     public function it_accepts_a_custom_limit(): void
     {
@@ -78,6 +82,8 @@ class ChannelMessagesQueryStringTest extends TestCase
 
         $this->assertSame(100, $payload->limit);
     }
+
+    // ==================== mutually exclusive cursor validation ====================
 
     #[Group('error-handling')]
     #[Test]
@@ -144,6 +150,8 @@ class ChannelMessagesQueryStringTest extends TestCase
         }
     }
 
+    // ==================== message resource flattening to id ====================
+
     #[Test]
     public function it_accepts_a_message_resource_for_before_and_flattens_to_id(): void
     {
@@ -181,6 +189,8 @@ class ChannelMessagesQueryStringTest extends TestCase
 
         $this->assertSame('12345', $data->toArray()['before']);
     }
+
+    // ==================== helpers ====================
 
     private function makeMessage(string $id): Message
     {

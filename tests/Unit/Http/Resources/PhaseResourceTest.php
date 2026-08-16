@@ -28,6 +28,8 @@ class PhaseResourceTest extends TestCase
         $this->assertSame($phase->id, $array['id']);
     }
 
+    // ==================== description ====================
+
     #[Test]
     public function it_returns_description(): void
     {
@@ -38,6 +40,8 @@ class PhaseResourceTest extends TestCase
 
         $this->assertSame('Phase 1: Karazhan', $array['description']);
     }
+
+    // ==================== start date ====================
 
     #[Test]
     public function it_returns_start_date_in_iso8601_format_when_present(): void
@@ -61,6 +65,8 @@ class PhaseResourceTest extends TestCase
 
         $this->assertNull($array['start_date']);
     }
+
+    // ==================== has started ====================
 
     #[Test]
     public function it_returns_has_started_true_when_phase_has_started(): void
@@ -95,6 +101,8 @@ class PhaseResourceTest extends TestCase
         $this->assertFalse($array['has_started']);
     }
 
+    // ==================== raids relation ====================
+
     #[Test]
     public function it_includes_raids_when_loaded(): void
     {
@@ -120,6 +128,8 @@ class PhaseResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('raids', $array);
     }
+
+    // ==================== bosses relation ====================
 
     #[Test]
     public function it_includes_bosses_when_loaded(): void
@@ -148,6 +158,8 @@ class PhaseResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('bosses', $array);
     }
+
+    // ==================== full resource shape ====================
 
     #[Test]
     public function it_returns_all_expected_keys(): void

@@ -127,6 +127,8 @@ class GuildTagsTest extends TestCase
         });
     }
 
+    // ==================== guild tag model persistence ====================
+
     #[Test]
     public function constructor_creates_guild_tag_models(): void
     {
@@ -156,6 +158,8 @@ class GuildTagsTest extends TestCase
         $this->assertEmpty($guildTags->toArray());
     }
 
+    // ==================== response caching ====================
+
     #[Test]
     public function constructor_caches_graphql_response(): void
     {
@@ -179,6 +183,8 @@ class GuildTagsTest extends TestCase
         new GuildTags($config, $auth);
     }
 
+    // ==================== find ====================
+
     #[Test]
     public function find_returns_guild_tag_by_id(): void
     {
@@ -200,6 +206,8 @@ class GuildTagsTest extends TestCase
 
         $this->assertNull($tag);
     }
+
+    // ==================== toArray ====================
 
     #[Test]
     public function to_array_returns_all_tags(): void
@@ -226,6 +234,8 @@ class GuildTagsTest extends TestCase
             $this->assertInstanceOf(GuildTag::class, $tag);
         }
     }
+
+    // ==================== toCollection ====================
 
     #[Test]
     public function to_collection_returns_collection_instance(): void
@@ -261,6 +271,8 @@ class GuildTagsTest extends TestCase
             $this->assertInstanceOf(GuildTag::class, $tag);
         });
     }
+
+    // ==================== normalizeGuildTagIDs ====================
 
     #[Test]
     public function normalize_guild_tag_ids_returns_empty_array_for_null(): void
@@ -300,6 +312,8 @@ class GuildTagsTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    // ==================== container resolution ====================
 
     #[Test]
     public function guild_tags_service_can_be_resolved_from_container(): void

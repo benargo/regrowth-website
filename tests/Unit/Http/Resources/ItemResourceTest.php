@@ -41,6 +41,8 @@ class ItemResourceTest extends TestCase
         $this->assertSame('Thunderfury, Blessed Blade of the Windseeker', $array['name']);
     }
 
+    // ==================== slug ====================
+
     #[Test]
     public function it_returns_slug_from_model_name(): void
     {
@@ -50,6 +52,8 @@ class ItemResourceTest extends TestCase
 
         $this->assertSame('thunderfury-blessed-blade-of-the-windseeker', $array['slug']);
     }
+
+    // ==================== wowhead url ====================
 
     #[Test]
     public function it_returns_wowhead_url_with_item_name(): void
@@ -73,6 +77,8 @@ class ItemResourceTest extends TestCase
 
         $this->assertSame('https://www.wowhead.com/tbc/item=19019', $array['wowhead']['url']);
     }
+
+    // ==================== boss relation ====================
 
     #[Test]
     public function it_excludes_boss_when_not_loaded(): void
@@ -108,6 +114,8 @@ class ItemResourceTest extends TestCase
         $this->assertIsObject($array['boss']);
         $this->assertSame($boss->id, $array['boss']->id);
     }
+
+    // ==================== raids relation ====================
 
     #[Test]
     public function it_excludes_raids_when_not_loaded(): void
@@ -156,6 +164,8 @@ class ItemResourceTest extends TestCase
         $this->assertCount(0, $array['raids']);
     }
 
+    // ==================== group ====================
+
     #[Test]
     public function it_returns_group_when_set(): void
     {
@@ -176,6 +186,8 @@ class ItemResourceTest extends TestCase
         $this->assertArrayNotHasKey('group', $array);
     }
 
+    // ==================== notes ====================
+
     #[Test]
     public function it_returns_notes_when_set(): void
     {
@@ -195,6 +207,8 @@ class ItemResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('notes', $array);
     }
+
+    // ==================== has_notes via search request ====================
 
     #[Test]
     public function it_returns_has_notes_true_instead_of_notes_when_resolved_via_search_request(): void
@@ -217,6 +231,8 @@ class ItemResourceTest extends TestCase
         $this->assertFalse($array['has_notes']);
         $this->assertArrayNotHasKey('notes', $array);
     }
+
+    // ==================== item class, subclass, and inventory type ====================
 
     #[Test]
     public function it_returns_item_class_when_set_on_model(): void
@@ -281,6 +297,8 @@ class ItemResourceTest extends TestCase
         $this->assertArrayNotHasKey('inventory_type', $array);
     }
 
+    // ==================== quality ====================
+
     #[Test]
     public function it_returns_quality_from_model(): void
     {
@@ -300,6 +318,8 @@ class ItemResourceTest extends TestCase
 
         $this->assertSame('border-quality-epic', $array['quality_border_class']);
     }
+
+    // ==================== icon url ====================
 
     #[Test]
     public function it_returns_icon_url(): void
@@ -329,6 +349,8 @@ class ItemResourceTest extends TestCase
         $this->assertNull($array['icon']);
     }
 
+    // ==================== priorities relation ====================
+
     #[Test]
     public function it_includes_priorities_when_loaded(): void
     {
@@ -356,6 +378,8 @@ class ItemResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('priorities', $array);
     }
+
+    // ==================== full resource shape ====================
 
     #[Test]
     public function it_returns_all_expected_keys(): void

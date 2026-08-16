@@ -109,6 +109,8 @@ class WarcraftLogsServiceTest extends TestCase
         });
     }
 
+    // ==================== query variables and response ====================
+
     #[Test]
     public function query_includes_variables_when_provided(): void
     {
@@ -167,6 +169,8 @@ class WarcraftLogsServiceTest extends TestCase
 
         $this->assertEquals(['guild' => ['id' => 774848, 'name' => 'Test Guild']], $data);
     }
+
+    // ==================== graphQL errors ====================
 
     #[Group('error-handling')]
     #[Test]
@@ -251,6 +255,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertFalse($exception->hasErrorMatching('/not found/i'));
     }
 
+    // ==================== response caching ====================
+
     #[Test]
     public function query_caches_responses(): void
     {
@@ -289,6 +295,8 @@ class WarcraftLogsServiceTest extends TestCase
         $this->assertStringStartsWith('warcraftlogs:', $key1);
     }
 
+    // ==================== guild id resolution ====================
+
     #[Test]
     public function get_guild_id_returns_configured_value(): void
     {
@@ -310,6 +318,8 @@ class WarcraftLogsServiceTest extends TestCase
 
         $this->assertEquals(0, $service->publicGetGuildId());
     }
+
+    // ==================== rate limiting ====================
 
     #[Group('error-handling')]
     #[Test]
@@ -404,6 +414,8 @@ class WarcraftLogsServiceTest extends TestCase
         $service->publicQuery('query { guild { id } }');
     }
 
+    // ==================== custom cache ttl ====================
+
     #[Test]
     public function custom_ttl_passed_to_query(): void
     {
@@ -426,6 +438,8 @@ class WarcraftLogsServiceTest extends TestCase
 
         $this->assertEquals(['guild' => ['id' => 774848]], $data);
     }
+
+    // ==================== rate limit header tracking ====================
 
     #[Test]
     public function rate_limit_headers_are_cached_after_successful_query(): void

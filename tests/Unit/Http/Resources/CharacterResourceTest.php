@@ -63,6 +63,8 @@ class CharacterResourceTest extends TestCase
         $this->assertFalse($array['is_loot_councillor']);
     }
 
+    // ==================== gender ====================
+
     #[Test]
     public function it_includes_gender_key(): void
     {
@@ -82,6 +84,8 @@ class CharacterResourceTest extends TestCase
 
         $this->assertSame(Gender::MALE, $array['gender']);
     }
+
+    // ==================== playable class relation ====================
 
     #[Test]
     public function it_omits_playable_class_when_not_loaded(): void
@@ -108,6 +112,8 @@ class CharacterResourceTest extends TestCase
         $this->assertNull($array['playable_class']['icon_url']);
     }
 
+    // ==================== playable race relation ====================
+
     #[Test]
     public function it_omits_playable_race_when_not_loaded(): void
     {
@@ -129,6 +135,8 @@ class CharacterResourceTest extends TestCase
         $this->assertSame($playableRace->id, $array['playable_race']['id']);
         $this->assertSame('Orc', $array['playable_race']['name']);
     }
+
+    // ==================== planned absences relation ====================
 
     #[Test]
     public function it_omits_planned_absences_when_not_loaded(): void
@@ -153,6 +161,8 @@ class CharacterResourceTest extends TestCase
         $this->assertContainsOnlyInstancesOf(PlannedAbsenceResource::class, $array['planned_absences']);
     }
 
+    // ==================== pivot data ====================
+
     #[Test]
     public function it_omits_pivot_when_not_from_pivot_table(): void
     {
@@ -162,6 +172,8 @@ class CharacterResourceTest extends TestCase
 
         $this->assertInstanceOf(MissingValue::class, $array['pivot']);
     }
+
+    // ==================== rank relation ====================
 
     #[Test]
     public function it_omits_rank_when_not_loaded(): void
@@ -186,6 +198,8 @@ class CharacterResourceTest extends TestCase
         $this->assertSame($rank->id, $array['rank']['id']);
     }
 
+    // ==================== presence pivot via report ====================
+
     #[Test]
     public function it_includes_presence_pivot_when_loaded_via_report(): void
     {
@@ -200,6 +214,8 @@ class CharacterResourceTest extends TestCase
 
         $this->assertSame(['presence' => 3, 'is_loot_councillor' => false], $array['pivot']);
     }
+
+    // ==================== specializations relation ====================
 
     #[Test]
     public function it_omits_specializations_when_not_loaded(): void
@@ -226,7 +242,7 @@ class CharacterResourceTest extends TestCase
         $this->assertCount(2, $array['specializations']);
     }
 
-    // portrait_url
+    // ==================== portrait url ====================
 
     #[Test]
     public function it_includes_portrait_url_key(): void
@@ -266,6 +282,8 @@ class CharacterResourceTest extends TestCase
         $this->assertStringContainsString('character_15678.jpg', $array['portrait_url']);
         $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
     }
+
+    // ==================== linked characters relation ====================
 
     #[Test]
     public function it_omits_linked_characters_when_not_loaded(): void
