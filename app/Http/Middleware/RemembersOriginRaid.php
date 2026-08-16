@@ -21,7 +21,7 @@ class RemembersOriginRaid implements SharesOriginRaidSession
     public function handle(Request $request, Closure $next): Response
     {
         $request->attributes->set(
-            'origin_raid_id',
+            self::SESSION_KEY,
             $this->rememberedRaidIdFor($request, $request->route('item')),
         );
 

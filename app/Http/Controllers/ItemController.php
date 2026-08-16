@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Events\Broadcasts\ItemUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
@@ -49,7 +50,7 @@ class ItemController extends Controller
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $this->loadItemData($blizzardConnector, $item, $request->attributes->get('origin_raid_id'));
+        $this->loadItemData($blizzardConnector, $item, $request->attributes->get(SharesOriginRaidSession::SESSION_KEY));
 
         return Inertia::render('Loot/Items/Show', [
             'item' => new ItemResource($item),
@@ -69,7 +70,7 @@ class ItemController extends Controller
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $this->loadItemData($blizzardConnector, $item, $request->attributes->get('origin_raid_id'));
+        $this->loadItemData($blizzardConnector, $item, $request->attributes->get(SharesOriginRaidSession::SESSION_KEY));
 
         return Inertia::render('Loot/Items/Edit', [
             'item' => new ItemResource($item),
@@ -102,7 +103,7 @@ class ItemController extends Controller
             }
         });
 
-        $this->loadItemRelations($item, $request->attributes->get('origin_raid_id'));
+        $this->loadItemRelations($item, $request->attributes->get(SharesOriginRaidSession::SESSION_KEY));
 
         broadcast(new ItemUpdated($item))->toOthers();
 

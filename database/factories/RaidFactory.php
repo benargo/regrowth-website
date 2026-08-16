@@ -104,7 +104,7 @@ class RaidFactory extends Factory
     {
         return $this->afterCreating(function (Raid $raid) use ($count): void {
             $items = Item::factory()->count($count)->trashDrop()->create();
-            $raid->items()->syncWithoutDetaching($items->pluck('id')->all());
+            $this->attachItems($raid, $items->pluck('id')->all());
         });
     }
 
@@ -118,8 +118,18 @@ class RaidFactory extends Factory
                 ->has(Comment::factory()->count($count), 'comments')
                 ->create();
 
-            $raid->items()->syncWithoutDetaching([$item->id]);
+            $this->attachItems($raid, [$item->id]);
         });
+    }
+
+    /**
+     * Attach the given items to the raid without detaching existing ones.
+     *
+     * @param  array<int, int>  $itemIds
+     */
+    private function attachItems(Raid $raid, array $itemIds): void
+    {
+        $raid->items()->syncWithoutDetaching($itemIds);
     }
 
     /**

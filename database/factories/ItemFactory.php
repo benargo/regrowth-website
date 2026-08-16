@@ -43,7 +43,7 @@ class ItemFactory extends Factory
     public function withRaid(?Raid $raid = null): static
     {
         return $this->afterCreating(function (Item $item) use ($raid): void {
-            $item->raids()->syncWithoutDetaching([($raid ?? Raid::factory()->create())->id]);
+            $this->attachToRaids($item, [($raid ?? Raid::factory()->create())->id]);
         });
     }
 
@@ -55,7 +55,7 @@ class ItemFactory extends Factory
     public function inRaids(array $raids): static
     {
         return $this->afterCreating(function (Item $item) use ($raids): void {
-            $item->raids()->syncWithoutDetaching(collect($raids)->pluck('id')->all());
+            $this->attachToRaids($item, collect($raids)->pluck('id')->all());
         });
     }
 
@@ -69,8 +69,18 @@ class ItemFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'boss_id' => $boss->id,
         ])->afterCreating(function (Item $item) use ($boss): void {
-            $item->raids()->syncWithoutDetaching([$boss->raid_id]);
+            $this->attachToRaids($item, [$boss->raid_id]);
         });
+    }
+
+    /**
+     * Attach the item to the given raids without detaching existing ones.
+     *
+     * @param  array<int, int>  $raidIds
+     */
+    private function attachToRaids(Item $item, array $raidIds): void
+    {
+        $item->raids()->syncWithoutDetaching($raidIds);
     }
 
     /**
