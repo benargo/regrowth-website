@@ -32,8 +32,7 @@ class SearchPageTest extends TestCase
             $factory = $factory->withName($name);
         }
 
-        return $factory->create([
-            'raid_id' => $raid->id,
+        return $factory->withRaid($raid)->create([
             'boss_id' => $boss->id,
         ]);
     }
