@@ -129,7 +129,7 @@ class TestSuiteDocumentationStandardTest extends TestCase
      *
      * @return list<string>
      */
-    private function test_files(): array
+    private function testFiles(): array
     {
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator(base_path('tests'), RecursiveDirectoryIterator::SKIP_DOTS)
