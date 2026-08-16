@@ -4,10 +4,12 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Media;
 
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class MediaDataTest extends TestCase
 {
     #[Test]
@@ -26,7 +28,7 @@ class MediaDataTest extends TestCase
         $this->assertCount(2, $dto->assets);
         $this->assertContainsOnlyInstancesOf(AssetData::class, $dto->assets);
         $this->assertSame('icon', $dto->assets[0]->key);
-        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', $dto->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', (string) $dto->assets[0]->value);
         $this->assertSame(132221, $dto->assets[0]->fileDataId);
         $this->assertSame('zoom', $dto->assets[1]->key);
         $this->assertSame(132222, $dto->assets[1]->fileDataId);
@@ -58,7 +60,7 @@ class MediaDataTest extends TestCase
         $this->assertSame(1, $dto->id);
         $this->assertCount(1, $dto->assets);
         $this->assertInstanceOf(Optional::class, $dto->assets[0]->key);
-        $this->assertSame('https://render.worldofwarcraft.com/icons/56/spell_holy_flash.jpg', $dto->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/icons/56/spell_holy_flash.jpg', (string) $dto->assets[0]->value);
         $this->assertInstanceOf(Optional::class, $dto->assets[0]->fileDataId);
     }
 }

@@ -46,15 +46,33 @@ export default function AddonExportSchema({ schema }) {
                     <pre
                         ref={dataRef}
                         onClick={selectAllContent}
-                        className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 bg-brown-800/50 p-4 text-sm text-white"
+                        className="bg-brown-800/50 max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 p-4 text-sm text-white"
                     >
                         {schemaJson}
                     </pre>
                 </div>
                 <div className="mt-6 border-t border-amber-700 pt-6">
                     <h2 className="mb-4 text-2xl font-semibold">Changelog</h2>
-                    <h3 className="text-md font-semibold">
-                        Version 1.2.0 <span className="text-sm italic text-gray-400">(2026-02-04)</span>
+                    <h3 className="mt-4 flex flex-row items-center gap-2 font-semibold">
+                        <span className="text-lg">Version 2.0.0 </span>
+                        <span className="text-sm text-gray-400 italic">(2026-07-31)</span>
+                        <Pill bgColor="bg-blue-700">Major release</Pill>
+                    </h3>
+                    <ul className="mt-2 list-inside list-disc text-sm">
+                        <li>
+                            Added <code>phases</code> array to include start dates for each phase (where known).
+                        </li>
+                        <li>
+                            <code>players.attendance.first_attendance</code> can now return <code>null</code> when a
+                            player has no recorded attendance.
+                        </li>
+                        <li>
+                            <code>phases.start_time</code> and <code>players.attendance.first_attendance</code> now
+                            return Unix timestamps instead of ISO 8601 strings.
+                        </li>
+                    </ul>
+                    <h3 className="text-md mt-4 font-semibold">
+                        Version 1.2.0 <span className="text-sm text-gray-400 italic">(2026-02-04)</span>
                     </h3>
                     <ul className="mt-2 list-inside list-disc text-sm">
                         <li>
@@ -62,7 +80,7 @@ export default function AddonExportSchema({ schema }) {
                         </li>
                     </ul>
                     <h3 className="text-md mt-4 font-semibold">
-                        Version 1.1.2 <span className="text-sm italic text-gray-400">(2026-02-03)</span>
+                        Version 1.1.2 <span className="text-sm text-gray-400 italic">(2026-02-03)</span>
                     </h3>
                     <ul className="mt-2 list-inside list-disc text-sm">
                         <li>
@@ -71,7 +89,7 @@ export default function AddonExportSchema({ schema }) {
                         </li>
                     </ul>
                     <h3 className="text-md mt-4 font-semibold">
-                        Version 1.1.1 <span className="text-sm italic text-gray-400">(2026-02-02)</span>
+                        Version 1.1.1 <span className="text-sm text-gray-400 italic">(2026-02-02)</span>
                     </h3>
                     <ul className="mt-2 list-inside list-disc text-sm">
                         <li>
@@ -79,7 +97,7 @@ export default function AddonExportSchema({ schema }) {
                         </li>
                     </ul>
                     <h3 className="text-md mt-4 font-semibold">
-                        Version 1.1.0 <span className="text-sm italic text-gray-400">(2026-02-01)</span>
+                        Version 1.1.0 <span className="text-sm text-gray-400 italic">(2026-02-01)</span>
                     </h3>
                     <ul className="mt-2 list-inside list-disc text-sm">
                         <li>
@@ -91,7 +109,7 @@ export default function AddonExportSchema({ schema }) {
                     </ul>
                     <h3 className="mt-4 flex flex-row items-center gap-2 font-semibold">
                         <span className="text-lg">Version 1.0.0 </span>
-                        <span className="text-sm italic text-gray-400">(2026-01-31)</span>
+                        <span className="text-sm text-gray-400 italic">(2026-01-31)</span>
                         <Pill bgColor="bg-blue-700">Major release</Pill>
                     </h3>
                     <ul className="mt-2 list-inside list-disc text-sm">

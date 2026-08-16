@@ -6,10 +6,12 @@ use App\Models\DiscordRole;
 use App\Models\User;
 use App\Policies\SpellPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class SpellPolicyTest extends TestCase
 {
     use RefreshDatabase;

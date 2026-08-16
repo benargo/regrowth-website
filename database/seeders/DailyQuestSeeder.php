@@ -16,7 +16,7 @@ use App\Http\Integrations\Blizzard\Exceptions\NotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\DailyQuest;
 use App\Models\Item;
@@ -110,14 +110,14 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
             }
 
             $iconName = $model->type->icon();
-            $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+            $iconFileName = $iconName.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION;
 
             try {
-                $body = $this->renderConnector->send(new FetchAssetRequest($iconName))->body();
+                $body = $this->renderConnector->send(new FetchIconRequest($iconName))->body();
 
                 $model->addMediaFromString($body)
                     ->usingFileName($iconFileName)
-                    ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                    ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
                     ->toMediaCollection('blizzard_icons');
             } catch (ForbiddenException $e) {
                 AttachBlizzardIconToModel::dispatch(DailyQuest::class, $model->id, $this->typeIconUrl($iconFileName))
@@ -209,7 +209,7 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
 
         try {
             $fileName = (string) Str::of($asset->value)->afterLast('/')->before('?');
-            $body = $this->renderConnector->send(new FetchAssetRequest($asset->value))->body();
+            $body = $this->renderConnector->send(new FetchIconRequest($asset->value))->body();
 
             $item->addMediaFromString($body)
                 ->usingFileName($fileName)
@@ -226,13 +226,13 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
 
     /**
      * Build the absolute render-CDN URL for a type icon, matching the URL that
-     * FetchAssetRequest::boot() constructs from a bare filename. Used as the asset
+     * FetchIconRequest::boot() constructs from a bare filename. Used as the asset
      * URL when deferring the icon fetch to AttachBlizzardIconToModel after a 403.
      */
     private function typeIconUrl(string $iconName): string
     {
         return $this->renderConnector->resolveBaseUrl()
-            ."/{$this->renderConnector->getRegion()->value}/icons/".self::BLIZZARD_ICON_SIZE."/{$iconName}";
+            ."/{$this->renderConnector->getRegion()->value}/icons/".self::DEFAULT_MEDIA_SIZE."/{$iconName}";
     }
 
     /**

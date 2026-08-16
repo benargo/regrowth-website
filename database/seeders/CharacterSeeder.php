@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
@@ -20,7 +21,11 @@ class CharacterSeeder extends Seeder
 
     public function run(): void
     {
-        $characters = Character::whereNull('playable_class_id')->orWhereNull('playable_race_id')->get();
+        $characters = Character::where(function ($query) {
+            $query->whereNull('playable_class_id')
+                ->orWhereNull('playable_race_id')
+                ->orWhereNull('gender');
+        })->get();
 
         $characters->each(function (Character $character) {
             try {
@@ -39,6 +44,7 @@ class CharacterSeeder extends Seeder
                 $character->update([
                     'playable_class_id' => $playableClass?->id,
                     'playable_race_id' => $race?->id,
+                    'gender' => Gender::tryFrom($profile->gender['name']),
                 ], ['touch' => false]);
 
                 $this->command?->line("  <info>✓</info> [{$character->id}] {$character->name}");

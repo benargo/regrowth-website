@@ -4,13 +4,16 @@ namespace Tests\SmokeTest;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
 class AccountPagesTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[Group('happy-path')]
     #[Test]
     public function account_index_loads(): void
     {
@@ -22,6 +25,7 @@ class AccountPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function account_index_redirects_unauthenticated_users(): void
     {

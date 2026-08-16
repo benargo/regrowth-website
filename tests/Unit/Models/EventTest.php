@@ -4,6 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
+use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
@@ -16,9 +17,11 @@ use App\Services\Discord\Resources\Channel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class EventTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -87,10 +90,10 @@ class EventTest extends ModelTestCase
     #[Test]
     public function background_css_class_is_cast_to_raid_background_enum(): void
     {
-        $event = Event::factory()->make(['background_css_class' => RaidBackground::KARAZHAN]);
+        $event = Event::factory()->make(['background_css_class' => RaidBackground::Karazhan]);
 
         $this->assertInstanceOf(RaidBackground::class, $event->background_css_class);
-        $this->assertSame(RaidBackground::KARAZHAN, $event->background_css_class);
+        $this->assertSame(RaidBackground::Karazhan, $event->background_css_class);
     }
 
     #[Test]
@@ -152,6 +155,7 @@ class EventTest extends ModelTestCase
         $this->assertSame('226e73', $event->color);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function color_setter_throws_for_invalid_string(): void
     {
@@ -319,7 +323,7 @@ class EventTest extends ModelTestCase
         $event->characters()->attach($character->id, [
             'slot_number' => 3,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
         ]);
 
         $pivot = $event->characters->first()->pivot;
@@ -327,7 +331,7 @@ class EventTest extends ModelTestCase
         $this->assertInstanceOf(EventCharacter::class, $pivot);
         $this->assertSame(3, $pivot->slot_number);
         $this->assertSame(1, $pivot->group_number);
-        $this->assertTrue($pivot->is_confirmed);
+        $this->assertSame(SignupStatus::Confirmed, $pivot->signup_status);
     }
 
     #[Test]

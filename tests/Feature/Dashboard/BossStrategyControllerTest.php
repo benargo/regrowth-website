@@ -8,10 +8,12 @@ use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Support\DashboardTestCase;
 
+#[Group('raiding')]
 class BossStrategyControllerTest extends DashboardTestCase
 {
     #[Test]
@@ -36,6 +38,52 @@ class BossStrategyControllerTest extends DashboardTestCase
         $response = $this->get(route('management.boss-strategies.index'));
 
         $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function guests_can_view_the_raiding_index(): void
+    {
+        Phase::factory()->create();
+        Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->get(route('raiding.boss-strategies.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Raiding/BossStrategies/Index')
+            ->has('bosses')
+            ->has('phases')
+        );
+    }
+
+    #[Test]
+    public function officers_see_the_raiding_index_via_the_raiding_route(): void
+    {
+        Phase::factory()->create();
+        Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->actingAs($this->officer)->get(route('raiding.boss-strategies.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Raiding/BossStrategies/Index')
+            ->has('bosses')
+            ->has('phases')
+        );
+    }
+
+    #[Test]
+    public function guests_can_view_a_boss_strategy(): void
+    {
+        $boss = Boss::factory()->for(Raid::factory())->create();
+
+        $response = $this->get(route('raiding.boss-strategies.show', ['boss' => $boss, 'slug' => $boss->slug]));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Raiding/BossStrategies/Show')
+            ->has('boss')
+        );
     }
 
     #[Test]
@@ -66,6 +114,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function edit_requires_manage_boss_strategies_permission(): void
     {
@@ -140,19 +189,19 @@ class BossStrategyControllerTest extends DashboardTestCase
         $user = User::factory()->withPermissions('view-officer-dashboard', 'manage-boss-strategies')->create();
         $boss = Boss::factory()->for(Raid::factory())->create();
 
-        // Add media to boss
         $file = UploadedFile::fake()->image('strategy.png', 800, 600);
         $boss->addMedia($file)->toMediaCollection();
-        $initialCount = $boss->getMedia()->count();
+        $this->assertCount(1, $boss->refresh()->getMedia());
+
+        $mediaUrl = $boss->getFirstMedia()->getUrl();
 
         $response = $this->actingAs($user)->patch(
             route('management.boss-strategies.update', ['boss' => $boss]),
-            ['deleted_images' => []]
+            ['deleted_images' => [$mediaUrl]]
         );
 
         $response->assertRedirect();
-        // Media deletion requires exact URL matching which is difficult to test reliably
-        // The important part is that the endpoint accepts the deleted_images array
+        $this->assertCount(0, $boss->refresh()->getMedia());
     }
 
     #[Test]
@@ -185,6 +234,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         $this->assertEquals($url1, $reorderedMedia[1]->getUrl());
     }
 
+    #[Group('authorization')]
     #[Test]
     public function update_requires_manage_boss_strategies_permission(): void
     {
@@ -271,6 +321,7 @@ class BossStrategyControllerTest extends DashboardTestCase
         );
 
         $response->assertRedirect();
+        $this->assertCount(0, $boss->refresh()->getMedia());
     }
 
     #[Test]

@@ -2,19 +2,24 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\Commentable;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
+use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use App\Models\Boss;
 use App\Models\Item;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Models\Raid;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
+#[Group('loot')]
 class ItemTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -45,7 +50,6 @@ class ItemTest extends ModelTestCase
         $model = new Item;
 
         $this->assertFillable($model, [
-            'raid_id',
             'boss_id',
             'name',
             'quality',
@@ -55,23 +59,15 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_can_be_created_without_raid_id(): void
+    public function it_has_expected_hidden_attributes(): void
     {
-        $item = $this->create(['raid_id' => null]);
+        $model = new Item;
 
-        $this->assertNull($item->raid_id);
-        $this->assertModelExists($item);
-    }
-
-    #[Test]
-    public function it_can_be_created_with_raid_id(): void
-    {
-        $raid = Raid::factory()->create();
-
-        $item = $this->create(['raid_id' => $raid->id]);
-
-        $this->assertTableHas(['raid_id' => $raid->id]);
-        $this->assertModelExists($item);
+        $this->assertHidden($model, [
+            'wowhead_url',
+            'created_at',
+            'updated_at',
+        ]);
     }
 
     #[Test]
@@ -81,7 +77,6 @@ class ItemTest extends ModelTestCase
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
         $item = $this->create([
-            'raid_id' => $raid->id,
             'boss_id' => $boss->id,
             'name' => 'Warglaive of Azzinoth',
             'group' => 'Tokens',
@@ -89,7 +84,6 @@ class ItemTest extends ModelTestCase
         ]);
 
         $this->assertTableHas([
-            'raid_id' => $raid->id,
             'boss_id' => $boss->id,
             'name' => 'Warglaive of Azzinoth',
             'group' => 'Tokens',
@@ -126,40 +120,6 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function factory_creates_valid_model(): void
-    {
-        $item = $this->create();
-
-        $this->assertModelExists($item);
-    }
-
-    #[Test]
-    public function factory_default_has_null_raid_id(): void
-    {
-        $item = $this->create();
-
-        $this->assertNull($item->raid_id);
-    }
-
-    #[Test]
-    public function factory_with_raid_state_sets_raid_id(): void
-    {
-        $raid = Raid::factory()->create();
-
-        $item = $this->factory()->withRaid($raid)->create();
-
-        $this->assertSame($raid->id, $item->raid_id);
-    }
-
-    #[Test]
-    public function factory_with_raid_state_creates_raid_when_none_given(): void
-    {
-        $item = $this->factory()->withRaid()->create();
-
-        $this->assertNotNull($item->raid_id);
-    }
-
-    #[Test]
     public function factory_from_boss_state_sets_boss(): void
     {
         $item = $this->factory()->fromBoss()->create();
@@ -193,21 +153,11 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_belongs_to_a_raid(): void
-    {
-        $raid = Raid::factory()->create();
-        $item = $this->create(['raid_id' => $raid->id]);
-
-        $this->assertRelation($item, 'raid', BelongsTo::class);
-        $this->assertTrue($item->raid->is($raid));
-    }
-
-    #[Test]
     public function it_belongs_to_a_boss(): void
     {
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-        $item = $this->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item = $this->factory()->fromBoss($boss)->create();
 
         $this->assertRelation($item, 'boss', BelongsTo::class);
         $this->assertTrue($item->boss->is($boss));
@@ -217,7 +167,7 @@ class ItemTest extends ModelTestCase
     public function it_belongs_to_many_priorities(): void
     {
         $item = $this->create();
-        $priorities = Priority::factory()->count(3)->create();
+        $priorities = LootPriority::factory()->count(3)->create();
 
         foreach ($priorities as $priority) {
             $item->priorities()->attach($priority->id, ['weight' => 100]);
@@ -233,13 +183,82 @@ class ItemTest extends ModelTestCase
     public function it_has_weight_on_priority_pivot(): void
     {
         $item = $this->create();
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $item->priorities()->attach($priority->id, ['weight' => 50]);
 
         $item->refresh();
 
         $this->assertSame(50, $item->priorities->first()->pivot->weight);
+    }
+
+    #[Test]
+    public function it_belongs_to_many_raids(): void
+    {
+        $item = $this->create();
+        $raids = Raid::factory()->count(2)->create();
+
+        $item->raids()->attach($raids->pluck('id'));
+        $item->refresh();
+
+        $this->assertRelation($item, 'raids', BelongsToMany::class);
+        $this->assertCount(2, $item->raids);
+    }
+
+    #[Test]
+    public function it_has_no_raids_by_default(): void
+    {
+        $item = $this->create();
+
+        $this->assertCount(0, $item->raids);
+    }
+
+    #[Test]
+    public function the_same_raid_cannot_be_attached_twice(): void
+    {
+        $item = $this->create();
+        $raid = Raid::factory()->create();
+
+        $item->raids()->attach($raid->id);
+        $item->raids()->syncWithoutDetaching([$raid->id]);
+        $item->refresh();
+
+        $this->assertCount(1, $item->raids);
+    }
+
+    #[Test]
+    public function factory_in_raids_state_attaches_the_given_raids(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+
+        $item = $this->factory()->inRaids($raids->all())->create();
+
+        $this->assertCount(2, $item->raids);
+        $this->assertEqualsCanonicalizing(
+            $raids->pluck('id')->all(),
+            $item->raids->pluck('id')->all(),
+        );
+    }
+
+    #[Test]
+    public function factory_with_raid_state_attaches_a_single_raid(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $item = $this->factory()->withRaid($raid)->create();
+
+        $this->assertCount(1, $item->raids);
+        $this->assertTrue($item->raids->first()->is($raid));
+    }
+
+    #[Test]
+    public function factory_from_boss_state_attaches_the_bosses_raid(): void
+    {
+        $item = $this->factory()->fromBoss()->create();
+
+        $this->assertNotNull($item->boss_id);
+        $this->assertCount(1, $item->raids);
+        $this->assertSame($item->boss->raid_id, $item->raids->first()->id);
     }
 
     #[Test]
@@ -316,12 +335,110 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
+    public function fill_blizzard_data_sets_name_and_blizzard_attributes(): void
+    {
+        $item = $this->create(['name' => null]);
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $item->fillBlizzardData($data);
+
+        $this->assertSame('Thunderfury, Blessed Blade of the Windseeker', $item->name);
+        $this->assertSame('Weapon', $item->itemClass['name']);
+        $this->assertSame('One-Handed Sword', $item->itemSubclass['name']);
+        $this->assertSame('One-Hand', $item->inventoryType['name']);
+    }
+
+    #[Test]
+    public function fill_blizzard_data_returns_the_same_model_instance(): void
+    {
+        $item = $this->create();
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $result = $item->fillBlizzardData($data);
+
+        $this->assertSame($item, $result);
+    }
+
+    #[Test]
+    public function fill_blizzard_data_does_not_persist_to_database(): void
+    {
+        $item = $this->create(['name' => null]);
+        $data = ItemData::from([
+            'id' => 19019,
+            'name' => 'Thunderfury, Blessed Blade of the Windseeker',
+            'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
+            'level' => 80,
+            'required_level' => 60,
+            'media' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/media/item/19019'], 'id' => 19019],
+            'item_class' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2'], 'name' => 'Weapon', 'id' => 2],
+            'item_subclass' => ['key' => ['href' => 'https://eu.api.blizzard.com/data/wow/item-class/2/item-subclass/7'], 'name' => 'One-Handed Sword', 'id' => 7],
+            'inventory_type' => ['type' => 'WEAPON', 'name' => 'One-Hand'],
+            'purchase_price' => 0,
+            'sell_price' => 12345,
+        ]);
+
+        $item->fillBlizzardData($data);
+
+        $this->assertNull($item->fresh()->name);
+    }
+
+    #[Test]
+    public function trash_scope_only_includes_items_without_a_boss(): void
+    {
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+        $bossItem = $this->factory()->fromBoss($boss)->create();
+        $trashItem = $this->factory()->trashDrop()->create();
+
+        $trashItems = Item::trash()->get();
+
+        $this->assertTrue($trashItems->contains($trashItem));
+        $this->assertFalse($trashItems->contains($bossItem));
+    }
+
+    #[Test]
     public function it_implements_media_library_contracts(): void
     {
         $model = new Item;
 
         $this->assertInstanceOf(HasMedia::class, $model);
         $this->assertInstanceOf(HasBlizzardIcons::class, $model);
+        $this->assertInstanceOf(Commentable::class, $model);
+    }
+
+    #[Test]
+    public function comment_channel_is_scoped_to_the_item_id(): void
+    {
+        $item = $this->create();
+
+        $channel = $item->commentChannel();
+
+        $this->assertInstanceOf(Channel::class, $channel);
+        $this->assertSame("item.{$item->id}", $channel->name);
     }
 
     #[Test]

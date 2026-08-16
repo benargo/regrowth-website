@@ -6,15 +6,17 @@ use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Media\GetMediaRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Integrations\Blizzard\Responses\GetMediaResponse;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetMediaResponseTest extends BlizzardTestCase
 {
     private function fakeGetMediaRequest(array $assets = []): GetMediaResponse
@@ -53,7 +55,7 @@ class GetMediaResponseTest extends BlizzardTestCase
         $this->assertInstanceOf(MediaData::class, $data);
         $this->assertSame(19019, $data->id);
         $this->assertCount(1, $data->assets);
-        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', $data->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', (string) $data->assets[0]->value);
     }
 
     #[Test]
@@ -71,7 +73,7 @@ class GetMediaResponseTest extends BlizzardTestCase
                     ['key' => 'icon', 'value' => $assetUrl, 'file_data_id' => 132221],
                 ],
             ], status: 200),
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: 'fake-image-content',
                 status: 200,
                 headers: ['Content-Type' => 'image/jpeg'],
@@ -105,7 +107,7 @@ class GetMediaResponseTest extends BlizzardTestCase
                     ['key' => 'icon', 'value' => $assetUrl, 'file_data_id' => 132221],
                 ],
             ], status: 200),
-            FetchAssetRequest::class => MockResponse::make(
+            FetchIconRequest::class => MockResponse::make(
                 body: 'fake-image-content',
                 status: 200,
                 headers: ['Content-Type' => 'image/jpeg'],

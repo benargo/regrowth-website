@@ -2,54 +2,98 @@
 
 namespace App\Notifications;
 
-use App\Facades\Blizzard;
-use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Models\LootCouncil\Comment;
+use App\Models\Comment;
+use App\Models\Item;
+use App\Notifications\Concerns\UpdatesExisting;
 use App\Services\Discord\Notifications\Notification;
 use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Embed;
-use Illuminate\Support\Str;
+use LogicException;
 
 class NewLootCouncilComment extends Notification
 {
-    public function __construct(
-        public Comment $comment,
-    ) {
+    use UpdatesExisting;
+
+    /**
+     * The number of live replies to report on the embed.
+     */
+    protected int $replyCount = 0;
+
+    public function __construct(Comment $comment)
+    {
         $this->withRelatedModels([$comment])
             ->withSender($comment->user);
     }
 
     /**
+     * Set the live reply count reported by this notification's embed.
+     */
+    public function withReplyCount(int $count): self
+    {
+        $this->replyCount = $count;
+
+        return $this;
+    }
+
+    /**
      * Get the payload to send to Discord for this notification.
+     *
+     * @throws LogicException if the comment's commentable is not an Item.
      */
     public function toMessage(): MessagePayload
     {
-        $item = $this->comment->item;
-        $user = $this->comment->user;
-        $itemName = $this->resolveItemName($item->id);
+        /** @var Comment $comment */
+        $comment = $this->hydrateOrFail($this->relatedModel(Comment::class));
+
+        if (! $comment->commentable instanceof Item) {
+            throw new LogicException('NewLootCouncilComment only supports Item commentables.');
+        }
+
+        $item = $comment->commentable;
+        $user = $comment->user;
 
         $description = sprintf(
             "New comment posted by <@%s> on **%s**\n\n%s",
             $user->id,
-            $itemName,
-            $this->comment->body,
+            $item->name,
+            $comment->body,
         );
 
         $itemUrl = route('loot.items.show', [
             'item' => $item->id,
-            'name' => Str::slug($itemName),
+            'slug' => $item->slug,
         ]);
 
+        $embed = [
+            'title' => 'New comment received',
+            'url' => $itemUrl,
+            'color' => 5814783,
+            'description' => $description,
+            'timestamp' => $comment->created_at->toIso8601String(),
+        ];
+
+        if ($this->replyCount > 0) {
+            $embed['fields'] = [[
+                'name' => 'Replies',
+                'value' => (string) $this->replyCount,
+                'inline' => true,
+            ]];
+        }
+
         return MessagePayload::from([
-            'embeds' => [Embed::from([
-                'title' => 'New comment received',
-                'url' => $itemUrl,
-                'color' => 5814783,
-                'description' => $description,
-                'timestamp' => $this->comment->created_at->toIso8601String(),
-            ])],
+            'embeds' => [Embed::from($embed)],
         ]);
+    }
+
+    /**
+     * Determine if the notification should be sent.
+     */
+    public function shouldSend(object $notifiable, string $channel): bool
+    {
+        /** @var Comment $comment */
+        $comment = $this->hydrateOrFail($this->relatedModel(Comment::class));
+
+        return $comment->commentable instanceof Item;
     }
 
     /**
@@ -63,16 +107,5 @@ class NewLootCouncilComment extends Notification
             'payload' => $this->toMessage()->toArray(),
             'created_by_user_id' => $this->sender()?->id,
         ];
-    }
-
-    private function resolveItemName(int $itemId): string
-    {
-        try {
-            $item = Blizzard::send(new GetItemRequest($itemId))->dto();
-
-            return $item->name;
-        } catch (ItemNotFoundException) {
-            return "Item #{$itemId}";
-        }
     }
 }

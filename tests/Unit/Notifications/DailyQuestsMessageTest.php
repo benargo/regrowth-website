@@ -11,9 +11,12 @@ use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('daily-quests')]
+#[Group('discord-integration')]
 class DailyQuestsMessageTest extends TestCase
 {
     use RefreshDatabase;
@@ -274,5 +277,53 @@ class DailyQuestsMessageTest extends TestCase
             ->withSender($user);
 
         $this->assertSame($user->id, $notification->sender()->id);
+    }
+
+    // -------------------------------------------------------------------------
+    // Serialization (for queue)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function it_renders_quest_fields_after_a_queue_round_trip(): void
+    {
+        $cooking = DailyQuest::factory()->cooking()->create(['name' => 'Delicious Surprise']);
+
+        $notification = new DailyQuestsMessage([
+            'Cooking' => $cooking,
+            'Fishing' => null,
+            'Dungeon' => null,
+            'Heroic' => null,
+            'PvP' => null,
+        ]);
+
+        /** @var DailyQuestsMessage $unserialized */
+        $unserialized = unserialize(serialize($notification));
+
+        $fields = $unserialized->toMessage()->embeds[0]->fields;
+
+        $this->assertCount(1, $fields);
+        $this->assertSame('Delicious Surprise', $fields[0]->value);
+    }
+
+    #[Test]
+    public function it_produces_a_json_encodable_queue_payload(): void
+    {
+        // The notification holds the daily quests as an array of models, so the
+        // queue serialises them in full. Guard against any related model carrying
+        // binary (non-UTF-8) attributes that would break json_encode.
+        $cooking = DailyQuest::factory()->cooking()->create();
+
+        $serialized = serialize(new DailyQuestsMessage([
+            'Cooking' => $cooking,
+            'Fishing' => null,
+            'Dungeon' => null,
+            'Heroic' => null,
+            'PvP' => null,
+        ]));
+
+        $this->assertNotFalse(
+            json_encode(['command' => $serialized], JSON_UNESCAPED_UNICODE),
+            'Queue payload must be JSON-encodable: '.json_last_error_msg(),
+        );
     }
 }

@@ -1,0 +1,213 @@
+<?php
+
+namespace Tests\Feature\Jobs;
+
+use App\Jobs\SyncDiscordUser;
+use App\Models\DiscordRole;
+use App\Models\User;
+use App\Services\Discord\Discord;
+use App\Services\Discord\Exceptions\RateLimitedException;
+use App\Services\Discord\Exceptions\UserNotInGuildException;
+use App\Services\Discord\Resources\GuildMember;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
+use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+#[Group('auth')]
+#[Group('discord-integration')]
+class SyncDiscordUserTest extends TestCase
+{
+    use RefreshDatabase;
+
+    #[Test]
+    public function it_syncs_roles_for_a_guild_member(): void
+    {
+        $role = DiscordRole::factory()->create([
+            'id' => '111111111111111111',
+            'name' => 'Officer',
+            'position' => 10,
+        ]);
+
+        $user = User::factory()->create(['id' => '100000000000000000']);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andReturn(GuildMember::from([
+                    'nick' => 'TestNick',
+                    'avatar' => 'avatar_hash',
+                    'banner' => 'banner_hash',
+                    'roles' => ['111111111111111111'],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
+                ]));
+        });
+
+        SyncDiscordUser::dispatchSync('100000000000000000');
+
+        $user->refresh();
+        $this->assertSame('TestNick', $user->nickname);
+        $this->assertSame('avatar_hash', $user->guild_avatar);
+        $this->assertSame('banner_hash', $user->banner);
+        $this->assertTrue($user->discordRoles->contains($role));
+    }
+
+    #[Test]
+    public function it_updates_user_profile_data(): void
+    {
+        User::factory()->create([
+            'id' => '100000000000000000',
+            'nickname' => 'OldNick',
+            'guild_avatar' => 'old_avatar',
+            'banner' => 'old_banner',
+        ]);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andReturn(GuildMember::from([
+                    'nick' => 'NewNick',
+                    'avatar' => 'new_avatar',
+                    'banner' => 'new_banner',
+                    'roles' => [],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
+                ]));
+        });
+
+        SyncDiscordUser::dispatchSync('100000000000000000');
+
+        $user = User::find('100000000000000000');
+        $this->assertSame('NewNick', $user->nickname);
+        $this->assertSame('new_avatar', $user->guild_avatar);
+        $this->assertSame('new_banner', $user->banner);
+    }
+
+    #[Test]
+    public function it_syncs_a_guild_member(): void
+    {
+        $role = DiscordRole::factory()->create([
+            'id' => '111111111111111111',
+            'name' => 'Member',
+            'position' => 30,
+        ]);
+
+        $user = User::factory()->create(['id' => '100000000000000000']);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andReturn(GuildMember::from([
+                    'nick' => 'ValidUser',
+                    'avatar' => null,
+                    'banner' => null,
+                    'roles' => ['111111111111111111'],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
+                ]));
+        });
+
+        SyncDiscordUser::dispatchSync('100000000000000000');
+
+        $user->refresh();
+        $this->assertSame('ValidUser', $user->nickname);
+        $this->assertTrue($user->discordRoles->contains($role));
+    }
+
+    #[Test]
+    public function it_deletes_a_user_not_in_guild(): void
+    {
+        User::factory()->create(['id' => '100000000000000000']);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andThrow(new UserNotInGuildException('User not in guild'));
+        });
+
+        SyncDiscordUser::dispatchSync('100000000000000000');
+
+        $this->assertDatabaseMissing('users', ['id' => '100000000000000000']);
+    }
+
+    // ==========================================
+    // Batch Cancellation
+    // ==========================================
+
+    #[Test]
+    public function it_skips_execution_when_batch_is_cancelled(): void
+    {
+        $batch = Bus::batch([])->dispatch();
+        $batch->cancel();
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldNotReceive('getGuildMember');
+        });
+
+        $job = new SyncDiscordUser('100000000000000000');
+        $job->batchId = $batch->id;
+        dispatch_sync($job);
+    }
+
+    #[Test]
+    public function it_only_syncs_recognized_role_ids(): void
+    {
+        DiscordRole::factory()->create([
+            'id' => '111111111111111111',
+            'name' => 'Officer',
+            'position' => 10,
+        ]);
+
+        $user = User::factory()->create(['id' => '100000000000000000']);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andReturn(GuildMember::from([
+                    'nick' => null,
+                    'avatar' => null,
+                    'banner' => null,
+                    'roles' => ['111111111111111111', '999999999999999999'],
+                    'deaf' => false,
+                    'mute' => false,
+                    'flags' => 0,
+                ]));
+        });
+
+        SyncDiscordUser::dispatchSync('100000000000000000');
+
+        $user->refresh();
+        $this->assertCount(1, $user->discordRoles);
+        $this->assertTrue($user->discordRoles->contains('id', '111111111111111111'));
+    }
+
+    #[Test]
+    public function it_releases_itself_when_discord_is_rate_limited(): void
+    {
+        User::factory()->create(['id' => '100000000000000000']);
+
+        $this->mock(Discord::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getGuildMember')
+                ->with('100000000000000000')
+                ->once()
+                ->andThrow(new RateLimitedException('guilds/123/members/100000000000000000', 10.0, 'user'));
+        });
+
+        $job = new SyncDiscordUser('100000000000000000');
+        $job->withFakeQueueInteractions();
+        $job->handle(app(Discord::class));
+
+        $job->assertReleased(10.0);
+    }
+}

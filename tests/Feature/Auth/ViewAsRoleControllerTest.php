@@ -6,9 +6,11 @@ use App\Http\Controllers\Auth\ViewAsRoleController;
 use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('auth')]
 class ViewAsRoleControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -25,6 +27,7 @@ class ViewAsRoleControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function view_as_role_requires_impersonate_permission(): void
     {

@@ -28,9 +28,9 @@ function StatBox({ icon, label, value, subLabel, subText, className }) {
     return (
         <div className={`flex flex-col rounded border border-amber-600 p-4${className ? ` ${className}` : ""}`}>
             <BoxLabel icon={icon} label={label} />
-            <p className="mt-1 flex-grow align-top text-3xl font-bold text-amber-400">{value ?? "–"}</p>
-            {subText && <p className="mt-1 flex-grow text-xs text-gray-400">{subText}</p>}
-            {subLabel && <p className="mt-2 flex-grow text-xs text-gray-500">{subLabel}</p>}
+            <p className="mt-1 grow align-top text-3xl font-bold text-amber-400">{value ?? "–"}</p>
+            {subText && <p className="mt-1 grow text-xs text-gray-400">{subText}</p>}
+            {subLabel && <p className="mt-2 grow text-xs text-gray-500">{subLabel}</p>}
         </div>
     );
 }
@@ -42,7 +42,7 @@ function PlayerChip({ player }) {
                 <img
                     src={player.playable_class.icon_url}
                     alt={player.playable_class.name}
-                    className="inline-block h-3 w-3 rounded-sm"
+                    className="inline-block h-3 w-3 rounded-xs"
                 />
             )}
             {player.name}
@@ -132,7 +132,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
                                     <img
                                         src={absence.character.playable_class.icon_url}
                                         alt={absence.character.playable_class.name}
-                                        className="inline-block h-4 w-4 rounded-sm"
+                                        className="inline-block h-4 w-4 rounded-xs"
                                     />
                                 )}
                                 {absence.character?.name ?? "Unknown"}

@@ -96,8 +96,8 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
                 return SpellResource::collection(Spell::all())->resolve($request);
             }),
             'questionMarkIconUrl' => URL::signedRoute('icons.show', [
-                'size' => self::BLIZZARD_ICON_SIZE,
-                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::BLIZZARD_ICON_FILE_EXTENSION,
+                'size' => self::DEFAULT_MEDIA_SIZE,
+                'name' => self::BLIZZARD_UNKNOWN_ICON.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION,
             ]),
         ]);
     }

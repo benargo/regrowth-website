@@ -5,18 +5,20 @@ namespace Tests\Unit\Models;
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Event;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\Phase;
 use App\Models\Raid;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class RaidTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -101,10 +103,10 @@ class RaidTest extends ModelTestCase
     #[Test]
     public function background_css_class_is_cast_to_raid_background_enum(): void
     {
-        $raid = $this->create(['background_css_class' => RaidBackground::KARAZHAN]);
+        $raid = $this->create(['background_css_class' => RaidBackground::Karazhan]);
 
         $this->assertInstanceOf(RaidBackground::class, $raid->background_css_class);
-        $this->assertSame(RaidBackground::KARAZHAN, $raid->background_css_class);
+        $this->assertSame(RaidBackground::Karazhan, $raid->background_css_class);
     }
 
     // ==================== color ====================
@@ -150,6 +152,7 @@ class RaidTest extends ModelTestCase
         $this->assertSame('8b7ed0', $raid->color);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function color_setter_throws_for_invalid_string(): void
     {
@@ -313,15 +316,6 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
-    public function factory_with_items_state_creates_trash_items(): void
-    {
-        $raid = $this->factory()->withItems(3)->create();
-
-        $this->assertCount(3, $raid->items);
-        $this->assertTrue($raid->items->every(fn (Item $item) => $item->boss_id === null));
-    }
-
-    #[Test]
     public function factory_with_comments_state_creates_comments_through_items(): void
     {
         $raid = $this->factory()->withComments(2)->create();
@@ -357,11 +351,11 @@ class RaidTest extends ModelTestCase
     // ==================== items ====================
 
     #[Test]
-    public function it_has_many_items(): void
+    public function it_belongs_to_many_items(): void
     {
         $raid = $this->factory()->withItems(2)->create();
 
-        $this->assertRelation($raid, 'items', HasMany::class);
+        $this->assertRelation($raid, 'items', BelongsToMany::class);
         $this->assertCount(2, $raid->items);
         $this->assertInstanceOf(Item::class, $raid->items->first());
     }
@@ -370,23 +364,62 @@ class RaidTest extends ModelTestCase
     public function it_has_many_trash_items(): void
     {
         $raid = $this->factory()->withItems(2)->create();
-        Item::factory()->fromBoss()->create(['raid_id' => $raid->id]);
+        Item::factory()->fromBoss(Boss::factory()->create(['raid_id' => $raid->id]))->create();
 
-        $this->assertRelation($raid, 'trashItems', HasMany::class);
+        $this->assertRelation($raid, 'trashItems', BelongsToMany::class);
         $this->assertCount(2, $raid->trashItems);
         $this->assertTrue($raid->trashItems->every(fn (Item $item) => $item->boss_id === null));
+    }
+
+    #[Test]
+    public function factory_with_items_state_creates_trash_items(): void
+    {
+        $raid = $this->factory()->withItems(3)->create();
+
+        $this->assertCount(3, $raid->items);
+        $this->assertTrue($raid->items->every(fn (Item $item) => $item->boss_id === null));
+    }
+
+    #[Test]
+    public function an_item_can_belong_to_two_raids(): void
+    {
+        $hyjal = $this->create(['name' => 'Hyjal Summit']);
+        $blackTemple = $this->create(['name' => 'Black Temple']);
+        $item = Item::factory()->trashDrop()->create();
+
+        $item->raids()->attach([$hyjal->id, $blackTemple->id]);
+
+        $this->assertCount(1, $hyjal->trashItems);
+        $this->assertCount(1, $blackTemple->trashItems);
+        $this->assertSame($item->id, $hyjal->trashItems->first()->id);
+        $this->assertSame($item->id, $blackTemple->trashItems->first()->id);
     }
 
     // ==================== comments ====================
 
     #[Test]
-    public function it_has_many_comments_through_items(): void
+    public function it_has_many_comments_through_its_items(): void
     {
         $raid = $this->factory()->withComments(2)->create();
 
-        $this->assertRelation($raid, 'comments', HasManyThrough::class);
+        $this->assertRelation($raid, 'comments', HasMany::class);
         $this->assertCount(2, $raid->comments);
         $this->assertInstanceOf(Comment::class, $raid->comments->first());
+    }
+
+    #[Test]
+    public function comments_are_scoped_to_item_commentable_type(): void
+    {
+        $raid = $this->factory()->withComments(2)->create();
+        $item = $raid->items->first();
+
+        // Insert a comment with a different commentable_type pointing at the same item ID
+        Comment::factory()->create([
+            'commentable_id' => (string) $item->id,
+            'commentable_type' => User::class,
+        ]);
+
+        $this->assertCount(2, $raid->comments);
     }
 
     // ==================== events ====================

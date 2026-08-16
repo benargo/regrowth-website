@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\Gender;
 use App\Http\Resources\CharacterResource;
 use App\Http\Resources\PlannedAbsenceResource;
 use App\Models\Character;
@@ -15,9 +16,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('characters')]
 class CharacterResourceTest extends TestCase
 {
     use RefreshDatabase;
@@ -41,6 +45,7 @@ class CharacterResourceTest extends TestCase
         $this->assertArrayHasKey('playable_race', $array);
         $this->assertArrayHasKey('pivot', $array);
         $this->assertArrayHasKey('rank', $array);
+        $this->assertArrayHasKey('portrait_url', $array);
     }
 
     #[Test]
@@ -56,6 +61,26 @@ class CharacterResourceTest extends TestCase
         $this->assertSame($character->level, $array['level']);
         $this->assertTrue($array['is_main']);
         $this->assertFalse($array['is_loot_councillor']);
+    }
+
+    #[Test]
+    public function it_includes_gender_key(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertArrayHasKey('gender', $array);
+    }
+
+    #[Test]
+    public function it_returns_gender_enum_value_when_set(): void
+    {
+        $character = Character::factory()->create(['gender' => Gender::MALE]);
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertSame(Gender::MALE, $array['gender']);
     }
 
     #[Test]
@@ -199,6 +224,47 @@ class CharacterResourceTest extends TestCase
 
         $this->assertIsArray($array['specializations']);
         $this->assertCount(2, $array['specializations']);
+    }
+
+    // portrait_url
+
+    #[Test]
+    public function it_includes_portrait_url_key(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertArrayHasKey('portrait_url', $array);
+    }
+
+    #[Test]
+    public function it_returns_null_portrait_url_when_no_media_attached(): void
+    {
+        $character = Character::factory()->create();
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertNull($array['portrait_url']);
+    }
+
+    #[Test]
+    public function it_returns_storage_portrait_url_when_media_attached(): void
+    {
+        Storage::fake('public');
+
+        $character = Character::factory()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->withCustomProperties(['size' => 135])
+            ->toMediaCollection(Character::MEDIA_COLLECTION);
+
+        $array = (new CharacterResource($character))->toArray(new Request);
+
+        $this->assertNotNull($array['portrait_url']);
+        $this->assertStringContainsString('/storage/', $array['portrait_url']);
+        $this->assertStringContainsString('character_15678.jpg', $array['portrait_url']);
+        $this->assertStringNotContainsString('/icons/', $array['portrait_url']);
     }
 
     #[Test]

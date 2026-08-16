@@ -104,7 +104,7 @@ export default function Table({ reports }) {
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                     {report.linked_reports_count > 0 ? (
-                                        <Tooltip text={`${report.linked_reports_count}`} position="right">
+                                        <Tooltip body={`${report.linked_reports_count}`} position="right">
                                             <Icon icon="link" style="solid" className="text-amber-500" />
                                         </Tooltip>
                                     ) : (

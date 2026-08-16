@@ -16,7 +16,7 @@ import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 
 function ViewOnWarcraftLogsLink({ code, children }) {
     return (
-        <Tooltip text="View on Warcraft Logs" position="top">
+        <Tooltip body="View on Warcraft Logs" position="top">
             <a
                 href={`https://fresh.warcraftlogs.com/reports/${code}`}
                 target="_blank"
@@ -130,7 +130,7 @@ export default function Show({ report, nearbyReports, impactedReports }) {
                             {data.guild_tag?.name && <MetaItem icon="tag">{data.guild_tag.name}</MetaItem>}
                         </div>
                         {data.code && (
-                            <div className="flex-shrink-0">
+                            <div className="shrink-0">
                                 <ViewOnWarcraftLogsLink code={data.code}>View on Warcraft Logs</ViewOnWarcraftLogsLink>
                             </div>
                         )}

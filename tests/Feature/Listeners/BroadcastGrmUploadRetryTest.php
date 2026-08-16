@@ -9,9 +9,12 @@ use Illuminate\Contracts\Queue\Job;
 use Illuminate\Queue\Events\JobReleasedAfterException;
 use Illuminate\Support\Facades\Event;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('broadcasting')]
 class BroadcastGrmUploadRetryTest extends TestCase
 {
     #[Test]

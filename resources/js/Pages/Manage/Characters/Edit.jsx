@@ -1,0 +1,191 @@
+import { Link, useForm } from "@inertiajs/react";
+import Master from "@/Layouts/Master";
+import SharedHeader from "@/Components/SharedHeader";
+import FormContainer from "@/Components/FormContainer";
+import PrimaryButton from "@/Components/PrimaryButton";
+import InputError from "@/Components/InputError";
+import Icon from "@/Components/FontAwesome/Icon";
+import ToolNav from "@/Components/ToolNav";
+import SpecRow from "@/Components/Characters/SpecRow";
+
+function SectionHeading({ children }) {
+    return (
+        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-amber-500/70">
+            <span>{children}</span>
+            <span className="h-px flex-1 bg-amber-600/20" />
+        </h2>
+    );
+}
+
+export default function Edit({ character, specializations }) {
+    const { data, setData, patch, processing, errors } = useForm({
+        is_loot_councillor: character.is_loot_councillor ?? false,
+        specializations: {
+            specialization_ids: character.specializations?.map((s) => s.id) ?? [],
+            raid_specialization_id: character.specializations?.find((s) => s.is_raid_spec)?.id ?? null,
+        },
+    });
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        patch(route("characters.update", character.id));
+    }
+
+    function toggleSpec(specId) {
+        const isCurrentlySelected = data.specializations.specialization_ids.includes(specId);
+        const newIds = isCurrentlySelected
+            ? data.specializations.specialization_ids.filter((id) => id !== specId)
+            : [...data.specializations.specialization_ids, specId];
+
+        const newRaidId =
+            isCurrentlySelected && data.specializations.raid_specialization_id === specId
+                ? null
+                : data.specializations.raid_specialization_id;
+
+        setData((prev) => ({
+            ...prev,
+            specializations: {
+                ...prev.specializations,
+                specialization_ids: newIds,
+                raid_specialization_id: newRaidId,
+            },
+        }));
+    }
+
+    function setRaidSpec(specId) {
+        setData(
+            "specializations.raid_specialization_id",
+            specId === data.specializations.raid_specialization_id ? null : specId,
+        );
+    }
+
+    const specErrors = data.specializations.specialization_ids
+        ?.map((_, i) => errors[`specializations.specialization_ids.${i}`])
+        .filter(Boolean);
+
+    return (
+        <Master title={`Edit · ${character.name}`}>
+            <SharedHeader backgroundClass="bg-stormwind" title={`Edit: ${character.name}`} />
+
+            {/* Tool navigation */}
+            <ToolNav>
+                <div className="flex-initial space-x-4">
+                    <Link
+                        href={route("characters.show", {
+                            character: character.id,
+                            slug: character.slug,
+                        })}
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                    >
+                        <Icon icon="arrow-left" style="solid" className="mr-2" />
+                        <span>Finish editing {character.name}</span>
+                    </Link>
+                </div>
+            </ToolNav>
+
+            <FormContainer>
+                <form onSubmit={handleSubmit}>
+                    {/* Character identity (read-only) */}
+                    <div className="mb-8 flex items-center gap-4">
+                        {character.playable_class?.icon_url && (
+                            <img
+                                src={character.playable_class.icon_url}
+                                alt={character.playable_class.name}
+                                className="h-12 w-12 rounded-lg border border-amber-600/30 shadow-lg shadow-black/40"
+                            />
+                        )}
+                        <div>
+                            <h2 className="text-xl font-bold text-white">{character.name}</h2>
+                            <p className="text-sm text-gray-400">
+                                {character.playable_class?.name ?? "Unknown class"}
+                                {character.rank?.name ? ` · ${character.rank.name}` : ""}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8 lg:max-w-2xl">
+                        {/* Specializations */}
+                        <section>
+                            <SectionHeading>Specializations</SectionHeading>
+                            <p className="mb-4 text-sm text-gray-400">
+                                Select which specs this character plays. Mark one as the{" "}
+                                <span className="inline-flex items-center gap-1 text-amber-500">
+                                    raid spec
+                                </span>
+                                .
+                            </p>
+
+                            {specializations && specializations.length > 0 ? (
+                                <div className="space-y-2">
+                                    {specializations.map((spec) => (
+                                        <SpecRow
+                                            key={spec.id}
+                                            spec={spec}
+                                            isSelected={data.specializations.specialization_ids.includes(spec.id)}
+                                            isRaidSpec={data.specializations.raid_specialization_id === spec.id}
+                                            onToggle={() => toggleSpec(spec.id)}
+                                            onSetRaid={() => setRaidSpec(spec.id)}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-500">
+                                    No specializations available for this class.
+                                </p>
+                            )}
+
+                            {specErrors?.length > 0 && (
+                                <InputError message={specErrors[0]} className="mt-2" />
+                            )}
+                            {errors["specializations.specialization_ids"] && (
+                                <InputError message={errors["specializations.specialization_ids"]} className="mt-2" />
+                            )}
+                            {errors["specializations.raid_specialization_id"] && (
+                                <InputError
+                                    message={errors["specializations.raid_specialization_id"]}
+                                    className="mt-2"
+                                />
+                            )}
+                        </section>
+
+                        {/* Loot Council */}
+                        <section>
+                            <SectionHeading>Loot Council</SectionHeading>
+                            <label className="flex cursor-pointer items-center gap-3 rounded border border-brown-700 bg-brown-800/30 px-4 py-3 transition-colors hover:border-brown-600">
+                                <input
+                                    type="checkbox"
+                                    checked={data.is_loot_councillor}
+                                    onChange={(e) => setData("is_loot_councillor", e.target.checked)}
+                                    className="h-4 w-4 rounded border-amber-600 bg-brown-900 text-amber-600 focus:ring-amber-500 focus:ring-offset-0"
+                                />
+                                <span className="font-medium text-white">Loot Councillor</span>
+                                <span className="text-sm text-gray-500">
+                                    This character has a vote on loot distribution
+                                </span>
+                            </label>
+                            {errors.is_loot_councillor && (
+                                <InputError message={errors.is_loot_councillor} className="mt-2" />
+                            )}
+                        </section>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-4 border-t border-brown-700 pt-6">
+                            <PrimaryButton type="submit" processing={processing}>
+                                {processing ? "Saving…" : "Save Changes"}
+                            </PrimaryButton>
+                            <Link
+                                href={route("characters.show", {
+                                    character: character.id,
+                                    slug: character.slug,
+                                })}
+                                className="text-sm text-gray-400 transition-colors hover:text-white"
+                            >
+                                Cancel
+                            </Link>
+                        </div>
+                    </div>
+                </form>
+            </FormContainer>
+        </Master>
+    );
+}

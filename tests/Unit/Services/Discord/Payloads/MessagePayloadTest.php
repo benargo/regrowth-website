@@ -6,12 +6,14 @@ use App\Services\Discord\Payloads\MessagePayload;
 use App\Services\Discord\Resources\Attachment;
 use App\Services\Discord\Resources\Embed;
 use App\Services\Discord\Resources\MessageReference;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class MessagePayloadTest extends TestCase
 {
     #[Test]

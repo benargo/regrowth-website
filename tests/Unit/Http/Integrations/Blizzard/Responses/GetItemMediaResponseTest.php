@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Responses;
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Responses\GetItemMediaResponse;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetItemMediaResponseTest extends BlizzardTestCase
 {
     private function fakeGetItemMediaRequest(array $assets = []): GetItemMediaResponse
@@ -49,7 +51,7 @@ class GetItemMediaResponseTest extends BlizzardTestCase
         $this->assertInstanceOf(MediaData::class, $data);
         $this->assertSame(19019, $data->id);
         $this->assertCount(1, $data->assets);
-        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', $data->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/icons/56/inv_sword_39.jpg', (string) $data->assets[0]->value);
     }
 
     #[Test]

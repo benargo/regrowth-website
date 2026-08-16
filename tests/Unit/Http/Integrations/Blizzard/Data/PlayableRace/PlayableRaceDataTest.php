@@ -4,10 +4,12 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\PlayableRace;
 
 use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class PlayableRaceDataTest extends TestCase
 {
     /**

@@ -5,8 +5,9 @@ namespace App\Jobs;
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\Item;
-use App\Models\LootCouncil\ItemPriority;
-use App\Models\LootCouncil\Priority;
+use App\Models\ItemPriority;
+use App\Models\LootPriority;
+use App\Models\Phase;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;
@@ -62,6 +63,7 @@ class BuildAddonExportFile implements ShouldQueue
             'system' => [
                 'date_generated' => Carbon::now()->unix(),
             ],
+            'phases' => $this->buildPhases(),
             'priorities' => $this->buildPriorities(),
             'items' => $this->buildItems(),
             'players' => $this->buildPlayerAttendance($calculator),
@@ -74,11 +76,25 @@ class BuildAddonExportFile implements ShouldQueue
     }
 
     /**
+     * Build a list of raid phases with their start times.
+     */
+    protected function buildPhases(): Collection
+    {
+        return Phase::orderBy('number')->get()->map(function (Phase $phase) {
+            return [
+                'id' => $phase->id,
+                'number' => $phase->number,
+                'start_date' => $phase->start_date?->unix(),
+            ];
+        });
+    }
+
+    /**
      * Build a list of loot priorities with their icons.
      */
     protected function buildPriorities(): Collection
     {
-        return Priority::has('items')->where('type', '!=', 'Meme')->with('media')->get()->map(function (Priority $priority) {
+        return LootPriority::has('items')->where('type', '!=', 'Meme')->with('media')->get()->map(function (LootPriority $priority) {
             $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
 
             return [
@@ -116,7 +132,7 @@ class BuildAddonExportFile implements ShouldQueue
                 'id' => $stats->character->id,
                 'name' => $stats->character->name,
                 'attendance' => [
-                    'first_attendance' => $stats->firstAttendance->copy()->setTimezone(config('app.timezone'))->toIso8601String(),
+                    'first_attendance' => $stats->firstAttendance->unix(),
                     'attended' => $stats->reportsAttended,
                     'total' => $stats->totalReports,
                     'percentage' => $stats->percentage,

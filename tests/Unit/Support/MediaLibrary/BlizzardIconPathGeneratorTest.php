@@ -2,10 +2,11 @@
 
 namespace Tests\Unit\Support\MediaLibrary;
 
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use App\Support\MediaLibrary\BlizzardIconPathGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
@@ -15,6 +16,8 @@ use Tests\TestCase;
  * HasBlizzardIcons yet. Full end-to-end verification that PathGeneratorFactory::create()
  * dispatches to this generator is deferred to Task 6, once Priority implements the interface.
  */
+#[Group('media')]
+#[Group('blizzard-integration')]
 class BlizzardIconPathGeneratorTest extends TestCase
 {
     use RefreshDatabase;
@@ -28,7 +31,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
 
     private function mediaFor(string $fileName, ?int $size): Media
     {
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         return $priority->addMediaFromString('BINARY')
             ->usingFileName($fileName)
@@ -79,7 +82,7 @@ class BlizzardIconPathGeneratorTest extends TestCase
     #[Test]
     public function it_delegates_to_default_path_generator_for_non_blizzard_icons_collection(): void
     {
-        $priority = Priority::factory()->create();
+        $priority = LootPriority::factory()->create();
 
         $media = $priority->addMediaFromString('BINARY')
             ->usingFileName('screenshot.jpg')

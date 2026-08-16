@@ -9,9 +9,11 @@ use App\Listeners\ScheduleAddonExportBuild;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class ScheduleAddonExportBuildTest extends TestCase
 {
     use RefreshDatabase;

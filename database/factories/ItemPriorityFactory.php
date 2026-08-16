@@ -1,0 +1,66 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Item;
+use App\Models\ItemPriority;
+use App\Models\LootPriority;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @extends Factory<ItemPriority>
+ */
+class ItemPriorityFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var class-string<Model>
+     */
+    protected $model = ItemPriority::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'item_id' => Item::factory(),
+            'priority_id' => LootPriority::factory(),
+            'weight' => fake()->numberBetween(1, 100),
+        ];
+    }
+
+    /**
+     * Set a specific weight value.
+     */
+    public function weight(int $weight): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'weight' => $weight,
+        ]);
+    }
+
+    /**
+     * Indicate a high priority weight.
+     */
+    public function highPriority(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'weight' => fake()->numberBetween(80, 100),
+        ]);
+    }
+
+    /**
+     * Indicate a low priority weight.
+     */
+    public function lowPriority(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'weight' => fake()->numberBetween(1, 20),
+        ]);
+    }
+}

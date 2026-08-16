@@ -4,7 +4,7 @@ namespace App\Http\Integrations\Blizzard\Responses;
 
 use App\Http\Integrations\Blizzard\Data\Media\MediaData;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Saloon\Http\Response;
 use Throwable;
 
@@ -31,7 +31,7 @@ class GetMediaResponse extends Response
     }
 
     /**
-     * Send a FetchAssetRequest for each asset in the DTO via the given
+     * Send a FetchIconRequest for each asset in the DTO via the given
      * RenderConnector and annotate each AssetData with its mirrored path.
      *
      * Errors for individual assets are reported and swallowed so a single
@@ -44,7 +44,7 @@ class GetMediaResponse extends Response
         foreach ($this->dto()->assets as $asset) {
             try {
                 /** @var FetchAssetResponse $fetchResponse */
-                $fetchResponse = $connector->send(new FetchAssetRequest($asset->value));
+                $fetchResponse = $connector->send(new FetchIconRequest($asset->value));
                 $mirroredPath = $fetchResponse->mirroredPath();
 
                 if ($mirroredPath !== null) {

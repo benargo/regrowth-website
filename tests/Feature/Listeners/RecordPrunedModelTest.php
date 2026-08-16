@@ -6,9 +6,11 @@ use App\Events\ModelPruned;
 use App\Models\Event;
 use App\Models\PrunedModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class RecordPrunedModelTest extends TestCase
 {
     use RefreshDatabase;
@@ -51,6 +53,17 @@ class RecordPrunedModelTest extends TestCase
 
         $this->assertEquals(Event::class, $pruned->type);
         $this->assertStringContainsString('App\\Models\\Event', $pruned->type);
+    }
+
+    #[Test]
+    public function it_is_idempotent_when_dispatched_twice_for_the_same_model(): void
+    {
+        $event = Event::factory()->create();
+
+        ModelPruned::dispatch($event);
+        ModelPruned::dispatch($event);
+
+        $this->assertCount(1, PrunedModel::where('id', $event->id)->where('type', Event::class)->get());
     }
 
     #[Test]

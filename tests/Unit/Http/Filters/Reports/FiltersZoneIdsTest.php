@@ -7,9 +7,12 @@ use App\Models\Raids\Report;
 use App\Models\Zone;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
+#[Group('warcraftlogs-integration')]
 class FiltersZoneIdsTest extends TestCase
 {
     use RefreshDatabase;

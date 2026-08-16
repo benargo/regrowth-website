@@ -3,9 +3,11 @@
 namespace Tests\Unit\Http\Integrations\Blizzard\Data\Item;
 
 use App\Http\Integrations\Blizzard\Data\Item\InventoryTypeData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class InventoryTypeDataTest extends TestCase
 {
     #[Test]

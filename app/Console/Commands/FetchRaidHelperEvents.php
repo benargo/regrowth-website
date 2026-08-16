@@ -8,7 +8,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 
-#[Signature('raid-helper:fetch-events')]
+#[Signature('fetch:raid-helper')]
 #[Description('Fetch events from Raid Helper')]
 class FetchRaidHelperEvents extends Command
 {

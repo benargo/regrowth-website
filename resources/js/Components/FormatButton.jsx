@@ -6,7 +6,7 @@ export default function FormatButton({ title, onClick, label = null }) {
             <button
                 type="button"
                 onClick={onClick}
-                className={`w-8 h-8 flex items-center justify-center px-2 py-1 text-sm rounded border border-brown-600 bg-brown-700 text-white hover:bg-brown-600 focus:outline-none focus:ring-1 focus:ring-primary`}
+                className={`w-8 h-8 flex items-center justify-center px-2 py-1 text-sm rounded border border-brown-600 bg-brown-700 text-white hover:bg-brown-600 focus:outline-hidden focus:ring-1 focus:ring-primary`}
             >
                 {label || title}
             </button>

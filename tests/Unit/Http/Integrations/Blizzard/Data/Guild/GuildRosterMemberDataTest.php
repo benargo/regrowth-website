@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Guild;
 
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterCharacterData;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class GuildRosterMemberDataTest extends TestCase
 {
     #[Test]

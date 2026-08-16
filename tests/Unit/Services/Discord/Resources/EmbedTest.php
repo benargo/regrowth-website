@@ -10,12 +10,14 @@ use App\Services\Discord\Resources\EmbedFooter;
 use App\Services\Discord\Resources\EmbedMedia;
 use App\Services\Discord\Resources\EmbedProvider;
 use App\Services\Discord\Resources\EmbedVideo;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use ReflectionProperty;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class EmbedTest extends TestCase
 {
     // -------------------------------------------------------------------------

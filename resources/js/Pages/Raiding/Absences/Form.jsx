@@ -74,7 +74,7 @@ function CharacterSearch({ characters, value, onChange, error, disabled = false 
                     onFocus={disabled ? undefined : handleFocus}
                     placeholder="Search by character name..."
                     disabled={disabled}
-                    className={`w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500 ${disabled ? "cursor-not-allowed opacity-75" : ""}`}
+                    className={`w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-amber-500 ${disabled ? "cursor-not-allowed opacity-75" : ""}`}
                 />
                 {!disabled && (search || selectedCharacter) && (
                     <button

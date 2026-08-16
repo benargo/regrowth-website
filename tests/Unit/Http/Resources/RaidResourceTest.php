@@ -4,13 +4,17 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Enums\RaidBackground;
 use App\Http\Resources\RaidResource;
-use App\Models\Phase;
+use App\Models\Boss;
+use App\Models\Comment;
+use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class RaidResourceTest extends TestCase
 {
     use RefreshDatabase;
@@ -56,25 +60,25 @@ class RaidResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_phase_when_loaded(): void
+    public function it_includes_phase_number_when_phase_loaded(): void
     {
         $raid = Raid::factory()->create();
         $raid->load('phase');
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
-        $this->assertArrayHasKey('phase', $array);
-        $this->assertInstanceOf(Phase::class, $array['phase']);
+        $this->assertArrayHasKey('phase_number', $array);
+        $this->assertSame($raid->phase->number, $array['phase_number']);
     }
 
     #[Test]
-    public function it_excludes_phase_when_not_loaded(): void
+    public function it_excludes_phase_number_when_phase_not_loaded(): void
     {
         $raid = Raid::factory()->create();
 
         $array = (new RaidResource($raid))->resolve(new Request);
 
-        $this->assertArrayNotHasKey('phase', $array);
+        $this->assertArrayNotHasKey('phase_number', $array);
     }
 
     #[Test]
@@ -97,50 +101,6 @@ class RaidResourceTest extends TestCase
         $array = (new RaidResource($raid))->resolve(new Request);
 
         $this->assertArrayNotHasKey('bosses', $array);
-    }
-
-    #[Test]
-    public function it_includes_items_when_loaded(): void
-    {
-        $raid = Raid::factory()->withItems(2)->create();
-        $raid->load('items');
-
-        $array = (new RaidResource($raid))->toArray(new Request);
-
-        $this->assertArrayHasKey('items', $array);
-        $this->assertCount(2, $array['items']);
-    }
-
-    #[Test]
-    public function it_excludes_items_when_not_loaded(): void
-    {
-        $raid = Raid::factory()->withItems(2)->create();
-
-        $array = (new RaidResource($raid))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('items', $array);
-    }
-
-    #[Test]
-    public function it_includes_comments_when_loaded(): void
-    {
-        $raid = Raid::factory()->withComments(2)->create();
-        $raid->load('comments');
-
-        $array = (new RaidResource($raid))->toArray(new Request);
-
-        $this->assertArrayHasKey('comments', $array);
-        $this->assertCount(2, $array['comments']);
-    }
-
-    #[Test]
-    public function it_excludes_comments_when_not_loaded(): void
-    {
-        $raid = Raid::factory()->withComments(2)->create();
-
-        $array = (new RaidResource($raid))->resolve(new Request);
-
-        $this->assertArrayNotHasKey('comments', $array);
     }
 
     #[Test]
@@ -188,7 +148,7 @@ class RaidResourceTest extends TestCase
     #[Test]
     public function it_returns_background_css_class_value(): void
     {
-        $raid = Raid::factory()->withBackground(RaidBackground::KARAZHAN)->create();
+        $raid = Raid::factory()->withBackground(RaidBackground::Karazhan)->create();
 
         $array = (new RaidResource($raid))->toArray(new Request);
 
@@ -203,6 +163,87 @@ class RaidResourceTest extends TestCase
         $array = (new RaidResource($raid))->toArray(new Request);
 
         $this->assertNull($array['background']);
+    }
+
+    #[Test]
+    public function it_returns_true_for_has_trash_items_when_trash_items_exist(): void
+    {
+        $raid = Raid::factory()->withItems(2)->create();
+        $raid->loadExists('trashItems');
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayHasKey('has_trash_items', $array);
+        $this->assertTrue($array['has_trash_items']);
+    }
+
+    #[Test]
+    public function it_returns_false_for_has_trash_items_when_no_trash_items_exist(): void
+    {
+        $raid = Raid::factory()->create();
+        $raid->loadExists('trashItems');
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayHasKey('has_trash_items', $array);
+        $this->assertFalse($array['has_trash_items']);
+    }
+
+    #[Test]
+    public function it_excludes_has_trash_items_when_exists_not_loaded(): void
+    {
+        $raid = Raid::factory()->withItems(2)->create();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('has_trash_items', $array);
+    }
+
+    #[Test]
+    public function it_returns_trash_comments_count_when_counted(): void
+    {
+        $raid = Raid::factory()->create();
+        $raid->trash_comments_count = Comment::query()
+            ->where('commentable_type', Item::class)
+            ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
+            ->count();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayHasKey('trash_comments_count', $array);
+        $this->assertSame((int) $raid->trash_comments_count, $array['trash_comments_count']);
+    }
+
+    #[Test]
+    public function it_excludes_trash_comments_count_when_not_counted(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('trash_comments_count', $array);
+    }
+
+    #[Test]
+    public function it_counts_only_trash_item_comments_excluding_boss_item_comments(): void
+    {
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+
+        $trashItem = Item::factory()->trashDrop()->withRaid($raid)->create();
+        $bossItem = Item::factory()->fromBoss($boss)->create();
+
+        Comment::factory()->count(3)->create(['commentable_id' => (string) $trashItem->id, 'commentable_type' => Item::class]);
+        Comment::factory()->count(5)->create(['commentable_id' => (string) $bossItem->id, 'commentable_type' => Item::class]);
+
+        $raid->trash_comments_count = Comment::query()
+            ->where('commentable_type', Item::class)
+            ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
+            ->count();
+
+        $array = (new RaidResource($raid))->resolve(new Request);
+
+        $this->assertSame(3, $array['trash_comments_count']);
     }
 
     #[Test]

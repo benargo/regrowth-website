@@ -14,7 +14,7 @@ export default function CopyButton({ getValue, label = null, className = '', suc
     }
 
     return (
-        <Tooltip text={copied ? successMessage : 'Copy to clipboard'}>
+        <Tooltip body={copied ? successMessage : 'Copy to clipboard'}>
             <button onClick={handleCopy} className={className}>
                 <Icon icon={copied ? 'check' : 'copy'} style="solid" className={label ? 'mr-2' : ''} />
                 {label && <span>{copied ? successMessage : label}</span>}

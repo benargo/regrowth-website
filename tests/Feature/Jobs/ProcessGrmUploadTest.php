@@ -23,6 +23,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
@@ -30,6 +31,7 @@ use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('characters')]
 class ProcessGrmUploadTest extends TestCase
 {
     use RefreshDatabase;
@@ -213,7 +215,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
-        $this->assertDatabaseCount('character_links', 2);
+        $this->assertDatabaseCount('character_links', 4);
     }
 
     #[Test]
@@ -346,8 +348,8 @@ class ProcessGrmUploadTest extends TestCase
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
-        // Should still only have one link
-        $this->assertDatabaseCount('character_links', 1);
+        // One link per direction; no duplicates created
+        $this->assertDatabaseCount('character_links', 2);
     }
 
     #[Test]

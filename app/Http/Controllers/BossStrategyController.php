@@ -10,10 +10,10 @@ use App\Models\Phase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-#[Authorize('view-officer-dashboard')]
 class BossStrategyController extends Controller
 {
     /**
@@ -23,9 +23,27 @@ class BossStrategyController extends Controller
     {
         $phases = Phase::with(['raids'])->orderBy('number')->get();
 
-        return Inertia::render('Manage/BossStrategies/Index', [
+        $route = Route::currentRouteName();
+
+        $view = match ($route) {
+            'raiding.boss-strategies.index' => 'Raiding/BossStrategies/Index',
+            'management.boss-strategies.index' => 'Manage/BossStrategies/Index',
+            default => throw new \Exception("Unexpected route name: $route"),
+        };
+
+        return Inertia::render($view, [
             'bosses' => new RaidBossesCollection(Boss::orderBy('raid_id')->orderBy('encounter_order')->get()),
             'phases' => PhaseResource::collection($phases)->resolve($request),
+        ]);
+    }
+
+    /**
+     * Show a boss's strategy.
+     */
+    public function show(Boss $boss, string $slug)
+    {
+        return Inertia::render('Raiding/BossStrategies/Show', [
+            'boss' => $boss->load('raid')->toResource(),
         ]);
     }
 

@@ -108,7 +108,7 @@ export default function Autocomplete({
             {(icon || labelText) && (
                 <label className="mb-2 flex flex-row items-center">
                     {icon && (
-                        <img src={icon} alt={iconAlt} className="mr-2 h-6 w-6 rounded-sm" />
+                        <img src={icon} alt={iconAlt} className="mr-2 h-6 w-6 rounded-xs" />
                     )}
                     {labelText && <span className="text-lg font-semibold">{labelText}</span>}
                 </label>
@@ -123,7 +123,7 @@ export default function Autocomplete({
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 required={required}
-                className="w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white placeholder-gray-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white placeholder-gray-400 focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                 autoComplete="off"
             />
 

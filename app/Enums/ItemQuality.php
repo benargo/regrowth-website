@@ -35,8 +35,10 @@ enum ItemQuality: string
     /**
      * Get a CSS class name corresponding to this item quality, which can be used for styling purposes.
      */
-    public function cssClass(): string
+    public function cssClass(string $prefix = ''): string
     {
-        return 'item-quality-'.Str::slug($this->name);
+        $prefix = Str::of($prefix)->rtrim('-');
+
+        return (string) Str::of($this->name)->slug()->prepend($prefix, '-quality-');
     }
 }

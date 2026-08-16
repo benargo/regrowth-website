@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Responses;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassMediaData;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
 use App\Http\Integrations\Blizzard\Responses\GetPlayableClassMediaResponse;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetPlayableClassMediaResponseTest extends BlizzardTestCase
 {
     private function fakeGetPlayableClassMediaRequest(array $assets = []): GetPlayableClassMediaResponse
@@ -49,7 +51,7 @@ class GetPlayableClassMediaResponseTest extends BlizzardTestCase
         $this->assertInstanceOf(PlayableClassMediaData::class, $data);
         $this->assertSame(7, $data->id);
         $this->assertCount(1, $data->assets);
-        $this->assertSame('https://render.worldofwarcraft.com/icons/56/classicon_shaman.jpg', $data->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/icons/56/classicon_shaman.jpg', (string) $data->assets[0]->value);
     }
 
     #[Test]

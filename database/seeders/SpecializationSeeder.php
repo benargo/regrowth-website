@@ -6,7 +6,7 @@ use App\Contracts\HasBlizzardIcons;
 use App\Enums\PlayableSpecRole;
 use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\PlayableClass;
 use App\Models\PlayableSpecialization;
@@ -92,10 +92,8 @@ class SpecializationSeeder extends Seeder implements HasBlizzardIcons
                 $model = PlayableSpecialization::updateOrCreate(
                     [
                         'playable_class_id' => $playableClass->id,
-                        'name' => $spec['name'],
-                    ],
-                    [
                         'role' => $spec['role'],
+                        'name' => $spec['name'],
                     ]
                 );
 
@@ -104,15 +102,17 @@ class SpecializationSeeder extends Seeder implements HasBlizzardIcons
                 }
 
                 $iconName = $spec['icon_name'];
-                $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+                $iconFileName = $iconName.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION;
 
                 try {
-                    $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
+                    $response = $this->renderConnector->send(new FetchIconRequest($iconName));
 
                     $model->addMediaFromString($response->body())
                         ->usingFileName($iconFileName)
-                        ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                        ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
                         ->toMediaCollection('blizzard_icons');
+
+                    $this->command?->info("  <info>✓</info> [{$model->id}] {$model->name}");
                 } catch (ForbiddenException $e) {
                     AttachBlizzardIconToModel::dispatch(PlayableSpecialization::class, $model->id, $e->getPendingRequest()->getUrl())
                         ->delay(now()->addMinutes(5));

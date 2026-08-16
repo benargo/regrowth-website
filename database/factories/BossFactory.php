@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Boss;
+use App\Models\Comment;
 use App\Models\Item;
-use App\Models\LootCouncil\Comment;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;

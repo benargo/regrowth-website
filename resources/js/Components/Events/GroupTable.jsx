@@ -60,7 +60,7 @@ export function GroupTable({ group }) {
                             {group.characters.map((character) => (
                                 <tr
                                     key={character.id}
-                                    className={`transition-colors hover:bg-brown-800/50${!character.is_confirmed ? " opacity-40" : ""}`}
+                                    className={`transition-colors hover:bg-brown-800/50${character.signup_status === "unconfirmed" ? " opacity-40" : ""}${character.signup_status === "cancelled" ? " opacity-40 line-through decoration-red-400 text-red-400" : ""}`}
                                 >
                                     <td className="px-4 py-3">
                                         <span className="inline-flex items-center gap-1">

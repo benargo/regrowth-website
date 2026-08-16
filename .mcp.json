@@ -2,10 +2,19 @@
     "mcpServers": {
         "laravel-boost": {
             "command": "vendor/bin/sail",
-            "args": [
-                "artisan",
-                "boost:mcp"
-            ]
+            "args": ["artisan", "boost:mcp"]
+        },
+        "laravel-inertia": {
+            "type": "http",
+            "url": "https://inertiajs.com/docs/mcp"
+        },
+        "saloon": {
+            "type": "http",
+            "url": "https://docs.saloon.dev/~gitbook/mcp"
+        },
+        "tailwindcss-server": {
+            "command": "npx",
+            "args": ["-y", "tailwindcss-mcp-server"]
         }
     }
 }

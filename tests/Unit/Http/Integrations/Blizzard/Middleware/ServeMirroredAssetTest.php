@@ -6,15 +6,17 @@ use App\Contracts\Http\Integrations\Blizzard\Mirrorable;
 use App\Http\Integrations\Blizzard\Middleware\ServeMirroredAsset;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Http\Integrations\Blizzard\Support\MirrorPaths;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Contracts\RequestMiddleware;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class ServeMirroredAssetTest extends TestCase
 {
     #[Test]
@@ -33,13 +35,13 @@ class ServeMirroredAssetTest extends TestCase
         $disk->put('blizzard-cdn/icons/56/foo.jpg', 'CACHED');
 
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'NETWORK', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'NETWORK', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, $disk);
         $connector->withMockClient($mock);
 
-        $response = $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
+        $response = $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/foo.jpg'));
 
         $this->assertSame('CACHED', $response->body());
         $this->assertSame('hit', $response->header('X-Mirror'));
@@ -51,13 +53,13 @@ class ServeMirroredAssetTest extends TestCase
         $disk = Storage::fake('public');
 
         $mock = new MockClient([
-            FetchAssetRequest::class => MockResponse::make(body: 'NETWORK', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'NETWORK', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, $disk);
         $connector->withMockClient($mock);
 
-        $response = $connector->send(new FetchAssetRequest('https://render.worldofwarcraft.com/eu/icons/56/missing.jpg'));
+        $response = $connector->send(new FetchIconRequest('https://render.worldofwarcraft.com/eu/icons/56/missing.jpg'));
 
         $this->assertSame('NETWORK', $response->body());
         $this->assertNotSame('hit', $response->header('X-Mirror'));
@@ -69,7 +71,7 @@ class ServeMirroredAssetTest extends TestCase
         $disk = Storage::fake('public');
         $disk->put('custom/path.jpg', 'CUSTOM');
 
-        $request = new class('https://render.worldofwarcraft.com/eu/anything.jpg') extends FetchAssetRequest implements Mirrorable
+        $request = new class('https://render.worldofwarcraft.com/eu/anything.jpg') extends FetchIconRequest implements Mirrorable
         {
             public function resolveMirrorPath(): string
             {

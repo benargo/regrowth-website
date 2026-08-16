@@ -1,18 +1,21 @@
+import { useState, useRef, useCallback } from "react";
 import Master from "@/Layouts/Master";
-import { Deferred, Link } from "@inertiajs/react";
-import CommentsSection from "@/Components/Loot/CommentsSection";
+import { Link } from "@inertiajs/react";
+import useItemChannel from "@/Hooks/useItemChannel";
+import CommentsSection from "@/Components/Comments/CommentsSection";
 import Icon from "@/Components/FontAwesome/Icon";
 import SharedHeader from "@/Components/SharedHeader";
-import Notes from "@/Components/Loot/Notes";
+import FormattedMarkdown from "@/Components/FormattedMarkdown";
 import { Can } from "@/Components/Authorizable";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
 import ToolNav from "@/Components/ToolNav";
 import PageContainer from "@/Components/PageContainer";
+import getItemRaid from "@/Helpers/GetItemRaid";
 
 function PriorityItem({ priority }) {
     return (
-        <div className="md:w-50 flex w-full items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6">
-            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
+        <div className="border-primary bg-brown-800 flex w-auto items-center justify-center gap-2 rounded-md border px-4 py-3">
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
         </div>
     );
@@ -20,47 +23,46 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="italic text-gray-500">This item has no biases.</p>;
+        return <p className="text-gray-500 italic">This item has no biases.</p>;
     }
 
-    // Sort by weight (ascending) and group by weight
     const sorted = [...priorities].sort((a, b) => a.weight - b.weight);
     const grouped = sorted.reduce((acc, priority) => {
         const weight = priority.weight;
-        if (!acc[weight]) {
-            acc[weight] = [];
-        }
+        if (!acc[weight]) acc[weight] = [];
         acc[weight].push(priority);
         return acc;
     }, {});
 
-    // Build display: join same-weight with " = ", different weights with " > "
     const weights = Object.keys(grouped).sort((a, b) => a - b);
 
+    const rowBgs = ["bg-brown-900/60", "bg-brown-800/60", "bg-brown-700/60", "bg-brown-600/60"];
+
     return (
-        <span className="flex-col flex-wrap items-center gap-2 text-lg">
+        <div className="overflow-hidden rounded-md text-lg">
             {weights.map((weight, weightIndex) => (
-                <div key={weight} className="my-4">
+                <div key={weight}>
                     {weightIndex > 0 && (
-                        <div className="mx-auto my-4 text-center text-4xl font-bold text-amber-600 md:ml-12">
+                        <div className="flex justify-center py-1 text-2xl text-amber-700/60">
                             <Icon icon="chevron-down" style="solid" />
                         </div>
                     )}
-                    <div className="flex items-center justify-center rounded-md border border-amber-700 md:border-transparent">
-                        <div className="mx-2 w-6 flex-none text-4xl">{weightIndex + 1}</div>
-                        <div className="md:w-92 flex w-full flex-col items-center justify-center rounded px-2 py-4 md:flex-row">
+                    <div
+                        className={`flex items-center gap-3 px-3 py-4 ${rowBgs[Math.min(weightIndex, rowBgs.length - 1)]}`}
+                    >
+                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-amber-600 text-lg font-bold text-amber-600">
+                            {weightIndex + 1}
+                        </div>
+                        <div className="flex flex-1 flex-wrap items-center justify-center gap-2">
                             {grouped[weight].map((priority, index) => (
-                                <div
-                                    key={`priority-${priority.id}`}
-                                    className="flex w-full flex-col items-center justify-center md:w-auto md:flex-row"
-                                >
+                                <div key={`priority-${priority.id}`} className="flex items-center gap-2">
                                     {index > 0 && (
-                                        <div
+                                        <Icon
                                             key={`separator-${index}`}
-                                            className="my-4 w-12 flex-none items-center text-center text-2xl font-bold text-amber-600"
-                                        >
-                                            <Icon icon="equals" style="solid" />
-                                        </div>
+                                            icon="equals"
+                                            style="solid"
+                                            className="flex-none text-2xl font-bold text-amber-600"
+                                        />
                                     )}
                                     <PriorityItem priority={priority} />
                                 </div>
@@ -69,30 +71,59 @@ function PriorityDisplay({ priorities }) {
                     </div>
                 </div>
             ))}
-        </span>
+        </div>
     );
 }
 
-export default function ItemShow({ item, comments }) {
+export default function Show({ item, comments, replies }) {
+    const raid = getItemRaid(item);
+    const [notes, setNotes] = useState(item.data.notes);
+    const [priorities, setPriorities] = useState(item.data.priorities);
+
+    const commentHandlers = useRef({});
+    const registerBroadcastHandlers = useCallback((handlers) => {
+        commentHandlers.current = handlers;
+    }, []);
+
+    useItemChannel(
+        item.data.id,
+        (payload) => {
+            if (payload.notes !== undefined) {
+                setNotes(payload.notes);
+            }
+            if (payload.priorities !== undefined) {
+                setPriorities(payload.priorities);
+            }
+        },
+        {
+            onCommentPosted: (payload) => commentHandlers.current.onCommentPosted?.(payload),
+            onCommentChanged: (payload) => commentHandlers.current.onCommentChanged?.(payload),
+            onCommentRemoved: (payload) => commentHandlers.current.onCommentRemoved?.(payload),
+            onCommentReactionChanged: (payload) => commentHandlers.current.onCommentReactionChanged?.(payload),
+        },
+    );
+
     return (
         <Master title={item.data.name}>
-            <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
+            <SharedHeader backgroundClass={raid?.background ?? "bg-ssctk"} title="Loot Bias" subtitle={raid?.name} />
             {/* Tool navigation */}
             <ToolNav>
-                <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("loot.raids.show", { raid: item.data.raid.id, name: item.data.raid.slug })}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
-                    >
-                        <Icon icon="arrow-left" style="solid" className="mr-2" />
-                        <span>Back to {item.data.raid.name} loot</span>
-                    </Link>
-                </div>
+                {raid && (
+                    <div className="flex-initial space-x-4">
+                        <Link
+                            href={route("loot.raids.show", { raid: raid.id, name: raid.slug })}
+                            className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                        >
+                            <Icon icon="arrow-left" style="solid" className="mr-2" />
+                            <span>Back to {raid.name} loot</span>
+                        </Link>
+                    </div>
+                )}
                 <div className="flex items-center space-x-4">
                     <Can permission="edit-items">
                         <Link
-                            href={route("loot.items.edit", { item: item.data.id, name: item.data.slug })}
-                            className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                            href={route("loot.items.edit", { item: item.data.id, slug: item.data.slug })}
+                            className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                         >
                             <Icon icon="edit" style="solid" className="mr-2" />
                             <span>Edit this item</span>
@@ -104,12 +135,14 @@ export default function ItemShow({ item, comments }) {
             <PageContainer>
                 <ItemDetailsCard item={item.data} />
 
-                <h2 className="mb-4 mt-8 text-xl font-bold">Loot Biases</h2>
+                <div className="border-brown-700 my-8 border-t" />
+
+                <h2 className="mb-4 text-xl font-bold">Loot Biases</h2>
                 {/* Biases List */}
-                {item.data.priorities.length > 0 ? (
-                    <div className="mt-8 w-full">
-                        <PriorityDisplay priorities={item.data.priorities} />
-                        <p className="text-gray-400">
+                {priorities.length > 0 ? (
+                    <div className="w-full">
+                        <PriorityDisplay priorities={priorities} />
+                        <p className="mt-4 text-gray-400">
                             Beyond the above biases, this item will be distributed <strong>MS &gt; OS</strong>.
                         </p>
                     </div>
@@ -121,10 +154,20 @@ export default function ItemShow({ item, comments }) {
                 )}
 
                 {/* Notes Section */}
-                <Notes notes={item.data.notes} itemId={item.data.id} canEdit={false} />
+                {notes && (
+                    <div className="mt-8">
+                        <h2 className="mb-6 text-xl font-bold">Officers&rsquo; Notes</h2>
+                        <FormattedMarkdown>{notes}</FormattedMarkdown>
+                    </div>
+                )}
 
                 {/* Comments Section */}
-                <CommentsSection comments={comments} itemId={item.data.id} />
+                <CommentsSection
+                    comments={comments}
+                    replies={replies}
+                    itemId={item.data.id}
+                    registerBroadcastHandlers={registerBroadcastHandlers}
+                />
             </PageContainer>
         </Master>
     );

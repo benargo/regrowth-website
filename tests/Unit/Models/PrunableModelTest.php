@@ -11,10 +11,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 use Tests\TestCase;
 
+#[Group('platform')]
 class ConcreteModel extends PrunableModel
 {
     use HasUuids;
@@ -77,6 +79,7 @@ class PrunableModelTest extends TestCase
         $this->assertSame($id, $result->id);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function resolve_route_binding_throws_gone_exception_for_pruned_id(): void
     {

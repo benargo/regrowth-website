@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
 
-export default function FilterDropdown({ label, options, selected, onChange, showIcon = false, dusk }) {
+export default function FilterDropdown({ label, options, selected, onChange, showIcon = false }) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -34,7 +34,6 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                dusk={dusk}
                 className="flex w-full items-center justify-between rounded border border-amber-600 bg-brown-800 px-4 py-2 text-left text-white transition-colors hover:bg-brown-700"
             >
                 <span className="truncate text-sm">{buttonText}</span>
@@ -49,14 +48,12 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
                     <div className="flex border-b border-brown-700">
                         <button
                             onClick={selectAll}
-                            dusk={dusk ? `${dusk}-all` : undefined}
                             className="flex-1 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
                         >
                             All
                         </button>
                         <button
                             onClick={selectNone}
-                            dusk={dusk ? `${dusk}-none` : undefined}
                             className="flex-1 border-l border-brown-700 px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-brown-700"
                         >
                             None

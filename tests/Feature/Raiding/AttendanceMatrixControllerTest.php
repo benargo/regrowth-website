@@ -15,10 +15,12 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class AttendanceMatrixControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -48,6 +50,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function invoke_forbids_guest_users(): void
     {
@@ -58,6 +61,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function invoke_forbids_member_users(): void
     {
@@ -68,6 +72,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function invoke_forbids_raider_users(): void
     {
@@ -78,6 +83,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function invoke_forbids_loot_councillor_users(): void
     {
@@ -305,6 +311,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['character']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_nonexistent_character_id(): void
     {
@@ -315,6 +322,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionHasErrors(['character']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_non_integer_character(): void
     {
@@ -335,6 +343,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['zone_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_zone_ids_with_invalid_format(): void
     {
@@ -355,6 +364,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['guild_tag_ids']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_guild_tag_ids_with_invalid_format(): void
     {
@@ -375,6 +385,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['since_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_invalid_since_date(): void
     {
@@ -395,6 +406,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['before_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_invalid_before_date(): void
     {
@@ -416,6 +428,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['since_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_since_date_in_the_future(): void
     {
@@ -438,6 +451,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['before_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_before_date_in_the_future(): void
     {
@@ -463,6 +477,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['since_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_since_date_before_minimum(): void
     {
@@ -490,6 +505,7 @@ class AttendanceMatrixControllerTest extends TestCase
         $response->assertSessionDoesntHaveErrors(['before_date']);
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_rejects_before_date_before_minimum(): void
     {
@@ -689,6 +705,7 @@ class AttendanceMatrixControllerTest extends TestCase
         );
     }
 
+    #[Group('validation')]
     #[Test]
     public function invoke_combine_linked_characters_rejects_non_boolean(): void
     {

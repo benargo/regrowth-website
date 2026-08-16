@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Resources;
 
 use App\Enums\RaidBackground;
+use App\Enums\SignupStatus;
 use App\Http\Resources\EventResource;
 use App\Models\Boss;
 use App\Models\Character;
@@ -11,14 +12,13 @@ use App\Models\EventAssignment;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
-use App\Services\RaidHelper\RaidHelper;
-use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class EventResourceTest extends TestCase
 {
     use RefreshDatabase;
@@ -34,38 +34,6 @@ class EventResourceTest extends TestCase
         return $channel;
     }
 
-    private function mockRaidHelper(array $signUps = []): void
-    {
-        $this->mock(RaidHelper::class, function (MockInterface $mock) use ($signUps) {
-            $mock->shouldReceive('getEvent')->andReturn(
-                RaidHelperEvent::from([
-                    'id' => '999000000000000001',
-                    'serverId' => '111222333444555666',
-                    'leaderId' => '200000000000000001',
-                    'leaderName' => 'Raid Leader',
-                    'channelId' => '100000000000000001',
-                    'channelName' => 'raid-signups',
-                    'channelType' => 'GUILD_TEXT',
-                    'templateId' => 'wowclassic',
-                    'templateEmoteId' => '0',
-                    'title' => 'Weekly Raid',
-                    'description' => '',
-                    'startTime' => 1700000000,
-                    'endTime' => 1700007200,
-                    'closingTime' => 1699999800,
-                    'date' => '2023-11-14',
-                    'time' => '20:00',
-                    'advancedSettings' => [],
-                    'classes' => [],
-                    'roles' => [],
-                    'signUps' => $signUps,
-                    'lastUpdated' => 1699999000,
-                    'color' => '0,0,0',
-                ])
-            )->byDefault();
-        });
-    }
-
     private function makeResource(Event $event): array
     {
         $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
@@ -77,7 +45,6 @@ class EventResourceTest extends TestCase
     public function it_returns_all_expected_top_level_keys(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -99,7 +66,6 @@ class EventResourceTest extends TestCase
     public function it_returns_null_background_when_no_raids_attached(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -111,7 +77,6 @@ class EventResourceTest extends TestCase
     public function it_returns_null_color_when_event_has_no_color(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create(['color' => null]);
 
         $array = $this->makeResource($event);
@@ -123,7 +88,6 @@ class EventResourceTest extends TestCase
     public function it_returns_color_as_hex_string(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create(['color' => '34,110,115']);
 
         $array = $this->makeResource($event);
@@ -136,20 +100,18 @@ class EventResourceTest extends TestCase
     public function it_returns_background_string_based_on_event_background_css_class(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
-        $event = Event::factory()->withBackground(RaidBackground::KARAZHAN)->create();
+        $event = Event::factory()->withBackground(RaidBackground::Karazhan)->create();
 
         $array = $this->makeResource($event);
 
-        $this->assertSame(RaidBackground::KARAZHAN->value, $array['background']);
+        $this->assertSame(RaidBackground::Karazhan->value, $array['background']);
     }
 
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -164,7 +126,6 @@ class EventResourceTest extends TestCase
     public function it_returns_duration_as_seconds_between_start_and_end(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -176,7 +137,6 @@ class EventResourceTest extends TestCase
     public function it_returns_channel_as_an_array(): void
     {
         $this->mockChannel(id: '999888777', name: 'raid-chat', position: 3);
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -193,7 +153,6 @@ class EventResourceTest extends TestCase
         $discord = $this->createStub(Discord::class);
         $discord->method('getChannel')->willThrowException(new \Exception('Discord unavailable'));
         $this->app->instance(Discord::class, $discord);
-        $this->mockRaidHelper();
 
         $event = Event::factory()->create();
 
@@ -251,7 +210,6 @@ class EventResourceTest extends TestCase
     public function it_returns_event_level_assignments_excluding_boss_scoped_ones(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->for($raid)->create();
@@ -272,7 +230,6 @@ class EventResourceTest extends TestCase
     public function it_returns_boss_level_assignments_inside_the_boss(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->for($raid)->create();
@@ -295,7 +252,6 @@ class EventResourceTest extends TestCase
     public function it_returns_raids_with_expected_shape(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
         $event = Event::factory()->create();
@@ -314,7 +270,6 @@ class EventResourceTest extends TestCase
     public function it_returns_bosses_with_expected_shape(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->for($raid)->create(['name' => 'Attumen', 'notes' => 'Kill adds first']);
@@ -340,7 +295,6 @@ class EventResourceTest extends TestCase
     public function it_returns_composition_with_groups_and_bench_keys(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -353,7 +307,6 @@ class EventResourceTest extends TestCase
     public function it_returns_groups_with_correct_character_shape(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
         $raid = Raid::factory()->create(['max_players' => 10]);
         $event = Event::factory()->hasAttached($raid, [], 'raids')->create();
@@ -361,7 +314,7 @@ class EventResourceTest extends TestCase
         $event->characters()->attach($character->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_leader' => false,
             'is_loot_councillor' => false,
             'is_loot_master' => false,
@@ -384,7 +337,8 @@ class EventResourceTest extends TestCase
         $this->assertArrayNotHasKey('id', $char['rank']);
         $this->assertArrayNotHasKey('count_attendance', $char['rank']);
         $this->assertSame(1, $char['slot_number']);
-        $this->assertTrue($char['is_confirmed']);
+        $this->assertSame(SignupStatus::Confirmed, $char['signup_status']);
+        $this->assertArrayNotHasKey('is_confirmed', $char);
         $this->assertArrayHasKey('is_leader', $char);
         $this->assertArrayHasKey('is_loot_councillor', $char);
         $this->assertArrayHasKey('is_loot_master', $char);
@@ -394,7 +348,6 @@ class EventResourceTest extends TestCase
     public function it_returns_empty_groups_when_no_characters(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -408,7 +361,6 @@ class EventResourceTest extends TestCase
     public function it_returns_empty_bench_when_no_characters_in_comp(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
         $event = Event::factory()->create();
 
         $array = $this->makeResource($event);
@@ -420,7 +372,6 @@ class EventResourceTest extends TestCase
     public function it_returns_benched_characters_not_in_comp(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
         $inComp = Character::factory()->withRank()->create(['name' => 'Jaina']);
         $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
@@ -429,13 +380,13 @@ class EventResourceTest extends TestCase
         $event->characters()->attach($inComp->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
         $event->characters()->attach($benchedChar->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 
@@ -449,7 +400,6 @@ class EventResourceTest extends TestCase
     public function it_returns_bench_characters_with_expected_shape(): void
     {
         $this->mockChannel();
-        $this->mockRaidHelper();
 
         $benchedChar = Character::factory()->withRank()->create(['name' => 'Thrall']);
 
@@ -457,7 +407,7 @@ class EventResourceTest extends TestCase
         $event->characters()->attach($benchedChar->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 

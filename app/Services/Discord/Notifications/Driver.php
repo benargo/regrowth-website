@@ -104,10 +104,13 @@ class Driver
                 return;
             }
 
+            // Update a unique-by column to itself: Eloquent's upsert() treats an
+            // empty $update list as "just insert" rather than a true no-op upsert,
+            // which throws a duplicate-key error when a row already exists.
             $record->relatedModels()->upsert(
                 $desired,
                 ['discord_notification_id', 'model_type', 'model_id'],
-                [],
+                ['discord_notification_id'],
             );
 
             // Delete any existing pivot rows that are not part of the desired model pairs.

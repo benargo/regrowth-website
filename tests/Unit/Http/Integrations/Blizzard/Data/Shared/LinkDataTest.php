@@ -4,10 +4,12 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\Shared;
 
 use App\Http\Integrations\Blizzard\Data\Shared\HrefData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class LinkDataTest extends TestCase
 {
     #[Test]
@@ -20,7 +22,7 @@ class LinkDataTest extends TestCase
         ]);
 
         $this->assertInstanceOf(HrefData::class, $dto->key);
-        $this->assertSame('https://eu.api.blizzard.com/data/wow/playable-class/1?namespace=static-eu', $dto->key->href);
+        $this->assertSame('https://eu.api.blizzard.com/data/wow/playable-class/1?namespace=static-eu', (string) $dto->key->href);
         $this->assertSame('Warrior', $dto->name);
         $this->assertSame(1, $dto->id);
     }

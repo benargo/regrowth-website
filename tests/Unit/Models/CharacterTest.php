@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\Gender;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Character;
@@ -16,9 +17,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
+#[Group('characters')]
 class CharacterTest extends ModelTestCase
 {
     protected function modelClass(): string
@@ -46,6 +50,7 @@ class CharacterTest extends ModelTestCase
             'rank_id',
             'playable_class_id',
             'playable_race_id',
+            'gender',
             'is_main',
             'is_loot_councillor',
         ]);
@@ -57,6 +62,7 @@ class CharacterTest extends ModelTestCase
         $model = new Character;
 
         $this->assertCasts($model, [
+            'gender' => Gender::class,
             'is_main' => 'boolean',
             'is_loot_councillor' => 'boolean',
         ]);
@@ -498,6 +504,38 @@ class CharacterTest extends ModelTestCase
 
         $character->refresh();
         $this->assertNull($character->rank_id);
+    }
+
+    // HasMedia / character_portrait
+
+    #[Test]
+    public function it_implements_has_media_interface(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(HasMedia::class, $character);
+    }
+
+    #[Test]
+    public function it_registers_character_portrait_collection(): void
+    {
+        $character = $this->create();
+
+        $collections = $character->getRegisteredMediaCollections();
+        $names = array_map(fn ($c) => $c->name, $collections->all());
+
+        $this->assertContains(Character::MEDIA_COLLECTION, $names);
+    }
+
+    #[Test]
+    public function character_portrait_collection_is_single_file(): void
+    {
+        $character = $this->create();
+
+        $collection = $character->getRegisteredMediaCollections()
+            ->firstWhere('name', Character::MEDIA_COLLECTION);
+
+        $this->assertTrue($collection->singleFile);
     }
 
     // warcraft_logs_reports

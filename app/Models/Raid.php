@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use App\Models\LootCouncil\Comment;
 use Database\Factories\RaidFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -14,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 
 #[Appends(['slug'])]
@@ -117,32 +116,43 @@ class Raid extends Model
     // ========== Loot bias relationships ==========
 
     /**
-     * Get the items that drop from this raid.
+     * Get the items that drop in this raid.
      *
-     * @return HasMany<Item, $this>
+     * @return BelongsToMany<Item, $this>
      */
-    public function items(): HasMany
+    public function items(): BelongsToMany
     {
-        return $this->hasMany(Item::class, 'raid_id');
+        return $this->belongsToMany(Item::class, 'pivot_items_raids', 'raid_id', 'item_id')
+            ->withTimestamps();
     }
 
     /**
-     * Get the trash items that drop from this raid (items without a boss).
+     * Get the trash items that drop in this raid (items without a boss).
      *
-     * @return HasMany<Item, $this>
+     * @return BelongsToMany<Item, $this>
      */
-    public function trashItems(): HasMany
+    public function trashItems(): BelongsToMany
     {
-        return $this->items()->whereNull('boss_id');
+        return $this->items()->trash();
     }
 
     /**
-     * Get the comments for the items that drop from this raid (including trash drops).
+     * Get the comments on the items that drop in this raid (including trash drops).
      *
-     * @return HasManyThrough<Comment, Item>
+     * A HasManyThrough cannot hop across a pivot table, so the item ids are
+     * resolved with a subquery over the pivot instead. The relation is built
+     * with Relation::noConstraints() because hasMany() would otherwise add
+     * its own `commentable_id = raids.id` constraint — comparing the item id
+     * stored in the polymorphic column against the raid's own key, which is
+     * meaningless here. The whereIn() subquery is the only constraint that
+     * should apply.
+     *
+     * @return HasMany<Comment, $this>
      */
-    public function comments(): HasManyThrough
+    public function comments(): HasMany
     {
-        return $this->hasManyThrough(Comment::class, Item::class, 'raid_id', 'item_id');
+        return Relation::noConstraints(fn () => $this->hasMany(Comment::class, 'commentable_id')
+            ->where('commentable_type', Item::class)
+            ->whereIn('commentable_id', $this->items()->select('items.id')));
     }
 }

@@ -5,9 +5,11 @@ namespace Tests\Feature\Providers;
 use App\Listeners\BroadcastGrmUploadRetry;
 use Illuminate\Queue\Events\JobReleasedAfterException;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class EventServiceProviderTest extends TestCase
 {
     #[Test]

@@ -4,11 +4,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Guild;
 
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetGuildRosterRequestTest extends BlizzardTestCase
 {
     #[Test]

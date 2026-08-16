@@ -13,9 +13,11 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class CalculatorTest extends TestCase
 {
     use RefreshDatabase;
@@ -73,6 +75,7 @@ class CalculatorTest extends TestCase
 
     // ==================== wholeGuild: Empty Input Tests ====================
 
+    #[Group('error-handling')]
     #[Test]
     public function calculate_throws_when_no_counting_ranks_exist(): void
     {
@@ -511,6 +514,7 @@ class CalculatorTest extends TestCase
 
     // ==================== forRanks: Tests ====================
 
+    #[Group('error-handling')]
     #[Test]
     public function for_ranks_throws_for_empty_collection(): void
     {

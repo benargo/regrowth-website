@@ -4,9 +4,11 @@ namespace Tests\Unit\Facades;
 
 use App\Facades\Blizzard;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class BlizzardTest extends TestCase
 {
     #[Test]

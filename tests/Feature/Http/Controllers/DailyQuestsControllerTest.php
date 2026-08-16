@@ -11,13 +11,16 @@ use App\Models\User;
 use App\Notifications\DailyQuestsMessage;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel as ChannelResource;
+use Carbon\Carbon;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\DashboardTestCase;
 
+#[Group('daily-quests')]
 class DailyQuestsControllerTest extends DashboardTestCase
 {
     protected function setUp(): void
@@ -41,6 +44,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
         $response->assertRedirect(route('login'));
     }
 
+    #[Group('authorization')]
     #[Test]
     public function form_requires_set_daily_quests_permission(): void
     {
@@ -137,6 +141,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
         $response->assertRedirect(route('login'));
     }
 
+    #[Group('authorization')]
     #[Test]
     public function store_requires_set_daily_quests_permission(): void
     {
@@ -173,6 +178,7 @@ class DailyQuestsControllerTest extends DashboardTestCase
         Queue::assertPushed(SendQueuedNotifications::class, fn ($job) => $job->notification instanceof DailyQuestsMessage);
     }
 
+    #[Group('validation')]
     #[Test]
     public function store_rejects_a_quest_submitted_under_the_wrong_type(): void
     {
@@ -229,6 +235,90 @@ class DailyQuestsControllerTest extends DashboardTestCase
             ->where('hasNotification', true)
             ->missing('quests')
         );
+    }
+
+    #[Test]
+    public function index_includes_a_notification_created_exactly_at_the_4am_lower_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::yesterday()->setTime(4, 0, 0),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', true)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
+    }
+
+    #[Test]
+    public function index_excludes_a_notification_created_one_second_before_the_4am_lower_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::yesterday()->setTime(3, 59, 59),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', false)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
+    }
+
+    #[Test]
+    public function index_includes_a_notification_created_exactly_at_the_upper_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::tomorrow()->setTime(3, 59, 59),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', true)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
+    }
+
+    #[Test]
+    public function index_excludes_a_notification_created_one_second_after_the_upper_boundary(): void
+    {
+        $this->travelTo('2026-07-26 10:00:00');
+
+        DiscordNotification::factory()->create([
+            'type' => DailyQuestsMessage::class,
+            'created_at' => Carbon::tomorrow()->setTime(4, 0, 0),
+        ]);
+
+        $response = $this->get(route('daily-quests.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('DailyQuests/Index')
+            ->where('hasNotification', false)
+            ->missing('quests')
+        );
+
+        $this->travelBack();
     }
 
     #[Test]

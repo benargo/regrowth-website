@@ -4,6 +4,8 @@ use App\Http\Controllers\AttendanceDashboardController;
 use App\Http\Controllers\AttendanceGraphsController;
 use App\Http\Controllers\AttendanceMatrixController;
 use App\Http\Controllers\BossStrategyController;
+use App\Http\Controllers\CharacterController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DailyQuestsAuditController;
 use App\Http\Controllers\DailyQuestsController;
 use App\Http\Controllers\Dashboard\AddonController;
@@ -16,45 +18,49 @@ use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
-use App\Http\Controllers\GuildRosterController;
-use App\Http\Controllers\Loot\CommentController;
-use App\Http\Controllers\Loot\ItemController;
-use App\Http\Controllers\Loot\LootController;
-use App\Http\Controllers\Loot\ReactionController;
-use App\Http\Controllers\Loot\ShowRaidController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PlannedAbsenceController;
 use App\Http\Controllers\RaidingController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('Home'))->name('home');
 
+Route::get('/search', SearchController::class)->name('search');
+
 /**
  * Guild Roster
  */
-Route::get('/roster', GuildRosterController::class)->name('roster');
+Route::get('/roster', [CharacterController::class, 'index'])
+    ->name('characters.index');
+Route::get('/roster/characters', fn () => redirect()->route('characters.index', status: 303));
+Route::get('/roster/characters/{character}/{slug?}', [CharacterController::class, 'show'])
+    ->name('characters.show');
+
+/**
+ * Character management
+ */
+Route::get('/manage/characters/{character}/{slug}/edit', [CharacterController::class, 'edit'])
+    ->name('characters.edit');
+Route::patch('/manage/characters/{character}', [CharacterController::class, 'update'])
+    ->name('characters.update');
 
 /**
  * Loot Bias Tools
  */
-Route::group(['prefix' => 'loot', 'as' => 'loot.', 'middleware' => ['auth']], function () {
-    Route::get('/', [LootController::class, 'index'])->name('index');
-    Route::get('/raids/{raid}/{name?}', ShowRaidController::class)->name('raids.show');
-    Route::post('/items/{item}/comments', [CommentController::class, 'store'])->name('items.comments.store');
-    Route::post('/items/{item}/notes', [ItemController::class, 'updateNotes'])->name('items.notes.store');
-    Route::put('/items/{item}/priorities', [ItemController::class, 'updatePriorities'])->name('items.priorities.update');
-    Route::get('/items/{item}/edit', [ItemController::class, 'redirectToEdit']);
-    Route::get('/items/{item}/{name?}', [ItemController::class, 'show'])->name('items.show');
-    Route::get('/items/{item}/{name}/edit', [ItemController::class, 'edit'])->name('items.edit');
+Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
+    Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
+    Route::get('/raids/{raid}/{name?}', [LootBiasToolController::class, 'showRaid'])->name('raids.show');
+    Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
+    Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
+    Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
 
     // Comment routes
-    Route::get('/comments', [CommentController::class, 'index'])->name('comments.index');
-    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
-    Route::post('/comments/{comment}/reactions', [ReactionController::class, 'store'])->name('comments.reactions.store');
-    Route::delete('/comments/{comment}/reactions/{reaction}', [ReactionController::class, 'destroy'])->name('comments.reactions.destroy');
+    Route::get('/comments', [CommentController::class, 'index'])->name('comments');
 });
 
 /**
@@ -82,6 +88,10 @@ Route::group(['prefix' => 'raiding', 'as' => 'raiding.'], function () {
     Route::get('/plans/{event}/edit', [EventController::class, 'edit'])->name('plans.edit');
     Route::post('/plans/{event}/apply-template', [EventController::class, 'applyTemplate'])->name('plans.apply-template');
 
+    // Boss strategies routes
+    Route::get('/boss-strategies', [BossStrategyController::class, 'index'])->name('boss-strategies.index');
+    Route::get('/boss-strategies/{boss}/{slug}', [BossStrategyController::class, 'show'])->name('boss-strategies.show');
+
     // Reports routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
@@ -103,9 +113,7 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::get('/addon/export', [AddonController::class, 'exportBase64'])->name('addon.export');
     Route::get('/addon/export/json', [AddonController::class, 'exportJson'])->name('addon.export.json');
     Route::get('/addon/export/schema', AddonSchemaController::class)->name('addon.export.schema');
-    Route::get('/addon/settings', [AddonSettingsController::class, 'index'])->name('addon.settings');
-    Route::post('/addon/settings/councillors', [AddonSettingsController::class, 'addCouncillor'])->name('addon.settings.councillors.add');
-    Route::delete('/addon/settings/councillors/{character}', [AddonSettingsController::class, 'removeCouncillor'])->name('addon.settings.councillors.remove');
+    Route::get('/addon/settings', AddonSettingsController::class)->name('addon.settings');
 
     /**
      * Boss strategies management
@@ -115,7 +123,7 @@ Route::group(['prefix' => 'manage', 'as' => 'management.', 'middleware' => ['aut
     Route::patch('/boss-strategies/{boss}', [BossStrategyController::class, 'update'])->name('boss-strategies.update');
 
     /**
-     * Daily Quests
+     * Daily quests
      */
     Route::get('/daily-quests', [DailyQuestsController::class, 'form'])->name('daily-quests.form');
     Route::post('/daily-quests', [DailyQuestsController::class, 'store'])->name('daily-quests.store');
@@ -189,10 +197,9 @@ Route::get('/info/privacy', function () {
 })->name('privacypolicy');
 
 /**
- * Deprecated routes
+ * Include additional route files
  */
-Route::get('/dashboard', fn () => redirect()->route('management.dashboard'));
-Route::get('/comps', [RaidingController::class, 'comps'])->name('raiding.plans.next');
-
 require __DIR__.'/assets.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/deprecated.php';
+require __DIR__.'/testing.php';

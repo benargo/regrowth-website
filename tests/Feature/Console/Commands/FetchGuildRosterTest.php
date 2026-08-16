@@ -6,9 +6,12 @@ use App\Jobs\FetchGuildRoster;
 use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\RateLimiter;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('characters')]
+#[Group('blizzard-integration')]
 class FetchGuildRosterTest extends TestCase
 {
     protected function tearDown(): void
@@ -22,7 +25,7 @@ class FetchGuildRosterTest extends TestCase
     {
         Bus::fake([FetchGuildRoster::class]);
 
-        $this->artisan('blizzard:fetch-guild-roster')
+        $this->artisan('fetch:blizzard-roster')
             ->expectsOutput('Guild roster refreshed.')
             ->assertSuccessful();
 
@@ -40,7 +43,7 @@ class FetchGuildRosterTest extends TestCase
         $interval->method('forHumans')->willReturn('15 minutes');
         CarbonInterval::macro('seconds', fn () => $interval);
 
-        $this->artisan('blizzard:fetch-guild-roster')
+        $this->artisan('fetch:blizzard-roster')
             ->expectsOutput('The guild roster was refreshed recently. Please wait 15 minutes before refreshing again.')
             ->assertSuccessful();
 

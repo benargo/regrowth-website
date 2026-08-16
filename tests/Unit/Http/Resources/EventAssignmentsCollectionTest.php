@@ -8,9 +8,11 @@ use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class EventAssignmentsCollectionTest extends TestCase
 {
     use RefreshDatabase;

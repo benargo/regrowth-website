@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Data\PlayableClass;
 
 use App\Http\Integrations\Blizzard\Data\Media\AssetData;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassMediaData;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class PlayableClassMediaDataTest extends TestCase
 {
     /**
@@ -35,7 +37,7 @@ class PlayableClassMediaDataTest extends TestCase
         $this->assertCount(1, $dto->assets);
         $this->assertInstanceOf(AssetData::class, $dto->assets[0]);
         $this->assertSame('icon', $dto->assets[0]->key);
-        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', $dto->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', (string) $dto->assets[0]->value);
         $this->assertSame(642015, $dto->assets[0]->fileDataId);
     }
 

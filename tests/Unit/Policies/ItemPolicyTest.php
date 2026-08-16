@@ -7,10 +7,12 @@ use App\Models\Item;
 use App\Models\User;
 use App\Policies\ItemPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+#[Group('auth')]
 class ItemPolicyTest extends TestCase
 {
     use RefreshDatabase;
@@ -47,43 +49,9 @@ class ItemPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_view_any_with_permission(): void
-    {
-        $user = $this->userWithPermission('view-loot-bias-tool');
-
-        $this->assertTrue($this->policy->viewAny($user));
-    }
-
-    #[Test]
-    public function it_denies_view_any_without_permission(): void
-    {
-        $user = $this->userWithoutPermission();
-
-        $this->assertFalse($this->policy->viewAny($user));
-    }
-
-    #[Test]
-    public function it_allows_view_with_permission(): void
-    {
-        $user = $this->userWithPermission('view-loot-bias-tool');
-        $item = Item::factory()->create();
-
-        $this->assertTrue($this->policy->view($user, $item));
-    }
-
-    #[Test]
-    public function it_denies_view_without_permission(): void
-    {
-        $user = $this->userWithoutPermission();
-        $item = Item::factory()->create();
-
-        $this->assertFalse($this->policy->view($user, $item));
-    }
-
-    #[Test]
     public function it_always_denies_create(): void
     {
-        $user = $this->userWithPermission('view-loot-bias-tool');
+        $user = $this->userWithPermission('edit-items');
 
         $this->assertFalse($this->policy->create($user));
     }

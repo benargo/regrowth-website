@@ -8,7 +8,7 @@ use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassIndexRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\PlayableClass;
 use Illuminate\Database\Seeder;
@@ -46,7 +46,7 @@ class PlayableClassSeeder extends Seeder
                 }
 
                 try {
-                    $body = $this->renderConnector->send(new FetchAssetRequest($asset->value))->body();
+                    $body = $this->renderConnector->send(new FetchIconRequest($asset->value))->body();
 
                     $model->addMediaFromString($body)
                         ->usingFileName($fileName)

@@ -2,11 +2,16 @@
 
 use App\Http\Controllers\Api\AttendanceNamesController;
 use App\Http\Controllers\Api\BlizzardMediaController;
+use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\CommentReactionController;
 use App\Http\Controllers\Api\Discord\GuildResourceController;
 use App\Http\Controllers\Api\Event\PublishAssignmentsController;
 use App\Http\Controllers\Api\EventAssignmentController;
 use App\Http\Controllers\Api\EventGroupController;
-use App\Http\Controllers\Api\Loot\ResolveCommentController;
+use App\Http\Controllers\Api\RaidHelper\DeleteEventController;
+use App\Http\Controllers\Api\RaidHelper\SyncEventController;
+use App\Http\Controllers\Api\RaidHelper\UpdateCompositionController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SpellController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,10 +23,36 @@ Route::get('/blizzard/media', BlizzardMediaController::class)->name('api.blizzar
 Route::get('/discord/guild/members/search', [GuildResourceController::class, 'searchMembers'])
     ->name('api.discord.guild.members.search');
 
-Route::post('/loot/comments/{comment}/resolve', ResolveCommentController::class)
-    ->name('api.loot.comments.resolve');
+Route::get('/search', SearchController::class)->name('api.search');
 
 Route::post('/spells', [SpellController::class, 'store'])->name('api.spells.store');
+
+Route::prefix('/raidhelper')->group(function () {
+    Route::post('/event-create', SyncEventController::class);
+    Route::post('/event-update', SyncEventController::class);
+    Route::post('/event-delete', DeleteEventController::class);
+    Route::post('/comp-update', UpdateCompositionController::class);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('/comments')->group(function () {
+    // Reactions are declared first and both keys are numerically constrained, so
+    // the literal `reactions` segment can never bind as a {comment}. The
+    // constraint makes the separation structural rather than order-dependent.
+    Route::post('/reactions', [CommentReactionController::class, 'store'])
+        ->name('api.comments.reactions.store');
+    Route::delete('/reactions/{reaction}', [CommentReactionController::class, 'destroy'])
+        ->whereNumber('reaction')
+        ->name('api.comments.reactions.destroy');
+
+    Route::post('/', [CommentController::class, 'store'])
+        ->name('api.comments.store');
+    Route::patch('/{comment}', [CommentController::class, 'update'])
+        ->whereNumber('comment')
+        ->name('api.comments.update');
+    Route::delete('/{comment}', [CommentController::class, 'destroy'])
+        ->whereNumber('comment')
+        ->name('api.comments.destroy');
+});
 
 Route::middleware(['auth:sanctum'])->prefix('/events/{event}')->group(function () {
     // reorder must be registered before {group}/{assignment} to avoid treating "reorder" as a model ID

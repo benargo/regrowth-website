@@ -1,6 +1,150 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@plugin "@tailwindcss/forms";
+
+/* Scan Blade + JSX for class names (replaces v3 `content` array) */
+@source "../../resources/views/**/*.blade.php";
+@source "../../resources/js/**/*.jsx";
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
+
+@theme {
+    --font-sans:
+        "Figtree", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+
+    /* brown */
+    --color-brown: #231a13;
+    --color-brown-100: #f5f0eb;
+    --color-brown-200: #e6ddd3;
+    --color-brown-300: #d1c3b4;
+    --color-brown-400: #b8a48f;
+    --color-brown-500: #9a826a;
+    --color-brown-600: #7a6249;
+    --color-brown-700: #5c472f;
+    --color-brown-800: #4a3d32;
+    --color-brown-900: #372d22;
+
+    /* affect type colors */
+    --color-affect-curse: #9600ff;
+    --color-affect-disease: #966400;
+    --color-affect-magic: #3296ff;
+    --color-affect-poison: #009600;
+    --color-affect-physical: #c80000;
+
+    /* discord branding and role colors */
+    --color-discord: #5865f2;
+    --color-discord-officer: #aa3b3b;
+    --color-discord-raider: #e67e22;
+    --color-discord-member: #1f8b4c;
+    --color-discord-lootcouncillor: #a335ee;
+    --color-discord-guest: #9b59b6;
+
+    /* playable class colors */
+    --color-playable-class-death-knight: #c41f3b;
+    --color-playable-class-druid: #ff7d0a;
+    --color-playable-class-hunter: #abd473;
+    --color-playable-class-mage: #69ccf0;
+    --color-playable-class-paladin: #f58cba;
+    --color-playable-class-priest: #ffffff;
+    --color-playable-class-rogue: #fff569;
+    --color-playable-class-shaman: #0070de;
+    --color-playable-class-warlock: #9482c9;
+    --color-playable-class-warrior: #c79c63;
+
+    /* WoW item quality colors */
+    --color-quality: #ffffff;
+    --color-quality-poor: #9d9d9d;
+    --color-quality-common: #ffffff;
+    --color-quality-uncommon: #1eff00;
+    --color-quality-rare: #0070dd;
+    --color-quality-epic: #a335ee;
+    --color-quality-legendary: #ff8000;
+    --color-quality-artifact: #e6cc80;
+    --color-quality-heirloom: #00ccff;
+
+    /* guild rank colors */
+    --color-guild-rank: #1f8b4c;
+    --color-guild-rank-guild-master: #aa3b3b;
+    --color-guild-rank-officer: #aa3b3b;
+    --color-guild-rank-raider: #e67e22;
+    --color-guild-rank-trial-raider: #e67e22;
+    --color-guild-rank-warden: #1f8b4c;
+    --color-guild-rank-champion: #1f8b4c;
+    --color-guild-rank-veteran: #1f8b4c;
+    --color-guild-rank-member: #1f8b4c;
+    --color-guild-rank-initiate: #1f8b4c;
+    --color-guild-rank-inactive: #1f8b4c;
+
+    /* wowhead */
+    --color-wowhead: #a71a19;
+    --color-wowhead-links: #ffd100;
+
+    --color-primary: #f8b700;
+
+    --animate-fade-in-up: fade-in-up 0.4s ease-out backwards;
+
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(0.5rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/*
+ * Safelist replacement (v4 has no regex safelist).
+ * These classes are built dynamically in JSX from data; the scanner cannot
+ * see them as literals, so `@source inline()` forces generation.
+ * Brace-expansion mirrors the v3 safelist regex patterns.
+ */
+@source inline("{bg,text,border}-affect-{curse,disease,magic,poison,physical}");
+@source inline("{bg,text,border}-discord-{officer,raider,member,lootcouncillor,guest}");
+@source inline(
+    "{bg,text,border}-guild-rank-{guild-master,officer,raider,trial-raider,warden,champion,veteran,member,initiate,inactive}"
+);
+@source inline(
+    "{bg,text,border}-playable-class-{death-knight,druid,hunter,mage,paladin,priest,rogue,shaman,warlock,warrior}"
+);
+@source inline("{bg,text,border}-quality-{poor,common,uncommon,rare,epic,legendary,artifact,heirloom}");
+
+/* Required by @/Components/Items/ItemIcon.jsx */
+@source inline("md:{w,h}-24");
+
+/* --- v4 compatibility: restore v3 default colors/behaviors --- */
+
+@theme {
+    /* v3 default ring was 3px / blue-500; v4 is 1px / currentColor */
+    --default-ring-width: 3px;
+    --default-ring-color: var(--color-blue-500);
+}
+
+@layer base {
+    /* v3 default border + divide color was gray-200; v4 is currentColor */
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
+    /* v3 placeholder color was gray-400; v4 is current text @ 50% */
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-gray-400);
+    }
+
+    /* v3 buttons used cursor: pointer; v4 uses default */
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
 
 svg.recharts-surface {
     overflow: visible;
@@ -24,6 +168,7 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+/* Deprecated background, avoid using for new pages */
 .bg-goldshire {
     background-image: url("../images/bg_goldshire.webp");
     background-position: center;
@@ -66,8 +211,26 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-raid-black-temple {
+    background-image: url("../images/bg_blacktemple.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-gruul {
+    background-image: url("../images/bg_gruul.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-raid-gruul-magtheridon {
     background-image: url("../images/bg_gruul_magtheridon.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+.bg-raid-hyjal-summit {
+    background-image: url("../images/bg_hyjalsummit.webp");
     background-position: center;
     background-size: cover;
 }
@@ -78,9 +241,21 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-raid-magtheridon {
+    background-image: url("../images/bg_magtheridon.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-raid-serpentshrine-cavern {
     background-image: url("../images/bg_serpentshrinecavern.webp");
     background-position: center bottom;
+    background-size: cover;
+}
+
+.bg-raid-sunwell-plateau {
+    background-image: url("../images/bg_sunwell.webp");
+    background-position: center;
     background-size: cover;
 }
 
@@ -90,8 +265,20 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-raid-zulaman {
+    background-image: url("../images/bg_zulaman.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-ssctk {
     background-image: url("../images/bg_ssctk.webp");
     background-position: center;
+    background-size: cover;
+}
+
+.bg-stormwind {
+    background-image: url("../images/bg_stormwind.webp");
+    background-position: bottom -60px center;
     background-size: cover;
 }

@@ -10,10 +10,12 @@ use App\Models\EventAssignmentGroup;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class EventGroupControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -91,6 +93,7 @@ class EventGroupControllerTest extends TestCase
         $response->assertJsonPath('sort_order', 4);
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_on_store_when_user_cannot_update_event(): void
     {
@@ -100,6 +103,7 @@ class EventGroupControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_401_on_store_when_unauthenticated(): void
     {
@@ -127,6 +131,7 @@ class EventGroupControllerTest extends TestCase
         ]);
     }
 
+    #[Group('validation')]
     #[Test]
     public function it_returns_422_when_boss_id_does_not_exist_on_store(): void
     {
@@ -191,6 +196,7 @@ class EventGroupControllerTest extends TestCase
             ->assertNotFound();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_on_update_when_user_cannot_update_event(): void
     {
@@ -217,6 +223,7 @@ class EventGroupControllerTest extends TestCase
         $this->assertDatabaseHas('event_assignment_groups', ['id' => $b->id, 'sort_order' => 2]);
     }
 
+    #[Group('validation')]
     #[Test]
     public function it_returns_422_on_reorder_when_ids_belong_to_different_event(): void
     {
@@ -229,6 +236,7 @@ class EventGroupControllerTest extends TestCase
             ->assertUnprocessable();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_on_reorder_when_user_cannot_update_event(): void
     {
@@ -278,6 +286,7 @@ class EventGroupControllerTest extends TestCase
             ->assertNotFound();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_on_destroy_when_user_cannot_update_event(): void
     {

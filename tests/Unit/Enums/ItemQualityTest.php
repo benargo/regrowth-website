@@ -3,9 +3,11 @@
 namespace Tests\Unit\Enums;
 
 use App\Enums\ItemQuality;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('loot')]
 class ItemQualityTest extends TestCase
 {
     // ==================== cases ====================
@@ -49,15 +51,29 @@ class ItemQualityTest extends TestCase
     // ==================== cssClass ====================
 
     #[Test]
-    public function css_class_returns_lowercase_name_prefixed(): void
+    public function css_class_returns_lowercase_name_with_no_prefix_by_default(): void
     {
-        $this->assertSame('item-quality-poor', ItemQuality::POOR->cssClass());
-        $this->assertSame('item-quality-common', ItemQuality::COMMON->cssClass());
-        $this->assertSame('item-quality-uncommon', ItemQuality::UNCOMMON->cssClass());
-        $this->assertSame('item-quality-rare', ItemQuality::RARE->cssClass());
-        $this->assertSame('item-quality-epic', ItemQuality::EPIC->cssClass());
-        $this->assertSame('item-quality-legendary', ItemQuality::LEGENDARY->cssClass());
-        $this->assertSame('item-quality-artifact', ItemQuality::ARTIFACT->cssClass());
-        $this->assertSame('item-quality-heirloom', ItemQuality::HEIRLOOM->cssClass());
+        $this->assertSame('-quality-poor', ItemQuality::POOR->cssClass());
+        $this->assertSame('-quality-common', ItemQuality::COMMON->cssClass());
+        $this->assertSame('-quality-uncommon', ItemQuality::UNCOMMON->cssClass());
+        $this->assertSame('-quality-rare', ItemQuality::RARE->cssClass());
+        $this->assertSame('-quality-epic', ItemQuality::EPIC->cssClass());
+        $this->assertSame('-quality-legendary', ItemQuality::LEGENDARY->cssClass());
+        $this->assertSame('-quality-artifact', ItemQuality::ARTIFACT->cssClass());
+        $this->assertSame('-quality-heirloom', ItemQuality::HEIRLOOM->cssClass());
+    }
+
+    #[Test]
+    public function css_class_prepends_the_given_prefix(): void
+    {
+        $this->assertSame('item-quality-poor', ItemQuality::POOR->cssClass('item'));
+        $this->assertSame('item-quality-legendary', ItemQuality::LEGENDARY->cssClass('item'));
+    }
+
+    #[Test]
+    public function css_class_trims_trailing_hyphens_from_the_prefix(): void
+    {
+        $this->assertSame('item-quality-poor', ItemQuality::POOR->cssClass('item-'));
+        $this->assertSame('item-quality-poor', ItemQuality::POOR->cssClass('item---'));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Database\Seeders;
 
+use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Models\Character;
 use App\Models\PlayableClass;
@@ -9,11 +10,14 @@ use App\Models\PlayableRace;
 use Database\Seeders\CharacterSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\TestCase;
 
+#[Group('characters')]
 class CharacterSeederTest extends TestCase
 {
     use RefreshDatabase;
@@ -21,12 +25,12 @@ class CharacterSeederTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function makeProfileResponse(int $classId = 7, int $raceId = 2): array
+    private function makeProfileResponse(int $classId = 7, int $raceId = 2, string $gender = 'Male'): array
     {
         return [
             'id' => 1,
             'name' => 'Thrall',
-            'gender' => ['type' => 'MALE', 'name' => 'Male'],
+            'gender' => ['type' => strtoupper($gender), 'name' => $gender],
             'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
             'race' => ['key' => ['href' => "https://example.test/race/{$raceId}"], 'name' => 'Orc', 'id' => $raceId],
             'character_class' => ['key' => ['href' => "https://example.test/class/{$classId}"], 'name' => 'Shaman', 'id' => $classId],
@@ -85,7 +89,7 @@ class CharacterSeederTest extends TestCase
         Character::factory()
             ->withPlayableClass()
             ->withPlayableRace(PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']))
-            ->create(['name' => 'Thrall']);
+            ->create(['name' => 'Thrall', 'gender' => Gender::MALE]);
 
         $this->runSeeder();
 
@@ -171,5 +175,50 @@ class CharacterSeederTest extends TestCase
         $this->runSeeder();
 
         $this->assertNull($character->fresh()->playable_class_id);
+    }
+
+    #[Test]
+    public function seeder_populates_gender_for_characters_missing_it(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
+        PlayableRace::factory()->create(['id' => 2, 'name' => 'Orc']);
+
+        $this->fakeSaloon();
+
+        $character = Character::factory()
+            ->withPlayableClass($playableClass)
+            ->withPlayableRace(PlayableRace::find(2))
+            ->create(['name' => 'Thrall', 'gender' => null]);
+
+        $this->runSeeder();
+
+        $this->assertSame(Gender::MALE, $character->fresh()->gender);
+    }
+
+    #[Test]
+    public function seeder_populates_female_gender_from_api_response(): void
+    {
+        $playableClass = PlayableClass::factory()->create(['id' => 7, 'name' => 'Shaman']);
+        PlayableRace::factory()->create(['id' => 2, 'name' => 'Orc']);
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(
+                body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
+                status: 200,
+            ),
+            GetCharacterProfileRequest::class => MockResponse::make(
+                body: $this->makeProfileResponse(gender: 'Female'),
+                status: 200,
+            ),
+        ]);
+
+        $character = Character::factory()
+            ->withPlayableClass($playableClass)
+            ->withPlayableRace(PlayableRace::find(2))
+            ->create(['name' => 'Thrall', 'gender' => null]);
+
+        $this->runSeeder();
+
+        $this->assertSame(Gender::FEMALE, $character->fresh()->gender);
     }
 }

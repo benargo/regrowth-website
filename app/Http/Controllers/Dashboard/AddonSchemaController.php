@@ -15,7 +15,7 @@ class AddonSchemaController extends Controller
         return Inertia::render('Manage/Addon/ExportSchema', [
             'schema' => [
                 '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-                '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=1.2.0',
+                '$id' => config('app.url').'/regrowth-loot-tool-schema.json?v=2.0.0',
                 'title' => 'Regrowth Loot Tool Export Schema',
                 'description' => 'Schema for the Regrowth Loot Tool addon data export format.',
                 'type' => 'object',
@@ -30,6 +30,17 @@ class AddonSchemaController extends Controller
                                     'id' => ['type' => 'integer'],
                                     'name' => ['type' => 'string'],
                                 ],
+                            ],
+                        ],
+                    ],
+                    'phases' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'id' => ['type' => 'integer'],
+                                'number' => ['type' => 'number'],
+                                'start_date' => ['type' => ['integer', 'null']],
                             ],
                         ],
                     ],
@@ -74,7 +85,7 @@ class AddonSchemaController extends Controller
                                 'attendance' => [
                                     'type' => 'object',
                                     'properties' => [
-                                        'first_attendance' => ['type' => 'string', 'format' => 'date-time'],
+                                        'first_attendance' => ['type' => ['integer', 'null']],
                                         'attended' => ['type' => 'integer'],
                                         'total' => ['type' => 'integer'],
                                         'percentage' => ['type' => 'number'],

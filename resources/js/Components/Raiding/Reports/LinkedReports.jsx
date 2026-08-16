@@ -158,7 +158,7 @@ function LinkReportsModal({
                                         disabled={isDisabled}
                                         onChange={() => toggleCluster(cluster)}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="mt-1 h-4 w-4 flex-shrink-0 rounded border-amber-600 bg-brown-800 text-amber-500 accent-amber-500"
+                                        className="mt-1 h-4 w-4 shrink-0 rounded border-amber-600 bg-brown-800 text-amber-500 accent-amber-500"
                                     />
                                     <div className="min-w-0 flex-1">
                                         {!isSingle && (
@@ -167,12 +167,12 @@ function LinkReportsModal({
                                                     {cluster.reports.length} reports
                                                 </span>
                                                 {current && (
-                                                    <span className="flex-shrink-0 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
+                                                    <span className="shrink-0 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
                                                         Current
                                                     </span>
                                                 )}
                                                 {linked && (
-                                                    <span className="flex-shrink-0 rounded bg-green-600/20 px-1.5 py-0.5 text-xs text-green-400">
+                                                    <span className="shrink-0 rounded bg-green-600/20 px-1.5 py-0.5 text-xs text-green-400">
                                                         Linked
                                                     </span>
                                                 )}
@@ -186,12 +186,12 @@ function LinkReportsModal({
                                                             {cluster.reports[0].title}
                                                         </span>
                                                         {current && (
-                                                            <span className="flex-shrink-0 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
+                                                            <span className="shrink-0 rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
                                                                 Current
                                                             </span>
                                                         )}
                                                         {linked && (
-                                                            <span className="flex-shrink-0 rounded bg-green-600/20 px-1.5 py-0.5 text-xs text-green-400">
+                                                            <span className="shrink-0 rounded bg-green-600/20 px-1.5 py-0.5 text-xs text-green-400">
                                                                 Linked
                                                             </span>
                                                         )}
@@ -485,7 +485,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                     ) : (
                                         <Can permission="manage-reports">
                                             <Tooltip
-                                                text={isManualLink ? "Remove link" : "Auto-linked – cannot be removed"}
+                                                body={isManualLink ? "Remove link" : "Auto-linked – cannot be removed"}
                                                 position="left"
                                             >
                                                 <button

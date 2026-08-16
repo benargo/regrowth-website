@@ -12,10 +12,12 @@ use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class RaidingPagesTest extends TestCase
 {
     use RefreshDatabase;
@@ -42,6 +44,17 @@ class RaidingPagesTest extends TestCase
         });
     }
 
+    #[Group('happy-path')]
+    #[Test]
+    public function comps_page_redirects(): void
+    {
+        $response = $this->get(route('raiding.plans.next'));
+
+        $response->assertStatus(303);
+        $response->assertRedirect();
+    }
+
+    #[Group('happy-path')]
     #[Test]
     public function raiding_index_loads(): void
     {
@@ -53,6 +66,7 @@ class RaidingPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function raiding_index_loads_for_unauthenticated_users(): void
     {
@@ -61,6 +75,7 @@ class RaidingPagesTest extends TestCase
         $response->assertOk();
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function attendance_dashboard_loads(): void
     {
@@ -72,6 +87,7 @@ class RaidingPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function attendance_matrix_loads(): void
     {
@@ -83,6 +99,7 @@ class RaidingPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function report_show_loads(): void
     {
@@ -95,6 +112,7 @@ class RaidingPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function planned_absences_index_loads(): void
     {
@@ -106,6 +124,7 @@ class RaidingPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function planned_absences_index_redirects_unauthenticated_users(): void
     {
@@ -114,6 +133,7 @@ class RaidingPagesTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function planned_absences_index_returns_403_for_users_without_permission(): void
     {
@@ -124,6 +144,7 @@ class RaidingPagesTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function planned_absences_create_loads(): void
     {
@@ -135,6 +156,7 @@ class RaidingPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function planned_absences_create_redirects_unauthenticated_users(): void
     {
@@ -143,6 +165,7 @@ class RaidingPagesTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function planned_absences_create_returns_403_for_users_without_permission(): void
     {
@@ -153,6 +176,7 @@ class RaidingPagesTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function planned_absences_edit_loads(): void
     {
@@ -165,6 +189,7 @@ class RaidingPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function planned_absences_edit_redirects_unauthenticated_users(): void
     {
@@ -175,6 +200,7 @@ class RaidingPagesTest extends TestCase
         $response->assertRedirect('/login');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function planned_absences_edit_returns_403_for_users_without_permission(): void
     {
@@ -186,6 +212,7 @@ class RaidingPagesTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('happy-path')]
     #[Test]
     public function event_show_loads(): void
     {

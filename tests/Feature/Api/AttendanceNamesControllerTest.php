@@ -12,10 +12,12 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class AttendanceNamesControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -41,6 +43,7 @@ class AttendanceNamesControllerTest extends TestCase
 
     // ==================== Access Control ====================
 
+    #[Group('authorization')]
     #[Test]
     public function requires_authentication(): void
     {
@@ -49,6 +52,7 @@ class AttendanceNamesControllerTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function forbids_users_without_view_attendance_permission(): void
     {

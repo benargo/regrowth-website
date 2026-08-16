@@ -5,7 +5,7 @@ namespace Tests\Feature\Database\Seeders;
 use App\Enums\ItemQuality;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\DailyQuest;
 use App\Models\Item;
@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
@@ -22,6 +23,7 @@ use Saloon\Laravel\Facades\Saloon;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;
 
+#[Group('daily-quests')]
 class DailyQuestSeederTest extends TestCase
 {
     use RefreshDatabase;
@@ -149,7 +151,7 @@ class DailyQuestSeederTest extends TestCase
             GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
                 return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
             },
-            FetchAssetRequest::class => function (PendingRequest $request): MockResponse {
+            FetchIconRequest::class => function (PendingRequest $request): MockResponse {
                 if (str_contains($request->getUrl(), 'item_33844.jpg')) {
                     return MockResponse::make(body: ['code' => 403, 'detail' => 'Forbidden'], status: 403);
                 }
@@ -188,7 +190,7 @@ class DailyQuestSeederTest extends TestCase
             GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
                 return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
             },
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $this->runSeeder();
@@ -223,7 +225,7 @@ class DailyQuestSeederTest extends TestCase
             GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
                 return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
             },
-            FetchAssetRequest::class => function (PendingRequest $request): MockResponse {
+            FetchIconRequest::class => function (PendingRequest $request): MockResponse {
                 if (str_contains($request->getUrl(), 'trade_fishing.jpg')) {
                     return MockResponse::make(body: ['code' => 403, 'detail' => 'Forbidden'], status: 403);
                 }
@@ -294,7 +296,7 @@ class DailyQuestSeederTest extends TestCase
             GetItemMediaRequest::class => function (PendingRequest $request): MockResponse {
                 return MockResponse::make(body: $this->makeMediaResponse($this->extractItemIdFromRequest($request)), status: 200);
             },
-            FetchAssetRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
 

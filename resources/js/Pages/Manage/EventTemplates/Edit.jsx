@@ -310,7 +310,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="flex-1 rounded border border-amber-500 bg-brown-800 px-2 py-0.5 text-sm text-amber-400 focus:outline-none"
+                            className="flex-1 rounded border border-amber-500 bg-brown-800 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -530,9 +530,7 @@ function BossSection({ boss, raid, commonContainerProps, groupsByBossId, assignm
             key={boss.id}
             title={boss.name}
             sessionKey={`template_boss_expanded_${raid.slug}_${boss.id}`}
-            className="border-amber-600/40"
-            headerClassName="hover:bg-amber-600/10"
-            bodyClassName="border-amber-600/40"
+            style="amber"
         >
             <div className="flex flex-col gap-3">
                 <GroupContainer
@@ -1132,7 +1130,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                 <form onSubmit={handleSubmit} className="mb-8">
                     <MetaCard>
                         <MetaItem icon="tag">
-                            <Tooltip text="Click to edit">
+                            <Tooltip body="Click to edit">
                                 <label className="sr-only" htmlFor="template-title">
                                     Template name
                                 </label>
@@ -1140,7 +1138,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                                     type="text"
                                     value={data.title}
                                     onChange={(e) => setData("title", e.target.value)}
-                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-amber-500 focus:outline-none"
+                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-amber-500 focus:outline-hidden"
                                     placeholder="Template name"
                                 />
                             </Tooltip>

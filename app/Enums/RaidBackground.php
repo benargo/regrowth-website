@@ -4,14 +4,18 @@ namespace App\Enums;
 
 enum RaidBackground: string
 {
-    case KARAZHAN = 'bg-raid-karazhan';
-    case GRUUL_MAGTHERIDON = 'bg-raid-gruul-magtheridon';
-    case SERPENTSHRINE_CAVERN = 'bg-raid-serpentshrine-cavern';
-    case TEMPEST_KEEP = 'bg-raid-tempest-keep';
-    case SSC_TK = 'bg-ssctk';
+    // Individual raids
+    case Karazhan = 'bg-raid-karazhan';
+    case Gruul = 'bg-raid-gruul';
+    case Magtheridon = 'bg-raid-magtheridon';
+    case SerpentshrineCavern = 'bg-raid-serpentshrine-cavern';
+    case TempestKeep = 'bg-raid-tempest-keep';
+    case HyjalSummit = 'bg-raid-hyjal-summit';
+    case BlackTemple = 'bg-raid-black-temple';
+    case ZulAman = 'bg-raid-zulaman';
+    case SunwellPlateau = 'bg-raid-sunwell-plateau';
 
-    // Reserved for future use...
-    // case MOUNT_HYJAL = 'bg-raid-mount-hyjal';
-    // case BLACK_TEMPLE = 'bg-raid-black-temple';
-    // case SUNWELL_PLATEAU = 'bg-raid-sunwell-plateau';
+    // Joint raids
+    case GruulAndMagtheridon = 'bg-raid-gruul-magtheridon';
+    case SerpentshrineCavernAndTempestKeep = 'bg-ssctk';
 }

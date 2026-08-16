@@ -4,9 +4,11 @@ namespace Tests\Unit\Services\WarcraftLogs\ValueObjects;
 
 use App\Services\WarcraftLogs\ValueObjects\RegionData;
 use Illuminate\Contracts\Support\Arrayable;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class RegionTest extends TestCase
 {
     /**

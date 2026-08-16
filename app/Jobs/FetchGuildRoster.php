@@ -2,8 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Enums\Gender;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterMemberData;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
 use App\Models\GuildRank;
@@ -74,25 +76,23 @@ class FetchGuildRoster implements ShouldQueue
             return;
         }
 
-        $guildRank = GuildRank::where('position', $member->rank)->firstOrFail();
-        $playableClass = PlayableClass::find($member->character->playableClass?->id);
+        $characterDto = $blizzard->send(new GetCharacterProfileRequest(
+            $blizzard->defaultRealmSlug(),
+            $member->character->name
+        ))->dto();
 
-        $playableRace = PlayableRace::updateOrCreate(
-            ['id' => $member->character->playableRace->id],
-            ['name' => $member->character->playableRace->name],
-        );
+        $guildRank = GuildRank::where('position', $member->rank)->firstOrFail();
 
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([
             'name' => $member->character->name,
             'level' => $member->character->level,
-            'playable_race_id' => $playableRace->id,
+            'playable_class_id' => PlayableClass::find(data_get($characterDto, 'characterClass.id'))?->getKey(),
+            'playable_race_id' => PlayableRace::find(data_get($characterDto, 'race.id'))?->getKey(),
+            'gender' => Gender::tryFrom(data_get($characterDto, 'gender.name')),
         ]);
 
-        Character::withoutEvents(function () use ($character, $playableClass, $guildRank) {
-            if (is_a($playableClass, PlayableClass::class)) {
-                $character->playableClass()->associate($playableClass);
-            }
+        Character::withoutEvents(function () use ($character, $guildRank) {
             $character->rank()->associate($guildRank);
             $character->save();
         });

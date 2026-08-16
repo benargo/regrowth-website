@@ -5,9 +5,9 @@ namespace Database\Seeders;
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchAssetRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
-use App\Models\LootCouncil\Priority;
+use App\Models\LootPriority;
 use Illuminate\Database\Seeder;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Exceptions\Request\Statuses\ForbiddenException;
@@ -24,7 +24,7 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
     public function run(): void
     {
         // Update 'Ranged DPS' to 'Caster DPS'
-        Priority::where(['type' => 'Role', 'title' => 'Ranged DPS'])->update(['title' => 'Caster DPS']);
+        LootPriority::where(['type' => 'Role', 'title' => 'Ranged DPS'])->update(['title' => 'Caster DPS']);
 
         $priorities = [
             // Roles
@@ -99,14 +99,13 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
             ['type' => 'Custom', 'title' => 'DPS Warrior', 'icon_name' => 'ability_rogue_ambush'],
 
             // Disenchant
-            ['type' => 'Meme', 'title' => 'Bakas', 'icon_name' => 'ui_embercourt-emoji-elated'],
             ['type' => 'Meme', 'title' => 'Disenchant', 'icon_name' => 'inv_enchant_voidcrystal'],
         ];
 
         foreach ($priorities as $priority) {
             $iconName = $priority['icon_name'];
 
-            $model = Priority::query()->updateOrCreate(
+            $model = LootPriority::query()->updateOrCreate(
                 ['title' => $priority['title']],
                 ['type' => $priority['type'], 'title' => $priority['title']],
             );
@@ -115,17 +114,17 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
                 continue;
             }
 
-            $iconFileName = $iconName.'.'.self::BLIZZARD_ICON_FILE_EXTENSION;
+            $iconFileName = $iconName.'.'.self::DEFAULT_MEDIA_FILE_EXTENSION;
 
             try {
-                $response = $this->renderConnector->send(new FetchAssetRequest($iconName));
+                $response = $this->renderConnector->send(new FetchIconRequest($iconName));
 
                 $model->addMediaFromString($response->body())
                     ->usingFileName($iconFileName)
-                    ->withCustomProperties(['size' => self::BLIZZARD_ICON_SIZE])
+                    ->withCustomProperties(['size' => self::DEFAULT_MEDIA_SIZE])
                     ->toMediaCollection('blizzard_icons');
             } catch (ForbiddenException $e) {
-                AttachBlizzardIconToModel::dispatch(Priority::class, $model->id, $e->getPendingRequest()->getUrl())
+                AttachBlizzardIconToModel::dispatch(LootPriority::class, $model->id, $e->getPendingRequest()->getUrl())
                     ->delay(now()->addMinutes(5));
                 $this->command?->warn("  ⚠ [{$model->title}] Icon deferred (403) — retrying in 5 min");
             } catch (MediaNotFoundException|RequestException $e) {

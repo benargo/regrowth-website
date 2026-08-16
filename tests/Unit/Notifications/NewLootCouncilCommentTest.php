@@ -2,20 +2,22 @@
 
 namespace Tests\Unit\Notifications;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Models\LootCouncil\Comment;
+use App\Models\Comment;
+use App\Models\Item;
+use App\Models\Raid;
 use App\Notifications\NewLootCouncilComment;
 use App\Services\Discord\Notifications\Driver as DiscordDriver;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel;
+use App\Services\Discord\Resources\EmbedField;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
+use Spatie\LaravelData\Optional;
 use Tests\TestCase;
 
-#[Group('notifications')]
+#[Group('loot')]
+#[Group('discord-integration')]
 class NewLootCouncilCommentTest extends TestCase
 {
     use RefreshDatabase;
@@ -30,11 +32,10 @@ class NewLootCouncilCommentTest extends TestCase
     }
 
     #[Test]
-    public function it_resolves_item_name_via_blizzard_api(): void
+    public function it_resolves_item_name_from_model(): void
     {
-        $comment = Comment::factory()->create();
-
-        $this->fakeItemResponse('Thunderfury');
+        $item = Item::factory()->create(['name' => 'Thunderfury']);
+        $comment = Comment::factory()->create(['commentable_id' => $item->id, 'commentable_type' => Item::class]);
 
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
@@ -43,30 +44,9 @@ class NewLootCouncilCommentTest extends TestCase
     }
 
     #[Test]
-    public function it_falls_back_to_item_id_when_item_not_found(): void
-    {
-        $comment = Comment::factory()->create();
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(
-                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
-                status: 404,
-            ),
-        ]);
-
-        $notification = new NewLootCouncilComment($comment);
-        $message = $notification->toMessage();
-
-        $this->assertStringContainsString("Item #{$comment->item->id}", $message->embeds[0]->description);
-    }
-
-    #[Test]
     public function it_builds_embed_with_correct_structure(): void
     {
         $comment = Comment::factory()->create();
-
-        $this->fakeItemResponse('Warglaive');
 
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
@@ -78,11 +58,53 @@ class NewLootCouncilCommentTest extends TestCase
     }
 
     #[Test]
-    public function it_includes_user_mention_in_description(): void
+    public function it_omits_the_replies_field_when_reply_count_is_zero(): void
     {
         $comment = Comment::factory()->create();
 
-        $this->fakeItemResponse('Warglaive');
+        $notification = new NewLootCouncilComment($comment);
+        $message = $notification->toMessage();
+
+        $this->assertInstanceOf(Optional::class, $message->embeds[0]->fields);
+    }
+
+    #[Test]
+    public function it_includes_a_replies_field_when_reply_count_is_set(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $notification = (new NewLootCouncilComment($comment))->withReplyCount(3);
+        $message = $notification->toMessage();
+
+        $fields = $message->embeds[0]->fields;
+
+        $this->assertIsArray($fields);
+        $this->assertCount(1, $fields);
+        $this->assertInstanceOf(EmbedField::class, $fields[0]);
+        $this->assertSame('Replies', $fields[0]->name);
+        $this->assertSame('3', $fields[0]->value);
+        $this->assertTrue($fields[0]->inline);
+    }
+
+    #[Test]
+    public function it_generates_url_with_slug_path_segment(): void
+    {
+        $item = Item::factory()->create(['name' => 'Thunderfury']);
+        $comment = Comment::factory()->create(['commentable_id' => $item->id, 'commentable_type' => Item::class]);
+
+        $notification = new NewLootCouncilComment($comment);
+        $message = $notification->toMessage();
+
+        $url = $message->embeds[0]->url;
+
+        $this->assertStringContainsString('/thunderfury', $url);
+        $this->assertStringNotContainsString('name=', $url);
+    }
+
+    #[Test]
+    public function it_includes_user_mention_in_description(): void
+    {
+        $comment = Comment::factory()->create();
 
         $notification = new NewLootCouncilComment($comment);
         $message = $notification->toMessage();
@@ -105,8 +127,6 @@ class NewLootCouncilCommentTest extends TestCase
         $comment = Comment::factory()->create();
         $notifiable = $this->makeNotifiable();
 
-        $this->fakeItemResponse('Warglaive');
-
         $notification = new NewLootCouncilComment($comment);
         $data = $notification->toDatabase($notifiable);
 
@@ -116,28 +136,70 @@ class NewLootCouncilCommentTest extends TestCase
         $this->assertArrayHasKey('embeds', $data['payload']);
     }
 
+    #[Test]
+    public function it_stores_the_related_comment_as_an_id_reference_not_a_full_model(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $related = (new NewLootCouncilComment($comment))->mapRelatedModels();
+
+        $this->assertSame([
+            ['model_id' => $comment->getKey(), 'model_type' => Comment::class],
+        ], $related);
+    }
+
+    #[Test]
+    public function it_produces_a_json_encodable_queue_payload(): void
+    {
+        $comment = Comment::factory()->create();
+
+        $serialized = serialize(new NewLootCouncilComment($comment));
+
+        $this->assertNotFalse(
+            json_encode(['command' => $serialized], JSON_UNESCAPED_UNICODE),
+            'Queue payload must be JSON-encodable: '.json_last_error_msg(),
+        );
+    }
+
+    #[Test]
+    public function it_should_send_when_commentable_is_an_item(): void
+    {
+        $comment = Comment::factory()->create();
+        $notification = new NewLootCouncilComment($comment);
+
+        $this->assertTrue($notification->shouldSend($this->makeNotifiable(), 'discord'));
+    }
+
+    #[Test]
+    public function it_should_not_send_when_commentable_is_not_an_item(): void
+    {
+        $raid = Raid::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_id' => $raid->id,
+            'commentable_type' => Raid::class,
+        ]);
+
+        $notification = new NewLootCouncilComment($comment);
+
+        $this->assertFalse($notification->shouldSend($this->makeNotifiable(), 'discord'));
+    }
+
+    #[Test]
+    public function it_throws_when_commentable_is_not_an_item(): void
+    {
+        $raid = Raid::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_id' => $raid->id,
+            'commentable_type' => Raid::class,
+        ]);
+
+        $this->expectException(\LogicException::class);
+
+        (new NewLootCouncilComment($comment))->toMessage();
+    }
+
     private function makeNotifiable(): NotifiableChannel
     {
         return new NotifiableChannel(Channel::from(['id' => '123456789']));
-    }
-
-    private function fakeItemResponse(string $name = 'Thunderfury, Blessed Blade of the Windseeker', int $id = 19019): void
-    {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => MockResponse::make(body: [
-                'id' => $id,
-                'name' => $name,
-                'quality' => ['type' => 'LEGENDARY', 'name' => 'Legendary'],
-                'level' => 80,
-                'required_level' => 60,
-                'media' => ['key' => ['href' => 'https://example.test/media/19019']],
-                'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
-                'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'One-Handed Sword', 'id' => 7],
-                'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
-                'purchase_price' => 0,
-                'sell_price' => 0,
-            ], status: 200),
-        ]);
     }
 }

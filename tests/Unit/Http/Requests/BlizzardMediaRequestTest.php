@@ -4,9 +4,11 @@ namespace Tests\Unit\Http\Requests;
 
 use App\Http\Requests\BlizzardMediaRequest;
 use App\Models\User;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('blizzard-integration')]
 class BlizzardMediaRequestTest extends TestCase
 {
     private function makeRequest(array $params = [], ?User $user = null): BlizzardMediaRequest

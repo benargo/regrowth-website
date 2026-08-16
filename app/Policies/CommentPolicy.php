@@ -2,21 +2,13 @@
 
 namespace App\Policies;
 
-use App\Models\LootCouncil\Comment;
+use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class CommentPolicy extends AuthorizationPolicy
 {
     use HandlesAuthorization;
-
-    /**
-     * Determine if the user can access the "All Comments" page.
-     */
-    public function viewAny(User $user): bool
-    {
-        return $user->isAuthorizedTo('view-all-comments');
-    }
 
     /**
      * Determine if the user can create comments on loot items.
@@ -56,21 +48,31 @@ class CommentPolicy extends AuthorizationPolicy
 
     /**
      * Determine if the user can mark a comment as resolved.
+     *
+     * Resolution is a thread-level concept: only a root comment can be
+     * resolved, never an individual reply within the discussion.
      */
     public function markAsResolved(User $user, Comment $comment): bool
     {
+        if ($comment->isReply()) {
+            return false;
+        }
+
         return $user->isAuthorizedTo('mark-comment-as-resolved');
     }
 
     /**
-     * Determine if the user can react to a comment.
+     * Determine if the user can reply to a comment.
+     *
+     * Replies need the same permission as any other comment; the only extra
+     * constraint is that a deleted comment's thread is closed to new replies.
      */
-    public function react(User $user, Comment $comment): bool
+    public function reply(User $user, Comment $comment): bool
     {
-        if ($comment->user_id === $user->id) {
-            return false; // Users cannot react to their own comments
+        if ($comment->trashed()) {
+            return false;
         }
 
-        return $user->isAuthorizedTo('react-to-comments');
+        return $user->isAuthorizedTo('comment-on-loot-items');
     }
 }

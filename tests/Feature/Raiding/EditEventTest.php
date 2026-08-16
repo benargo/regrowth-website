@@ -10,17 +10,17 @@ use App\Models\TargetMarker;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
-use App\Services\RaidHelper\RaidHelper;
-use App\Services\RaidHelper\Resources\Event as RaidHelperEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class EditEventTest extends TestCase
 {
     use RefreshDatabase;
@@ -46,12 +46,6 @@ class EditEventTest extends TestCase
         $this->mock(Discord::class, function (MockInterface $mock) {
             $mock->shouldReceive('getChannel')->andReturn(
                 Channel::from(['id' => '123456789', 'name' => 'raids', 'position' => 1]),
-            )->byDefault();
-        });
-
-        $this->mock(RaidHelper::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getEvent')->andReturn(
-                RaidHelperEvent::from($this->minimalRaidHelperEventPayload()),
             )->byDefault();
         });
     }
@@ -159,6 +153,7 @@ class EditEventTest extends TestCase
         );
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_on_edit_when_user_cannot_update_event(): void
     {
@@ -178,37 +173,5 @@ class EditEventTest extends TestCase
         $response = $this->get(route('raiding.plans.edit', $event));
 
         $response->assertRedirect(route('login'));
-    }
-
-    /**
-     * @param  array<string, mixed>  $overrides
-     * @return array<string, mixed>
-     */
-    private function minimalRaidHelperEventPayload(array $overrides = []): array
-    {
-        return array_merge([
-            'id' => '999000000000000001',
-            'serverId' => '111222333444555666',
-            'leaderId' => '200000000000000001',
-            'leaderName' => 'Raid Leader',
-            'channelId' => '100000000000000001',
-            'channelName' => 'raid-signups',
-            'channelType' => 'GUILD_TEXT',
-            'templateId' => 'wowclassic',
-            'templateEmoteId' => '0',
-            'title' => 'Weekly Raid',
-            'description' => '',
-            'startTime' => 1700000000,
-            'endTime' => 1700007200,
-            'closingTime' => 1699999800,
-            'date' => '2023-11-14',
-            'time' => '20:00',
-            'advancedSettings' => [],
-            'classes' => [],
-            'roles' => [],
-            'signUps' => [],
-            'lastUpdated' => 1699999000,
-            'color' => '0,0,0',
-        ], $overrides);
     }
 }

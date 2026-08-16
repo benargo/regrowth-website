@@ -6,10 +6,12 @@ use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class SpellControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -49,6 +51,7 @@ class SpellControllerTest extends TestCase
         $response->assertJsonPath('name', 'Avenging Wrath');
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_returns_403_on_store_without_edit_datasets_permission(): void
     {
@@ -62,6 +65,7 @@ class SpellControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('validation')]
     #[Test]
     public function it_returns_422_when_name_is_missing_on_store(): void
     {
@@ -76,6 +80,7 @@ class SpellControllerTest extends TestCase
         $response->assertJsonValidationErrors('name');
     }
 
+    #[Group('validation')]
     #[Test]
     public function it_returns_422_when_type_is_invalid_on_store(): void
     {

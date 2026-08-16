@@ -4,20 +4,21 @@ use App\Jobs\BuildAddonExportFile;
 use App\Jobs\DeleteStaleDailyQuestsMessage;
 use App\Jobs\FetchGuildRoster;
 use App\Jobs\RaidHelper\FetchEvents as FetchRaidHelperEvents;
+use App\Jobs\SyncDiscordRoles;
 use Illuminate\Support\Facades\Schedule;
 
 /**
  * Synchronise Discord roles every hour to ensure we have the latest roles and permissions.
  */
-Schedule::command('app:sync-discord')->hourly()->name('sync-discord');
+Schedule::job(new SyncDiscordRoles)->hourly()->name('sync-discord-roles');
 
 /**
- * Fetch events from the Raid Helper API every hour to keep our event data up to date.
+ * Reconcile events with the Raid Helper API every six hours as a backstop for missed webhooks.
  *
  * This job will run with default parameters, which means it will fetch events from the channels specified in the config file
  * and with a default time range of 1 week ago to 1 week from now.
  */
-Schedule::job(new FetchRaidHelperEvents)->hourly()->name('fetch-raid-helper-events')->withoutOverlapping();
+Schedule::job(new FetchRaidHelperEvents)->everySixHours()->name('fetch-raid-helper-events')->withoutOverlapping();
 
 /**
  * Fetch the guild roster every 6 hours to ensure we have the latest member information.
@@ -29,7 +30,9 @@ Schedule::job(new FetchGuildRoster)->everySixHours()->name('fetch-guild-roster')
  *
  * The twiceDailyAt arguments indicate this job will run at 16:30 and 23:30 every day.
  */
-Schedule::command('app:refresh-warcraft-logs-reports --latest')->twiceDailyAt(16, 23, 30)->name('refresh-warcraft-logs-reports');
+Schedule::command('app:refresh-warcraft-logs-reports --latest')
+    ->twiceDailyAt(16, 23, 30)
+    ->name('refresh-warcraft-logs-reports');
 
 /**
  * Reset daily quests at 3:00 AM server time.
@@ -46,4 +49,4 @@ Schedule::job(new BuildAddonExportFile)->dailyAt('03:15')->name('build-addon-exp
 /**
  * This should be the last job to run each day.
  */
-Schedule::command('model:prune')->dailyAt('06:00')->name('model-prune');
+// Schedule::command('model:prune')->dailyAt('06:00')->name('model-prune');

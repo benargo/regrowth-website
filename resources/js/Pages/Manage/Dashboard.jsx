@@ -96,12 +96,11 @@ export default function Dashboard({ discordRoles }) {
                 <h2 className="mt-12 text-2xl font-semibold">Site Management</h2>
                 <p className="text-md text-gray-400">Manage site-wide settings and core datasets.</p>
 
+                <div className="flex flex-col gap-4">
                 {/* Datasets */}
                 <Collapsible
                     title="Datasets"
-                    className="mt-6 border-gray-400"
-                    bodyClassName="border-gray-400"
-                    headerClassName="hover:bg-gray-400/10"
+                    style="gray"
                 >
                     <p className="text-md mb-4 text-gray-400">
                         Manage core datasets that power the site&rsquo;s features.
@@ -121,15 +120,21 @@ export default function Dashboard({ discordRoles }) {
                             <h3 className="text-md">Upload GRM data</h3>
                             <p className="mb-1 text-sm">Upload data from GRM to link mains and alts together.</p>
                         </DashboardCard>
+                        <Can permission="update-characters">
+                            <DashboardCard href={route("characters.index")} icon="users">
+                                <h3 className="text-md">Manage characters</h3>
+                                <p className="mb-1 text-sm">
+                                    Review and update guild characters, specs, and loot council status.
+                                </p>
+                            </DashboardCard>
+                        </Can>
                     </div>
                 </Collapsible>
 
                 {/* Site options */}
                 <Collapsible
                     title="Site options"
-                    className="mt-6 border-gray-400"
-                    bodyClassName="border-gray-400"
-                    headerClassName="hover:bg-gray-400/10"
+                    style="gray"
                 >
                     <p className="text-md mb-4 text-gray-400">Configure site-wide options and permissions.</p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -157,9 +162,7 @@ export default function Dashboard({ discordRoles }) {
                 {/* Testing */}
                 <Collapsible
                     title="Testing"
-                    className="mt-6 border-gray-400"
-                    bodyClassName="border-gray-400"
-                    headerClassName="hover:bg-gray-400/10"
+                    style="gray"
                 >
                     <p className="text-md mb-4 text-gray-400">
                         View the site as different user roles for testing purposes. Use the user menu to switch back to
@@ -177,6 +180,7 @@ export default function Dashboard({ discordRoles }) {
                         </DashboardCard>
                     </div>
                 </Collapsible>
+                </div>
             </PageContainer>
         </Master>
     );

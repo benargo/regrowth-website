@@ -3,16 +3,20 @@
 namespace Tests\Unit\Support\MediaLibrary;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Contracts\HasCharacterMedia;
 use App\Models\Boss;
+use App\Models\Character;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Tests\TestCase;
 
+#[Group('media')]
 class UrlGeneratorTest extends TestCase
 {
     use RefreshDatabase;
@@ -72,6 +76,34 @@ class UrlGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_storage_url_for_has_character_media_model(): void
+    {
+        $character = Character::factory()->create();
+
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('character_15678.jpg')
+            ->withCustomProperties(['size' => HasCharacterMedia::DEFAULT_MEDIA_SIZE])
+            ->toMediaCollection('character_portraits');
+
+        $url = $character->getFirstMediaUrl('character_portraits');
+
+        $this->assertNotNull($url);
+        $this->assertStringContainsString('/storage/', $url);
+        $this->assertStringContainsString('character_15678.jpg', $url);
+        $this->assertStringNotContainsString('/icons/', $url);
+    }
+
+    #[Test]
+    public function it_returns_null_for_has_character_media_with_no_media(): void
+    {
+        $character = Character::factory()->create();
+
+        $url = $character->getFirstMediaUrl('character_portraits') ?: null;
+
+        $this->assertNull($url);
+    }
+
+    #[Test]
     public function it_returns_default_storage_url_for_has_blizzard_icons_model_with_non_blizzard_collection(): void
     {
         $model = BlizzardIconStubModel::create(['title' => 'Test', 'type' => 'role']);
@@ -90,14 +122,14 @@ class UrlGeneratorTest extends TestCase
 /**
  * Lightweight test double that implements HasBlizzardIcons so the positive-branch
  * of UrlGenerator can be exercised before any production model adopts
- * the interface. Backed by the `lootcouncil_priorities` table (title + type columns);
+ * the interface. Backed by the `loot_priorities` table (title + type columns);
  * reuses an existing migrated table with compatible columns to avoid a throwaway migration.
  */
 class BlizzardIconStubModel extends Model implements HasBlizzardIcons, HasMedia
 {
     use InteractsWithMedia;
 
-    protected $table = 'lootcouncil_priorities';
+    protected $table = 'loot_priorities';
 
     public $timestamps = true;
 

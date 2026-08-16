@@ -19,9 +19,11 @@ use App\Services\Discord\Resources\Message;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class DriverTest extends TestCase
 {
     use RefreshDatabase;
@@ -475,6 +477,51 @@ class DriverTest extends TestCase
         ]);
     }
 
+    #[Test]
+    public function it_does_not_throw_when_syncing_the_same_related_model_twice(): void
+    {
+        $user = User::factory()->create();
+        $payload = MessagePayload::from(['content' => 'Edited with related models']);
+
+        $existingNotification = DiscordNotification::factory()->create([
+            'channel_id' => $this->channel->id,
+            'message_id' => '123456789012345679',
+        ]);
+
+        $existingNotification->relatedModels()->create([
+            'model_type' => User::class,
+            'model_id' => (string) $user->id,
+        ]);
+
+        $existingDiscordMessage = $this->makeDiscordMessage('123456789012345679');
+
+        $notification = Mockery::mock(Notification::class);
+        $notification->updates = $existingNotification;
+        $notification->relatedModels = [['model_id' => $user->id, 'model_type' => User::class]];
+        $notification->expects('toMessage')->once()->andReturn($payload);
+        $notification->expects('sender')->once()->andReturnNull();
+        $notification->expects('mapRelatedModels')->once()->andReturn([
+            ['model_id' => $user->id, 'model_type' => User::class],
+        ]);
+
+        $this->discord->expects('getChannelMessage')
+            ->with($this->channel, '123456789012345679')
+            ->andReturn($existingDiscordMessage);
+
+        $this->discord->expects('editMessage')
+            ->with($existingDiscordMessage, $payload)
+            ->andReturn($existingDiscordMessage);
+
+        $this->driver->send($this->notifiable, $notification);
+
+        $this->assertDatabaseHas('discord_notification_related_models', [
+            'discord_notification_id' => $existingNotification->id,
+            'model_type' => User::class,
+            'model_id' => (string) $user->id,
+        ]);
+    }
+
+    #[Group('error-handling')]
     #[Test]
     public function send_propagates_discord_request_exception_without_deleting_the_record(): void
     {

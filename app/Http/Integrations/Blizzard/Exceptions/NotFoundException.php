@@ -6,7 +6,7 @@ use Saloon\Exceptions\Request\Statuses\NotFoundException as Base;
 use Saloon\Http\Response;
 use Throwable;
 
-abstract class NotFoundException extends Base
+abstract class NotFoundException extends Base implements BlizzardRequestException
 {
     /**
      * A prefix for the exception message, to be set by child classes.

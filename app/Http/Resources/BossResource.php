@@ -24,10 +24,10 @@ class BossResource extends JsonResource
             'raid' => $this->when(
                 $this->relationLoaded('raid'),
                 fn () => new RaidResource($this->raid),
-                fn () => $this->raid_id,
+                $this->raid_id,
             ),
-            'items' => $this->whenLoaded('items'),
-            'comments' => $this->whenLoaded('comments'),
+            'items' => $this->whenLoaded('items', fn () => ItemResource::collection($this->items)),
+            'comments_count' => $this->whenCounted('comments'),
         ];
     }
 }

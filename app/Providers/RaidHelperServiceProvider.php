@@ -2,10 +2,11 @@
 
 namespace App\Providers;
 
-use App\Services\RaidHelper\RaidHelper;
-use App\Services\RaidHelper\RaidHelperClient;
+use App\Http\Integrations\RaidHelper\RaidHelperConnector;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
+use Saloon\RateLimitPlugin\Stores\LaravelCacheStore;
 
 class RaidHelperServiceProvider extends ServiceProvider
 {
@@ -14,14 +15,15 @@ class RaidHelperServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // API client
-        $this->app->singleton(RaidHelperClient::class, function (Application $app) {
-            return new RaidHelperClient(config('services.raidhelper.token'));
-        });
-
-        // Main RaidHelper service
-        $this->app->singleton(RaidHelper::class, function (Application $app) {
-            return new RaidHelper($app->make(RaidHelperClient::class), config('services.raidhelper'));
+        // Saloon connector for the Raid Helper API.
+        $this->app->singleton(RaidHelperConnector::class, function (Application $app) {
+            return new RaidHelperConnector(
+                token: config('services.raidhelper.token'),
+                serverId: config('services.raidhelper.server_id'),
+                store: new LaravelCacheStore(
+                    Cache::store()->tags(['raidhelper', 'raidhelper-rate-limit'])
+                ),
+            );
         });
     }
 
@@ -33,8 +35,7 @@ class RaidHelperServiceProvider extends ServiceProvider
     public function provides(): array
     {
         return [
-            RaidHelperClient::class,
-            RaidHelper::class,
+            RaidHelperConnector::class,
         ];
     }
 }

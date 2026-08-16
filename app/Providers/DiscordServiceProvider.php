@@ -2,9 +2,15 @@
 
 namespace App\Providers;
 
+use App\Jobs\SyncDiscordRoles;
+use App\Jobs\SyncDiscordUser;
+use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\DiscordClient;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Discord\Provider as DiscordProvider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -42,6 +48,13 @@ class DiscordServiceProvider extends ServiceProvider
         // Register the Discord Socialite provider
         $this->app['events']->listen(SocialiteWasCalled::class, function (SocialiteWasCalled $event) {
             $event->extendSocialite('discord', DiscordProvider::class);
+        });
+
+        Queue::after(function (JobProcessed $event) {
+            if ($event->job->resolveName() === SyncDiscordRoles::class) {
+                $jobs = User::all()->map(fn (User $user) => new SyncDiscordUser($user->id));
+                Bus::batch($jobs)->dispatch();
+            }
         });
     }
 

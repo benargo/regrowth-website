@@ -355,14 +355,13 @@ class ProcessGrmUpload implements ShouldQueue
                     ['name' => $altName]
                 );
 
-                // Create the link if it doesn't exist
-                // The linkedCharacters() relationship uses:
-                // 'linked_character_id' for the current model (alt)
-                // 'character_id' for the related model (main)
-                if (! $altCharacter->linkedCharacters()
-                    ->where('character_id', $mainCharacter->id)
-                    ->exists()) {
+                // Create links in both directions so either character can find the other.
+                if (! $altCharacter->linkedCharacters()->where('character_id', $mainCharacter->id)->exists()) {
                     $altCharacter->linkedCharacters()->attach($mainCharacter->id);
+                }
+
+                if (! $mainCharacter->linkedCharacters()->where('character_id', $altCharacter->id)->exists()) {
+                    $mainCharacter->linkedCharacters()->attach($altCharacter->id);
                 }
             } catch (CharacterTooLowLevelException $e) {
                 Log::debug('GRM Upload: Alt character too low level', [

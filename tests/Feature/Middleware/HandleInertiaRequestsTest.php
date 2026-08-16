@@ -8,9 +8,11 @@ use App\Models\Phase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('platform')]
 class HandleInertiaRequestsTest extends TestCase
 {
     use RefreshDatabase;
@@ -19,12 +21,10 @@ class HandleInertiaRequestsTest extends TestCase
     {
         parent::setUp();
 
-        $viewAllComments = Permission::firstOrCreate(['name' => 'view-all-comments', 'guard_name' => 'web']);
         $viewOfficerDashboard = Permission::firstOrCreate(['name' => 'view-officer-dashboard', 'guard_name' => 'web']);
         $officerRole = DiscordRole::firstOrCreate(['id' => '829021769448816691'], ['name' => 'Officer', 'position' => 6, 'is_visible' => true]);
-        $officerRole->givePermissionTo($viewAllComments);
         $officerRole->givePermissionTo($viewOfficerDashboard);
-        DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true])->givePermissionTo($viewAllComments);
+        DiscordRole::firstOrCreate(['id' => '1467994755953852590'], ['name' => 'Loot Councillor', 'position' => 5, 'is_visible' => true]);
     }
 
     #[Test]
@@ -169,64 +169,14 @@ class HandleInertiaRequestsTest extends TestCase
     }
 
     #[Test]
-    public function it_shares_view_all_comments_permission_for_officers(): void
+    public function shared_props_do_not_include_phases(): void
     {
-        $user = User::factory()->officer()->create();
-
-        $this->actingAs($user)
-            ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => $permissions->contains('view-all-comments'))
-            );
-    }
-
-    #[Test]
-    public function it_shares_view_all_comments_permission_for_loot_councillors(): void
-    {
-        $user = User::factory()->lootCouncillor()->create();
-
-        $this->actingAs($user)
-            ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => $permissions->contains('view-all-comments'))
-            );
-    }
-
-    #[Test]
-    public function it_does_not_share_view_all_comments_permission_for_raiders(): void
-    {
-        $user = User::factory()->raider()->create();
-
-        $this->actingAs($user)
-            ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => ! $permissions->contains('view-all-comments'))
-            );
-    }
-
-    #[Test]
-    public function it_does_not_share_view_all_comments_permission_for_members(): void
-    {
+        Phase::factory()->create();
         $user = User::factory()->member()->create();
 
-        $this->actingAs($user)
-            ->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.permissions', fn ($permissions) => ! $permissions->contains('view-all-comments'))
-            );
-    }
+        $response = $this->actingAs($user)->get(route('loot.index'));
 
-    #[Test]
-    public function it_shares_phases_with_inertia(): void
-    {
-        $phases = Phase::factory()->count(3)->create();
-
-        $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('phases', 3)
-            );
-    }
-
-    #[Test]
-    public function it_shares_empty_phases_when_none_exist(): void
-    {
-        $this->get('/')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('phases', 0)
-            );
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->missing('phases'));
     }
 }

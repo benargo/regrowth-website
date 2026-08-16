@@ -23,9 +23,11 @@ use Illuminate\Support\Collection;
 use InvalidArgumentException;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('discord-integration')]
 class DiscordTest extends TestCase
 {
     private DiscordClient&MockInterface $client;
@@ -44,6 +46,7 @@ class DiscordTest extends TestCase
     // Constructor
     // -------------------------------------------------------------------------
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_an_invalid_argument_exception_when_server_id_is_empty(): void
     {
@@ -179,6 +182,7 @@ class DiscordTest extends TestCase
         $this->assertSame('TestNick', $member->nick);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_user_not_in_guild_exception_when_member_returns_404(): void
     {
@@ -191,6 +195,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildMember('999999999');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_propagates_non_404_discord_exceptions_from_get_guild_member(): void
     {
@@ -363,6 +368,7 @@ class DiscordTest extends TestCase
         $this->assertSame('Officer', $role->name);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_role_not_found_exception_when_role_response_is_empty(): void
     {
@@ -378,6 +384,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildRole('000000000000000000');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_role_not_found_exception_when_client_returns_404(): void
     {
@@ -390,6 +397,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildRole('000000000000000000');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_propagates_non_404_discord_exceptions_from_get_guild_role(): void
     {
@@ -527,6 +535,7 @@ class DiscordTest extends TestCase
     // Exception propagation — simple-delegation methods
     // -------------------------------------------------------------------------
 
+    #[Group('error-handling')]
     #[Test]
     public function get_channel_propagates_discord_request_exception(): void
     {
@@ -539,6 +548,7 @@ class DiscordTest extends TestCase
         $this->discord->getChannel('111');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function get_guild_channels_propagates_discord_request_exception(): void
     {
@@ -551,6 +561,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildChannels();
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function search_guild_members_propagates_discord_request_exception(): void
     {
@@ -563,6 +574,7 @@ class DiscordTest extends TestCase
         $this->discord->searchGuildMembers('alice');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function get_guild_roles_propagates_discord_request_exception(): void
     {
@@ -575,6 +587,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildRoles();
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function get_guild_members_propagates_discord_request_exception(): void
     {
@@ -587,6 +600,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildMembers();
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function get_channel_messages_propagates_discord_request_exception(): void
     {
@@ -602,6 +616,7 @@ class DiscordTest extends TestCase
         $this->discord->getChannelMessages($channel, $query);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function get_channel_message_propagates_discord_request_exception(): void
     {
@@ -616,6 +631,7 @@ class DiscordTest extends TestCase
         $this->discord->getChannelMessage($channel, '111111111111111111');
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function create_message_propagates_discord_request_exception(): void
     {
@@ -631,6 +647,7 @@ class DiscordTest extends TestCase
         $this->discord->createMessage($channel, $payload);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function edit_message_propagates_discord_request_exception(): void
     {
@@ -646,6 +663,7 @@ class DiscordTest extends TestCase
         $this->discord->editMessage($message, $payload);
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function delete_message_propagates_discord_request_exception(): void
     {
@@ -664,6 +682,7 @@ class DiscordTest extends TestCase
     // RateLimitedException bubbles through Discord facade
     // -------------------------------------------------------------------------
 
+    #[Group('error-handling')]
     #[Test]
     public function rate_limited_exception_bubbles_through_get_channel(): void
     {

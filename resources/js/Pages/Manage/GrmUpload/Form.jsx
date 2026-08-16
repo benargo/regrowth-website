@@ -224,7 +224,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                 <ol className="mb-6 list-inside list-decimal space-y-2">
                     <li>
                         Open{" "}
-                        <span className="inline-block rounded-sm border border-amber-800 bg-brown-800 p-1 font-mono font-bold">
+                        <span className="inline-block rounded-xs border border-amber-800 bg-brown-800 p-1 font-mono font-bold">
                             /grm export
                         </span>{" "}
                         in-game.

@@ -5,12 +5,14 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableClass;
 use App\Http\Integrations\Blizzard\Data\PlayableClass\PlayableClassMediaData;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassMediaRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\LaravelData\Optional;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetPlayableClassMediaRequestTest extends BlizzardTestCase
 {
     #[Test]
@@ -37,7 +39,7 @@ class GetPlayableClassMediaRequestTest extends BlizzardTestCase
         $this->assertInstanceOf(PlayableClassMediaData::class, $dto);
         $this->assertSame(7, $dto->id);
         $this->assertCount(1, $dto->assets);
-        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', $dto->assets[0]->value);
+        $this->assertSame('https://render.worldofwarcraft.com/eu/icons/56/shaman.jpg', (string) $dto->assets[0]->value);
         $this->assertSame('icon', $dto->assets[0]->key);
         $this->assertSame(642015, $dto->assets[0]->fileDataId);
     }
@@ -80,6 +82,7 @@ class GetPlayableClassMediaRequestTest extends BlizzardTestCase
         );
     }
 
+    #[Group('error-handling')]
     #[Test]
     public function it_throws_invalid_class_exception_on_404(): void
     {

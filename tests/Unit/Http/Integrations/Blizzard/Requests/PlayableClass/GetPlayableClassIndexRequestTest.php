@@ -4,11 +4,13 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableClass;
 
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use App\Http\Integrations\Blizzard\Requests\PlayableClass\GetPlayableClassIndexRequest;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Unit\Http\Integrations\Blizzard\BlizzardTestCase;
 
+#[Group('blizzard-integration')]
 class GetPlayableClassIndexRequestTest extends BlizzardTestCase
 {
     #[Test]

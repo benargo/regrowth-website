@@ -12,9 +12,11 @@ use App\Models\Spell;
 use App\Models\TargetMarker;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
 
+#[Group('raiding')]
 class EventAssignmentTest extends ModelTestCase
 {
     protected function modelClass(): string

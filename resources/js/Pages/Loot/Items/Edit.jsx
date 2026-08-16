@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
     DndContext,
     DragOverlay,
-    closestCenter,
+    pointerWithin,
+    rectIntersection,
     PointerSensor,
     KeyboardSensor,
     useSensor,
@@ -11,16 +12,22 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Deferred, Link, useForm } from "@inertiajs/react";
+import { Link, router, useForm } from "@inertiajs/react";
+import { useSocketId } from "@laravel/echo-react";
+import useItemChannel from "@/Hooks/useItemChannel";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
 import Icon from "@/Components/FontAwesome/Icon";
-import CommentsSection from "@/Components/Loot/CommentsSection";
+import CommentsSection from "@/Components/Comments/CommentsSection";
 import ItemDetailsCard from "@/Components/Loot/ItemDetailsCard";
-import Notes from "@/Components/Loot/Notes";
+import MarkdownEditor from "@/Components/MarkdownEditor";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
+import getItemRaid from "@/Helpers/GetItemRaid";
+
+const ALLOWED_FORMATS = ["bold", "italic", "underline", "link", "wowheadLink"];
+const VALIDATION_RULES = ["noLineBreaks"];
 
 function DraggablePriorityItem({ priority, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: priority.id });
@@ -39,7 +46,7 @@ function DraggablePriorityItem({ priority, onRemove }) {
             {...attributes}
             {...listeners}
         >
-            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
             <button
                 type="button"
@@ -60,7 +67,7 @@ function PriorityOverlay({ priority }) {
 
     return (
         <div className="flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border border-primary bg-brown-800 p-6 shadow-lg">
-            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-sm" />}
+            {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
         </div>
     );
@@ -75,7 +82,7 @@ function DroppableWeightRow({ weight, children, onAddClick }) {
     return (
         <div
             ref={setNodeRef}
-            className={`flex items-center justify-center transition-colors ${isOver ? "bg-amber-900/30" : ""}`}
+            className={`flex min-h-24 items-center justify-center transition-colors ${isOver ? "bg-amber-900/30" : ""}`}
         >
             <div className="w-12 flex-none text-4xl">{weight + 1}</div>
             <div className="ml-4 flex w-full flex-wrap items-center justify-center gap-4 py-4">
@@ -154,8 +161,6 @@ function AddNewWeightRow({ weight, onAddClick }) {
 }
 
 function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
-    if (!isOpen) return null;
-
     const groupedPriorities = useMemo(() => {
         return priorities.reduce((acc, priority) => {
             const type = priority.type || "other";
@@ -166,6 +171,8 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
             return acc;
         }, {});
     }, [priorities]);
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -191,7 +198,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                                     className="flex items-center gap-2 rounded-md border border-primary/50 bg-brown-800 p-3 text-left transition-colors hover:bg-brown-700"
                                 >
                                     {priority.media && (
-                                        <img src={priority.media} alt="" className="h-5 w-5 rounded-sm" />
+                                        <img src={priority.media} alt="" className="h-5 w-5 rounded-xs" />
                                     )}
                                     <span className="text-sm">{priority.title}</span>
                                 </button>
@@ -252,6 +259,11 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
         if (!activeId) return null;
         return priorities.find((p) => p.id === activeId);
     }, [activeId, priorities]);
+
+    const collisionDetection = useCallback((args) => {
+        const pointerCollisions = pointerWithin(args);
+        return pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
+    }, []);
 
     const recalculateWeights = (updatedPriorities) => {
         const uniqueWeights = [...new Set(updatedPriorities.map((p) => p.weight))].sort((a, b) => a - b);
@@ -365,7 +377,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={collisionDetection}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
@@ -409,43 +421,124 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     );
 }
 
-export default function ItemEdit({ item, allPriorities: allPrioritiesResource, comments }) {
-    const allPriorities = allPrioritiesResource.data;
+export default function ItemEdit({ item, priorities: prioritiesResource, comments, replies }) {
+    const allPriorities = prioritiesResource.data;
+    const raid = getItemRaid(item);
 
-    const { data, setData, put, processing, isDirty } = useForm({
+    const { data, setData } = useForm({
         priorities: item.data.priorities.map((p) => ({
             priority_id: p.id,
             weight: p.weight,
         })),
     });
 
+    const [notesValidationError, setNotesValidationError] = useState(null);
+    const [notesError, setNotesError] = useState(null);
+    const [saving, setSaving] = useState(false);
+
+    const { data: notesData, setData: setNotesData, reset: resetNotes } = useForm({
+        notes: item.data.notes || "",
+    });
+
+    const notesFocused = useRef(false);
+
+    useEffect(() => {
+        if (!notesFocused.current) {
+            setNotesData("notes", item.data.notes || "");
+        }
+    }, [item.data.notes]);
+
+    const handleNotesValidationChange = useCallback((error) => {
+        setNotesValidationError(error);
+    }, []);
+
+    /**
+     * `router.patch` doesn't attach `X-Socket-ID` automatically, so without
+     * this the sender's own `->toOthers()` broadcast would come back to it,
+     * get treated as an external change, and re-trigger another save —
+     * looping indefinitely. See CommentsSection.jsx for the same pattern.
+     */
+    const socketId = useSocketId();
+    const socketHeaders = useMemo(() => (socketId ? { "X-Socket-ID": socketId } : {}), [socketId]);
+
+    const saveItem = useCallback(
+        (payload) => {
+            router.patch(route("loot.items.update", { item: item.data.id }), payload, {
+                headers: socketHeaders,
+                preserveScroll: true,
+                preserveState: true,
+                preserveUrl: true,
+                only: ["item"],
+                onStart: () => setSaving(true),
+                onSuccess: () => setNotesError(null),
+                onError: (errors) => setNotesError(errors.notes ?? null),
+                onFinish: () => setSaving(false),
+            });
+        },
+        [item.data.id, socketHeaders],
+    );
+
+    useItemChannel(item.data.id, ({ notes, priorities }) => {
+        if (!notesFocused.current && notes !== undefined) {
+            setNotesData("notes", notes ?? "");
+        }
+        if (priorities !== undefined) {
+            setData(
+                "priorities",
+                priorities.map((p) => ({ priority_id: p.id, weight: p.weight })),
+            );
+        }
+    });
+
     const isFirstRender = useRef(true);
-    const debounceTimer = useRef(null);
-    // Auto-save when priorities change
+    const prioritiesDebounce = useRef(null);
+
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
             return;
         }
 
-        if (debounceTimer.current) {
-            clearTimeout(debounceTimer.current);
+        if (prioritiesDebounce.current) {
+            clearTimeout(prioritiesDebounce.current);
         }
 
-        if (!isDirty) return;
-
-        debounceTimer.current = setTimeout(() => {
-            put(route("loot.items.priorities.update", { item: item.data.id }), {
-                preserveScroll: true,
-            });
+        prioritiesDebounce.current = setTimeout(() => {
+            saveItem({ priorities: data.priorities });
         }, 1000);
 
         return () => {
-            if (debounceTimer.current) {
-                clearTimeout(debounceTimer.current);
+            if (prioritiesDebounce.current) {
+                clearTimeout(prioritiesDebounce.current);
             }
         };
-    }, [data.priorities]);
+    }, [data.priorities, saveItem]);
+
+    const isFirstNotesRender = useRef(true);
+    const notesDebounce = useRef(null);
+
+    useEffect(() => {
+        if (isFirstNotesRender.current) {
+            isFirstNotesRender.current = false;
+            return;
+        }
+
+        if (notesDebounce.current) {
+            clearTimeout(notesDebounce.current);
+        }
+
+        if (notesValidationError) return;
+
+        notesDebounce.current = setTimeout(() => {
+            saveItem({ notes: notesData.notes });
+        }, 1000);
+
+        return () => {
+            if (notesDebounce.current) {
+                clearTimeout(notesDebounce.current);
+            }
+        };
+    }, [notesData.notes, saveItem]);
 
     const prioritiesWithDetails = useMemo(() => {
         return data.priorities.map((p) => {
@@ -459,12 +552,12 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
 
     return (
         <Master title={`Editing ${item.data.name}`}>
-            <SharedHeader backgroundClass="bg-ssctk" title="Edit Loot Biases" />
+            <SharedHeader backgroundClass={raid?.background ?? "bg-ssctk"} title="Edit Loot Biases" subtitle={raid?.name} />
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
-                        href={route("loot.items.show", { item: item.data.id, name: item.data.slug })}
+                        href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}
                         className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
@@ -472,7 +565,7 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                     </Link>
                 </div>
                 <div className="flex space-x-4">
-                    <AutoSaveLabel processing={processing} />
+                    <AutoSaveLabel processing={saving} />
                 </div>
             </ToolNav>
             {/* Content */}
@@ -494,10 +587,39 @@ export default function ItemEdit({ item, allPriorities: allPrioritiesResource, c
                 </div>
 
                 {/* Notes Section */}
-                <Notes notes={item.data.notes} itemId={item.data.id} canEdit="true" />
+                <div className="mt-8">
+                    <h2 className="mb-2 text-xl font-bold">Officers&rsquo; notes</h2>
+                    <p className="text-md mb-4 text-gray-400">
+                        Notes are unique to each loot item. If you change what another officer has written, it will
+                        overwrite their notes.
+                    </p>
+                    <div onFocus={() => (notesFocused.current = true)} onBlur={() => (notesFocused.current = false)}>
+                        <MarkdownEditor
+                            value={notesData.notes}
+                            onChange={(value) => setNotesData("notes", value)}
+                            allowedFormats={ALLOWED_FORMATS}
+                            validationRules={VALIDATION_RULES}
+                            rows={2}
+                            error={notesError}
+                            onValidationChange={handleNotesValidationChange}
+                            className="mb-1"
+                        />
+                    </div>
+                    <div className="mb-4 flex flex-col justify-between gap-4 md:flex-row">
+                        <div className="flex items-center justify-between gap-4 md:order-2">
+                            <button
+                                type="button"
+                                onClick={() => resetNotes("notes")}
+                                className="hover:bg-brown-700 focus:bg-brown-700 focus:ring-brown-500 active:bg-brown-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+                            >
+                                <Icon icon="trash" style="solid" className="mr-1" /> Reset notes
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Comments Section */}
-                <CommentsSection comments={comments} itemId={item.data.id} canCreate="true" />
+                <CommentsSection comments={comments} replies={replies} itemId={item.data.id} />
             </PageContainer>
         </Master>
     );

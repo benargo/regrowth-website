@@ -145,7 +145,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                     <img
                                         src={character.playable_class.icon_url}
                                         alt={character.playable_class.name}
-                                        className="h-6 w-6 rounded-sm"
+                                        className="h-6 w-6 rounded-xs"
                                     />
                                 )}
                                 <div className="flex flex-row items-center gap-2">
@@ -158,7 +158,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                 </div>
                             </div>
                             {canManage && (
-                                <Tooltip text={"Remove " + character.name + " as councillor"} position="left">
+                                <Tooltip body={"Remove " + character.name + " as councillor"} position="left">
                                     <button
                                         type="button"
                                         disabled={processingIds.has(character.id)}
@@ -203,7 +203,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                         <img
                                             src={c.playable_class.icon_url}
                                             alt={c.playable_class.name}
-                                            className="h-4 w-4 rounded-sm"
+                                            className="h-4 w-4 rounded-xs"
                                         />
                                     )}
                                     {c.name}

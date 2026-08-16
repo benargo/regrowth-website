@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Raiding;
 
+use App\Enums\SignupStatus;
 use App\Models\Boss;
 use App\Models\Character;
 use App\Models\DiscordRole;
@@ -16,10 +17,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
+#[Group('raiding')]
 class ShowEventTest extends TestCase
 {
     use RefreshDatabase;
@@ -155,7 +158,7 @@ class ShowEventTest extends TestCase
         $event->characters()->attach($character->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
         ]);
 
         $response = $this->actingAs($user)->get(route('raiding.plans.show', $event));
@@ -180,13 +183,13 @@ class ShowEventTest extends TestCase
         $event->characters()->attach($inComp->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
         $event->characters()->attach($benched->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 
@@ -226,13 +229,13 @@ class ShowEventTest extends TestCase
         $event->characters()->attach($inComp->id, [
             'slot_number' => 1,
             'group_number' => 1,
-            'is_confirmed' => true,
+            'signup_status' => SignupStatus::Confirmed->value,
             'is_benched' => false,
         ]);
         $event->characters()->attach($benched->id, [
             'slot_number' => null,
             'group_number' => null,
-            'is_confirmed' => false,
+            'signup_status' => SignupStatus::Unconfirmed->value,
             'is_benched' => true,
         ]);
 
@@ -326,6 +329,7 @@ class ShowEventTest extends TestCase
         $response->assertOk();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_denies_guest_access_to_an_old_event(): void
     {
@@ -336,6 +340,7 @@ class ShowEventTest extends TestCase
         $response->assertForbidden();
     }
 
+    #[Group('authorization')]
     #[Test]
     public function it_denies_authenticated_user_without_permission_access_to_old_event(): void
     {

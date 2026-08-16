@@ -7,9 +7,11 @@ use App\Services\WarcraftLogs\ValueObjects\PlayerAttendanceData;
 use App\Services\WarcraftLogs\ValueObjects\ZoneData;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Arrayable;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[Group('warcraftlogs-integration')]
 class GuildAttendanceTest extends TestCase
 {
     /**
