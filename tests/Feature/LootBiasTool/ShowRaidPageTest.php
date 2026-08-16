@@ -143,7 +143,7 @@ class ShowRaidPageTest extends TestCase
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item = Item::factory()->fromBoss($boss)->create();
         Comment::factory()->count(3)->create(['commentable_id' => (string) $item->id, 'commentable_type' => Item::class]);
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
@@ -185,7 +185,7 @@ class ShowRaidPageTest extends TestCase
         $user = User::factory()->member()->create();
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-        Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        Item::factory()->fromBoss($boss)->create();
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
         $pageData = $response->viewData('page');
@@ -215,7 +215,7 @@ class ShowRaidPageTest extends TestCase
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item = Item::factory()->fromBoss($boss)->create();
         $priority = LootPriority::factory()->create();
         $item->priorities()->attach($priority->id, ['weight' => 100]);
         Comment::factory()->count(2)->create(['commentable_id' => (string) $item->id, 'commentable_type' => Item::class]);
@@ -247,7 +247,7 @@ class ShowRaidPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         Boss::factory()->create(['raid_id' => $raid->id, 'name' => 'Real Boss']);
 
-        Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+        Item::factory()->trashDrop()->inRaids([$raid])->create();
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
@@ -265,7 +265,7 @@ class ShowRaidPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id, 'name' => 'Real Boss']);
 
-        Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        Item::factory()->fromBoss($boss)->create();
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
 
@@ -305,7 +305,7 @@ class ShowRaidPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         Boss::factory()->create(['raid_id' => $raid->id]);
 
-        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+        $item = Item::factory()->trashDrop()->inRaids([$raid])->create();
 
         $response = $this->actingAs($user)->get($this->raidUrl($raid));
         $pageData = $response->viewData('page');
@@ -333,7 +333,7 @@ class ShowRaidPageTest extends TestCase
         $phase = Phase::factory()->started()->create();
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
 
-        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => null]);
+        $item = Item::factory()->trashDrop()->inRaids([$raid])->create();
         Comment::factory()->count(3)->create([
             'commentable_id' => (string) $item->id,
             'commentable_type' => Item::class,
@@ -345,6 +345,32 @@ class ShowRaidPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('raid.data.trash_comments_count', 3)
         );
+    }
+
+    #[Test]
+    public function a_cross_raid_trash_item_is_listed_under_both_raids(): void
+    {
+        $hyjal = Raid::factory()->create(['name' => 'Hyjal Summit']);
+        $blackTemple = Raid::factory()->create(['name' => 'Black Temple']);
+
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Boots of Effortless Sneaking')
+            ->inRaids([$hyjal, $blackTemple])
+            ->create();
+
+        foreach ([$hyjal, $blackTemple] as $raid) {
+            $this->get($this->raidUrl($raid).'?trash_items=1')
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('raid.data.has_trash_items', true)
+                );
+
+            $this->assertTrue(
+                $raid->trashItems()->whereKey($item->id)->exists(),
+                "Item missing from {$raid->name} trash items",
+            );
+        }
     }
 
     protected function raidUrl(Raid $raid, ?string $name = null): string
