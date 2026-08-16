@@ -84,11 +84,17 @@ class Comment extends Model
     /**
      * Get the comment this comment replies to, if any.
      *
+     * Resolved `withTrashed()` because a thread outlives its root: deleting a
+     * root leaves a tombstone with live replies beneath it, and those replies
+     * must still be able to name their parent. Without this a reply under a
+     * deleted root reports no parent at all, which reads identically to being
+     * a root itself.
+     *
      * @return BelongsTo<Comment, $this>
      */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(Comment::class, 'parent_id');
+        return $this->belongsTo(Comment::class, 'parent_id')->withTrashed();
     }
 
     /**
@@ -131,6 +137,28 @@ class Comment extends Model
     protected function topLevel(Builder $query): void
     {
         $query->whereNull('parent_id');
+    }
+
+    /**
+     * Scope to the root comments a listing should display.
+     *
+     * A root is listable when it is live, or when it is trashed but still has
+     * live replies — its tombstone has to render so the surviving discussion
+     * beneath it has somewhere to hang. A trashed root with nothing under it
+     * is dropped entirely.
+     *
+     * `orWhereHas('replies')` counts only non-trashed replies, because the
+     * `replies()` relation does not apply `withTrashed()`.
+     */
+    #[Scope]
+    protected function listableRoots(Builder $query): void
+    {
+        $query->withTrashed()
+            ->topLevel()
+            ->where(fn (Builder $nested) => $nested
+                ->whereNull('deleted_at')
+                ->orWhereHas('replies')
+            );
     }
 
     /**

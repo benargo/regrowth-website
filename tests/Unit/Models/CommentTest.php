@@ -385,4 +385,51 @@ class CommentTest extends ModelTestCase
         $this->assertSoftDeleted('comments', ['id' => $root->id]);
         $this->assertDatabaseHas('comments', ['id' => $reply->id, 'deleted_at' => null]);
     }
+
+    #[Test]
+    public function listable_roots_includes_a_live_root(): void
+    {
+        $root = Comment::factory()->create();
+
+        $this->assertTrue(Comment::listableRoots()->where('id', $root->id)->exists());
+    }
+
+    #[Test]
+    public function listable_roots_includes_a_trashed_root_with_live_replies(): void
+    {
+        $root = Comment::factory()->create();
+        Comment::factory()->replyTo($root)->create();
+        $root->delete();
+
+        $this->assertTrue(Comment::listableRoots()->where('id', $root->id)->exists());
+    }
+
+    #[Test]
+    public function listable_roots_excludes_a_trashed_root_with_no_replies(): void
+    {
+        $root = Comment::factory()->create();
+        $root->delete();
+
+        $this->assertFalse(Comment::listableRoots()->where('id', $root->id)->exists());
+    }
+
+    #[Test]
+    public function listable_roots_excludes_replies(): void
+    {
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+
+        $this->assertFalse(Comment::listableRoots()->where('id', $reply->id)->exists());
+    }
+
+    #[Test]
+    public function parent_resolves_a_soft_deleted_root(): void
+    {
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+        $root->delete();
+
+        $this->assertNotNull($reply->fresh()->parent);
+        $this->assertSame($root->id, $reply->fresh()->parent->id);
+    }
 }

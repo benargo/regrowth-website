@@ -7,13 +7,18 @@ use App\Events\Broadcasts\CommentPosted;
 use App\Events\Broadcasts\CommentRemoved;
 use App\Models\Boss;
 use App\Models\Comment;
+use App\Models\DiscordRole;
 use App\Models\Item;
+use App\Models\Permission;
+use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 #[Group('comments')]
@@ -65,6 +70,33 @@ class CommentBroadcastTest extends TestCase
         $this->assertArrayHasKey('reactions', $payload['comment']);
         $this->assertArrayHasKey('permissions', $payload['comment']);
         $this->assertNull($payload['parent_id']);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function a_reply_broadcasts_its_resolved_root_as_the_parent(): void
+    {
+        Event::fake([CommentPosted::class]);
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
+        DiscordRole::factory()->raider()->create()->givePermissionTo($commentOnLootItems);
+
+        $user = User::factory()->raider()->create();
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+
+        $this->actingAs($user)->postJson(route('api.comments.store'), [
+            'commentable_id' => (string) $root->commentable_id,
+            'commentable_type' => Item::class,
+            'body' => 'Nested reply',
+            'parent_id' => $reply->id,
+        ])->assertCreated();
+
+        Event::assertDispatched(
+            CommentPosted::class,
+            fn (CommentPosted $event): bool => $event->comment->parent_id === $root->id,
+        );
     }
 
     // ─── CommentChanged ──────────────────────────────────────────────────────

@@ -299,6 +299,24 @@ class CommentControllerTest extends TestCase
         );
     }
 
+    #[Group('authorization')]
+    #[Test]
+    public function a_user_without_permission_cannot_post_a_reply(): void
+    {
+        $user = User::factory()->create();
+        $root = Comment::factory()->create();
+
+        $response = $this->actingAs($user)->postJson(route('api.comments.store'), [
+            'commentable_id' => (string) $root->commentable_id,
+            'commentable_type' => Item::class,
+            'body' => 'Unauthorized reply',
+            'parent_id' => $root->id,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('comments', ['body' => 'Unauthorized reply']);
+    }
+
     // ==================== update — authorization ====================
 
     #[Group('authorization')]
@@ -547,6 +565,23 @@ class CommentControllerTest extends TestCase
 
         $response->assertForbidden();
         $this->assertFalse($comment->fresh()->is_resolved);
+    }
+
+    #[Group('authorization')]
+    #[Test]
+    public function a_reply_cannot_be_marked_as_resolved(): void
+    {
+        $officer = User::factory()->officer()->create();
+        $root = Comment::factory()->create();
+        $reply = Comment::factory()->replyTo($root)->create();
+
+        $response = $this->actingAs($officer)->patchJson(
+            route('api.comments.update', $reply),
+            ['isResolved' => true],
+        );
+
+        $response->assertForbidden();
+        $this->assertFalse($reply->fresh()->is_resolved);
     }
 
     // ==================== update — revisions ====================

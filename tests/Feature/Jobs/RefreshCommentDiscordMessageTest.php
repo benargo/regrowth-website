@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
-use App\Jobs\SyncCommentReplyCount;
+use App\Jobs\RefreshCommentDiscordMessage;
 use App\Models\Comment;
 use App\Models\DiscordNotification;
 use App\Models\DiscordNotificationRelatedModel;
@@ -14,7 +14,6 @@ use App\Services\Discord\Resources\Channel as DiscordChannel;
 use App\Services\Discord\Resources\Message as DiscordMessage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -24,7 +23,7 @@ use Tests\TestCase;
 
 #[Group('comments')]
 #[Group('discord-integration')]
-class SyncCommentReplyCountTest extends TestCase
+class RefreshCommentDiscordMessageTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
@@ -43,19 +42,20 @@ class SyncCommentReplyCountTest extends TestCase
     {
         $root = Comment::factory()->make();
 
-        $this->assertInstanceOf(ShouldQueue::class, new SyncCommentReplyCount($root));
+        $this->assertInstanceOf(ShouldQueue::class, new RefreshCommentDiscordMessage($root));
     }
 
     #[Test]
     #[Group('contract')]
-    public function it_prevents_overlapping_syncs_for_the_same_root(): void
+    public function it_scopes_its_overlap_key_to_a_single_root(): void
     {
-        $root = Comment::factory()->create();
+        $first = Comment::factory()->create();
+        $second = Comment::factory()->create();
 
-        $middleware = (new SyncCommentReplyCount($root))->middleware();
+        $keyFor = fn (Comment $root): string => (new RefreshCommentDiscordMessage($root))->middleware()[0]->key;
 
-        $this->assertCount(1, $middleware);
-        $this->assertInstanceOf(WithoutOverlapping::class, $middleware[0]);
+        $this->assertNotSame($keyFor($first), $keyFor($second));
+        $this->assertStringContainsString((string) $first->getKey(), $keyFor($first));
     }
 
     #[Test]
@@ -66,7 +66,7 @@ class SyncCommentReplyCountTest extends TestCase
         $root = Comment::factory()->create();
         Comment::factory()->replyTo($root)->create();
 
-        (new SyncCommentReplyCount($root))->handle(app(Discord::class));
+        (new RefreshCommentDiscordMessage($root))->handle(app(Discord::class));
 
         Notification::assertNothingSent();
     }
@@ -78,9 +78,9 @@ class SyncCommentReplyCountTest extends TestCase
 
         $root = Comment::factory()->create();
         Comment::factory()->replyTo($root)->create();
-        $record = $this->notificationFor($root);
+        $this->notificationFor($root);
 
-        (new SyncCommentReplyCount($root))->handle(app(Discord::class));
+        (new RefreshCommentDiscordMessage($root))->handle(app(Discord::class));
 
         Notification::assertSentTo(
             new NotifiableChannel(DiscordChannel::from(['id' => '123456789'])),
@@ -89,23 +89,27 @@ class SyncCommentReplyCountTest extends TestCase
     }
 
     #[Test]
-    public function it_counts_only_live_replies(): void
+    public function it_reports_only_live_replies_in_the_discord_embed(): void
     {
+        Notification::fake();
+
         $root = Comment::factory()->create();
         Comment::factory()->replyTo($root)->count(2)->create();
         $deleted = Comment::factory()->replyTo($root)->create();
         $deleted->delete();
-
         $this->notificationFor($root);
 
-        $notification = new NewLootCouncilComment($root);
-        $notification->withReplyCount((new SyncCommentReplyCount($root))->countFor($root));
+        (new RefreshCommentDiscordMessage($root))->handle(app(Discord::class));
 
-        $embed = $notification->toMessage()->toArray()['embeds'][0];
-        $field = collect($embed['fields'] ?? [])->firstWhere('name', 'Replies');
+        Notification::assertSentTo(
+            new NotifiableChannel(DiscordChannel::from(['id' => '123456789'])),
+            function (NewLootCouncilComment $notification): bool {
+                $embed = $notification->toMessage()->toArray()['embeds'][0];
+                $field = collect($embed['fields'] ?? [])->firstWhere('name', 'Replies');
 
-        $this->assertNotNull($field);
-        $this->assertSame('2', $field['value']);
+                return $field !== null && $field['value'] === '2';
+            }
+        );
     }
 
     #[Test]
