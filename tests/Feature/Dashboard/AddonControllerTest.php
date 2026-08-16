@@ -61,7 +61,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::disk('local')->put('addon/export.json', json_encode($data));
     }
 
-    // ==================== export ====================
+    // ==================== export & export json ====================
 
     #[Test]
     public function export_requires_authentication(): void
