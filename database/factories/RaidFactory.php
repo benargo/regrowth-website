@@ -102,18 +102,34 @@ class RaidFactory extends Factory
      */
     public function withItems(int $count = 3): static
     {
-        return $this->has(Item::factory()->count($count)->trashDrop(), 'items');
+        return $this->afterCreating(function (Raid $raid) use ($count): void {
+            $items = Item::factory()->count($count)->trashDrop()->create();
+            $this->attachItems($raid, $items->pluck('id')->all());
+        });
     }
 
     /**
-     * Create the raid with items and comments attached.
+     * Create the raid with a single item carrying the given number of comments.
      */
     public function withComments(int $count = 3): static
     {
-        return $this->has(
-            Item::factory()->has(Comment::factory()->count($count), 'comments'),
-            'items'
-        );
+        return $this->afterCreating(function (Raid $raid) use ($count): void {
+            $item = Item::factory()
+                ->has(Comment::factory()->count($count), 'comments')
+                ->create();
+
+            $this->attachItems($raid, [$item->id]);
+        });
+    }
+
+    /**
+     * Attach the given items to the raid without detaching existing ones.
+     *
+     * @param  array<int, int>  $itemIds
+     */
+    private function attachItems(Raid $raid, array $itemIds): void
+    {
+        $raid->items()->syncWithoutDetaching($itemIds);
     }
 
     /**

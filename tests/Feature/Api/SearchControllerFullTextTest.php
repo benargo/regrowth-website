@@ -28,10 +28,7 @@ class SearchControllerFullTextTest extends FullTextTestCase
             $factory = $factory->withName($name);
         }
 
-        return $factory->create([
-            'raid_id' => $raid->id,
-            'boss_id' => $boss->id,
-        ]);
+        return $factory->fromBoss($boss)->create();
     }
 
     /**
@@ -47,10 +44,7 @@ class SearchControllerFullTextTest extends FullTextTestCase
             $factory = $factory->withName($name);
         }
 
-        return $factory->create([
-            'raid_id' => $raid->id,
-            'boss_id' => $boss->id,
-        ]);
+        return $factory->fromBoss($boss)->create();
     }
 
     #[Test]
@@ -68,7 +62,7 @@ class SearchControllerFullTextTest extends FullTextTestCase
                     ->assertJsonPath('data.0.id', $items['match']->id)
                     ->assertJsonPath('total', 1)
                     ->assertJsonStructure([
-                        'data' => [['id', 'name', 'slug', 'icon', 'wowhead' => ['url'], 'raid', 'boss']],
+                        'data' => [['id', 'name', 'slug', 'icon', 'wowhead' => ['url'], 'raids', 'boss']],
                         'total',
                     ]);
             },

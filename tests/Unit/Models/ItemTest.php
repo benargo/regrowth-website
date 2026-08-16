@@ -50,7 +50,6 @@ class ItemTest extends ModelTestCase
         $model = new Item;
 
         $this->assertFillable($model, [
-            'raid_id',
             'boss_id',
             'name',
             'quality',
@@ -72,33 +71,12 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_can_be_created_without_raid_id(): void
-    {
-        $item = $this->create(['raid_id' => null]);
-
-        $this->assertNull($item->raid_id);
-        $this->assertModelExists($item);
-    }
-
-    #[Test]
-    public function it_can_be_created_with_raid_id(): void
-    {
-        $raid = Raid::factory()->create();
-
-        $item = $this->create(['raid_id' => $raid->id]);
-
-        $this->assertTableHas(['raid_id' => $raid->id]);
-        $this->assertModelExists($item);
-    }
-
-    #[Test]
     public function it_can_be_created_with_all_attributes(): void
     {
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
         $item = $this->create([
-            'raid_id' => $raid->id,
             'boss_id' => $boss->id,
             'name' => 'Warglaive of Azzinoth',
             'group' => 'Tokens',
@@ -106,7 +84,6 @@ class ItemTest extends ModelTestCase
         ]);
 
         $this->assertTableHas([
-            'raid_id' => $raid->id,
             'boss_id' => $boss->id,
             'name' => 'Warglaive of Azzinoth',
             'group' => 'Tokens',
@@ -143,32 +120,6 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function factory_default_has_null_raid_id(): void
-    {
-        $item = $this->create();
-
-        $this->assertNull($item->raid_id);
-    }
-
-    #[Test]
-    public function factory_with_raid_state_sets_raid_id(): void
-    {
-        $raid = Raid::factory()->create();
-
-        $item = $this->factory()->withRaid($raid)->create();
-
-        $this->assertSame($raid->id, $item->raid_id);
-    }
-
-    #[Test]
-    public function factory_with_raid_state_creates_raid_when_none_given(): void
-    {
-        $item = $this->factory()->withRaid()->create();
-
-        $this->assertNotNull($item->raid_id);
-    }
-
-    #[Test]
     public function factory_from_boss_state_sets_boss(): void
     {
         $item = $this->factory()->fromBoss()->create();
@@ -202,21 +153,11 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_belongs_to_a_raid(): void
-    {
-        $raid = Raid::factory()->create();
-        $item = $this->create(['raid_id' => $raid->id]);
-
-        $this->assertRelation($item, 'raid', BelongsTo::class);
-        $this->assertTrue($item->raid->is($raid));
-    }
-
-    #[Test]
     public function it_belongs_to_a_boss(): void
     {
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-        $item = $this->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item = $this->factory()->fromBoss($boss)->create();
 
         $this->assertRelation($item, 'boss', BelongsTo::class);
         $this->assertTrue($item->boss->is($boss));
@@ -249,6 +190,75 @@ class ItemTest extends ModelTestCase
         $item->refresh();
 
         $this->assertSame(50, $item->priorities->first()->pivot->weight);
+    }
+
+    #[Test]
+    public function it_belongs_to_many_raids(): void
+    {
+        $item = $this->create();
+        $raids = Raid::factory()->count(2)->create();
+
+        $item->raids()->attach($raids->pluck('id'));
+        $item->refresh();
+
+        $this->assertRelation($item, 'raids', BelongsToMany::class);
+        $this->assertCount(2, $item->raids);
+    }
+
+    #[Test]
+    public function it_has_no_raids_by_default(): void
+    {
+        $item = $this->create();
+
+        $this->assertCount(0, $item->raids);
+    }
+
+    #[Test]
+    public function the_same_raid_cannot_be_attached_twice(): void
+    {
+        $item = $this->create();
+        $raid = Raid::factory()->create();
+
+        $item->raids()->attach($raid->id);
+        $item->raids()->syncWithoutDetaching([$raid->id]);
+        $item->refresh();
+
+        $this->assertCount(1, $item->raids);
+    }
+
+    #[Test]
+    public function factory_in_raids_state_attaches_the_given_raids(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+
+        $item = $this->factory()->inRaids($raids->all())->create();
+
+        $this->assertCount(2, $item->raids);
+        $this->assertEqualsCanonicalizing(
+            $raids->pluck('id')->all(),
+            $item->raids->pluck('id')->all(),
+        );
+    }
+
+    #[Test]
+    public function factory_with_raid_state_attaches_a_single_raid(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $item = $this->factory()->withRaid($raid)->create();
+
+        $this->assertCount(1, $item->raids);
+        $this->assertTrue($item->raids->first()->is($raid));
+    }
+
+    #[Test]
+    public function factory_from_boss_state_attaches_the_bosses_raid(): void
+    {
+        $item = $this->factory()->fromBoss()->create();
+
+        $this->assertNotNull($item->boss_id);
+        $this->assertCount(1, $item->raids);
+        $this->assertSame($item->boss->raid_id, $item->raids->first()->id);
     }
 
     #[Test]
@@ -394,6 +404,20 @@ class ItemTest extends ModelTestCase
         $item->fillBlizzardData($data);
 
         $this->assertNull($item->fresh()->name);
+    }
+
+    #[Test]
+    public function trash_scope_only_includes_items_without_a_boss(): void
+    {
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+        $bossItem = $this->factory()->fromBoss($boss)->create();
+        $trashItem = $this->factory()->trashDrop()->create();
+
+        $trashItems = Item::trash()->get();
+
+        $this->assertTrue($trashItems->contains($trashItem));
+        $this->assertFalse($trashItems->contains($bossItem));
     }
 
     #[Test]

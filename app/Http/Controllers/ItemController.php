@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Events\Broadcasts\ItemUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Middleware\EnsureItemSlugIsValid;
+use App\Http\Middleware\RemembersOriginRaid;
 use App\Http\Requests\Items\UpdateItemRequest;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\ItemResource;
@@ -41,13 +43,14 @@ class ItemController extends Controller
 
     /** Display a specific loot item. */
     #[Middleware(EnsureItemSlugIsValid::class)]
+    #[Middleware(RemembersOriginRaid::class)]
     public function show(
         Request $request,
         BlizzardConnector $blizzardConnector,
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $this->loadItemData($blizzardConnector, $item);
+        $this->loadItemData($blizzardConnector, $item, $request->attributes->get(SharesOriginRaidSession::SESSION_KEY));
 
         return Inertia::render('Loot/Items/Show', [
             'item' => new ItemResource($item),
@@ -59,6 +62,7 @@ class ItemController extends Controller
     /** Show the form for editing a specific loot item. */
     #[Middleware('auth')]
     #[Middleware(EnsureItemSlugIsValid::class)]
+    #[Middleware(RemembersOriginRaid::class)]
     #[Authorize('update', 'item')]
     public function edit(
         Request $request,
@@ -66,7 +70,7 @@ class ItemController extends Controller
         Item $item,
         ?string $slug = null
     ): InertiaResponse|RedirectResponse {
-        $this->loadItemData($blizzardConnector, $item);
+        $this->loadItemData($blizzardConnector, $item, $request->attributes->get(SharesOriginRaidSession::SESSION_KEY));
 
         return Inertia::render('Loot/Items/Edit', [
             'item' => new ItemResource($item),
@@ -78,6 +82,7 @@ class ItemController extends Controller
 
     /** Update a loot item's notes and biases. */
     #[Middleware('auth')]
+    #[Middleware(RemembersOriginRaid::class)]
     #[Authorize('update', 'item')]
     public function update(UpdateItemRequest $request, Item $item): InertiaResponse
     {
@@ -98,7 +103,7 @@ class ItemController extends Controller
             }
         });
 
-        $this->loadItemRelations($item);
+        $this->loadItemRelations($item, $request->attributes->get(SharesOriginRaidSession::SESSION_KEY));
 
         broadcast(new ItemUpdated($item))->toOthers();
 
@@ -110,7 +115,7 @@ class ItemController extends Controller
         ]);
     }
 
-    private function loadItemData(BlizzardConnector $blizzardConnector, Item $item): void
+    private function loadItemData(BlizzardConnector $blizzardConnector, Item $item, ?int $originRaidId): void
     {
         try {
             $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->id))->dto();
@@ -119,13 +124,26 @@ class ItemController extends Controller
             // We can continue without the filled in data.
         }
 
-        $this->loadItemRelations($item);
+        $this->loadItemRelations($item, $originRaidId);
     }
 
-    private function loadItemRelations(Item $item): void
+    /**
+     * Eager-load an item's relations, keeping at most one raid.
+     *
+     * When $originRaidId is given, load only the matching raid (the user's
+     * remembered origin raid). Otherwise load only the first raid by id, so
+     * the frontend always receives a single, deterministic raid rather than
+     * every raid a cross-raid trash item drops in.
+     */
+    private function loadItemRelations(Item $item, ?int $originRaidId): void
     {
         $item->load([
-            'raid',
+            'raids' => fn (BelongsToMany $query) => $query
+                ->when(
+                    $originRaidId,
+                    fn (Builder $q) => $q->where('raids.id', $originRaidId),
+                    fn (Builder $q) => $q->orderBy('raids.id')->limit(1),
+                ),
             'boss',
             'priorities' => fn (BelongsToMany $query) => $query->orderByPivot('weight', 'desc'),
         ]);

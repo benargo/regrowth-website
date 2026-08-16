@@ -10,7 +10,6 @@ use App\Events\CommentUpdated;
 use App\Events\ItemPriorityDeleted;
 use App\Events\ItemPrioritySaved;
 use App\Events\ItemSaved;
-use App\Jobs\RebuildLootCouncilCache;
 use Illuminate\Support\Facades\Cache;
 
 class FlushLootCouncilCache
@@ -21,7 +20,5 @@ class FlushLootCouncilCache
     public function handle(CommentCreated|CommentDeleted|CommentUpdated|CommentReactionCreated|CommentReactionDeleted|ItemPriorityDeleted|ItemPrioritySaved|ItemSaved $event): void
     {
         Cache::tags(['lootcouncil'])->flush();
-
-        RebuildLootCouncilCache::dispatch();
     }
 }

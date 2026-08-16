@@ -78,7 +78,7 @@ class ItemResourceTest extends TestCase
     public function it_excludes_boss_when_not_loaded(): void
     {
         $boss = Boss::factory()->create();
-        $item = Item::factory()->create(['boss_id' => $boss->id, 'raid_id' => $boss->raid_id]);
+        $item = Item::factory()->fromBoss($boss)->create();
 
         $array = (new ItemResource($item))->resolve(new Request);
 
@@ -100,7 +100,7 @@ class ItemResourceTest extends TestCase
     public function it_returns_full_boss_when_loaded(): void
     {
         $boss = Boss::factory()->create();
-        $item = Item::factory()->create(['boss_id' => $boss->id, 'raid_id' => $boss->raid_id]);
+        $item = Item::factory()->fromBoss($boss)->create();
         $item->load('boss');
 
         $array = (new ItemResource($item))->toArray(new Request);
@@ -110,38 +110,50 @@ class ItemResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_excludes_raid_when_not_loaded(): void
+    public function it_excludes_raids_when_not_loaded(): void
     {
         $raid = Raid::factory()->create();
-        $item = Item::factory()->create(['raid_id' => $raid->id]);
+        $item = Item::factory()->withRaid($raid)->create();
 
         $array = (new ItemResource($item))->resolve(new Request);
 
-        $this->assertArrayNotHasKey('raid', $array);
+        $this->assertArrayNotHasKey('raids', $array);
     }
 
     #[Test]
-    public function it_returns_full_raid_when_loaded(): void
+    public function it_returns_the_raids_when_loaded(): void
     {
         $raid = Raid::factory()->create();
-        $item = Item::factory()->create(['raid_id' => $raid->id]);
-        $item->load('raid');
+        $item = Item::factory()->withRaid($raid)->create();
+        $item->load('raids');
 
         $array = (new ItemResource($item))->toArray(new Request);
 
-        $this->assertIsObject($array['raid']);
-        $this->assertSame($raid->id, $array['raid']->id);
+        $this->assertCount(1, $array['raids']);
+        $this->assertSame($raid->id, $array['raids']->first()->id);
     }
 
     #[Test]
-    public function it_returns_null_raid_when_item_has_no_raid_and_raid_is_loaded(): void
+    public function it_returns_every_raid_for_a_cross_raid_item(): void
     {
-        $item = Item::factory()->create(['raid_id' => null, 'boss_id' => null]);
-        $item->load('raid');
+        $raids = Raid::factory()->count(2)->create();
+        $item = Item::factory()->inRaids($raids->all())->create();
+        $item->load('raids');
 
         $array = (new ItemResource($item))->toArray(new Request);
 
-        $this->assertNull($array['raid']);
+        $this->assertCount(2, $array['raids']);
+    }
+
+    #[Test]
+    public function it_returns_an_empty_collection_when_the_item_has_no_raids(): void
+    {
+        $item = Item::factory()->create();
+        $item->load('raids');
+
+        $array = (new ItemResource($item))->toArray(new Request);
+
+        $this->assertCount(0, $array['raids']);
     }
 
     #[Test]
@@ -350,8 +362,8 @@ class ItemResourceTest extends TestCase
     {
         $raid = Raid::factory()->create();
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-        $item = Item::factory()->inGroup('Weapons')->create(['boss_id' => $boss->id, 'raid_id' => $raid->id]);
-        $item->load('boss', 'raid');
+        $item = Item::factory()->inGroup('Weapons')->withRaid($raid)->fromBoss($boss)->create();
+        $item->load('boss', 'raids');
         $item->forceFill([
             'itemClass' => ['name' => 'Weapon'],
             'itemSubclass' => ['name' => 'Sword'],
@@ -373,7 +385,7 @@ class ItemResourceTest extends TestCase
         $this->assertArrayHasKey('wowhead', $array);
         $this->assertArrayHasKey('url', $array['wowhead']);
         $this->assertArrayHasKey('boss', $array);
-        $this->assertArrayHasKey('raid', $array);
+        $this->assertArrayHasKey('raids', $array);
         $this->assertArrayNotHasKey('wowhead_url', $array);
     }
 }

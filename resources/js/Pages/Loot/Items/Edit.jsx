@@ -24,6 +24,7 @@ import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
+import getItemRaid from "@/Helpers/GetItemRaid";
 
 const ALLOWED_FORMATS = ["bold", "italic", "underline", "link", "wowheadLink"];
 const VALIDATION_RULES = ["noLineBreaks"];
@@ -422,7 +423,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
 
 export default function ItemEdit({ item, priorities: prioritiesResource, comments, replies }) {
     const allPriorities = prioritiesResource.data;
-    const raid = item.data.raid;
+    const raid = getItemRaid(item);
 
     const { data, setData } = useForm({
         priorities: item.data.priorities.map((p) => ({

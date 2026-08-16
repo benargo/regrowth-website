@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\LootBiasTool;
 
+use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
@@ -154,10 +155,44 @@ class EditItemPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Edit')
             ->has('priorities.data')
-            ->has('item.data.raid')
+            ->has('item.data.raids')
             ->has('comments.data')
             ->missing('allPriorities')
-            ->missing('raid')
+            ->missing('raids')
+        );
+    }
+
+    #[Test]
+    public function edit_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+        $otherRaid = Raid::factory()->create();
+        $item->raids()->attach($otherRaid->id);
+
+        $response = $this->actingAs($user)
+            ->withSession([SharesOriginRaidSession::SESSION_KEY => $otherRaid->id])
+            ->get($this->editUrl($item));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('item.data.raids.0.id', $otherRaid->id)
+        );
+    }
+
+    #[Test]
+    public function edit_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
+    {
+        $user = User::factory()->officer()->create();
+        $item = $this->createTestItem();
+        $originalRaidId = $item->raids()->first()->id;
+        $item->raids()->attach(Raid::factory()->create()->id);
+
+        $response = $this->actingAs($user)->get($this->editUrl($item));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('item.data.raids.0.id', $originalRaidId)
         );
     }
 
@@ -198,7 +233,7 @@ class EditItemPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
-        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item = Item::factory()->fromBoss($boss)->create();
         $item->update(['name' => "Test Item {$item->id}"]);
 
         return $item->fresh();
