@@ -154,10 +154,10 @@ class EditItemPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Edit')
             ->has('priorities.data')
-            ->has('item.data.raid')
+            ->has('item.data.raids')
             ->has('comments.data')
             ->missing('allPriorities')
-            ->missing('raid')
+            ->missing('raids')
         );
     }
 
@@ -198,7 +198,7 @@ class EditItemPageTest extends TestCase
         $raid = Raid::factory()->create(['phase_id' => $phase->id]);
         $boss = Boss::factory()->create(['raid_id' => $raid->id]);
 
-        $item = Item::factory()->create(['raid_id' => $raid->id, 'boss_id' => $boss->id]);
+        $item = Item::factory()->fromBoss($boss)->create();
         $item->update(['name' => "Test Item {$item->id}"]);
 
         return $item->fresh();

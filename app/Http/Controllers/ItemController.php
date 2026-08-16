@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Middleware\EnsureItemSlugIsValid;
+use App\Http\Middleware\RemembersOriginRaid;
 use App\Http\Requests\Items\UpdateItemRequest;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\ItemResource;
@@ -41,6 +42,7 @@ class ItemController extends Controller
 
     /** Display a specific loot item. */
     #[Middleware(EnsureItemSlugIsValid::class)]
+    #[Middleware(RemembersOriginRaid::class)]
     public function show(
         Request $request,
         BlizzardConnector $blizzardConnector,
@@ -53,12 +55,14 @@ class ItemController extends Controller
             'item' => new ItemResource($item),
             'comments' => $this->buildCommentsProp($item),
             'replies' => Inertia::optional(fn () => $this->buildRepliesProp($item, $request)),
+            'origin_raid_id' => $request->attributes->get('origin_raid_id'),
         ]);
     }
 
     /** Show the form for editing a specific loot item. */
     #[Middleware('auth')]
     #[Middleware(EnsureItemSlugIsValid::class)]
+    #[Middleware(RemembersOriginRaid::class)]
     #[Authorize('update', 'item')]
     public function edit(
         Request $request,
@@ -73,6 +77,7 @@ class ItemController extends Controller
             'priorities' => PriorityResource::collection(LootPriority::all()),
             'comments' => $this->buildCommentsProp($item),
             'replies' => Inertia::optional(fn () => $this->buildRepliesProp($item, $request)),
+            'origin_raid_id' => $request->attributes->get('origin_raid_id'),
         ]);
     }
 
@@ -125,7 +130,7 @@ class ItemController extends Controller
     private function loadItemRelations(Item $item): void
     {
         $item->load([
-            'raid',
+            'raids',
             'boss',
             'priorities' => fn (BelongsToMany $query) => $query->orderByPivot('weight', 'desc'),
         ]);

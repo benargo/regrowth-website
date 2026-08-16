@@ -8,6 +8,7 @@ use App\Models\CommentReaction;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
+use App\Models\Raid;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -131,7 +132,7 @@ class ShowItemPageTest extends TestCase
             ->component('Loot/Items/Show')
             ->has('item.data', fn (Assert $prop) => $prop
                 ->where('id', $item->id)
-                ->has('raid')
+                ->has('raids')
                 ->has('boss')
                 ->has('inventory_type')
                 ->has('item_class')
@@ -141,7 +142,7 @@ class ShowItemPageTest extends TestCase
             ->has('comments.data')
             ->has('comments.links')
             ->has('comments.meta')
-            ->missing('raid')
+            ->missing('raids')
             ->missing('boss')
         );
     }
@@ -209,7 +210,7 @@ class ShowItemPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Loot/Items/Show')
             ->where('item.data.boss', null)
-            ->has('item.data.raid')
+            ->has('item.data.raids')
         );
     }
 
@@ -464,6 +465,23 @@ class ShowItemPageTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('comments.data.0.permissions.resolve', false)
         );
+    }
+
+    #[Test]
+    public function a_cross_raid_item_exposes_every_raid_to_the_page(): void
+    {
+        $raids = Raid::factory()->count(2)->create();
+        $item = Item::factory()
+            ->trashDrop()
+            ->withName('Test Item')
+            ->inRaids($raids->all())
+            ->create();
+
+        $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('item.data.raids', 2)
+            );
     }
 
     protected function createTestItem(): Item
