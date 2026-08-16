@@ -29,7 +29,6 @@ class ItemFactory extends Factory
     public function definition(): array
     {
         return [
-            'raid_id' => null,
             'boss_id' => null,
             'name' => null,
             'quality' => fake()->randomElement(ItemQuality::cases()),
@@ -39,27 +38,38 @@ class ItemFactory extends Factory
     }
 
     /**
-     * Set a raid for the item.
+     * Attach the item to a single raid.
      */
     public function withRaid(?Raid $raid = null): static
     {
-        return $this->state(fn (array $attributes) => [
-            'raid_id' => $raid?->id ?? Raid::factory(),
-        ]);
+        return $this->afterCreating(function (Item $item) use ($raid): void {
+            $item->raids()->syncWithoutDetaching([($raid ?? Raid::factory()->create())->id]);
+        });
     }
 
     /**
-     * Indicate that the item drops from a specific boss.
+     * Attach the item to several raids.
+     *
+     * @param  array<int, Raid>  $raids
+     */
+    public function inRaids(array $raids): static
+    {
+        return $this->afterCreating(function (Item $item) use ($raids): void {
+            $item->raids()->syncWithoutDetaching(collect($raids)->pluck('id')->all());
+        });
+    }
+
+    /**
+     * Indicate that the item drops from a specific boss, in that boss's raid.
      */
     public function fromBoss(?Boss $boss = null): static
     {
-        return $this->state(function (array $attributes) use ($boss) {
-            $boss = $boss ?? Boss::factory()->create();
+        $boss = $boss ?? Boss::factory()->create();
 
-            return [
-                'boss_id' => $boss->id,
-                'raid_id' => $boss->raid_id,
-            ];
+        return $this->state(fn (array $attributes) => [
+            'boss_id' => $boss->id,
+        ])->afterCreating(function (Item $item) use ($boss): void {
+            $item->raids()->syncWithoutDetaching([$boss->raid_id]);
         });
     }
 

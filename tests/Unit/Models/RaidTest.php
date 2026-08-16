@@ -14,7 +14,6 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -317,15 +316,6 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
-    public function factory_with_items_state_creates_trash_items(): void
-    {
-        $raid = $this->factory()->withItems(3)->create();
-
-        $this->assertCount(3, $raid->items);
-        $this->assertTrue($raid->items->every(fn (Item $item) => $item->boss_id === null));
-    }
-
-    #[Test]
     public function factory_with_comments_state_creates_comments_through_items(): void
     {
         $raid = $this->factory()->withComments(2)->create();
@@ -361,11 +351,11 @@ class RaidTest extends ModelTestCase
     // ==================== items ====================
 
     #[Test]
-    public function it_has_many_items(): void
+    public function it_belongs_to_many_items(): void
     {
         $raid = $this->factory()->withItems(2)->create();
 
-        $this->assertRelation($raid, 'items', HasMany::class);
+        $this->assertRelation($raid, 'items', BelongsToMany::class);
         $this->assertCount(2, $raid->items);
         $this->assertInstanceOf(Item::class, $raid->items->first());
     }
@@ -374,21 +364,45 @@ class RaidTest extends ModelTestCase
     public function it_has_many_trash_items(): void
     {
         $raid = $this->factory()->withItems(2)->create();
-        Item::factory()->fromBoss()->create(['raid_id' => $raid->id]);
+        Item::factory()->fromBoss(Boss::factory()->create(['raid_id' => $raid->id]))->create();
 
-        $this->assertRelation($raid, 'trashItems', HasMany::class);
+        $this->assertRelation($raid, 'trashItems', BelongsToMany::class);
         $this->assertCount(2, $raid->trashItems);
         $this->assertTrue($raid->trashItems->every(fn (Item $item) => $item->boss_id === null));
+    }
+
+    #[Test]
+    public function factory_with_items_state_creates_trash_items(): void
+    {
+        $raid = $this->factory()->withItems(3)->create();
+
+        $this->assertCount(3, $raid->items);
+        $this->assertTrue($raid->items->every(fn (Item $item) => $item->boss_id === null));
+    }
+
+    #[Test]
+    public function an_item_can_belong_to_two_raids(): void
+    {
+        $hyjal = $this->create(['name' => 'Hyjal Summit']);
+        $blackTemple = $this->create(['name' => 'Black Temple']);
+        $item = Item::factory()->trashDrop()->create();
+
+        $item->raids()->attach([$hyjal->id, $blackTemple->id]);
+
+        $this->assertCount(1, $hyjal->trashItems);
+        $this->assertCount(1, $blackTemple->trashItems);
+        $this->assertSame($item->id, $hyjal->trashItems->first()->id);
+        $this->assertSame($item->id, $blackTemple->trashItems->first()->id);
     }
 
     // ==================== comments ====================
 
     #[Test]
-    public function it_has_many_comments_through_items(): void
+    public function it_has_many_comments_through_its_items(): void
     {
         $raid = $this->factory()->withComments(2)->create();
 
-        $this->assertRelation($raid, 'comments', HasManyThrough::class);
+        $this->assertRelation($raid, 'comments', HasMany::class);
         $this->assertCount(2, $raid->comments);
         $this->assertInstanceOf(Comment::class, $raid->comments->first());
     }
