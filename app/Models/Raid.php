@@ -129,14 +129,11 @@ class Raid extends Model
     /**
      * Get the trash items that drop in this raid (items without a boss).
      *
-     * `boss_id` is table-qualified because the pivot join makes a bare column
-     * name ambiguous.
-     *
      * @return BelongsToMany<Item, $this>
      */
     public function trashItems(): BelongsToMany
     {
-        return $this->items()->whereNull('items.boss_id');
+        return $this->items()->trash();
     }
 
     /**

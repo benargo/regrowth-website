@@ -407,6 +407,20 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
+    public function trash_scope_only_includes_items_without_a_boss(): void
+    {
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
+        $bossItem = $this->factory()->fromBoss($boss)->create();
+        $trashItem = $this->factory()->trashDrop()->create();
+
+        $trashItems = Item::trash()->get();
+
+        $this->assertTrue($trashItems->contains($trashItem));
+        $this->assertFalse($trashItems->contains($bossItem));
+    }
+
+    #[Test]
     public function it_implements_media_library_contracts(): void
     {
         $model = new Item;

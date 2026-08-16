@@ -146,6 +146,17 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
             ->withTimestamps();
     }
 
+    // ============ Trash ============
+
+    /**
+     * Constrain the query to trash items (items without a boss).
+     */
+    #[Scope]
+    protected function trash(Builder $query): void
+    {
+        $query->whereNull('boss_id');
+    }
+
     // ============ Search ============
 
     /**
