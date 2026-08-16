@@ -38,9 +38,7 @@ class BuildAddonExportFileTest extends TestCase
         GuildRank::factory()->create(['count_attendance' => true]);
     }
 
-    // ==========================================
-    // Job Contract Tests
-    // ==========================================
+    // ==================== job contract ====================
 
     #[Test]
     public function it_implements_should_queue(): void
@@ -63,9 +61,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertInstanceOf(RateLimitedWithRedis::class, $middleware[0]);
     }
 
-    // ==========================================
-    // Storage Tests
-    // ==========================================
+    // ==================== storage ====================
 
     #[Test]
     public function it_writes_export_data_to_storage(): void
@@ -84,9 +80,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertNotNull(json_decode($content, true));
     }
 
-    // ==========================================
-    // Data Structure Tests
-    // ==========================================
+    // ==================== data structure ====================
 
     #[Test]
     public function it_includes_all_sections_in_output(): void
@@ -128,9 +122,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertEmpty($data['councillors']);
     }
 
-    // ==========================================
-    // Phase Data Tests
-    // ==========================================
+    // ==================== phase data ====================
 
     #[Test]
     public function it_includes_phase_id_number_and_start_date(): void
@@ -173,9 +165,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertEquals([1, 2, 3], $numbers);
     }
 
-    // ==========================================
-    // Priority Data Tests
-    // ==========================================
+    // ==================== priority data ====================
 
     #[Test]
     public function it_only_includes_priorities_with_items(): void
@@ -256,9 +246,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertNotContains($memePriority->id, $ids);
     }
 
-    // ==========================================
-    // Item Data Tests
-    // ==========================================
+    // ==================== item data ====================
 
     #[Test]
     public function it_only_includes_items_with_priorities(): void
@@ -313,9 +301,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertNotContains($memePriority->id, $priorityIds);
     }
 
-    // ==========================================
-    // Clean Notes Tests
-    // ==========================================
+    // ==================== clean notes ====================
 
     #[Test]
     public function it_cleans_notes_by_removing_wowhead_links(): void
@@ -457,9 +443,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertEquals('Multiple spaces and newlines', $itemData['notes']);
     }
 
-    // ==========================================
-    // Attendance Data Tests
-    // ==========================================
+    // ==================== attendance data ====================
 
     #[Test]
     public function it_caches_empty_attendance_when_no_ranks_count_attendance(): void
@@ -605,9 +589,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertEquals(1, $playerData['attendance']['total']);
     }
 
-    // ==========================================
-    // Councillor Data Tests
-    // ==========================================
+    // ==================== councillor data ====================
 
     #[Test]
     public function it_caches_empty_collection_when_no_councillors_exist(): void
@@ -686,9 +668,7 @@ class BuildAddonExportFileTest extends TestCase
         $this->assertNotContains('NotCouncillor', $names);
     }
 
-    // ==========================================
-    // Failure Handling Tests
-    // ==========================================
+    // ==================== failure handling ====================
 
     #[Test]
     public function it_logs_error_on_failure(): void

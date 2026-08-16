@@ -110,7 +110,7 @@ class CharacterTest extends ModelTestCase
         $this->assertNotNull($character->updated_at);
     }
 
-    // is_loot_councillor
+    // ==================== is_loot_councillor ====================
 
     #[Test]
     public function it_can_be_created_as_loot_councillor(): void
@@ -128,7 +128,7 @@ class CharacterTest extends ModelTestCase
         $this->assertFalse($character->is_loot_councillor);
     }
 
-    // is_main
+    // ==================== is_main ====================
 
     #[Test]
     public function it_can_be_created_as_main(): void
@@ -138,7 +138,7 @@ class CharacterTest extends ModelTestCase
         $this->assertTrue($character->is_main);
     }
 
-    // slug
+    // ==================== slug ====================
 
     #[Test]
     public function slug_returns_url_safe_version_of_name(): void
@@ -156,7 +156,7 @@ class CharacterTest extends ModelTestCase
         $this->assertSame('kaelthas', $character->slug);
     }
 
-    // linked_characters
+    // ==================== linked_characters ====================
 
     #[Test]
     public function linked_characters_returns_belongs_to_many_relationship(): void
@@ -208,7 +208,7 @@ class CharacterTest extends ModelTestCase
         ]);
     }
 
-    // main_character
+    // ==================== main_character ====================
 
     #[Test]
     public function main_character_returns_linked_character_with_is_main_true(): void
@@ -242,7 +242,7 @@ class CharacterTest extends ModelTestCase
         $this->assertNull($character->mainCharacter);
     }
 
-    // planned_absences
+    // ==================== planned_absences ====================
 
     #[Test]
     public function planned_absences_returns_has_many_relationship(): void
@@ -270,7 +270,7 @@ class CharacterTest extends ModelTestCase
         $this->assertCount(0, $character->plannedAbsences);
     }
 
-    // playable_class
+    // ==================== playable_class ====================
 
     #[Test]
     public function playable_class_returns_belongs_to_relationship(): void
@@ -311,7 +311,7 @@ class CharacterTest extends ModelTestCase
         $this->assertNull($character->playable_class_id);
     }
 
-    // playable_race
+    // ==================== playable_race ====================
 
     #[Test]
     public function playable_race_returns_belongs_to_relationship(): void
@@ -352,7 +352,7 @@ class CharacterTest extends ModelTestCase
         $this->assertNull($character->playable_race_id);
     }
 
-    // prunable
+    // ==================== prunable ====================
 
     #[Test]
     public function prunable_returns_builder_instance(): void
@@ -410,7 +410,7 @@ class CharacterTest extends ModelTestCase
         $this->assertCount(0, (new Character)->prunable()->get());
     }
 
-    // specializations
+    // ==================== specializations ====================
 
     #[Test]
     public function specializations_returns_belongs_to_many_relationship(): void
@@ -455,7 +455,7 @@ class CharacterTest extends ModelTestCase
         ]);
     }
 
-    // rank
+    // ==================== rank ====================
 
     #[Test]
     public function it_can_be_created_with_rank(): void
@@ -506,7 +506,7 @@ class CharacterTest extends ModelTestCase
         $this->assertNull($character->rank_id);
     }
 
-    // HasMedia / character_portrait
+    // ==================== hasmedia / character_portrait ====================
 
     #[Test]
     public function it_implements_has_media_interface(): void
@@ -538,7 +538,7 @@ class CharacterTest extends ModelTestCase
         $this->assertTrue($collection->singleFile);
     }
 
-    // warcraft_logs_reports
+    // ==================== warcraft_logs_reports ====================
 
     #[Test]
     public function warcraft_logs_reports_returns_belongs_to_many_relationship(): void

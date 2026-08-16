@@ -11,9 +11,7 @@ use Tests\Support\DashboardTestCase;
 #[Group('platform')]
 class AddonSchemaControllerTest extends DashboardTestCase
 {
-    // ==========================================
-    // Authentication & Authorization Tests
-    // ==========================================
+    // ==================== export schema ====================
 
     #[Test]
     public function export_schema_requires_authentication(): void
@@ -64,9 +62,7 @@ class AddonSchemaControllerTest extends DashboardTestCase
         $response->assertOk();
     }
 
-    // ==========================================
-    // Export Schema Endpoint Tests
-    // ==========================================
+    // ==================== export schema endpoint ====================
 
     #[Test]
     public function export_schema_renders_inertia_page_with_schema(): void

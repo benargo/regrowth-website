@@ -20,9 +20,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==========================================
-    // Happy Path
-    // ==========================================
+    // ==================== happy path ====================
 
     #[Test]
     public function it_dispatches_a_batch_with_a_fetch_reports_job_per_guild_tag(): void
@@ -64,9 +62,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         });
     }
 
-    // ==========================================
-    // --latest Option
-    // ==========================================
+    // ==================== latest option ====================
 
     #[Test]
     public function it_passes_null_since_when_latest_flag_is_absent(): void
@@ -164,9 +160,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         });
     }
 
-    // ==========================================
-    // --all Option
-    // ==========================================
+    // ==================== all option ====================
 
     #[Test]
     public function it_includes_all_guild_tags_when_all_flag_is_set(): void
@@ -214,9 +208,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         });
     }
 
-    // ==========================================
-    // Batch Count
-    // ==========================================
+    // ==================== batch count ====================
 
     #[Test]
     public function it_dispatches_exactly_one_batch(): void
@@ -247,9 +239,7 @@ class RefreshWarcraftLogsReportsTest extends TestCase
         Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 3);
     }
 
-    // ==========================================
-    // FetchGuildTags Sync Dispatch
-    // ==========================================
+    // ==================== fetchguildtags sync dispatch ====================
 
     #[Test]
     public function it_dispatches_fetch_guild_tags_synchronously_before_the_batch(): void

@@ -140,9 +140,7 @@ class SyncDiscordUserTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => '100000000000000000']);
     }
 
-    // ==========================================
-    // Batch Cancellation
-    // ==========================================
+    // ==================== batch cancellation ====================
 
     #[Test]
     public function it_skips_execution_when_batch_is_cancelled(): void

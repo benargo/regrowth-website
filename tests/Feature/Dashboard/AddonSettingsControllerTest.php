@@ -15,9 +15,7 @@ use Tests\Support\DashboardTestCase;
 #[Group('platform')]
 class AddonSettingsControllerTest extends DashboardTestCase
 {
-    // ==========================================
-    // Settings Endpoint Tests
-    // ==========================================
+    // ==================== settings endpoint ====================
 
     #[Test]
     public function settings_requires_authentication(): void

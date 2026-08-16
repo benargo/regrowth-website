@@ -79,9 +79,7 @@ class CommentsCacheTest extends TestCase
         $officerRole->givePermissionTo($editItems);
     }
 
-    // ==========================================
-    // Comment visibility tests
-    // ==========================================
+    // ==================== comment visibility ====================
 
     #[Test]
     public function new_comment_appears_after_creation(): void

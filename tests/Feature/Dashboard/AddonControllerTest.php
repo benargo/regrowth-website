@@ -61,9 +61,7 @@ class AddonControllerTest extends DashboardTestCase
         Storage::disk('local')->put('addon/export.json', json_encode($data));
     }
 
-    // ==========================================
-    // Authentication & Authorization Tests
-    // ==========================================
+    // ==================== export ====================
 
     #[Test]
     public function export_requires_authentication(): void
@@ -169,9 +167,7 @@ class AddonControllerTest extends DashboardTestCase
         $response->assertOk();
     }
 
-    // ==========================================
-    // Export Endpoint Tests
-    // ==========================================
+    // ==================== export endpoint ====================
 
     #[Test]
     public function export_renders_inertia_page_with_base64_data(): void
@@ -272,9 +268,7 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    // ==========================================
-    // Export JSON Endpoint Tests
-    // ==========================================
+    // ==================== export json endpoint ====================
 
     #[Test]
     public function export_json_renders_inertia_page_with_json_data(): void
@@ -366,9 +360,7 @@ class AddonControllerTest extends DashboardTestCase
         );
     }
 
-    // ==========================================
-    // GRM Freshness Tests
-    // ==========================================
+    // ==================== grm freshness ====================
 
     #[Test]
     public function export_returns_grm_freshness_as_deferred_prop(): void

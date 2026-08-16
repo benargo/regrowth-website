@@ -54,9 +54,7 @@ class SearchControllerTest extends TestCase
         ]);
     }
 
-    // ==========================================
-    // Validation
-    // ==========================================
+    // ==================== validation ====================
 
     #[Test]
     public function it_rejects_a_non_existent_raid_id(): void
@@ -98,9 +96,7 @@ class SearchControllerTest extends TestCase
             ->assertJsonValidationErrors(['q']);
     }
 
-    // ==========================================
-    // Results
-    // ==========================================
+    // ==================== results ====================
 
     #[Test]
     public function it_is_reachable_without_authentication(): void
@@ -120,9 +116,7 @@ class SearchControllerTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
-    // ==========================================
-    // Rate limiting
-    // ==========================================
+    // ==================== rate limiting ====================
 
     #[Test]
     public function it_rate_limits_past_sixty_requests_a_minute(): void

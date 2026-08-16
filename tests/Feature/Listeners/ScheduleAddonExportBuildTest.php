@@ -18,9 +18,7 @@ class ScheduleAddonExportBuildTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==========================================
-    // Listener Contract Tests
-    // ==========================================
+    // ==================== listener contract ====================
 
     #[Test]
     public function it_implements_should_queue(): void
@@ -28,9 +26,7 @@ class ScheduleAddonExportBuildTest extends TestCase
         $this->assertInstanceOf(ShouldQueue::class, new ScheduleAddonExportBuild);
     }
 
-    // ==========================================
-    // Dispatch Tests
-    // ==========================================
+    // ==================== dispatch ====================
 
     #[Test]
     public function it_dispatches_job_on_addon_settings_processed_event(): void
@@ -54,9 +50,7 @@ class ScheduleAddonExportBuildTest extends TestCase
         Bus::assertDispatched(BuildAddonExportFile::class);
     }
 
-    // ==========================================
-    // failed() Handler Tests
-    // ==========================================
+    // ==================== failed() handler ====================
 
     #[Test]
     public function failed_only_logs_for_any_event(): void
@@ -71,9 +65,7 @@ class ScheduleAddonExportBuildTest extends TestCase
         $this->assertTrue(true); // No exception thrown
     }
 
-    // ==========================================
-    // Tags
-    // ==========================================
+    // ==================== tags ====================
 
     #[Test]
     public function it_has_correct_tags(): void
