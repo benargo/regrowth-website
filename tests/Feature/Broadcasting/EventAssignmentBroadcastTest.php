@@ -297,7 +297,7 @@ class EventAssignmentBroadcastTest extends TestCase
         $this->assertEquals("private-event.{$event->id}", $channels[0]->name);
     }
 
-    // ==================== compositionChanged for bulk sync ====================
+    // ==================== composition changed for bulk sync ====================
 
     #[Test]
     public function composition_changed_broadcasts_on_private_event_channel(): void

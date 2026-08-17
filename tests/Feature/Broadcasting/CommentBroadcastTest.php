@@ -28,7 +28,7 @@ class CommentBroadcastTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==================== commentPosted ====================
+    // ==================== comment posted ====================
 
     #[Test]
     #[Group('contract')]
@@ -99,7 +99,7 @@ class CommentBroadcastTest extends TestCase
         );
     }
 
-    // ==================== commentChanged ====================
+    // ==================== comment changed ====================
 
     #[Test]
     #[Group('contract')]
@@ -143,7 +143,7 @@ class CommentBroadcastTest extends TestCase
         $this->assertTrue($payload['comment']['is_resolved']);
     }
 
-    // ==================== commentRemoved ====================
+    // ==================== comment removed ====================
 
     #[Test]
     #[Group('contract')]
