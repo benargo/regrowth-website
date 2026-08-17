@@ -20,12 +20,6 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
         return DiscordNotificationRelatedModel::class;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Fillable attributes
-    |--------------------------------------------------------------------------
-    */
-
     #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
@@ -38,11 +32,7 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Timestamps
-    |--------------------------------------------------------------------------
-    */
+    // ==================== timestamps ====================
 
     #[Test]
     public function it_has_no_timestamps(): void
@@ -52,11 +42,7 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
         $this->assertNotEmpty($attributes);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Persistence
-    |--------------------------------------------------------------------------
-    */
+    // ==================== persistence ====================
 
     #[Test]
     public function it_can_be_persisted_to_the_database(): void
@@ -78,11 +64,7 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Relationships — notification
-    |--------------------------------------------------------------------------
-    */
+    // ==================== notification ====================
 
     #[Test]
     public function notification_returns_belongs_to_relationship(): void
@@ -107,11 +89,7 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
         $this->assertTrue($related->fresh()->notification->is($notification));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Relationships — relatedModel
-    |--------------------------------------------------------------------------
-    */
+    // ==================== relatedModel ====================
 
     #[Test]
     public function related_model_returns_morph_to_relationship(): void
