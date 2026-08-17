@@ -88,6 +88,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         Queue::assertPushed(ProcessGrmUpload::class);
     }
 
+    // ==================== form — member count ====================
+
     #[Test]
     public function upload_form_member_count_reflects_guild_roster(): void
     {
@@ -136,6 +138,8 @@ class GrmUploadValidationTest extends DashboardTestCase
         $partialResponse->assertJsonPath('props.memberCount', 2);
     }
 
+    // ==================== upload — validation ====================
+
     #[Group('validation')]
     #[Test]
     public function upload_validates_grm_data_required(): void
@@ -169,6 +173,8 @@ class GrmUploadValidationTest extends DashboardTestCase
 
         $response->assertSessionHasErrors(['grm_data']);
     }
+
+    // ==================== upload — delimiter handling ====================
 
     #[Test]
     public function upload_accepts_comma_delimited_csv(): void
@@ -205,6 +211,8 @@ class GrmUploadValidationTest extends DashboardTestCase
 
         $response->assertSessionHasErrors(['grm_data']);
     }
+
+    // ==================== upload — job payload ====================
 
     #[Test]
     public function upload_passes_uploading_user_id_to_job(): void

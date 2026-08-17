@@ -35,6 +35,8 @@ class EditItemPageTest extends TestCase
         $this->mockItemService();
     }
 
+    // ==================== edit — access control ====================
+
     #[Test]
     public function edit_item_requires_authentication(): void
     {
@@ -92,6 +94,8 @@ class EditItemPageTest extends TestCase
         $response->assertOk();
     }
 
+    // ==================== edit — slug resolution ====================
+
     #[Test]
     public function edit_item_redirects_from_incorrect_slug_to_correct_slug(): void
     {
@@ -103,6 +107,8 @@ class EditItemPageTest extends TestCase
         $response->assertRedirect(route('loot.items.edit', ['item' => $item->id, 'slug' => 'test-item-'.$item->id]));
         $response->assertStatus(303);
     }
+
+    // ==================== edit — rendering ====================
 
     #[Test]
     public function edit_item_renders_with_correct_slug(): void
@@ -162,6 +168,8 @@ class EditItemPageTest extends TestCase
         );
     }
 
+    // ==================== edit — origin raid ====================
+
     #[Test]
     public function edit_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
     {
@@ -196,6 +204,8 @@ class EditItemPageTest extends TestCase
         );
     }
 
+    // ==================== edit — blizzard api fallback ====================
+
     #[Test]
     public function edit_item_renders_using_db_data_when_blizzard_api_returns_not_found(): void
     {
@@ -218,6 +228,8 @@ class EditItemPageTest extends TestCase
             ->where('item.data.name', $item->name)
         );
     }
+
+    // ==================== helpers ====================
 
     protected function setUpPermissions(): void
     {

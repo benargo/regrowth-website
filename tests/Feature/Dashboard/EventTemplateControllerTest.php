@@ -53,7 +53,7 @@ class EventTemplateControllerTest extends TestCase
         });
     }
 
-    // ─── index ───────────────────────────────────────────────────────────────────
+    // ==================== index ====================
 
     #[Test]
     public function it_renders_the_index_page_for_officers(): void
@@ -116,7 +116,7 @@ class EventTemplateControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    // ─── create ──────────────────────────────────────────────────────────────────
+    // ==================== create ====================
 
     #[Test]
     public function it_renders_the_create_page_with_raids(): void
@@ -133,7 +133,7 @@ class EventTemplateControllerTest extends TestCase
         );
     }
 
-    // ─── store ───────────────────────────────────────────────────────────────────
+    // ==================== store ====================
 
     #[Test]
     public function it_creates_a_template_and_redirects_to_edit(): void
@@ -179,7 +179,7 @@ class EventTemplateControllerTest extends TestCase
         $response->assertSessionHasErrors('raid_ids');
     }
 
-    // ─── edit ────────────────────────────────────────────────────────────────────
+    // ==================== edit ====================
 
     #[Test]
     public function it_renders_the_edit_page_for_a_template(): void
@@ -222,7 +222,7 @@ class EventTemplateControllerTest extends TestCase
         );
     }
 
-    // ─── update ──────────────────────────────────────────────────────────────────
+    // ==================== update ====================
 
     #[Test]
     public function it_updates_the_template_title_and_raids(): void
@@ -245,7 +245,7 @@ class EventTemplateControllerTest extends TestCase
         $this->assertTrue($template->raids()->where('raids.id', $raidB->id)->exists());
     }
 
-    // ─── destroy ─────────────────────────────────────────────────────────────────
+    // ==================== destroy ====================
 
     #[Test]
     public function it_deletes_a_template_and_redirects_to_index(): void

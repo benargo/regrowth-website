@@ -41,6 +41,8 @@ class ShowItemPageTest extends TestCase
         $officerRole->givePermissionTo($markCommentAsResolved);
     }
 
+    // ==================== show — access control ====================
+
     #[Test]
     public function show_item_allows_unauthenticated_users(): void
     {
@@ -96,6 +98,8 @@ class ShowItemPageTest extends TestCase
         $response->assertOk();
     }
 
+    // ==================== show — slug resolution ====================
+
     #[Test]
     public function show_item_redirects_from_null_slug_to_correct_slug(): void
     {
@@ -117,6 +121,8 @@ class ShowItemPageTest extends TestCase
 
         $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
     }
+
+    // ==================== show — rendering ====================
 
     #[Test]
     public function show_item_renders_with_correct_slug(): void
@@ -214,6 +220,8 @@ class ShowItemPageTest extends TestCase
             ->has('item.data.raids')
         );
     }
+
+    // ==================== show — comments ====================
 
     #[Group('comments')]
     #[Test]
@@ -468,6 +476,8 @@ class ShowItemPageTest extends TestCase
         );
     }
 
+    // ==================== show — cross-raid items ====================
+
     #[Test]
     public function a_cross_raid_item_exposes_only_one_raid_to_the_page(): void
     {
@@ -540,6 +550,8 @@ class ShowItemPageTest extends TestCase
                 ->where('item.data.raids.0.id', $firstRaidId)
             );
     }
+
+    // ==================== helpers ====================
 
     protected function createTestItem(): Item
     {

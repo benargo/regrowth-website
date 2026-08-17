@@ -47,6 +47,8 @@ class AllCommentsPageTest extends TestCase
         $response->assertOk();
     }
 
+    // ==================== pagination and item data ====================
+
     #[Test]
     public function comments_index_is_paginated(): void
     {
@@ -109,6 +111,8 @@ class AllCommentsPageTest extends TestCase
         );
     }
 
+    // ==================== ordering ====================
+
     #[Test]
     public function comments_index_orders_by_latest(): void
     {
@@ -140,6 +144,8 @@ class AllCommentsPageTest extends TestCase
             ->where('comments.data.1.id', $oldComment->id)
         );
     }
+
+    // ==================== root comments and reply pagination ====================
 
     #[Test]
     public function the_index_lists_only_root_comments(): void
@@ -187,6 +193,8 @@ class AllCommentsPageTest extends TestCase
 
         $response->assertInertia(fn (AssertableJson $page) => $page->missing('replies'));
     }
+
+    // ==================== tombstoned roots ====================
 
     #[Test]
     public function a_trashed_root_with_live_replies_is_still_listed_as_a_tombstone(): void
@@ -295,6 +303,8 @@ class AllCommentsPageTest extends TestCase
             ->has('comments.data', 0)
         );
     }
+
+    // ==================== helpers ====================
 
     protected function createItem(): Item
     {

@@ -58,6 +58,8 @@ class ProcessGrmUploadTest extends TestCase
         });
     }
 
+    // ==================== character creation ====================
+
     #[Test]
     public function it_creates_character_from_csv_row(): void
     {
@@ -119,6 +121,8 @@ class ProcessGrmUploadTest extends TestCase
             'is_main' => false,
         ]);
     }
+
+    // ==================== alt linking ====================
 
     #[Test]
     public function it_creates_character_links_for_main_with_alts(): void
@@ -217,6 +221,8 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->assertDatabaseCount('character_links', 4);
     }
+
+    // ==================== error handling ====================
 
     #[Test]
     public function it_continues_processing_on_individual_row_error(): void
@@ -325,6 +331,8 @@ class ProcessGrmUploadTest extends TestCase
         $job->handle(app(BlizzardConnector::class), $discordMock);
     }
 
+    // ==================== data integrity ====================
+
     #[Test]
     public function it_does_not_create_duplicate_character_links(): void
     {
@@ -376,6 +384,8 @@ class ProcessGrmUploadTest extends TestCase
             'is_main' => true,
         ]);
     }
+
+    // ==================== grm upload processed event ====================
 
     #[Test]
     public function it_dispatches_grm_upload_processed_event_once_after_successful_batch(): void
@@ -466,6 +476,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseCount('characters', 0);
     }
 
+    // ==================== rate limiting ====================
+
     #[Test]
     public function it_releases_itself_when_discord_is_rate_limited_sending_notification(): void
     {
@@ -490,6 +502,8 @@ class ProcessGrmUploadTest extends TestCase
         $job->assertReleased(5.0);
         $this->assertDatabaseHas('characters', ['id' => 12345]);
     }
+
+    // ==================== progress broadcasts ====================
 
     #[Test]
     public function it_broadcasts_started_with_the_total_row_count(): void
@@ -605,6 +619,8 @@ class ProcessGrmUploadTest extends TestCase
         });
     }
 
+    // ==================== timestamp integrity ====================
+
     #[Test]
     public function it_does_not_touch_related_model_timestamps(): void
     {
@@ -650,6 +666,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertEquals($originalAltOneUpdatedAt, $altOne->updated_at, 'Existing alt characters should not be touched');
         $this->assertEquals($originalAltTwoUpdatedAt, $altTwo->updated_at, 'Existing alt characters should not be touched');
     }
+
+    // ==================== helpers ====================
 
     private function makeMessage(): MessageResource
     {

@@ -146,6 +146,8 @@ class ShowEventTest extends TestCase
         );
     }
 
+    // ==================== composition groups ====================
+
     #[Test]
     public function it_returns_composition_groups_nested_inside_event(): void
     {
@@ -169,6 +171,8 @@ class ShowEventTest extends TestCase
             ->has('event.composition.groups.0.characters', 1)
         );
     }
+
+    // ==================== bench ====================
 
     #[Test]
     public function it_returns_benched_characters_nested_inside_composition(): void
@@ -247,6 +251,8 @@ class ShowEventTest extends TestCase
         );
     }
 
+    // ==================== assignments ====================
+
     #[Test]
     public function it_returns_event_level_assignments_nested_inside_event(): void
     {
@@ -303,6 +309,8 @@ class ShowEventTest extends TestCase
         );
     }
 
+    // ==================== initial props ====================
+
     #[Test]
     public function it_passes_question_mark_icon_url_as_signed_url_in_initial_props(): void
     {
@@ -318,6 +326,8 @@ class ShowEventTest extends TestCase
                 && URL::hasValidSignature(request()->create((string) $url)))
         );
     }
+
+    // ==================== access control — old events ====================
 
     #[Test]
     public function it_allows_guest_to_view_a_recent_event(): void

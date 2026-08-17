@@ -30,6 +30,8 @@ class ShowRaidPageTest extends TestCase
         $this->mockItemService();
     }
 
+    // ==================== show — access control ====================
+
     #[Test]
     public function loot_raid_allows_unauthenticated_users(): void
     {
@@ -75,6 +77,8 @@ class ShowRaidPageTest extends TestCase
         $response->assertOk();
     }
 
+    // ==================== show — slug resolution ====================
+
     #[Test]
     public function loot_raid_redirects_when_name_is_missing(): void
     {
@@ -97,6 +101,8 @@ class ShowRaidPageTest extends TestCase
 
         $response->assertRedirect($this->raidUrl($raid));
     }
+
+    // ==================== show — rendering ====================
 
     #[Test]
     public function loot_raid_renders_raid_page_with_correct_props(): void
@@ -179,6 +185,8 @@ class ShowRaidPageTest extends TestCase
         );
     }
 
+    // ==================== boss items ====================
+
     #[Test]
     public function loot_raid_boss_items_not_included_on_initial_load(): void
     {
@@ -238,6 +246,8 @@ class ShowRaidPageTest extends TestCase
         $partialResponse->assertJsonPath("props.boss_items.{$boss->id}.data.0.comments_count", 2);
         $partialResponse->assertJsonPath("props.boss_items.{$boss->id}.data.0.priorities.0.id", $priority->id);
     }
+
+    // ==================== trash items ====================
 
     #[Test]
     public function it_flags_has_trash_items_when_items_have_no_boss(): void
@@ -347,6 +357,8 @@ class ShowRaidPageTest extends TestCase
         );
     }
 
+    // ==================== cross-raid trash items ====================
+
     #[Test]
     public function a_cross_raid_trash_item_is_listed_under_both_raids(): void
     {
@@ -372,6 +384,8 @@ class ShowRaidPageTest extends TestCase
             );
         }
     }
+
+    // ==================== helpers ====================
 
     protected function raidUrl(Raid $raid, ?string $name = null): string
     {

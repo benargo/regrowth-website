@@ -32,6 +32,8 @@ class FetchGuildRosterTest extends TestCase
     use MocksBlizzardServices;
     use RefreshDatabase;
 
+    // ==================== job contract ====================
+
     #[Group('contract')]
     #[Test]
     public function it_has_the_correct_tags(): void
@@ -62,6 +64,8 @@ class FetchGuildRosterTest extends TestCase
     {
         $this->assertContains(Batchable::class, class_uses_recursive(FetchGuildRoster::class));
     }
+
+    // ==================== fetching and creating characters ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -220,6 +224,8 @@ class FetchGuildRosterTest extends TestCase
         $this->assertSame('Gnome', $character->playableRace->name);
     }
 
+    // ==================== updating existing characters ====================
+
     #[Group('happy-path')]
     #[Test]
     public function it_touches_every_character_present_in_the_roster(): void
@@ -320,6 +326,8 @@ class FetchGuildRosterTest extends TestCase
 
         $this->assertSame(Gender::FEMALE, Character::find(2)->gender);
     }
+
+    // ==================== error handling ====================
 
     #[Group('error-handling')]
     #[Test]

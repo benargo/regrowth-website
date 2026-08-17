@@ -64,6 +64,8 @@ class AddonSettingsControllerTest extends DashboardTestCase
         $response->assertOk();
     }
 
+    // ==================== rendering ====================
+
     #[Test]
     public function settings_renders_inertia_page(): void
     {
@@ -73,6 +75,8 @@ class AddonSettingsControllerTest extends DashboardTestCase
             ->component('Manage/Addon/Settings')
         );
     }
+
+    // ==================== councillors ====================
 
     #[Test]
     public function settings_includes_councillors_in_settings(): void
@@ -147,6 +151,8 @@ class AddonSettingsControllerTest extends DashboardTestCase
         );
     }
 
+    // ==================== guild ranks ====================
+
     #[Test]
     public function settings_includes_guild_ranks_in_settings(): void
     {
@@ -163,6 +169,8 @@ class AddonSettingsControllerTest extends DashboardTestCase
         );
     }
 
+    // ==================== guild tags ====================
+
     #[Test]
     public function settings_includes_guild_tags_in_settings(): void
     {
@@ -176,6 +184,8 @@ class AddonSettingsControllerTest extends DashboardTestCase
             ->where('tags.data.0.count_attendance', true)
         );
     }
+
+    // ==================== characters ====================
 
     #[Test]
     public function settings_includes_characters_as_deferred_prop(): void
@@ -211,6 +221,8 @@ class AddonSettingsControllerTest extends DashboardTestCase
             )
         );
     }
+
+    // ==================== ordering ====================
 
     #[Test]
     public function settings_councillors_are_ordered_by_name(): void

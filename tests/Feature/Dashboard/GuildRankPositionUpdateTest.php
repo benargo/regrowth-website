@@ -78,6 +78,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    // ==================== update-positions — validation ====================
+
     #[Group('validation')]
     #[Test]
     public function update_positions_validates_ranks_required(): void
@@ -172,6 +174,8 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
 
         $response->assertSessionHasErrors(['ranks.0.position']);
     }
+
+    // ==================== update-positions — persistence ====================
 
     #[Test]
     public function update_positions_saves_positions_to_database(): void

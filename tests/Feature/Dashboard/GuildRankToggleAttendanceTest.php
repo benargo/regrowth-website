@@ -79,6 +79,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    // ==================== toggle-attendance — persistence ====================
+
     #[Test]
     public function toggle_count_attendance_can_enable_attendance(): void
     {
@@ -110,6 +112,8 @@ class GuildRankToggleAttendanceTest extends DashboardTestCase
 
         $this->assertFalse($rank->count_attendance);
     }
+
+    // ==================== toggle-attendance — validation ====================
 
     #[Group('validation')]
     #[Test]

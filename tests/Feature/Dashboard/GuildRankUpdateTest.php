@@ -78,6 +78,8 @@ class GuildRankUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    // ==================== update — validation ====================
+
     #[Group('validation')]
     #[Test]
     public function update_validates_name_required(): void
@@ -114,6 +116,8 @@ class GuildRankUpdateTest extends DashboardTestCase
 
         $response->assertSessionHasErrors(['name']);
     }
+
+    // ==================== update — persistence ====================
 
     #[Test]
     public function update_saves_name_to_database(): void

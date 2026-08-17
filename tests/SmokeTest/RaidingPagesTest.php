@@ -75,6 +75,8 @@ class RaidingPagesTest extends TestCase
         $response->assertOk();
     }
 
+    // ==================== attendance pages ====================
+
     #[Group('happy-path')]
     #[Test]
     public function attendance_dashboard_loads(): void
@@ -111,6 +113,8 @@ class RaidingPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
+
+    // ==================== planned absences pages ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -211,6 +215,8 @@ class RaidingPagesTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    // ==================== event pages ====================
 
     #[Group('happy-path')]
     #[Test]

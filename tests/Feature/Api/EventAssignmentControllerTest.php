@@ -51,7 +51,7 @@ class EventAssignmentControllerTest extends TestCase
         $this->event = Event::factory()->create();
     }
 
-    // ─── store() ──────────────────────────────────────────────────────────────
+    // ==================== store ====================
 
     #[Test]
     public function it_creates_an_assignment_and_returns_201(): void
@@ -191,7 +191,7 @@ class EventAssignmentControllerTest extends TestCase
         ]);
     }
 
-    // ─── update() ─────────────────────────────────────────────────────────────
+    // ==================== update ====================
 
     #[Test]
     public function it_updates_left_and_right_fields(): void
@@ -333,7 +333,7 @@ class EventAssignmentControllerTest extends TestCase
             ->assertUnprocessable();
     }
 
-    // ─── reorder() ────────────────────────────────────────────────────────────
+    // ==================== reorder ====================
 
     #[Test]
     public function it_reorders_assignments_by_array_position(): void
@@ -405,7 +405,7 @@ class EventAssignmentControllerTest extends TestCase
             ->assertUnprocessable();
     }
 
-    // ─── destroy() ────────────────────────────────────────────────────────────
+    // ==================== destroy ====================
 
     #[Test]
     public function it_deletes_an_assignment(): void
@@ -440,6 +440,8 @@ class EventAssignmentControllerTest extends TestCase
             ->deleteJson(route('api.events.assignments.destroy', [$this->event, $assignment]))
             ->assertForbidden();
     }
+
+    // ==================== update — partial payloads ====================
 
     #[Test]
     public function test_update_only_left_side_does_not_overwrite_right_side(): void

@@ -97,6 +97,8 @@ class ReplyPropTest extends TestCase
         );
     }
 
+    // ==================== tombstoned roots ====================
+
     #[Test]
     public function a_trashed_root_with_live_replies_is_still_listed_as_a_tombstone(): void
     {
@@ -125,6 +127,8 @@ class ReplyPropTest extends TestCase
 
         $response->assertInertia(fn (AssertableJson $page) => $page->has('comments.data', 0));
     }
+
+    // ==================== partial reload pagination ====================
 
     #[Test]
     public function the_replies_prop_is_absent_from_the_initial_render(): void
@@ -208,6 +212,8 @@ class ReplyPropTest extends TestCase
         $response->assertJsonMissingPath("props.replies.{$reply->id}");
     }
 
+    // ==================== authorization and limits ====================
+
     #[Test]
     #[Group('authorization')]
     public function a_guest_can_load_replies_but_cannot_reply(): void
@@ -244,7 +250,7 @@ class ReplyPropTest extends TestCase
         );
     }
 
-    // ↓ Helpers
+    // ==================== helpers ====================
 
     /**
      * Create a root comment attached to the given item.
