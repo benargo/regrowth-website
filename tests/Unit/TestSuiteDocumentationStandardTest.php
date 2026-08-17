@@ -32,7 +32,7 @@ class TestSuiteDocumentationStandardTest extends TestCase
     {
         $violations = [];
 
-        foreach ($this->testFiles() as $path) {
+        foreach ($this->filePaths() as $path) {
             $lines = file($path, FILE_IGNORE_NEW_LINES);
 
             foreach ($lines as $index => $line) {
@@ -66,7 +66,7 @@ class TestSuiteDocumentationStandardTest extends TestCase
     {
         $violations = [];
 
-        foreach ($this->testFiles() as $path) {
+        foreach ($this->filePaths() as $path) {
             $lines = file($path, FILE_IGNORE_NEW_LINES);
 
             foreach ($lines as $index => $line) {
@@ -99,7 +99,7 @@ class TestSuiteDocumentationStandardTest extends TestCase
     {
         $violations = [];
 
-        foreach ($this->testFiles() as $path) {
+        foreach ($this->filePaths() as $path) {
             $contents = file_get_contents($path);
             $testCount = preg_match_all('/^\s*#\[Test\]/m', $contents);
 
@@ -129,7 +129,7 @@ class TestSuiteDocumentationStandardTest extends TestCase
      *
      * @return list<string>
      */
-    private function testFiles(): array
+    private function filePaths(): array
     {
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator(base_path('tests'), RecursiveDirectoryIterator::SKIP_DOTS)
