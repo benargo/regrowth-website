@@ -11,6 +11,7 @@ use App\Models\LootPriority;
 use App\Models\Raid;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -324,6 +325,8 @@ class ItemResourceTest extends TestCase
     #[Test]
     public function it_returns_icon_url(): void
     {
+        Storage::fake('public');
+
         $item = Item::factory()->create();
         $item->addMediaFromString('BINARY')
             ->usingFileName('foo.jpg')
