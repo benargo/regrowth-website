@@ -237,6 +237,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_eager_loads_reaction_users_for_comments(): void
     {
+        $this->mockItemService();
+
         $item = $this->createTestItem();
         $author = User::factory()->create();
         $comment = Comment::factory()->create([
@@ -491,6 +493,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function a_cross_raid_item_exposes_only_one_raid_to_the_page(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
             ->trashDrop()
@@ -508,6 +512,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
             ->trashDrop()
@@ -526,6 +532,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_falls_back_to_the_first_raid_when_the_remembered_raid_does_not_apply(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $otherRaid = Raid::factory()->create();
         $item = Item::factory()
@@ -546,6 +554,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
             ->trashDrop()
