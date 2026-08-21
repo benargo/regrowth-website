@@ -5,29 +5,26 @@ namespace Tests\Feature\Comments;
 use App\Http\Controllers\ItemController;
 use App\Models\Comment;
 use App\Models\Item;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Enums\MessageType;
-use App\Services\Discord\Resources\Channel as DiscordChannel;
-use App\Services\Discord\Resources\Message as DiscordMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('comments')]
 #[Group('loot')]
 class ReplyPropTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockDiscordService();
+        $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
     }
 
     #[Test]
@@ -290,27 +287,5 @@ class ReplyPropTest extends TestCase
             'X-Inertia-Partial-Component' => 'Loot/Items/Show',
             'X-Inertia-Partial-Data' => 'replies',
         ]);
-    }
-
-    private function mockDiscordService(): void
-    {
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')
-                ->andReturn(DiscordChannel::from(['id' => '123456789']));
-
-            $mock->shouldReceive('createMessage')
-                ->andReturn(DiscordMessage::from([
-                    'id' => '999999999999999999',
-                    'channel_id' => '123456789',
-                    'timestamp' => now()->toIso8601String(),
-                    'tts' => false,
-                    'mention_everyone' => false,
-                    'mention_roles' => [],
-                    'attachments' => [],
-                    'embeds' => [],
-                    'pinned' => false,
-                    'type' => MessageType::Default->value,
-                ]));
-        });
     }
 }

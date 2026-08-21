@@ -8,17 +8,15 @@ use App\Models\DiscordNotification;
 use App\Models\DiscordNotificationRelatedModel;
 use App\Notifications\NewLootCouncilComment;
 use App\Services\Discord\Discord;
-use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel as DiscordChannel;
-use App\Services\Discord\Resources\Message as DiscordMessage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\Blizzard\MocksBlizzardServices;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('comments')]
@@ -26,6 +24,7 @@ use Tests\TestCase;
 class RefreshCommentDiscordMessageTest extends TestCase
 {
     use MocksBlizzardServices;
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -33,7 +32,7 @@ class RefreshCommentDiscordMessageTest extends TestCase
         parent::setUp();
 
         $this->mockItemService();
-        $this->mockDiscordService();
+        $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
     }
 
     #[Test]
@@ -144,27 +143,5 @@ class RefreshCommentDiscordMessageTest extends TestCase
         ]);
 
         return $record;
-    }
-
-    private function mockDiscordService(): void
-    {
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')
-                ->andReturn(DiscordChannel::from(['id' => '123456789']));
-
-            $mock->shouldReceive('createMessage')
-                ->andReturn(DiscordMessage::from([
-                    'id' => '999999999999999999',
-                    'channel_id' => '123456789',
-                    'timestamp' => now()->toIso8601String(),
-                    'tts' => false,
-                    'mention_everyone' => false,
-                    'mention_roles' => [],
-                    'attachments' => [],
-                    'embeds' => [],
-                    'pinned' => false,
-                    'type' => MessageType::Default->value,
-                ]));
-        });
     }
 }
