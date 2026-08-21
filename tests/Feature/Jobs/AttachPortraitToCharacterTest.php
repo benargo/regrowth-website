@@ -127,11 +127,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -150,11 +146,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
         $job = new AttachPortraitToCharacter($character->id, $assetUrl);
@@ -174,7 +166,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
+            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeCharacterProfileResponse(), status: 200),
             FetchCharacterPortraitRequest::class => MockResponse::make(body: ['code' => 403], status: 403),
         ]);
 
@@ -193,11 +185,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService();
 
         $assetUrl = Uri::of('https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
 
@@ -213,11 +201,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService();
 
         $assetUrl = Uri::of('https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
 
@@ -239,11 +223,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg?version=3';
 
@@ -261,11 +241,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse('Male'), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService(gender: 'Male');
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -281,11 +257,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse('Female'), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService(gender: 'Female');
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -301,9 +273,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => Gender::FEMALE]);
 
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitFetch();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -320,11 +290,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse('Male'), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService(gender: 'Male');
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -335,10 +301,7 @@ class AttachPortraitToCharacterTest extends TestCase
         // Simulate re-run scenario: portrait still attached, gender cleared.
         $character->fresh()->updateQuietly(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse('Male'), status: 200),
-        ]);
+        $this->mockCharacterProfileService(gender: 'Male');
 
         // Second run: portrait already present (skipped), gender still synced.
         (new AttachPortraitToCharacter($character->id, $assetUrl))
@@ -353,11 +316,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService(profileBody: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], profileStatus: 404);
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -374,11 +333,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse('Unknown'), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService(gender: 'Unknown');
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -397,11 +352,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeProfileResponse(), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -420,9 +371,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 2]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => Gender::FEMALE]);
 
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitFetch();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -440,9 +389,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 1]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => Gender::MALE]);
 
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitFetch();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -460,11 +407,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 2]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitService(profileBody: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], profileStatus: 404);
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -482,9 +425,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => Gender::MALE]);
 
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitFetch();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -503,9 +444,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 2]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => Gender::FEMALE]);
 
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitFetch();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -525,9 +464,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $character = Character::factory()->create(['gender' => Gender::MALE]);
 
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitFetch();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -544,9 +481,7 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $character = Character::factory()->create(['gender' => Gender::MALE]);
 
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockCharacterPortraitFetch();
 
         $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
@@ -560,27 +495,5 @@ class AttachPortraitToCharacterTest extends TestCase
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Event::assertNotDispatched(CharacterPortraitAttached::class);
-    }
-
-    // ==================== helpers ====================
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function makeProfileResponse(string $gender = 'Male'): array
-    {
-        return [
-            'id' => 1,
-            'name' => 'Testcharacter',
-            'gender' => ['type' => strtoupper($gender), 'name' => $gender],
-            'faction' => ['type' => 'HORDE', 'name' => 'Horde'],
-            'race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Orc', 'id' => 1],
-            'character_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Shaman', 'id' => 1],
-            'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
-            'level' => 70,
-            'last_login_timestamp' => 0,
-            'average_item_level' => 0,
-            'equipped_item_level' => 0,
-        ];
     }
 }
