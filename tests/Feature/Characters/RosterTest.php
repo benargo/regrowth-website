@@ -2,15 +2,12 @@
 
 namespace Tests\Feature\Characters;
 
-use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Models\Character;
 use App\Models\GuildRank;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
@@ -182,12 +179,6 @@ class RosterTest extends TestCase
 
     private function fakeRosterWithMembers(array $members): void
     {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
-            GetGuildRosterRequest::class => MockResponse::make(body: [
-                'guild' => ['key' => ['href' => 'https://example.test/guild'], 'name' => 'Wild Growth', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
-                'members' => $members,
-            ], status: 200),
-        ]);
+        $this->mockGuildRoster($members);
     }
 }
