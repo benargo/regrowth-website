@@ -46,6 +46,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_unauthenticated_users(): void
     {
+        $this->mockItemService();
+
         $item = $this->createTestItem();
 
         $response = $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
@@ -57,6 +59,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_guest_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
 
@@ -68,6 +72,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_member_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
 
@@ -79,6 +85,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_raider_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
 
@@ -90,6 +98,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_officer_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
 

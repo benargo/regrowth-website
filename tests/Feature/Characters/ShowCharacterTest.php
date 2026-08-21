@@ -68,7 +68,12 @@ class ShowCharacterTest extends TestCase
     #[Test]
     public function show_is_accessible_without_authentication(): void
     {
+        Storage::fake('public');
+
         $character = Character::factory()->withPlayableClass()->withRank()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('portrait.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
 
         $response = $this->get(route('characters.show', [
             'character' => $character,

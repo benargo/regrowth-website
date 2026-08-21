@@ -12,7 +12,6 @@ use Database\Seeders\BossSeeder;
 use Database\Seeders\ItemSeeder;
 use Database\Seeders\PhaseSeeder;
 use Database\Seeders\RaidSeeder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -22,11 +21,13 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Tests\Support\Database\Seeders\LimitsItemSeederFixtures;
 use Tests\TestCase;
 
 #[Group('loot')]
 class ItemSeederTest extends TestCase
 {
+    use LimitsItemSeederFixtures;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -102,21 +103,15 @@ class ItemSeederTest extends TestCase
     }
 
     /**
-     * Seed with only the items needed for testing, to avoid processing all 684 items.
+     * Seed with only the first 5 items (includes 28453 and 28454 used in
+     * assertions), to avoid processing all 684 items.
      */
     private function seedWithLimitedItems(): ItemSeeder
     {
-        $seeder = app(ItemSeeder::class);
+        $allItems = (new \ReflectionProperty(ItemSeeder::class, 'items'))->getValue(app(ItemSeeder::class));
+        $firstFiveIds = array_column(array_slice($allItems, 0, 5), 'id');
 
-        $reflection = new \ReflectionProperty(ItemSeeder::class, 'items');
-        $allItems = $reflection->getValue($seeder);
-
-        // Keep only the first 5 items (includes 28453 and 28454 used in assertions)
-        $reflection->setValue($seeder, array_slice($allItems, 0, 5));
-
-        Model::unguarded(fn () => $seeder->run());
-
-        return $seeder;
+        return $this->seedSpecificItems($firstFiveIds);
     }
 
     // ==================== seeder behaviour ====================
@@ -370,25 +365,5 @@ class ItemSeederTest extends TestCase
         $this->assertNotNull($item28454);
         $this->assertSame('Item 28454', $item28454->name);
         $this->assertTrue($item28454->hasMedia('blizzard_icons'));
-    }
-
-    /**
-     * Seed only the given item ids, so a test does not process all 684 rows.
-     *
-     * @param  array<int, int>  $itemIds
-     */
-    private function seedSpecificItems(array $itemIds): void
-    {
-        $seeder = app(ItemSeeder::class);
-
-        $reflection = new \ReflectionProperty(ItemSeeder::class, 'items');
-        $allItems = $reflection->getValue($seeder);
-
-        $reflection->setValue($seeder, array_values(array_filter(
-            $allItems,
-            fn (array $item): bool => in_array($item['id'], $itemIds, true),
-        )));
-
-        Model::unguarded(fn () => $seeder->run());
     }
 }
