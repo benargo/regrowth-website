@@ -2,25 +2,17 @@
 
 namespace Tests\Feature\Comments;
 
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
-use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Models\Comment;
 use App\Models\DiscordRole;
 use App\Models\Item;
 use App\Models\Permission;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel as DiscordChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Storage;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Http\PendingRequest;
-use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Blizzard\MocksBlizzardServices;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('comments')]
@@ -28,6 +20,8 @@ use Tests\TestCase;
 #[Group('loot')]
 class CommentsCacheTest extends TestCase
 {
+    use MocksBlizzardServices;
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -36,37 +30,9 @@ class CommentsCacheTest extends TestCase
 
         Queue::fake();
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')
-                ->andReturn(DiscordChannel::from(['id' => '123456789']));
-        });
+        $this->mockDiscordChannel();
 
-        Storage::fake('public');
-
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600]),
-            GetItemRequest::class => function (PendingRequest $pendingRequest): MockResponse {
-                $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
-                $segments = explode('/', trim($path, '/'));
-                $itemId = (int) ($segments[array_key_last($segments)] ?? 0);
-
-                return MockResponse::make(body: [
-                    'id' => $itemId,
-                    'name' => "Test Item {$itemId}",
-                    'quality' => ['type' => 'UNCOMMON', 'name' => 'Uncommon'],
-                    'level' => 1,
-                    'required_level' => 1,
-                    'media' => ['key' => ['href' => "https://example.test/media/{$itemId}"]],
-                    'item_class' => ['key' => ['href' => 'https://example.test/item-class/2'], 'name' => 'Weapon', 'id' => 2],
-                    'item_subclass' => ['key' => ['href' => 'https://example.test/item-subclass/2-7'], 'name' => 'Sword', 'id' => 7],
-                    'inventory_type' => ['type' => 'WEAPONMAINHAND', 'name' => 'Main Hand'],
-                    'purchase_price' => 0,
-                    'sell_price' => 0,
-                ], status: 200);
-            },
-            GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
-            FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
+        $this->mockItemService();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);

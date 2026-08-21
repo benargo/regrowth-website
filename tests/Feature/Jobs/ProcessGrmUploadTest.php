@@ -15,10 +15,8 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\User;
 use App\Services\Discord\Discord;
-use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Resources\Channel as ChannelResource;
-use App\Services\Discord\Resources\Message as MessageResource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
@@ -29,11 +27,13 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('characters')]
 class ProcessGrmUploadTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     private Discord $discord;
@@ -54,7 +54,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->discord = $this->mock(Discord::class, function (MockInterface $mock) use ($channel) {
             $mock->shouldReceive('getChannel')->andReturn($channel);
-            $mock->shouldReceive('createMessage')->andReturn($this->makeMessage());
+            $mock->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119'));
         });
     }
 
@@ -251,7 +251,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
             $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeMessage();
+            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
 
             $mock->shouldReceive('getChannel')->andReturn($channel);
             $mock->shouldReceive('createMessage')
@@ -282,7 +282,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
             $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeMessage();
+            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
 
             $mock->shouldReceive('getChannel')->andReturn($channel);
             $mock->shouldReceive('createMessage')
@@ -311,7 +311,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
             $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeMessage();
+            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
 
             $mock->shouldReceive('getChannel')->andReturn($channel);
             $mock->shouldReceive('createMessage')
@@ -668,22 +668,6 @@ class ProcessGrmUploadTest extends TestCase
     }
 
     // ==================== helpers ====================
-
-    private function makeMessage(): MessageResource
-    {
-        return MessageResource::from([
-            'id' => '9999999999999999999',
-            'channel_id' => '1407688195386114119',
-            'timestamp' => '2024-01-01T00:00:00.000000+00:00',
-            'tts' => false,
-            'mention_everyone' => false,
-            'mention_roles' => [],
-            'attachments' => [],
-            'embeds' => [],
-            'pinned' => false,
-            'type' => MessageType::Default,
-        ]);
-    }
 
     /**
      * Fake the Blizzard character status/profile endpoints.
