@@ -45,19 +45,14 @@ trait MocksBlizzardServices
 
     /**
      * Fake the oauth token plus a GetCharacterProfileRequest response.
-     *
-     * Pass $status/$body to simulate an error response (e.g. 404 not found)
-     * instead of the happy-path profile.
-     *
-     * @param  array<string, mixed>|null  $body
      */
-    protected function mockCharacterProfileService(string $gender = 'Male', int $status = 200, ?array $body = null): void
+    protected function mockCharacterProfileService(string $gender = 'Male'): void
     {
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
             GetCharacterProfileRequest::class => MockResponse::make(
-                body: $body ?? $this->makeCharacterProfileResponse($gender),
-                status: $status,
+                body: $this->makeCharacterProfileResponse($gender),
+                status: 200,
             ),
         ]);
     }
