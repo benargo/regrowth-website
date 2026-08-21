@@ -204,7 +204,7 @@ class EventResourceTest extends TestCase
         $this->assertNull($array['channel']);
     }
 
-    // ============ Assignments ============
+    // ==================== assignments ====================
 
     #[Test]
     public function it_returns_event_level_assignments_excluding_boss_scoped_ones(): void
@@ -246,7 +246,7 @@ class EventResourceTest extends TestCase
         $this->assertCount(1, $bossAssignments['ungrouped']);
     }
 
-    // ============ Raids and bosses ============
+    // ==================== raids and bosses ====================
 
     #[Test]
     public function it_returns_raids_with_expected_shape(): void
@@ -289,7 +289,7 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
     }
 
-    // ============ Composition — groups ============
+    // ==================== composition — groups ====================
 
     #[Test]
     public function it_returns_composition_with_groups_and_bench_keys(): void
@@ -355,7 +355,7 @@ class EventResourceTest extends TestCase
         $this->assertSame([], $array['composition']['groups']);
     }
 
-    // ============ Composition — bench ============
+    // ==================== composition — bench ====================
 
     #[Test]
     public function it_returns_empty_bench_when_no_characters_in_comp(): void

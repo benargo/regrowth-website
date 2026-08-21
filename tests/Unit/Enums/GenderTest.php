@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 #[Group('characters')]
 class GenderTest extends TestCase
 {
-    // ==================== cases ====================
-
     #[Test]
     public function it_has_exactly_two_cases(): void
     {

@@ -69,6 +69,8 @@ class MessageTest extends TestCase
         $this->assertInstanceOf(Optional::class, $message->nonce);
     }
 
+    // ==================== helpers ====================
+
     private function minimalPayload(): array
     {
         return [
@@ -84,6 +86,8 @@ class MessageTest extends TestCase
             'type' => MessageType::Default->value,
         ];
     }
+
+    // ==================== construction from payload ====================
 
     #[Test]
     public function message_constructs_with_required_fields(): void
@@ -120,6 +124,8 @@ class MessageTest extends TestCase
         $this->assertInstanceOf(Optional::class, $message->nonce);
     }
 
+    // ==================== content, edits, and webhook fields ====================
+
     #[Test]
     public function message_stores_content_and_author(): void
     {
@@ -153,6 +159,8 @@ class MessageTest extends TestCase
         $this->assertSame('111122223333444455', $message->webhook_id);
     }
 
+    // ==================== flags bitfield ====================
+
     #[Test]
     public function message_stores_flags_as_bitfield(): void
     {
@@ -168,6 +176,8 @@ class MessageTest extends TestCase
         $this->assertTrue(($message->flags & MessageFlag::EPHEMERAL->value) !== 0);
         $this->assertFalse(($message->flags & MessageFlag::CROSSPOSTED->value) !== 0);
     }
+
+    // ==================== message reference, embeds, and attachments ====================
 
     #[Test]
     public function message_stores_message_reference(): void
@@ -224,6 +234,8 @@ class MessageTest extends TestCase
         $this->assertSame('file.png', $message->attachments[0]->filename);
     }
 
+    // ==================== nullable optional fields and nonce ====================
+
     #[Test]
     public function it_stores_null_for_nullable_optional_fields(): void
     {
@@ -250,6 +262,8 @@ class MessageTest extends TestCase
         $this->assertSame('abc123', $message->nonce);
     }
 
+    // ==================== enum backing values ====================
+
     #[Test]
     public function message_type_enum_has_correct_backing_values(): void
     {
@@ -269,6 +283,8 @@ class MessageTest extends TestCase
         $this->assertSame(4096, MessageFlag::SUPPRESS_NOTIFICATIONS->value);
         $this->assertSame(32768, MessageFlag::IS_COMPONENTS_V2->value);
     }
+
+    // ==================== readonly properties ====================
 
     #[Test]
     public function message_properties_are_readonly(): void

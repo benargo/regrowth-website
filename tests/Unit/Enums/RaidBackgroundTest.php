@@ -18,6 +18,8 @@ class RaidBackgroundTest extends TestCase
         }
     }
 
+    // ==================== case values ====================
+
     #[Test]
     public function karazhan_has_correct_value(): void
     {

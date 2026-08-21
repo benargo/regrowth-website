@@ -49,7 +49,7 @@ class StoreTest extends TestCase
         ];
     }
 
-    // ==================== Access Control ====================
+    // ==================== store ====================
 
     #[Test]
     public function store_requires_authentication(): void
@@ -71,7 +71,7 @@ class StoreTest extends TestCase
         $response->assertForbidden();
     }
 
-    // ==================== Happy Path ====================
+    // ==================== happy path ====================
 
     #[Test]
     public function store_creates_report_with_valid_data(): void
@@ -226,7 +226,7 @@ class StoreTest extends TestCase
         ]);
     }
 
-    // ==================== Validation ====================
+    // ==================== validation ====================
 
     #[Group('validation')]
     #[Test]

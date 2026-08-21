@@ -8,18 +8,17 @@ use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
 use App\Models\Permission;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class ApplyTemplateTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected DiscordRole $officerRole;
@@ -44,11 +43,7 @@ class ApplyTemplateTest extends TestCase
         $this->officer = User::factory()->create();
         $this->officer->discordRoles()->attach($this->officerRole->id);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')->andReturn(
-                Channel::from(['id' => '123456789', 'name' => 'raids', 'position' => 1]),
-            )->byDefault();
-        });
+        $this->mockDiscordChannel(name: 'raids', position: 1, byDefault: true);
     }
 
     #[Test]

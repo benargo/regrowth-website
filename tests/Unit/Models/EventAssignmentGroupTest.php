@@ -20,7 +20,7 @@ class EventAssignmentGroupTest extends ModelTestCase
         return EventAssignmentGroup::class;
     }
 
-    // ============ Schema / config ============
+    // ==================== schema / config ====================
 
     #[Test]
     public function it_uses_event_assignment_groups_table(): void
@@ -74,7 +74,7 @@ class EventAssignmentGroupTest extends ModelTestCase
         $this->assertTrue($model->usesTimestamps());
     }
 
-    // ============ Default attributes ============
+    // ==================== default attributes ====================
 
     #[Test]
     public function it_defaults_name_to_new_group(): void
@@ -84,7 +84,7 @@ class EventAssignmentGroupTest extends ModelTestCase
         $this->assertSame('New group', $model->name);
     }
 
-    // ============ Factory / persistence ============
+    // ==================== factory / persistence ====================
 
     #[Test]
     public function factory_creates_valid_model(): void
@@ -114,7 +114,7 @@ class EventAssignmentGroupTest extends ModelTestCase
         $this->assertNotNull($group->notes);
     }
 
-    // ============ Sort order ============
+    // ==================== sort order ====================
 
     #[Test]
     public function it_defaults_sort_order_to_zero(): void
@@ -132,7 +132,7 @@ class EventAssignmentGroupTest extends ModelTestCase
         $this->assertSame(5, $group->sort_order);
     }
 
-    // ============ Notes accessor ============
+    // ==================== notes accessor ====================
 
     #[Test]
     public function notes_are_rendered_as_markdown(): void
@@ -150,7 +150,7 @@ class EventAssignmentGroupTest extends ModelTestCase
         $this->assertNull($group->notes);
     }
 
-    // ============ Relationships ============
+    // ==================== relationships ====================
 
     #[Test]
     public function it_belongs_to_an_event(): void
@@ -205,7 +205,7 @@ class EventAssignmentGroupTest extends ModelTestCase
         $this->assertCount(2, $group->assignments);
     }
 
-    // ============ Cascade deletes ============
+    // ==================== cascade deletes ====================
 
     #[Test]
     public function deleting_event_cascades_to_groups(): void

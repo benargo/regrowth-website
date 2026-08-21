@@ -31,8 +31,6 @@ use Tests\TestCase;
 #[Group('blizzard-integration')]
 class BlizzardConnectorTest extends TestCase
 {
-    // ==================== resolveBaseUrl ====================
-
     #[Test]
     #[Group('happy-path')]
     public function resolves_base_url_from_region(): void
@@ -118,7 +116,7 @@ class BlizzardConnectorTest extends TestCase
         $this->assertSame('regrowth', $connector->defaultGuildSlug());
     }
 
-    // ==================== OAuth + token caching ====================
+    // ==================== oauth + token caching ====================
 
     #[Test]
     #[Group('happy-path')]
@@ -163,7 +161,7 @@ class BlizzardConnectorTest extends TestCase
         $this->assertSame('test_token', $cached['token']);
     }
 
-    // ==================== Exception mapping ====================
+    // ==================== exception mapping ====================
 
     #[Test]
     #[Group('error-handling')]
@@ -342,7 +340,7 @@ class BlizzardConnectorTest extends TestCase
         }
     }
 
-    // ==================== Rate limits ====================
+    // ==================== rate limits ====================
 
     #[Test]
     #[Group('error-handling')]
@@ -362,7 +360,7 @@ class BlizzardConnectorTest extends TestCase
         $this->assertFalse($hourly->getShouldSleep(), 'Expected the 36,000/hour limit to throw.');
     }
 
-    // ==================== Helpers ====================
+    // ==================== helpers ====================
 
     /**
      * Invoke the connector's protected resolveLimits().

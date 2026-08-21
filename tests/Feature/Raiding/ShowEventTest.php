@@ -11,20 +11,19 @@ use App\Models\EventAssignment;
 use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class ShowEventTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected DiscordRole $memberRole;
@@ -43,11 +42,7 @@ class ShowEventTest extends TestCase
         ]);
         $this->memberRole->givePermissionTo(Permission::firstOrCreate(['name' => 'manage-raid-plans', 'guard_name' => 'web']));
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')->andReturn(
-                Channel::from(['id' => '123456789', 'name' => 'raids', 'position' => 1]),
-            )->byDefault();
-        });
+        $this->mockDiscordChannel(name: 'raids', position: 1, byDefault: true);
     }
 
     #[Test]
@@ -146,6 +141,8 @@ class ShowEventTest extends TestCase
         );
     }
 
+    // ==================== composition groups ====================
+
     #[Test]
     public function it_returns_composition_groups_nested_inside_event(): void
     {
@@ -169,6 +166,8 @@ class ShowEventTest extends TestCase
             ->has('event.composition.groups.0.characters', 1)
         );
     }
+
+    // ==================== bench ====================
 
     #[Test]
     public function it_returns_benched_characters_nested_inside_composition(): void
@@ -247,6 +246,8 @@ class ShowEventTest extends TestCase
         );
     }
 
+    // ==================== assignments ====================
+
     #[Test]
     public function it_returns_event_level_assignments_nested_inside_event(): void
     {
@@ -303,6 +304,8 @@ class ShowEventTest extends TestCase
         );
     }
 
+    // ==================== initial props ====================
+
     #[Test]
     public function it_passes_question_mark_icon_url_as_signed_url_in_initial_props(): void
     {
@@ -318,6 +321,8 @@ class ShowEventTest extends TestCase
                 && URL::hasValidSignature(request()->create((string) $url)))
         );
     }
+
+    // ==================== access control — old events ====================
 
     #[Test]
     public function it_allows_guest_to_view_a_recent_event(): void

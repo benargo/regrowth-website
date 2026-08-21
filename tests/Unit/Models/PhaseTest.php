@@ -61,6 +61,8 @@ class PhaseTest extends ModelTestCase
         ]);
     }
 
+    // ==================== persistence ====================
+
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
@@ -116,6 +118,8 @@ class PhaseTest extends ModelTestCase
         $this->assertModelExists($phase);
     }
 
+    // ==================== factory states ====================
+
     #[Test]
     public function factory_creates_valid_model(): void
     {
@@ -151,6 +155,8 @@ class PhaseTest extends ModelTestCase
         $this->assertNull($phase->start_date);
     }
 
+    // ==================== number accessor ====================
+
     #[Test]
     public function number_accessor_returns_int_for_whole_numbers(): void
     {
@@ -168,6 +174,8 @@ class PhaseTest extends ModelTestCase
         $this->assertIsFloat($phase->number);
         $this->assertSame(2.5, $phase->number);
     }
+
+    // ==================== relationships ====================
 
     #[Test]
     public function it_has_many_raids(): void
@@ -202,6 +210,8 @@ class PhaseTest extends ModelTestCase
         $this->assertCount(5, $phase->bosses);
     }
 
+    // ==================== has started ====================
+
     #[Test]
     public function has_started_returns_true_when_start_date_is_in_the_past(): void
     {
@@ -225,6 +235,8 @@ class PhaseTest extends ModelTestCase
 
         $this->assertFalse($phase->hasStarted());
     }
+
+    // ==================== guild tags ====================
 
     #[Test]
     public function it_has_many_guild_tags(): void

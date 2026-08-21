@@ -20,12 +20,6 @@ class UserTest extends ModelTestCase
         return User::class;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Primary key and key type
-    |--------------------------------------------------------------------------
-    */
-
     #[Test]
     public function it_uses_discord_id_as_primary_key(): void
     {
@@ -35,12 +29,6 @@ class UserTest extends ModelTestCase
         $this->assertSame('string', $model->getKeyType());
         $this->assertFalse($model->getIncrementing());
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Fillable attributes
-    |--------------------------------------------------------------------------
-    */
 
     #[Test]
     public function it_has_expected_fillable_attributes(): void
@@ -66,12 +54,6 @@ class UserTest extends ModelTestCase
         $this->assertNotContains('password', $model->getFillable());
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Casts
-    |--------------------------------------------------------------------------
-    */
-
     #[Test]
     public function it_has_expected_casts(): void
     {
@@ -83,12 +65,6 @@ class UserTest extends ModelTestCase
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Default attributes
-    |--------------------------------------------------------------------------
-    */
-
     #[Test]
     public function it_defaults_is_admin_to_false(): void
     {
@@ -96,12 +72,6 @@ class UserTest extends ModelTestCase
 
         $this->assertFalse($model->is_admin);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Hidden attributes
-    |--------------------------------------------------------------------------
-    */
 
     #[Test]
     public function it_has_expected_hidden_attributes(): void
@@ -118,11 +88,7 @@ class UserTest extends ModelTestCase
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Mutators and accessors
-    |--------------------------------------------------------------------------
-    */
+    // ==================== accessors ====================
 
     #[Test]
     public function display_name_returns_nickname_when_set(): void
@@ -227,11 +193,7 @@ class UserTest extends ModelTestCase
         $this->assertNull($user->banner_url);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Discord roles relationship
-    |--------------------------------------------------------------------------
-    */
+    // ==================== persistence and discord roles ====================
 
     #[Test]
     public function it_persists_with_discord_id_as_primary_key(): void
@@ -367,11 +329,7 @@ class UserTest extends ModelTestCase
         $this->assertNull($user->highestRole());
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Planned absences relationships
-    |--------------------------------------------------------------------------
-    */
+    // ==================== planned absences relationships ====================
 
     #[Test]
     public function planned_absences_returns_has_many_relationship(): void
@@ -409,12 +367,6 @@ class UserTest extends ModelTestCase
         $this->assertInstanceOf(HasMany::class, $model->plannedAbsencesCreated());
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Planned absences created relationships
-    |--------------------------------------------------------------------------
-    */
-
     #[Test]
     public function planned_absences_created_returns_absences_created_by_user(): void
     {
@@ -435,11 +387,7 @@ class UserTest extends ModelTestCase
         $this->assertCount(0, $user->plannedAbsencesCreated);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Permissions
-    |--------------------------------------------------------------------------
-    */
+    // ==================== permissions ====================
 
     #[Test]
     public function permissions_returns_empty_collection_when_user_has_no_roles(): void

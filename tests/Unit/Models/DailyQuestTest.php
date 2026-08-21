@@ -82,6 +82,8 @@ class DailyQuestTest extends ModelTestCase
         ]);
     }
 
+    // ==================== persistence ====================
+
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
@@ -94,6 +96,8 @@ class DailyQuestTest extends ModelTestCase
         $this->assertTableHas(['name' => 'Test Quest']);
         $this->assertModelExists($quest);
     }
+
+    // ==================== factory states ====================
 
     #[Test]
     public function factory_creates_valid_model(): void
@@ -152,6 +156,8 @@ class DailyQuestTest extends ModelTestCase
         $this->assertNotNull($quest->instance);
     }
 
+    // ==================== rewards relationship ====================
+
     #[Test]
     public function rewards_relationship_returns_attached_items_with_quantity(): void
     {
@@ -165,6 +171,8 @@ class DailyQuestTest extends ModelTestCase
         $this->assertTrue($quest->rewards->contains($item));
         $this->assertSame(3, (int) $quest->rewards->first()->pivot->quantity);
     }
+
+    // ==================== display name ====================
 
     #[Test]
     public function display_name_returns_plain_name_for_non_dungeon_quests(): void

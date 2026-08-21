@@ -26,9 +26,7 @@ class FetchReportsByGuildTagTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==========================================
-    // Happy Path
-    // ==========================================
+    // ==================== happy path ====================
 
     #[Test]
     public function it_persists_reports_for_the_given_guild_tag(): void
@@ -91,9 +89,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $this->assertDatabaseHas('raid_reports', ['code' => 'ZONE01', 'zone_id' => 2000]);
     }
 
-    // ==========================================
-    // Time Filters
-    // ==========================================
+    // ==================== time filters ====================
 
     #[Test]
     public function it_applies_the_since_time_filter(): void
@@ -144,9 +140,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $job->handle($reportsService);
     }
 
-    // ==========================================
-    // Batch Cancellation
-    // ==========================================
+    // ==================== batch cancellation ====================
 
     #[Test]
     public function it_skips_execution_when_batch_is_cancelled(): void
@@ -166,9 +160,7 @@ class FetchReportsByGuildTagTest extends TestCase
         dispatch_sync($job);
     }
 
-    // ==========================================
-    // Report Linking — Same Raid Day
-    // ==========================================
+    // ==================== report linking — same raid day ====================
 
     protected function mockReportsService(array $reports): Reports
     {
@@ -315,9 +307,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $this->assertDatabaseHas('raid_report_links', ['report_1' => $r2Id, 'report_2' => $r1Id, 'created_by' => $officer->id]);
     }
 
-    // ==========================================
-    // Touching
-    // ==========================================
+    // ==================== touching ====================
 
     #[Test]
     public function it_touches_report_updated_at_when_auto_links_are_inserted(): void

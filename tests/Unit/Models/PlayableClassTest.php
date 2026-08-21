@@ -52,6 +52,8 @@ class PlayableClassTest extends ModelTestCase
         ]);
     }
 
+    // ==================== persistence ====================
+
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
@@ -70,7 +72,7 @@ class PlayableClassTest extends ModelTestCase
         $this->assertModelExists($playableClass);
     }
 
-    // slug
+    // ==================== slug ====================
 
     #[Test]
     public function slug_returns_kebab_case_of_name(): void
@@ -88,7 +90,7 @@ class PlayableClassTest extends ModelTestCase
         $this->assertSame('warrior', $playableClass->slug);
     }
 
-    // characters
+    // ==================== characters relationship ====================
 
     #[Test]
     public function characters_returns_has_many_relationship(): void
@@ -106,7 +108,7 @@ class PlayableClassTest extends ModelTestCase
         $this->assertCount(0, $playableClass->characters);
     }
 
-    // specializations
+    // ==================== specializations relationship ====================
 
     #[Test]
     public function specializations_returns_has_many_relationship(): void

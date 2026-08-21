@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\LootPriority;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -69,6 +70,8 @@ class PriorityResourceTest extends TestCase
     #[Test]
     public function it_returns_media_url_when_icon_is_attached(): void
     {
+        Storage::fake('public');
+
         $priority = LootPriority::factory()->create();
         $priority->addMediaFromString('BINARY')
             ->usingFileName('inv_shield_04.jpg')

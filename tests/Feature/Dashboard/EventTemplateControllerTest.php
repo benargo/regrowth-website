@@ -7,20 +7,19 @@ use App\Models\Event;
 use App\Models\Permission;
 use App\Models\Raid;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class EventTemplateControllerTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected DiscordRole $officerRole;
@@ -46,14 +45,10 @@ class EventTemplateControllerTest extends TestCase
         $this->officer = User::factory()->create();
         $this->officer->discordRoles()->attach($this->officerRole->id);
 
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')->andReturn(
-                Channel::from(['id' => '123456789', 'name' => 'raids', 'position' => 1]),
-            )->byDefault();
-        });
+        $this->mockDiscordChannel(name: 'raids', position: 1, byDefault: true);
     }
 
-    // ─── index ───────────────────────────────────────────────────────────────────
+    // ==================== index ====================
 
     #[Test]
     public function it_renders_the_index_page_for_officers(): void
@@ -116,7 +111,7 @@ class EventTemplateControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    // ─── create ──────────────────────────────────────────────────────────────────
+    // ==================== create ====================
 
     #[Test]
     public function it_renders_the_create_page_with_raids(): void
@@ -133,7 +128,7 @@ class EventTemplateControllerTest extends TestCase
         );
     }
 
-    // ─── store ───────────────────────────────────────────────────────────────────
+    // ==================== store ====================
 
     #[Test]
     public function it_creates_a_template_and_redirects_to_edit(): void
@@ -179,7 +174,7 @@ class EventTemplateControllerTest extends TestCase
         $response->assertSessionHasErrors('raid_ids');
     }
 
-    // ─── edit ────────────────────────────────────────────────────────────────────
+    // ==================== edit ====================
 
     #[Test]
     public function it_renders_the_edit_page_for_a_template(): void
@@ -222,7 +217,7 @@ class EventTemplateControllerTest extends TestCase
         );
     }
 
-    // ─── update ──────────────────────────────────────────────────────────────────
+    // ==================== update ====================
 
     #[Test]
     public function it_updates_the_template_title_and_raids(): void
@@ -245,7 +240,7 @@ class EventTemplateControllerTest extends TestCase
         $this->assertTrue($template->raids()->where('raids.id', $raidB->id)->exists());
     }
 
-    // ─── destroy ─────────────────────────────────────────────────────────────────
+    // ==================== destroy ====================
 
     #[Test]
     public function it_deletes_a_template_and_redirects_to_index(): void

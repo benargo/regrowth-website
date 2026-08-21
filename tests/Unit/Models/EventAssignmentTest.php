@@ -24,7 +24,7 @@ class EventAssignmentTest extends ModelTestCase
         return EventAssignment::class;
     }
 
-    // ============ Schema / config ============
+    // ==================== schema / config ====================
 
     #[Test]
     public function it_uses_event_assignments_table(): void
@@ -81,7 +81,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertTrue($model->usesTimestamps());
     }
 
-    // ============ Factory / persistence ============
+    // ==================== factory / persistence ====================
 
     #[Test]
     public function factory_creates_valid_model(): void
@@ -116,7 +116,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertSame($boss->id, $assignment->boss_id);
     }
 
-    // ============ Left-side column variants ============
+    // ==================== left-side column variants ====================
 
     #[Test]
     public function it_supports_left_character(): void
@@ -156,7 +156,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertSame('All mages', $assignment->left_value);
     }
 
-    // ============ Right-side column variants ============
+    // ==================== right-side column variants ====================
 
     #[Test]
     public function it_supports_right_character(): void
@@ -206,7 +206,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertSame('kick rotation A', $assignment->right_value);
     }
 
-    // ============ Resolver tests ============
+    // ==================== resolver tests ====================
 
     #[Test]
     public function resolve_left_returns_character_model_when_model_key_is_character(): void
@@ -264,7 +264,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertSame('Main tank', $resolved);
     }
 
-    // ============ Invariant ============
+    // ==================== invariant ====================
 
     #[Test]
     public function is_valid_returns_true_when_both_values_are_present(): void
@@ -290,7 +290,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertFalse($assignment->isValid());
     }
 
-    // ============ Relationships ============
+    // ==================== relationships ====================
 
     #[Test]
     public function it_belongs_to_an_event(): void
@@ -341,7 +341,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertNull($assignment->group);
     }
 
-    // ============ Cascade deletes ============
+    // ==================== cascade deletes ====================
 
     #[Test]
     public function deleting_event_cascades_to_assignments(): void
@@ -365,7 +365,7 @@ class EventAssignmentTest extends ModelTestCase
         $this->assertDatabaseMissing('event_assignments', ['id' => $assignment->id]);
     }
 
-    // ============ Event::assignments() and Boss::assignments() ============
+    // ==================== event::assignments() and boss::assignments() ====================
 
     #[Test]
     public function event_has_many_assignments(): void

@@ -55,6 +55,8 @@ class TargetMarkerTest extends ModelTestCase
         $this->assertFillable($model, ['slug', 'name']);
     }
 
+    // ==================== persistence ====================
+
     #[Test]
     public function it_can_be_created_with_slug_and_name(): void
     {

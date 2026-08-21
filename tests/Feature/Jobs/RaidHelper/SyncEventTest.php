@@ -32,6 +32,8 @@ class SyncEventTest extends TestCase
         config()->set('services.raidhelper.channel_ids', ['100000000000000001']);
     }
 
+    // ==================== event upsert ====================
+
     #[Test]
     public function it_creates_a_new_event_from_event_data(): void
     {
@@ -71,6 +73,8 @@ class SyncEventTest extends TestCase
         $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
         $this->assertTrue($event->raids->contains($raid));
     }
+
+    // ==================== bench sync ====================
 
     #[Test]
     public function it_marks_signed_up_characters_not_in_the_comp_as_benched(): void
@@ -217,6 +221,8 @@ class SyncEventTest extends TestCase
         $this->assertTrue($event->characters()->where('character_id', $slotted->id)->exists());
     }
 
+    // ==================== channel filtering ====================
+
     #[Test]
     public function it_does_not_upsert_an_event_from_an_unlisted_channel(): void
     {
@@ -243,6 +249,8 @@ class SyncEventTest extends TestCase
         ]);
     }
 
+    // ==================== timezone handling ====================
+
     #[Test]
     public function it_captures_the_timezone_at_construction_time(): void
     {
@@ -263,6 +271,8 @@ class SyncEventTest extends TestCase
             'start_time' => $expected,
         ]);
     }
+
+    // ==================== side effects ====================
 
     #[Test]
     public function it_broadcasts_composition_changed(): void
@@ -303,6 +313,8 @@ class SyncEventTest extends TestCase
 
         $this->assertNull(Cache::tags(['events'])->get('events:test'));
     }
+
+    // ==================== helpers ====================
 
     /**
      * @param  array<string, mixed>  $overrides

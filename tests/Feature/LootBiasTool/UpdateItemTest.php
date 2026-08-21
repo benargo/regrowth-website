@@ -55,9 +55,7 @@ class UpdateItemTest extends TestCase
         return route('loot.items.edit', ['item' => $item->id, 'slug' => $item->slug ?: "item-{$item->id}"]);
     }
 
-    // ==========================================
-    // Authentication and authorization
-    // ==========================================
+    // ==================== update ====================
 
     #[Group('authorization')]
     #[Test]
@@ -100,9 +98,7 @@ class UpdateItemTest extends TestCase
             );
     }
 
-    // ==========================================
-    // Notes-only payload
-    // ==========================================
+    // ==================== notes-only payload ====================
 
     #[Test]
     public function update_saves_notes_when_notes_payload_sent(): void
@@ -203,9 +199,7 @@ class UpdateItemTest extends TestCase
         $this->assertEquals('Updated notes', $item->notes);
     }
 
-    // ==========================================
-    // Priorities-only payload
-    // ==========================================
+    // ==================== priorities-only payload ====================
 
     #[Test]
     public function update_syncs_priorities_when_priorities_payload_sent(): void
@@ -312,9 +306,7 @@ class UpdateItemTest extends TestCase
         $this->assertEquals([0, 0], $weights);
     }
 
-    // ==========================================
-    // Combined payload
-    // ==========================================
+    // ==================== combined payload ====================
 
     #[Test]
     public function update_saves_both_notes_and_priorities_in_single_request(): void
@@ -339,9 +331,7 @@ class UpdateItemTest extends TestCase
         $this->assertTrue($item->priorities->contains('id', $priority->id));
     }
 
-    // ==========================================
-    // Independent field behaviour (sometimes)
-    // ==========================================
+    // ==================== independent field behaviour (sometimes) ====================
 
     #[Test]
     public function update_notes_only_leaves_priorities_untouched(): void
@@ -382,9 +372,7 @@ class UpdateItemTest extends TestCase
         $this->assertCount(1, $item->priorities);
     }
 
-    // ==========================================
-    // Trash items (no boss)
-    // ==========================================
+    // ==================== trash items (no boss) ====================
 
     #[Test]
     public function officers_can_update_a_trash_item_with_no_boss(): void
@@ -399,9 +387,7 @@ class UpdateItemTest extends TestCase
         $this->assertDatabaseHas('items', ['id' => $item->id, 'notes' => 'Trash notes']);
     }
 
-    // ==========================================
-    // Origin raid selection
-    // ==========================================
+    // ==================== origin raid selection ====================
 
     #[Test]
     public function update_reloads_with_the_remembered_origin_raid(): void
@@ -438,9 +424,7 @@ class UpdateItemTest extends TestCase
             );
     }
 
-    // ==========================================
-    // Broadcasting
-    // ==========================================
+    // ==================== broadcasting ====================
 
     #[Test]
     public function update_dispatches_item_updated_broadcast_on_success(): void
@@ -476,9 +460,7 @@ class UpdateItemTest extends TestCase
         Event::assertNotDispatched(ItemUpdated::class);
     }
 
-    // ==========================================
-    // Blizzard API isolation
-    // ==========================================
+    // ==================== blizzard api isolation ====================
 
     #[Test]
     public function update_does_not_call_blizzard_api(): void

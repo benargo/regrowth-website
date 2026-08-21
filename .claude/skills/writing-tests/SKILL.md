@@ -23,6 +23,7 @@ description: Use when writing, creating, or editing PHPUnit test classes in this
 | Faker style          | Match existing file convention (`$this->faker` or `fake()`)                                       |
 | Create test file     | `sail artisan make:test {Name}` (feature) or `--unit` (unit)                                      |
 | Helper methods       | Bottom of class, after all `#[Test]` methods                                                      |
+| Section separators   | `// ==================== label ====================` — lowercase, names the subject under test |
 | Default test type    | Feature test unless testing a single class in isolation                                           |
 
 ## Test Method Notation
@@ -184,6 +185,49 @@ class PhaseTest extends TestCase
 - **Domain groups** go on the **class**. Add more than one only when the subject genuinely spans domains.
 - **Behaviour groups** go on **methods**. Add them only where the behaviour axis is selective — not on every method.
 - Run a group with: `vendor/bin/sail artisan test --group=<name> --compact`
+
+## Section Separators
+
+Test classes with **11 or more** `#[Test]` methods must divide themselves into
+sections. Classes with 10 or fewer may, but need not.
+
+The canonical separator is a single line: exactly 20 `=`, one space, a lowercase
+label, one space, exactly 20 `=`. It sits at one indent level inside the class
+body with exactly one blank line either side.
+
+```php
+    // ==================== toArray ====================
+
+    #[Test]
+    public function to_array_exposes_the_body(): void
+    {
+        // ...
+    }
+```
+
+**Label rules:**
+
+- Lowercase, always.
+- Name the **method or subject under test** — `rules`, `toArray`, `resolveBaseUrl`,
+  `index`, `store`. For controller feature tests, use the controller action.
+- Do **not** name a behaviour axis (`validation`, `authorization`, `happy path`).
+  Behaviour is already encoded by method-level `#[Group]` attributes, and a label
+  that repeats it adds nothing. A compound label is fine when the action leads:
+  `store — validation`.
+- Drop a trailing "tests" — the class is already a test class.
+- The helper block at the bottom of the class is introduced by a separator
+  labelled exactly `helpers`.
+
+**Placement:** a separator never appears as the first line of the class body. The
+first group of methods is unlabelled; the first separator marks the first change
+of subject. Aim for 2–6 sections per class — one section per method is noise.
+
+Do not use the older box-banner form (`// ====` / `// Label` / `// ====`) or a
+bare `// Label` line. Both have been migrated away.
+
+This rule is machine-enforced by `tests/Unit/TestSuiteDocumentationStandardTest.php`,
+which fails if any separator deviates from the canonical format, if a separator
+lacks its surrounding blank lines, or if a class with 11+ tests has no sections.
 
 ## Helper Methods
 

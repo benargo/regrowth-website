@@ -46,6 +46,8 @@ class BossResourceTest extends TestCase
         $this->assertSame('Prince Malchezaar', $array['name']);
     }
 
+    // ==================== encounter order ====================
+
     #[Test]
     public function it_returns_encounter_order(): void
     {
@@ -55,6 +57,8 @@ class BossResourceTest extends TestCase
 
         $this->assertSame(3, $array['encounter_order']);
     }
+
+    // ==================== raid relation ====================
 
     #[Test]
     public function it_includes_raid_resource_when_loaded(): void
@@ -79,6 +83,8 @@ class BossResourceTest extends TestCase
         $this->assertSame($boss->raid_id, $array['raid']);
     }
 
+    // ==================== items relation ====================
+
     #[Test]
     public function it_includes_items_when_loaded(): void
     {
@@ -102,6 +108,8 @@ class BossResourceTest extends TestCase
         $this->assertArrayNotHasKey('items', $array);
     }
 
+    // ==================== notes ====================
+
     #[Test]
     public function it_returns_notes(): void
     {
@@ -122,6 +130,8 @@ class BossResourceTest extends TestCase
         $this->assertNull($array['notes']);
     }
 
+    // ==================== slug ====================
+
     #[Test]
     public function it_returns_slug(): void
     {
@@ -131,6 +141,8 @@ class BossResourceTest extends TestCase
 
         $this->assertSame('prince-malchezaar', $array['slug']);
     }
+
+    // ==================== images ====================
 
     #[Test]
     public function it_returns_images_array(): void
@@ -143,6 +155,8 @@ class BossResourceTest extends TestCase
         $this->assertIsArray($array['images']);
         $this->assertEmpty($array['images']);
     }
+
+    // ==================== comments count ====================
 
     #[Test]
     public function it_returns_comments_count_when_counted(): void
@@ -165,6 +179,8 @@ class BossResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('comments_count', $array);
     }
+
+    // ==================== full resource shape ====================
 
     #[Test]
     public function it_returns_all_expected_keys(): void

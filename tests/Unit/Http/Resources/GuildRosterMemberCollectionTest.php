@@ -64,6 +64,8 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertSame('Warden', $result[0]['rank']);
     }
 
+    // ==================== rank resolution ====================
+
     #[Group('contract')]
     #[Test]
     public function it_returns_null_rank_name_when_no_matching_guild_rank_exists(): void
@@ -72,6 +74,8 @@ class GuildRosterMemberCollectionTest extends TestCase
 
         $this->assertNull($result[0]['rank']);
     }
+
+    // ==================== excluded keys ====================
 
     #[Group('contract')]
     #[Test]
@@ -91,6 +95,8 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertArrayNotHasKey('playable_class', $result[0]['character']);
         $this->assertArrayNotHasKey('playable_race', $result[0]['character']);
     }
+
+    // ==================== is known and is main ====================
 
     #[Group('contract')]
     #[Test]
@@ -143,6 +149,8 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertFalse($result[0]['character']['is_known']);
     }
 
+    // ==================== specializations ====================
+
     #[Group('contract')]
     #[Test]
     public function it_returns_empty_specializations_for_unknown_character(): void
@@ -180,6 +188,8 @@ class GuildRosterMemberCollectionTest extends TestCase
         $this->assertSame([], $result[0]['character']['specializations']);
     }
 
+    // ==================== sort order ====================
+
     #[Group('contract')]
     #[Test]
     public function it_sorts_by_rank_then_level_descending_then_name(): void
@@ -205,6 +215,8 @@ class GuildRosterMemberCollectionTest extends TestCase
             ['name' => 'Carl', 'rank' => 'Raider'],
         ], array_map(fn ($r) => ['name' => $r['character']['name'], 'rank' => $r['rank']], $result));
     }
+
+    // ==================== helpers ====================
 
     private function makeMember(
         int $id = 1,

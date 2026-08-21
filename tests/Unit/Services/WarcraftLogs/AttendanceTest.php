@@ -114,7 +114,7 @@ class AttendanceTest extends TestCase
         );
     }
 
-    // ==================== Fluent Builder Tests ====================
+    // ==================== fluent builder ====================
 
     #[Test]
     public function player_names_returns_self_for_chaining(): void

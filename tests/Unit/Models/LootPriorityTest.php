@@ -59,6 +59,8 @@ class LootPriorityTest extends ModelTestCase
         $this->assertModelExists($priority);
     }
 
+    // ==================== media ====================
+
     #[Test]
     public function it_implements_has_media(): void
     {
@@ -80,6 +82,8 @@ class LootPriorityTest extends ModelTestCase
 
         $this->assertTrue($collections->contains(fn ($c) => $c->name === 'blizzard_icons'));
     }
+
+    // ==================== factory states ====================
 
     #[Test]
     public function factory_creates_valid_model(): void
@@ -114,6 +118,8 @@ class LootPriorityTest extends ModelTestCase
 
         $this->assertSame('spec', $priority->type);
     }
+
+    // ==================== items relationship ====================
 
     #[Test]
     public function it_belongs_to_many_items(): void

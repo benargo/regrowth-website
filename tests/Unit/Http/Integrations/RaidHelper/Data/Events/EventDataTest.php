@@ -19,10 +19,6 @@ class EventDataTest extends TestCase
 {
     use RefreshDatabase;
 
-    // -------------------------------------------------------------------------
-    // Required fields (both endpoints)
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function it_constructs_from_a_listing_payload(): void
     {
@@ -52,9 +48,7 @@ class EventDataTest extends TestCase
         $this->assertSame('20:00', $event->time);
     }
 
-    // -------------------------------------------------------------------------
-    // Carbon casting
-    // -------------------------------------------------------------------------
+    // ==================== carbon casting ====================
 
     #[Test]
     public function it_casts_timestamp_fields_to_carbon_instances(): void
@@ -78,9 +72,7 @@ class EventDataTest extends TestCase
         $this->assertSame(1746230400, $event->lastUpdated->unix());
     }
 
-    // -------------------------------------------------------------------------
-    // Optional nullable fields
-    // -------------------------------------------------------------------------
+    // ==================== optional nullable fields ====================
 
     #[Test]
     public function detail_only_fields_default_to_null_when_omitted(): void
@@ -166,9 +158,7 @@ class EventDataTest extends TestCase
         $this->assertSame('Jaina', $event->signUps[0]->name);
     }
 
-    // -------------------------------------------------------------------------
-    // Nested hydration
-    // -------------------------------------------------------------------------
+    // ==================== nested hydration ====================
 
     #[Test]
     public function it_hydrates_advanced_settings_as_an_event_advanced_settings_instance(): void
@@ -213,9 +203,7 @@ class EventDataTest extends TestCase
         $this->assertSame('Healer', $event->roles[0]->name);
     }
 
-    // -------------------------------------------------------------------------
-    // user()
-    // -------------------------------------------------------------------------
+    // ==================== user ====================
 
     #[Test]
     public function user_returns_null_when_leader_id_does_not_match_a_user(): void
@@ -237,9 +225,7 @@ class EventDataTest extends TestCase
         $this->assertSame($user->id, $result->id);
     }
 
-    // -------------------------------------------------------------------------
-    // rules()
-    // -------------------------------------------------------------------------
+    // ==================== rules ====================
 
     #[Test]
     public function rules_returns_time_ordering_constraints(): void
@@ -257,9 +243,7 @@ class EventDataTest extends TestCase
         $this->assertContains('before_or_equal:startTime', $rules['closingTime']);
     }
 
-    // -------------------------------------------------------------------------
-    // toArray()
-    // -------------------------------------------------------------------------
+    // ==================== toArray ====================
 
     #[Test]
     public function to_array_produces_snake_case_keys_for_listing_payload(): void
@@ -297,9 +281,7 @@ class EventDataTest extends TestCase
         $this->assertArrayHasKey('sign_ups', $array);
     }
 
-    // -------------------------------------------------------------------------
-    // New optional fields
-    // -------------------------------------------------------------------------
+    // ==================== new optional fields ====================
 
     #[Test]
     public function new_fields_default_to_null_when_omitted(): void
@@ -362,9 +344,7 @@ class EventDataTest extends TestCase
         $this->assertSame(16, $event->signUpCount);
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
+    // ==================== helpers ====================
 
     /**
      * Minimal payload as returned by the listing endpoint (/events).

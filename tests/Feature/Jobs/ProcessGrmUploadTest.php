@@ -15,10 +15,8 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\User;
 use App\Services\Discord\Discord;
-use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Exceptions\RateLimitedException;
 use App\Services\Discord\Resources\Channel as ChannelResource;
-use App\Services\Discord\Resources\Message as MessageResource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
@@ -29,11 +27,13 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\OAuth2\GetClientCredentialsTokenBasicAuthRequest;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('characters')]
 class ProcessGrmUploadTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     private Discord $discord;
@@ -54,9 +54,11 @@ class ProcessGrmUploadTest extends TestCase
 
         $this->discord = $this->mock(Discord::class, function (MockInterface $mock) use ($channel) {
             $mock->shouldReceive('getChannel')->andReturn($channel);
-            $mock->shouldReceive('createMessage')->andReturn($this->makeMessage());
+            $mock->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119'));
         });
     }
+
+    // ==================== character creation ====================
 
     #[Test]
     public function it_creates_character_from_csv_row(): void
@@ -119,6 +121,8 @@ class ProcessGrmUploadTest extends TestCase
             'is_main' => false,
         ]);
     }
+
+    // ==================== alt linking ====================
 
     #[Test]
     public function it_creates_character_links_for_main_with_alts(): void
@@ -218,6 +222,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseCount('character_links', 4);
     }
 
+    // ==================== error handling ====================
+
     #[Test]
     public function it_continues_processing_on_individual_row_error(): void
     {
@@ -245,7 +251,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
             $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeMessage();
+            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
 
             $mock->shouldReceive('getChannel')->andReturn($channel);
             $mock->shouldReceive('createMessage')
@@ -276,7 +282,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
             $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeMessage();
+            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
 
             $mock->shouldReceive('getChannel')->andReturn($channel);
             $mock->shouldReceive('createMessage')
@@ -305,7 +311,7 @@ class ProcessGrmUploadTest extends TestCase
 
         $discordMock = $this->mock(Discord::class, function (MockInterface $mock) {
             $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
-            $message = $this->makeMessage();
+            $message = $this->makeDiscordMessage(id: '9999999999999999999', channelId: '1407688195386114119');
 
             $mock->shouldReceive('getChannel')->andReturn($channel);
             $mock->shouldReceive('createMessage')
@@ -324,6 +330,8 @@ class ProcessGrmUploadTest extends TestCase
 
         $job->handle(app(BlizzardConnector::class), $discordMock);
     }
+
+    // ==================== data integrity ====================
 
     #[Test]
     public function it_does_not_create_duplicate_character_links(): void
@@ -376,6 +384,8 @@ class ProcessGrmUploadTest extends TestCase
             'is_main' => true,
         ]);
     }
+
+    // ==================== grm upload processed event ====================
 
     #[Test]
     public function it_dispatches_grm_upload_processed_event_once_after_successful_batch(): void
@@ -466,6 +476,8 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseCount('characters', 0);
     }
 
+    // ==================== rate limiting ====================
+
     #[Test]
     public function it_releases_itself_when_discord_is_rate_limited_sending_notification(): void
     {
@@ -490,6 +502,8 @@ class ProcessGrmUploadTest extends TestCase
         $job->assertReleased(5.0);
         $this->assertDatabaseHas('characters', ['id' => 12345]);
     }
+
+    // ==================== progress broadcasts ====================
 
     #[Test]
     public function it_broadcasts_started_with_the_total_row_count(): void
@@ -605,6 +619,8 @@ class ProcessGrmUploadTest extends TestCase
         });
     }
 
+    // ==================== timestamp integrity ====================
+
     #[Test]
     public function it_does_not_touch_related_model_timestamps(): void
     {
@@ -651,21 +667,7 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertEquals($originalAltTwoUpdatedAt, $altTwo->updated_at, 'Existing alt characters should not be touched');
     }
 
-    private function makeMessage(): MessageResource
-    {
-        return MessageResource::from([
-            'id' => '9999999999999999999',
-            'channel_id' => '1407688195386114119',
-            'timestamp' => '2024-01-01T00:00:00.000000+00:00',
-            'tts' => false,
-            'mention_everyone' => false,
-            'mention_roles' => [],
-            'attachments' => [],
-            'embeds' => [],
-            'pinned' => false,
-            'type' => MessageType::Default,
-        ]);
-    }
+    // ==================== helpers ====================
 
     /**
      * Fake the Blizzard character status/profile endpoints.

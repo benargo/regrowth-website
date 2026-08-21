@@ -102,6 +102,8 @@ class FetchCharacterPortraitRequestTest extends TestCase
         );
     }
 
+    // ==================== invalid urls ====================
+
     #[Group('error-handling')]
     #[Test]
     public function it_rejects_non_blizzard_hosts(): void
@@ -138,6 +140,8 @@ class FetchCharacterPortraitRequestTest extends TestCase
         new FetchCharacterPortraitRequest('51042439-avatar');
     }
 
+    // ==================== sending through connector ====================
+
     #[Test]
     public function it_sends_through_render_connector_to_the_given_url(): void
     {
@@ -158,6 +162,8 @@ class FetchCharacterPortraitRequestTest extends TestCase
             $mock->getLastPendingRequest()->getUrl(),
         );
     }
+
+    // ==================== building endpoint from bare portrait path ====================
 
     #[Test]
     public function it_builds_an_endpoint_from_a_bare_portrait_path_using_the_connectors_region(): void

@@ -18,12 +18,24 @@ use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\PendingRequest;
 use Saloon\Laravel\Facades\Saloon;
+use Tests\Support\Database\Seeders\LimitsItemSeederFixtures;
 use Tests\TestCase;
 
 #[Group('loot')]
 class MigrateItemRaidRelationshipsTest extends TestCase
 {
+    use LimitsItemSeederFixtures;
     use RefreshDatabase;
+
+    /**
+     * Item ids the ItemSeeder step is limited to, so the command's tests
+     * don't process all 702 real items. Includes 28453 (used by the
+     * skip-on-404 test) and the cross-raid trash items asserted on by
+     * it_links_the_cross_raid_trash_items_to_both_raids().
+     *
+     * @var array<int, int>
+     */
+    private const array LIMITED_ITEM_IDS = [28453, 32589, 32590, 32591, 32592, 32609, 34009];
 
     /**
      * This test runs real migrations mid-test (DDL), which triggers an
@@ -45,6 +57,8 @@ class MigrateItemRaidRelationshipsTest extends TestCase
         $this->seed([PhaseSeeder::class, RaidSeeder::class, BossSeeder::class]);
 
         $this->fakeSaloon();
+
+        $this->limitItemSeederTo(self::LIMITED_ITEM_IDS);
     }
 
     protected function tearDown(): void

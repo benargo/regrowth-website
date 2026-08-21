@@ -29,6 +29,8 @@ class RaidResourceTest extends TestCase
         $this->assertSame($raid->id, $array['id']);
     }
 
+    // ==================== name and slug ====================
+
     #[Test]
     public function it_returns_name(): void
     {
@@ -38,6 +40,8 @@ class RaidResourceTest extends TestCase
 
         $this->assertSame('Karazhan', $array['name']);
     }
+
+    // ==================== difficulty and player count ====================
 
     #[Test]
     public function it_does_not_return_difficulty(): void
@@ -58,6 +62,8 @@ class RaidResourceTest extends TestCase
 
         $this->assertSame(25, $array['max_players']);
     }
+
+    // ==================== phase relation ====================
 
     #[Test]
     public function it_includes_phase_number_when_phase_loaded(): void
@@ -81,6 +87,8 @@ class RaidResourceTest extends TestCase
         $this->assertArrayNotHasKey('phase_number', $array);
     }
 
+    // ==================== bosses relation ====================
+
     #[Test]
     public function it_includes_bosses_when_loaded(): void
     {
@@ -103,6 +111,8 @@ class RaidResourceTest extends TestCase
         $this->assertArrayNotHasKey('bosses', $array);
     }
 
+    // ==================== slug field ====================
+
     #[Test]
     public function it_returns_slug(): void
     {
@@ -113,6 +123,8 @@ class RaidResourceTest extends TestCase
         $this->assertArrayHasKey('slug', $array);
         $this->assertSame($raid->slug, $array['slug']);
     }
+
+    // ==================== max loot councillors ====================
 
     #[Test]
     public function it_returns_max_loot_councillors_when_set(): void
@@ -133,6 +145,8 @@ class RaidResourceTest extends TestCase
 
         $this->assertNull($array['max_loot_councillors']);
     }
+
+    // ==================== color and background ====================
 
     #[Test]
     public function it_returns_color(): void
@@ -164,6 +178,8 @@ class RaidResourceTest extends TestCase
 
         $this->assertNull($array['background']);
     }
+
+    // ==================== has trash items ====================
 
     #[Test]
     public function it_returns_true_for_has_trash_items_when_trash_items_exist(): void
@@ -198,6 +214,8 @@ class RaidResourceTest extends TestCase
 
         $this->assertArrayNotHasKey('has_trash_items', $array);
     }
+
+    // ==================== trash comments count ====================
 
     #[Test]
     public function it_returns_trash_comments_count_when_counted(): void
@@ -245,6 +263,8 @@ class RaidResourceTest extends TestCase
 
         $this->assertSame(3, $array['trash_comments_count']);
     }
+
+    // ==================== full resource shape ====================
 
     #[Test]
     public function it_returns_all_expected_keys(): void

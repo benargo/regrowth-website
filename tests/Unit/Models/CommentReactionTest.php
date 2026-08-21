@@ -56,6 +56,8 @@ class CommentReactionTest extends ModelTestCase
         $this->assertModelExists($reaction);
     }
 
+    // ==================== persistence and factory ====================
+
     #[Test]
     public function factory_creates_valid_model(): void
     {
@@ -84,6 +86,8 @@ class CommentReactionTest extends ModelTestCase
         $this->assertSame($user->id, $reaction->user_id);
     }
 
+    // ==================== relationships ====================
+
     #[Test]
     public function it_belongs_to_a_comment(): void
     {
@@ -103,6 +107,8 @@ class CommentReactionTest extends ModelTestCase
         $this->assertRelation($reaction, 'user', BelongsTo::class);
         $this->assertTrue($reaction->user->is($user));
     }
+
+    // ==================== self reaction prevention ====================
 
     #[Group('error-handling')]
     #[Test]
@@ -224,6 +230,8 @@ class CommentReactionTest extends ModelTestCase
             ->update(['user_id' => $commentAuthor->id]);
     }
 
+    // ==================== deletion ====================
+
     #[Test]
     public function it_can_be_deleted(): void
     {
@@ -258,6 +266,8 @@ class CommentReactionTest extends ModelTestCase
 
         $this->assertNull(CommentReaction::find($reactionId));
     }
+
+    // ==================== reaction multiplicity ====================
 
     #[Test]
     public function multiple_users_can_react_to_same_comment(): void

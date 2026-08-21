@@ -72,6 +72,8 @@ class BossStrategyControllerTest extends DashboardTestCase
         );
     }
 
+    // ==================== show ====================
+
     #[Test]
     public function guests_can_view_a_boss_strategy(): void
     {
@@ -85,6 +87,8 @@ class BossStrategyControllerTest extends DashboardTestCase
             ->has('boss')
         );
     }
+
+    // ==================== edit ====================
 
     #[Test]
     public function edit_returns_boss_with_raid(): void
@@ -127,6 +131,8 @@ class BossStrategyControllerTest extends DashboardTestCase
 
         $response->assertForbidden();
     }
+
+    // ==================== update ====================
 
     #[Test]
     public function update_saves_notes_as_markdown(): void
@@ -265,6 +271,8 @@ class BossStrategyControllerTest extends DashboardTestCase
 
         $response->assertRedirect($editUrl);
     }
+
+    // ==================== update — partial payloads ====================
 
     #[Test]
     public function update_notes_only_partial_update(): void

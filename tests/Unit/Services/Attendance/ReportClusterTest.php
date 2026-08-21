@@ -81,6 +81,8 @@ class ReportClusterTest extends TestCase
         $this->assertInstanceOf(JsonSerializable::class, $cluster);
     }
 
+    // ==================== id ====================
+
     #[Test]
     public function single_report_id_is_the_report_id(): void
     {
@@ -107,6 +109,8 @@ class ReportClusterTest extends TestCase
         $this->assertSame(implode('+', $ids), $cluster->id());
         $this->assertTrue($cluster->isMerged());
     }
+
+    // ==================== code ====================
 
     #[Test]
     public function single_report_code_is_the_report_code(): void
@@ -166,6 +170,8 @@ class ReportClusterTest extends TestCase
         $this->assertNull($cluster->code());
     }
 
+    // ==================== startTime ====================
+
     #[Test]
     public function start_time_is_the_earliest_report_start_time(): void
     {
@@ -178,6 +184,8 @@ class ReportClusterTest extends TestCase
 
         $this->assertTrue($cluster->startTime()->equalTo($early->start_time));
     }
+
+    // ==================== zoneName ====================
 
     #[Test]
     public function zone_name_is_the_zone_of_the_earliest_report(): void
@@ -204,6 +212,8 @@ class ReportClusterTest extends TestCase
 
         $this->assertNull($cluster->zoneName());
     }
+
+    // ==================== players presence resolution ====================
 
     #[Test]
     public function players_contains_one_entry_per_character_for_a_single_report(): void
@@ -277,6 +287,8 @@ class ReportClusterTest extends TestCase
 
         $this->assertSame(2, $cluster->players()['Thrall']->presence);
     }
+
+    // ==================== toArray and jsonSerialize ====================
 
     #[Test]
     public function to_array_emits_the_expected_shape(): void

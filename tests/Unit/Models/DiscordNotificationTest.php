@@ -22,12 +22,6 @@ class DiscordNotificationTest extends ModelTestCase
         return DiscordNotification::class;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Fillable attributes
-    |--------------------------------------------------------------------------
-    */
-
     #[Test]
     public function it_has_expected_fillable_attributes(): void
     {
@@ -42,12 +36,6 @@ class DiscordNotificationTest extends ModelTestCase
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Casts
-    |--------------------------------------------------------------------------
-    */
-
     #[Test]
     public function it_has_expected_casts(): void
     {
@@ -58,12 +46,6 @@ class DiscordNotificationTest extends ModelTestCase
             'payload' => MessagePayload::class,
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Hidden attributes
-    |--------------------------------------------------------------------------
-    */
 
     #[Test]
     public function it_has_expected_hidden_attributes(): void
@@ -76,11 +58,7 @@ class DiscordNotificationTest extends ModelTestCase
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Persistence
-    |--------------------------------------------------------------------------
-    */
+    // ==================== persistence ====================
 
     #[Test]
     public function it_can_be_created_via_factory(): void
@@ -101,11 +79,7 @@ class DiscordNotificationTest extends ModelTestCase
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Relationships — createdByUser
-    |--------------------------------------------------------------------------
-    */
+    // ==================== relationships ====================
 
     #[Test]
     public function created_by_user_returns_belongs_to_relationship(): void
@@ -131,12 +105,6 @@ class DiscordNotificationTest extends ModelTestCase
 
         $this->assertNull($notification->createdByUser);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Relationships — relatedModels
-    |--------------------------------------------------------------------------
-    */
 
     #[Test]
     public function related_models_returns_morph_to_many_relationship(): void
@@ -169,11 +137,7 @@ class DiscordNotificationTest extends ModelTestCase
         $this->assertSame(User::class, $rows->first()->model_type);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Soft deletes
-    |--------------------------------------------------------------------------
-    */
+    // ==================== soft deletes ====================
 
     #[Test]
     public function it_uses_soft_deletes(): void
@@ -205,11 +169,7 @@ class DiscordNotificationTest extends ModelTestCase
         $this->assertNull($notification->deleted_at);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Type cast
-    |--------------------------------------------------------------------------
-    */
+    // ==================== type and payload casts ====================
 
     #[Test]
     public function type_is_stored_and_retrieved_as_fully_qualified_class_name(): void
@@ -218,12 +178,6 @@ class DiscordNotificationTest extends ModelTestCase
 
         $this->assertSame(DailyQuestsMessage::class, $notification->fresh()->type);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Test: Payload cast
-    |--------------------------------------------------------------------------
-    */
 
     #[Test]
     public function payload_is_cast_to_message_payload(): void

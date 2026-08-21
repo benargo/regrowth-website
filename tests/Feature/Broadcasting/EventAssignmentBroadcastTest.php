@@ -26,7 +26,7 @@ class EventAssignmentBroadcastTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ─── EventAssignment model broadcasts ────────────────────────────────────
+    // ==================== event assignment model broadcasts ====================
 
     #[Test]
     public function event_assignment_created_broadcasts_on_private_event_channel(): void
@@ -142,7 +142,7 @@ class EventAssignmentBroadcastTest extends TestCase
         );
     }
 
-    // ─── EventAssignmentGroup model broadcasts ───────────────────────────────
+    // ==================== event assignment group model broadcasts ====================
 
     #[Test]
     public function event_assignment_group_created_broadcasts_on_private_event_channel(): void
@@ -213,7 +213,7 @@ class EventAssignmentBroadcastTest extends TestCase
         );
     }
 
-    // ─── Reorder broadcasts (still controller-level) ─────────────────────────
+    // ==================== reorder broadcasts ====================
 
     #[Test]
     public function assignment_reorder_broadcasts_assignment_changed_with_reordered_action(): void
@@ -297,7 +297,7 @@ class EventAssignmentBroadcastTest extends TestCase
         $this->assertEquals("private-event.{$event->id}", $channels[0]->name);
     }
 
-    // ─── CompositionChanged (still exists for bulk sync) ─────────────────────
+    // ==================== composition changed for bulk sync ====================
 
     #[Test]
     public function composition_changed_broadcasts_on_private_event_channel(): void
@@ -324,7 +324,7 @@ class EventAssignmentBroadcastTest extends TestCase
         $this->assertEquals([], $broadcast->broadcastWith());
     }
 
-    // ─── Cache invalidation ──────────────────────────────────────────────────
+    // ==================== cache invalidation ====================
 
     #[Test]
     public function event_assignment_save_flushes_raiding_cache(): void

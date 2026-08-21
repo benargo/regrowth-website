@@ -91,6 +91,8 @@ class PlannedAbsencePolicyTest extends TestCase
         $this->assertFalse($this->policy->view($user, $absence));
     }
 
+    // ==================== create ====================
+
     #[Test]
     public function it_allows_create_with_permission(): void
     {
@@ -123,6 +125,8 @@ class PlannedAbsencePolicyTest extends TestCase
         $this->assertTrue($this->policy->createBackdated($user));
     }
 
+    // ==================== update ====================
+
     #[Test]
     public function it_allows_update_with_permission(): void
     {
@@ -140,6 +144,8 @@ class PlannedAbsencePolicyTest extends TestCase
 
         $this->assertTrue($this->policy->update($user, $absence));
     }
+
+    // ==================== delete ====================
 
     #[Test]
     public function it_allows_delete_with_permission(): void
@@ -159,6 +165,8 @@ class PlannedAbsencePolicyTest extends TestCase
         $this->assertTrue($this->policy->delete($user, $absence));
     }
 
+    // ==================== restore ====================
+
     #[Test]
     public function it_allows_restore_for_admins(): void
     {
@@ -176,6 +184,8 @@ class PlannedAbsencePolicyTest extends TestCase
 
         $this->assertFalse($this->policy->restore($user, $absence));
     }
+
+    // ==================== force delete ====================
 
     #[Test]
     public function it_allows_force_delete_for_admins(): void

@@ -58,6 +58,8 @@ class NotFoundExceptionTest extends TestCase
         $this->assertStringContainsString('404', $exception->getMessage());
     }
 
+    // ==================== getters ====================
+
     #[Test]
     public function it_exposes_method_via_getter(): void
     {
@@ -111,6 +113,8 @@ class NotFoundExceptionTest extends TestCase
         $this->assertSame($body, $exception->getBlizzardBody());
     }
 
+    // ==================== prefix override ====================
+
     #[Test]
     public function it_allows_subclasses_to_override_the_prefix(): void
     {
@@ -123,6 +127,8 @@ class NotFoundExceptionTest extends TestCase
 
         $this->assertStringContainsString('Custom prefix:', $exception->getMessage());
     }
+
+    // ==================== helpers ====================
 
     private function makeException(
         string $method = 'GET',

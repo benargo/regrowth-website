@@ -40,7 +40,7 @@ class CreateTest extends TestCase
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
-    // ==================== Access Control ====================
+    // ==================== create ====================
 
     #[Test]
     public function create_requires_authentication(): void
@@ -72,7 +72,7 @@ class CreateTest extends TestCase
         $response->assertOk();
     }
 
-    // ==================== Page Props ====================
+    // ==================== page props ====================
 
     #[Test]
     public function create_renders_correct_inertia_component(): void

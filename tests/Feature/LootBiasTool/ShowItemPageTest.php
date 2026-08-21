@@ -41,9 +41,13 @@ class ShowItemPageTest extends TestCase
         $officerRole->givePermissionTo($markCommentAsResolved);
     }
 
+    // ==================== show — access control ====================
+
     #[Test]
     public function show_item_allows_unauthenticated_users(): void
     {
+        $this->mockItemService();
+
         $item = $this->createTestItem();
 
         $response = $this->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
@@ -55,6 +59,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_guest_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
 
@@ -66,6 +72,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_member_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
 
@@ -77,6 +85,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_raider_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
 
@@ -88,6 +98,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_officer_users(): void
     {
+        $this->mockItemService();
+
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
 
@@ -95,6 +107,8 @@ class ShowItemPageTest extends TestCase
 
         $response->assertOk();
     }
+
+    // ==================== show — slug resolution ====================
 
     #[Test]
     public function show_item_redirects_from_null_slug_to_correct_slug(): void
@@ -117,6 +131,8 @@ class ShowItemPageTest extends TestCase
 
         $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
     }
+
+    // ==================== show — rendering ====================
 
     #[Test]
     public function show_item_renders_with_correct_slug(): void
@@ -215,10 +231,14 @@ class ShowItemPageTest extends TestCase
         );
     }
 
+    // ==================== show — comments ====================
+
     #[Group('comments')]
     #[Test]
     public function show_item_eager_loads_reaction_users_for_comments(): void
     {
+        $this->mockItemService();
+
         $item = $this->createTestItem();
         $author = User::factory()->create();
         $comment = Comment::factory()->create([
@@ -468,9 +488,13 @@ class ShowItemPageTest extends TestCase
         );
     }
 
+    // ==================== show — cross-raid items ====================
+
     #[Test]
     public function a_cross_raid_item_exposes_only_one_raid_to_the_page(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
             ->trashDrop()
@@ -488,6 +512,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
             ->trashDrop()
@@ -506,6 +532,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_falls_back_to_the_first_raid_when_the_remembered_raid_does_not_apply(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $otherRaid = Raid::factory()->create();
         $item = Item::factory()
@@ -526,6 +554,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
     {
+        $this->mockItemService();
+
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
             ->trashDrop()
@@ -540,6 +570,8 @@ class ShowItemPageTest extends TestCase
                 ->where('item.data.raids.0.id', $firstRaidId)
             );
     }
+
+    // ==================== helpers ====================
 
     protected function createTestItem(): Item
     {

@@ -30,7 +30,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         Storage::fake('public');
     }
 
-    // ==================== Job Contract ====================
+    // ==================== job contract ====================
 
     #[Group('contract')]
     #[Test]
@@ -75,7 +75,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         new AttachBlizzardIconToModel(\stdClass::class, 1, 'https://example.test/icon.jpg');
     }
 
-    // ==================== Middleware ====================
+    // ==================== middleware ====================
 
     #[Group('contract')]
     #[Test]
@@ -121,7 +121,7 @@ class AttachBlizzardIconToModelTest extends TestCase
         $this->assertSame(60, $middleware->releaseAfter);
     }
 
-    // ==================== Handle ====================
+    // ==================== handle ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -181,9 +181,9 @@ class AttachBlizzardIconToModelTest extends TestCase
         (new AttachBlizzardIconToModel(Item::class, $item->id, $assetUrl))->handle(app(RenderConnector::class));
     }
 
-    // ==================== Retail Asset URL ====================
+    // ==================== retail asset url ====================
 
-    // ==================== Uri Input ====================
+    // ==================== uri input ====================
 
     #[Group('happy-path')]
     #[Test]

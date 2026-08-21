@@ -17,8 +17,6 @@ use Tests\TestCase;
 #[Group('blizzard-integration')]
 class RenderConnectorTest extends TestCase
 {
-    // ==================== resolveBaseUrl ====================
-
     private function makeConnector(Region $region = Region::EU): RenderConnector
     {
         return new RenderConnector($region, Storage::fake('public'));
@@ -44,7 +42,7 @@ class RenderConnectorTest extends TestCase
         $this->assertSame(Region::KR, $this->makeConnector(Region::KR)->getRegion());
     }
 
-    // ==================== Pipeline behaviour ====================
+    // ==================== send ====================
 
     #[Test]
     public function sends_unauthenticated_requests_against_the_render_host(): void

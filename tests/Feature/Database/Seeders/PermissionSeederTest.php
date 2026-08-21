@@ -31,7 +31,7 @@ class PermissionSeederTest extends TestCase
         $this->permissions = $reflection->getValue($seeder);
     }
 
-    // ==================== Schema Validation ====================
+    // ==================== schema validation ====================
 
     #[Test]
     public function every_permission_entry_has_a_name_key(): void
@@ -109,7 +109,7 @@ class PermissionSeederTest extends TestCase
         }
     }
 
-    // ==================== Seeder Behaviour ====================
+    // ==================== seeder behaviour ====================
 
     #[Test]
     public function seeder_creates_all_defined_permissions(): void

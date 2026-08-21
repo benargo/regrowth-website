@@ -10,8 +10,6 @@ use Tests\TestCase;
 #[Group('characters')]
 class PlayableSpecRoleTest extends TestCase
 {
-    // ==================== cases ====================
-
     #[Test]
     public function it_has_exactly_three_cases(): void
     {

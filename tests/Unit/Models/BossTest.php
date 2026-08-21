@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
@@ -54,6 +55,8 @@ class BossTest extends ModelTestCase
             'notes',
         ]);
     }
+
+    // ==================== persistence and factory ====================
 
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
@@ -105,6 +108,8 @@ class BossTest extends ModelTestCase
 
         $this->assertSame(5, $boss->encounter_order);
     }
+
+    // ==================== relationships ====================
 
     #[Test]
     public function it_belongs_to_a_raid(): void
@@ -169,6 +174,8 @@ class BossTest extends ModelTestCase
         $this->assertCount(2, $boss->comments);
     }
 
+    // ==================== media ====================
+
     #[Test]
     public function it_implements_has_media_interface(): void
     {
@@ -180,15 +187,17 @@ class BossTest extends ModelTestCase
     #[Test]
     public function it_can_add_media(): void
     {
-        $boss = $this->create();
-        $testFile = storage_path('app/test-image.png');
-        file_put_contents($testFile, 'fake image content');
+        Storage::fake('public');
 
-        $boss->addMedia($testFile)->toMediaCollection('default');
+        $boss = $this->create();
+        $boss->addMediaFromString('fake image content')
+            ->usingFileName('test-image.png')
+            ->toMediaCollection('default');
 
         $this->assertNotEmpty($boss->getMedia('default'));
-        @unlink($testFile);
     }
+
+    // ==================== slug ====================
 
     #[Test]
     public function it_generates_slug_from_name(): void
@@ -197,6 +206,8 @@ class BossTest extends ModelTestCase
 
         $this->assertSame('prince-malchezaar', $boss->slug);
     }
+
+    // ==================== assignments relationship ====================
 
     #[Test]
     public function it_has_many_assignments(): void

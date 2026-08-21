@@ -60,6 +60,8 @@ class DiscordClientTest extends TestCase
         });
     }
 
+    // ==================== post requests ====================
+
     #[Test]
     public function it_sends_the_bot_authorization_header_on_post_requests(): void
     {
@@ -81,6 +83,8 @@ class DiscordClientTest extends TestCase
                 && $request->data()['content'] === 'Hello';
         });
     }
+
+    // ==================== patch requests ====================
 
     #[Test]
     public function it_sends_the_bot_authorization_header_on_patch_requests(): void
@@ -104,6 +108,8 @@ class DiscordClientTest extends TestCase
         });
     }
 
+    // ==================== delete requests ====================
+
     #[Test]
     public function it_sends_the_bot_authorization_header_on_delete_requests(): void
     {
@@ -125,6 +131,8 @@ class DiscordClientTest extends TestCase
         });
     }
 
+    // ==================== user agent header ====================
+
     #[Test]
     public function it_sends_the_discord_bot_user_agent_on_every_request(): void
     {
@@ -136,6 +144,8 @@ class DiscordClientTest extends TestCase
             return str_starts_with($ua, 'DiscordBot (https://regrowth.gg');
         });
     }
+
+    // ==================== rate limiting ====================
 
     #[Test]
     public function it_throws_rate_limited_exception_on_429_without_retrying(): void
@@ -197,6 +207,8 @@ class DiscordClientTest extends TestCase
             $this->assertSame(1.0, $e->retryAfter);
         }
     }
+
+    // ==================== error responses ====================
 
     #[Test]
     public function get_throws_discord_request_exception_on_non_2xx_status(): void

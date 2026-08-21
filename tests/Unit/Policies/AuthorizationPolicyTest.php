@@ -38,6 +38,8 @@ class AuthorizationPolicyTest extends TestCase
         $this->assertFalse($this->policy->userIsOfficer($user));
     }
 
+    // ==================== is raider ====================
+
     #[Test]
     public function it_returns_true_when_user_is_raider(): void
     {
@@ -55,6 +57,8 @@ class AuthorizationPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->userIsRaider($user));
     }
+
+    // ==================== is member ====================
 
     #[Test]
     public function it_returns_true_when_user_is_member(): void
@@ -74,6 +78,8 @@ class AuthorizationPolicyTest extends TestCase
         $this->assertFalse($this->policy->userIsMember($user));
     }
 
+    // ==================== is loot councillor ====================
+
     #[Test]
     public function it_returns_true_when_user_is_loot_councillor(): void
     {
@@ -91,6 +97,8 @@ class AuthorizationPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->userIsLootCouncillor($user));
     }
+
+    // ==================== member or above ====================
 
     #[Test]
     public function member_or_above_returns_true_for_officer(): void

@@ -72,6 +72,8 @@ class GuildRankStoreTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    // ==================== store — validation ====================
+
     #[Group('validation')]
     #[Test]
     public function store_validates_name_required(): void
@@ -105,6 +107,8 @@ class GuildRankStoreTest extends DashboardTestCase
 
         $response->assertSessionHasErrors(['name']);
     }
+
+    // ==================== store — persistence ====================
 
     #[Test]
     public function store_creates_rank_in_database(): void

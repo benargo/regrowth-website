@@ -28,7 +28,7 @@ class CommentBroadcastTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ─── CommentPosted ───────────────────────────────────────────────────────
+    // ==================== comment posted ====================
 
     #[Test]
     #[Group('contract')]
@@ -99,7 +99,7 @@ class CommentBroadcastTest extends TestCase
         );
     }
 
-    // ─── CommentChanged ──────────────────────────────────────────────────────
+    // ==================== comment changed ====================
 
     #[Test]
     #[Group('contract')]
@@ -143,7 +143,7 @@ class CommentBroadcastTest extends TestCase
         $this->assertTrue($payload['comment']['is_resolved']);
     }
 
-    // ─── CommentRemoved ──────────────────────────────────────────────────────
+    // ==================== comment removed ====================
 
     #[Test]
     #[Group('contract')]
@@ -196,7 +196,7 @@ class CommentBroadcastTest extends TestCase
         $this->assertEquals("item.{$item->id}", $channels[0]->name);
     }
 
-    // ─── The non-Item guard ──────────────────────────────────────────────────
+    // ==================== the non-item guard ====================
 
     #[Test]
     #[Group('contract')]
@@ -213,7 +213,7 @@ class CommentBroadcastTest extends TestCase
         $this->assertSame([], (new CommentRemoved($comment))->broadcastOn());
     }
 
-    // ─── Contract ────────────────────────────────────────────────────────────
+    // ==================== contract ====================
 
     #[Test]
     #[Group('contract')]

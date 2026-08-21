@@ -18,9 +18,7 @@ class FetchGuildTagsTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==========================================
-    // Happy Path
-    // ==========================================
+    // ==================== happy path ====================
 
     #[Test]
     public function it_syncs_guild_tags_via_the_service(): void
@@ -37,9 +35,7 @@ class FetchGuildTagsTest extends TestCase
         $job->handle($guildTagsService);
     }
 
-    // ==========================================
-    // Batch Cancellation
-    // ==========================================
+    // ==================== batch cancellation ====================
 
     #[Test]
     public function it_skips_execution_when_batch_is_cancelled(): void
@@ -56,9 +52,7 @@ class FetchGuildTagsTest extends TestCase
         dispatch_sync($job);
     }
 
-    // ==========================================
-    // Tags
-    // ==========================================
+    // ==================== tags ====================
 
     #[Test]
     public function it_has_the_correct_job_tags(): void

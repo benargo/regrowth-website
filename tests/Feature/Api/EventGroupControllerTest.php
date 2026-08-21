@@ -48,7 +48,7 @@ class EventGroupControllerTest extends TestCase
         $this->event = Event::factory()->create();
     }
 
-    // ─── store() ──────────────────────────────────────────────────────────────
+    // ==================== store ====================
 
     #[Test]
     public function it_creates_a_group_and_returns_201(): void
@@ -159,7 +159,7 @@ class EventGroupControllerTest extends TestCase
         ]);
     }
 
-    // ─── update() ─────────────────────────────────────────────────────────────
+    // ==================== update ====================
 
     #[Test]
     public function it_updates_group_name(): void
@@ -207,7 +207,7 @@ class EventGroupControllerTest extends TestCase
             ->assertForbidden();
     }
 
-    // ─── reorder() ────────────────────────────────────────────────────────────
+    // ==================== reorder ====================
 
     #[Test]
     public function it_reorders_groups_by_array_position(): void
@@ -247,7 +247,7 @@ class EventGroupControllerTest extends TestCase
             ->assertForbidden();
     }
 
-    // ─── destroy() ────────────────────────────────────────────────────────────
+    // ==================== destroy ====================
 
     #[Test]
     public function it_deletes_a_group(): void

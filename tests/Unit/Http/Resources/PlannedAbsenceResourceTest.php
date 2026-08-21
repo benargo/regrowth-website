@@ -43,6 +43,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('created_by', $array);
     }
 
+    // ==================== scalar fields ====================
+
     #[Test]
     public function it_returns_correct_scalar_fields(): void
     {
@@ -57,6 +59,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertSame($absence->id, $array['id']);
         $this->assertSame('I will be on holiday.', $array['reason']);
     }
+
+    // ==================== character relation ====================
 
     #[Test]
     public function it_omits_character_when_not_loaded(): void
@@ -118,6 +122,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertNull($array['character']['playable_class']);
     }
 
+    // ==================== user relation ====================
+
     #[Test]
     public function it_omits_user_when_not_loaded(): void
     {
@@ -155,6 +161,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertNull($array['user']);
     }
 
+    // ==================== created by relation ====================
+
     #[Test]
     public function it_omits_created_by_when_not_loaded(): void
     {
@@ -180,6 +188,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertIsArray($array['created_by']);
         $this->assertSame($absence->createdBy->id, $array['created_by']['id']);
     }
+
+    // ==================== end date and discord message id ====================
 
     #[Test]
     public function it_returns_null_end_date_when_not_set(): void
@@ -217,6 +227,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertSame($absence->discord_message_id, $array['discord_message_id']);
     }
 
+    // ==================== date formatting ====================
+
     #[Test]
     public function it_formats_start_date_as_d_m_y(): void
     {
@@ -245,6 +257,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertSame('2026-06-20', $array['end_date']);
     }
 
+    // ==================== playable class icon url ====================
+
     #[Test]
     public function it_includes_icon_url_in_playable_class(): void
     {
@@ -258,6 +272,8 @@ class PlannedAbsenceResourceTest extends TestCase
         $this->assertArrayHasKey('icon_url', $array['character']['playable_class']);
         $this->assertArrayHasKey('slug', $array['character']['playable_class']);
     }
+
+    // ==================== helpers ====================
 
     /**
      * Helper method to mock the request user for testing authorization logic in the resource.

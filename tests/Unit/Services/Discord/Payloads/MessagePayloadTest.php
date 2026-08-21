@@ -44,6 +44,8 @@ class MessagePayloadTest extends TestCase
         $this->assertInstanceOf(Optional::class, $payload->enforce_nonce);
     }
 
+    // ==================== construction from array ====================
+
     #[Test]
     public function message_payload_constructs_with_all_fields_optional(): void
     {
@@ -90,6 +92,8 @@ class MessagePayloadTest extends TestCase
 
         $this->assertSame(12345, $payload->nonce);
     }
+
+    // ==================== nested object hydration ====================
 
     #[Test]
     public function message_payload_hydrates_embeds_collection(): void
@@ -140,6 +144,8 @@ class MessagePayloadTest extends TestCase
         $this->assertSame('file.png', $payload->attachments[0]->filename);
     }
 
+    // ==================== validation rules ====================
+
     #[Test]
     public function message_payload_rules_cap_content_at_two_thousand_characters(): void
     {
@@ -166,6 +172,8 @@ class MessagePayloadTest extends TestCase
         $this->assertArrayHasKey('sticker_ids', $rules);
         $this->assertContains('max:3', $rules['sticker_ids']);
     }
+
+    // ==================== readonly properties ====================
 
     #[Test]
     public function message_payload_properties_are_readonly(): void

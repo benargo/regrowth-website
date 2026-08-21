@@ -51,22 +51,19 @@ class HasManyKeyByTest extends TestCase
     {
         parent::setUp();
 
-        Schema::create('trait_test_parents', function (Blueprint $table) {
-            $table->id();
-        });
+        if (! Schema::hasTable('trait_test_parents')) {
+            Schema::create('trait_test_parents', function (Blueprint $table) {
+                $table->id();
+            });
+        }
 
-        Schema::create('trait_test_children', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('trait_parent_model_id');
-            $table->string('code');
-        });
-    }
-
-    protected function tearDown(): void
-    {
-        Schema::dropIfExists('trait_test_children');
-        Schema::dropIfExists('trait_test_parents');
-        parent::tearDown();
+        if (! Schema::hasTable('trait_test_children')) {
+            Schema::create('trait_test_children', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('trait_parent_model_id');
+                $table->string('code');
+            });
+        }
     }
 
     #[Test]

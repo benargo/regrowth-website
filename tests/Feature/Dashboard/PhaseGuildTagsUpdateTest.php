@@ -78,6 +78,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $response->assertRedirect();
     }
 
+    // ==================== update-guild-tags — associations ====================
+
     #[Test]
     public function update_guild_tags_associates_tags_with_phase(): void
     {
@@ -132,6 +134,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
         $this->assertNull($tag2->tbc_phase_id);
     }
 
+    // ==================== update-guild-tags — validation ====================
+
     #[Group('validation')]
     #[Test]
     public function update_guild_tags_validates_guild_tag_ids_is_required(): void
@@ -168,6 +172,8 @@ class PhaseGuildTagsUpdateTest extends DashboardTestCase
 
         $response->assertSessionHasErrors(['guild_tag_ids.0']);
     }
+
+    // ==================== update-guild-tags — phase isolation ====================
 
     #[Test]
     public function update_guild_tags_does_not_affect_tags_from_other_phases(): void

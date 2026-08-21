@@ -12,8 +12,6 @@ use Tests\TestCase;
 #[Group('raiding')]
 class AttendanceServiceProviderTest extends TestCase
 {
-    // ==================== provides ====================
-
     #[Test]
     public function it_declares_the_expected_services_in_provides(): void
     {

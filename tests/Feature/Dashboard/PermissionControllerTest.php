@@ -75,6 +75,8 @@ class PermissionControllerTest extends DashboardTestCase
         $response->assertRedirect(route('management.permissions.group.show', ['group' => 'loot-bias-tool']));
     }
 
+    // ==================== show group ====================
+
     #[Test]
     public function show_group_requires_authentication(): void
     {
@@ -146,6 +148,8 @@ class PermissionControllerTest extends DashboardTestCase
 
         $response->assertRedirect(route('management.permissions.group.show', ['group' => 'roster']));
     }
+
+    // ==================== toggle ====================
 
     #[Test]
     public function toggle_requires_authentication(): void
@@ -226,6 +230,8 @@ class PermissionControllerTest extends DashboardTestCase
         $this->assertFalse($role->hasPermissionTo('comment-on-loot-items'));
     }
 
+    // ==================== toggle — validation ====================
+
     #[Group('validation')]
     #[Test]
     public function toggle_validates_discord_role_id_is_required(): void
@@ -291,6 +297,8 @@ class PermissionControllerTest extends DashboardTestCase
 
         $response->assertSessionHasErrors(['enabled']);
     }
+
+    // ==================== toggle — highest role restrictions ====================
 
     #[Group('authorization')]
     #[Test]

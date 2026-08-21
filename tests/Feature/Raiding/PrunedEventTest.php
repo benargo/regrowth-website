@@ -6,18 +6,17 @@ use App\Events\ModelPruned;
 use App\Models\Event;
 use App\Models\PrunedModel;
 use App\Models\User;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Resources\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event as EventFacade;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('raiding')]
 class PrunedEventTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     #[Test]
@@ -57,11 +56,7 @@ class PrunedEventTest extends TestCase
     #[Test]
     public function it_returns_410_for_a_pruned_event(): void
     {
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')->andReturn(
-                Channel::from(['id' => '123', 'name' => 'test-channel'])
-            );
-        });
+        $this->mockDiscordChannel(id: '123', name: 'test-channel');
 
         $eventId = fake()->uuid();
 
@@ -83,11 +78,7 @@ class PrunedEventTest extends TestCase
     #[Test]
     public function it_renders_the_gone_inertia_page_for_a_pruned_event(): void
     {
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')->andReturn(
-                Channel::from(['id' => '123', 'name' => 'test-channel'])
-            );
-        });
+        $this->mockDiscordChannel(id: '123', name: 'test-channel');
 
         $eventId = fake()->uuid();
 

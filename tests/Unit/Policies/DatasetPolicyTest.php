@@ -82,6 +82,8 @@ class DatasetPolicyTest extends TestCase
         $this->assertFalse($this->policy->view($user, $model));
     }
 
+    // ==================== create ====================
+
     #[Test]
     public function it_allows_create_with_permission(): void
     {
@@ -97,6 +99,8 @@ class DatasetPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->create($user));
     }
+
+    // ==================== update and delete ====================
 
     #[Test]
     public function it_allows_update_with_permission(): void
@@ -116,6 +120,8 @@ class DatasetPolicyTest extends TestCase
         $this->assertTrue($this->policy->delete($user, $model));
     }
 
+    // ==================== restore ====================
+
     #[Test]
     public function it_allows_restore_for_admins(): void
     {
@@ -133,6 +139,8 @@ class DatasetPolicyTest extends TestCase
 
         $this->assertFalse($this->policy->restore($user, $model));
     }
+
+    // ==================== force delete ====================
 
     #[Test]
     public function it_allows_force_delete_for_admins(): void

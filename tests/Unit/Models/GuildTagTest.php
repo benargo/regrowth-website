@@ -81,6 +81,8 @@ class GuildTagTest extends ModelTestCase
         $this->assertFalse($model->count_attendance);
     }
 
+    // ==================== persistence ====================
+
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
@@ -122,6 +124,8 @@ class GuildTagTest extends ModelTestCase
         $this->assertNull($guildTag->tbc_phase_id);
         $this->assertModelExists($guildTag);
     }
+
+    // ==================== factory states ====================
 
     #[Test]
     public function factory_creates_valid_model(): void
@@ -176,6 +180,8 @@ class GuildTagTest extends ModelTestCase
         $this->assertNull($guildTag->tbc_phase_id);
     }
 
+    // ==================== phase relationship ====================
+
     #[Test]
     public function it_belongs_to_a_phase(): void
     {
@@ -193,6 +199,8 @@ class GuildTagTest extends ModelTestCase
 
         $this->assertNull($guildTag->phase);
     }
+
+    // ==================== reports relationship ====================
 
     #[Test]
     public function it_has_many_reports(): void

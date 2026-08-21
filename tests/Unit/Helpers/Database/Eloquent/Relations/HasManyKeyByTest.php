@@ -39,24 +39,21 @@ class HasManyKeyByTest extends TestCase
     {
         parent::setUp();
 
-        Schema::create('relation_test_parents', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-        });
+        if (! Schema::hasTable('relation_test_parents')) {
+            Schema::create('relation_test_parents', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+            });
+        }
 
-        Schema::create('relation_test_children', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('relation_parent_model_id');
-            $table->string('code');
-            $table->string('label');
-        });
-    }
-
-    protected function tearDown(): void
-    {
-        Schema::dropIfExists('relation_test_children');
-        Schema::dropIfExists('relation_test_parents');
-        parent::tearDown();
+        if (! Schema::hasTable('relation_test_children')) {
+            Schema::create('relation_test_children', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('relation_parent_model_id');
+                $table->string('code');
+                $table->string('label');
+            });
+        }
     }
 
     private function makeRelation(string $keyBy, RelationParentModel $parent): HasManyKeyBy

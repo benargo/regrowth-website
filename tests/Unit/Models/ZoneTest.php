@@ -85,6 +85,8 @@ class ZoneTest extends ModelTestCase
         $this->assertFalse($model->is_frozen);
     }
 
+    // ==================== persistence and casting ====================
+
     #[Test]
     public function it_can_be_created_with_required_attributes(): void
     {
@@ -138,6 +140,8 @@ class ZoneTest extends ModelTestCase
         $this->assertTrue($zone->is_frozen);
     }
 
+    // ==================== reports relationship ====================
+
     #[Test]
     public function it_has_many_reports(): void
     {
@@ -162,6 +166,8 @@ class ZoneTest extends ModelTestCase
 
         $this->assertCount(0, $zone->reports);
     }
+
+    // ==================== factory states ====================
 
     #[Test]
     public function factory_creates_valid_model(): void

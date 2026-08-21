@@ -36,7 +36,7 @@ class SpecializationSeederTest extends TestCase
         ]);
     }
 
-    // ==================== Record Creation ====================
+    // ==================== record creation ====================
 
     #[Test]
     public function seeder_creates_all_28_specialisations(): void
@@ -100,7 +100,7 @@ class SpecializationSeederTest extends TestCase
         Storage::disk('public')->assertExists('blizzard-cdn/icons/56/spell_nature_starfall.jpg');
     }
 
-    // ==================== Idempotency ====================
+    // ==================== idempotency ====================
 
     #[Test]
     public function seeder_is_idempotent(): void
@@ -138,7 +138,7 @@ class SpecializationSeederTest extends TestCase
         $this->assertCount(1, $balance->fresh()->getMedia('blizzard_icons'));
     }
 
-    // ==================== Class Association ====================
+    // ==================== class association ====================
 
     #[Test]
     public function seeder_associates_specializations_with_correct_playable_class(): void
@@ -158,7 +158,7 @@ class SpecializationSeederTest extends TestCase
         $this->assertSame(['Elemental', 'Enhancement', 'Restoration'], $shamanSpecs);
     }
 
-    // ==================== Error Handling ====================
+    // ==================== error handling ====================
 
     #[Test]
     public function seeder_dispatches_retry_job_when_icon_fetch_returns_403(): void
@@ -206,7 +206,7 @@ class SpecializationSeederTest extends TestCase
         Queue::assertNothingPushed();
     }
 
-    // ==================== Console Output ====================
+    // ==================== console output ====================
 
     #[Test]
     public function seeder_outputs_info_per_specialization_on_success(): void

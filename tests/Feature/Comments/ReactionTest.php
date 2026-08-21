@@ -31,9 +31,7 @@ class ReactionTest extends TestCase
         $this->mockItemService();
     }
 
-    // ==========================================
-    // Model validation tests
-    // ==========================================
+    // ==================== model validation ====================
 
     #[Group('error-handling')]
     #[Test]

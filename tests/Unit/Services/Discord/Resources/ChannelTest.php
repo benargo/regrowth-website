@@ -92,6 +92,8 @@ class ChannelTest extends TestCase
         $this->assertInstanceOf(Optional::class, $channel->member);
     }
 
+    // ==================== construction from minimal payload ====================
+
     /**
      * @return array<string, mixed>
      */
@@ -152,6 +154,8 @@ class ChannelTest extends TestCase
         $this->assertInstanceOf(Optional::class, $channel->member);
     }
 
+    // ==================== channel type enum ====================
+
     #[Test]
     public function it_hydrates_the_channel_type_enum(): void
     {
@@ -160,6 +164,8 @@ class ChannelTest extends TestCase
             $this->assertSame($case, $channel->type);
         }
     }
+
+    // ==================== scalar optional fields ====================
 
     #[Test]
     public function it_stores_all_scalar_optional_fields(): void
@@ -222,6 +228,8 @@ class ChannelTest extends TestCase
         $this->assertSame('abc123hash', $channel->icon);
     }
 
+    // ==================== nullable fields ====================
+
     #[Test]
     public function it_accepts_null_for_default_reaction_emoji(): void
     {
@@ -254,6 +262,8 @@ class ChannelTest extends TestCase
         $this->assertNull($channel->icon);
     }
 
+    // ==================== array fields ====================
+
     #[Test]
     public function it_stores_array_fields(): void
     {
@@ -279,6 +289,8 @@ class ChannelTest extends TestCase
         $this->assertSame(['archived' => false, 'auto_archive_duration' => 60], $channel->thread_metadata);
         $this->assertSame(['user_id' => '99', 'join_timestamp' => '2024-01-01T00:00:00Z'], $channel->member);
     }
+
+    // ==================== validation rules ====================
 
     #[Test]
     public function rules_caps_applied_tags_at_five(): void
@@ -307,6 +319,8 @@ class ChannelTest extends TestCase
         $channel = Channel::from([...$this->minimalPayload(), 'default_reaction_emoji' => null]);
         $this->assertNull($channel->default_reaction_emoji);
     }
+
+    // ==================== readonly properties ====================
 
     #[Test]
     public function all_properties_are_readonly(): void

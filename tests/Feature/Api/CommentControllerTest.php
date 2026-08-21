@@ -15,17 +15,14 @@ use App\Models\Phase;
 use App\Models\Raid;
 use App\Models\User;
 use App\Notifications\NewLootCouncilComment;
-use App\Services\Discord\Discord;
-use App\Services\Discord\Enums\MessageType;
 use App\Services\Discord\Notifications\NotifiableChannel;
 use App\Services\Discord\Resources\Channel as DiscordChannel;
-use App\Services\Discord\Resources\Message as DiscordMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
 #[Group('comments')]
@@ -33,13 +30,14 @@ use Tests\TestCase;
 #[Group('discord-integration')]
 class CommentControllerTest extends TestCase
 {
+    use MocksDiscordService;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockDiscordService();
+        $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $deleteAnyComment = Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']);
@@ -939,28 +937,6 @@ class CommentControllerTest extends TestCase
     }
 
     // ==================== helpers ====================
-
-    private function mockDiscordService(): void
-    {
-        $this->mock(Discord::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getChannel')
-                ->andReturn(DiscordChannel::from(['id' => '123456789']));
-
-            $mock->shouldReceive('createMessage')
-                ->andReturn(DiscordMessage::from([
-                    'id' => '999999999999999999',
-                    'channel_id' => '123456789',
-                    'timestamp' => now()->toIso8601String(),
-                    'tts' => false,
-                    'mention_everyone' => false,
-                    'mention_roles' => [],
-                    'attachments' => [],
-                    'embeds' => [],
-                    'pinned' => false,
-                    'type' => MessageType::Default->value,
-                ]));
-        });
-    }
 
     private function createItem(): Item
     {

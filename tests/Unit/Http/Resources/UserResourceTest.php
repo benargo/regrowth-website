@@ -36,6 +36,8 @@ class UserResourceTest extends TestCase
         $this->assertSame($user->id, $array['id']);
     }
 
+    // ==================== username, discriminator, and nickname ====================
+
     #[Test]
     public function it_returns_username(): void
     {
@@ -80,6 +82,8 @@ class UserResourceTest extends TestCase
         $this->assertNull($array['nickname']);
     }
 
+    // ==================== display name ====================
+
     #[Test]
     public function it_returns_display_name_as_nickname_when_set(): void
     {
@@ -107,6 +111,8 @@ class UserResourceTest extends TestCase
 
         $this->assertSame('testuser', $array['display_name']);
     }
+
+    // ==================== avatar url ====================
 
     #[Test]
     public function it_returns_guild_avatar_url_when_guild_avatar_is_set(): void
@@ -164,6 +170,8 @@ class UserResourceTest extends TestCase
         );
     }
 
+    // ==================== banner url ====================
+
     #[Test]
     public function it_returns_banner_url_when_banner_is_set(): void
     {
@@ -191,6 +199,8 @@ class UserResourceTest extends TestCase
 
         $this->assertNull($array['banner']);
     }
+
+    // ==================== roles ====================
 
     #[Test]
     public function it_returns_roles(): void
@@ -221,6 +231,8 @@ class UserResourceTest extends TestCase
 
         $this->assertSame([], $array['roles']);
     }
+
+    // ==================== highest role ====================
 
     #[Test]
     public function it_returns_highest_role_officer(): void
@@ -299,6 +311,8 @@ class UserResourceTest extends TestCase
         $this->assertSame('Officer', $array['highest_role']);
     }
 
+    // ==================== full resource shape ====================
+
     #[Test]
     public function it_returns_all_expected_keys(): void
     {
@@ -318,6 +332,8 @@ class UserResourceTest extends TestCase
         $this->assertArrayHasKey('highest_role', $array);
         $this->assertArrayHasKey('admin', $array);
     }
+
+    // ==================== planned absences ====================
 
     #[Test]
     public function it_omits_planned_absences_when_not_loaded(): void
@@ -342,6 +358,8 @@ class UserResourceTest extends TestCase
         $this->assertArrayHasKey('planned_absences', $array);
         $this->assertCount(2, $array['planned_absences']);
     }
+
+    // ==================== planned absences created ====================
 
     #[Test]
     public function it_omits_planned_absences_created_when_not_loaded(): void

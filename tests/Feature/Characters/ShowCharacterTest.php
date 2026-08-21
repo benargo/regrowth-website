@@ -68,7 +68,12 @@ class ShowCharacterTest extends TestCase
     #[Test]
     public function show_is_accessible_without_authentication(): void
     {
+        Storage::fake('public');
+
         $character = Character::factory()->withPlayableClass()->withRank()->create();
+        $character->addMediaFromString('BINARY')
+            ->usingFileName('portrait.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
 
         $response = $this->get(route('characters.show', [
             'character' => $character,
@@ -83,6 +88,11 @@ class ShowCharacterTest extends TestCase
     {
         $character = Character::factory()->withPlayableClass()->withRank()->create();
         $user = $this->member();
+
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
+            GetCharacterMediaRequest::class => MockResponse::make(body: $this->makeMediaResponse(), status: 200),
+        ]);
 
         $response = $this->actingAs($user)->get(route('characters.show', [
             'character' => $character,
@@ -103,6 +113,11 @@ class ShowCharacterTest extends TestCase
     {
         $character = Character::factory()->withPlayableClass()->withRank()->withPlayableRace()->create(['gender' => null]);
 
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
+            GetCharacterMediaRequest::class => MockResponse::make(body: $this->makeMediaResponse(), status: 200),
+        ]);
+
         $response = $this->get(route('characters.show', [
             'character' => $character,
             'slug' => $this->characterSlug($character),
@@ -115,7 +130,7 @@ class ShowCharacterTest extends TestCase
         );
     }
 
-    // ==================== Portrait dispatch ====================
+    // ==================== portrait dispatch ====================
 
     #[Test]
     public function show_dispatches_portrait_job_when_character_has_no_media(): void
@@ -177,7 +192,7 @@ class ShowCharacterTest extends TestCase
         Bus::assertNotDispatched(AttachPortraitToCharacter::class);
     }
 
-    // ==================== Helpers ====================
+    // ==================== helpers ====================
 
     private function member(): User
     {

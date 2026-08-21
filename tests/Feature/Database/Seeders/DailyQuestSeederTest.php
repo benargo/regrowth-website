@@ -84,6 +84,8 @@ class DailyQuestSeederTest extends TestCase
         $this->assertSame($mediaCount, Media::count());
     }
 
+    // ==================== reward items ====================
+
     #[Test]
     public function seeder_creates_reward_items_that_do_not_yet_exist(): void
     {
@@ -134,6 +136,8 @@ class DailyQuestSeederTest extends TestCase
         $this->assertSame($itemCount, Item::count());
         $this->assertSame($pivotCount, \DB::table('pivot_dailyquest_rewards')->count());
     }
+
+    // ==================== icon fetch error handling ====================
 
     #[Test]
     public function seeder_dispatches_retry_job_when_reward_item_icon_returns_403(): void
@@ -244,6 +248,8 @@ class DailyQuestSeederTest extends TestCase
                 && str_contains($job->assetUrl, 'trade_fishing.jpg');
         });
     }
+
+    // ==================== helpers ====================
 
     /** @return array<string, mixed> */
     private function makeItemResponse(int $id, ?string $name = null): array

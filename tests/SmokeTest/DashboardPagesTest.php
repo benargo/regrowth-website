@@ -146,6 +146,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    // ==================== ranks and phases pages ====================
+
     #[Group('happy-path')]
     #[Test]
     public function manage_ranks_page_loads(): void
@@ -182,6 +184,8 @@ class DashboardPagesTest extends TestCase
         $response->assertSee('Regrowth');
     }
 
+    // ==================== daily quests pages ====================
+
     #[Group('happy-path')]
     #[Test]
     public function daily_quests_form_page_loads(): void
@@ -217,6 +221,8 @@ class DashboardPagesTest extends TestCase
         $response->assertForbidden();
     }
 
+    // ==================== permissions pages ====================
+
     #[Group('happy-path')]
     #[Test]
     public function permissions_index_redirects(): void
@@ -241,6 +247,8 @@ class DashboardPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
+
+    // ==================== boss strategy pages ====================
 
     #[Group('happy-path')]
     #[Test]
@@ -268,6 +276,8 @@ class DashboardPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Regrowth');
     }
+
+    // ==================== roster pages ====================
 
     #[Group('happy-path')]
     #[Test]

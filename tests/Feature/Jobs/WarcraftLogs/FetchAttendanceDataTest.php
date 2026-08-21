@@ -26,9 +26,7 @@ class FetchAttendanceDataTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==========================================
-    // Happy Path
-    // ==========================================
+    // ==================== happy path ====================
 
     #[Test]
     public function it_creates_pivot_entries_for_characters_with_count_attendance_ranks(): void
@@ -82,9 +80,7 @@ class FetchAttendanceDataTest extends TestCase
         ]);
     }
 
-    // ==========================================
-    // Rank Filtering
-    // ==========================================
+    // ==================== rank filtering ====================
 
     #[Test]
     public function it_skips_characters_whose_ranks_do_not_count_attendance(): void
@@ -133,9 +129,7 @@ class FetchAttendanceDataTest extends TestCase
         ]);
     }
 
-    // ==========================================
-    // Missing Records
-    // ==========================================
+    // ==================== missing records ====================
 
     #[Test]
     public function it_skips_players_not_found_in_the_database(): void
@@ -179,9 +173,7 @@ class FetchAttendanceDataTest extends TestCase
         $this->assertDatabaseCount('pivot_characters_raid_reports', 0);
     }
 
-    // ==========================================
-    // Touching
-    // ==========================================
+    // ==================== touching ====================
 
     #[Test]
     public function it_touches_the_report_updated_at_when_attendance_is_synced(): void
@@ -228,9 +220,7 @@ class FetchAttendanceDataTest extends TestCase
         $this->assertEquals($originalTime->toDateTimeString(), $report->fresh()->updated_at->toDateTimeString());
     }
 
-    // ==========================================
-    // Edge Cases
-    // ==========================================
+    // ==================== edge cases ====================
 
     #[Test]
     public function it_handles_duplicate_character_entries_without_throwing(): void
@@ -290,9 +280,7 @@ class FetchAttendanceDataTest extends TestCase
         $this->assertDatabaseCount('pivot_characters_raid_reports', 1);
     }
 
-    // ==========================================
-    // Concurrency & Resilience
-    // ==========================================
+    // ==================== concurrency & resilience ====================
 
     #[Test]
     public function it_uses_without_overlapping_middleware_to_prevent_concurrent_execution(): void

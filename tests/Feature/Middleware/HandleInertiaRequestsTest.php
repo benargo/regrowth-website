@@ -68,6 +68,8 @@ class HandleInertiaRequestsTest extends TestCase
             );
     }
 
+    // ==================== user data sharing ====================
+
     #[Test]
     public function it_shares_user_data_with_inertia_for_authenticated_user(): void
     {
@@ -167,6 +169,8 @@ class HandleInertiaRequestsTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->where('auth.user.highest_role', null)
             );
     }
+
+    // ==================== phases scoping ====================
 
     #[Test]
     public function shared_props_do_not_include_phases(): void

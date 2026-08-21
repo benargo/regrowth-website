@@ -42,10 +42,6 @@ class DiscordTest extends TestCase
         $this->discord = new Discord($this->client, '111222333444555666');
     }
 
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-
     #[Group('error-handling')]
     #[Test]
     public function it_throws_an_invalid_argument_exception_when_server_id_is_empty(): void
@@ -55,9 +51,7 @@ class DiscordTest extends TestCase
         new Discord($this->client, '');
     }
 
-    // -------------------------------------------------------------------------
-    // getChannel
-    // -------------------------------------------------------------------------
+    // ==================== getChannel ====================
 
     #[Test]
     public function it_returns_a_channel_for_a_valid_channel_id(): void
@@ -97,9 +91,7 @@ class DiscordTest extends TestCase
         $this->discord->getChannel('111000111000111000');
     }
 
-    // -------------------------------------------------------------------------
-    // getGuildChannels
-    // -------------------------------------------------------------------------
+    // ==================== getGuildChannels ====================
 
     #[Test]
     public function it_returns_a_collection_of_channels_for_the_configured_guild(): void
@@ -156,9 +148,7 @@ class DiscordTest extends TestCase
         $this->assertTrue(true);
     }
 
-    // -------------------------------------------------------------------------
-    // getGuildMember
-    // -------------------------------------------------------------------------
+    // ==================== getGuildMember ====================
 
     #[Test]
     public function it_returns_a_guild_member_for_a_valid_user_id(): void
@@ -208,9 +198,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildMember('999999999');
     }
 
-    // -------------------------------------------------------------------------
-    // getGuildMembers
-    // -------------------------------------------------------------------------
+    // ==================== getGuildMembers ====================
 
     #[Test]
     public function it_returns_a_cursor_paginator_of_guild_members(): void
@@ -299,9 +287,7 @@ class DiscordTest extends TestCase
         $this->assertTrue(true);
     }
 
-    // -------------------------------------------------------------------------
-    // searchGuildMembers
-    // -------------------------------------------------------------------------
+    // ==================== searchGuildMembers ====================
 
     #[Test]
     public function it_returns_a_collection_of_guild_members_matching_the_query(): void
@@ -322,9 +308,7 @@ class DiscordTest extends TestCase
         $this->assertInstanceOf(GuildMember::class, $members->first());
     }
 
-    // -------------------------------------------------------------------------
-    // getGuildRoles
-    // -------------------------------------------------------------------------
+    // ==================== getGuildRoles ====================
 
     #[Test]
     public function it_returns_a_collection_of_roles(): void
@@ -346,9 +330,7 @@ class DiscordTest extends TestCase
         $this->assertSame('Officer', $roles->first()->name);
     }
 
-    // -------------------------------------------------------------------------
-    // getGuildRole
-    // -------------------------------------------------------------------------
+    // ==================== getGuildRole ====================
 
     #[Test]
     public function it_returns_a_single_role_by_id(): void
@@ -410,9 +392,7 @@ class DiscordTest extends TestCase
         $this->discord->getGuildRole('000000000000000000');
     }
 
-    // -------------------------------------------------------------------------
-    // getChannelMessages
-    // -------------------------------------------------------------------------
+    // ==================== getChannelMessages ====================
 
     #[Test]
     public function it_returns_a_collection_of_messages(): void
@@ -436,9 +416,7 @@ class DiscordTest extends TestCase
         $this->assertInstanceOf(Message::class, $messages->first());
     }
 
-    // -------------------------------------------------------------------------
-    // getChannelMessage
-    // -------------------------------------------------------------------------
+    // ==================== getChannelMessage ====================
 
     #[Test]
     public function it_returns_a_single_message_by_id(): void
@@ -460,9 +438,7 @@ class DiscordTest extends TestCase
         $this->assertSame('111111111111111111', $message->id);
     }
 
-    // -------------------------------------------------------------------------
-    // createMessage
-    // -------------------------------------------------------------------------
+    // ==================== createMessage ====================
 
     #[Test]
     public function it_posts_a_message_and_returns_the_created_message(): void
@@ -485,9 +461,7 @@ class DiscordTest extends TestCase
         $this->assertSame('222222222222222222', $message->id);
     }
 
-    // -------------------------------------------------------------------------
-    // editMessage
-    // -------------------------------------------------------------------------
+    // ==================== editMessage ====================
 
     #[Test]
     public function it_patches_a_message_and_returns_the_updated_message(): void
@@ -510,9 +484,7 @@ class DiscordTest extends TestCase
         $this->assertSame('Updated content', $updated->content);
     }
 
-    // -------------------------------------------------------------------------
-    // deleteMessage
-    // -------------------------------------------------------------------------
+    // ==================== deleteMessage ====================
 
     #[Test]
     public function it_deletes_a_message(): void
@@ -531,9 +503,7 @@ class DiscordTest extends TestCase
         $this->assertTrue(true);
     }
 
-    // -------------------------------------------------------------------------
-    // Exception propagation — simple-delegation methods
-    // -------------------------------------------------------------------------
+    // ==================== exception propagation via simple delegation ====================
 
     #[Group('error-handling')]
     #[Test]
@@ -678,9 +648,7 @@ class DiscordTest extends TestCase
         $this->discord->deleteMessage($message);
     }
 
-    // -------------------------------------------------------------------------
-    // RateLimitedException bubbles through Discord facade
-    // -------------------------------------------------------------------------
+    // ==================== rate limited exception bubbling ====================
 
     #[Group('error-handling')]
     #[Test]
