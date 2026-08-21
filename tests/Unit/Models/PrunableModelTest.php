@@ -41,16 +41,11 @@ class PrunableModelTest extends TestCase
     {
         parent::setUp();
 
-        Schema::create('concrete_models', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-        });
-    }
-
-    protected function tearDown(): void
-    {
-        Schema::dropIfExists('concrete_models');
-
-        parent::tearDown();
+        if (! Schema::hasTable('concrete_models')) {
+            Schema::create('concrete_models', function (Blueprint $table) {
+                $table->uuid('id')->primary();
+            });
+        }
     }
 
     #[Test]

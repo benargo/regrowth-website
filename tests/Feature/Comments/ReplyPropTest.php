@@ -230,7 +230,7 @@ class ReplyPropTest extends TestCase
     public function the_replies_prop_caps_the_number_of_requested_roots(): void
     {
         $item = Item::factory()->create();
-        $offsets = collect(range(1, 60))
+        $offsets = collect(range(1, ItemController::MAX_REPLY_ROOTS + 5))
             ->mapWithKeys(function () use ($item): array {
                 $root = $this->rootOn($item);
                 Comment::factory()->replyTo($root)->create();
