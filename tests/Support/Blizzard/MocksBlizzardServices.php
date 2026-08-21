@@ -3,6 +3,7 @@
 namespace Tests\Support\Blizzard;
 
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
+use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest;
@@ -90,6 +91,29 @@ trait MocksBlizzardServices
                 status: $profileStatus,
             ),
             FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+    }
+
+    /**
+     * Fake the oauth token plus a GetGuildRosterRequest response. Defaults to
+     * an empty roster — pass $members for tests that assert on roster
+     * contents.
+     *
+     * @param  array<int, array<string, mixed>>  $members
+     */
+    protected function mockGuildRoster(array $members = []): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
+            GetGuildRosterRequest::class => MockResponse::make(body: [
+                'guild' => [
+                    'key' => ['href' => 'https://example.test/guild'],
+                    'name' => 'Wild Growth',
+                    'id' => 1,
+                    'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
+                ],
+                'members' => $members,
+            ], status: 200),
         ]);
     }
 
