@@ -19,7 +19,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Karazhan',
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::Karazhan,
-                'color' => 0x8B7ED0,
+                'color' => 0x8B7ED0, // 139, 126, 208
                 'phase_id' => 1,
                 'max_players' => 10,
                 'max_loot_councillors' => 3,
@@ -29,7 +29,7 @@ class RaidSeeder extends Seeder
                 'name' => "Gruul's Lair",
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::Gruul,
-                'color' => 0x9B443E,
+                'color' => 0x9B443E, // 155, 68, 62
                 'phase_id' => 1,
                 'max_players' => 25,
                 'max_loot_councillors' => 5,
@@ -39,7 +39,7 @@ class RaidSeeder extends Seeder
                 'name' => "Magtheridon's Lair",
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::Magtheridon,
-                'color' => 0x2D7A5A,
+                'color' => 0x2D7A5A, // 45, 122, 90
                 'phase_id' => 1,
                 'max_players' => 25,
                 'max_loot_councillors' => 5,
@@ -49,7 +49,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Serpentshrine Cavern',
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::SerpentshrineCavern,
-                'color' => 0x226E73,
+                'color' => 0x226E73, // 34, 110, 115
                 'phase_id' => 2,
                 'max_players' => 25,
                 'max_loot_councillors' => 5,
@@ -59,7 +59,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Tempest Keep: The Eye',
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::TempestKeep,
-                'color' => 0xAE47EB,
+                'color' => 0xAE47EB, // 174, 71, 235
                 'phase_id' => 2,
                 'max_players' => 25,
                 'max_loot_councillors' => 5,
@@ -69,7 +69,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Hyjal Summit',
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::HyjalSummit,
-                'color' => 0x4D9E1F,
+                'color' => 0x4D9E1F, // 77, 158, 31
                 'phase_id' => 3,
                 'max_players' => 25,
                 'max_loot_councillors' => 5,
@@ -79,7 +79,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Black Temple',
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::BlackTemple,
-                'color' => 0x4AE832,
+                'color' => 0x4AE832, // 74, 232, 50
                 'phase_id' => 3,
                 'max_players' => 25,
                 'max_loot_councillors' => 5,
@@ -89,7 +89,7 @@ class RaidSeeder extends Seeder
                 'name' => "Zul'Aman",
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::ZulAman,
-                'color' => 0x2AAFA0,
+                'color' => 0x2AAFA0, // 42, 175, 160
                 'phase_id' => 4,
                 'max_players' => 10,
                 'max_loot_councillors' => 3,
@@ -99,7 +99,7 @@ class RaidSeeder extends Seeder
                 'name' => 'Sunwell Plateau',
                 'difficulty' => 'Normal',
                 'background_css_class' => RaidBackground::SunwellPlateau,
-                'color' => 0xC41F1F,
+                'color' => 0xC41F1F, // 196, 31, 31
                 'phase_id' => 5,
                 'max_players' => 25,
                 'max_loot_councillors' => 5,
