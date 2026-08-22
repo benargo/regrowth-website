@@ -8,13 +8,12 @@ use App\Models\PrunedModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
-use Tests\TestCase;
+use Tests\Support\ModelTestCase;
 
 #[Group('platform')]
 class ConcreteModel extends PrunableModel
@@ -33,9 +32,12 @@ class ConcreteModel extends PrunableModel
     }
 }
 
-class PrunableModelTest extends TestCase
+class PrunableModelTest extends ModelTestCase
 {
-    use RefreshDatabase;
+    protected function modelClass(): string
+    {
+        return ConcreteModel::class;
+    }
 
     protected function setUp(): void
     {

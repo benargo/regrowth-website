@@ -3,17 +3,18 @@
 namespace Tests\Unit\Models;
 
 use App\Models\PrunedModel;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
+use Tests\Support\ModelTestCase;
 
 #[Group('platform')]
-class PrunedModelTest extends TestCase
+class PrunedModelTest extends ModelTestCase
 {
-    use RefreshDatabase;
+    protected function modelClass(): string
+    {
+        return PrunedModel::class;
+    }
 
     #[Test]
     public function it_has_no_auto_increment_timestamps(): void
@@ -28,7 +29,7 @@ class PrunedModelTest extends TestCase
     {
         $model = new PrunedModel;
 
-        $this->assertEqualsCanonicalizing(['id', 'type', 'pruned_at'], $model->getFillable());
+        $this->assertFillable($model, ['id', 'type', 'pruned_at']);
     }
 
     #[Test]
@@ -36,10 +37,7 @@ class PrunedModelTest extends TestCase
     {
         $model = new PrunedModel;
 
-        $attributes = (new \ReflectionClass($model))->getAttributes(Fillable::class);
-
-        $this->assertNotEmpty($attributes, 'Expected model to declare #[Fillable] attribute.');
-        $this->assertEqualsCanonicalizing(['id', 'type', 'pruned_at'], $attributes[0]->newInstance()->columns);
+        $this->assertFillableAttribute($model, ['id', 'type', 'pruned_at']);
     }
 
     #[Test]
@@ -52,7 +50,7 @@ class PrunedModelTest extends TestCase
             'type' => 'App\\Models\\Event',
         ]);
 
-        $this->assertDatabaseHas('pruned_models', [
+        $this->assertTableHas([
             'id' => $uuid,
             'type' => 'App\\Models\\Event',
         ]);
