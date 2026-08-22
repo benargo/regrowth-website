@@ -55,6 +55,20 @@ class ZoneTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Zone;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'name',
+            'difficulties',
+            'expansion',
+            'is_frozen',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new Zone;

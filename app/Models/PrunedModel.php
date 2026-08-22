@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
+#[Fillable(['id', 'type', 'pruned_at'])]
 class PrunedModel extends Model
 {
     /**
@@ -12,13 +14,6 @@ class PrunedModel extends Model
      * @var bool
      */
     public $timestamps = false;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = ['id', 'type', 'pruned_at'];
 
     /**
      * Get the attributes that should be cast.

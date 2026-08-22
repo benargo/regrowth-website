@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\AsClassName;
 use App\Services\Discord\Payloads\MessagePayload;
 use Database\Factories\DiscordNotificationFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[UseFactory(DiscordNotificationFactory::class)]
+#[Fillable(['type', 'channel_id', 'message_id', 'payload', 'created_by_user_id'])]
 class DiscordNotification extends Model
 {
     use HasFactory, SoftDeletes;
@@ -29,19 +31,6 @@ class DiscordNotification extends Model
             'payload' => MessagePayload::class,
         ];
     }
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'type',
-        'channel_id',
-        'message_id',
-        'payload',
-        'created_by_user_id',
-    ];
 
     /**
      * The attributes that should be hidden for serialization.

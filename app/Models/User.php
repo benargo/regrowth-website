@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Config;
 use Laravel\Sanctum\HasApiTokens;
 
+#[Fillable(['id', 'username', 'discriminator', 'nickname', 'avatar', 'guild_avatar', 'banner'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -39,21 +41,6 @@ class User extends Authenticatable
      */
     protected $attributes = [
         'is_admin' => false,
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'id',
-        'username',
-        'discriminator',
-        'nickname',
-        'avatar',
-        'guild_avatar',
-        'banner',
     ];
 
     /**

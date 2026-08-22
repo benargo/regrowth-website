@@ -52,6 +52,17 @@ class PlayableClassTest extends ModelTestCase
         ]);
     }
 
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new PlayableClass;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'name',
+        ]);
+    }
+
     // ==================== persistence ====================
 
     #[Test]

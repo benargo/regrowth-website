@@ -55,6 +55,14 @@ class TargetMarkerTest extends ModelTestCase
         $this->assertFillable($model, ['slug', 'name']);
     }
 
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new TargetMarker;
+
+        $this->assertFillableAttribute($model, ['slug', 'name']);
+    }
+
     // ==================== persistence ====================
 
     #[Test]

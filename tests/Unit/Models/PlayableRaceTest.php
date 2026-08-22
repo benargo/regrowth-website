@@ -55,6 +55,18 @@ class PlayableRaceTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new PlayableRace;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'name',
+            'faction',
+        ]);
+    }
+
+    #[Test]
     public function it_casts_faction_to_faction_enum(): void
     {
         $model = new PlayableRace;
@@ -90,7 +102,7 @@ class PlayableRaceTest extends ModelTestCase
         });
     }
 
-    // characters
+    // ==================== characters ====================
 
     #[Test]
     public function characters_returns_has_many_relationship(): void

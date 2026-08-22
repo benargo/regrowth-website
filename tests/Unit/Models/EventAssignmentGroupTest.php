@@ -55,6 +55,20 @@ class EventAssignmentGroupTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new EventAssignmentGroup;
+
+        $this->assertFillableAttribute($model, [
+            'event_id',
+            'boss_id',
+            'name',
+            'notes',
+            'sort_order',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_hidden_attributes(): void
     {
         $model = new EventAssignmentGroup;

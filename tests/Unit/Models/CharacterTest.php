@@ -57,6 +57,24 @@ class CharacterTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Character;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'name',
+            'level',
+            'rank_id',
+            'playable_class_id',
+            'playable_race_id',
+            'gender',
+            'is_main',
+            'is_loot_councillor',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new Character;

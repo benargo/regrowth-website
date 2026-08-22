@@ -3,24 +3,17 @@
 namespace App\Models;
 
 use App\Events\PermissionUpdated;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 
+#[Fillable(['name', 'guard_name', 'group'])]
 class Permission extends SpatiePermission
 {
     use HasFactory;
-
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'name',
-        'guard_name',
-        'group',
-    ];
 
     /**
      * The attributes that should be hidden for serialization.

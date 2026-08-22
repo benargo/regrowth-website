@@ -61,6 +61,21 @@ class ReportTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $report = new Report;
+
+        $this->assertFillableAttribute($report, [
+            'code',
+            'title',
+            'start_time',
+            'end_time',
+            'guild_tag_id',
+            'zone_id',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $report = new Report;

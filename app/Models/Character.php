@@ -7,6 +7,7 @@ use App\Enums\Gender;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Raids\Report;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,7 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[Fillable(['id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'is_main', 'is_loot_councillor'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
     use HasFactory, InteractsWithMedia, Prunable;
@@ -30,23 +32,6 @@ class Character extends Model implements HasCharacterMedia, HasMedia
      */
     protected $attributes = [
         'is_loot_councillor' => false,
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'id',
-        'name',
-        'level',
-        'rank_id',
-        'playable_class_id',
-        'playable_race_id',
-        'gender',
-        'is_main',
-        'is_loot_councillor',
     ];
 
     /**

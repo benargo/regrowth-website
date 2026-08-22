@@ -52,6 +52,19 @@ class DiscordRoleTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new DiscordRole;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'name',
+            'position',
+            'is_visible',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new DiscordRole;

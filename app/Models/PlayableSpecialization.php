@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\PlayableSpecRole;
 use Database\Factories\PlayableSpecializationFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,17 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[Fillable(['playable_class_id', 'role', 'name'])]
 class PlayableSpecialization extends Model implements HasBlizzardIcons, HasMedia
 {
     /** use HasFactory<PlayableSpecializationFactory> */
     use HasFactory, InteractsWithMedia;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = ['playable_class_id', 'role', 'name'];
 
     /**
      * Get the attributes that should be cast.

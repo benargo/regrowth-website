@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
 use App\Models\Raids\Report;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['id', 'name', 'difficulties', 'expansion', 'is_frozen'])]
 class Zone extends Model
 {
     use HasFactory;
@@ -42,19 +44,6 @@ class Zone extends Model
      */
     protected $attributes = [
         'is_frozen' => false,
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $fillable = [
-        'id',
-        'name',
-        'difficulties',
-        'expansion',
-        'is_frozen',
     ];
 
     /**

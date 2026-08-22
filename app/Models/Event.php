@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
 use App\Services\Discord\Discord;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'background_css_class', 'color', 'channel_id', 'is_template'])]
 class Event extends PrunableModel
 {
     use HasFactory, HasUuids;
@@ -24,23 +26,6 @@ class Event extends PrunableModel
      */
     protected $attributes = [
         'is_template' => false,
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'id',
-        'raid_helper_event_id',
-        'title',
-        'start_time',
-        'end_time',
-        'background_css_class',
-        'color',
-        'channel_id',
-        'is_template',
     ];
 
     /**

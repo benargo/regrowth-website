@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Database\Factories\TargetMarkerFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[Fillable(['slug', 'name'])]
 class TargetMarker extends Model
 {
     /** @use HasFactory<TargetMarkerFactory> */
@@ -22,9 +24,4 @@ class TargetMarker extends Model
 
     /** @var bool */
     public $timestamps = false;
-
-    /**
-     * @var array<int, string>
-     */
-    protected $fillable = ['slug', 'name'];
 }

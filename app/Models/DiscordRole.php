@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Events\DiscordRoleUpdated;
 use App\Traits\HasPermissions;
 use Database\Factories\DiscordRoleFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+#[Fillable(['id', 'name', 'position', 'is_visible'])]
 class DiscordRole extends Model
 {
     /** @use HasFactory<DiscordRoleFactory> */
@@ -35,18 +37,6 @@ class DiscordRole extends Model
      */
     protected $attributes = [
         'is_visible' => false,
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'id',
-        'name',
-        'position',
-        'is_visible',
     ];
 
     /**

@@ -2,25 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[WithoutTimestamps]
+#[Fillable(['discord_notification_id', 'model_type', 'model_id'])]
 class DiscordNotificationRelatedModel extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'discord_notification_id',
-        'model_type',
-        'model_id',
-    ];
-
     /**
      * Get the DiscordNotification that this related model belongs to.
      */

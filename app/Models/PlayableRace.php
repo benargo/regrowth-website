@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Faction;
 use Database\Factories\PlayableRaceFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\WithoutIncrementing;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,21 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[WithoutIncrementing]
 #[WithoutTimestamps]
+#[Fillable(['id', 'name', 'faction'])]
 class PlayableRace extends Model
 {
     /** @use HasFactory<PlayableRaceFactory> */
     use HasFactory;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'id',
-        'name',
-        'faction',
-    ];
 
     /**
      * Get the attributes that should be cast.

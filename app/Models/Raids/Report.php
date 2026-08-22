@@ -9,6 +9,7 @@ use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Models\GuildTag;
 use App\Models\Zone;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[UseResourceCollection(ReportCollection::class)]
+#[Fillable(['code', 'title', 'start_time', 'end_time', 'guild_tag_id', 'zone_id'])]
 class Report extends Model
 {
     use HasFactory;
@@ -43,20 +45,6 @@ class Report extends Model
      * @var string
      */
     protected $keyType = 'string';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'code',
-        'title',
-        'start_time',
-        'end_time',
-        'guild_tag_id',
-        'zone_id',
-    ];
 
     /**
      * Get the attributes that should be cast.

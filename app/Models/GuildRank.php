@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
 use App\Policies\DatasetPolicy;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 #[UsePolicy(DatasetPolicy::class)]
+#[Fillable(['position', 'name', 'count_attendance'])]
 class GuildRank extends Model implements DatasetModel
 {
     use HasFactory;
@@ -44,17 +46,6 @@ class GuildRank extends Model implements DatasetModel
             'count_attendance' => 'boolean',
         ];
     }
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'position',
-        'name',
-        'count_attendance',
-    ];
 
     /**
      * Set the name attribute to be title-cased.

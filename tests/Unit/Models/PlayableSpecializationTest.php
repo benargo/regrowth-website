@@ -43,6 +43,18 @@ class PlayableSpecializationTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new PlayableSpecialization;
+
+        $this->assertFillableAttribute($model, [
+            'playable_class_id',
+            'role',
+            'name',
+        ]);
+    }
+
+    #[Test]
     public function it_implements_media_library_contracts(): void
     {
         $model = new PlayableSpecialization;

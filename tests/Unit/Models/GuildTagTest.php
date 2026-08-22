@@ -64,6 +64,19 @@ class GuildTagTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new GuildTag;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'name',
+            'count_attendance',
+            'tbc_phase_id',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new GuildTag;

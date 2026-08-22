@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\DailyQuestType;
 use App\Enums\Instance;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[Fillable(['name', 'type', 'instance'])]
 class DailyQuest extends Model implements HasBlizzardIcons, HasMedia
 {
     use HasFactory, InteractsWithMedia;
@@ -22,17 +24,6 @@ class DailyQuest extends Model implements HasBlizzardIcons, HasMedia
      * @var string
      */
     protected $table = 'daily_quests';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'type',
-        'instance',
-    ];
 
     /**
      * The attributes that should be hidden for serialization.

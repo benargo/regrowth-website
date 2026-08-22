@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Models\Raids\Report;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
+#[Fillable(['character_id', 'raid_report_id', 'presence', 'is_loot_councillor'])]
 class CharacterReport extends Pivot
 {
     /**
@@ -21,18 +23,6 @@ class CharacterReport extends Pivot
      * @var bool
      */
     public $timestamps = false;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'character_id',
-        'raid_report_id',
-        'presence',
-        'is_loot_councillor',
-    ];
 
     /**
      * Get the attributes that should be cast.

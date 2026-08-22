@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\PlannedAbsenceObserver;
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([PlannedAbsenceObserver::class])]
+#[Fillable(['character_id', 'user_id', 'start_date', 'end_date', 'reason', 'discord_message_id', 'created_by'])]
 class PlannedAbsence extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
@@ -22,21 +24,6 @@ class PlannedAbsence extends Model
      * @var string
      */
     protected $table = 'planned_absences';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'character_id',
-        'user_id',
-        'start_date',
-        'end_date',
-        'reason',
-        'discord_message_id',
-        'created_by',
-    ];
 
     /**
      * Get the attributes that should be cast.

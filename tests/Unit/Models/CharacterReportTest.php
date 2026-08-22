@@ -5,6 +5,7 @@ namespace Tests\Unit\Models;
 use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Models\Raids\Report;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
@@ -40,6 +41,35 @@ class CharacterReportTest extends TestCase
         $pivot = new CharacterReport;
 
         $this->assertContains('report', $pivot->getTouchedRelations());
+    }
+
+    #[Test]
+    public function it_has_expected_fillable_attributes(): void
+    {
+        $pivot = new CharacterReport;
+
+        $this->assertEqualsCanonicalizing([
+            'character_id',
+            'raid_report_id',
+            'presence',
+            'is_loot_councillor',
+        ], $pivot->getFillable());
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $pivot = new CharacterReport;
+
+        $attributes = (new \ReflectionClass($pivot))->getAttributes(Fillable::class);
+
+        $this->assertNotEmpty($attributes, 'Expected model to declare #[Fillable] attribute.');
+        $this->assertEqualsCanonicalizing([
+            'character_id',
+            'raid_report_id',
+            'presence',
+            'is_loot_councillor',
+        ], $attributes[0]->newInstance()->columns);
     }
 
     // ==================== is_loot_councillor ====================
