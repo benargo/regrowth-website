@@ -6,7 +6,7 @@ use App\Jobs\WarcraftLogs\FetchAttendanceData;
 use App\Jobs\WarcraftLogs\FetchGuildTags;
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Bus\Batch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;

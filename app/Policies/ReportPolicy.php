@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 
 class ReportPolicy

@@ -3,7 +3,7 @@
 namespace Tests\Feature\Reports;
 
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Carbon\Carbon;

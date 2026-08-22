@@ -11,7 +11,7 @@ use App\Http\Resources\ZoneResource;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\PlannedAbsence;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\Zone;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceRowData;

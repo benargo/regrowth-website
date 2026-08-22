@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Resources\WarcraftLogs;
 
 use App\Http\Resources\UserResource;
 use App\Http\Resources\WarcraftLogs\LinkedReportResource;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;

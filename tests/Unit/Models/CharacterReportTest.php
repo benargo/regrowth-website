@@ -4,7 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\Character;
 use App\Models\CharacterReport;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;

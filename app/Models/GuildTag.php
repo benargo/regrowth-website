@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
-use App\Models\Raids\Report;
 use App\Observers\GuildTagObserver;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;

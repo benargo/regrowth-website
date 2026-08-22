@@ -10,7 +10,7 @@ use App\Models\Item;
 use App\Models\ItemPriority;
 use App\Models\LootPriority;
 use App\Models\Phase;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Services\Attendance\Calculator;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;

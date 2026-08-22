@@ -1,23 +1,22 @@
 <?php
 
-namespace App\Models\Raids;
+namespace App\Models;
 
 use App\Events\ReportLinkDeleted;
 use App\Events\ReportLinkSaved;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\Touches;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-#[Table('raid_report_links')]
+#[Table('pivot_report_links')]
 #[Touches(['report1', 'report2'])]
 class ReportLink extends Pivot
 {
     /**
      * The event map for the model.
      *
-     * @var array<string, class-string>
+     * @var array<string, string>
      */
     protected $dispatchesEvents = [
         'saved' => ReportLinkSaved::class,

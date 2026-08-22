@@ -26,7 +26,7 @@ class StoreReportRequest extends FormRequest
             'loot_councillor_ids' => ['nullable', 'array'],
             'loot_councillor_ids.*' => ['required', 'integer', Rule::exists('characters', 'id')->where('is_loot_councillor', true)],
             'linked_report_ids' => ['nullable', 'array'],
-            'linked_report_ids.*' => ['required', 'string', 'exists:raid_reports,id'],
+            'linked_report_ids.*' => ['required', 'string', 'exists:reports,id'],
         ];
     }
 }

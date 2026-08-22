@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\Touches;

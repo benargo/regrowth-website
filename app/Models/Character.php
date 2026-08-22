@@ -6,7 +6,6 @@ use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
-use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;

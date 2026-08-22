@@ -4,7 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;

@@ -5,7 +5,7 @@ namespace App\Services\Attendance;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;

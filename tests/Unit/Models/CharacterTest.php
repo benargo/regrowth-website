@@ -11,7 +11,7 @@ use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;

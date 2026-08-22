@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Models\Raids;
+namespace Tests\Unit\Models;
 
 use App\Events\ReportLinkDeleted;
 use App\Events\ReportLinkSaved;
-use App\Models\Raids\Report;
-use App\Models\Raids\ReportLink;
+use App\Models\Report;
+use App\Models\ReportLink;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,7 +21,7 @@ class ReportLinkTest extends TestCase
     {
         $pivot = new ReportLink;
 
-        $this->assertSame('raid_report_links', $pivot->getTable());
+        $this->assertSame('pivot_report_links', $pivot->getTable());
     }
 
     #[Test]

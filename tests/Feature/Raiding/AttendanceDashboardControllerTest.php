@@ -10,7 +10,7 @@ use App\Models\Permission;
 use App\Models\Phase;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

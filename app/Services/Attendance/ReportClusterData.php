@@ -2,7 +2,7 @@
 
 namespace App\Services\Attendance;
 
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;

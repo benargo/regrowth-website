@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
-use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;

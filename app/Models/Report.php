@@ -1,14 +1,10 @@
 <?php
 
-namespace App\Models\Raids;
+namespace App\Models;
 
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
 use App\Http\Resources\ReportCollection;
-use App\Models\Character;
-use App\Models\CharacterReport;
-use App\Models\GuildTag;
-use App\Models\Zone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -22,12 +18,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable(['code', 'title', 'start_time', 'end_time', 'guild_tag_id', 'zone_id'])]
 #[Hidden(['created_at', 'updated_at', 'zone_id'])]
-#[Table(name: 'raid_reports', keyType: 'string', incrementing: false)]
+#[Table(keyType: 'string', incrementing: false)]
 #[UseResourceCollection(ReportCollection::class)]
 class Report extends Model
 {
     use HasFactory;
     use HasUuids;
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => ReportCreated::class,
+        'updated' => ReportUpdated::class,
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -41,16 +47,6 @@ class Report extends Model
             'end_time' => 'datetime',
         ];
     }
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, class-string>
-     */
-    protected $dispatchesEvents = [
-        'created' => ReportCreated::class,
-        'updated' => ReportUpdated::class,
-    ];
 
     // ============ Custom attributes ============
 
@@ -93,7 +89,7 @@ class Report extends Model
     {
         return $this->belongsToMany(
             Report::class,
-            'raid_report_links',
+            'pivot_report_links',
             'report_1',
             'report_2'
         )->using(ReportLink::class)->withPivot('created_by')->withTimestamps();

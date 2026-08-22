@@ -7,7 +7,7 @@ use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\PlayableClass;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;

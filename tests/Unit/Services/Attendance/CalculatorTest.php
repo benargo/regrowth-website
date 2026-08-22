@@ -6,7 +6,7 @@ use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Services\Attendance\Calculator;
 use App\Services\Attendance\CharacterAttendanceStatsData;
 use Carbon\Carbon;
@@ -67,7 +67,7 @@ class CalculatorTest extends TestCase
 
     protected function linkReports(Report $report1, Report $report2): void
     {
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);

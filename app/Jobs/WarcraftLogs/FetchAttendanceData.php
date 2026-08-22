@@ -3,7 +3,7 @@
 namespace App\Jobs\WarcraftLogs;
 
 use App\Models\Character;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
 use Illuminate\Bus\Batchable;
