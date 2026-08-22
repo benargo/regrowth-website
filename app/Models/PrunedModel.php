@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable(['id', 'type', 'pruned_at'])]
-#[Table(timestamps: false)]
+#[WithoutTimestamps]
 class PrunedModel extends Model
 {
     /**

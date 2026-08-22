@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Attributes\Touches;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 #[Fillable(['character_id', 'raid_report_id', 'presence', 'is_loot_councillor'])]
 #[Table(name: 'pivot_characters_raid_reports', timestamps: false)]
+#[Touches('report')]
 class CharacterReport extends Pivot
 {
     /**
@@ -23,13 +25,6 @@ class CharacterReport extends Pivot
             'is_loot_councillor' => 'boolean',
         ];
     }
-
-    /**
-     * All of the relationships to be touched.
-     *
-     * @var array<int, string>
-     */
-    protected $touches = ['report'];
 
     /**
      * Get the report this pivot entry belongs to.
