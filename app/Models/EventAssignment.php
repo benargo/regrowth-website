@@ -13,13 +13,32 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 
 #[Fillable(['event_id', 'boss_id', 'group_id', 'sort_order', 'left_type', 'left_value', 'right_type', 'right_value'])]
-class EventAssignment extends Model
+class EventAssignment extends Model implements Sortable
 {
     use BroadcastsEvents;
     use FlushesRaidingCacheOnSave;
     use HasFactory;
+    use SortableTrait;
+
+    // ============ Casting ============
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'sort_order' => 'integer',
+            'left_type' => AsClassName::class,
+            'right_type' => AsClassName::class,
+        ];
+    }
 
     // ============ Sorting ============
 
@@ -37,22 +56,6 @@ class EventAssignment extends Model
             ->where('event_id', $this->event_id)
             ->where('boss_id', $this->boss_id)
             ->where('group_id', $this->group_id);
-    }
-
-    // ============ Casting ============
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'sort_order' => 'integer',
-            'left_type' => AsClassName::class,
-            'right_type' => AsClassName::class,
-        ];
     }
 
     // ============ Broadcasting ============
