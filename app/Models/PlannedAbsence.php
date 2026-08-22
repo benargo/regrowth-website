@@ -19,13 +19,6 @@ class PlannedAbsence extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'planned_absences';
-
-    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -47,7 +40,7 @@ class PlannedAbsence extends Model
     }
 
     /**
-     * Get the character associated with this planned absence.
+     * @return BelongsTo<Character, $this>
      */
     public function character(): BelongsTo
     {
@@ -55,8 +48,6 @@ class PlannedAbsence extends Model
     }
 
     /**
-     * Get the user associated with this planned absence.
-     *
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
@@ -65,8 +56,6 @@ class PlannedAbsence extends Model
     }
 
     /**
-     * Get the user who created this planned absence.
-     *
      * @return BelongsTo<User, $this>
      */
     public function createdBy(): BelongsTo

@@ -19,13 +19,6 @@ class GuildRank extends Model implements DatasetModel
     use HasFactory;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'guild_ranks';
-
-    /**
      * The model's default values for attributes.
      *
      * @var array

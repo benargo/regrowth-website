@@ -26,13 +26,6 @@ class Boss extends Model implements HasMedia
     use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'bosses';
-
-    /**
      * The attributes that should be hidden for serialization.
      *
      * @var array<string>
