@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use Database\Factories\EventAssignmentGroupFactory;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
@@ -18,8 +17,9 @@ use Illuminate\Support\Str;
 #[Fillable(['event_id', 'boss_id', 'name', 'notes', 'sort_order'])]
 class EventAssignmentGroup extends Model
 {
-    /** @use HasFactory<EventAssignmentGroupFactory> */
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory;
+    use BroadcastsEvents;
+    use FlushesRaidingCacheOnSave;
+    use HasFactory;
 
     /**
      * The model's default values.

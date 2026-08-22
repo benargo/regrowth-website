@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\Faction;
-use Database\Factories\PlayableRaceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\WithoutIncrementing;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
@@ -16,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['id', 'name', 'faction'])]
 class PlayableRace extends Model
 {
-    /** @use HasFactory<PlayableRaceFactory> */
     use HasFactory;
 
     /**

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use Database\Factories\BossFactory;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
@@ -22,7 +21,6 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Fillable(['name', 'raid_id', 'encounter_order', 'notes'])]
 class Boss extends Model implements HasMedia
 {
-    /** @use HasFactory<BossFactory> */
     use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia;
 
     /**

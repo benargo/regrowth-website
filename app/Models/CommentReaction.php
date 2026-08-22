@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Events\CommentReactionCreated;
 use App\Events\CommentReactionDeleted;
-use Database\Factories\CommentReactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -18,7 +17,6 @@ use Illuminate\Validation\ValidationException;
 #[Hidden(['created_at', 'updated_at'])]
 class CommentReaction extends Model
 {
-    /** @use HasFactory<CommentReactionFactory> */
     use HasFactory;
 
     /**

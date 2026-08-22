@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Casts\AsClassName;
 use App\Http\Resources\EventAssignmentResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use Database\Factories\EventAssignmentFactory;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
@@ -17,8 +16,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['event_id', 'boss_id', 'group_id', 'sort_order', 'left_type', 'left_value', 'right_type', 'right_value'])]
 class EventAssignment extends Model
 {
-    /** @use HasFactory<EventAssignmentFactory> */
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory;
+    use BroadcastsEvents;
+    use FlushesRaidingCacheOnSave;
+    use HasFactory;
 
     /**
      * Get the attributes that should be cast.

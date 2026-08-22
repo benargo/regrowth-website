@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Events\ItemPriorityDeleted;
 use App\Events\ItemPrioritySaved;
-use Database\Factories\ItemPriorityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -21,7 +20,6 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 #[Hidden(['created_at', 'updated_at'])]
 class ItemPriority extends Pivot
 {
-    /** @use HasFactory<ItemPriorityFactory> */
     use HasFactory;
 
     /**

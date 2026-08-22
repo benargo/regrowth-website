@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\CommentRevisionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['comment_id', 'body', 'edited_by'])]
 class CommentRevision extends Model
 {
-    /** @use HasFactory<CommentRevisionFactory> */
     use HasFactory;
 
     /**

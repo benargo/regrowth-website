@@ -7,7 +7,6 @@ use App\Contracts\HasBlizzardIcons;
 use App\Enums\ItemQuality;
 use App\Events\ItemSaved;
 use App\Http\Integrations\Blizzard\Data\Item\ItemData;
-use Database\Factories\ItemFactory;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -27,9 +26,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Hidden(['wowhead_url', 'created_at', 'updated_at'])]
 class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
 {
-    /** @use HasFactory<ItemFactory> */
     use HasFactory;
-
     use InteractsWithMedia;
 
     /**

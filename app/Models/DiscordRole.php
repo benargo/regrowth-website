@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Events\DiscordRoleUpdated;
 use App\Traits\HasPermissions;
-use Database\Factories\DiscordRoleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 #[Table(keyType: 'string', incrementing: false)]
 class DiscordRole extends Model
 {
-    /** @use HasFactory<DiscordRoleFactory> */
-    use HasFactory, HasPermissions;
+    use HasFactory;
+    use HasPermissions;
 
     /**
      * The model's default values for attributes.

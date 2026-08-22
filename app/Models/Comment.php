@@ -7,7 +7,6 @@ use App\Casts\AsKeyType;
 use App\Events\CommentCreated;
 use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
-use Database\Factories\CommentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,9 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['commentable_id', 'commentable_type', 'user_id', 'body', 'is_resolved', 'deleted_by'])]
 class Comment extends Model
 {
-    /** @use HasFactory<CommentFactory> */
     use HasFactory;
-
     use SoftDeletes;
 
     /**
