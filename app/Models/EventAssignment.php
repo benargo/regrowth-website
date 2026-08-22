@@ -9,6 +9,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,26 @@ class EventAssignment extends Model
     use BroadcastsEvents;
     use FlushesRaidingCacheOnSave;
     use HasFactory;
+
+    // ============ Sorting ============
+
+    /**
+     * @var array<string, mixed>
+     */
+    public array $sortable = [
+        'order_column_name' => 'sort_order',
+        'sort_when_creating' => true,
+    ];
+
+    public function buildSortQuery(): Builder
+    {
+        return static::query()
+            ->where('event_id', $this->event_id)
+            ->where('boss_id', $this->boss_id)
+            ->where('group_id', $this->group_id);
+    }
+
+    // ============ Casting ============
 
     /**
      * Get the attributes that should be cast.
