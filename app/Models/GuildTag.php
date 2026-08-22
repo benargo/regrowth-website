@@ -8,6 +8,7 @@ use App\Observers\GuildTagObserver;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,16 +18,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy([GuildTagObserver::class])]
 #[UsePolicy(DatasetPolicy::class)]
 #[Fillable(['id', 'name', 'count_attendance', 'tbc_phase_id'])]
+#[Table('wcl_guild_tags')]
 class GuildTag extends Model implements DatasetModel
 {
     use HasFactory;
-
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'wcl_guild_tags';
 
     /**
      * The attributes that are the model's default values.

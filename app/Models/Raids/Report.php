@@ -10,6 +10,7 @@ use App\Models\CharacterReport;
 use App\Models\GuildTag;
 use App\Models\Zone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -20,31 +21,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[UseResourceCollection(ReportCollection::class)]
 #[Fillable(['code', 'title', 'start_time', 'end_time', 'guild_tag_id', 'zone_id'])]
+#[Table(name: 'raid_reports', keyType: 'string', incrementing: false)]
 class Report extends Model
 {
     use HasFactory;
     use HasUuids;
-
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'raid_reports';
-
-    /**
-     * Indicates if the model's ID is auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
-
-    /**
-     * The data type of the primary key.
-     *
-     * @var string
-     */
-    protected $keyType = 'string';
 
     /**
      * Get the attributes that should be cast.

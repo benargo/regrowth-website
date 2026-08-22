@@ -4,26 +4,14 @@ namespace App\Models;
 
 use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 #[Fillable(['character_id', 'raid_report_id', 'presence', 'is_loot_councillor'])]
+#[Table(name: 'pivot_characters_raid_reports', timestamps: false)]
 class CharacterReport extends Pivot
 {
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'pivot_characters_raid_reports';
-
-    /**
-     * Indicates if the model should be timestamped.
-     *
-     * @var bool
-     */
-    public $timestamps = false;
-
     /**
      * Get the attributes that should be cast.
      *

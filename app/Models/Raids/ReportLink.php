@@ -5,18 +5,13 @@ namespace App\Models\Raids;
 use App\Events\ReportLinkDeleted;
 use App\Events\ReportLinkSaved;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
+#[Table('raid_report_links')]
 class ReportLink extends Pivot
 {
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'raid_report_links';
-
     /**
      * All of the relationships to be touched.
      *
