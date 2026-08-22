@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use App\Enums\PlayableSpecRole;
-use Database\Factories\PlayableSpecializationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +17,6 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Hidden(['created_at', 'updated_at'])]
 class PlayableSpecialization extends Model implements HasBlizzardIcons, HasMedia
 {
-    /** use HasFactory<PlayableSpecializationFactory> */
     use HasFactory, InteractsWithMedia;
 
     /**
