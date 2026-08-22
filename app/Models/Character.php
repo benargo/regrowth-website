@@ -28,12 +28,22 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     use HasFactory, InteractsWithMedia, Prunable;
 
     /**
-     * The attributes that are the model's default values.
+     * The model's default values for attributes.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_loot_councillor' => false,
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => CharacterUpdated::class,
+        'deleted' => CharacterDeleted::class,
     ];
 
     /**
@@ -49,16 +59,6 @@ class Character extends Model implements HasCharacterMedia, HasMedia
             'is_loot_councillor' => 'boolean',
         ];
     }
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'updated' => CharacterUpdated::class,
-        'deleted' => CharacterDeleted::class,
-    ];
 
     // ============ Media ============
 

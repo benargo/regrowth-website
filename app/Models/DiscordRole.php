@@ -20,7 +20,7 @@ class DiscordRole extends Model
     /**
      * The model's default values for attributes.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_visible' => false,

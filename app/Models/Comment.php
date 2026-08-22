@@ -25,9 +25,22 @@ class Comment extends Model
 
     /**
      * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_resolved' => false,
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => CommentCreated::class,
+        'deleted' => CommentDeleted::class,
+        'updated' => CommentUpdated::class,
     ];
 
     /**
@@ -43,17 +56,6 @@ class Comment extends Model
             'is_resolved' => 'boolean',
         ];
     }
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'created' => CommentCreated::class,
-        'deleted' => CommentDeleted::class,
-        'updated' => CommentUpdated::class,
-    ];
 
     /**
      * Get the parent commentable model.

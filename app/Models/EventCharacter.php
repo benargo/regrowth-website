@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 class EventCharacter extends Pivot
 {
     /**
-     * The model's default attributes.
+     * The model's default values for attributes.
      *
      * @var array<string, mixed>
      */

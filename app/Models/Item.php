@@ -30,6 +30,15 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     use InteractsWithMedia;
 
     /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'saved' => ItemSaved::class,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -40,15 +49,6 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
             'quality' => ItemQuality::class,
         ];
     }
-
-    /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
-     */
-    protected $dispatchesEvents = [
-        'saved' => ItemSaved::class,
-    ];
 
     // ============ Custom attributes ============
 

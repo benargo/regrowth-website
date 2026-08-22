@@ -24,9 +24,9 @@ class GuildTag extends Model implements DatasetModel
     use HasFactory;
 
     /**
-     * The attributes that are the model's default values.
+     * The model's default values for attributes.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'count_attendance' => false,

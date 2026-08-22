@@ -21,7 +21,7 @@ class GuildRank extends Model implements DatasetModel
     /**
      * The model's default values for attributes.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'count_attendance' => true,

@@ -24,7 +24,9 @@ class EventAssignmentGroup extends Model
     use HasFactory;
 
     /**
-     * The model's default values.
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'name' => 'New group',

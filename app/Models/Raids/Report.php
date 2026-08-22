@@ -64,7 +64,7 @@ class Report extends Model
         );
     }
 
-    // ============ Relationships ============
+    // ============ Relations ============
 
     /**
      * Get the characters that participated in this report.

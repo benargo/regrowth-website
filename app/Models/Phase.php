@@ -24,6 +24,15 @@ class Phase extends Model implements DatasetModel
     use HasManyKeyBy;
 
     /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => AddonSettingsProcessed::class,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -35,14 +44,15 @@ class Phase extends Model implements DatasetModel
         ];
     }
 
+    // ============ Custom attributes ============
+
     /**
-     * The event map for the model.
-     *
-     * @var array<string, string>
+     * Determine if the phase has started.
      */
-    protected $dispatchesEvents = [
-        'updated' => AddonSettingsProcessed::class,
-    ];
+    public function hasStarted(): bool
+    {
+        return $this->start_date?->isPast() ?? false;
+    }
 
     /**
      * Get the phase number attribute.
@@ -55,6 +65,8 @@ class Phase extends Model implements DatasetModel
             },
         );
     }
+
+    // ============ Relations ============
 
     /**
      * Get the raids that belong to this phase.
@@ -78,13 +90,5 @@ class Phase extends Model implements DatasetModel
     public function guildTags(): HasMany
     {
         return $this->hasMany(GuildTag::class, 'tbc_phase_id');
-    }
-
-    /**
-     * Determine if the phase has started.
-     */
-    public function hasStarted(): bool
-    {
-        return $this->start_date?->isPast() ?? false;
     }
 }
