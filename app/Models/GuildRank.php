@@ -33,14 +33,17 @@ class GuildRank extends Model implements DatasetModel
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $casts = [
-        'position' => 'integer',
-        'count_attendance' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'position' => 'integer',
+            'count_attendance' => 'boolean',
+        ];
+    }
 
     /**
      * The attributes that are mass assignable.

@@ -66,15 +66,18 @@ class Zone extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'difficulties' => AsDifficultyCollection::class,
-        'expansion' => AsExpansion::class,
-        'is_frozen' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'difficulties' => AsDifficultyCollection::class,
+            'expansion' => AsExpansion::class,
+            'is_frozen' => 'boolean',
+        ];
+    }
 
     /**
      * Get the reports for the zone.

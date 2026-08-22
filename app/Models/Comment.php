@@ -34,13 +34,18 @@ class Comment extends Model
     ];
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
      */
-    protected $casts = [
-        'commentable_id' => AsKeyType::class,
-        'commentable_type' => AsClassName::class,
-        'is_resolved' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'commentable_id' => AsKeyType::class,
+            'commentable_type' => AsClassName::class,
+            'is_resolved' => 'boolean',
+        ];
+    }
 
     /**
      * The event map for the model.

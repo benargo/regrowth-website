@@ -21,11 +21,14 @@ class PrunedModel extends Model
     protected $fillable = ['id', 'type', 'pruned_at'];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $casts = [
-        'pruned_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'pruned_at' => 'datetime',
+        ];
+    }
 }

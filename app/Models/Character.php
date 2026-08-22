@@ -50,15 +50,18 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $casts = [
-        'gender' => Gender::class,
-        'is_main' => 'boolean',
-        'is_loot_councillor' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'gender' => Gender::class,
+            'is_main' => 'boolean',
+            'is_loot_councillor' => 'boolean',
+        ];
+    }
 
     /**
      * The attributes that should be hidden for arrays.

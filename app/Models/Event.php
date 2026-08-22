@@ -54,17 +54,20 @@ class Event extends PrunableModel
     ];
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
-        'background_css_class' => RaidBackground::class,
-        'color' => AsBinaryColor::class,
-        'is_template' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
+            'background_css_class' => RaidBackground::class,
+            'color' => AsBinaryColor::class,
+            'is_template' => 'boolean',
+        ];
+    }
 
     // ========== Pruning ============
 

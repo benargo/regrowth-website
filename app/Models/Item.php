@@ -33,13 +33,16 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     use InteractsWithMedia;
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'quality' => ItemQuality::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'quality' => ItemQuality::class,
+        ];
+    }
 
     /**
      * The event map for the model.

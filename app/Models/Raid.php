@@ -45,16 +45,19 @@ class Raid extends Model
     protected $hidden = ['created_at', 'updated_at'];
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'background_css_class' => RaidBackground::class,
-        'color' => AsBinaryColor::class,
-        'max_players' => 'integer',
-        'max_loot_councillors' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'background_css_class' => RaidBackground::class,
+            'color' => AsBinaryColor::class,
+            'max_players' => 'integer',
+            'max_loot_councillors' => 'integer',
+        ];
+    }
 
     // ============ Custom attributes ============
 

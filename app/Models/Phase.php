@@ -29,11 +29,14 @@ class Phase extends Model implements DatasetModel
     /**
      * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'start_date' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'datetime',
+        ];
+    }
 
     /**
      * The event map for the model.

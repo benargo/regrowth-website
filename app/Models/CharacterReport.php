@@ -35,13 +35,16 @@ class CharacterReport extends Pivot
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'is_loot_councillor' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_loot_councillor' => 'boolean',
+        ];
+    }
 
     /**
      * All of the relationships to be touched.

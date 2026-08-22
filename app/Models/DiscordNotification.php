@@ -18,14 +18,17 @@ class DiscordNotification extends Model
     use HasFactory, SoftDeletes;
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'type' => AsClassName::class,
-        'payload' => MessagePayload::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'type' => AsClassName::class,
+            'payload' => MessagePayload::class,
+        ];
+    }
 
     /**
      * The attributes that are mass assignable.

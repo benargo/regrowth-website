@@ -25,11 +25,16 @@ class PlayableSpecialization extends Model implements HasBlizzardIcons, HasMedia
     protected $fillable = ['playable_class_id', 'role', 'name'];
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = ['role' => PlayableSpecRole::class];
+    protected function casts(): array
+    {
+        return [
+            'role' => PlayableSpecRole::class,
+        ];
+    }
 
     /**
      * The attributes that should be hidden for serialization.

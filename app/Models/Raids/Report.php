@@ -61,12 +61,15 @@ class Report extends Model
     /**
      * Get the attributes that should be cast.
      *
-     * @var array<string, mixed>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
+        ];
+    }
 
     /**
      * The event map for the model.

@@ -36,13 +36,16 @@ class GuildTag extends Model implements DatasetModel
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $casts = [
-        'count_attendance' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'count_attendance' => 'boolean',
+        ];
+    }
 
     /**
      * The attributes that are mass assignable.

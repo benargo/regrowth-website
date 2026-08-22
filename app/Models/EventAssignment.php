@@ -33,13 +33,18 @@ class EventAssignment extends Model
     ];
 
     /**
-     * @var array<string, string>
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
      */
-    protected $casts = [
-        'sort_order' => 'integer',
-        'left_type' => AsClassName::class,
-        'right_type' => AsClassName::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'sort_order' => 'integer',
+            'left_type' => AsClassName::class,
+            'right_type' => AsClassName::class,
+        ];
+    }
 
     // ============ Broadcasting ============
 
