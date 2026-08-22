@@ -209,10 +209,19 @@ class MigrateItemRaidRelationshipsTest extends TestCase
      * RefreshDatabase has already run every migration, so both files are
      * recorded as applied and the schema is at its final shape. Roll the two
      * back so the command has real work to do.
+     *
+     * Targeted by --path rather than --step, since --step rolls back the
+     * last N migrations by run order, which silently breaks if any other
+     * migration is ever added with a later timestamp than these two.
      */
     private function rewindBothMigrations(): void
     {
-        $this->artisan('migrate:rollback', ['--step' => 2])->assertExitCode(0);
+        $this->artisan('migrate:rollback', [
+            '--path' => [
+                'database/migrations/2026_08_15_100000_create_pivot_items_raids_table.php',
+                'database/migrations/2026_08_15_100001_drop_raid_id_from_items_table.php',
+            ],
+        ])->assertExitCode(0);
 
         DB::table('migrations')
             ->whereIn('migration', [
