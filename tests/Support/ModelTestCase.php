@@ -2,6 +2,7 @@
 
 namespace Tests\Support;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -18,7 +19,8 @@ abstract class ModelTestCase extends TestCase
     /** @return class-string<Model> */
     abstract protected function modelClass(): string;
 
-    /** ---------- Factory helpers ---------- */
+    // ==================== Factory helpers ====================
+
     protected function make(array $overrides = []): Model
     {
         return $this->factory()->make($overrides);
@@ -37,7 +39,7 @@ abstract class ModelTestCase extends TestCase
         return Factory::factoryForModel($class);
     }
 
-    /** ---------- Schema / attribute helpers ---------- */
+    // ==================== Schema helpers ====================
 
     /**
      * Assert that a model's $casts includes (at least) the expected key=>type pairs.
@@ -56,12 +58,21 @@ abstract class ModelTestCase extends TestCase
         $this->assertEqualsCanonicalizing($expected, $model->getFillable(), 'Unexpected $fillable.');
     }
 
+    protected function assertFillableAttribute(Model $model, array $expected): void
+    {
+        $attributes = (new \ReflectionClass($model))->getAttributes(Fillable::class);
+
+        $this->assertNotEmpty($attributes, 'Expected model to declare #[Fillable] attribute.');
+        $this->assertEqualsCanonicalizing($expected, $attributes[0]->newInstance()->columns, 'Unexpected #[Fillable] columns.');
+    }
+
     protected function assertHidden(Model $model, array $expected): void
     {
         $this->assertEqualsCanonicalizing($expected, $model->getHidden(), 'Unexpected $hidden.');
     }
 
-    /** ---------- Database helpers ---------- */
+    // ==================== Database helpers ====================
+
     protected function assertTableHas(array $data): void
     {
         $this->assertDatabaseHas($this->tableName(), $data);
@@ -90,7 +101,7 @@ abstract class ModelTestCase extends TestCase
         $persistSecondRecord();
     }
 
-    /** ---------- Relation helpers ---------- */
+    // ==================== Relation helpers ====================
 
     /**
      * Sanity check that a relation method exists and can load.
