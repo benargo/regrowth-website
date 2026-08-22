@@ -6,6 +6,7 @@ use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
 use App\Services\Discord\Discord;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'background_css_class', 'color', 'channel_id', 'is_template'])]
+#[Hidden(['channel_id', 'is_template'])]
 class Event extends PrunableModel
 {
     use HasFactory, HasUuids;
@@ -26,16 +28,6 @@ class Event extends PrunableModel
      */
     protected $attributes = [
         'is_template' => false,
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'channel_id',
-        'is_template',
     ];
 
     /**

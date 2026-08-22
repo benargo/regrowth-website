@@ -8,6 +8,7 @@ use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Raids\Report;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable(['id', 'name', 'level', 'rank_id', 'playable_class_id', 'playable_race_id', 'gender', 'is_main', 'is_loot_councillor'])]
+#[Hidden(['created_at', 'updated_at'])]
 class Character extends Model implements HasCharacterMedia, HasMedia
 {
     use HasFactory, InteractsWithMedia, Prunable;
@@ -47,16 +49,6 @@ class Character extends Model implements HasCharacterMedia, HasMedia
             'is_loot_councillor' => 'boolean',
         ];
     }
-
-    /**
-     * The attributes that should be hidden for arrays.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-    ];
 
     /**
      * The event map for the model.

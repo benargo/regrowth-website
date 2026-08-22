@@ -6,6 +6,7 @@ use App\Contracts\HasBlizzardIcons;
 use App\Enums\PlayableSpecRole;
 use Database\Factories\PlayableSpecializationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable(['playable_class_id', 'role', 'name'])]
+#[Hidden(['created_at', 'updated_at'])]
 class PlayableSpecialization extends Model implements HasBlizzardIcons, HasMedia
 {
     /** use HasFactory<PlayableSpecializationFactory> */
@@ -30,13 +32,6 @@ class PlayableSpecialization extends Model implements HasBlizzardIcons, HasMedia
             'role' => PlayableSpecRole::class,
         ];
     }
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<string, string>
-     */
-    protected $hidden = ['created_at', 'updated_at'];
 
     // ========== Relationships ============
 

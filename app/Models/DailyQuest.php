@@ -6,6 +6,7 @@ use App\Contracts\HasBlizzardIcons;
 use App\Enums\DailyQuestType;
 use App\Enums\Instance;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,19 +15,10 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable(['name', 'type', 'instance'])]
+#[Hidden(['created_at', 'updated_at'])]
 class DailyQuest extends Model implements HasBlizzardIcons, HasMedia
 {
     use HasFactory, InteractsWithMedia;
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-    ];
 
     /**
      * Get the attributes that should be cast.

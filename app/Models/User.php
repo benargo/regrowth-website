@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Config;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['id', 'username', 'discriminator', 'nickname', 'avatar', 'guild_avatar', 'banner'])]
+#[Hidden(['username', 'discriminator', 'remember_token', 'is_admin', 'created_at', 'updated_at'])]
 #[Table(keyType: 'string', incrementing: false)]
 class User extends Authenticatable
 {
@@ -29,20 +31,6 @@ class User extends Authenticatable
      */
     protected $attributes = [
         'is_admin' => false,
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'username',
-        'discriminator',
-        'remember_token',
-        'is_admin',
-        'created_at',
-        'updated_at',
     ];
 
     /**

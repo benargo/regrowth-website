@@ -6,6 +6,7 @@ use App\Http\Resources\BossResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -19,16 +20,10 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable(['name', 'raid_id', 'encounter_order', 'notes'])]
+#[Hidden(['created_at', 'updated_at'])]
 class Boss extends Model implements HasMedia
 {
     use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia;
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<string>
-     */
-    protected $hidden = ['created_at', 'updated_at'];
 
     // ============ Broadcasting ============
 

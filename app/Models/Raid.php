@@ -7,6 +7,7 @@ use App\Enums\RaidBackground;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,17 +19,11 @@ use Illuminate\Support\Str;
 
 #[Appends(['slug'])]
 #[Fillable(['name', 'difficulty', 'background_css_class', 'color', 'phase_id', 'max_players', 'max_loot_councillors'])]
+#[Hidden(['created_at', 'updated_at'])]
 class Raid extends Model
 {
     use FlushesRaidingCacheOnSave;
     use HasFactory;
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<string>
-     */
-    protected $hidden = ['created_at', 'updated_at'];
 
     /**
      * Get the attributes that should be cast.

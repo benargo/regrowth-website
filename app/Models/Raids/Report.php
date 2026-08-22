@@ -10,6 +10,7 @@ use App\Models\CharacterReport;
 use App\Models\GuildTag;
 use App\Models\Zone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -19,9 +20,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[UseResourceCollection(ReportCollection::class)]
 #[Fillable(['code', 'title', 'start_time', 'end_time', 'guild_tag_id', 'zone_id'])]
+#[Hidden(['created_at', 'updated_at', 'zone_id'])]
 #[Table(name: 'raid_reports', keyType: 'string', incrementing: false)]
+#[UseResourceCollection(ReportCollection::class)]
 class Report extends Model
 {
     use HasFactory;
@@ -48,17 +50,6 @@ class Report extends Model
     protected $dispatchesEvents = [
         'created' => ReportCreated::class,
         'updated' => ReportUpdated::class,
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-        'zone_id',
     ];
 
     // ============ Custom attributes ============
