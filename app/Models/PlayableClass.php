@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,19 +14,10 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable(['id', 'name'])]
+#[Table(incrementing: false, timestamps: false)]
 class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
 {
     use HasFactory, InteractsWithMedia;
-
-    /**
-     * The primary key is not auto-incrementing, as the IDs correspond to Blizzard's predefined class IDs.
-     */
-    public $incrementing = false;
-
-    /**
-     * This model does not have timestamps, as the data is static and managed manually.
-     */
-    public $timestamps = false;
 
     // ============ Custom attributes ============
 

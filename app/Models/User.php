@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,24 +16,11 @@ use Illuminate\Support\Facades\Config;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['id', 'username', 'discriminator', 'nickname', 'avatar', 'guild_avatar', 'banner'])]
+#[Table(keyType: 'string', incrementing: false)]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
-
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
-    protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
 
     /**
      * The model's default values for attributes.
