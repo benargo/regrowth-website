@@ -56,6 +56,24 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Event;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'raid_helper_event_id',
+            'title',
+            'start_time',
+            'end_time',
+            'background_css_class',
+            'color',
+            'channel_id',
+            'is_template',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_hidden_attributes(): void
     {
         $model = new Event;

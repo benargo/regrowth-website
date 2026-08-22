@@ -11,7 +11,7 @@ use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -44,6 +44,24 @@ class CharacterTest extends ModelTestCase
         $model = new Character;
 
         $this->assertFillable($model, [
+            'id',
+            'name',
+            'level',
+            'rank_id',
+            'playable_class_id',
+            'playable_race_id',
+            'gender',
+            'is_main',
+            'is_loot_councillor',
+        ]);
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Character;
+
+        $this->assertFillableAttribute($model, [
             'id',
             'name',
             'level',

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Raid;
 
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;

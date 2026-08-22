@@ -4,19 +4,21 @@ namespace Tests\Unit\Models;
 
 use App\Models\Character;
 use App\Models\CharacterReport;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionMethod;
-use Tests\TestCase;
+use Tests\Support\ModelTestCase;
 
 #[Group('characters')]
 #[Group('raiding')]
-class CharacterReportTest extends TestCase
+class CharacterReportTest extends ModelTestCase
 {
-    use RefreshDatabase;
+    protected function modelClass(): string
+    {
+        return CharacterReport::class;
+    }
 
     #[Test]
     public function it_uses_the_correct_table(): void
@@ -40,6 +42,32 @@ class CharacterReportTest extends TestCase
         $pivot = new CharacterReport;
 
         $this->assertContains('report', $pivot->getTouchedRelations());
+    }
+
+    #[Test]
+    public function it_has_expected_fillable_attributes(): void
+    {
+        $pivot = new CharacterReport;
+
+        $this->assertFillable($pivot, [
+            'character_id',
+            'raid_report_id',
+            'presence',
+            'is_loot_councillor',
+        ]);
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $pivot = new CharacterReport;
+
+        $this->assertFillableAttribute($pivot, [
+            'character_id',
+            'raid_report_id',
+            'presence',
+            'is_loot_councillor',
+        ]);
     }
 
     // ==================== is_loot_councillor ====================
@@ -79,8 +107,7 @@ class CharacterReportTest extends TestCase
     {
         $pivot = new CharacterReport;
 
-        $this->assertArrayHasKey('is_loot_councillor', $pivot->getCasts());
-        $this->assertSame('boolean', $pivot->getCasts()['is_loot_councillor']);
+        $this->assertCasts($pivot, ['is_loot_councillor' => 'boolean']);
     }
 
     // ==================== report ====================

@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Factories\Raids;
+namespace Database\Factories;
 
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;

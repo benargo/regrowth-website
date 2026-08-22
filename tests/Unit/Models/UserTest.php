@@ -47,6 +47,22 @@ class UserTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new User;
+
+        $this->assertFillableAttribute($model, [
+            'id',
+            'username',
+            'discriminator',
+            'nickname',
+            'avatar',
+            'guild_avatar',
+            'banner',
+        ]);
+    }
+
+    #[Test]
     public function it_does_not_have_password_in_fillable(): void
     {
         $model = new User;

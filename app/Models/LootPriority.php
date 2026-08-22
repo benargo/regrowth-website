@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
-use Database\Factories\LootPriorityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,8 +15,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Hidden(['created_at', 'updated_at'])]
 class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 {
-    /** @use HasFactory<LootPriorityFactory> */
-    use HasFactory, InteractsWithMedia;
+    use HasFactory;
+    use InteractsWithMedia;
 
     // ============ Media ============
 

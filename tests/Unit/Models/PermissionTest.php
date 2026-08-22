@@ -36,6 +36,14 @@ class PermissionTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Permission;
+
+        $this->assertFillableAttribute($model, ['name', 'guard_name', 'group']);
+    }
+
+    #[Test]
     public function it_can_create_a_permission_without_a_group(): void
     {
         $permission = $this->create(['name' => 'manage-reports']);

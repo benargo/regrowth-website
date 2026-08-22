@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 class EventCharacter extends Pivot
 {
     /**
-     * The model's default attributes.
+     * The model's default values for attributes.
      *
      * @var array<string, mixed>
      */
@@ -28,19 +28,22 @@ class EventCharacter extends Pivot
     ];
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $casts = [
-        'slot_number' => 'integer',
-        'group_number' => 'integer',
-        'signup_status' => SignupStatus::class,
-        'is_leader' => 'boolean',
-        'is_loot_councillor' => 'boolean',
-        'is_loot_master' => 'boolean',
-        'is_benched' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'slot_number' => 'integer',
+            'group_number' => 'integer',
+            'signup_status' => SignupStatus::class,
+            'is_leader' => 'boolean',
+            'is_loot_councillor' => 'boolean',
+            'is_loot_master' => 'boolean',
+            'is_benched' => 'boolean',
+        ];
+    }
 
     // ========== Relationships ============
 

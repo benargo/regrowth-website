@@ -3,7 +3,7 @@
 namespace Tests\Unit\Policies;
 
 use App\Models\DiscordRole;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Policies\ReportPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;

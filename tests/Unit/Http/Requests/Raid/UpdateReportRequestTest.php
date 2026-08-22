@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Requests\Raid;
 
 use App\Http\Requests\Raid\UpdateReportRequest;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Routing\Route;
 use Illuminate\Validation\Rules\In;
 use Illuminate\Validation\Rules\NotIn;
@@ -64,7 +64,7 @@ class UpdateReportRequestTest extends TestCase
         $this->assertArrayHasKey('links.link_ids.*', $rules);
         $this->assertContains('required', $rules['links.link_ids.*']);
         $this->assertContains('string', $rules['links.link_ids.*']);
-        $this->assertContains('exists:raid_reports,id', $rules['links.link_ids.*']);
+        $this->assertContains('exists:reports,id', $rules['links.link_ids.*']);
 
         $notInRule = collect($rules['links.link_ids.*'])->first(fn ($r) => $r instanceof NotIn);
         $this->assertNotNull($notInRule, 'links.link_ids.* rules should contain a Rule::notIn validator');

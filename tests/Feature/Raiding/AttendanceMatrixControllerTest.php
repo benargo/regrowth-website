@@ -9,7 +9,7 @@ use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

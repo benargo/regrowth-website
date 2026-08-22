@@ -60,6 +60,22 @@ class RaidTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Raid;
+
+        $this->assertFillableAttribute($model, [
+            'name',
+            'difficulty',
+            'background_css_class',
+            'color',
+            'phase_id',
+            'max_players',
+            'max_loot_councillors',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new Raid;

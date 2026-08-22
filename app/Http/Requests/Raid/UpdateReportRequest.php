@@ -20,7 +20,7 @@ class UpdateReportRequest extends FormRequest
             'links' => ['sometimes', 'array'],
             'links.action' => ['required_with:links', 'string', Rule::in(['create', 'delete'])],
             'links.link_ids' => [Rule::when($this->input('links.action') === 'create', ['required', 'array', 'min:1'], ['nullable', 'array'])],
-            'links.link_ids.*' => ['required', 'string', 'exists:raid_reports,id', Rule::notIn([$this->route('report')->getKey()])],
+            'links.link_ids.*' => ['required', 'string', 'exists:reports,id', Rule::notIn([$this->route('report')->getKey()])],
 
             // Loot councillors (optional)
             'loot_councillors' => ['sometimes', 'array'],

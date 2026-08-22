@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\WithoutIncrementing;
+use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,27 +14,12 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+#[Fillable(['id', 'name'])]
+#[WithoutIncrementing]
+#[WithoutTimestamps]
 class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
 {
     use HasFactory, InteractsWithMedia;
-
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'id',
-        'name',
-    ];
-
-    /**
-     * The primary key is not auto-incrementing, as the IDs correspond to Blizzard's predefined class IDs.
-     */
-    public $incrementing = false;
-
-    /**
-     * This model does not have timestamps, as the data is static and managed manually.
-     */
-    public $timestamps = false;
 
     // ============ Custom attributes ============
 

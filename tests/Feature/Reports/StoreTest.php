@@ -6,7 +6,7 @@ use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\GuildTag;
 use App\Models\Permission;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -83,7 +83,7 @@ class StoreTest extends TestCase
 
         $this->actingAs($user)->post(route('raiding.reports.store'), $this->validStoreData($tag));
 
-        $this->assertDatabaseHas('raid_reports', [
+        $this->assertDatabaseHas('reports', [
             'title' => 'Sunday Karazhan',
             'zone_id' => 1000,
             'guild_tag_id' => $tag->id,
@@ -144,11 +144,11 @@ class StoreTest extends TestCase
 
         $newReport = Report::where('title', 'Sunday Karazhan')->firstOrFail();
 
-        $this->assertDatabaseHas('raid_report_links', [
+        $this->assertDatabaseHas('pivot_report_links', [
             'report_1' => $newReport->id,
             'report_2' => $existingReport->id,
         ]);
-        $this->assertDatabaseHas('raid_report_links', [
+        $this->assertDatabaseHas('pivot_report_links', [
             'report_1' => $existingReport->id,
             'report_2' => $newReport->id,
         ]);
@@ -176,8 +176,8 @@ class StoreTest extends TestCase
 
         $newReport = Report::where('title', 'Sunday Karazhan')->firstOrFail();
 
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $newReport->id, 'report_2' => $reportB->id]);
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $newReport->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $newReport->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $reportB->id, 'report_2' => $newReport->id]);
     }
 
     #[Test]

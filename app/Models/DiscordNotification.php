@@ -4,51 +4,32 @@ namespace App\Models;
 
 use App\Casts\AsClassName;
 use App\Services\Discord\Payloads\MessagePayload;
-use Database\Factories\DiscordNotificationFactory;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[UseFactory(DiscordNotificationFactory::class)]
+#[Fillable(['type', 'channel_id', 'message_id', 'payload', 'created_by_user_id'])]
+#[Hidden(['updated_at', 'deleted_at'])]
 class DiscordNotification extends Model
 {
     use HasFactory, SoftDeletes;
 
     /**
-     * The attributes that should be cast to native types.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'type' => AsClassName::class,
-        'payload' => MessagePayload::class,
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'type',
-        'channel_id',
-        'message_id',
-        'payload',
-        'created_by_user_id',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'updated_at',
-        'deleted_at',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'type' => AsClassName::class,
+            'payload' => MessagePayload::class,
+        ];
+    }
 
     /**
      * Get the user who created this notification.

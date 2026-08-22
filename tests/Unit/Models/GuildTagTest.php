@@ -4,7 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\GuildTag;
 use App\Models\Phase;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Observers\GuildTagObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -56,6 +56,19 @@ class GuildTagTest extends ModelTestCase
         $model = new GuildTag;
 
         $this->assertFillable($model, [
+            'id',
+            'name',
+            'count_attendance',
+            'tbc_phase_id',
+        ]);
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new GuildTag;
+
+        $this->assertFillableAttribute($model, [
             'id',
             'name',
             'count_attendance',

@@ -5,7 +5,7 @@ namespace Tests\Feature\Jobs\WarcraftLogs;
 use App\Jobs\WarcraftLogs\FetchAttendanceData;
 use App\Models\Character;
 use App\Models\GuildRank;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Services\WarcraftLogs\Attendance;
 use App\Services\WarcraftLogs\ValueObjects\GuildAttendanceData;
 use App\Services\WarcraftLogs\ValueObjects\PlayerAttendanceData;

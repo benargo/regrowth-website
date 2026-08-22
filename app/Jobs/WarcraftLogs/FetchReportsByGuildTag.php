@@ -3,7 +3,7 @@
 namespace App\Jobs\WarcraftLogs;
 
 use App\Models\GuildTag;
-use App\Models\Raids\Report as ReportModel;
+use App\Models\Report as ReportModel;
 use App\Models\Zone;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\ValueObjects\ReportData;
@@ -143,7 +143,7 @@ class FetchReportsByGuildTag implements ShouldQueue
         }
 
         // Fetch all existing links where report_1 belongs to this guild tag's reports.
-        $existingLinks = DB::table('raid_report_links')
+        $existingLinks = DB::table('pivot_report_links')
             ->whereIn('report_1', $allIds)
             ->get();
 
@@ -160,7 +160,7 @@ class FetchReportsByGuildTag implements ShouldQueue
 
         foreach ($staleKeys as $key) {
             [$id1, $id2] = $existingAutoPairs[$key];
-            DB::table('raid_report_links')
+            DB::table('pivot_report_links')
                 ->where('report_1', $id1)
                 ->where('report_2', $id2)
                 ->whereNull('created_by')
@@ -182,7 +182,7 @@ class FetchReportsByGuildTag implements ShouldQueue
             ->all();
 
         if (! empty($toInsert)) {
-            DB::table('raid_report_links')->insert($toInsert);
+            DB::table('pivot_report_links')->insert($toInsert);
             foreach ($toInsert as $row) {
                 $affectedIds->push($row['report_1'], $row['report_2']);
             }

@@ -72,6 +72,29 @@ class DailyQuestTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new DailyQuest;
+
+        $this->assertFillableAttribute($model, [
+            'name',
+            'type',
+            'instance',
+        ]);
+    }
+
+    #[Test]
+    public function it_has_expected_casts(): void
+    {
+        $model = new DailyQuest;
+
+        $this->assertCasts($model, [
+            'type' => DailyQuestType::class,
+            'instance' => Instance::class,
+        ]);
+    }
+
+    #[Test]
     public function it_hides_timestamps(): void
     {
         $model = new DailyQuest;

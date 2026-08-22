@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Models\Raids;
+namespace App\Models;
 
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
 use App\Http\Resources\ReportCollection;
-use App\Models\Character;
-use App\Models\CharacterReport;
-use App\Models\GuildTag;
-use App\Models\Zone;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,6 +16,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+#[Fillable(['code', 'title', 'start_time', 'end_time', 'guild_tag_id', 'zone_id'])]
+#[Hidden(['created_at', 'updated_at', 'zone_id'])]
+#[Table(keyType: 'string', incrementing: false)]
 #[UseResourceCollection(ReportCollection::class)]
 class Report extends Model
 {
@@ -24,54 +26,9 @@ class Report extends Model
     use HasUuids;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'raid_reports';
-
-    /**
-     * Indicates if the model's ID is auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
-
-    /**
-     * The data type of the primary key.
-     *
-     * @var string
-     */
-    protected $keyType = 'string';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'code',
-        'title',
-        'start_time',
-        'end_time',
-        'guild_tag_id',
-        'zone_id',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @var array<string, mixed>
-     */
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
-    ];
-
-    /**
      * The event map for the model.
      *
-     * @var array<string, class-string>
+     * @var array<string, string>
      */
     protected $dispatchesEvents = [
         'created' => ReportCreated::class,
@@ -79,15 +36,17 @@ class Report extends Model
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Get the attributes that should be cast.
      *
-     * @var array<int, string>
+     * @return array<string, string>
      */
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-        'zone_id',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
+        ];
+    }
 
     // ============ Custom attributes ============
 
@@ -101,7 +60,7 @@ class Report extends Model
         );
     }
 
-    // ============ Relationships ============
+    // ============ Relations ============
 
     /**
      * Get the characters that participated in this report.
@@ -130,7 +89,7 @@ class Report extends Model
     {
         return $this->belongsToMany(
             Report::class,
-            'raid_report_links',
+            'pivot_report_links',
             'report_1',
             'report_2'
         )->using(ReportLink::class)->withPivot('created_by')->withTimestamps();

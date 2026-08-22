@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
 use App\Policies\DatasetPolicy;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,46 +13,32 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 #[UsePolicy(DatasetPolicy::class)]
+#[Fillable(['position', 'name', 'count_attendance'])]
 class GuildRank extends Model implements DatasetModel
 {
     use HasFactory;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'guild_ranks';
-
-    /**
      * The model's default values for attributes.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'count_attendance' => true,
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $casts = [
-        'position' => 'integer',
-        'count_attendance' => 'boolean',
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'position',
-        'name',
-        'count_attendance',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'position' => 'integer',
+            'count_attendance' => 'boolean',
+        ];
+    }
 
     /**
      * Set the name attribute to be title-cased.

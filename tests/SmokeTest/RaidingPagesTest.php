@@ -6,7 +6,7 @@ use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\Permission;
 use App\Models\PlannedAbsence;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;

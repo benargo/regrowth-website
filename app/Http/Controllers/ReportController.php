@@ -13,8 +13,8 @@ use App\Http\Resources\WarcraftLogs\LinkedReportResource;
 use App\Http\Resources\WarcraftLogs\ReportClusterResource;
 use App\Models\Character;
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
-use App\Models\Raids\ReportLink;
+use App\Models\Report;
+use App\Models\ReportLink;
 use App\Models\User;
 use App\Models\Zone;
 use Carbon\Carbon;
@@ -221,7 +221,7 @@ class ReportController extends Controller
                 $report->linkedReports()->detach($existingLinkedIds);
 
                 // Delete reverse direction: linked → report (manual links only)
-                DB::table('raid_report_links')
+                DB::table('pivot_report_links')
                     ->whereIn('report_1', $existingLinkedIds)
                     ->where('report_2', $report->id)
                     ->whereNotNull('created_at')
@@ -316,7 +316,7 @@ class ReportController extends Controller
             Cache::tags(['raiding', 'warcraftlogs'])->remember(
                 'reports:links:all_edges',
                 now()->addMinutes(5),
-                fn () => DB::table('raid_report_links')->select('report_1', 'report_2')->get()->toArray()
+                fn () => DB::table('pivot_report_links')->select('report_1', 'report_2')->get()->toArray()
             )
         );
 

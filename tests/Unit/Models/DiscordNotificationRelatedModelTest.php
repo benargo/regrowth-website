@@ -32,6 +32,18 @@ class DiscordNotificationRelatedModelTest extends ModelTestCase
         ]);
     }
 
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new DiscordNotificationRelatedModel;
+
+        $this->assertFillableAttribute($model, [
+            'discord_notification_id',
+            'model_type',
+            'model_id',
+        ]);
+    }
+
     // ==================== timestamps ====================
 
     #[Test]

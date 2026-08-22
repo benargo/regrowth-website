@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use Database\Factories\EventAssignmentGroupFactory;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -14,40 +15,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+#[Fillable(['event_id', 'boss_id', 'name', 'notes', 'sort_order'])]
+#[Hidden(['event_id', 'created_at', 'updated_at'])]
 class EventAssignmentGroup extends Model
 {
-    /** @use HasFactory<EventAssignmentGroupFactory> */
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory;
+    use BroadcastsEvents;
+    use FlushesRaidingCacheOnSave;
+    use HasFactory;
 
     /**
-     * The model's default values.
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'name' => 'New group',
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'event_id',
-        'boss_id',
-        'name',
-        'notes',
-        'sort_order',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'event_id',
-        'created_at',
-        'updated_at',
     ];
 
     // ============ Broadcasting ============

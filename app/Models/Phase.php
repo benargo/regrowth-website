@@ -6,7 +6,6 @@ use App\Contracts\Models\DatasetModel;
 use App\Events\AddonSettingsProcessed;
 use App\Helpers\Database\Eloquent\Traits\HasManyKeyBy;
 use App\Policies\DatasetPolicy;
-use Database\Factories\PhaseFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
@@ -21,19 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 #[UsePolicy(DatasetPolicy::class)]
 class Phase extends Model implements DatasetModel
 {
-    /** @use HasFactory<PhaseFactory> */
     use HasFactory;
-
     use HasManyKeyBy;
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'start_date' => 'datetime',
-    ];
 
     /**
      * The event map for the model.
@@ -43,6 +31,28 @@ class Phase extends Model implements DatasetModel
     protected $dispatchesEvents = [
         'updated' => AddonSettingsProcessed::class,
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'datetime',
+        ];
+    }
+
+    // ============ Custom attributes ============
+
+    /**
+     * Determine if the phase has started.
+     */
+    public function hasStarted(): bool
+    {
+        return $this->start_date?->isPast() ?? false;
+    }
 
     /**
      * Get the phase number attribute.
@@ -55,6 +65,8 @@ class Phase extends Model implements DatasetModel
             },
         );
     }
+
+    // ============ Relations ============
 
     /**
      * Get the raids that belong to this phase.
@@ -78,13 +90,5 @@ class Phase extends Model implements DatasetModel
     public function guildTags(): HasMany
     {
         return $this->hasMany(GuildTag::class, 'tbc_phase_id');
-    }
-
-    /**
-     * Determine if the phase has started.
-     */
-    public function hasStarted(): bool
-    {
-        return $this->start_date?->isPast() ?? false;
     }
 }

@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Filters\Reports;
 
 use App\Http\Filters\Reports\FiltersZoneIds;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\Zone;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;

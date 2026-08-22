@@ -134,6 +134,6 @@ class StoreReportRequestTest extends TestCase
         $this->assertArrayHasKey('linked_report_ids.*', $rules);
         $this->assertContains('required', $rules['linked_report_ids.*']);
         $this->assertContains('string', $rules['linked_report_ids.*']);
-        $this->assertContains('exists:raid_reports,id', $rules['linked_report_ids.*']);
+        $this->assertContains('exists:reports,id', $rules['linked_report_ids.*']);
     }
 }

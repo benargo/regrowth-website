@@ -68,6 +68,22 @@ class PlannedAbsenceTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new PlannedAbsence;
+
+        $this->assertFillableAttribute($model, [
+            'character_id',
+            'user_id',
+            'start_date',
+            'end_date',
+            'reason',
+            'discord_message_id',
+            'created_by',
+        ]);
+    }
+
+    #[Test]
     public function it_casts_dates_as_datetime(): void
     {
         $model = new PlannedAbsence;

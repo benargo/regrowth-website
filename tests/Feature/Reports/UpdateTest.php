@@ -5,7 +5,7 @@ namespace Tests\Feature\Reports;
 use App\Models\Character;
 use App\Models\DiscordRole;
 use App\Models\Permission;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -167,13 +167,13 @@ class UpdateTest extends TestCase
         ]);
 
         // Forward direction: report → other
-        $this->assertDatabaseHas('raid_report_links', [
+        $this->assertDatabaseHas('pivot_report_links', [
             'report_1' => $report->id,
             'report_2' => $other->id,
         ]);
 
         // Reverse direction: other → report
-        $this->assertDatabaseHas('raid_report_links', [
+        $this->assertDatabaseHas('pivot_report_links', [
             'report_1' => $other->id,
             'report_2' => $report->id,
         ]);
@@ -201,7 +201,7 @@ class UpdateTest extends TestCase
             [$reportA->id, $reportB->id],
             [$reportB->id, $reportA->id],
         ] as [$r1, $r2]) {
-            $this->assertDatabaseHas('raid_report_links', ['report_1' => $r1, 'report_2' => $r2]);
+            $this->assertDatabaseHas('pivot_report_links', ['report_1' => $r1, 'report_2' => $r2]);
         }
     }
 
@@ -219,7 +219,7 @@ class UpdateTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseCount('raid_report_links', 2); // forward + reverse, no duplicates
+        $this->assertDatabaseCount('pivot_report_links', 2); // forward + reverse, no duplicates
     }
 
     #[Test]
@@ -240,8 +240,8 @@ class UpdateTest extends TestCase
             'links' => ['action' => 'create', 'link_ids' => [$reportA->id]],
         ]);
 
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
     }
 
     #[Test]
@@ -281,11 +281,11 @@ class UpdateTest extends TestCase
         ]);
 
         // Forward links from report should be gone
-        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
-        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report->id, 'report_2' => $reportC->id]);
+        $this->assertDatabaseMissing('pivot_report_links', ['report_1' => $report->id, 'report_2' => $reportB->id]);
+        $this->assertDatabaseMissing('pivot_report_links', ['report_1' => $report->id, 'report_2' => $reportC->id]);
         // Reverse links back to report should be gone
-        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
-        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $reportC->id, 'report_2' => $report->id]);
+        $this->assertDatabaseMissing('pivot_report_links', ['report_1' => $reportB->id, 'report_2' => $report->id]);
+        $this->assertDatabaseMissing('pivot_report_links', ['report_1' => $reportC->id, 'report_2' => $report->id]);
     }
 
     #[Test]
@@ -297,7 +297,7 @@ class UpdateTest extends TestCase
         $user = User::factory()->officer()->create();
 
         // Insert with created_at = null to simulate auto-linked rows (no Eloquent timestamps)
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $report->id, 'report_2' => $autoLinked->id, 'created_by' => null, 'created_at' => null, 'updated_at' => null],
             ['report_1' => $autoLinked->id, 'report_2' => $report->id, 'created_by' => null, 'created_at' => null, 'updated_at' => null],
         ]);
@@ -306,8 +306,8 @@ class UpdateTest extends TestCase
             'links' => ['action' => 'delete', 'link_ids' => []],
         ]);
 
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $report->id, 'report_2' => $autoLinked->id]);
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $autoLinked->id, 'report_2' => $report->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $report->id, 'report_2' => $autoLinked->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $autoLinked->id, 'report_2' => $report->id]);
     }
 
     #[Test]
@@ -322,7 +322,7 @@ class UpdateTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseCount('raid_report_links', 0);
+        $this->assertDatabaseCount('pivot_report_links', 0);
     }
 
     #[Test]

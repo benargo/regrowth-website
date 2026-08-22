@@ -3,7 +3,7 @@
 namespace Tests\Feature\Raiding;
 
 use App\Models\Event;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

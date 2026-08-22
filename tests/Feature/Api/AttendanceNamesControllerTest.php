@@ -7,7 +7,7 @@ use App\Models\DiscordRole;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
 use App\Models\Permission;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

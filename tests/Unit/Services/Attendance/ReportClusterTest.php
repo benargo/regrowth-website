@@ -5,7 +5,7 @@ namespace Tests\Unit\Services\Attendance;
 use App\Models\Character;
 use App\Models\GuildRank;
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\Zone;
 use App\Services\Attendance\PlayerPresenceData;
 use App\Services\Attendance\ReportClusterData;

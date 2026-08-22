@@ -7,7 +7,7 @@ use App\Events\ReportLinkDeleted;
 use App\Events\ReportLinkSaved;
 use App\Events\ReportUpdated;
 use App\Listeners\FlushAttendanceCache;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Providers;
 
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;

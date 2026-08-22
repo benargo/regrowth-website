@@ -1,18 +1,19 @@
 <?php
 
-namespace Tests\Unit\Models\Raids;
+namespace Tests\Unit\Models;
 
 use App\Events\AddonSettingsProcessed;
 use App\Events\ReportCreated;
 use App\Events\ReportUpdated;
 use App\Models\Character;
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -32,7 +33,7 @@ class ReportTest extends ModelTestCase
     {
         $report = new Report;
 
-        $this->assertSame('raid_reports', $report->getTable());
+        $this->assertSame('reports', $report->getTable());
     }
 
     #[Test]
@@ -51,6 +52,21 @@ class ReportTest extends ModelTestCase
         $report = new Report;
 
         $this->assertFillable($report, [
+            'code',
+            'title',
+            'start_time',
+            'end_time',
+            'guild_tag_id',
+            'zone_id',
+        ]);
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $report = new Report;
+
+        $this->assertFillableAttribute($report, [
             'code',
             'title',
             'start_time',
@@ -426,7 +442,7 @@ class ReportTest extends ModelTestCase
         $report1 = $this->create();
         $report2 = $this->create();
 
-        \DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
@@ -444,7 +460,7 @@ class ReportTest extends ModelTestCase
         $report2 = $this->create();
         $officer = User::factory()->officer()->create();
 
-        \DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
         ]);
@@ -462,14 +478,14 @@ class ReportTest extends ModelTestCase
         $report1 = $this->create();
         $report2 = $this->create();
 
-        \DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $report1->id, 'report_2' => $report2->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $report2->id, 'report_2' => $report1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $report1->delete();
 
-        $this->assertDatabaseMissing('raid_report_links', ['report_1' => $report1->id]);
-        $this->assertDatabaseMissing('raid_report_links', ['report_2' => $report1->id]);
+        $this->assertDatabaseMissing('pivot_report_links', ['report_1' => $report1->id]);
+        $this->assertDatabaseMissing('pivot_report_links', ['report_2' => $report1->id]);
     }
 }

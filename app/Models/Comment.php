@@ -7,7 +7,6 @@ use App\Casts\AsKeyType;
 use App\Events\CommentCreated;
 use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
-use Database\Factories\CommentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,25 +20,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['commentable_id', 'commentable_type', 'user_id', 'body', 'is_resolved', 'deleted_by'])]
 class Comment extends Model
 {
-    /** @use HasFactory<CommentFactory> */
     use HasFactory;
-
     use SoftDeletes;
 
     /**
      * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_resolved' => false,
-    ];
-
-    /**
-     * The attributes that should be cast to native types.
-     */
-    protected $casts = [
-        'commentable_id' => AsKeyType::class,
-        'commentable_type' => AsClassName::class,
-        'is_resolved' => 'boolean',
     ];
 
     /**
@@ -52,6 +42,20 @@ class Comment extends Model
         'deleted' => CommentDeleted::class,
         'updated' => CommentUpdated::class,
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'commentable_id' => AsKeyType::class,
+            'commentable_type' => AsClassName::class,
+            'is_resolved' => 'boolean',
+        ];
+    }
 
     /**
      * Get the parent commentable model.

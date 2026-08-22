@@ -7,7 +7,7 @@ use App\Models\DiscordRole;
 use App\Models\GuildTag;
 use App\Models\Permission;
 use App\Models\PlayableClass;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Carbon\Carbon;
@@ -197,7 +197,7 @@ class CreateTest extends TestCase
 
         // R1↔R3, R2↔R4, R3↔R4 creates parent[R4]→R2→R1 after initial unions;
         // the next find(R4) traverses two levels and path compression fires.
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $r1->id, 'report_2' => $r3->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $r3->id, 'report_2' => $r1->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $r2->id, 'report_2' => $r4->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
@@ -231,7 +231,7 @@ class CreateTest extends TestCase
         // The links cache refetches from DB (both were flushed above), so the link is present
         // but $phantom's ID is absent from $parent — simulating a dangling reference.
         // buildNearbyReportClusters() must skip it via the isset() guard.
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $report->id, 'report_2' => $phantom->id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
 

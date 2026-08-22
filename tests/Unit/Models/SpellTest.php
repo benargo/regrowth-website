@@ -43,6 +43,14 @@ class SpellTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Spell;
+
+        $this->assertFillableAttribute($model, ['id', 'name', 'type']);
+    }
+
+    #[Test]
     public function it_has_timestamps(): void
     {
         $model = new Spell;

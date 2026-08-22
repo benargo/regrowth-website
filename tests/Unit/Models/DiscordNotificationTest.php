@@ -37,6 +37,20 @@ class DiscordNotificationTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new DiscordNotification;
+
+        $this->assertFillableAttribute($model, [
+            'type',
+            'channel_id',
+            'message_id',
+            'payload',
+            'created_by_user_id',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new DiscordNotification;

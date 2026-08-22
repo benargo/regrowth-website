@@ -4,49 +4,26 @@ namespace App\Models;
 
 use App\Events\DiscordRoleUpdated;
 use App\Traits\HasPermissions;
-use Database\Factories\DiscordRoleFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+#[Fillable(['id', 'name', 'position', 'is_visible'])]
+#[Table(keyType: 'string', incrementing: false)]
 class DiscordRole extends Model
 {
-    /** @use HasFactory<DiscordRoleFactory> */
-    use HasFactory, HasPermissions;
-
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
-    protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
+    use HasFactory;
+    use HasPermissions;
 
     /**
      * The model's default values for attributes.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_visible' => false,
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'id',
-        'name',
-        'position',
-        'is_visible',
     ];
 
     /**

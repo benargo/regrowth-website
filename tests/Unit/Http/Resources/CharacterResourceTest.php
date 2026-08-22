@@ -11,7 +11,7 @@ use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
 use App\Models\PlayableSpecialization;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

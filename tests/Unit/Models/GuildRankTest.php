@@ -38,6 +38,18 @@ class GuildRankTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new GuildRank;
+
+        $this->assertFillableAttribute($model, [
+            'position',
+            'name',
+            'count_attendance',
+        ]);
+    }
+
+    #[Test]
     public function it_has_expected_casts(): void
     {
         $model = new GuildRank;

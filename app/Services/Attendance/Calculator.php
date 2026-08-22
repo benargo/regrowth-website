@@ -7,7 +7,7 @@ use App\Models\Character;
 use App\Models\CharacterReport;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -297,7 +297,7 @@ class Calculator
     /**
      * Merge reports that are linked together in the database into ReportClusterData value objects.
      *
-     * Reports connected via the raid_report_links table are treated as a single
+     * Reports connected via the pivot_report_links table are treated as a single
      * raid. Uses union-find (keyed on report id, since code is nullable for manual
      * reports) to resolve connected components within the provided collection.
      *

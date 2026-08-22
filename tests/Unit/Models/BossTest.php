@@ -56,6 +56,19 @@ class BossTest extends ModelTestCase
         ]);
     }
 
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Boss;
+
+        $this->assertFillableAttribute($model, [
+            'name',
+            'raid_id',
+            'encounter_order',
+            'notes',
+        ]);
+    }
+
     // ==================== persistence and factory ====================
 
     #[Test]

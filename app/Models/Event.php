@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Casts\AsBinaryColor;
 use App\Enums\RaidBackground;
 use App\Services\Discord\Discord;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,6 +15,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['id', 'raid_helper_event_id', 'title', 'start_time', 'end_time', 'background_css_class', 'color', 'channel_id', 'is_template'])]
+#[Hidden(['channel_id', 'is_template'])]
 class Event extends PrunableModel
 {
     use HasFactory, HasUuids;
@@ -27,44 +31,20 @@ class Event extends PrunableModel
     ];
 
     /**
-     * The attributes that are mass assignable.
+     * Get the attributes that should be cast.
      *
-     * @var array
+     * @return array<string, string>
      */
-    protected $fillable = [
-        'id',
-        'raid_helper_event_id',
-        'title',
-        'start_time',
-        'end_time',
-        'background_css_class',
-        'color',
-        'channel_id',
-        'is_template',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'channel_id',
-        'is_template',
-    ];
-
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
-        'background_css_class' => RaidBackground::class,
-        'color' => AsBinaryColor::class,
-        'is_template' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
+            'background_css_class' => RaidBackground::class,
+            'color' => AsBinaryColor::class,
+            'is_template' => 'boolean',
+        ];
+    }
 
     // ========== Pruning ============
 

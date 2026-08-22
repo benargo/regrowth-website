@@ -4,39 +4,22 @@ namespace App\Models;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
-use App\Models\Raids\Report;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['id', 'name', 'difficulties', 'expansion', 'is_frozen'])]
+#[Hidden(['created_at', 'updated_at'])]
+#[Table(name: 'wcl_zones', keyType: 'int', incrementing: false)]
 class Zone extends Model
 {
     use HasFactory;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'wcl_zones';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     * Zone IDs are sourced externally from Warcraft Logs.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
-
-    /**
-     * The data type of the primary key.
-     *
-     * @var string
-     */
-    protected $keyType = 'int';
-
-    /**
-     * The attributes that are the model's default values.
+     * The model's default values for attributes.
      *
      * @var array<string, mixed>
      */
@@ -45,36 +28,18 @@ class Zone extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $fillable = [
-        'id',
-        'name',
-        'difficulties',
-        'expansion',
-        'is_frozen',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     */
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'difficulties' => AsDifficultyCollection::class,
-        'expansion' => AsExpansion::class,
-        'is_frozen' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'difficulties' => AsDifficultyCollection::class,
+            'expansion' => AsExpansion::class,
+            'is_frozen' => 'boolean',
+        ];
+    }
 
     /**
      * Get the reports for the zone.

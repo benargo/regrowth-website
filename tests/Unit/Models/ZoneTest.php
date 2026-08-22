@@ -4,7 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
@@ -46,6 +46,20 @@ class ZoneTest extends ModelTestCase
         $model = new Zone;
 
         $this->assertFillable($model, [
+            'id',
+            'name',
+            'difficulties',
+            'expansion',
+            'is_frozen',
+        ]);
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $model = new Zone;
+
+        $this->assertFillableAttribute($model, [
             'id',
             'name',
             'difficulties',

@@ -4,7 +4,7 @@ namespace Tests\Feature\Jobs\WarcraftLogs;
 
 use App\Jobs\WarcraftLogs\FetchReportsByGuildTag;
 use App\Models\GuildTag;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Services\WarcraftLogs\Reports;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
@@ -52,7 +52,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($reportsService);
 
-        $this->assertDatabaseHas('raid_reports', ['code' => 'ABC123', 'title' => 'Test Report']);
+        $this->assertDatabaseHas('reports', ['code' => 'ABC123', 'title' => 'Test Report']);
     }
 
     #[Test]
@@ -86,7 +86,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $job->handle($reportsService);
 
         $this->assertDatabaseHas('wcl_zones', ['id' => 2000, 'name' => 'Karazhan']);
-        $this->assertDatabaseHas('raid_reports', ['code' => 'ZONE01', 'zone_id' => 2000]);
+        $this->assertDatabaseHas('reports', ['code' => 'ZONE01', 'zone_id' => 2000]);
     }
 
     // ==================== time filters ====================
@@ -188,8 +188,8 @@ class FetchReportsByGuildTagTest extends TestCase
 
         $r1 = Report::where('code', 'AAA111')->first();
         $r2 = Report::where('code', 'BBB222')->first();
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $r1->id, 'report_2' => $r2->id, 'created_by' => null]);
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $r2->id, 'report_2' => $r1->id, 'created_by' => null]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $r1->id, 'report_2' => $r2->id, 'created_by' => null]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $r2->id, 'report_2' => $r1->id, 'created_by' => null]);
     }
 
     #[Test]
@@ -205,7 +205,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
-        $this->assertDatabaseCount('raid_report_links', 0);
+        $this->assertDatabaseCount('pivot_report_links', 0);
     }
 
     #[Test]
@@ -224,8 +224,8 @@ class FetchReportsByGuildTagTest extends TestCase
 
         $r1 = Report::where('code', 'AAA111')->first();
         $r2 = Report::where('code', 'BBB222')->first();
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $r1->id, 'report_2' => $r2->id]);
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $r2->id, 'report_2' => $r1->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $r1->id, 'report_2' => $r2->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $r2->id, 'report_2' => $r1->id]);
     }
 
     #[Test]
@@ -242,7 +242,7 @@ class FetchReportsByGuildTagTest extends TestCase
         $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
-        $this->assertDatabaseCount('raid_report_links', 0);
+        $this->assertDatabaseCount('pivot_report_links', 0);
     }
 
     #[Test]
@@ -262,18 +262,18 @@ class FetchReportsByGuildTagTest extends TestCase
 
         $r1Id = Report::where('code', 'AAA111')->value('id');
         $r2Id = Report::where('code', 'BBB222')->value('id');
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $r1Id, 'report_2' => $r2Id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $r2Id, 'report_2' => $r1Id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        $this->assertDatabaseCount('raid_report_links', 2);
+        $this->assertDatabaseCount('pivot_report_links', 2);
 
         // Run the job again — the stale links should be removed
         $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
-        $this->assertDatabaseCount('raid_report_links', 0);
+        $this->assertDatabaseCount('pivot_report_links', 0);
     }
 
     #[Test]
@@ -294,7 +294,7 @@ class FetchReportsByGuildTagTest extends TestCase
         // Officer manually creates a link between the two reports
         $r1Id = Report::where('code', 'AAA111')->value('id');
         $r2Id = Report::where('code', 'BBB222')->value('id');
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $r1Id, 'report_2' => $r2Id, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
             ['report_1' => $r2Id, 'report_2' => $r1Id, 'created_by' => $officer->id, 'created_at' => now(), 'updated_at' => now()],
         ]);
@@ -303,8 +303,8 @@ class FetchReportsByGuildTagTest extends TestCase
         $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $r1Id, 'report_2' => $r2Id, 'created_by' => $officer->id]);
-        $this->assertDatabaseHas('raid_report_links', ['report_1' => $r2Id, 'report_2' => $r1Id, 'created_by' => $officer->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $r1Id, 'report_2' => $r2Id, 'created_by' => $officer->id]);
+        $this->assertDatabaseHas('pivot_report_links', ['report_1' => $r2Id, 'report_2' => $r1Id, 'created_by' => $officer->id]);
     }
 
     // ==================== touching ====================
@@ -351,7 +351,7 @@ class FetchReportsByGuildTagTest extends TestCase
         // Seed a stale auto-link
         $r1Id = Report::where('code', 'AAA111')->value('id');
         $r2Id = Report::where('code', 'BBB222')->value('id');
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $r1Id, 'report_2' => $r2Id, 'created_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
@@ -384,7 +384,7 @@ class FetchReportsByGuildTagTest extends TestCase
         // Backdate to isolate the initial persist from our assertion
         $originalTime = now()->subHour();
         Report::whereIn('code', ['AAA111', 'BBB222'])->update(['updated_at' => $originalTime]);
-        DB::table('raid_report_links')->truncate();
+        DB::table('pivot_report_links')->truncate();
 
         // Run again — links should now be inserted and reports touched
         $job2 = new FetchReportsByGuildTag($guildTag);
@@ -408,12 +408,12 @@ class FetchReportsByGuildTagTest extends TestCase
         $job = new FetchReportsByGuildTag($guildTag);
         $job->handle($this->mockReportsService([$report1, $report2]));
 
-        $this->assertDatabaseCount('raid_report_links', 2);
+        $this->assertDatabaseCount('pivot_report_links', 2);
 
         // Run again — must not insert duplicates
         $job2 = new FetchReportsByGuildTag($guildTag);
         $job2->handle($this->mockReportsService([$report1, $report2]));
 
-        $this->assertDatabaseCount('raid_report_links', 2);
+        $this->assertDatabaseCount('pivot_report_links', 2);
     }
 }

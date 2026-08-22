@@ -2,30 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Model;
 
+#[Fillable(['id', 'type', 'pruned_at'])]
+#[WithoutTimestamps]
 class PrunedModel extends Model
 {
     /**
-     * Indicates if the model should be timestamped.
+     * Get the attributes that should be cast.
      *
-     * @var bool
+     * @return array<string, string>
      */
-    public $timestamps = false;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = ['id', 'type', 'pruned_at'];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'pruned_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'pruned_at' => 'datetime',
+        ];
+    }
 }

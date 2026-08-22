@@ -5,7 +5,7 @@ namespace Tests\Feature\Reports;
 use App\Models\Character;
 use App\Models\GuildTag;
 use App\Models\PlayableClass;
-use App\Models\Raids\Report;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Carbon\Carbon;
@@ -254,7 +254,7 @@ class ShowTest extends TestCase
         $d = Report::factory()->withGuildTag($tag)->create(['start_time' => Carbon::parse('2025-01-04 20:00', 'UTC')]);
 
         // Link a ↔ b and b ↔ c → cluster {a,b,c}; d stands alone.
-        DB::table('raid_report_links')->insert([
+        DB::table('pivot_report_links')->insert([
             ['report_1' => $a->id, 'report_2' => $b->id],
             ['report_1' => $b->id, 'report_2' => $a->id],
             ['report_1' => $b->id, 'report_2' => $c->id],
