@@ -167,6 +167,38 @@ class PrioritySeederTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    // ==================== priorities ====================
+
+    #[Test]
+    public function priorities_returns_a_non_empty_array(): void
+    {
+        $priorities = PrioritySeeder::priorities();
+
+        $this->assertIsArray($priorities);
+        $this->assertNotEmpty($priorities);
+    }
+
+    #[Test]
+    public function priorities_entries_expose_type_title_and_icon_name(): void
+    {
+        $priorities = PrioritySeeder::priorities();
+
+        foreach ($priorities as $priority) {
+            $this->assertArrayHasKey('type', $priority);
+            $this->assertArrayHasKey('title', $priority);
+            $this->assertArrayHasKey('icon_name', $priority);
+        }
+    }
+
+    #[Test]
+    public function priorities_includes_known_entries(): void
+    {
+        $priorities = PrioritySeeder::priorities();
+
+        $this->assertContains(['type' => 'Role', 'title' => 'Tank', 'icon_name' => 'inv_shield_04'], $priorities);
+        $this->assertContains(['type' => 'Meme', 'title' => 'Disenchant', 'icon_name' => 'inv_enchant_voidcrystal'], $priorities);
+    }
+
     // ==================== helpers ====================
 
     private function runSeeder(): void
