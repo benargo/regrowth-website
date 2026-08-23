@@ -37,12 +37,16 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('event_assignment_groups')->update([
-            'sort_order' => DB::raw('sort_order - 1'),
-        ]);
+        DB::table('event_assignment_groups')
+            ->where('sort_order', '>', 0)
+            ->update([
+                'sort_order' => DB::raw('sort_order - 1'),
+            ]);
 
-        DB::table('event_assignments')->update([
-            'sort_order' => DB::raw('sort_order - 1'),
-        ]);
+        DB::table('event_assignments')
+            ->where('sort_order', '>', 0)
+            ->update([
+                'sort_order' => DB::raw('sort_order - 1'),
+            ]);
     }
 };
