@@ -46,6 +46,7 @@ class LootPriorityTest extends ModelTestCase
         $this->assertFillable($model, [
             'title',
             'type',
+            'playable_class_id',
         ]);
     }
 
@@ -186,6 +187,16 @@ class LootPriorityTest extends ModelTestCase
 
         $this->assertSame($playableClass->id, $priority->playable_class_id);
         $this->assertInstanceOf(PlayableClass::class, $priority->playableClass);
+    }
+
+    #[Test]
+    public function playable_class_id_is_mass_assignable(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+
+        $priority = $this->create(['playable_class_id' => $playableClass->id]);
+
+        $this->assertSame($playableClass->id, $priority->playable_class_id);
     }
 
     #[Test]

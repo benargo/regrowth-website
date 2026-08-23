@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['title', 'type'])]
+#[Fillable(['title', 'type', 'playable_class_id'])]
 #[Hidden(['created_at', 'updated_at'])]
 class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 {
