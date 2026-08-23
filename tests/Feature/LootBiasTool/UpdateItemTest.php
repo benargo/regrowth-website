@@ -4,6 +4,7 @@ namespace Tests\Feature\LootBiasTool;
 
 use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Events\Broadcasts\ItemUpdated;
+use App\Events\Broadcasts\LootPrioritiesChanged;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Boss;
 use App\Models\DiscordRole;
@@ -458,6 +459,63 @@ class UpdateItemTest extends TestCase
             ->assertSessionHasErrors('notes');
 
         Event::assertNotDispatched(ItemUpdated::class);
+    }
+
+    #[Test]
+    public function update_dispatches_loot_priorities_changed_when_priorities_payload_sent(): void
+    {
+        Event::fake([LootPrioritiesChanged::class]);
+
+        $user = User::factory()->officer()->create();
+        $item = $this->createItem();
+        $priority = LootPriority::factory()->create();
+
+        $this->actingAs($user)
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
+                'priorities' => [
+                    ['priority_id' => $priority->id, 'weight' => 0],
+                ],
+            ])
+            ->assertSessionHasNoErrors();
+
+        Event::assertDispatched(LootPrioritiesChanged::class);
+    }
+
+    #[Test]
+    public function update_does_not_dispatch_loot_priorities_changed_for_notes_only_update(): void
+    {
+        Event::fake([LootPrioritiesChanged::class]);
+
+        $user = User::factory()->officer()->create();
+        $item = $this->createItem();
+
+        $this->actingAs($user)
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), ['notes' => 'Notes only'])
+            ->assertSessionHasNoErrors();
+
+        Event::assertNotDispatched(LootPrioritiesChanged::class);
+    }
+
+    #[Test]
+    public function update_does_not_broadcast_loot_priorities_changed_when_validation_fails(): void
+    {
+        Event::fake([LootPrioritiesChanged::class]);
+
+        $user = User::factory()->officer()->create();
+        $item = $this->createItem();
+
+        $this->actingAs($user)
+            ->from($this->editUrl($item))
+            ->patch(route('loot.items.update', $item), [
+                'priorities' => [
+                    ['priority_id' => 99999, 'weight' => 0],
+                ],
+            ])
+            ->assertSessionHasErrors('priorities.0.priority_id');
+
+        Event::assertNotDispatched(LootPrioritiesChanged::class);
     }
 
     // ==================== blizzard api isolation ====================

@@ -16,6 +16,12 @@ Broadcast::channel('event.{event}', function (User $user, Event $event): bool {
     return $user->can('view', $event);
 });
 
+// Loot priorities aggregate channel: the Priorities page subscribes here as a
+// "something changed, go refetch" signal. Gated by the same permission as the page.
+Broadcast::channel('loot-priorities', function (User $user): bool {
+    return $user->isAuthorizedTo('view-priorities-page');
+});
+
 // Presence channel: only EditEvent joins here.
 // Requires manage-raid-plans permission; returns user data for the avatar stack.
 Broadcast::channel('event.{event}.editors', function (User $user, Event $event): bool|array {

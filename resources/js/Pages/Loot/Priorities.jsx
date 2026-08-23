@@ -5,6 +5,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import Icon from "@/Components/FontAwesome/Icon";
 import useLocalStorage from "@/Hooks/useLocalStorage";
+import useLootPrioritiesChannel from "@/Hooks/useLootPrioritiesChannel";
 
 function PriorityIcon({ icon, title, size = "h-5 w-5" }) {
     if (!icon) {
@@ -276,6 +277,8 @@ function PrioritiesTable({ phases, table }) {
 }
 
 export default function Priorities({ phases, table }) {
+    useLootPrioritiesChannel();
+
     phases = phases.data ?? phases ?? [];
 
     if (phases.length === 0) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Contracts\Http\Middleware\SharesOriginRaidSession;
 use App\Events\Broadcasts\ItemUpdated;
+use App\Events\Broadcasts\LootPrioritiesChanged;
 use App\Http\Controllers\Concerns\PaginatesCommentReplies;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
@@ -105,6 +106,10 @@ class ItemController extends Controller
         $this->loadItemRelations($item, $request->attributes->get(SharesOriginRaidSession::SESSION_KEY));
 
         broadcast(new ItemUpdated($item))->toOthers();
+
+        if ($request->has('priorities')) {
+            broadcast(new LootPrioritiesChanged)->toOthers();
+        }
 
         return Inertia::render('Loot/Items/Edit', [
             'item' => new ItemResource($item),
