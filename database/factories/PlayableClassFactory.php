@@ -11,7 +11,10 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PlayableClassFactory extends Factory
 {
-    private $classNames = [
+    /**
+     * @var array<int, string>
+     */
+    private array $classNames = [
         'Death Knight',
         'Demon Hunter',
         'Druid',
