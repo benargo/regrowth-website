@@ -24,6 +24,7 @@ class PermissionSeeder extends Seeder
         ['name' => 'edit-items', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
         ['name' => 'mark-comment-as-resolved', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
         ['name' => 'react-to-comments', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
+        ['name' => 'view-stats-page', 'group' => 'loot-bias-tool', 'guard_name' => 'web'],
 
         /**
          * Raid management permissions
