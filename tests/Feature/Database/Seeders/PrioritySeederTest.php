@@ -6,6 +6,7 @@ use App\Contracts\HasBlizzardIcons;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\LootPriority;
+use App\Models\PlayableClass;
 use Database\Seeders\PrioritySeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,6 +33,12 @@ class PrioritySeederTest extends TestCase
         Saloon::fake([
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
+
+        collect(PrioritySeeder::priorities())
+            ->pluck('playable_class_id')
+            ->filter()
+            ->unique()
+            ->each(fn (int $id) => PlayableClass::factory()->create(['id' => $id]));
     }
 
     #[Test]
@@ -165,6 +172,83 @@ class PrioritySeederTest extends TestCase
         $this->assertDatabaseHas('loot_priorities', ['title' => 'Tank', 'type' => 'Role']);
         $this->assertDatabaseCount('media', 0);
         Queue::assertNothingPushed();
+    }
+
+    #[Test]
+    public function seeder_sets_playable_class_id_when_defined(): void
+    {
+        $this->runSeeder();
+
+        $this->assertDatabaseHas('loot_priorities', [
+            'title' => 'Druid',
+            'type' => 'Class',
+            'playable_class_id' => 11,
+        ]);
+
+        $this->assertDatabaseHas('loot_priorities', [
+            'title' => 'Balance Druid',
+            'type' => 'Spec',
+            'playable_class_id' => 11,
+        ]);
+    }
+
+    #[Test]
+    public function seeder_leaves_playable_class_id_null_when_not_defined(): void
+    {
+        $this->runSeeder();
+
+        $tank = LootPriority::where('title', 'Tank')->first();
+        $disenchant = LootPriority::where('title', 'Disenchant')->first();
+
+        $this->assertNull($tank->playable_class_id);
+        $this->assertNull($disenchant->playable_class_id);
+    }
+
+    // ==================== priorities ====================
+
+    #[Test]
+    public function priorities_returns_a_non_empty_array(): void
+    {
+        $priorities = PrioritySeeder::priorities();
+
+        $this->assertIsArray($priorities);
+        $this->assertNotEmpty($priorities);
+    }
+
+    #[Test]
+    public function priorities_entries_expose_type_title_and_icon_name(): void
+    {
+        $priorities = PrioritySeeder::priorities();
+
+        foreach ($priorities as $priority) {
+            $this->assertArrayHasKey('type', $priority);
+            $this->assertArrayHasKey('title', $priority);
+            $this->assertArrayHasKey('icon_name', $priority);
+        }
+    }
+
+    #[Test]
+    public function priorities_includes_known_entries(): void
+    {
+        $priorities = PrioritySeeder::priorities();
+
+        $this->assertContains(['type' => 'Role', 'title' => 'Tank', 'icon_name' => 'inv_shield_04'], $priorities);
+        $this->assertContains(['type' => 'Meme', 'title' => 'Disenchant', 'icon_name' => 'inv_enchant_voidcrystal'], $priorities);
+        $this->assertContains(['type' => 'Class', 'title' => 'Druid', 'playable_class_id' => 11, 'icon_name' => 'classicon_druid'], $priorities);
+    }
+
+    #[Test]
+    public function priorities_entries_only_set_playable_class_id_for_class_spec_and_custom_types(): void
+    {
+        $priorities = PrioritySeeder::priorities();
+
+        foreach ($priorities as $priority) {
+            if (in_array($priority['type'], ['Class', 'Spec', 'Custom'], true)) {
+                $this->assertArrayHasKey('playable_class_id', $priority, "Expected playable_class_id for '{$priority['title']}'");
+            } else {
+                $this->assertArrayNotHasKey('playable_class_id', $priority, "Did not expect playable_class_id for '{$priority['title']}'");
+            }
+        }
     }
 
     // ==================== helpers ====================

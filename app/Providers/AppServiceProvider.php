@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
 use App\Models\User;
+use App\Services\LootPriorities\HighestPriorityStats;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PermissionGroupsResource::class, function () {
             return new PermissionGroupsResource(collect(PermissionSeeder::groups()));
         });
+
+        /**
+         * Loot priorities
+         */
+        $this->app->singleton(HighestPriorityStats::class);
     }
 
     /**
@@ -47,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('impersonate-roles', fn (User $user) => $user->isAuthorizedTo('impersonate-roles'));
         Gate::define('view-attendance', fn (User $user) => $user->isAuthorizedTo('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->isAuthorizedTo('view-officer-dashboard'));
+        Gate::define('view-priorities-page', fn (User $user) => $user->isAuthorizedTo('view-priorities-page'));
         Gate::define('set-daily-quests', fn (User $user) => $user->isAuthorizedTo('set-daily-quests'));
         Gate::define('audit-daily-quests', fn (User $user) => $user->isAuthorizedTo('audit-daily-quests'));
 

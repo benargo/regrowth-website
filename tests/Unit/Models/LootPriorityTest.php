@@ -3,8 +3,11 @@
 namespace Tests\Unit\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Enums\LootPriorityType;
 use App\Models\Item;
 use App\Models\LootPriority;
+use App\Models\PlayableClass;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -44,6 +47,7 @@ class LootPriorityTest extends ModelTestCase
         $this->assertFillable($model, [
             'title',
             'type',
+            'playable_class_id',
         ]);
     }
 
@@ -52,10 +56,10 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->create([
             'title' => 'Tank',
-            'type' => 'role',
+            'type' => LootPriorityType::ROLE,
         ]);
 
-        $this->assertTableHas(['title' => 'Tank', 'type' => 'role']);
+        $this->assertTableHas(['title' => 'Tank', 'type' => 'Role']);
         $this->assertModelExists($priority);
     }
 
@@ -100,7 +104,7 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->factory()->role()->create();
 
-        $this->assertSame('role', $priority->type);
+        $this->assertSame(LootPriorityType::ROLE, $priority->type);
     }
 
     #[Test]
@@ -108,7 +112,7 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->factory()->classType()->create();
 
-        $this->assertSame('class', $priority->type);
+        $this->assertSame(LootPriorityType::CLASS_TYPE, $priority->type);
     }
 
     #[Test]
@@ -116,7 +120,7 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->factory()->spec()->create();
 
-        $this->assertSame('spec', $priority->type);
+        $this->assertSame(LootPriorityType::SPEC, $priority->type);
     }
 
     // ==================== items relationship ====================
@@ -148,5 +152,71 @@ class LootPriorityTest extends ModelTestCase
         $priority->refresh();
 
         $this->assertSame(75, $priority->items->first()->pivot->weight);
+    }
+
+    #[Test]
+    public function deleting_the_priority_removes_its_item_pivot_rows_but_keeps_the_item(): void
+    {
+        $priority = $this->create();
+        $item = Item::factory()->create();
+        $item->priorities()->attach($priority->id, ['weight' => 100]);
+
+        $priority->delete();
+
+        $this->assertDatabaseMissing('pivot_items_priorities', [
+            'item_id' => $item->id,
+            'priority_id' => $priority->id,
+        ]);
+        $this->assertModelExists($item);
+    }
+
+    // ==================== playable_class relationship ====================
+
+    #[Test]
+    public function playable_class_returns_belongs_to_relationship(): void
+    {
+        $priority = new LootPriority;
+
+        $this->assertInstanceOf(BelongsTo::class, $priority->playableClass());
+    }
+
+    #[Test]
+    public function it_can_be_created_with_playable_class(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+        $priority = $this->factory()->withPlayableClass($playableClass)->create();
+
+        $this->assertSame($playableClass->id, $priority->playable_class_id);
+        $this->assertInstanceOf(PlayableClass::class, $priority->playableClass);
+    }
+
+    #[Test]
+    public function playable_class_id_is_mass_assignable(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+
+        $priority = $this->create(['playable_class_id' => $playableClass->id]);
+
+        $this->assertSame($playableClass->id, $priority->playable_class_id);
+    }
+
+    #[Test]
+    public function playable_class_is_null_by_default(): void
+    {
+        $priority = $this->create();
+
+        $this->assertNull($priority->playable_class_id);
+        $this->assertNull($priority->playableClass);
+    }
+
+    #[Test]
+    public function deleting_the_playable_class_deletes_the_priority(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+        $priority = $this->factory()->withPlayableClass($playableClass)->create();
+
+        $playableClass->delete();
+
+        $this->assertModelMissing($priority);
     }
 }

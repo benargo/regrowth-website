@@ -110,6 +110,9 @@
 @source inline(
     "{bg,text,border}-playable-class-{death-knight,druid,hunter,mage,paladin,priest,rogue,shaman,warlock,warrior}"
 );
+@source inline(
+    "{bg,text,border}-playable-class-{death-knight,druid,hunter,mage,paladin,priest,rogue,shaman,warlock,warrior}/{5,10,15,20}"
+);
 @source inline("{bg,text,border}-quality-{poor,common,uncommon,rare,epic,legendary,artifact,heirloom}");
 
 /* Required by @/Components/Items/ItemIcon.jsx */

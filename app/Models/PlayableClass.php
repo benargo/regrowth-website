@@ -23,9 +23,6 @@ class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
 
     // ============ Custom attributes ============
 
-    /**
-     * Generates a URL-friendly slug from the class name for use in frontend routing or CSS classes.
-     */
     protected function slug(): Attribute
     {
         return Attribute::make(
@@ -36,7 +33,7 @@ class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
     // ============ Relationships ============
 
     /**
-     * A playable class can have many characters.
+     * @return HasMany<Character, $this>
      */
     public function characters(): HasMany
     {
@@ -44,10 +41,18 @@ class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
     }
 
     /**
-     * A playable class can have many specializations.
+     * @return HasMany<PlayableSpecialization, $this>
      */
     public function specializations(): HasMany
     {
         return $this->hasMany(PlayableSpecialization::class);
+    }
+
+    /**
+     * @return HasMany<LootPriority, $this>
+     */
+    public function lootPriorities(): HasMany
+    {
+        return $this->hasMany(LootPriority::class);
     }
 }

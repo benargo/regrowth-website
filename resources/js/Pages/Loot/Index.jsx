@@ -4,6 +4,7 @@ import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
 import RaidCard from "@/Components/Loot/RaidCard";
 import Icon from "@/Components/FontAwesome/Icon";
+import { Can } from "@/Components/Authorizable";
 
 function StatSegment({ icon, label, value, index }) {
     return (
@@ -57,6 +58,27 @@ function StatsRow({ stats }) {
                     />
                 </span>
             </Link>
+            <Can permission="view-priorities-page">
+                <Link
+                    href={route("loot.priorities")}
+                    className="animate-fade-in-up group flex flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-amber-600/10"
+                    style={{ animationDelay: `${(items.length + 1) * 60}ms` }}
+                >
+                    <Icon
+                        icon="external-link"
+                        style="light"
+                        className="flex size-6 items-center justify-center text-xl text-amber-400"
+                    />
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                        Priority stats
+                        <Icon
+                            icon="chevron-right"
+                            style="solid"
+                            className="flex size-3 items-center justify-center text-xs text-amber-400 transition-transform duration-200 group-hover:translate-x-0.5"
+                        />
+                    </span>
+                </Link>
+            </Can>
         </div>
     );
 }

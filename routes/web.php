@@ -54,13 +54,12 @@ Route::patch('/manage/characters/{character}', [CharacterController::class, 'upd
  */
 Route::group(['prefix' => 'loot', 'as' => 'loot.'], function () {
     Route::get('/', [LootBiasToolController::class, 'index'])->name('index');
-    Route::get('/raids/{raid}/{name?}', [LootBiasToolController::class, 'showRaid'])->name('raids.show');
+    Route::get('/comments', [CommentController::class, 'index'])->name('comments');
     Route::patch('/items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::get('/items/{item}/{slug?}', [ItemController::class, 'show'])->name('items.show');
     Route::get('/items/{item}/{slug}/edit', [ItemController::class, 'edit'])->name('items.edit');
-
-    // Comment routes
-    Route::get('/comments', [CommentController::class, 'index'])->name('comments');
+    Route::get('/raids/{raid}/{name?}', [LootBiasToolController::class, 'showRaid'])->name('raids.show');
+    Route::get('/priorities', [LootBiasToolController::class, 'priorities'])->name('priorities');
 });
 
 /**
