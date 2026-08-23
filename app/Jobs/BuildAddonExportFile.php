@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\LootPriorityType;
 use App\Exceptions\EmptyCollectionException;
 use App\Models\Character;
 use App\Models\Item;
@@ -94,7 +95,7 @@ class BuildAddonExportFile implements ShouldQueue
      */
     protected function buildPriorities(): Collection
     {
-        return LootPriority::has('items')->where('type', '!=', 'Meme')->with('media')->get()->map(function (LootPriority $priority) {
+        return LootPriority::has('items')->where('type', '!=', LootPriorityType::MEME->value)->with('media')->get()->map(function (LootPriority $priority) {
             $fileName = $priority->getFirstMedia('blizzard_icons')?->file_name;
 
             return [
@@ -115,7 +116,7 @@ class BuildAddonExportFile implements ShouldQueue
                 'item_id' => $item->id,
                 'priorities' => ItemPriority::select('priority_id', 'weight')
                     ->where('item_id', $item->id)
-                    ->whereRelation('priority', 'type', '!=', 'Meme')
+                    ->whereRelation('priority', 'type', '!=', LootPriorityType::MEME->value)
                     ->get(),
                 'notes' => $this->cleanNotes($item->notes),
             ];
