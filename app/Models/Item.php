@@ -17,7 +17,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -131,6 +133,26 @@ class Item extends Model implements Commentable, HasBlizzardIcons, HasMedia
     {
         return $this->belongsToMany(Raid::class, 'pivot_items_raids', 'item_id', 'raid_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the phases that this item's raids belong to.
+     *
+     * An item can drop in multiple raids (via pivot_items_raids), and each raid
+     * belongs to one phase, so an item can span multiple phases. A pivot hop
+     * followed by a belongsTo hop can't be expressed by HasManyThrough (which
+     * only supports FK chains, not a pivot table) — see Raid::comments() for
+     * the same limitation. Relation::noConstraints() avoids hasMany() adding
+     * its own `phases.id = items.id`-style constraint, which would be
+     * meaningless here; the whereIn() subquery over the item's raids is the
+     * only constraint that should apply.
+     *
+     * @return HasMany<Phase, $this>
+     */
+    public function phases(): HasMany
+    {
+        return Relation::noConstraints(fn () => $this->hasMany(Phase::class, 'id')
+            ->whereIn('id', $this->raids()->select('raids.phase_id')->distinct()));
     }
 
     /**

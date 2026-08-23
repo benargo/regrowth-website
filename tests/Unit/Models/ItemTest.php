@@ -9,10 +9,12 @@ use App\Http\Integrations\Blizzard\Data\Item\ItemData;
 use App\Models\Boss;
 use App\Models\Item;
 use App\Models\LootPriority;
+use App\Models\Phase;
 use App\Models\Raid;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -231,6 +233,39 @@ class ItemTest extends ModelTestCase
         $item = $this->create();
 
         $this->assertCount(0, $item->raids);
+    }
+
+    #[Test]
+    public function it_has_many_phases_through_its_raids(): void
+    {
+        $phaseA = Phase::factory()->create();
+        $phaseB = Phase::factory()->create();
+        $raidA = Raid::factory()->create(['phase_id' => $phaseA->id]);
+        $raidB = Raid::factory()->create(['phase_id' => $phaseB->id]);
+        $item = $this->factory()->inRaids([$raidA, $raidB])->create();
+
+        $this->assertRelation($item, 'phases', HasMany::class);
+        $this->assertCount(2, $item->phases);
+        $this->assertTrue($item->phases->contains($phaseA));
+        $this->assertTrue($item->phases->contains($phaseB));
+    }
+
+    #[Test]
+    public function it_only_returns_distinct_phases_when_raids_share_a_phase(): void
+    {
+        $phase = Phase::factory()->create();
+        $raids = Raid::factory()->count(2)->create(['phase_id' => $phase->id]);
+        $item = $this->factory()->inRaids($raids->all())->create();
+
+        $this->assertCount(1, $item->phases);
+    }
+
+    #[Test]
+    public function it_has_no_phases_by_default(): void
+    {
+        $item = $this->create();
+
+        $this->assertCount(0, $item->phases);
     }
 
     #[Test]
