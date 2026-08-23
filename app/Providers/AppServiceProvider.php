@@ -47,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('impersonate-roles', fn (User $user) => $user->isAuthorizedTo('impersonate-roles'));
         Gate::define('view-attendance', fn (User $user) => $user->isAuthorizedTo('view-attendance'));
         Gate::define('view-officer-dashboard', fn (User $user) => $user->isAuthorizedTo('view-officer-dashboard'));
-        Gate::define('view-stats-page', fn (User $user) => $user->isAuthorizedTo('view-stats-page'));
+        Gate::define('view-priorities-page', fn (User $user) => $user->isAuthorizedTo('view-stats-page'));
         Gate::define('set-daily-quests', fn (User $user) => $user->isAuthorizedTo('set-daily-quests'));
         Gate::define('audit-daily-quests', fn (User $user) => $user->isAuthorizedTo('audit-daily-quests'));
 
