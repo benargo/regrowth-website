@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Enums\LootPriorityType;
 use App\Models\Item;
 use App\Models\LootPriority;
 use App\Models\PlayableClass;
@@ -55,10 +56,10 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->create([
             'title' => 'Tank',
-            'type' => 'role',
+            'type' => LootPriorityType::ROLE,
         ]);
 
-        $this->assertTableHas(['title' => 'Tank', 'type' => 'role']);
+        $this->assertTableHas(['title' => 'Tank', 'type' => 'Role']);
         $this->assertModelExists($priority);
     }
 
@@ -103,7 +104,7 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->factory()->role()->create();
 
-        $this->assertSame('role', $priority->type);
+        $this->assertSame(LootPriorityType::ROLE, $priority->type);
     }
 
     #[Test]
@@ -111,7 +112,7 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->factory()->classType()->create();
 
-        $this->assertSame('class', $priority->type);
+        $this->assertSame(LootPriorityType::CLASS_TYPE, $priority->type);
     }
 
     #[Test]
@@ -119,7 +120,7 @@ class LootPriorityTest extends ModelTestCase
     {
         $priority = $this->factory()->spec()->create();
 
-        $this->assertSame('spec', $priority->type);
+        $this->assertSame(LootPriorityType::SPEC, $priority->type);
     }
 
     // ==================== items relationship ====================

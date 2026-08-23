@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use App\Enums\LootPriorityType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,18 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 {
     use HasFactory, InteractsWithMedia;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'type' => LootPriorityType::class,
+        ];
+    }
 
     // ============ Media ============
 
