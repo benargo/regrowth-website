@@ -5,8 +5,10 @@ namespace Tests\Unit\Models;
 use App\Contracts\HasBlizzardIcons;
 use App\Models\Item;
 use App\Models\LootPriority;
+use App\Models\PlayableClass;
 use Database\Seeders\PrioritySeeder;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -166,6 +168,46 @@ class LootPriorityTest extends ModelTestCase
             'priority_id' => $priority->id,
         ]);
         $this->assertModelExists($item);
+    }
+
+    // ==================== playable_class relationship ====================
+
+    #[Test]
+    public function playable_class_returns_belongs_to_relationship(): void
+    {
+        $priority = new LootPriority;
+
+        $this->assertInstanceOf(BelongsTo::class, $priority->playableClass());
+    }
+
+    #[Test]
+    public function it_can_be_created_with_playable_class(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+        $priority = $this->factory()->withPlayableClass($playableClass)->create();
+
+        $this->assertSame($playableClass->id, $priority->playable_class_id);
+        $this->assertInstanceOf(PlayableClass::class, $priority->playableClass);
+    }
+
+    #[Test]
+    public function playable_class_is_null_by_default(): void
+    {
+        $priority = $this->create();
+
+        $this->assertNull($priority->playable_class_id);
+        $this->assertNull($priority->playableClass);
+    }
+
+    #[Test]
+    public function deleting_the_playable_class_deletes_the_priority(): void
+    {
+        $playableClass = PlayableClass::factory()->create();
+        $priority = $this->factory()->withPlayableClass($playableClass)->create();
+
+        $playableClass->delete();
+
+        $this->assertModelMissing($priority);
     }
 
     // ==================== prunable ====================

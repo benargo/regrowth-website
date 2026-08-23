@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\LootPriority;
+use App\Models\PlayableClass;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,6 +29,7 @@ class LootPriorityFactory extends Factory
         return [
             'title' => fake()->unique()->numerify('Priority-###'),
             'type' => fake()->randomElement(['role', 'class', 'spec']),
+            'playable_class_id' => null,
         ];
     }
 
@@ -58,6 +60,16 @@ class LootPriorityFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'spec',
+        ]);
+    }
+
+    /**
+     * Attach the priority to a playable class.
+     */
+    public function withPlayableClass(?PlayableClass $playableClass = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'playable_class_id' => $playableClass ?? PlayableClass::factory(),
         ]);
     }
 }

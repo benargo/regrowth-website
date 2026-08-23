@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -19,6 +20,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 {
     use HasFactory, InteractsWithMedia, Prunable;
+
+    // ============ Prunable ============
 
     /**
      * Get the prunable model query.
@@ -41,8 +44,6 @@ class LootPriority extends Model implements HasBlizzardIcons, HasMedia
     // ============ Relationships ============
 
     /**
-     * Get the items that have this priority.
-     *
      * @return BelongsToMany<Item, $this>
      */
     public function items(): BelongsToMany
@@ -50,5 +51,13 @@ class LootPriority extends Model implements HasBlizzardIcons, HasMedia
         return $this->belongsToMany(Item::class, 'pivot_items_priorities', 'priority_id', 'item_id')
             ->withPivot('weight')
             ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsTo<PlayableClass, $this>
+     */
+    public function playableClass(): BelongsTo
+    {
+        return $this->belongsTo(PlayableClass::class);
     }
 }
