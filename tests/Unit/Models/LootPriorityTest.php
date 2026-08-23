@@ -5,6 +5,8 @@ namespace Tests\Unit\Models;
 use App\Contracts\HasBlizzardIcons;
 use App\Models\Item;
 use App\Models\LootPriority;
+use Database\Seeders\PrioritySeeder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -164,5 +166,47 @@ class LootPriorityTest extends ModelTestCase
             'priority_id' => $priority->id,
         ]);
         $this->assertModelExists($item);
+    }
+
+    // ==================== prunable ====================
+
+    #[Test]
+    public function prunable_returns_builder_instance(): void
+    {
+        $priority = new LootPriority;
+
+        $this->assertInstanceOf(Builder::class, $priority->prunable());
+    }
+
+    #[Test]
+    public function prunable_includes_priorities_with_a_title_not_in_the_seeder_list(): void
+    {
+        $stalePriority = $this->create(['title' => 'Not A Real Priority']);
+
+        $prunableIds = (new LootPriority)->prunable()->pluck('id')->toArray();
+
+        $this->assertContains($stalePriority->id, $prunableIds);
+    }
+
+    #[Test]
+    public function prunable_excludes_priorities_with_a_title_in_the_seeder_list(): void
+    {
+        $seededTitle = PrioritySeeder::priorities()[0]['title'];
+        $seededPriority = $this->create(['title' => $seededTitle]);
+
+        $prunableIds = (new LootPriority)->prunable()->pluck('id')->toArray();
+
+        $this->assertNotContains($seededPriority->id, $prunableIds);
+    }
+
+    #[Test]
+    public function prunable_returns_empty_when_all_priorities_are_in_the_seeder_list(): void
+    {
+        $seededTitles = array_column(PrioritySeeder::priorities(), 'title');
+        foreach (array_slice($seededTitles, 0, 2) as $title) {
+            $this->create(['title' => $title]);
+        }
+
+        $this->assertCount(0, (new LootPriority)->prunable()->get());
     }
 }

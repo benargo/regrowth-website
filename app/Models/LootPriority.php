@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Contracts\HasBlizzardIcons;
+use Database\Seeders\PrioritySeeder;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -15,8 +18,15 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Hidden(['created_at', 'updated_at'])]
 class LootPriority extends Model implements HasBlizzardIcons, HasMedia
 {
-    use HasFactory;
-    use InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, Prunable;
+
+    /**
+     * Get the prunable model query.
+     */
+    public function prunable(): Builder
+    {
+        return static::whereNotIn('title', array_column(PrioritySeeder::priorities(), 'title'));
+    }
 
     // ============ Media ============
 
