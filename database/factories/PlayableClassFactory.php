@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\LootPriority;
 use App\Models\PlayableClass;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -36,5 +37,13 @@ class PlayableClassFactory extends Factory
             'id' => $this->faker->unique()->numberBetween(1, 12),
             'name' => $this->faker->unique()->randomElement($this->classNames),
         ];
+    }
+
+    /**
+     * Create the playable class with loot priorities attached.
+     */
+    public function withLootPriorities(int $count = 3): static
+    {
+        return $this->has(LootPriority::factory()->count($count), 'lootPriorities');
     }
 }

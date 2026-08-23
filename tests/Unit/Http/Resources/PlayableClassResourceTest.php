@@ -122,4 +122,15 @@ class PlayableClassResourceTest extends TestCase
         $this->assertArrayHasKey('specializations', $array);
         $this->assertCount(3, $array['specializations']);
     }
+
+    #[Test]
+    public function it_does_not_expose_loot_priorities_even_when_loaded(): void
+    {
+        $playableClass = PlayableClass::factory()->withLootPriorities(1)->create();
+        $playableClass->load('lootPriorities');
+
+        $array = (new PlayableClassResource($playableClass))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('loot_priorities', $array);
+    }
 }

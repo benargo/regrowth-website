@@ -136,4 +136,30 @@ class PlayableClassTest extends ModelTestCase
 
         $this->assertCount(0, $playableClass->specializations);
     }
+
+    // ==================== lootPriorities relationship ====================
+
+    #[Test]
+    public function loot_priorities_returns_has_many_relationship(): void
+    {
+        $playableClass = new PlayableClass;
+
+        $this->assertInstanceOf(HasMany::class, $playableClass->lootPriorities());
+    }
+
+    #[Test]
+    public function loot_priorities_returns_empty_collection_when_none_associated(): void
+    {
+        $playableClass = $this->create();
+
+        $this->assertCount(0, $playableClass->lootPriorities);
+    }
+
+    #[Test]
+    public function with_loot_priorities_state_attaches_related_records(): void
+    {
+        $playableClass = PlayableClass::factory()->withLootPriorities(3)->create();
+
+        $this->assertCount(3, $playableClass->lootPriorities);
+    }
 }
