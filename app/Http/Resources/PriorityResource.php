@@ -17,7 +17,7 @@ class PriorityResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'type' => $this->type,
+            'type' => $this->type->value,
             'media' => $this->getFirstMediaUrl('blizzard_icons') ?: null,
             'weight' => $this->whenPivotLoaded('pivot_items_priorities', fn () => $this->pivot->weight),
         ];

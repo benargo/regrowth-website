@@ -44,7 +44,7 @@ class PriorityResourceTest extends TestCase
 
         $array = (new PriorityResource($priority))->toArray(new Request);
 
-        $this->assertSame('role', $array['type']);
+        $this->assertSame('Role', $array['type']);
     }
 
     #[Test]
@@ -54,7 +54,7 @@ class PriorityResourceTest extends TestCase
 
         $array = (new PriorityResource($priority))->toArray(new Request);
 
-        $this->assertSame('class', $array['type']);
+        $this->assertSame('Class', $array['type']);
     }
 
     #[Test]
@@ -64,7 +64,7 @@ class PriorityResourceTest extends TestCase
 
         $array = (new PriorityResource($priority))->toArray(new Request);
 
-        $this->assertSame('spec', $array['type']);
+        $this->assertSame('Spec', $array['type']);
     }
 
     #[Test]
