@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\LootPriorityType;
 use App\Models\LootPriority;
 use App\Models\PlayableClass;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -28,7 +29,7 @@ class LootPriorityFactory extends Factory
     {
         return [
             'title' => fake()->unique()->numerify('Priority-###'),
-            'type' => fake()->randomElement(['role', 'class', 'spec']),
+            'type' => fake()->randomElement([LootPriorityType::ROLE, LootPriorityType::CLASS_TYPE, LootPriorityType::SPEC]),
             'playable_class_id' => null,
         ];
     }
@@ -39,7 +40,7 @@ class LootPriorityFactory extends Factory
     public function role(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'role',
+            'type' => LootPriorityType::ROLE,
         ]);
     }
 
@@ -49,7 +50,7 @@ class LootPriorityFactory extends Factory
     public function classType(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'class',
+            'type' => LootPriorityType::CLASS_TYPE,
         ]);
     }
 
@@ -59,7 +60,27 @@ class LootPriorityFactory extends Factory
     public function spec(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'spec',
+            'type' => LootPriorityType::SPEC,
+        ]);
+    }
+
+    /**
+     * Indicate that the priority is a custom type.
+     */
+    public function custom(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => LootPriorityType::CUSTOM,
+        ]);
+    }
+
+    /**
+     * Indicate that the priority is a meme type.
+     */
+    public function meme(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => LootPriorityType::MEME,
         ]);
     }
 
