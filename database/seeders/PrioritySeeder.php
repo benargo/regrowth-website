@@ -30,68 +30,68 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
         ['type' => 'Role', 'title' => 'Caster DPS', 'icon_name' => 'spell_nature_elementalprecision_1'],
 
         // Classes
-        ['type' => 'Class', 'title' => 'Druid', 'icon_name' => 'classicon_druid'],
-        ['type' => 'Class', 'title' => 'Hunter', 'icon_name' => 'classicon_hunter'],
-        ['type' => 'Class', 'title' => 'Mage', 'icon_name' => 'classicon_mage'],
-        ['type' => 'Class', 'title' => 'Paladin', 'icon_name' => 'classicon_paladin'],
-        ['type' => 'Class', 'title' => 'Priest', 'icon_name' => 'classicon_priest'],
-        ['type' => 'Class', 'title' => 'Rogue', 'icon_name' => 'classicon_rogue'],
-        ['type' => 'Class', 'title' => 'Shaman', 'icon_name' => 'classicon_shaman'],
-        ['type' => 'Class', 'title' => 'Warlock', 'icon_name' => 'classicon_warlock'],
-        ['type' => 'Class', 'title' => 'Warrior', 'icon_name' => 'classicon_warrior'],
+        ['type' => 'Class', 'title' => 'Druid', 'playable_class_id' => 11, 'icon_name' => 'classicon_druid'],
+        ['type' => 'Class', 'title' => 'Hunter', 'playable_class_id' => 3, 'icon_name' => 'classicon_hunter'],
+        ['type' => 'Class', 'title' => 'Mage', 'playable_class_id' => 8, 'icon_name' => 'classicon_mage'],
+        ['type' => 'Class', 'title' => 'Paladin', 'playable_class_id' => 2, 'icon_name' => 'classicon_paladin'],
+        ['type' => 'Class', 'title' => 'Priest', 'playable_class_id' => 5, 'icon_name' => 'classicon_priest'],
+        ['type' => 'Class', 'title' => 'Rogue', 'playable_class_id' => 4, 'icon_name' => 'classicon_rogue'],
+        ['type' => 'Class', 'title' => 'Shaman', 'playable_class_id' => 7, 'icon_name' => 'classicon_shaman'],
+        ['type' => 'Class', 'title' => 'Warlock', 'playable_class_id' => 9, 'icon_name' => 'classicon_warlock'],
+        ['type' => 'Class', 'title' => 'Warrior', 'playable_class_id' => 1, 'icon_name' => 'classicon_warrior'],
 
         // Specs - Druid
-        ['type' => 'Spec', 'title' => 'Balance Druid', 'icon_name' => 'spell_nature_starfall'],
-        ['type' => 'Spec', 'title' => 'Feral DPS Druid', 'icon_name' => 'ability_druid_catform'],
-        ['type' => 'Spec', 'title' => 'Feral Tank Druid', 'icon_name' => 'ability_racial_bearform'],
-        ['type' => 'Spec', 'title' => 'Restoration Druid', 'icon_name' => 'spell_nature_healingtouch'],
+        ['type' => 'Spec', 'title' => 'Balance Druid', 'playable_class_id' => 11, 'icon_name' => 'spell_nature_starfall'],
+        ['type' => 'Spec', 'title' => 'Feral DPS Druid', 'playable_class_id' => 11, 'icon_name' => 'ability_druid_catform'],
+        ['type' => 'Spec', 'title' => 'Feral Tank Druid', 'playable_class_id' => 11, 'icon_name' => 'ability_racial_bearform'],
+        ['type' => 'Spec', 'title' => 'Restoration Druid', 'playable_class_id' => 11, 'icon_name' => 'spell_nature_healingtouch'],
 
         // Specs - Hunter
-        ['type' => 'Spec', 'title' => 'Beast Mastery Hunter', 'icon_name' => 'ability_hunter_beasttaming'],
-        ['type' => 'Spec', 'title' => 'Marksmanship Hunter', 'icon_name' => 'ability_marksmanship'],
-        ['type' => 'Spec', 'title' => 'Survival Hunter', 'icon_name' => 'ability_hunter_swiftstrike'],
+        ['type' => 'Spec', 'title' => 'Beast Mastery Hunter', 'playable_class_id' => 3, 'icon_name' => 'ability_hunter_beasttaming'],
+        ['type' => 'Spec', 'title' => 'Marksmanship Hunter', 'playable_class_id' => 3, 'icon_name' => 'ability_marksmanship'],
+        ['type' => 'Spec', 'title' => 'Survival Hunter', 'playable_class_id' => 3, 'icon_name' => 'ability_hunter_swiftstrike'],
 
         // Specs - Mage
-        ['type' => 'Spec', 'title' => 'Arcane Mage', 'icon_name' => 'spell_arcane_blast'],
-        ['type' => 'Spec', 'title' => 'Fire Mage', 'icon_name' => 'spell_fire_flamebolt'],
-        ['type' => 'Spec', 'title' => 'Frost Mage', 'icon_name' => 'spell_frost_frostbolt02'],
+        ['type' => 'Spec', 'title' => 'Arcane Mage', 'playable_class_id' => 8, 'icon_name' => 'spell_arcane_blast'],
+        ['type' => 'Spec', 'title' => 'Fire Mage', 'playable_class_id' => 8, 'icon_name' => 'spell_fire_flamebolt'],
+        ['type' => 'Spec', 'title' => 'Frost Mage', 'playable_class_id' => 8, 'icon_name' => 'spell_frost_frostbolt02'],
 
         // Specs - Paladin
-        ['type' => 'Spec', 'title' => 'Holy Paladin', 'icon_name' => 'spell_holy_holybolt'],
-        ['type' => 'Spec', 'title' => 'Protection Paladin', 'icon_name' => 'spell_holy_devotionaura'],
-        ['type' => 'Spec', 'title' => 'Retribution Paladin', 'icon_name' => 'spell_holy_auraoflight'],
+        ['type' => 'Spec', 'title' => 'Holy Paladin', 'playable_class_id' => 2, 'icon_name' => 'spell_holy_holybolt'],
+        ['type' => 'Spec', 'title' => 'Protection Paladin', 'playable_class_id' => 2, 'icon_name' => 'spell_holy_devotionaura'],
+        ['type' => 'Spec', 'title' => 'Retribution Paladin', 'playable_class_id' => 2, 'icon_name' => 'spell_holy_auraoflight'],
 
         // Specs - Priest
-        ['type' => 'Spec', 'title' => 'Discipline Priest', 'icon_name' => 'spell_holy_powerwordshield'],
-        ['type' => 'Spec', 'title' => 'Holy Priest', 'icon_name' => 'spell_holy_guardianspirit'],
-        ['type' => 'Spec', 'title' => 'Shadow Priest', 'icon_name' => 'spell_shadow_shadowwordpain'],
+        ['type' => 'Spec', 'title' => 'Discipline Priest', 'playable_class_id' => 5, 'icon_name' => 'spell_holy_powerwordshield'],
+        ['type' => 'Spec', 'title' => 'Holy Priest', 'playable_class_id' => 5, 'icon_name' => 'spell_holy_guardianspirit'],
+        ['type' => 'Spec', 'title' => 'Shadow Priest', 'playable_class_id' => 5, 'icon_name' => 'spell_shadow_shadowwordpain'],
 
         // Specs - Rogue
-        ['type' => 'Spec', 'title' => 'Assassination Rogue', 'icon_name' => 'ability_rogue_eviscerate'],
-        ['type' => 'Spec', 'title' => 'Combat Rogue', 'icon_name' => 'ability_backstab'],
-        ['type' => 'Spec', 'title' => 'Subtlety Rogue', 'icon_name' => 'ability_stealth'],
+        ['type' => 'Spec', 'title' => 'Assassination Rogue', 'playable_class_id' => 4, 'icon_name' => 'ability_rogue_eviscerate'],
+        ['type' => 'Spec', 'title' => 'Combat Rogue', 'playable_class_id' => 4, 'icon_name' => 'ability_backstab'],
+        ['type' => 'Spec', 'title' => 'Subtlety Rogue', 'playable_class_id' => 4, 'icon_name' => 'ability_stealth'],
 
         // Specs - Shaman
-        ['type' => 'Spec', 'title' => 'Elemental Shaman', 'icon_name' => 'spell_nature_lightning'],
-        ['type' => 'Spec', 'title' => 'Enhancement Shaman', 'icon_name' => 'spell_nature_lightningshield'],
-        ['type' => 'Spec', 'title' => 'Restoration Shaman', 'icon_name' => 'spell_nature_magicimmunity'],
+        ['type' => 'Spec', 'title' => 'Elemental Shaman', 'playable_class_id' => 7, 'icon_name' => 'spell_nature_lightning'],
+        ['type' => 'Spec', 'title' => 'Enhancement Shaman', 'playable_class_id' => 7, 'icon_name' => 'spell_nature_lightningshield'],
+        ['type' => 'Spec', 'title' => 'Restoration Shaman', 'playable_class_id' => 7, 'icon_name' => 'spell_nature_magicimmunity'],
 
         // Specs - Warlock
-        ['type' => 'Spec', 'title' => 'Affliction Warlock', 'icon_name' => 'spell_shadow_deathcoil'],
-        ['type' => 'Spec', 'title' => 'Demonology Warlock', 'icon_name' => 'spell_shadow_metamorphosis'],
-        ['type' => 'Spec', 'title' => 'Destruction Warlock', 'icon_name' => 'spell_shadow_rainoffire'],
+        ['type' => 'Spec', 'title' => 'Affliction Warlock', 'playable_class_id' => 9, 'icon_name' => 'spell_shadow_deathcoil'],
+        ['type' => 'Spec', 'title' => 'Demonology Warlock', 'playable_class_id' => 9, 'icon_name' => 'spell_shadow_metamorphosis'],
+        ['type' => 'Spec', 'title' => 'Destruction Warlock', 'playable_class_id' => 9, 'icon_name' => 'spell_shadow_rainoffire'],
 
         // Specs - Warrior
-        ['type' => 'Spec', 'title' => 'Arms Warrior', 'icon_name' => 'ability_warrior_savageblow'],
-        ['type' => 'Spec', 'title' => 'Fury Warrior', 'icon_name' => 'ability_warrior_innerrage'],
-        ['type' => 'Spec', 'title' => 'Protection Warrior', 'icon_name' => 'ability_warrior_defensivestance'],
+        ['type' => 'Spec', 'title' => 'Arms Warrior', 'playable_class_id' => 1, 'icon_name' => 'ability_warrior_savageblow'],
+        ['type' => 'Spec', 'title' => 'Fury Warrior', 'playable_class_id' => 1, 'icon_name' => 'ability_warrior_innerrage'],
+        ['type' => 'Spec', 'title' => 'Protection Warrior', 'playable_class_id' => 1, 'icon_name' => 'ability_warrior_defensivestance'],
 
         // Custom
-        ['type' => 'Custom', 'title' => 'Feral Druid', 'icon_name' => 'ability_druid_mangle2'],
-        ['type' => 'Custom', 'title' => 'Fire Warlock', 'icon_name' => 'spell_fire_burnout'],
-        ['type' => 'Custom', 'title' => 'Shadow Warlock', 'icon_name' => 'spell_shadow_shadowbolt'],
-        ['type' => 'Custom', 'title' => 'Healing Priest', 'icon_name' => 'spell_holy_greaterheal'],
-        ['type' => 'Custom', 'title' => 'DPS Warrior', 'icon_name' => 'ability_rogue_ambush'],
+        ['type' => 'Custom', 'title' => 'Feral Druid', 'playable_class_id' => 11, 'icon_name' => 'ability_druid_mangle2'],
+        ['type' => 'Custom', 'title' => 'Fire Warlock', 'playable_class_id' => 9, 'icon_name' => 'spell_fire_burnout'],
+        ['type' => 'Custom', 'title' => 'Shadow Warlock', 'playable_class_id' => 9, 'icon_name' => 'spell_shadow_shadowbolt'],
+        ['type' => 'Custom', 'title' => 'Healing Priest', 'playable_class_id' => 5, 'icon_name' => 'spell_holy_greaterheal'],
+        ['type' => 'Custom', 'title' => 'DPS Warrior', 'playable_class_id' => 1, 'icon_name' => 'ability_rogue_ambush'],
 
         // Disenchant
         ['type' => 'Meme', 'title' => 'Disenchant', 'icon_name' => 'inv_enchant_voidcrystal'],
@@ -125,7 +125,11 @@ class PrioritySeeder extends Seeder implements HasBlizzardIcons
 
             $model = LootPriority::query()->updateOrCreate(
                 ['title' => $priority['title']],
-                ['type' => $priority['type'], 'title' => $priority['title']],
+                [
+                    'type' => $priority['type'],
+                    'title' => $priority['title'],
+                    'playable_class_id' => $priority['playable_class_id'] ?? null,
+                ]
             );
 
             if ($model->hasMedia('blizzard_icons')) {
