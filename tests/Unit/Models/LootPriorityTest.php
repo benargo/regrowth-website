@@ -149,4 +149,20 @@ class LootPriorityTest extends ModelTestCase
 
         $this->assertSame(75, $priority->items->first()->pivot->weight);
     }
+
+    #[Test]
+    public function deleting_the_priority_removes_its_item_pivot_rows_but_keeps_the_item(): void
+    {
+        $priority = $this->create();
+        $item = Item::factory()->create();
+        $item->priorities()->attach($priority->id, ['weight' => 100]);
+
+        $priority->delete();
+
+        $this->assertDatabaseMissing('pivot_items_priorities', [
+            'item_id' => $item->id,
+            'priority_id' => $priority->id,
+        ]);
+        $this->assertModelExists($item);
+    }
 }

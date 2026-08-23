@@ -197,6 +197,22 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
+    public function deleting_the_item_removes_its_priority_pivot_rows_but_keeps_the_priority(): void
+    {
+        $item = $this->create();
+        $priority = LootPriority::factory()->create();
+        $item->priorities()->attach($priority->id, ['weight' => 100]);
+
+        $item->delete();
+
+        $this->assertDatabaseMissing('pivot_items_priorities', [
+            'item_id' => $item->id,
+            'priority_id' => $priority->id,
+        ]);
+        $this->assertModelExists($priority);
+    }
+
+    #[Test]
     public function it_belongs_to_many_raids(): void
     {
         $item = $this->create();
