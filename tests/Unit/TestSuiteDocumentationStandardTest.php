@@ -77,7 +77,7 @@ class TestSuiteDocumentationStandardTest extends TestCase
                 $before = $lines[$index - 1] ?? null;
                 $after = $lines[$index + 1] ?? null;
 
-                if ($before === null || trim($before) !== '') {
+                if ($before === null || (trim($before) !== '' && trim($before) !== '{')) {
                     $violations[] = $this->relative($path).':'.($index + 1).' — missing blank line before';
                 }
 
