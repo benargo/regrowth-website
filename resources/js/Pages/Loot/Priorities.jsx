@@ -1,15 +1,16 @@
 import { Fragment } from "react";
-import { Deferred } from "@inertiajs/react";
+import { Deferred, Link } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import SharedHeader from "@/Components/SharedHeader";
 import PageContainer from "@/Components/PageContainer";
+import ToolNav from "@/Components/ToolNav";
 import Icon from "@/Components/FontAwesome/Icon";
 import useLocalStorage from "@/Hooks/useLocalStorage";
 import useLootPrioritiesChannel from "@/Hooks/useLootPrioritiesChannel";
 
 function PriorityIcon({ icon, title, size = "h-5 w-5" }) {
     if (!icon) {
-        return <span className={`${size} shrink-0 rounded bg-brown-700`} />;
+        return <span className={`${size} bg-brown-700 shrink-0 rounded`} />;
     }
 
     return <img src={icon} alt={title} className={`${size} shrink-0 rounded`} />;
@@ -34,7 +35,7 @@ function RowCells({ row, phases, columnMax }) {
                 return (
                     <td
                         key={phase.id}
-                        className="px-3 py-2 text-center text-sm tabular-nums text-gray-200"
+                        className="px-3 py-2 text-center text-sm text-gray-200 tabular-nums"
                         style={heatStyle(value, columnMax[phase.id])}
                     >
                         {value}
@@ -49,7 +50,7 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
     return (
         <div className="hidden overflow-x-auto rounded border border-amber-600/30 md:block">
             <table className="w-full min-w-max border-collapse">
-                <thead className="sticky top-0 border-b border-amber-600/30 bg-brown-900">
+                <thead className="bg-brown-900 sticky top-0 border-b border-amber-600/30">
                     <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Priority</th>
                         {phases.map((phase) => (
@@ -59,7 +60,7 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-brown-700">
+                <tbody className="divide-brown-700 divide-y">
                     {rows.map((row) =>
                         row.kind === "class" ? (
                             <Fragment key={`class-${row.id}`}>
@@ -100,13 +101,13 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
                         ),
                     )}
                 </tbody>
-                <tfoot className="border-t border-amber-600/30 bg-brown-900/60">
+                <tfoot className="bg-brown-900/60 border-t border-amber-600/30">
                     <tr>
                         <td className="px-4 py-3 text-sm font-semibold text-amber-500">Total</td>
                         {phases.map((phase) => (
                             <td
                                 key={phase.id}
-                                className="px-3 py-3 text-center text-sm font-semibold tabular-nums text-amber-400"
+                                className="px-3 py-3 text-center text-sm font-semibold text-amber-400 tabular-nums"
                             >
                                 {phaseTotals[phase.id] ?? 0}
                             </td>
@@ -130,7 +131,9 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                         type="button"
                         onClick={() => onSelectPhase(p.id)}
                         className={`flex-1 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                            p.id === phase?.id ? "bg-amber-600/20 text-amber-400" : "text-gray-400 hover:bg-brown-800/50"
+                            p.id === phase?.id
+                                ? "bg-amber-600/20 text-amber-400"
+                                : "hover:bg-brown-800/50 text-gray-400"
                         }`}
                     >
                         {p.name}
@@ -139,7 +142,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
             </div>
 
             {phase && (
-                <div className="divide-y divide-brown-700 rounded border border-amber-600/30">
+                <div className="divide-brown-700 divide-y rounded border border-amber-600/30">
                     {rows.map((row) =>
                         row.kind === "class" ? (
                             <div key={`class-${row.id}`}>
@@ -150,7 +153,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                                         <PriorityIcon icon={row.icon} title={row.title} size="h-6 w-6" />
                                         <span className="text-sm font-semibold text-white">{row.title}</span>
                                     </div>
-                                    <span className="text-sm font-semibold tabular-nums text-amber-400">
+                                    <span className="text-sm font-semibold text-amber-400 tabular-nums">
                                         {row.counts[phase.id] ?? 0}
                                     </span>
                                 </div>
@@ -163,7 +166,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                                             <PriorityIcon icon={child.icon} title={child.title} />
                                             <span className="text-sm text-gray-300">{child.title}</span>
                                         </div>
-                                        <span className="text-sm tabular-nums text-gray-200">
+                                        <span className="text-sm text-gray-200 tabular-nums">
                                             {child.counts[phase.id] ?? 0}
                                         </span>
                                     </div>
@@ -175,13 +178,13 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                                     <PriorityIcon icon={row.icon} title={row.title} />
                                     <span className="text-sm font-medium text-white">{row.title}</span>
                                 </div>
-                                <span className="text-sm tabular-nums text-gray-200">{row.counts[phase.id] ?? 0}</span>
+                                <span className="text-sm text-gray-200 tabular-nums">{row.counts[phase.id] ?? 0}</span>
                             </div>
                         ),
                     )}
-                    <div className="flex items-center justify-between px-4 py-3 bg-brown-900/60">
+                    <div className="bg-brown-900/60 flex items-center justify-between px-4 py-3">
                         <span className="text-sm font-semibold text-amber-500">Total</span>
-                        <span className="text-sm font-semibold tabular-nums text-amber-400">
+                        <span className="text-sm font-semibold text-amber-400 tabular-nums">
                             {phaseTotals[phase.id] ?? 0}
                         </span>
                     </div>
@@ -201,24 +204,24 @@ function TableSkeleton() {
                 <thead className="border-b border-amber-600/30">
                     <tr>
                         <th className="px-4 py-3">
-                            <div className="h-4 w-32 rounded bg-brown-700" />
+                            <div className="bg-brown-700 h-4 w-32 rounded" />
                         </th>
                         {fakeCols.map((_, i) => (
                             <th key={i} className="px-3 py-3">
-                                <div className="mx-auto h-4 w-10 rounded bg-brown-700" />
+                                <div className="bg-brown-700 mx-auto h-4 w-10 rounded" />
                             </th>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-brown-700">
+                <tbody className="divide-brown-700 divide-y">
                     {fakeRows.map((_, i) => (
                         <tr key={i}>
                             <td className="px-4 py-2">
-                                <div className="h-4 w-28 rounded bg-brown-700" />
+                                <div className="bg-brown-700 h-4 w-28 rounded" />
                             </td>
                             {fakeCols.map((_, j) => (
                                 <td key={j} className="px-3 py-2">
-                                    <div className="mx-auto h-4 w-4 rounded bg-brown-700" />
+                                    <div className="bg-brown-700 mx-auto h-4 w-4 rounded" />
                                 </td>
                             ))}
                         </tr>
@@ -256,10 +259,7 @@ function PrioritiesTable({ phases, table }) {
     );
 
     const phaseTotals = Object.fromEntries(
-        phases.map((phase) => [
-            phase.id,
-            table.reduce((sum, row) => sum + (row.counts[phase.id] ?? 0), 0),
-        ]),
+        phases.map((phase) => [phase.id, table.reduce((sum, row) => sum + (row.counts[phase.id] ?? 0), 0)]),
     );
 
     return (
@@ -281,24 +281,33 @@ export default function Priorities({ phases, table }) {
 
     phases = phases.data ?? phases ?? [];
 
-    if (phases.length === 0) {
-        return (
-            <Master title="Priority stats">
-                <SharedHeader backgroundClass="bg-ssctk" title="Highest priority stats" />
-                <PageContainer>
-                    <EmptyState />
-                </PageContainer>
-            </Master>
-        );
-    }
-
     return (
         <Master title="Priority stats">
             <SharedHeader backgroundClass="bg-ssctk" title="Highest priority stats" />
+            <ToolNav>
+                <div className="flex items-center space-x-4">
+                    <Link
+                        href={route("loot.index")}
+                        className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                    >
+                        <Icon icon="arrow-left" style="solid" className="mr-2" />
+                        <span>Back to loot bias tool</span>
+                    </Link>
+                </div>
+            </ToolNav>
             <PageContainer>
-                <Deferred data="table" fallback={<TableSkeleton />}>
-                    <PrioritiesTable phases={phases} table={table} />
-                </Deferred>
+                <p className="mb-8 text-lg">
+                    This table shows how loot priorities stack up across the raid. For each class, spec, or role, it
+                    looks at the top tier of priorities only, so you can see at a glance where the heaviest demand
+                    for an item's drop currently sits.
+                </p>
+                {phases.length === 0 ? (
+                    <EmptyState />
+                ) : (
+                    <Deferred data="table" fallback={<TableSkeleton />}>
+                        <PrioritiesTable phases={phases} table={table} />
+                    </Deferred>
+                )}
             </PageContainer>
         </Master>
     );
