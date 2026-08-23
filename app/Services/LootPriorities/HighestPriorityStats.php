@@ -31,12 +31,11 @@ class HighestPriorityStats
     /**
      * Build the priority rows for the stats table, each carrying a tier-1 count per phase.
      *
+     * @param  array<int, int>  $phaseIds
      * @return array<int, array<string, mixed>>
      */
-    public function table(): array
+    public function table(array $phaseIds): array
     {
-        $phaseIds = $this->phases()->pluck('id')->all();
-
         if ($phaseIds === []) {
             return [];
         }

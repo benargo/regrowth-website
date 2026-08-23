@@ -32,6 +32,16 @@ class HighestPriorityStatsTest extends TestCase
         return $item;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function table(): array
+    {
+        $service = $this->service();
+
+        return $service->table($service->phases()->pluck('id')->all());
+    }
+
     // ==================== phases() ====================
 
     #[Test]
@@ -98,7 +108,7 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($tank->id, ['weight' => 0]);
         $item->priorities()->attach($healer->id, ['weight' => 1]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $tankRow = collect($rows)->firstWhere('id', $tank->id);
         $healerRow = collect($rows)->firstWhere('id', $healer->id);
@@ -117,7 +127,7 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($tank->id, ['weight' => 0]);
         $item->priorities()->attach($healer->id, ['weight' => 0]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $tankRow = collect($rows)->firstWhere('id', $tank->id);
         $healerRow = collect($rows)->firstWhere('id', $healer->id);
@@ -134,7 +144,7 @@ class HighestPriorityStatsTest extends TestCase
         $tank = LootPriority::factory()->role()->create(['title' => 'Tank']);
         $item->priorities()->attach($tank->id, ['weight' => 7]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $tankRow = collect($rows)->firstWhere('id', $tank->id);
 
@@ -151,7 +161,7 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($meme->id, ['weight' => 0]);
         $item->priorities()->attach($role->id, ['weight' => 5]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $roleRow = collect($rows)->firstWhere('id', $role->id);
 
@@ -168,7 +178,7 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($meme->id, ['weight' => 0]);
         $item->priorities()->attach($role->id, ['weight' => 1]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $this->assertNull(collect($rows)->firstWhere('id', $meme->id));
     }
@@ -187,7 +197,7 @@ class HighestPriorityStatsTest extends TestCase
         $tank = LootPriority::factory()->role()->create();
         $item->priorities()->attach($tank->id, ['weight' => 0]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $tankRow = collect($rows)->firstWhere('id', $tank->id);
 
@@ -208,7 +218,7 @@ class HighestPriorityStatsTest extends TestCase
         $tank = LootPriority::factory()->role()->create();
         $item->priorities()->attach($tank->id, ['weight' => 0]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $tankRow = collect($rows)->firstWhere('id', $tank->id);
 
@@ -225,7 +235,7 @@ class HighestPriorityStatsTest extends TestCase
         $tank = LootPriority::factory()->role()->create();
         $item->priorities()->attach($tank->id, ['weight' => 0]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $this->assertSame('priority', $rows[0]['kind']);
         $this->assertSame($tank->id, $rows[0]['id']);
@@ -243,7 +253,7 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($tank->id, ['weight' => 0]);
         $item->priorities()->attach($classPriority->id, ['weight' => 1]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $this->assertSame(['priority', 'class'], collect($rows)->pluck('kind')->all());
     }
@@ -257,7 +267,7 @@ class HighestPriorityStatsTest extends TestCase
         $classPriority = LootPriority::factory()->classType()->withPlayableClass($playableClass)->create();
         $item->priorities()->attach($classPriority->id, ['weight' => 0]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $classGroup = collect($rows)->firstWhere('kind', 'class');
 
@@ -281,7 +291,7 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($spec->id, ['weight' => 1]);
         $item->priorities()->attach($classType->id, ['weight' => 2]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $classGroup = collect($rows)->firstWhere('kind', 'class');
         $childIds = collect($classGroup['children'])->pluck('id')->all();
@@ -302,7 +312,7 @@ class HighestPriorityStatsTest extends TestCase
         $item->priorities()->attach($classType->id, ['weight' => 0]);
         $item->priorities()->attach($spec->id, ['weight' => 0]);
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $classGroup = collect($rows)->firstWhere('kind', 'class');
 
@@ -314,15 +324,37 @@ class HighestPriorityStatsTest extends TestCase
     {
         PlayableClass::factory()->create();
 
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $this->assertCount(0, collect($rows)->where('kind', 'class'));
     }
 
     #[Test]
+    public function class_groups_are_ordered_alphabetically_by_class_name(): void
+    {
+        $phase = Phase::factory()->create(['number' => 1]);
+        $item = $this->itemInPhase($phase);
+
+        $warrior = PlayableClass::factory()->create(['name' => 'Warrior']);
+        $druid = PlayableClass::factory()->create(['name' => 'Druid']);
+        $mage = PlayableClass::factory()->create(['name' => 'Mage']);
+
+        foreach ([$warrior, $druid, $mage] as $playableClass) {
+            $priority = LootPriority::factory()->classType()->withPlayableClass($playableClass)->create();
+            $item->priorities()->attach($priority->id, ['weight' => 0]);
+        }
+
+        $rows = $this->table();
+
+        $classGroupNames = collect($rows)->where('kind', 'class')->pluck('title')->values()->all();
+
+        $this->assertSame(['Druid', 'Mage', 'Warrior'], $classGroupNames);
+    }
+
+    #[Test]
     public function renders_an_empty_table_when_no_priorities_have_items(): void
     {
-        $rows = $this->service()->table();
+        $rows = $this->table();
 
         $this->assertSame([], $rows);
     }
