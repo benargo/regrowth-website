@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Http\Resources\PermissionGroupsResource;
 use App\Models\User;
+use App\Services\LootPriorities\HighestPriorityStats;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PermissionGroupsResource::class, function () {
             return new PermissionGroupsResource(collect(PermissionSeeder::groups()));
         });
+
+        /**
+         * Loot priorities
+         */
+        $this->app->singleton(HighestPriorityStats::class);
     }
 
     /**
