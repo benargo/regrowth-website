@@ -97,12 +97,14 @@ class LootBiasToolController extends Controller
     #[Middleware('auth')]
     public function priorities(): Response
     {
+        $phases = $this->stats->phases();
+
         return Inertia::render('Loot/Priorities', [
-            'phases' => PhaseResource::collection($this->stats->phases()),
+            'phases' => PhaseResource::collection($phases),
             'table' => Inertia::defer(fn () => Cache::tags(['lootcouncil'])->remember(
                 'loot:priorities:highest-priority-stats',
                 now()->addHours(24),
-                fn () => $this->stats->table(),
+                fn () => $this->stats->table($phases->pluck('id')->all()),
             )),
         ]);
     }
