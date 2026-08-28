@@ -19,10 +19,7 @@ use Spatie\EloquentSortable\Sortable;
 #[Fillable(['event_id', 'boss_id', 'group_id', 'sort_order', 'left_type', 'left_value', 'right_type', 'right_value'])]
 class EventAssignment extends Model implements Sortable
 {
-    use BroadcastsEvents;
-    use FlushesRaidingCacheOnSave;
-    use HasFactory;
-    use SortsExplicitlyOnCreate;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, SortsExplicitlyOnCreate;
 
     // ============ Casting ============
 
@@ -41,14 +38,6 @@ class EventAssignment extends Model implements Sortable
     }
 
     // ============ Sorting ============
-
-    /**
-     * @var array<string, mixed>
-     */
-    public array $sortable = [
-        'order_column_name' => 'sort_order',
-        'sort_when_creating' => true,
-    ];
 
     public function buildSortQuery(): Builder
     {
