@@ -20,7 +20,7 @@ class BossResource extends JsonResource
             'slug' => $this->slug,
             'notes' => $this->notes,
             'images' => $this->getMedia()->map->getUrl()->values()->all(),
-            'encounter_order' => $this->encounter_order,
+            'sort_order' => $this->sort_order,
             'raid' => $this->when(
                 $this->relationLoaded('raid'),
                 fn () => new RaidResource($this->raid),
