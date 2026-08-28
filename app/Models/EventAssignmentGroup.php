@@ -22,10 +22,7 @@ use Spatie\EloquentSortable\Sortable;
 #[Hidden(['event_id', 'created_at', 'updated_at'])]
 class EventAssignmentGroup extends Model implements Sortable
 {
-    use BroadcastsEvents;
-    use FlushesRaidingCacheOnSave;
-    use HasFactory;
-    use SortsExplicitlyOnCreate;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, SortsExplicitlyOnCreate;
 
     /**
      * The model's default values for attributes.
@@ -36,13 +33,7 @@ class EventAssignmentGroup extends Model implements Sortable
         'name' => 'New group',
     ];
 
-    /**
-     * @var array<string, mixed>
-     */
-    public array $sortable = [
-        'order_column_name' => 'sort_order',
-        'sort_when_creating' => true,
-    ];
+    // ============ Sorting ============
 
     public function buildSortQuery(): Builder
     {
@@ -95,6 +86,8 @@ class EventAssignmentGroup extends Model implements Sortable
         });
     }
 
+    // ========== Custom attributes ===========
+
     /**
      * Format the notes attribute as markdown.
      *
@@ -106,6 +99,8 @@ class EventAssignmentGroup extends Model implements Sortable
             get: fn (?string $value) => $value ? Str::markdown($value) : null,
         )->shouldCache();
     }
+
+    // ============ Relationships ============
 
     /**
      * The event this group belongs to.
