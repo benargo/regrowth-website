@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
-use App\Models\Concerns\SortsExplicitlyOnCreate;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -19,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -26,7 +26,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Hidden(['created_at', 'updated_at'])]
 class Boss extends Model implements HasMedia, Sortable
 {
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia, SortsExplicitlyOnCreate;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia, SortableTrait;
 
     // ============ Sorting ============
 

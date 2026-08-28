@@ -162,12 +162,12 @@ class BossTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
+    public function it_overwrites_an_explicitly_provided_sort_order_on_create(): void
     {
         $boss = $this->create(['sort_order' => 5]);
 
-        $this->assertSame(5, $boss->sort_order);
-        $this->assertSame(5, $boss->fresh()->sort_order);
+        $this->assertSame(1, $boss->sort_order);
+        $this->assertSame(1, $boss->fresh()->sort_order);
     }
 
     // ==================== relationships ====================

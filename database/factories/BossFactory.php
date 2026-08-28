@@ -36,13 +36,13 @@ class BossFactory extends Factory
     }
 
     /**
-     * Set the sort order.
+     * Set the sort order after creation, since Boss auto-assigns sort_order on create.
      */
     public function order(int $order): static
     {
-        return $this->state(fn (array $attributes) => [
-            'sort_order' => $order,
-        ]);
+        return $this->afterCreating(function (Boss $boss) use ($order) {
+            $boss->update(['sort_order' => $order]);
+        });
     }
 
     /**

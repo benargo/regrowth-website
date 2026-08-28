@@ -84,10 +84,10 @@ class BossSeeder extends Seeder
         ];
 
         foreach ($bosses as $boss) {
-            Boss::query()->updateOrCreate(
-                ['id' => $boss['id']],
-                $boss
-            );
+            // Boss auto-assigns sort_order on create, so the seeded value is
+            // reapplied via a plain update() afterwards to force it to stick.
+            Boss::query()->updateOrCreate(['id' => $boss['id']], $boss)
+                ->update(['sort_order' => $boss['sort_order']]);
         }
     }
 }
