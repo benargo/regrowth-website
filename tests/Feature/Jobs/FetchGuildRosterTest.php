@@ -71,7 +71,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_fetches_the_roster_via_saloon(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
 
         Saloon::fake([
             'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
@@ -90,7 +90,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_creates_a_new_character_from_roster_member(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 2, 'name' => 'Shaman']);
         PlayableRace::factory()->create(['id' => 3, 'name' => 'Orc']);
 
@@ -115,7 +115,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_updates_an_existing_character_from_roster_member(): void
     {
-        $rank = GuildRank::factory()->create(['position' => 0]);
+        $rank = GuildRank::factory()->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 2, 'name' => 'Shaman']);
         PlayableRace::factory()->create(['id' => 3, 'name' => 'Orc']);
         Character::factory()->create(['id' => 999, 'name' => 'OldName', 'level' => 70, 'rank_id' => $rank->id]);
@@ -141,7 +141,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_associates_an_existing_local_playable_class(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 5, 'name' => 'Priest']);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
@@ -162,7 +162,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_saves_the_character_without_a_class_when_not_in_the_local_table(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
         Saloon::fake([
@@ -186,7 +186,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_skips_members_below_level_60(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
 
         Saloon::fake([
             'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
@@ -204,7 +204,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_stores_playable_race_from_profile_data(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
         PlayableRace::factory()->create(['id' => 7, 'name' => 'Gnome']);
 
@@ -230,7 +230,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_touches_every_character_present_in_the_roster(): void
     {
-        $rank = GuildRank::factory()->create(['position' => 0]);
+        $rank = GuildRank::factory()->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
         $rosterMember = Character::factory()->create([
@@ -274,7 +274,7 @@ class FetchGuildRosterTest extends TestCase
     {
         Event::fake([CharacterUpdated::class]);
 
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
 
         Saloon::fake([
             'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
@@ -293,7 +293,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_stores_male_gender_from_the_character_profile(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
 
         Saloon::fake([
             'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
@@ -312,7 +312,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_stores_female_gender_from_the_character_profile(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
 
         Saloon::fake([
             'battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
@@ -333,7 +333,7 @@ class FetchGuildRosterTest extends TestCase
     #[Test]
     public function it_logs_and_continues_to_the_next_member_when_one_fails(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
+        GuildRank::factory()->create(['sort_order' => 0]);
         PlayableClass::factory()->create(['id' => 1, 'name' => 'Warrior']);
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Human']);
 
