@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Boss::class)->constrained()->cascadeOnDelete();
-            $table->unsignedSmallInteger('sort_order');
+            $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
             $table->unique(['event_id', 'boss_id']);
         });
