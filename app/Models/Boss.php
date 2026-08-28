@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Http\Resources\BossResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
+use App\Models\Concerns\SortsExplicitlyOnCreate;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,14 +18,44 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
+use Spatie\EloquentSortable\Sortable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['name', 'raid_id', 'encounter_order', 'notes'])]
+#[Fillable(['name', 'raid_id', 'sort_order', 'notes'])]
 #[Hidden(['created_at', 'updated_at'])]
-class Boss extends Model implements HasMedia
+class Boss extends Model implements HasMedia, Sortable
 {
-    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, InteractsWithMedia, SortsExplicitlyOnCreate;
+
+    // ============ Sorting ============
+
+    /**
+     * @var array<string, mixed>
+     */
+    public array $sortable = [
+        'order_column_name' => 'sort_order',
+        'sort_when_creating' => true,
+    ];
+
+    public function buildSortQuery(): Builder
+    {
+        return static::query()->where('raid_id', $this->raid_id);
+    }
+
+    // ============ Casting ============
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'sort_order' => 'integer',
+        ];
+    }
 
     // ============ Broadcasting ============
 
