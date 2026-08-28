@@ -180,6 +180,6 @@ class Event extends PrunableModel
         return Boss::query()
             ->whereIn('raid_id', $this->raids()->select('raids.id'))
             ->orderBy('raid_id')
-            ->orderBy('sort_order');
+            ->ordered();
     }
 }
