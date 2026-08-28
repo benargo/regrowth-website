@@ -131,6 +131,15 @@ class EventAssignmentTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
+    {
+        $assignment = $this->create(['sort_order' => 5]);
+
+        $this->assertSame(5, $assignment->sort_order);
+        $this->assertSame(5, $assignment->fresh()->sort_order);
+    }
+
+    #[Test]
     public function it_can_be_created_without_a_boss(): void
     {
         $assignment = $this->create(['boss_id' => null]);

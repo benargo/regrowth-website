@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\AsClassName;
 use App\Http\Resources\EventAssignmentResource;
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
+use App\Models\Concerns\SortsExplicitlyOnCreate;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
@@ -14,7 +15,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\EloquentSortable\Sortable;
-use Spatie\EloquentSortable\SortableTrait;
 
 #[Fillable(['event_id', 'boss_id', 'group_id', 'sort_order', 'left_type', 'left_value', 'right_type', 'right_value'])]
 class EventAssignment extends Model implements Sortable
@@ -22,7 +22,7 @@ class EventAssignment extends Model implements Sortable
     use BroadcastsEvents;
     use FlushesRaidingCacheOnSave;
     use HasFactory;
-    use SortableTrait;
+    use SortsExplicitlyOnCreate;
 
     // ============ Casting ============
 

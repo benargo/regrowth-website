@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\FlushesRaidingCacheOnSave;
+use App\Models\Concerns\SortsExplicitlyOnCreate;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -16,7 +17,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
-use Spatie\EloquentSortable\SortableTrait;
 
 #[Fillable(['event_id', 'boss_id', 'name', 'notes', 'sort_order'])]
 #[Hidden(['event_id', 'created_at', 'updated_at'])]
@@ -25,7 +25,7 @@ class EventAssignmentGroup extends Model implements Sortable
     use BroadcastsEvents;
     use FlushesRaidingCacheOnSave;
     use HasFactory;
-    use SortableTrait;
+    use SortsExplicitlyOnCreate;
 
     /**
      * The model's default values for attributes.

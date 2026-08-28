@@ -162,11 +162,12 @@ class EventAssignmentGroupTest extends ModelTestCase
     }
 
     #[Test]
-    public function an_explicit_sort_order_passed_to_create_is_ignored_in_favor_of_the_computed_value(): void
+    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
     {
-        $group = $this->create(['sort_order' => 999]);
+        $group = $this->create(['sort_order' => 5]);
 
-        $this->assertSame(1, $group->sort_order);
+        $this->assertSame(5, $group->sort_order);
+        $this->assertSame(5, $group->fresh()->sort_order);
     }
 
     // ==================== notes accessor ====================
