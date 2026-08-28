@@ -107,7 +107,19 @@ class Event extends PrunableModel
     // ========== Relationships ============
 
     /**
-     * The characters that are associated with the event.
+     * @return BelongsToMany<Boss, $this>
+     */
+    public function bosses(): BelongsToMany
+    {
+        return $this->belongsToMany(Boss::class, 'pivot_events_bosses', 'event_id', 'boss_id')
+            ->using(EventBoss::class)
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }
+
+    /**
+     * @return BelongsToMany<Character, $this>
      */
     public function characters(): BelongsToMany
     {
@@ -118,7 +130,7 @@ class Event extends PrunableModel
     }
 
     /**
-     * The leaders that are associated with the event.
+     * @return BelongsToMany<Character, $this>
      */
     public function leaders(): BelongsToMany
     {
@@ -126,7 +138,7 @@ class Event extends PrunableModel
     }
 
     /**
-     * The loot councillors that are associated with the event.
+     * @return BelongsToMany<Character, $this>
      */
     public function lootCouncillors(): BelongsToMany
     {
@@ -134,7 +146,7 @@ class Event extends PrunableModel
     }
 
     /**
-     * The loot masters that are associated with the event.
+     * @return BelongsToMany<Character, $this>
      */
     public function lootMasters(): BelongsToMany
     {
@@ -142,19 +154,18 @@ class Event extends PrunableModel
     }
 
     /**
-     * The raids that are associated with the event.
+     * @return BelongsToMany<Raid, $this>
      */
     public function raids(): BelongsToMany
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
             ->using(EventRaid::class)
             ->withPivot('sort_order')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
     }
 
     /**
-     * Get the assignment groups associated with the event.
-     *
      * @return HasMany<EventAssignmentGroup, $this>
      */
     public function assignmentGroups(): HasMany
@@ -163,25 +174,10 @@ class Event extends PrunableModel
     }
 
     /**
-     * Get the assignments associated with the event.
-     *
      * @return HasMany<EventAssignment, $this>
      */
     public function assignments(): HasMany
     {
         return $this->hasMany(EventAssignment::class);
-    }
-
-    /**
-     * Get a query for the bosses associated with the event through its raids.
-     *
-     * @return Builder<Boss>
-     */
-    public function bosses(): Builder
-    {
-        return Boss::query()
-            ->whereIn('raid_id', $this->raids()->select('raids.id'))
-            ->orderBy('raid_id')
-            ->ordered();
     }
 }
