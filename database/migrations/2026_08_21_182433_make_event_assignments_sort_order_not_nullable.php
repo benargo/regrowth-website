@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('event_assignments', function (Blueprint $table) {
-            $table->unsignedSmallInteger('sort_order')->nullable(false)->change();
+            $table->integer('sort_order')->nullable(false)->change();
         });
     }
 
     public function down(): void
     {
         Schema::table('event_assignments', function (Blueprint $table) {
-            $table->unsignedSmallInteger('sort_order')->nullable()->change();
+            $table->integer('sort_order')->nullable()->change();
         });
     }
 };

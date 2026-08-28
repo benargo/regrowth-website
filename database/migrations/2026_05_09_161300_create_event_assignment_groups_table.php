@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(Event::class)->constrained()->cascadeOnDelete();
             $table->string('name')->default('New group');
             $table->longText('notes')->nullable();
-            $table->unsignedTinyInteger('sort_order')->default(0);
+            $table->integer('sort_order')->default(0);
             $table->timestamps();
         });
 

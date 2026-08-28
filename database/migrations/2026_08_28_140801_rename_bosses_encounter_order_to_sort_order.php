@@ -16,7 +16,7 @@ return new class extends Migration
         });
 
         Schema::table('bosses', function (Blueprint $table) {
-            $table->unsignedSmallInteger('sort_order')->nullable(false)->change();
+            $table->integer('sort_order')->nullable(false)->change();
         });
     }
 

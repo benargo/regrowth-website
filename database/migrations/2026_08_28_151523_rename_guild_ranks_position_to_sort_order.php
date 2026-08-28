@@ -20,7 +20,7 @@ return new class extends Migration
         });
 
         Schema::table('guild_ranks', function (Blueprint $table) {
-            $table->unsignedSmallInteger('sort_order')->nullable(false)->default(0)->change();
+            $table->integer('sort_order')->nullable(false)->default(0)->change();
         });
     }
 
