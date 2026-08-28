@@ -94,6 +94,8 @@ class Raid extends Model
     public function events(): BelongsToMany
     {
         return $this->belongsToMany(Event::class, 'pivot_events_raids', 'raid_id', 'event_id')
+            ->using(EventRaid::class)
+            ->withPivot('sort_order')
             ->withTimestamps();
     }
 

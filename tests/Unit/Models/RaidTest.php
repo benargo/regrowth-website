@@ -7,6 +7,7 @@ use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
+use App\Models\EventRaid;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -466,5 +467,19 @@ class RaidTest extends ModelTestCase
         $raid = $this->create();
 
         $this->assertCount(0, $raid->events);
+    }
+
+    #[Test]
+    public function events_use_the_event_raid_pivot(): void
+    {
+        $raid = $this->create();
+        $event = Event::factory()->create();
+
+        $raid->events()->attach($event->id, ['sort_order' => 4]);
+
+        $pivot = $raid->events->first()->pivot;
+
+        $this->assertInstanceOf(EventRaid::class, $pivot);
+        $this->assertSame(4, $pivot->sort_order);
     }
 }
