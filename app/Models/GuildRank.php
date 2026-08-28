@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Contracts\Models\DatasetModel;
-use App\Models\Concerns\SortsExplicitlyOnCreate;
 use App\Policies\DatasetPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
@@ -13,12 +12,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 
 #[UsePolicy(DatasetPolicy::class)]
 #[Fillable(['sort_order', 'name', 'count_attendance'])]
 class GuildRank extends Model implements DatasetModel, Sortable
 {
-    use HasFactory, SortsExplicitlyOnCreate;
+    use HasFactory, SortableTrait;
 
     /**
      * The model's default values for attributes.
@@ -45,6 +45,16 @@ class GuildRank extends Model implements DatasetModel, Sortable
         $this->sort_order = $this->buildSortQuery()->exists()
             ? $this->getHighestOrderNumber() + 1
             : 0;
+    }
+
+    /**
+     * Only auto-assign sort_order when the caller hasn't set one — GuildRankSeeder
+     * relies on an explicitly provided sort_order surviving create() so it can
+     * seed ranks with their Blizzard-defined index via updateOrCreate().
+     */
+    public function shouldSortWhenCreating(): bool
+    {
+        return $this->sort_order === null;
     }
 
     // ============ Casting ============
