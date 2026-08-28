@@ -39,9 +39,9 @@ class GuildRankController extends Controller
     #[Authorize('edit-datasets')]
     public function store(StoreGuildRankRequest $request): RedirectResponse
     {
-        GuildRank::create([
-            'name' => $request->validated('name'),
-        ]);
+        $guildRank = new GuildRank(['name' => $request->validated('name')]);
+        $guildRank->setHighestOrderNumber();
+        $guildRank->save();
 
         return $this->back();
     }
