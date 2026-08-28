@@ -30,14 +30,6 @@ class Boss extends Model implements HasMedia, Sortable
 
     // ============ Sorting ============
 
-    /**
-     * @var array<string, mixed>
-     */
-    public array $sortable = [
-        'order_column_name' => 'sort_order',
-        'sort_when_creating' => true,
-    ];
-
     public function buildSortQuery(): Builder
     {
         return static::query()->where('raid_id', $this->raid_id);
