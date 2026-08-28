@@ -131,12 +131,12 @@ class EventAssignmentTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
+    public function it_overwrites_an_explicitly_provided_sort_order_on_create(): void
     {
         $assignment = $this->create(['sort_order' => 5]);
 
-        $this->assertSame(5, $assignment->sort_order);
-        $this->assertSame(5, $assignment->fresh()->sort_order);
+        $this->assertSame(1, $assignment->sort_order);
+        $this->assertSame(1, $assignment->fresh()->sort_order);
     }
 
     #[Test]

@@ -67,7 +67,8 @@ class EventAssignmentsCollectionTest extends TestCase
     public function it_returns_correct_group_shape(): void
     {
         $event = Event::factory()->create();
-        $group = EventAssignmentGroup::factory()->for($event)->create(['name' => 'Healers', 'sort_order' => 3]);
+        $group = EventAssignmentGroup::factory()->for($event)->create(['name' => 'Healers']);
+        $group->update(['sort_order' => 3]);
         $assignments = EventAssignment::factory()->for($event)->forGroup($group)->create();
         $assignments = EventAssignment::whereKey($assignments->id)->with('group')->get();
 
@@ -102,8 +103,10 @@ class EventAssignmentsCollectionTest extends TestCase
     public function it_sorts_groups_by_sort_order(): void
     {
         $event = Event::factory()->create();
-        $groupB = EventAssignmentGroup::factory()->for($event)->create(['sort_order' => 2]);
-        $groupA = EventAssignmentGroup::factory()->for($event)->create(['sort_order' => 1]);
+        $groupB = EventAssignmentGroup::factory()->for($event)->create();
+        $groupB->update(['sort_order' => 2]);
+        $groupA = EventAssignmentGroup::factory()->for($event)->create();
+        $groupA->update(['sort_order' => 1]);
 
         EventAssignment::factory()->for($event)->forGroup($groupB)->create();
         EventAssignment::factory()->for($event)->forGroup($groupA)->create();
@@ -122,8 +125,10 @@ class EventAssignmentsCollectionTest extends TestCase
         $event = Event::factory()->create();
         $group = EventAssignmentGroup::factory()->for($event)->create();
 
-        $second = EventAssignment::factory()->for($event)->forGroup($group)->create(['sort_order' => 2]);
-        $first = EventAssignment::factory()->for($event)->forGroup($group)->create(['sort_order' => 1]);
+        $second = EventAssignment::factory()->for($event)->forGroup($group)->create();
+        $second->update(['sort_order' => 2]);
+        $first = EventAssignment::factory()->for($event)->forGroup($group)->create();
+        $first->update(['sort_order' => 1]);
 
         $assignments = EventAssignment::whereIn('id', [$second->id, $first->id])->with('group')->get();
 

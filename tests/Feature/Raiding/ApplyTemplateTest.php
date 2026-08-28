@@ -81,7 +81,8 @@ class ApplyTemplateTest extends TestCase
     #[Test]
     public function new_groups_have_sort_order_offset_after_existing_groups(): void
     {
-        $existingGroup = EventAssignmentGroup::factory()->create(['sort_order' => 3]);
+        $existingGroup = EventAssignmentGroup::factory()->create();
+        $existingGroup->update(['sort_order' => 3]);
         $event = $existingGroup->event;
 
         $template = Event::factory()->template()->create();

@@ -374,6 +374,22 @@ class EventAssignmentControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_touch_sort_order_of_assignments_in_other_events_on_reorder(): void
+    {
+        $otherEvent = Event::factory()->create();
+        $foreign = EventAssignment::factory()->for($otherEvent)->create();
+        $foreign->update(['sort_order' => 0]);
+
+        [$a, $b] = EventAssignment::factory()->count(2)->for($this->event)->create()->all();
+
+        $this->actingAs($this->editor)
+            ->patchJson(route('api.events.assignments.reorder', $this->event), ['order' => [$b->id, $a->id]])
+            ->assertNoContent();
+
+        $this->assertDatabaseHas('event_assignments', ['id' => $foreign->id, 'sort_order' => 0]);
+    }
+
+    #[Test]
     public function it_updates_left_type_using_short_type_string(): void
     {
         $assignment = EventAssignment::factory()->for($this->event)->create();

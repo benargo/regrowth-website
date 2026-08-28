@@ -40,7 +40,8 @@ class EventAssignmentResourceTest extends TestCase
         $assignment = EventAssignment::factory()
             ->withLeftCustom('Group 1')
             ->withRightCustom('Tank')
-            ->create(['sort_order' => 5]);
+            ->create();
+        $assignment->update(['sort_order' => 5]);
 
         $array = (new EventAssignmentResource($assignment))->toArray(new Request);
 

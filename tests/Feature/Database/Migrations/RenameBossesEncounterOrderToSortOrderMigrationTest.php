@@ -21,7 +21,8 @@ class RenameBossesEncounterOrderToSortOrderMigrationTest extends TestCase
     #[Test]
     public function up_renames_the_column_and_preserves_values(): void
     {
-        $boss = Boss::factory()->create(['sort_order' => 7]);
+        $boss = Boss::factory()->create();
+        $boss->update(['sort_order' => 7]);
 
         $this->assertTrue(Schema::hasColumn('bosses', 'sort_order'));
         $this->assertFalse(Schema::hasColumn('bosses', 'encounter_order'));
@@ -31,7 +32,8 @@ class RenameBossesEncounterOrderToSortOrderMigrationTest extends TestCase
     #[Test]
     public function down_restores_the_encounter_order_column_and_up_reapplies(): void
     {
-        $boss = Boss::factory()->create(['sort_order' => 4]);
+        $boss = Boss::factory()->create();
+        $boss->update(['sort_order' => 4]);
 
         $this->migration()->down();
 

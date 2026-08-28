@@ -522,9 +522,12 @@ class EventTest extends ModelTestCase
         $raid1 = Raid::factory()->create();
         $raid2 = Raid::factory()->create();
 
-        $boss1a = Boss::factory()->create(['raid_id' => $raid1->id, 'sort_order' => 2]);
-        $boss1b = Boss::factory()->create(['raid_id' => $raid1->id, 'sort_order' => 1]);
-        $boss2a = Boss::factory()->create(['raid_id' => $raid2->id, 'sort_order' => 1]);
+        $boss1a = Boss::factory()->create(['raid_id' => $raid1->id]);
+        $boss1a->update(['sort_order' => 2]);
+        $boss1b = Boss::factory()->create(['raid_id' => $raid1->id]);
+        $boss1b->update(['sort_order' => 1]);
+        $boss2a = Boss::factory()->create(['raid_id' => $raid2->id]);
+        $boss2a->update(['sort_order' => 1]);
 
         $event->raids()->attach([$raid1->id, $raid2->id]);
 

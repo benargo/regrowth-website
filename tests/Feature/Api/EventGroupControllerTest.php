@@ -84,7 +84,7 @@ class EventGroupControllerTest extends TestCase
     #[Test]
     public function it_auto_increments_sort_order_based_on_existing_groups(): void
     {
-        EventAssignmentGroup::factory()->for($this->event)->create(['sort_order' => 3]);
+        EventAssignmentGroup::factory()->count(3)->for($this->event)->create();
 
         $response = $this->actingAs($this->editor)
             ->postJson(route('api.events.groups.store', $this->event), ['name' => 'Second Group']);
@@ -245,6 +245,22 @@ class EventGroupControllerTest extends TestCase
         $this->actingAs($this->viewer)
             ->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$group->id]])
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function it_does_not_touch_sort_order_of_groups_in_other_events_on_reorder(): void
+    {
+        $otherEvent = Event::factory()->create();
+        $foreign = EventAssignmentGroup::factory()->for($otherEvent)->create();
+        $foreign->update(['sort_order' => 0]);
+
+        [$a, $b] = EventAssignmentGroup::factory()->count(2)->for($this->event)->create()->all();
+
+        $this->actingAs($this->editor)
+            ->patchJson(route('api.events.groups.reorder', $this->event), ['order' => [$b->id, $a->id]])
+            ->assertNoContent();
+
+        $this->assertDatabaseHas('event_assignment_groups', ['id' => $foreign->id, 'sort_order' => 0]);
     }
 
     // ==================== destroy ====================
