@@ -90,14 +90,14 @@ class EventBossTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_keeps_an_explicitly_provided_sort_order(): void
+    public function it_overrides_an_explicitly_provided_sort_order_on_create(): void
     {
         $event = Event::factory()->create();
         $boss = Boss::factory()->create();
 
         $event->bosses()->attach($boss->id, ['sort_order' => 5]);
 
-        $this->assertSame(5, EventBoss::where('event_id', $event->id)->value('sort_order'));
+        $this->assertSame(1, EventBoss::where('event_id', $event->id)->value('sort_order'));
     }
 
     // ==================== event ====================

@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\SortsExplicitlyOnCreate;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 
 #[Table(name: 'pivot_events_bosses', timestamps: true)]
 class EventBoss extends Pivot implements Sortable
 {
-    use SortsExplicitlyOnCreate;
+    use SortableTrait;
 
     /**
      * Get the attributes that should be cast.
