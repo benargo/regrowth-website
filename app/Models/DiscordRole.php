@@ -10,12 +10,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * This model must NOT use Spatie's `SortableTrait`. The `position` column
+ * reflects the role's ordering within the Discord server and is set by
+ * Discord, not by this application. Applying `SortableTrait` would let us
+ * overwrite `position` with our own values, which would fight Discord for
+ * ownership of that column and desync the ordering.
+ */
 #[Fillable(['id', 'name', 'position', 'is_visible'])]
 #[Table(keyType: 'string', incrementing: false)]
 class DiscordRole extends Model
 {
-    use HasFactory;
-    use HasPermissions;
+    use HasFactory, HasPermissions;
 
     /**
      * The model's default values for attributes.
@@ -50,9 +56,7 @@ class DiscordRole extends Model
     }
 
     /**
-     * Get the users that belong to this Discord role.
-     *
-     * @return BelongsToMany<User>
+     * @return BelongsToMany<User, $this>
      */
     public function users(): BelongsToMany
     {
