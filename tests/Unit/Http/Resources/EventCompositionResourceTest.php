@@ -96,7 +96,7 @@ class EventCompositionResourceTest extends TestCase
         $this->assertArrayHasKey('playable_class', $char);
         $this->assertArrayHasKey('rank', $char);
         $this->assertArrayHasKey('name', $char['rank']);
-        $this->assertArrayHasKey('position', $char['rank']);
+        $this->assertArrayHasKey('sort_order', $char['rank']);
         $this->assertSame(1, $char['slot_number']);
         $this->assertSame(SignupStatus::Confirmed, $char['signup_status']);
         $this->assertArrayNotHasKey('is_confirmed', $char);
@@ -174,7 +174,7 @@ class EventCompositionResourceTest extends TestCase
         $this->assertArrayHasKey('playable_class', $bench);
         $this->assertArrayHasKey('rank', $bench);
         $this->assertArrayHasKey('name', $bench['rank']);
-        $this->assertArrayHasKey('position', $bench['rank']);
+        $this->assertArrayHasKey('sort_order', $bench['rank']);
         $this->assertArrayNotHasKey('slot_number', $bench);
         $this->assertArrayNotHasKey('is_confirmed', $bench);
     }

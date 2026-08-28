@@ -55,7 +55,7 @@ class ReportResource extends JsonResource
                     if ($character->relationLoaded('rank')) {
                         $data['rank'] = $character->rank ? [
                             'id' => $character->rank->id,
-                            'position' => $character->rank->position,
+                            'sort_order' => $character->rank->sort_order,
                             'name' => $character->rank->name,
                             'count_attendance' => $character->rank->count_attendance,
                         ] : null;

@@ -86,7 +86,7 @@ class EventResource extends JsonResource
                     'playable_class' => $character->playableClass()->first()?->toResource()->resolve($request),
                     'rank' => [
                         'name' => $character->rank?->name,
-                        'position' => $character->rank?->position,
+                        'sort_order' => $character->rank?->sort_order,
                     ],
                     'slot_number' => $character->pivot->slot_number,
                     'signup_status' => $character->pivot->signup_status,
@@ -112,7 +112,7 @@ class EventResource extends JsonResource
                 'playable_class' => $character->playableClass()->first()?->toResource()->resolve($request),
                 'rank' => [
                     'name' => $character->rank?->name,
-                    'position' => $character->rank?->position,
+                    'sort_order' => $character->rank?->sort_order,
                 ],
             ])
             ->values()

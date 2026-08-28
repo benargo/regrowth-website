@@ -25,7 +25,7 @@ class GuildRankResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'position' => $this->position,
+            'sort_order' => $this->sort_order,
             'name' => $this->name,
             'slug' => Str::slug($this->name),
             'count_attendance' => $this->count_attendance,
