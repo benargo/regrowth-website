@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pivot_events_raids', function (Blueprint $table) {
-            $table->unsignedSmallInteger('sort_order')->nullable(false)->default(1)->after('raid_id');
+            $table->unsignedSmallInteger('sort_order')->default(0)->after('raid_id');
         });
     }
 
