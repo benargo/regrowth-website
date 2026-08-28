@@ -129,6 +129,7 @@ class EventResource extends JsonResource
             'name' => $raid->name,
             'slug' => $raid->slug,
             'max_players' => $raid->max_players,
+            'sort_order' => $raid->pivot->sort_order,
             'bosses' => $raid->bosses->map(fn (Boss $boss) => [
                 'id' => $boss->id,
                 'name' => $boss->name,

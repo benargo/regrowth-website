@@ -263,7 +263,30 @@ class EventResourceTest extends TestCase
         $this->assertSame('Karazhan', $array['raids'][0]['name']);
         $this->assertSame($raid->slug, $array['raids'][0]['slug']);
         $this->assertSame($raid->max_players, $array['raids'][0]['max_players']);
+        $this->assertSame(1, $array['raids'][0]['sort_order']);
         $this->assertArrayHasKey('bosses', $array['raids'][0]);
+    }
+
+    #[Test]
+    public function it_orders_raids_by_pivot_sort_order(): void
+    {
+        $this->mockChannel();
+
+        $first = Raid::factory()->create(['name' => 'Gruul']);
+        $second = Raid::factory()->create(['name' => 'Magtheridon']);
+        $third = Raid::factory()->create(['name' => 'Karazhan']);
+
+        $event = Event::factory()->create();
+        $event->raids()->attach($third->id, ['sort_order' => 3]);
+        $event->raids()->attach($first->id, ['sort_order' => 1]);
+        $event->raids()->attach($second->id, ['sort_order' => 2]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame(
+            ['Gruul', 'Magtheridon', 'Karazhan'],
+            array_column($array['raids'], 'name'),
+        );
     }
 
     #[Test]
