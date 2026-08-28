@@ -282,7 +282,7 @@ class EventResourceTest extends TestCase
         $this->assertSame($boss->id, $bossData['id']);
         $this->assertSame('Attumen', $bossData['name']);
         $this->assertSame($boss->slug, $bossData['slug']);
-        $this->assertSame($boss->encounter_order, $bossData['encounter_order']);
+        $this->assertSame($boss->sort_order, $bossData['sort_order']);
         $this->assertSame('Kill adds first', $bossData['notes']);
         $this->assertIsArray($bossData['images']);
         $this->assertArrayHasKey('groups', $bossData['assignments']);

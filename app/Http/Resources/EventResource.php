@@ -133,7 +133,7 @@ class EventResource extends JsonResource
                 'id' => $boss->id,
                 'name' => $boss->name,
                 'slug' => $boss->slug,
-                'encounter_order' => $boss->encounter_order,
+                'sort_order' => $boss->sort_order,
                 'images' => $boss->getMedia()->map->getUrl()->values()->all(),
                 'notes' => $boss->notes,
                 'assignments' => (new EventAssignmentsCollection(
