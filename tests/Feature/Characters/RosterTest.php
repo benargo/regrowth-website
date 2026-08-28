@@ -127,7 +127,7 @@ class RosterTest extends TestCase
     #[Test]
     public function index_characters_deferred_prop_returns_flat_ids_without_realm(): void
     {
-        GuildRank::factory()->create(['position' => 9, 'name' => 'Warden']);
+        GuildRank::factory()->create(['sort_order' => 9, 'name' => 'Warden']);
 
         $this->fakeRosterWithMembers([
             [
@@ -165,9 +165,9 @@ class RosterTest extends TestCase
     #[Test]
     public function index_passes_ranks_prop_as_deduplicated_names(): void
     {
-        GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
-        GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
-        GuildRank::factory()->create(['position' => 2, 'name' => 'Officer']);
+        GuildRank::factory()->create(['sort_order' => 0, 'name' => 'Guild Master']);
+        GuildRank::factory()->create(['sort_order' => 1, 'name' => 'Officer']);
+        GuildRank::factory()->create(['sort_order' => 2, 'name' => 'Officer']);
 
         $response = $this->get(route('characters.index'));
 

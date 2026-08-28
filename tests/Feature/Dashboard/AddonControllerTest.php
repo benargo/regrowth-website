@@ -454,7 +454,7 @@ class AddonControllerTest extends DashboardTestCase
                     'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
                     'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
                 ],
-                'rank' => $raiderRank->position,
+                'rank' => $raiderRank->sort_order,
             ],
             range(1, 5),
         ));
@@ -497,7 +497,7 @@ class AddonControllerTest extends DashboardTestCase
                     'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
                     'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
                 ],
-                'rank' => $raiderRank->position,
+                'rank' => $raiderRank->sort_order,
             ],
             range(1, 3),
         ));
@@ -542,7 +542,7 @@ class AddonControllerTest extends DashboardTestCase
                     'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
                     'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
                 ],
-                'rank' => $raiderRank->position,
+                'rank' => $raiderRank->sort_order,
             ],
             range(1, 3),
         ));
@@ -584,7 +584,7 @@ class AddonControllerTest extends DashboardTestCase
                     'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
                     'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
                 ],
-                'rank' => $raiderRank->position,
+                'rank' => $raiderRank->sort_order,
             ],
             range(1, 5),
         ));
@@ -622,9 +622,9 @@ class AddonControllerTest extends DashboardTestCase
 
         // Fake Saloon to return 3 raiders across different ranks
         $this->mockGuildRoster([
-            ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->position],
-            ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $coreRaiderRank->position],
-            ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $trialRaiderRank->position],
+            ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->sort_order],
+            ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $coreRaiderRank->sort_order],
+            ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $trialRaiderRank->sort_order],
         ]);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
@@ -681,8 +681,8 @@ class AddonControllerTest extends DashboardTestCase
 
         // Fake Saloon to return non-raiders
         $this->mockGuildRoster([
-            ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $officerRank->position],
-            ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $memberRank->position],
+            ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $officerRank->sort_order],
+            ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $memberRank->sort_order],
         ]);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
@@ -722,7 +722,7 @@ class AddonControllerTest extends DashboardTestCase
                     'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
                     'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
                 ],
-                'rank' => $raiderRank->position,
+                'rank' => $raiderRank->sort_order,
             ],
             range(1, 2),
         ));

@@ -124,11 +124,11 @@ class GuildRankStoreTest extends DashboardTestCase
     }
 
     #[Test]
-    public function store_assigns_next_available_position(): void
+    public function store_assigns_next_available_sort_order(): void
     {
-        GuildRank::factory()->create(['position' => 0]);
-        GuildRank::factory()->create(['position' => 1]);
-        GuildRank::factory()->create(['position' => 2]);
+        GuildRank::factory()->create(['sort_order' => 0]);
+        GuildRank::factory()->create(['sort_order' => 1]);
+        GuildRank::factory()->create(['sort_order' => 2]);
 
         $this->actingAs($this->officer)->post(route('management.ranks.store'), [
             'name' => 'New Rank',
@@ -136,12 +136,12 @@ class GuildRankStoreTest extends DashboardTestCase
 
         $this->assertDatabaseHas('guild_ranks', [
             'name' => 'New Rank',
-            'position' => 3,
+            'sort_order' => 3,
         ]);
     }
 
     #[Test]
-    public function store_assigns_position_zero_when_no_ranks_exist(): void
+    public function store_assigns_sort_order_zero_when_no_ranks_exist(): void
     {
 
         $this->actingAs($this->officer)->post(route('management.ranks.store'), [
@@ -150,7 +150,7 @@ class GuildRankStoreTest extends DashboardTestCase
 
         $this->assertDatabaseHas('guild_ranks', [
             'name' => 'First Rank',
-            'position' => 1,
+            'sort_order' => 0,
         ]);
     }
 

@@ -158,7 +158,7 @@ class AddonSettingsControllerTest extends DashboardTestCase
     {
         // Clear any existing ranks and create our test rank
         GuildRank::query()->delete();
-        GuildRank::factory()->create(['name' => 'Test Rank', 'position' => 1]);
+        GuildRank::factory()->create(['name' => 'Test Rank', 'sort_order' => 1]);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 
@@ -243,13 +243,13 @@ class AddonSettingsControllerTest extends DashboardTestCase
     }
 
     #[Test]
-    public function settings_ranks_are_ordered_by_position(): void
+    public function settings_ranks_are_ordered_by_sort_order(): void
     {
         // Clear any existing ranks and create our test ranks
         GuildRank::query()->delete();
-        GuildRank::factory()->create(['name' => 'Officer', 'position' => 2]);
-        GuildRank::factory()->create(['name' => 'Guild Master', 'position' => 1]);
-        GuildRank::factory()->create(['name' => 'Member', 'position' => 3]);
+        GuildRank::factory()->create(['name' => 'Officer', 'sort_order' => 2]);
+        GuildRank::factory()->create(['name' => 'Guild Master', 'sort_order' => 1]);
+        GuildRank::factory()->create(['name' => 'Member', 'sort_order' => 3]);
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.settings'));
 

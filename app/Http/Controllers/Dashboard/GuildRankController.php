@@ -11,7 +11,6 @@ use App\Models\GuildRank;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -25,9 +24,9 @@ class GuildRankController extends Controller
     {
         $guildRanks = GuildRank::hydrate(
             Cache::remember('guild_ranks:index', now()->addDay(), function () {
-                return GuildRank::all()->toArray();
+                return GuildRank::ordered()->get()->toArray();
             })
-        )->sortBy('position');
+        );
 
         return Inertia::render('Manage/Ranks/Index', [
             'guildRanks' => $guildRanks,
@@ -40,11 +39,8 @@ class GuildRankController extends Controller
     #[Authorize('edit-datasets')]
     public function store(StoreGuildRankRequest $request): RedirectResponse
     {
-        $nextPosition = GuildRank::max('position') + 1;
-
         GuildRank::create([
             'name' => $request->validated('name'),
-            'position' => $nextPosition,
         ]);
 
         return $this->back();
@@ -67,19 +63,10 @@ class GuildRankController extends Controller
     #[Authorize('edit-datasets')]
     public function updatePositions(UpdateGuildRankPositionsRequest $request): RedirectResponse
     {
-        $ranks = $request->validated('ranks');
-
-        DB::transaction(function () use ($ranks) {
-            // First, set all positions to negative values to avoid unique constraint conflicts
-            foreach ($ranks as $index => $rankData) {
-                GuildRank::where('id', $rankData['id'])->update(['position' => -($index + 1)]);
-            }
-
-            // Then set the final positions
-            foreach ($ranks as $rankData) {
-                GuildRank::where('id', $rankData['id'])->update(['position' => $rankData['position']]);
-            }
-        });
+        GuildRank::setNewOrder(
+            collect($request->validated('ranks'))->sortBy('position')->pluck('id')->all(),
+            startOrder: 0,
+        );
 
         return $this->back();
     }
