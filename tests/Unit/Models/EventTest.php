@@ -11,6 +11,7 @@ use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
 use App\Models\EventCharacter;
+use App\Models\EventRaid;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
@@ -454,6 +455,39 @@ class EventTest extends ModelTestCase
         $event = $this->create();
 
         $this->assertCount(0, $event->raids);
+    }
+
+    #[Test]
+    public function raids_use_the_event_raid_pivot(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+
+        $event->raids()->attach($raid->id, ['sort_order' => 3]);
+
+        $pivot = $event->raids->first()->pivot;
+
+        $this->assertInstanceOf(EventRaid::class, $pivot);
+        $this->assertSame(3, $pivot->sort_order);
+    }
+
+    #[Test]
+    public function raids_are_ordered_by_pivot_sort_order(): void
+    {
+        $event = $this->create();
+
+        $first = Raid::factory()->create();
+        $second = Raid::factory()->create();
+        $third = Raid::factory()->create();
+
+        $event->raids()->attach($third->id, ['sort_order' => 3]);
+        $event->raids()->attach($first->id, ['sort_order' => 1]);
+        $event->raids()->attach($second->id, ['sort_order' => 2]);
+
+        $this->assertSame(
+            [$first->id, $second->id, $third->id],
+            $event->raids->pluck('id')->all(),
+        );
     }
 
     #[Test]

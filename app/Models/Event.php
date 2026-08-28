@@ -147,6 +147,8 @@ class Event extends PrunableModel
     public function raids(): BelongsToMany
     {
         return $this->belongsToMany(Raid::class, 'pivot_events_raids', 'event_id', 'raid_id')
+            ->using(EventRaid::class)
+            ->withPivot('sort_order')
             ->withTimestamps();
     }
 
