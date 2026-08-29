@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/Components/FontAwesome/Icon";
+import Tooltip from "@/Components/Tooltip";
 
 const STYLES = {
     amber: {
@@ -21,6 +22,40 @@ export function RotatingChevron({ expanded = false, style = "solid" }) {
         >
             <Icon icon="chevron-down" style={style} />
         </span>
+    );
+}
+
+/**
+ * A non-interactive, permanently-collapsed rendering of a Collapsible. It mirrors
+ * the header shell of the real component but is muted and inert, signalling that
+ * the section exists yet is not part of the current context (e.g. a boss the
+ * event has not selected).
+ *
+ * When `tooltip` is supplied, its properties are spread onto a wrapping
+ * {@link Tooltip} (e.g. `{ body, position }`). Omit it to render without a
+ * tooltip wrapper.
+ */
+export function DisabledCollapsible({ title, headerRight, tooltip }) {
+    const collapsible = (
+        <div className="rounded-md border border-gray-700 opacity-60">
+            <div className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-3 text-left text-gray-500">
+                <span className="flex items-center justify-items-center text-gray-600">
+                    <Icon icon="chevron-down" style="solid" />
+                </span>
+                <h3 className="text-lg font-semibold">{title}</h3>
+                {headerRight && <span className="ml-auto">{headerRight}</span>}
+            </div>
+        </div>
+    );
+
+    if (!tooltip) {
+        return collapsible;
+    }
+
+    return (
+        <Tooltip {...tooltip} className="block w-full">
+            {collapsible}
+        </Tooltip>
     );
 }
 

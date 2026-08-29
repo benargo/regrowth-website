@@ -17,11 +17,7 @@ function BossSection({ boss, onStrategyChanged }) {
     useBossStrategyChannel(boss.id, () => onStrategyChanged());
 
     return (
-        <Collapsible
-            title={boss.name}
-            sessionKey={`event_boss_expanded_${boss.slug}_${boss.id}`}
-            style="amber"
-        >
+        <Collapsible title={boss.name} sessionKey={`event_boss_expanded_${boss.slug}_${boss.id}`} style="amber">
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col items-center gap-2 text-center">
                     {boss.assignments?.count > 0 ? (
@@ -109,7 +105,7 @@ export default function Show({ event }) {
                 {/** General assignments */}
                 {event.assignments.count > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-md mb-2 font-semibold uppercase tracking-wider text-amber-500/80">
+                        <h2 className="text-md mb-2 font-semibold tracking-wider text-amber-500/80 uppercase">
                             General Assignments
                         </h2>
                         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
@@ -133,13 +129,15 @@ export default function Show({ event }) {
                                     <h2 className="mb-4 text-xl font-semibold text-white">{raid.name}</h2>
                                 )}
                                 <div className="flex flex-col gap-2">
-                                    {(raid.bosses ?? []).map((boss) => (
-                                        <BossSection
-                                            key={boss.id}
-                                            boss={boss}
-                                            onStrategyChanged={() => router.reload({ preserveScroll: true })}
-                                        />
-                                    ))}
+                                    {(raid.bosses ?? [])
+                                        .filter((boss) => boss.is_visible)
+                                        .map((boss) => (
+                                            <BossSection
+                                                key={boss.id}
+                                                boss={boss}
+                                                onStrategyChanged={() => router.reload({ preserveScroll: true })}
+                                            />
+                                        ))}
                                 </div>
                             </div>
                         ))}
