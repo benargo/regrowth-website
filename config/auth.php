@@ -114,4 +114,25 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Local Test Users
+    |--------------------------------------------------------------------------
+    |
+    | These IDs identify the seeded test users used by the manual login flow
+    | (local/testing only) and by ViewAsRoleController's role impersonation.
+    | They are supplied via environment variables so that local and CI setups
+    | can point them at their own Discord snowflake IDs.
+    |
+    */
+
+    'local_users' => [
+        'officer' => env('LOCAL_USER_OFFICER_ID'),
+        'loot_councillor' => env('LOCAL_USER_LOOT_COUNCILLOR_ID'),
+        'raider' => env('LOCAL_USER_RAIDER_ID'),
+        'member' => env('LOCAL_USER_MEMBER_ID'),
+        'guest' => env('LOCAL_USER_GUEST_ID'),
+        'admin' => env('LOCAL_USER_ADMIN_ID'),
+    ],
+
 ];
