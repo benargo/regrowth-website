@@ -464,12 +464,12 @@ class EventTest extends ModelTestCase
         $event = $this->create();
         $raid = Raid::factory()->create();
 
-        $event->raids()->attach($raid->id, ['sort_order' => 3]);
+        $event->raids()->attach($raid->id);
 
         $pivot = $event->raids->first()->pivot;
 
         $this->assertInstanceOf(EventRaid::class, $pivot);
-        $this->assertSame(3, $pivot->sort_order);
+        $this->assertNotNull($pivot->sort_order);
     }
 
     #[Test]
@@ -477,13 +477,15 @@ class EventTest extends ModelTestCase
     {
         $event = $this->create();
 
-        $first = Raid::factory()->create();
-        $second = Raid::factory()->create();
+        // Created in reverse so id order and pivot order differ.
         $third = Raid::factory()->create();
+        $second = Raid::factory()->create();
+        $first = Raid::factory()->create();
 
-        $event->raids()->attach($third->id, ['sort_order' => 3]);
-        $event->raids()->attach($first->id, ['sort_order' => 1]);
-        $event->raids()->attach($second->id, ['sort_order' => 2]);
+        // The pivot numbers itself on create, so sequence follows attach order.
+        $event->raids()->attach($first->id);
+        $event->raids()->attach($second->id);
+        $event->raids()->attach($third->id);
 
         $this->assertSame(
             [$first->id, $second->id, $third->id],
@@ -541,12 +543,12 @@ class EventTest extends ModelTestCase
         $event = $this->create();
         $boss = Boss::factory()->create();
 
-        $event->bosses()->attach($boss->id, ['sort_order' => 3]);
+        $event->bosses()->attach($boss->id);
 
         $pivot = $event->bosses->first()->pivot;
 
         $this->assertInstanceOf(EventBoss::class, $pivot);
-        $this->assertSame(3, $pivot->sort_order);
+        $this->assertNotNull($pivot->sort_order);
     }
 
     #[Test]
@@ -554,13 +556,15 @@ class EventTest extends ModelTestCase
     {
         $event = $this->create();
 
-        $first = Boss::factory()->create();
-        $second = Boss::factory()->create();
+        // Created in reverse so id order and pivot order differ.
         $third = Boss::factory()->create();
+        $second = Boss::factory()->create();
+        $first = Boss::factory()->create();
 
-        $event->bosses()->attach($third->id, ['sort_order' => 3]);
-        $event->bosses()->attach($first->id, ['sort_order' => 1]);
-        $event->bosses()->attach($second->id, ['sort_order' => 2]);
+        // The pivot numbers itself on create, so sequence follows attach order.
+        $event->bosses()->attach($first->id);
+        $event->bosses()->attach($second->id);
+        $event->bosses()->attach($third->id);
 
         $this->assertSame(
             [$first->id, $second->id, $third->id],
