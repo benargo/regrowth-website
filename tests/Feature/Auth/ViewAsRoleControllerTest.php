@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Http\Controllers\Auth\ViewAsRoleController;
 use App\Models\DiscordRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -52,7 +51,7 @@ class ViewAsRoleControllerTest extends TestCase
         $response->assertRedirect('/');
         $response->assertSessionHas('impersonating_user_id', $user->id);
 
-        $this->assertAuthenticatedAs(User::find(ViewAsRoleController::TEST_RAIDER_ID));
+        $this->assertAuthenticatedAs(User::find(config('auth.local_users.raider')));
     }
 
     #[Test]
@@ -64,7 +63,7 @@ class ViewAsRoleControllerTest extends TestCase
 
         $this->actingAs($user)->get(route('auth.view-as', $raiderRole->id));
 
-        $testUser = User::find(ViewAsRoleController::TEST_RAIDER_ID);
+        $testUser = User::find(config('auth.local_users.raider'));
         $roleIds = $testUser->discordRoles->pluck('id')->all();
 
         $this->assertContains($raiderRole->id, $roleIds);
@@ -79,7 +78,7 @@ class ViewAsRoleControllerTest extends TestCase
 
         $this->actingAs($user)->get(route('auth.view-as', $memberRole->id));
 
-        $testUser = User::find(ViewAsRoleController::TEST_MEMBER_ID);
+        $testUser = User::find(config('auth.local_users.member'));
 
         $this->assertCount(1, $testUser->discordRoles);
         $this->assertTrue($testUser->discordRoles->first()->is($memberRole));
@@ -93,7 +92,7 @@ class ViewAsRoleControllerTest extends TestCase
 
         $this->actingAs($user)->get(route('auth.view-as', $guestRole->id));
 
-        $testUser = User::find(ViewAsRoleController::TEST_GUEST_ID);
+        $testUser = User::find(config('auth.local_users.guest'));
 
         $this->assertNotNull($testUser);
         $this->assertSame('Test Guest', $testUser->nickname);
@@ -105,6 +104,20 @@ class ViewAsRoleControllerTest extends TestCase
         $user = User::factory()->withPermissions('impersonate-roles')->create();
 
         $response = $this->actingAs($user)->get(route('auth.view-as', '999999'));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+    }
+
+    #[Test]
+    public function view_as_role_errors_when_local_user_id_is_not_configured(): void
+    {
+        config()->set('auth.local_users.raider', null);
+
+        $user = User::factory()->withPermissions('impersonate-roles')->create();
+        $raiderRole = DiscordRole::factory()->raider()->create();
+
+        $response = $this->actingAs($user)->get(route('auth.view-as', $raiderRole->id));
 
         $response->assertRedirect();
         $response->assertSessionHas('error');
