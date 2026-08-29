@@ -55,6 +55,26 @@ class EventBossTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_expected_fillable_attributes(): void
+    {
+        $this->assertFillable(new EventBoss, [
+            'event_id',
+            'boss_id',
+            'sort_order',
+        ]);
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $this->assertFillableAttribute(new EventBoss, [
+            'event_id',
+            'boss_id',
+            'sort_order',
+        ]);
+    }
+
+    #[Test]
     public function it_scopes_the_sort_query_to_the_event(): void
     {
         $event = Event::factory()->create();
@@ -72,32 +92,49 @@ class EventBossTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_auto_assigns_the_next_sort_order_per_event(): void
+    public function it_does_not_auto_assign_a_sort_order_on_create(): void
     {
         $event = Event::factory()->create();
-        $bossOne = Boss::factory()->create();
-        $bossTwo = Boss::factory()->create();
+        $boss = Boss::factory()->create();
 
-        $event->bosses()->attach($bossOne->id);
-        $event->bosses()->attach($bossTwo->id);
+        $event->bosses()->attach($boss->id);
 
-        $orders = EventBoss::where('event_id', $event->id)
-            ->orderBy('boss_id')
-            ->pluck('sort_order', 'boss_id');
-
-        $this->assertSame(1, $orders[$bossOne->id]);
-        $this->assertSame(2, $orders[$bossTwo->id]);
+        $this->assertSame(0, EventBoss::where('event_id', $event->id)->value('sort_order'));
     }
 
     #[Test]
-    public function it_overrides_an_explicitly_provided_sort_order_on_create(): void
+    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
     {
         $event = Event::factory()->create();
         $boss = Boss::factory()->create();
 
         $event->bosses()->attach($boss->id, ['sort_order' => 5]);
 
-        $this->assertSame(1, EventBoss::where('event_id', $event->id)->value('sort_order'));
+        $this->assertSame(5, EventBoss::where('event_id', $event->id)->value('sort_order'));
+    }
+
+    #[Test]
+    public function it_persists_explicit_sort_orders_verbatim_when_syncing_a_mixed_set(): void
+    {
+        $event = Event::factory()->create();
+        [$bossOne, $bossTwo, $bossThree] = Boss::factory()->count(3)->create();
+
+        $event->bosses()->sync([
+            $bossOne->id => ['sort_order' => 1],
+            $bossThree->id => ['sort_order' => 2],
+        ]);
+
+        $event->bosses()->sync([
+            $bossOne->id => ['sort_order' => 1],
+            $bossTwo->id => ['sort_order' => 2],
+            $bossThree->id => ['sort_order' => 3],
+        ]);
+
+        $orders = EventBoss::where('event_id', $event->id)->pluck('sort_order', 'boss_id');
+
+        $this->assertSame(1, $orders[$bossOne->id]);
+        $this->assertSame(2, $orders[$bossTwo->id]);
+        $this->assertSame(3, $orders[$bossThree->id]);
     }
 
     // ==================== event ====================

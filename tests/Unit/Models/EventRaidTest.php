@@ -55,6 +55,26 @@ class EventRaidTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_expected_fillable_attributes(): void
+    {
+        $this->assertFillable(new EventRaid, [
+            'event_id',
+            'raid_id',
+            'sort_order',
+        ]);
+    }
+
+    #[Test]
+    public function it_declares_fillable_via_attribute(): void
+    {
+        $this->assertFillableAttribute(new EventRaid, [
+            'event_id',
+            'raid_id',
+            'sort_order',
+        ]);
+    }
+
+    #[Test]
     public function it_scopes_the_sort_query_to_the_event(): void
     {
         $event = Event::factory()->create();
@@ -72,32 +92,49 @@ class EventRaidTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_auto_assigns_the_next_sort_order_per_event(): void
+    public function it_does_not_auto_assign_a_sort_order_on_create(): void
     {
         $event = Event::factory()->create();
-        $raidOne = Raid::factory()->create();
-        $raidTwo = Raid::factory()->create();
+        $raid = Raid::factory()->create();
 
-        $event->raids()->attach($raidOne->id);
-        $event->raids()->attach($raidTwo->id);
+        $event->raids()->attach($raid->id);
 
-        $orders = EventRaid::where('event_id', $event->id)
-            ->orderBy('raid_id')
-            ->pluck('sort_order', 'raid_id');
-
-        $this->assertSame(1, $orders[$raidOne->id]);
-        $this->assertSame(2, $orders[$raidTwo->id]);
+        $this->assertSame(0, EventRaid::where('event_id', $event->id)->value('sort_order'));
     }
 
     #[Test]
-    public function it_overrides_an_explicitly_provided_sort_order_on_create(): void
+    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
     {
         $event = Event::factory()->create();
         $raid = Raid::factory()->create();
 
         $event->raids()->attach($raid->id, ['sort_order' => 5]);
 
-        $this->assertSame(1, EventRaid::where('event_id', $event->id)->value('sort_order'));
+        $this->assertSame(5, EventRaid::where('event_id', $event->id)->value('sort_order'));
+    }
+
+    #[Test]
+    public function it_persists_explicit_sort_orders_verbatim_when_syncing_a_mixed_set(): void
+    {
+        $event = Event::factory()->create();
+        [$raidOne, $raidTwo, $raidThree] = Raid::factory()->count(3)->create();
+
+        $event->raids()->sync([
+            $raidOne->id => ['sort_order' => 1],
+            $raidThree->id => ['sort_order' => 2],
+        ]);
+
+        $event->raids()->sync([
+            $raidOne->id => ['sort_order' => 1],
+            $raidTwo->id => ['sort_order' => 2],
+            $raidThree->id => ['sort_order' => 3],
+        ]);
+
+        $orders = EventRaid::where('event_id', $event->id)->pluck('sort_order', 'raid_id');
+
+        $this->assertSame(1, $orders[$raidOne->id]);
+        $this->assertSame(2, $orders[$raidTwo->id]);
+        $this->assertSame(3, $orders[$raidThree->id]);
     }
 
     // ==================== event ====================
