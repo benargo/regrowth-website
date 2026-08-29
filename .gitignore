@@ -3,7 +3,6 @@
 .env
 .env.backup
 .env.production
-.env.testing
 .github
 .graphifyignore
 .phpactor.json
