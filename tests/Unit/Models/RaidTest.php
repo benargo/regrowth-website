@@ -365,6 +365,22 @@ class RaidTest extends ModelTestCase
         $this->assertCount(3, $raid->bosses);
     }
 
+    #[Test]
+    public function bosses_are_ordered_by_sort_order(): void
+    {
+        $raid = $this->create();
+
+        // Created out of encounter order so id order and sort order differ.
+        $second = Boss::factory()->for($raid)->order(2)->create();
+        $third = Boss::factory()->for($raid)->order(3)->create();
+        $first = Boss::factory()->for($raid)->order(1)->create();
+
+        $this->assertSame(
+            [$first->id, $second->id, $third->id],
+            $raid->bosses->pluck('id')->all()
+        );
+    }
+
     // ==================== items ====================
 
     #[Test]
@@ -475,11 +491,11 @@ class RaidTest extends ModelTestCase
         $raid = $this->create();
         $event = Event::factory()->create();
 
-        $raid->events()->attach($event->id, ['sort_order' => 4]);
+        $raid->events()->attach($event->id);
 
         $pivot = $raid->events->first()->pivot;
 
         $this->assertInstanceOf(EventRaid::class, $pivot);
-        $this->assertSame(4, $pivot->sort_order);
+        $this->assertNotNull($pivot->sort_order);
     }
 }

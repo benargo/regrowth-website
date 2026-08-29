@@ -73,7 +73,7 @@ class Raid extends Model
      */
     public function bosses(): HasMany
     {
-        return $this->hasMany(Boss::class);
+        return $this->hasMany(Boss::class)->orderBy('sort_order');
     }
 
     /**
@@ -90,13 +90,16 @@ class Raid extends Model
 
     /**
      * Get the events that are associated with this raid.
+     *
+     * @return BelongsToMany<Event, $this>
      */
     public function events(): BelongsToMany
     {
         return $this->belongsToMany(Event::class, 'pivot_events_raids', 'raid_id', 'event_id')
             ->using(EventRaid::class)
             ->withPivot('sort_order')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
     }
 
     // ========== Loot bias relationships ==========
