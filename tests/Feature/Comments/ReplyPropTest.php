@@ -10,6 +10,7 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\Support\Discord\MocksDiscordService;
 use Tests\TestCase;
 
@@ -17,12 +18,15 @@ use Tests\TestCase;
 #[Group('loot')]
 class ReplyPropTest extends TestCase
 {
+    use MocksBlizzardServices;
     use MocksDiscordService;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->mockItemService();
 
         $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
     }

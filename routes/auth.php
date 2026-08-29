@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AccountController;
 use App\Http\Controllers\Auth\DiscordController;
+use App\Http\Controllers\Auth\LocalLoginController;
 use App\Http\Controllers\Auth\ViewAsRoleController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,26 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [DiscordController::class, 'destroy'])
         ->name('logout');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Manual Login Routes (local / testing only)
+|--------------------------------------------------------------------------
+|
+| The routes are only registered outside production so they never reach
+| Ziggy's serialised route collection. The env middleware is defence in
+| depth: it 404s the request even if the routes are somehow registered
+| in production (e.g. a route cache built in the wrong environment).
+*/
+if (app()->environment(['local', 'testing'])) {
+    Route::middleware(['env:local,testing', 'guest'])->group(function () {
+        Route::get('login/local', [LocalLoginController::class, 'create'])
+            ->name('login.local');
+
+        Route::post('login/local', [LocalLoginController::class, 'store'])
+            ->name('login.local.store');
+    });
+}
 
 /*
 |--------------------------------------------------------------------------

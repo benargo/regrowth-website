@@ -12,12 +12,6 @@ use InvalidArgumentException;
 
 class ViewAsRoleController extends Controller
 {
-    public const TEST_RAIDER_ID = '000000000000000000';
-
-    public const TEST_MEMBER_ID = '000000000000000001';
-
-    public const TEST_GUEST_ID = '000000000000000002';
-
     /**
      * Temporarily view the site as a different role.
      */
@@ -70,13 +64,17 @@ class ViewAsRoleController extends Controller
             ?? throw new InvalidArgumentException('Invalid role specified.');
 
         $testUsers = [
-            'Raider' => ['id' => self::TEST_RAIDER_ID, 'discriminator' => '0000', 'nickname' => 'Test Raider'],
-            'Member' => ['id' => self::TEST_MEMBER_ID, 'discriminator' => '0001', 'nickname' => 'Test Member'],
-            'Guest' => ['id' => self::TEST_GUEST_ID, 'discriminator' => '0002', 'nickname' => 'Test Guest'],
+            'Raider' => ['id' => config('auth.local_users.raider'), 'discriminator' => '0000', 'nickname' => 'Test Raider'],
+            'Member' => ['id' => config('auth.local_users.member'), 'discriminator' => '0001', 'nickname' => 'Test Member'],
+            'Guest' => ['id' => config('auth.local_users.guest'), 'discriminator' => '0002', 'nickname' => 'Test Guest'],
         ];
 
         $config = $testUsers[$discordRole->name]
             ?? throw new InvalidArgumentException('Invalid role specified.');
+
+        if (blank($config['id'])) {
+            throw new InvalidArgumentException('Invalid role specified.');
+        }
 
         $user = User::firstOrCreate(
             ['id' => $config['id']],

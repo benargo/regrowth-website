@@ -14,12 +14,14 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('comments')]
 #[Group('loot')]
 class ThreadedCommentsTest extends TestCase
 {
+    use MocksBlizzardServices;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -27,6 +29,8 @@ class ThreadedCommentsTest extends TestCase
         parent::setUp();
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->mockItemService();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $deleteAnyComment = Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']);

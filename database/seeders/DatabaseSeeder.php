@@ -36,5 +36,9 @@ class DatabaseSeeder extends Seeder
             PrioritySeeder::class,
             ItemSeeder::class,
         ]);
+
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(LocalUserSeeder::class);
+        }
     }
 }

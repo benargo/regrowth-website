@@ -45,5 +45,12 @@
         <env name="DISCORD_BOT_TOKEN" value="test_discord_bot_token"/>
         <env name="DISCORD_SERVER_ID" value="829020506907869214"/>
         <env name="RAID_HELPER_WEBHOOK_KEY" value="test_webhook_key"/>
+        <!-- Manual login / view-as test users. Keep in sync with .env.testing. -->
+        <env name="LOCAL_USER_OFFICER_ID" value="100000000000000001"/>
+        <env name="LOCAL_USER_LOOT_COUNCILLOR_ID" value="100000000000000002"/>
+        <env name="LOCAL_USER_RAIDER_ID" value="000000000000000000"/>
+        <env name="LOCAL_USER_MEMBER_ID" value="000000000000000001"/>
+        <env name="LOCAL_USER_GUEST_ID" value="000000000000000002"/>
+        <env name="LOCAL_USER_ADMIN_ID" value="100000000000000003"/>
     </php>
 </phpunit>
