@@ -312,78 +312,18 @@ class EventResourceTest extends TestCase
         $this->assertSame($boss->sort_order, $bossData['sort_order']);
         $this->assertSame('Kill adds first', $bossData['notes']);
         $this->assertIsArray($bossData['images']);
+        $this->assertArrayHasKey('is_visible', $bossData);
+        $this->assertIsBool($bossData['is_visible']);
+        $this->assertFalse($bossData['is_visible']);
         $this->assertArrayHasKey('groups', $bossData['assignments']);
         $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
     }
 
-    // ==================== bosses ====================
+    // ==================== raids.bosses — is_visible ====================
 
     #[Test]
     #[Group('contract')]
-    public function it_exposes_a_top_level_bosses_key(): void
-    {
-        $this->mockChannel();
-        $event = Event::factory()->create();
-
-        $array = $this->makeResource($event);
-
-        $this->assertArrayHasKey('bosses', $array);
-    }
-
-    #[Test]
-    public function the_bosses_key_is_an_empty_array_when_none_are_attached(): void
-    {
-        $this->mockChannel();
-        $event = Event::factory()->create();
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame([], $array['bosses']);
-    }
-
-    #[Test]
-    #[Group('contract')]
-    public function top_level_bosses_match_the_shape_of_bosses_under_raids(): void
-    {
-        $this->mockChannel();
-        $raid = Raid::factory()->create();
-        $boss = Boss::factory()->for($raid)->order(1)->create();
-
-        $event = Event::factory()->create();
-        $event->raids()->attach($raid->id);
-        $event->bosses()->attach($boss->id);
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame(
-            array_keys($array['raids'][0]['bosses'][0]),
-            array_keys($array['bosses'][0])
-        );
-    }
-
-    #[Test]
-    #[Group('contract')]
-    public function top_level_bosses_are_ordered_by_the_pivot_sort_order(): void
-    {
-        $this->mockChannel();
-        $raid = Raid::factory()->create();
-        $a = Boss::factory()->for($raid)->order(1)->create();
-        $b = Boss::factory()->for($raid)->order(2)->create();
-
-        $event = Event::factory()->create();
-        $event->raids()->attach($raid->id);
-
-        // Attached against the bosses' own order, so pivot order must win.
-        $event->bosses()->attach($b->id, ['sort_order' => 1]);
-        $event->bosses()->attach($a->id, ['sort_order' => 2]);
-
-        $array = $this->makeResource($event);
-
-        $this->assertSame([$b->id, $a->id], array_column($array['bosses'], 'id'));
-    }
-
-    #[Test]
-    public function attaching_event_bosses_leaves_the_bosses_under_raids_unchanged(): void
+    public function raids_bosses_expose_is_visible_from_the_event_pivot(): void
     {
         $this->mockChannel();
         $raid = Raid::factory()->create();
@@ -398,8 +338,26 @@ class EventResourceTest extends TestCase
 
         $array = $this->makeResource($event);
 
+        // Every one of the raid's bosses is still present, in the raid's own order.
         $this->assertSame([$a->id, $b->id], array_column($array['raids'][0]['bosses'], 'id'));
-        $this->assertSame([$b->id], array_column($array['bosses'], 'id'));
+
+        // is_visible reflects pivot membership.
+        $this->assertSame([false, true], array_column($array['raids'][0]['bosses'], 'is_visible'));
+    }
+
+    #[Test]
+    public function raids_bosses_are_all_hidden_when_none_are_attached(): void
+    {
+        $this->mockChannel();
+        $raid = Raid::factory()->create();
+        Boss::factory()->for($raid)->order(1)->create();
+
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([false], array_column($array['raids'][0]['bosses'], 'is_visible'));
     }
 
     // ==================== composition — groups ====================
