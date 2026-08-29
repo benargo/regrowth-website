@@ -36,7 +36,7 @@ class EventResourceTest extends TestCase
 
     private function makeResource(Event $event): array
     {
-        $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
+        $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return (new EventResource($event))->toArray(new Request);
     }
@@ -272,14 +272,18 @@ class EventResourceTest extends TestCase
     {
         $this->mockChannel();
 
-        $first = Raid::factory()->create(['name' => 'Gruul']);
-        $second = Raid::factory()->create(['name' => 'Magtheridon']);
+        // Created in reverse of the expected order so id order and pivot order differ.
         $third = Raid::factory()->create(['name' => 'Karazhan']);
+        $second = Raid::factory()->create(['name' => 'Magtheridon']);
+        $first = Raid::factory()->create(['name' => 'Gruul']);
 
         $event = Event::factory()->create();
-        $event->raids()->attach($third->id, ['sort_order' => 3]);
-        $event->raids()->attach($first->id, ['sort_order' => 1]);
-        $event->raids()->attach($second->id, ['sort_order' => 2]);
+
+        // The pivot numbers itself on create, so sequence comes from the order
+        // rows are attached rather than from the values passed in.
+        $event->raids()->attach($first->id);
+        $event->raids()->attach($second->id);
+        $event->raids()->attach($third->id);
 
         $array = $this->makeResource($event);
 
@@ -310,6 +314,92 @@ class EventResourceTest extends TestCase
         $this->assertIsArray($bossData['images']);
         $this->assertArrayHasKey('groups', $bossData['assignments']);
         $this->assertArrayHasKey('ungrouped', $bossData['assignments']);
+    }
+
+    // ==================== bosses ====================
+
+    #[Test]
+    #[Group('contract')]
+    public function it_exposes_a_top_level_bosses_key(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = $this->makeResource($event);
+
+        $this->assertArrayHasKey('bosses', $array);
+    }
+
+    #[Test]
+    public function the_bosses_key_is_an_empty_array_when_none_are_attached(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([], $array['bosses']);
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function top_level_bosses_match_the_shape_of_bosses_under_raids(): void
+    {
+        $this->mockChannel();
+        $raid = Raid::factory()->create();
+        $boss = Boss::factory()->for($raid)->order(1)->create();
+
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+        $event->bosses()->attach($boss->id);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame(
+            array_keys($array['raids'][0]['bosses'][0]),
+            array_keys($array['bosses'][0])
+        );
+    }
+
+    #[Test]
+    #[Group('contract')]
+    public function top_level_bosses_are_ordered_by_the_pivot_sort_order(): void
+    {
+        $this->mockChannel();
+        $raid = Raid::factory()->create();
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        // Attached against the bosses' own order, so pivot order must win.
+        $event->bosses()->attach($b->id, ['sort_order' => 1]);
+        $event->bosses()->attach($a->id, ['sort_order' => 2]);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([$b->id, $a->id], array_column($array['bosses'], 'id'));
+    }
+
+    #[Test]
+    public function attaching_event_bosses_leaves_the_bosses_under_raids_unchanged(): void
+    {
+        $this->mockChannel();
+        $raid = Raid::factory()->create();
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+
+        $event = Event::factory()->create();
+        $event->raids()->attach($raid->id);
+
+        // Only one of the raid's bosses is selected for the event.
+        $event->bosses()->attach($b->id);
+
+        $array = $this->makeResource($event);
+
+        $this->assertSame([$a->id, $b->id], array_column($array['raids'][0]['bosses'], 'id'));
+        $this->assertSame([$b->id], array_column($array['bosses'], 'id'));
     }
 
     // ==================== composition — groups ====================

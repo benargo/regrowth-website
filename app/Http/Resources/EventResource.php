@@ -10,8 +10,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * Requires raids.bosses.media, assignments, and characters.rank to be eager-loaded
- * before construction. Use $event->load('raids.bosses.media', 'assignments', 'characters.rank').
+ * Requires raids.bosses.media, bosses.media, assignments, and characters.rank to be
+ * eager-loaded before construction. Use
+ * $event->load('raids.bosses.media', 'bosses.media', 'assignments', 'characters.rank').
  */
 class EventResource extends JsonResource
 {
@@ -37,6 +38,7 @@ class EventResource extends JsonResource
             'assignments' => (new EventAssignmentsCollection($eventAssignments))->resolve($request),
             'composition' => $this->buildComposition($request),
             'raids' => $this->buildRaids($bossByIdAssignments, $request),
+            'bosses' => $this->buildBosses($bossByIdAssignments, $request),
         ];
 
         try {
@@ -126,21 +128,51 @@ class EventResource extends JsonResource
     protected function buildRaids(Collection $bossByIdAssignments, Request $request): array
     {
         return $this->raids->map(fn (Raid $raid) => [
+            'id' => $raid->id,
             'name' => $raid->name,
             'slug' => $raid->slug,
             'max_players' => $raid->max_players,
             'sort_order' => $raid->pivot->sort_order,
-            'bosses' => $raid->bosses->map(fn (Boss $boss) => [
-                'id' => $boss->id,
-                'name' => $boss->name,
-                'slug' => $boss->slug,
-                'sort_order' => $boss->sort_order,
-                'images' => $boss->getMedia()->map->getUrl()->values()->all(),
-                'notes' => $boss->notes,
-                'assignments' => (new EventAssignmentsCollection(
-                    $bossByIdAssignments->get($boss->id, collect())
-                ))->resolve($request),
-            ])->values()->all(),
+            'bosses' => $raid->bosses
+                ->map(fn (Boss $boss) => $this->buildBoss($boss, $bossByIdAssignments, $request))
+                ->values()
+                ->all(),
         ])->values()->all();
+    }
+
+    /**
+     * Build the event's own ordered boss selection.
+     *
+     * This is the flat counterpart to the bosses nested under each raid, in the
+     * per-event order held on the pivot rather than the raid's own order.
+     *
+     * @param  Collection<int|string, mixed>  $bossByIdAssignments
+     * @return array<int, mixed>
+     */
+    protected function buildBosses(Collection $bossByIdAssignments, Request $request): array
+    {
+        return $this->bosses
+            ->map(fn (Boss $boss) => $this->buildBoss($boss, $bossByIdAssignments, $request))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int|string, mixed>  $bossByIdAssignments
+     * @return array<string, mixed>
+     */
+    protected function buildBoss(Boss $boss, Collection $bossByIdAssignments, Request $request): array
+    {
+        return [
+            'id' => $boss->id,
+            'name' => $boss->name,
+            'slug' => $boss->slug,
+            'sort_order' => $boss->sort_order,
+            'images' => $boss->getMedia()->map->getUrl()->values()->all(),
+            'notes' => $boss->notes,
+            'assignments' => (new EventAssignmentsCollection(
+                $bossByIdAssignments->get($boss->id, collect())
+            ))->resolve($request),
+        ];
     }
 }
