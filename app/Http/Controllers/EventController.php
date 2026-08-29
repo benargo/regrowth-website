@@ -46,7 +46,7 @@ class EventController extends Controller implements HasBlizzardIcons
     #[Authorize('view', 'event')]
     public function show(Event $event, Request $request): Response
     {
-        $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
+        $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Show', [
             'event' => (new EventResource($event))->resolve($request),
@@ -64,7 +64,7 @@ class EventController extends Controller implements HasBlizzardIcons
     #[Authorize('update', 'event')]
     public function edit(Event $event, Request $request): Response
     {
-        $event->load('raids.bosses.media', 'assignments.group', 'characters.rank');
+        $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
 
         return Inertia::render('Raiding/Plans/Edit', [
             'event' => (new EventResource($event))->resolve($request),
