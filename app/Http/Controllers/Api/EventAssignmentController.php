@@ -28,12 +28,6 @@ class EventAssignmentController extends Controller
         $this->abortIfGroupBossMismatch($request->input('group_id'), $request->input('boss_id'));
 
         $assignment = DB::transaction(function () use ($event, $request): EventAssignment {
-            EventAssignment::where('event_id', $event->id)
-                ->where('boss_id', $request->input('boss_id'))
-                ->where('group_id', $request->input('group_id'))
-                ->lockForUpdate()
-                ->exists();
-
             return EventAssignment::create([
                 'event_id' => $event->id,
                 'boss_id' => $request->input('boss_id'),

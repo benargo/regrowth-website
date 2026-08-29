@@ -191,6 +191,23 @@ class EventAssignmentControllerTest extends TestCase
         ]);
     }
 
+    #[Test]
+    public function it_assigns_an_incrementing_sort_order_within_a_scope_on_store(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $first = $this->actingAs($this->editor)
+            ->postJson(route('api.events.assignments.store', $this->event), ['boss_id' => $boss->id])
+            ->assertCreated();
+
+        $second = $this->actingAs($this->editor)
+            ->postJson(route('api.events.assignments.store', $this->event), ['boss_id' => $boss->id])
+            ->assertCreated();
+
+        $first->assertJsonPath('sort_order', 1);
+        $second->assertJsonPath('sort_order', 2);
+    }
+
     // ==================== update ====================
 
     #[Test]

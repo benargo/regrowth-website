@@ -39,12 +39,26 @@ class EventAssignment extends Model implements Sortable
 
     // ============ Sorting ============
 
+    /**
+     * Scope sort_order to a single (event, boss, group) column so reordering one
+     * column never renumbers assignments in another.
+     */
     public function buildSortQuery(): Builder
     {
         return static::query()
             ->where('event_id', $this->event_id)
             ->where('boss_id', $this->boss_id)
             ->where('group_id', $this->group_id);
+    }
+
+    /**
+     * Only auto-assign sort_order when the caller hasn't set one. Callers that
+     * assign a value themselves (e.g. EventController::applyTemplate, factories)
+     * need that value to survive create() rather than be overwritten.
+     */
+    public function shouldSortWhenCreating(): bool
+    {
+        return $this->sort_order === null;
     }
 
     // ============ Broadcasting ============

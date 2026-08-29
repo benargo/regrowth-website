@@ -23,10 +23,6 @@ class EventGroupController extends Controller
     public function store(Event $event, CreateEventGroupRequest $request): JsonResponse
     {
         $group = DB::transaction(function () use ($event, $request): EventAssignmentGroup {
-            EventAssignmentGroup::where('event_id', $event->id)
-                ->lockForUpdate()
-                ->exists();
-
             return EventAssignmentGroup::create([
                 'event_id' => $event->id,
                 'boss_id' => $request->input('boss_id'),

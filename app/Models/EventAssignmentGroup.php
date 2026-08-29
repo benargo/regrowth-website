@@ -35,9 +35,23 @@ class EventAssignmentGroup extends Model implements Sortable
 
     // ============ Sorting ============
 
+    /**
+     * Scope sort_order to a single event so reordering one event's groups never
+     * renumbers another's.
+     */
     public function buildSortQuery(): Builder
     {
         return static::query()->where('event_id', $this->event_id);
+    }
+
+    /**
+     * Only auto-assign sort_order when the caller hasn't set one. Callers that
+     * assign a value themselves (e.g. EventController::applyTemplate, factories)
+     * need that value to survive create() rather than be overwritten.
+     */
+    public function shouldSortWhenCreating(): bool
+    {
+        return $this->sort_order === null;
     }
 
     // ============ Broadcasting ============
