@@ -185,7 +185,7 @@ class ReportResourceTest extends TestCase
     #[Test]
     public function it_returns_character_rank_when_loaded(): void
     {
-        $rank = GuildRank::factory()->create(['position' => 2, 'name' => 'Officer']);
+        $rank = GuildRank::factory()->create(['sort_order' => 2, 'name' => 'Officer']);
         $report = Report::factory()->withoutGuildTag()->create();
         $character = Character::factory()->create(['rank_id' => $rank->id]);
         $report->characters()->attach($character, ['presence' => 1]);
@@ -196,7 +196,7 @@ class ReportResourceTest extends TestCase
         $rankData = $array['characters'][0]['rank'];
         $this->assertIsArray($rankData);
         $this->assertSame($rank->id, $rankData['id']);
-        $this->assertSame(2, $rankData['position']);
+        $this->assertSame(2, $rankData['sort_order']);
         $this->assertSame('Officer', $rankData['name']);
     }
 

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\EloquentSortable\Sortable;
 use Spatie\MediaLibrary\HasMedia;
 use Tests\Support\ModelTestCase;
 
@@ -51,7 +52,7 @@ class BossTest extends ModelTestCase
         $this->assertFillable($model, [
             'name',
             'raid_id',
-            'encounter_order',
+            'sort_order',
             'notes',
         ]);
     }
@@ -64,7 +65,7 @@ class BossTest extends ModelTestCase
         $this->assertFillableAttribute($model, [
             'name',
             'raid_id',
-            'encounter_order',
+            'sort_order',
             'notes',
         ]);
     }
@@ -79,7 +80,7 @@ class BossTest extends ModelTestCase
         $boss = $this->create([
             'name' => 'Prince Malchezaar',
             'raid_id' => $raid->id,
-            'encounter_order' => 1,
+            'sort_order' => 1,
         ]);
 
         $this->assertTableHas(['name' => 'Prince Malchezaar']);
@@ -95,7 +96,7 @@ class BossTest extends ModelTestCase
         $boss = $this->create([
             'name' => 'Prince Malchezaar',
             'raid_id' => $raid->id,
-            'encounter_order' => 1,
+            'sort_order' => 1,
             'notes' => $notes,
         ]);
 
@@ -110,16 +111,63 @@ class BossTest extends ModelTestCase
 
         $this->assertNotEmpty($boss->name);
         $this->assertNotNull($boss->raid_id);
-        $this->assertNotNull($boss->encounter_order);
+        $this->assertNotNull($boss->sort_order);
         $this->assertModelExists($boss);
     }
 
     #[Test]
-    public function factory_order_state_sets_encounter_order(): void
+    public function factory_order_state_sets_sort_order(): void
     {
         $boss = $this->factory()->order(5)->create();
 
-        $this->assertSame(5, $boss->encounter_order);
+        $this->assertSame(5, $boss->sort_order);
+    }
+
+    // ==================== sort order ====================
+
+    #[Test]
+    public function it_implements_sortable_interface(): void
+    {
+        $this->assertInstanceOf(Sortable::class, new Boss);
+    }
+
+    #[Test]
+    public function it_casts_sort_order_to_integer(): void
+    {
+        $this->assertCasts(new Boss, ['sort_order' => 'integer']);
+    }
+
+    #[Test]
+    public function it_assigns_sort_order_one_to_the_first_boss_in_a_raid(): void
+    {
+        $raid = Raid::factory()->create();
+
+        $boss = $this->create(['raid_id' => $raid->id]);
+
+        $this->assertSame(1, $boss->sort_order);
+    }
+
+    #[Test]
+    public function it_scopes_sort_order_increments_per_raid(): void
+    {
+        $raidA = Raid::factory()->create();
+        $raidB = Raid::factory()->create();
+
+        $this->create(['raid_id' => $raidA->id]);
+        $this->create(['raid_id' => $raidA->id]);
+
+        $firstInRaidB = $this->create(['raid_id' => $raidB->id]);
+
+        $this->assertSame(1, $firstInRaidB->sort_order);
+    }
+
+    #[Test]
+    public function it_overwrites_an_explicitly_provided_sort_order_on_create(): void
+    {
+        $boss = $this->create(['sort_order' => 5]);
+
+        $this->assertSame(1, $boss->sort_order);
+        $this->assertSame(1, $boss->fresh()->sort_order);
     }
 
     // ==================== relationships ====================

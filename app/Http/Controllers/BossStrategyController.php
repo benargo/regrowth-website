@@ -32,7 +32,7 @@ class BossStrategyController extends Controller
         };
 
         return Inertia::render($view, [
-            'bosses' => new RaidBossesCollection(Boss::orderBy('raid_id')->orderBy('encounter_order')->get()),
+            'bosses' => new RaidBossesCollection(Boss::orderBy('raid_id')->ordered()->get()),
             'phases' => PhaseResource::collection($phases)->resolve($request),
         ]);
     }

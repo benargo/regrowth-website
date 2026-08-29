@@ -515,16 +515,19 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
-    public function bosses_are_ordered_by_raid_id_then_encounter_order(): void
+    public function bosses_are_ordered_by_raid_id_then_sort_order(): void
     {
         $event = $this->create();
 
         $raid1 = Raid::factory()->create();
         $raid2 = Raid::factory()->create();
 
-        $boss1a = Boss::factory()->create(['raid_id' => $raid1->id, 'encounter_order' => 2]);
-        $boss1b = Boss::factory()->create(['raid_id' => $raid1->id, 'encounter_order' => 1]);
-        $boss2a = Boss::factory()->create(['raid_id' => $raid2->id, 'encounter_order' => 1]);
+        $boss1a = Boss::factory()->create(['raid_id' => $raid1->id]);
+        $boss1a->update(['sort_order' => 2]);
+        $boss1b = Boss::factory()->create(['raid_id' => $raid1->id]);
+        $boss1b->update(['sort_order' => 1]);
+        $boss2a = Boss::factory()->create(['raid_id' => $raid2->id]);
+        $boss2a->update(['sort_order' => 1]);
 
         $event->raids()->attach([$raid1->id, $raid2->id]);
 

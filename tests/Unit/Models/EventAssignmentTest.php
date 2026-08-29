@@ -107,11 +107,36 @@ class EventAssignmentTest extends ModelTestCase
 
         $this->assertModelExists($assignment);
         $this->assertNotNull($assignment->event_id);
-        $this->assertNull($assignment->sort_order);
+        $this->assertSame(1, $assignment->sort_order);
         $this->assertNull($assignment->left_type);
         $this->assertNull($assignment->left_value);
         $this->assertNull($assignment->right_type);
         $this->assertNull($assignment->right_value);
+    }
+
+    #[Test]
+    public function it_scopes_sort_order_increments_by_event_boss_and_group(): void
+    {
+        $event = Event::factory()->create();
+        $boss = Boss::factory()->create();
+        $group = EventAssignmentGroup::factory()->for($event)->create(['boss_id' => $boss->id]);
+
+        $this->create(['event_id' => $event->id, 'boss_id' => $boss->id, 'group_id' => $group->id]);
+        $second = $this->create(['event_id' => $event->id, 'boss_id' => $boss->id, 'group_id' => $group->id]);
+
+        $unrelated = $this->create(['event_id' => $event->id, 'boss_id' => null, 'group_id' => null]);
+
+        $this->assertSame(2, $second->sort_order);
+        $this->assertSame(1, $unrelated->sort_order);
+    }
+
+    #[Test]
+    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
+    {
+        $assignment = $this->create(['sort_order' => 5]);
+
+        $this->assertSame(5, $assignment->sort_order);
+        $this->assertSame(5, $assignment->fresh()->sort_order);
     }
 
     #[Test]

@@ -131,19 +131,43 @@ class EventAssignmentGroupTest extends ModelTestCase
     // ==================== sort order ====================
 
     #[Test]
-    public function it_defaults_sort_order_to_zero(): void
+    public function it_assigns_sort_order_one_to_the_first_group_in_an_event(): void
     {
-        $group = $this->create(['sort_order' => 0]);
+        $group = $this->create();
 
-        $this->assertSame(0, $group->sort_order);
+        $this->assertSame(1, $group->sort_order);
     }
 
     #[Test]
-    public function it_can_be_created_with_a_sort_order(): void
+    public function it_auto_increments_sort_order_from_the_highest_existing_value_in_the_event(): void
+    {
+        $event = Event::factory()->create();
+        $this->create(['event_id' => $event->id]);
+        $this->create(['event_id' => $event->id]);
+        $third = $this->create(['event_id' => $event->id]);
+
+        $this->assertSame(3, $third->sort_order);
+    }
+
+    #[Test]
+    public function it_scopes_sort_order_increments_per_event(): void
+    {
+        $eventA = Event::factory()->create();
+        $eventB = Event::factory()->create();
+        $this->create(['event_id' => $eventA->id]);
+
+        $firstInEventB = $this->create(['event_id' => $eventB->id]);
+
+        $this->assertSame(1, $firstInEventB->sort_order);
+    }
+
+    #[Test]
+    public function it_keeps_an_explicitly_provided_sort_order_on_create(): void
     {
         $group = $this->create(['sort_order' => 5]);
 
         $this->assertSame(5, $group->sort_order);
+        $this->assertSame(5, $group->fresh()->sort_order);
     }
 
     // ==================== notes accessor ====================

@@ -23,15 +23,10 @@ class EventGroupController extends Controller
     public function store(Event $event, CreateEventGroupRequest $request): JsonResponse
     {
         $group = DB::transaction(function () use ($event, $request): EventAssignmentGroup {
-            $maxSortOrder = EventAssignmentGroup::where('event_id', $event->id)
-                ->lockForUpdate()
-                ->max('sort_order') ?? 0;
-
             return EventAssignmentGroup::create([
                 'event_id' => $event->id,
                 'boss_id' => $request->input('boss_id'),
                 'name' => $request->input('name', 'New group'),
-                'sort_order' => $maxSortOrder + 1,
             ]);
         });
 
@@ -70,9 +65,11 @@ class EventGroupController extends Controller
 
             abort_if(count($ids) !== count($order), 422);
 
-            foreach ($order as $position => $id) {
-                EventAssignmentGroup::where('id', $id)->update(['sort_order' => $position]);
-            }
+            EventAssignmentGroup::setNewOrder(
+                $order,
+                startOrder: 0,
+                modifyQuery: fn ($query) => $query->where('event_id', $event->id),
+            );
         });
 
         broadcast(GroupChanged::forReorder($event, $order))->toOthers();

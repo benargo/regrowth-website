@@ -161,7 +161,7 @@ class ShowRaidPageTest extends TestCase
                 ->where('id', $boss->id)
                 ->where('name', $boss->name)
                 ->where('slug', $boss->slug)
-                ->where('encounter_order', $boss->encounter_order)
+                ->where('sort_order', $boss->sort_order)
                 ->where('comments_count', 3)
                 ->etc()
             )

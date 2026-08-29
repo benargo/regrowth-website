@@ -46,16 +46,16 @@ class BossResourceTest extends TestCase
         $this->assertSame('Prince Malchezaar', $array['name']);
     }
 
-    // ==================== encounter order ====================
+    // ==================== sort order ====================
 
     #[Test]
-    public function it_returns_encounter_order(): void
+    public function it_returns_sort_order(): void
     {
         $boss = Boss::factory()->order(3)->create();
 
         $array = (new BossResource($boss))->toArray(new Request);
 
-        $this->assertSame(3, $array['encounter_order']);
+        $this->assertSame(3, $array['sort_order']);
     }
 
     // ==================== raid relation ====================
@@ -193,6 +193,6 @@ class BossResourceTest extends TestCase
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('notes', $array);
         $this->assertArrayHasKey('images', $array);
-        $this->assertArrayHasKey('encounter_order', $array);
+        $this->assertArrayHasKey('sort_order', $array);
     }
 }

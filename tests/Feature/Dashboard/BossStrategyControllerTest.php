@@ -33,6 +33,43 @@ class BossStrategyControllerTest extends DashboardTestCase
     }
 
     #[Test]
+    public function index_orders_bosses_by_raid_then_sort_order(): void
+    {
+        Phase::factory()->create();
+
+        // Two raids, created so the second-created raid has the higher id.
+        $lowerRaid = Raid::factory()->create();
+        $higherRaid = Raid::factory()->create();
+
+        // Create bosses out of order so both sort keys have to do real work.
+        $higherRaidSecondBoss = Boss::factory()->for($higherRaid)->order(2)->create();
+        $lowerRaidSecondBoss = Boss::factory()->for($lowerRaid)->order(2)->create();
+        $higherRaidFirstBoss = Boss::factory()->for($higherRaid)->order(1)->create();
+        $lowerRaidFirstBoss = Boss::factory()->for($lowerRaid)->order(1)->create();
+
+        $expectedOrder = [
+            $lowerRaidFirstBoss->id,
+            $lowerRaidSecondBoss->id,
+            $higherRaidFirstBoss->id,
+            $higherRaidSecondBoss->id,
+        ];
+
+        $response = $this->actingAs($this->officer)->get(route('management.boss-strategies.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Manage/BossStrategies/Index')
+            ->where(
+                'bosses.data',
+                fn ($groups) => collect($groups)
+                    ->flatten(1)
+                    ->pluck('id')
+                    ->all() === $expectedOrder
+            )
+        );
+    }
+
+    #[Test]
     public function index_requires_authentication(): void
     {
         $response = $this->get(route('management.boss-strategies.index'));

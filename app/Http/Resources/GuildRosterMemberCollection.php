@@ -33,10 +33,10 @@ class GuildRosterMemberCollection extends ResourceCollection
             ->get()
             ->keyBy('id');
 
-        $this->rankNames = GuildRank::select('position', 'name')
-            ->orderBy('position')
+        $this->rankNames = GuildRank::select('sort_order', 'name')
+            ->ordered()
             ->get()
-            ->pluck('name', 'position')
+            ->pluck('name', 'sort_order')
             ->all();
     }
 

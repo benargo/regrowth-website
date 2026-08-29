@@ -495,7 +495,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function rank_returns_associated_guild_rank(): void
     {
-        $rank = GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
+        $rank = GuildRank::factory()->create(['sort_order' => 0, 'name' => 'Guild Master']);
         $character = $this->create(['rank_id' => $rank->id]);
 
         $this->assertInstanceOf(GuildRank::class, $character->rank);
@@ -513,7 +513,7 @@ class CharacterTest extends ModelTestCase
     #[Test]
     public function rank_is_set_to_null_when_guild_rank_is_deleted(): void
     {
-        $rank = GuildRank::factory()->create(['position' => 0, 'name' => 'Officer']);
+        $rank = GuildRank::factory()->create(['sort_order' => 0, 'name' => 'Officer']);
         $character = $this->create(['rank_id' => $rank->id]);
 
         $this->assertSame($rank->id, $character->rank_id);

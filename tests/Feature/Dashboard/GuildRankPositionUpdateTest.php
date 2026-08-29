@@ -18,7 +18,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $ranks = GuildRank::factory()->count(3)->create();
 
         $response = $this->post(route('management.ranks.update-positions'), [
-            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
+            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->sort_order])->toArray(),
         ]);
 
         $response->assertRedirect('/login');
@@ -32,7 +32,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $ranks = GuildRank::factory()->count(3)->create();
 
         $response = $this->actingAs($user)->post(route('management.ranks.update-positions'), [
-            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
+            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->sort_order])->toArray(),
         ]);
 
         $response->assertForbidden();
@@ -46,7 +46,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $ranks = GuildRank::factory()->count(3)->create();
 
         $response = $this->actingAs($user)->post(route('management.ranks.update-positions'), [
-            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
+            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->sort_order])->toArray(),
         ]);
 
         $response->assertForbidden();
@@ -60,7 +60,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $ranks = GuildRank::factory()->count(3)->create();
 
         $response = $this->actingAs($user)->post(route('management.ranks.update-positions'), [
-            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
+            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->sort_order])->toArray(),
         ]);
 
         $response->assertForbidden();
@@ -72,7 +72,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
         $ranks = GuildRank::factory()->count(3)->create();
 
         $response = $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
-            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->position])->toArray(),
+            'ranks' => $ranks->map(fn ($rank) => ['id' => $rank->id, 'position' => $rank->sort_order])->toArray(),
         ]);
 
         $response->assertRedirect();
@@ -180,9 +180,9 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
     #[Test]
     public function update_positions_saves_positions_to_database(): void
     {
-        $rank1 = GuildRank::factory()->create(['position' => 0]);
-        $rank2 = GuildRank::factory()->create(['position' => 1]);
-        $rank3 = GuildRank::factory()->create(['position' => 2]);
+        $rank1 = GuildRank::factory()->create(['sort_order' => 0]);
+        $rank2 = GuildRank::factory()->create(['sort_order' => 1]);
+        $rank3 = GuildRank::factory()->create(['sort_order' => 2]);
 
         $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
@@ -192,16 +192,16 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
             ],
         ]);
 
-        $this->assertEquals(2, $rank1->fresh()->position);
-        $this->assertEquals(0, $rank2->fresh()->position);
-        $this->assertEquals(1, $rank3->fresh()->position);
+        $this->assertEquals(2, $rank1->fresh()->sort_order);
+        $this->assertEquals(0, $rank2->fresh()->sort_order);
+        $this->assertEquals(1, $rank3->fresh()->sort_order);
     }
 
     #[Test]
     public function update_positions_can_swap_two_ranks(): void
     {
-        $rank1 = GuildRank::factory()->create(['position' => 0, 'name' => 'Guild Master']);
-        $rank2 = GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
+        $rank1 = GuildRank::factory()->create(['sort_order' => 0, 'name' => 'Guild Master']);
+        $rank2 = GuildRank::factory()->create(['sort_order' => 1, 'name' => 'Officer']);
 
         $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
@@ -210,14 +210,14 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
             ],
         ]);
 
-        $this->assertEquals(1, $rank1->fresh()->position);
-        $this->assertEquals(0, $rank2->fresh()->position);
+        $this->assertEquals(1, $rank1->fresh()->sort_order);
+        $this->assertEquals(0, $rank2->fresh()->sort_order);
     }
 
     #[Test]
     public function update_positions_can_update_single_rank(): void
     {
-        $rank = GuildRank::factory()->create(['position' => 5]);
+        $rank = GuildRank::factory()->create(['sort_order' => 5]);
 
         $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
@@ -225,7 +225,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
             ],
         ]);
 
-        $this->assertEquals(0, $rank->fresh()->position);
+        $this->assertEquals(0, $rank->fresh()->sort_order);
     }
 
     #[Test]
@@ -238,7 +238,7 @@ class GuildRankPositionUpdateTest extends DashboardTestCase
 
         $this->actingAs($this->officer)->post(route('management.ranks.update-positions'), [
             'ranks' => [
-                ['id' => $rank->id, 'position' => $rank->position],
+                ['id' => $rank->id, 'position' => $rank->sort_order],
             ],
         ]);
 

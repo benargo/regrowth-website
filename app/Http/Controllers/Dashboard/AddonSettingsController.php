@@ -28,7 +28,7 @@ class AddonSettingsController extends Controller
 
         return Inertia::render('Manage/Addon/Settings', [
             'councillors' => new LootCouncillorCollection($councillors),
-            'ranks' => GuildRank::orderBy('position')->get()->toResourceCollection(),
+            'ranks' => GuildRank::ordered()->get()->toResourceCollection(),
             'tags' => GuildTag::orderBy('name')->get()->toResourceCollection(),
             'characters' => Inertia::defer(function () {
                 return CharacterSummaryResource::collection(

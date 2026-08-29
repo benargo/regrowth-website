@@ -23,7 +23,7 @@ class GuildRankResourceTest extends TestCase
         $array = (new GuildRankResource($rank))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
-        $this->assertArrayHasKey('position', $array);
+        $this->assertArrayHasKey('sort_order', $array);
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('count_attendance', $array);
     }
@@ -32,14 +32,14 @@ class GuildRankResourceTest extends TestCase
     public function it_returns_correct_scalar_fields(): void
     {
         $rank = GuildRank::factory()->create([
-            'position' => 3,
+            'sort_order' => 3,
             'name' => 'Officer',
         ]);
 
         $array = (new GuildRankResource($rank))->toArray(new Request);
 
         $this->assertSame($rank->id, $array['id']);
-        $this->assertSame(3, $array['position']);
+        $this->assertSame(3, $array['sort_order']);
         $this->assertSame('Officer', $array['name']);
         $this->assertSame('officer', $array['slug']);
         $this->assertTrue($array['count_attendance']);

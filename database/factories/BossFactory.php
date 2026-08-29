@@ -31,19 +31,18 @@ class BossFactory extends Factory
         return [
             'name' => fake()->randomElement(['Attumen the Huntsman', 'Moroes', 'Maiden of Virtue', 'Opera Event', 'The Curator', 'Shade of Aran', 'Netherspite', 'Prince Malchezaar', 'Illidan Stormrage', 'Kil\'jaeden']),
             'raid_id' => Raid::factory(),
-            'encounter_order' => fake()->numberBetween(1, 12),
             'notes' => fake()->optional()->paragraph(),
         ];
     }
 
     /**
-     * Set the encounter order.
+     * Set the sort order after creation, since Boss auto-assigns sort_order on create.
      */
     public function order(int $order): static
     {
-        return $this->state(fn (array $attributes) => [
-            'encounter_order' => $order,
-        ]);
+        return $this->afterCreating(function (Boss $boss) use ($order) {
+            $boss->update(['sort_order' => $order]);
+        });
     }
 
     /**

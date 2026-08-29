@@ -191,6 +191,23 @@ class EventAssignmentControllerTest extends TestCase
         ]);
     }
 
+    #[Test]
+    public function it_assigns_an_incrementing_sort_order_within_a_scope_on_store(): void
+    {
+        $boss = Boss::factory()->create();
+
+        $first = $this->actingAs($this->editor)
+            ->postJson(route('api.events.assignments.store', $this->event), ['boss_id' => $boss->id])
+            ->assertCreated();
+
+        $second = $this->actingAs($this->editor)
+            ->postJson(route('api.events.assignments.store', $this->event), ['boss_id' => $boss->id])
+            ->assertCreated();
+
+        $first->assertJsonPath('sort_order', 1);
+        $second->assertJsonPath('sort_order', 2);
+    }
+
     // ==================== update ====================
 
     #[Test]
@@ -371,6 +388,22 @@ class EventAssignmentControllerTest extends TestCase
         $this->actingAs($this->viewer)
             ->patchJson(route('api.events.assignments.reorder', $this->event), ['order' => [$assignment->id]])
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function it_does_not_touch_sort_order_of_assignments_in_other_events_on_reorder(): void
+    {
+        $otherEvent = Event::factory()->create();
+        $foreign = EventAssignment::factory()->for($otherEvent)->create();
+        $foreign->update(['sort_order' => 0]);
+
+        [$a, $b] = EventAssignment::factory()->count(2)->for($this->event)->create()->all();
+
+        $this->actingAs($this->editor)
+            ->patchJson(route('api.events.assignments.reorder', $this->event), ['order' => [$b->id, $a->id]])
+            ->assertNoContent();
+
+        $this->assertDatabaseHas('event_assignments', ['id' => $foreign->id, 'sort_order' => 0]);
     }
 
     #[Test]

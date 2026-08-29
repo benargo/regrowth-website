@@ -28,17 +28,10 @@ class EventAssignmentController extends Controller
         $this->abortIfGroupBossMismatch($request->input('group_id'), $request->input('boss_id'));
 
         $assignment = DB::transaction(function () use ($event, $request): EventAssignment {
-            $maxSortOrder = EventAssignment::where('event_id', $event->id)
-                ->where('boss_id', $request->input('boss_id'))
-                ->where('group_id', $request->input('group_id'))
-                ->lockForUpdate()
-                ->max('sort_order') ?? 0;
-
             return EventAssignment::create([
                 'event_id' => $event->id,
                 'boss_id' => $request->input('boss_id'),
                 'group_id' => $request->input('group_id'),
-                'sort_order' => $maxSortOrder + 1,
                 'left_type' => null,
                 'left_value' => null,
                 'right_type' => null,
@@ -115,9 +108,11 @@ class EventAssignmentController extends Controller
 
             abort_if(count($ids) !== count($order), 422);
 
-            foreach ($order as $position => $id) {
-                EventAssignment::where('id', $id)->update(['sort_order' => $position]);
-            }
+            EventAssignment::setNewOrder(
+                $order,
+                startOrder: 0,
+                modifyQuery: fn ($query) => $query->where('event_id', $event->id),
+            );
         });
 
         broadcast(AssignmentChanged::forReorder($event, $order))->toOthers();

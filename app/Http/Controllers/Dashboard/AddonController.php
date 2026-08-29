@@ -97,7 +97,7 @@ class AddonController extends Controller
             $this->blizzardConnector->defaultRealmSlug(),
             $this->blizzardConnector->defaultGuildSlug(),
         ))->dto();
-        $raiderRankPositions = GuildRank::whereLike('name', '%Raider%')->pluck('position');
+        $raiderRankPositions = GuildRank::whereLike('name', '%Raider%')->pluck('sort_order');
 
         $raiderCount = collect($roster->members)
             ->filter(fn ($member) => $raiderRankPositions->contains($member->rank))

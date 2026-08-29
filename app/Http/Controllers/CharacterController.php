@@ -39,7 +39,7 @@ class CharacterController extends Controller
     {
         return Inertia::render('Roster/Index', [
             'classes' => PlayableClassResource::collection(PlayableClass::orderBy('name')->get())->resolve($request),
-            'ranks' => GuildRank::select('name')->orderBy('position')->get()->pluck('name')->unique()->values(),
+            'ranks' => GuildRank::select('name')->ordered()->get()->pluck('name')->unique()->values(),
             'races' => PlayableRaceResource::collection(PlayableRace::where('faction', Faction::ALLIANCE)->orderBy('name')->get())->resolve($request),
             'characters' => Inertia::defer(function () use ($request) {
                 $members = $this->blizzard->send(new GetGuildRosterRequest(

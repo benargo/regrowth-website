@@ -45,7 +45,7 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_returns_correct_scalar_values(): void
     {
-        GuildRank::factory()->create(['position' => 9, 'name' => 'Warden']);
+        GuildRank::factory()->create(['sort_order' => 9, 'name' => 'Warden']);
 
         $result = (new GuildRosterMemberCollection([$this->makeMember(
             id: 52461508,
@@ -194,8 +194,8 @@ class GuildRosterMemberCollectionTest extends TestCase
     #[Test]
     public function it_sorts_by_rank_then_level_descending_then_name(): void
     {
-        GuildRank::factory()->create(['position' => 1, 'name' => 'Officer']);
-        GuildRank::factory()->create(['position' => 2, 'name' => 'Raider']);
+        GuildRank::factory()->create(['sort_order' => 1, 'name' => 'Officer']);
+        GuildRank::factory()->create(['sort_order' => 2, 'name' => 'Raider']);
 
         $members = [
             $this->makeMember(id: 1, name: 'Zara', level: 70, rank: 2),

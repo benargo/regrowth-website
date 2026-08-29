@@ -18,7 +18,7 @@ class GuildRankFactory extends Factory
     public function definition(): array
     {
         return [
-            'position' => fake()->unique()->numberBetween(0, 9),
+            'sort_order' => fake()->unique()->numberBetween(0, 9),
             'name' => fake()->word(),
             'count_attendance' => true,
         ];

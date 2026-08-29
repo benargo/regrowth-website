@@ -35,7 +35,6 @@ class EventAssignmentFactory extends Factory
             'event_id' => Event::factory(),
             'boss_id' => null,
             'group_id' => null,
-            'sort_order' => null,
             'left_type' => null,
             'left_value' => null,
             'right_type' => null,

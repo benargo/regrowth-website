@@ -81,7 +81,7 @@ class FetchGuildRoster implements ShouldQueue
             $member->character->name
         ))->dto();
 
-        $guildRank = GuildRank::where('position', $member->rank)->firstOrFail();
+        $guildRank = GuildRank::where('sort_order', $member->rank)->firstOrFail();
 
         $character = Character::firstOrNew(['id' => $member->character->id]);
         $character->fill([

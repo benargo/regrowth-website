@@ -26,6 +26,7 @@
         "saloonphp/saloon": "^4",
         "saloonphp/xml-wrangler": "^1.5",
         "socialiteproviders/discord": "^4.2",
+        "spatie/eloquent-sortable": "^5.0",
         "spatie/laravel-data": "^4.22",
         "spatie/laravel-medialibrary": "^11.22",
         "spatie/laravel-permission": "^7.1",

@@ -282,7 +282,7 @@ class EventResourceTest extends TestCase
         $this->assertSame($boss->id, $bossData['id']);
         $this->assertSame('Attumen', $bossData['name']);
         $this->assertSame($boss->slug, $bossData['slug']);
-        $this->assertSame($boss->encounter_order, $bossData['encounter_order']);
+        $this->assertSame($boss->sort_order, $bossData['sort_order']);
         $this->assertSame('Kill adds first', $bossData['notes']);
         $this->assertIsArray($bossData['images']);
         $this->assertArrayHasKey('groups', $bossData['assignments']);
@@ -333,7 +333,7 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('playable_class', $char);
         $this->assertArrayHasKey('rank', $char);
         $this->assertArrayHasKey('name', $char['rank']);
-        $this->assertArrayHasKey('position', $char['rank']);
+        $this->assertArrayHasKey('sort_order', $char['rank']);
         $this->assertArrayNotHasKey('id', $char['rank']);
         $this->assertArrayNotHasKey('count_attendance', $char['rank']);
         $this->assertSame(1, $char['slot_number']);
@@ -419,7 +419,7 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('playable_class', $bench);
         $this->assertArrayHasKey('rank', $bench);
         $this->assertArrayHasKey('name', $bench['rank']);
-        $this->assertArrayHasKey('position', $bench['rank']);
+        $this->assertArrayHasKey('sort_order', $bench['rank']);
         $this->assertArrayNotHasKey('slot_number', $bench);
         $this->assertArrayNotHasKey('is_confirmed', $bench);
     }

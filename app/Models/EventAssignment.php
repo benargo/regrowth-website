@@ -9,16 +9,19 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\BroadcastableModelEventOccurred;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 
 #[Fillable(['event_id', 'boss_id', 'group_id', 'sort_order', 'left_type', 'left_value', 'right_type', 'right_value'])]
-class EventAssignment extends Model
+class EventAssignment extends Model implements Sortable
 {
-    use BroadcastsEvents;
-    use FlushesRaidingCacheOnSave;
-    use HasFactory;
+    use BroadcastsEvents, FlushesRaidingCacheOnSave, HasFactory, SortableTrait;
+
+    // ============ Casting ============
 
     /**
      * Get the attributes that should be cast.
@@ -32,6 +35,30 @@ class EventAssignment extends Model
             'left_type' => AsClassName::class,
             'right_type' => AsClassName::class,
         ];
+    }
+
+    // ============ Sorting ============
+
+    /**
+     * Scope sort_order to a single (event, boss, group) column so reordering one
+     * column never renumbers assignments in another.
+     */
+    public function buildSortQuery(): Builder
+    {
+        return static::query()
+            ->where('event_id', $this->event_id)
+            ->where('boss_id', $this->boss_id)
+            ->where('group_id', $this->group_id);
+    }
+
+    /**
+     * Only auto-assign sort_order when the caller hasn't set one. Callers that
+     * assign a value themselves (e.g. EventController::applyTemplate, factories)
+     * need that value to survive create() rather than be overwritten.
+     */
+    public function shouldSortWhenCreating(): bool
+    {
+        return $this->sort_order === null;
     }
 
     // ============ Broadcasting ============

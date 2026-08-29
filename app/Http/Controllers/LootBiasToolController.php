@@ -65,7 +65,7 @@ class LootBiasToolController extends Controller
             ->where('commentable_type', Item::class)
             ->whereIn('commentable_id', $raid->trashItems()->select('items.id'))
             ->count();
-        $raid->load(['bosses' => fn ($q) => $q->orderBy('encounter_order')->withCount('comments')]);
+        $raid->load(['bosses' => fn ($q) => $q->orderBy('sort_order')->withCount('comments')]);
 
         return Inertia::render('Loot/Raids/Show', [
             'raid' => new RaidResource($raid),
