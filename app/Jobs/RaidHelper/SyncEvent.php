@@ -2,17 +2,21 @@
 
 namespace App\Jobs\RaidHelper;
 
+use App\Actions\EventBossResolver;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
+use App\Http\Integrations\RaidHelper\Data\Zones\ZoneData;
 use App\Http\Resources\EventCompositionResource;
+use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\Raid;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SyncEvent implements ShouldQueue
@@ -49,36 +53,53 @@ class SyncEvent implements ShouldQueue
     }
 
     /**
+     * Resolve the zones to raids, keyed by id and kept in zone order.
+     *
+     * A zone must match both the id and the name to resolve, guarding against a
+     * stale payload pointing at a raid that has since been replaced. Zones that
+     * do not resolve are skipped and logged rather than failing the sync.
+     *
+     * @param  Collection<int, ZoneData>  $zones
+     * @return Collection<int, Raid>
+     */
+    private function resolveRaids(Collection $zones): Collection
+    {
+        $raids = Raid::whereIn('id', $zones->pluck('id'))->get()->keyBy('id');
+
+        return $zones
+            ->filter(function (ZoneData $zone) use ($raids): bool {
+                $resolved = $raids->get($zone->id);
+
+                if ($resolved?->name === $zone->name) {
+                    return true;
+                }
+
+                Log::error('SyncEvent: skipping zone that does not match a known raid.', [
+                    'zone_id' => $zone->id,
+                    'zone_name' => $zone->name,
+                ]);
+
+                return false;
+            })
+            ->mapWithKeys(fn (ZoneData $zone): array => [$zone->id => $raids->get($zone->id)]);
+    }
+
+    /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(EventBossResolver $eventBossResolver): void
     {
-        // Decode raids from the event description.
-        $raidsString = str($this->data->description)
-            ->after("-# Do not edit below this line...\n")
-            ->trim();
+        // Decode the zones from the event description, in payload order.
+        $zones = ZoneData::collectFromDescription($this->data->description)
+            ->sortBy(fn (ZoneData $zone, int $index): array => [$zone->order ?? PHP_INT_MAX, $index])
+            ->values();
 
-        $raids = collect();
+        $raids = $this->resolveRaids($zones);
 
-        if ($raidsString->isJson()) {
-            $decoded = json_decode(stripslashes($raidsString), true);
+        // Zones whose raid could not be resolved contribute nothing.
+        $zones = $zones->filter(fn (ZoneData $zone): bool => $raids->has($zone->id))->values();
 
-            foreach ($decoded as $row) {
-                if (! Arr::hasAll($row, ['id', 'name'])) {
-                    Log::error('SyncEvent: skipping raid row with missing keys.', ['row' => $row]);
-
-                    continue;
-                }
-
-                $query = Raid::where('id', Arr::get($row, 'id'))->where('name', Arr::get($row, 'name'));
-
-                $raid = $query->first();
-
-                if ($raid) {
-                    $raids->push($raid);
-                }
-            }
-        }
+        $bosses = $eventBossResolver->fromZones($zones, $raids);
 
         // Upsert the event.
         $event = Event::updateOrCreate(
@@ -87,14 +108,31 @@ class SyncEvent implements ShouldQueue
                 'title' => $this->data->title,
                 'start_time' => $this->data->startTime->setTimezone($this->timezone),
                 'end_time' => $this->data->endTime->setTimezone($this->timezone),
-                'background_css_class' => $raids->firstWhere('background_css_class')?->background_css_class ?? null,
+                'background_css_class' => $raids->values()->firstWhere('background_css_class')?->background_css_class ?? null,
                 'color' => $this->data->color,
                 'channel_id' => $this->data->channelId,
             ]
         );
 
-        // Sync associated raids.
-        $event->raids()->sync($raids->pluck('id')->all());
+        // Sync the raids and bosses together so the two cannot diverge. Both
+        // are written with explicit, contiguous positions derived from the
+        // payload sequence — the payload's own `order` values are only a
+        // sorting hint and are never stored verbatim.
+        DB::transaction(function () use ($event, $zones, $bosses): void {
+            $event->raids()->sync(
+                $zones->values()
+                    ->mapWithKeys(fn (ZoneData $zone, int $index): array => [
+                        $zone->id => ['sort_order' => $index + 1],
+                    ])
+                    ->all()
+            );
+
+            $event->bosses()->sync(
+                $bosses->mapWithKeys(fn (Boss $boss, int $index): array => [
+                    $boss->id => ['sort_order' => $index + 1],
+                ])->all()
+            );
+        });
 
         // Sync benched characters from sign-ups (all signed-up, non-absent players not in comp are benched).
         $characterSync = [];
@@ -140,7 +178,7 @@ class SyncEvent implements ShouldQueue
         }
 
         // Broadcast and flush cache.
-        $event->load(['characters.playableClass', 'characters.rank', 'raids']);
+        $event->load(['characters.playableClass', 'characters.rank', 'raids', 'bosses']);
         $composition = (new EventCompositionResource($event))->resolve();
         broadcast(new CompositionChanged($event->id, $composition));
 

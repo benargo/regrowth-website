@@ -7,6 +7,7 @@ use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
+use App\Models\EventRaid;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -364,6 +365,22 @@ class RaidTest extends ModelTestCase
         $this->assertCount(3, $raid->bosses);
     }
 
+    #[Test]
+    public function bosses_are_ordered_by_sort_order(): void
+    {
+        $raid = $this->create();
+
+        // Created out of encounter order so id order and sort order differ.
+        $second = Boss::factory()->for($raid)->order(2)->create();
+        $third = Boss::factory()->for($raid)->order(3)->create();
+        $first = Boss::factory()->for($raid)->order(1)->create();
+
+        $this->assertSame(
+            [$first->id, $second->id, $third->id],
+            $raid->bosses->pluck('id')->all()
+        );
+    }
+
     // ==================== items ====================
 
     #[Test]
@@ -466,5 +483,19 @@ class RaidTest extends ModelTestCase
         $raid = $this->create();
 
         $this->assertCount(0, $raid->events);
+    }
+
+    #[Test]
+    public function events_use_the_event_raid_pivot(): void
+    {
+        $raid = $this->create();
+        $event = Event::factory()->create();
+
+        $raid->events()->attach($event->id);
+
+        $pivot = $raid->events->first()->pivot;
+
+        $this->assertInstanceOf(EventRaid::class, $pivot);
+        $this->assertNotNull($pivot->sort_order);
     }
 }

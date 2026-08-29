@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Jobs\RaidHelper;
 
+use App\Actions\EventBossResolver;
 use App\Enums\SignupStatus;
 use App\Events\Broadcasts\CompositionChanged;
 use App\Http\Integrations\RaidHelper\Data\Events\EventData;
 use App\Jobs\RaidHelper\FetchComposition;
 use App\Jobs\RaidHelper\SyncEvent;
+use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\Raid;
@@ -14,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -72,6 +75,352 @@ class SyncEventTest extends TestCase
 
         $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
         $this->assertTrue($event->raids->contains($raid));
+    }
+
+    // ==================== boss sync ====================
+
+    #[Test]
+    public function a_zone_without_a_bosses_key_attaches_every_boss_in_the_raid(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $second = Boss::factory()->for($raid)->order(2)->create();
+        $first = Boss::factory()->for($raid)->order(1)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                ['id' => $raid->id, 'name' => $raid->name],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$first->id, $second->id], $event->bosses->pluck('id')->all());
+    }
+
+    #[Test]
+    public function a_zone_with_an_explicit_subset_attaches_only_those_bosses(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $wanted = Boss::factory()->for($raid)->order(1)->create();
+        $skipped = Boss::factory()->for($raid)->order(2)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                [
+                    'id' => $raid->id,
+                    'name' => $raid->name,
+                    'bosses' => [['id' => $wanted->id, 'name' => $wanted->name]],
+                ],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$wanted->id], $event->bosses->pluck('id')->all());
+        $this->assertDatabaseMissing('pivot_events_bosses', ['boss_id' => $skipped->id]);
+    }
+
+    #[Test]
+    public function a_zone_with_an_explicit_empty_bosses_array_attaches_none(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        Boss::factory()->for($raid)->order(1)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                ['id' => $raid->id, 'name' => $raid->name, 'bosses' => []],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertCount(0, $event->bosses);
+        $this->assertCount(1, $event->raids);
+    }
+
+    #[Test]
+    public function it_numbers_bosses_contiguously_across_two_zones_in_raid_order(): void
+    {
+        $first = Raid::factory()->create(['name' => 'Molten Core']);
+        $second = Raid::factory()->create(['name' => 'Blackwing Lair']);
+        $a = Boss::factory()->for($first)->order(1)->create();
+        $b = Boss::factory()->for($first)->order(2)->create();
+        $c = Boss::factory()->for($second)->order(1)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                ['id' => $first->id, 'name' => $first->name],
+                ['id' => $second->id, 'name' => $second->name],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$a->id, $b->id, $c->id], $event->bosses->pluck('id')->all());
+        $this->assertSame([1, 2, 3], $event->bosses->pluck('pivot.sort_order')->all());
+    }
+
+    #[Test]
+    public function boss_order_decides_the_sequence_when_present(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+
+        // The payload deliberately reverses the bosses' own sort_order.
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                [
+                    'id' => $raid->id,
+                    'name' => $raid->name,
+                    'bosses' => [
+                        ['id' => $a->id, 'name' => $a->name, 'order' => 2],
+                        ['id' => $b->id, 'name' => $b->name, 'order' => 1],
+                    ],
+                ],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$b->id, $a->id], $event->bosses->pluck('id')->all());
+    }
+
+    #[Test]
+    public function sparse_and_duplicated_payload_order_values_collapse_to_contiguous_positions(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+        $c = Boss::factory()->for($raid)->order(3)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                [
+                    'id' => $raid->id,
+                    'name' => $raid->name,
+                    'bosses' => [
+                        ['id' => $a->id, 'name' => $a->name, 'order' => 5],
+                        ['id' => $b->id, 'name' => $b->name, 'order' => 5],
+                        ['id' => $c->id, 'name' => $c->name, 'order' => 90],
+                    ],
+                ],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$a->id, $b->id, $c->id], $event->bosses->pluck('id')->all());
+        $this->assertSame([1, 2, 3], $event->bosses->pluck('pivot.sort_order')->all());
+    }
+
+    #[Test]
+    public function zone_order_drives_the_raid_sequence(): void
+    {
+        $first = Raid::factory()->create(['name' => 'Molten Core']);
+        $second = Raid::factory()->create(['name' => 'Blackwing Lair']);
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                ['id' => $first->id, 'name' => $first->name, 'order' => 2],
+                ['id' => $second->id, 'name' => $second->name, 'order' => 1],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$second->id, $first->id], $event->raids->pluck('id')->all());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_an_unknown_boss_id_and_completes(): void
+    {
+        Log::shouldReceive('info')->andReturnNull();
+        Log::shouldReceive('error')->once();
+
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $known = Boss::factory()->for($raid)->order(1)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                [
+                    'id' => $raid->id,
+                    'name' => $raid->name,
+                    'bosses' => [
+                        ['id' => $known->id, 'name' => $known->name],
+                        ['id' => 999999, 'name' => 'No Such Boss'],
+                    ],
+                ],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$known->id], $event->bosses->pluck('id')->all());
+    }
+
+    #[Test]
+    #[Group('error-handling')]
+    public function it_skips_a_boss_belonging_to_a_different_raid(): void
+    {
+        Log::shouldReceive('info')->andReturnNull();
+        Log::shouldReceive('error')->once();
+
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $mine = Boss::factory()->for($raid)->order(1)->create();
+        $foreign = Boss::factory()->for(Raid::factory()->create())->order(1)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                [
+                    'id' => $raid->id,
+                    'name' => $raid->name,
+                    'bosses' => [
+                        ['id' => $mine->id, 'name' => $mine->name],
+                        ['id' => $foreign->id, 'name' => $foreign->name],
+                    ],
+                ],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$mine->id], $event->bosses->pluck('id')->all());
+        $this->assertDatabaseMissing('pivot_events_bosses', ['boss_id' => $foreign->id]);
+    }
+
+    #[Test]
+    public function re_running_the_same_payload_is_idempotent(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+
+        $data = EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                ['id' => $raid->id, 'name' => $raid->name],
+            ]),
+        ]));
+
+        SyncEvent::dispatchSync($data);
+        SyncEvent::dispatchSync($data);
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$a->id, $b->id], $event->bosses->pluck('id')->all());
+        $this->assertDatabaseCount('pivot_events_bosses', 2);
+    }
+
+    #[Test]
+    public function a_mid_insert_re_sync_resolves_in_the_new_order(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+        $c = Boss::factory()->for($raid)->order(3)->create();
+
+        $zone = fn (array $bosses): string => $this->zonePayload([
+            ['id' => $raid->id, 'name' => $raid->name, 'bosses' => $bosses],
+        ]);
+
+        // The event first holds a and c.
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $zone([
+                ['id' => $a->id, 'name' => $a->name],
+                ['id' => $c->id, 'name' => $c->name],
+            ]),
+        ])));
+
+        // b is then inserted between them.
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $zone([
+                ['id' => $a->id, 'name' => $a->name],
+                ['id' => $b->id, 'name' => $b->name],
+                ['id' => $c->id, 'name' => $c->name],
+            ]),
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$a->id, $b->id, $c->id], $event->bosses->pluck('id')->all());
+    }
+
+    #[Test]
+    public function a_full_reversal_resolves_in_the_new_order(): void
+    {
+        $raid = Raid::factory()->create(['name' => 'Molten Core']);
+        $a = Boss::factory()->for($raid)->order(1)->create();
+        $b = Boss::factory()->for($raid)->order(2)->create();
+        $c = Boss::factory()->for($raid)->order(3)->create();
+
+        $zone = fn (array $bosses): string => $this->zonePayload([
+            ['id' => $raid->id, 'name' => $raid->name, 'bosses' => $bosses],
+        ]);
+
+        $entry = fn (Boss $boss, int $order): array => [
+            'id' => $boss->id,
+            'name' => $boss->name,
+            'order' => $order,
+        ];
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $zone([$entry($a, 1), $entry($b, 2), $entry($c, 3)]),
+        ])));
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $zone([$entry($c, 1), $entry($b, 2), $entry($a, 3)]),
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$c->id, $b->id, $a->id], $event->bosses->pluck('id')->all());
+    }
+
+    #[Test]
+    public function a_zone_removed_from_the_payload_detaches_its_bosses(): void
+    {
+        $kept = Raid::factory()->create(['name' => 'Molten Core']);
+        $dropped = Raid::factory()->create(['name' => 'Blackwing Lair']);
+        $keptBoss = Boss::factory()->for($kept)->order(1)->create();
+        $droppedBoss = Boss::factory()->for($dropped)->order(1)->create();
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                ['id' => $kept->id, 'name' => $kept->name],
+                ['id' => $dropped->id, 'name' => $dropped->name],
+            ]),
+        ])));
+
+        SyncEvent::dispatchSync(EventData::from($this->minimalEventPayload([
+            'description' => $this->zonePayload([
+                ['id' => $kept->id, 'name' => $kept->name],
+            ]),
+        ])));
+
+        $event = Event::where('raid_helper_event_id', '111222333444555001')->first();
+
+        $this->assertSame([$keptBoss->id], $event->bosses->pluck('id')->all());
+        $this->assertDatabaseMissing('pivot_events_bosses', ['boss_id' => $droppedBoss->id]);
+        $this->assertDatabaseMissing('pivot_events_raids', ['raid_id' => $dropped->id]);
     }
 
     // ==================== bench sync ====================
@@ -262,7 +611,7 @@ class SyncEventTest extends TestCase
         // Change timezone after construction — the stored datetime must still reflect Pacific/Auckland.
         config()->set('app.timezone', 'America/New_York');
 
-        $job->handle();
+        $job->handle(app(EventBossResolver::class));
 
         $expected = Carbon::createFromTimestamp(1700000000)->setTimezone('Pacific/Auckland')->toDateTimeString();
 
@@ -335,6 +684,16 @@ class SyncEventTest extends TestCase
             'lastUpdated' => 1699999000,
             'color' => '0,0,0',
         ], $overrides);
+    }
+
+    /**
+     * Build an event description carrying the given zone payload.
+     *
+     * @param  array<int, array<string, mixed>>  $zones
+     */
+    private function zonePayload(array $zones): string
+    {
+        return "-# Do not edit below this line...\n".json_encode($zones);
     }
 
     /**

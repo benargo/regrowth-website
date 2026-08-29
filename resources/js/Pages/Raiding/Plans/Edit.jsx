@@ -16,7 +16,7 @@ import { Link, router, usePage } from "@inertiajs/react";
 import { useEchoNotification } from "@laravel/echo-react";
 import FlashMessage from "@/Components/FlashMessage";
 import AutoSaveLabel from "@/Components/AutoSaveLabel";
-import Collapsible from "@/Components/Collapsible";
+import Collapsible, { DisabledCollapsible } from "@/Components/Collapsible";
 import AssignmentCellEditor, { resetAssignmentOptionsFetched } from "@/Components/Events/AssignmentCellEditor";
 import EditorPresence from "@/Components/Events/EditorPresence";
 import { BenchedTable, GroupTable } from "@/Components/Events/GroupTable";
@@ -64,11 +64,11 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             ref={setNodeRef}
             style={style}
             data-assignment-key={assignment._key}
-            className="group relative border-b border-brown-700/50 last:border-0"
+            className="group border-brown-700/50 relative border-b last:border-0"
         >
             {/* Drag handle */}
             <td
-                className="w-6 cursor-grab px-1 py-2 text-center text-brown-700 hover:text-brown-400 active:cursor-grabbing"
+                className="text-brown-700 hover:text-brown-400 w-6 cursor-grab px-1 py-2 text-center active:cursor-grabbing"
                 {...attributes}
                 {...listeners}
             >
@@ -129,12 +129,12 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
 
 function AddAssignmentRow({ onAdd }) {
     return (
-        <tr className="border-t border-dashed border-brown-700/50">
+        <tr className="border-brown-700/50 border-t border-dashed">
             <td colSpan={4}>
                 <button
                     type="button"
                     onClick={onAdd}
-                    className="flex w-full items-center justify-center gap-2 py-2 text-xs text-brown-500 transition-colors hover:bg-brown-700/30 hover:text-brown-300"
+                    className="text-brown-500 hover:bg-brown-700/30 hover:text-brown-300 flex w-full items-center justify-center gap-2 py-2 text-xs transition-colors"
                 >
                     <Icon icon="plus" style="solid" className="text-[10px]" />
                     Add assignment
@@ -207,7 +207,7 @@ function AssignmentGroupEditor({
             }`}
         >
             {groupName && (
-                <div className="border-b border-brown-700 bg-brown-800/60 px-3 py-2">
+                <div className="border-brown-700 bg-brown-800/60 border-b px-3 py-2">
                     <h3 className="text-sm font-semibold text-amber-400">{groupName}</h3>
                 </div>
             )}
@@ -302,7 +302,7 @@ function SortableGroupCard({
                 <div className="mb-1 flex items-center gap-1">
                     <button
                         type="button"
-                        className="cursor-grab touch-none text-brown-600 hover:text-brown-400 active:cursor-grabbing"
+                        className="text-brown-600 hover:text-brown-400 cursor-grab touch-none active:cursor-grabbing"
                         {...attributes}
                         {...listeners}
                     >
@@ -320,7 +320,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="flex-1 rounded border border-amber-500 bg-brown-800 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
+                            className="bg-brown-800 flex-1 rounded border border-amber-500 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -331,7 +331,7 @@ function SortableGroupCard({
                             }}
                             className="flex-1 truncate text-left text-sm font-semibold text-amber-400 hover:text-amber-300"
                         >
-                            {groupName ?? <span className="italic text-brown-500">Unnamed group</span>}
+                            {groupName ?? <span className="text-brown-500 italic">Unnamed group</span>}
                         </button>
                     )}
 
@@ -555,7 +555,7 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
         >
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col gap-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-500/80">Assignments</h3>
+                    <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Assignments</h3>
                     <GroupContainer
                         bossId={boss.id}
                         groups={groupsByBossId[boss.id] ?? []}
@@ -566,7 +566,7 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
 
                 {bossImages.length > 0 || bossNotes ? (
                     <div className="col-span-2 flex flex-col gap-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-500/80">Strategy</h3>
+                        <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Strategy</h3>
                         {bossImages.map((url, i) => (
                             <img
                                 key={i}
@@ -579,7 +579,7 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
                     </div>
                 ) : (
                     <div className="col-span-2 flex items-center justify-center py-8">
-                        <p className="text-center text-sm text-brown-500">
+                        <p className="text-brown-500 text-center text-sm">
                             No strategy notes or images for this boss yet.
                         </p>
                     </div>
@@ -629,7 +629,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                         {templates.map((template) => (
                             <div
                                 key={template.id}
-                                className="flex items-center justify-between gap-4 rounded border border-brown-700 px-4 py-3"
+                                className="border-brown-700 flex items-center justify-between gap-4 rounded border px-4 py-3"
                             >
                                 <div className="flex flex-col gap-1">
                                     <span className="font-semibold">{template.title}</span>
@@ -1363,7 +1363,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                     <Link
                         href={route("raiding.plans.show", event.id)}
                         preserveScroll
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                        className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to {event.title}
@@ -1449,7 +1449,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                 >
                     {/* General Assignments */}
                     <section className="mb-8">
-                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                             General Assignments
                         </h2>
                         <GroupContainer
@@ -1467,21 +1467,25 @@ export default function Edit({ event, targetMarkers, templates }) {
                             {event.raids.map((raid) => (
                                 <div key={raid.slug}>
                                     {event.raids.length > 1 && (
-                                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-amber-500/80">
+                                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
                                             {raid.name}
                                         </h2>
                                     )}
                                     <div className="flex flex-col gap-2">
-                                        {(raid.bosses ?? []).map((boss) => (
-                                            <BossStrategySection
-                                                key={boss.id}
-                                                boss={boss}
-                                                raid={raid}
-                                                commonContainerProps={commonContainerProps}
-                                                groupsByBossId={groupsByBossId}
-                                                assignments={assignments}
-                                            />
-                                        ))}
+                                        {(raid.bosses ?? []).map((boss) =>
+                                            boss.is_visible ? (
+                                                <BossStrategySection
+                                                    key={boss.id}
+                                                    boss={boss}
+                                                    raid={raid}
+                                                    commonContainerProps={commonContainerProps}
+                                                    groupsByBossId={groupsByBossId}
+                                                    assignments={assignments}
+                                                />
+                                            ) : (
+                                                <DisabledCollapsible key={boss.id} title={boss.name} />
+                                            ),
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -1490,20 +1494,20 @@ export default function Edit({ event, targetMarkers, templates }) {
 
                     <DragOverlay>
                         {activeAssignment ? (
-                            <table className="w-full table-fixed rounded border border-amber-500/50 bg-brown-800 opacity-90 shadow-xl">
+                            <table className="bg-brown-800 w-full table-fixed rounded border border-amber-500/50 opacity-90 shadow-xl">
                                 <tbody>
-                                    <tr className="border-b border-brown-700/50">
-                                        <td className="w-6 px-1 py-2 text-brown-700">
+                                    <tr className="border-brown-700/50 border-b">
+                                        <td className="text-brown-700 w-6 px-1 py-2">
                                             <Icon icon="grip-vertical" style="solid" className="text-xs" />
                                         </td>
-                                        <td className="w-1/2 border-r border-brown-700/50 px-3 py-2.5 text-sm text-brown-200">
+                                        <td className="border-brown-700/50 text-brown-200 w-1/2 border-r px-3 py-2.5 text-sm">
                                             {labelFromSide(activeAssignment._leftSide).label || (
-                                                <span className="italic text-brown-600">empty</span>
+                                                <span className="text-brown-600 italic">empty</span>
                                             )}
                                         </td>
-                                        <td className="w-1/2 px-3 py-2.5 text-sm text-brown-200">
+                                        <td className="text-brown-200 w-1/2 px-3 py-2.5 text-sm">
                                             {labelFromSide(activeAssignment._rightSide).label || (
-                                                <span className="italic text-brown-600">empty</span>
+                                                <span className="text-brown-600 italic">empty</span>
                                             )}
                                         </td>
                                         <td className="w-10" />

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Actions\EventBossResolver;
 use App\Http\Resources\PermissionGroupsResource;
 use App\Models\User;
 use App\Services\LootPriorities\HighestPriorityStats;
@@ -32,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
          * Loot priorities
          */
         $this->app->singleton(HighestPriorityStats::class);
+
+        /**
+         * Event boss resolution
+         */
+        $this->app->singleton(EventBossResolver::class);
     }
 
     /**

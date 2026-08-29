@@ -10,8 +10,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * Requires raids.bosses.media, assignments, and characters.rank to be eager-loaded
- * before construction. Use $event->load('raids.bosses.media', 'assignments', 'characters.rank').
+ * Requires raids.bosses.media, bosses.media, assignments.group, and characters.rank
+ * to be eager-loaded before construction. Use
+ * $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank').
+ *
+ * The bosses relation (the event's own pivot selection) drives the is_visible flag
+ * on each boss nested under raids.bosses rather than a top-level key.
  */
 class EventResource extends JsonResource
 {
@@ -125,21 +129,39 @@ class EventResource extends JsonResource
      */
     protected function buildRaids(Collection $bossByIdAssignments, Request $request): array
     {
+        $visibleBossIds = $this->bosses->pluck('id')->flip();
+
         return $this->raids->map(fn (Raid $raid) => [
+            'id' => $raid->id,
             'name' => $raid->name,
             'slug' => $raid->slug,
             'max_players' => $raid->max_players,
-            'bosses' => $raid->bosses->map(fn (Boss $boss) => [
-                'id' => $boss->id,
-                'name' => $boss->name,
-                'slug' => $boss->slug,
-                'sort_order' => $boss->sort_order,
-                'images' => $boss->getMedia()->map->getUrl()->values()->all(),
-                'notes' => $boss->notes,
-                'assignments' => (new EventAssignmentsCollection(
-                    $bossByIdAssignments->get($boss->id, collect())
-                ))->resolve($request),
-            ])->values()->all(),
+            'sort_order' => $raid->pivot->sort_order,
+            'bosses' => $raid->bosses
+                ->map(fn (Boss $boss) => $this->buildBoss($boss, $bossByIdAssignments, $visibleBossIds, $request))
+                ->values()
+                ->all(),
         ])->values()->all();
+    }
+
+    /**
+     * @param  Collection<int|string, mixed>  $bossByIdAssignments
+     * @param  Collection<int|string, int>  $visibleBossIds  Boss ids attached to the event via the pivot.
+     * @return array<string, mixed>
+     */
+    protected function buildBoss(Boss $boss, Collection $bossByIdAssignments, Collection $visibleBossIds, Request $request): array
+    {
+        return [
+            'id' => $boss->id,
+            'name' => $boss->name,
+            'slug' => $boss->slug,
+            'sort_order' => $boss->sort_order,
+            'images' => $boss->getMedia()->map->getUrl()->values()->all(),
+            'notes' => $boss->notes,
+            'is_visible' => $visibleBossIds->has($boss->id),
+            'assignments' => (new EventAssignmentsCollection(
+                $bossByIdAssignments->get($boss->id, collect())
+            ))->resolve($request),
+        ];
     }
 }

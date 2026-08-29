@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Models\Boss;
 use App\Models\DiscordRole;
 use App\Models\Event;
 use App\Models\Permission;
@@ -148,6 +149,41 @@ class EventTemplateControllerTest extends TestCase
         $response->assertRedirect(route('management.event-templates.edit', $template));
     }
 
+    #[Test]
+    public function store_populates_the_bosses_pivot_in_raid_order(): void
+    {
+        $first = Raid::factory()->create();
+        $second = Raid::factory()->create();
+        $a = Boss::factory()->for($first)->order(1)->create();
+        $b = Boss::factory()->for($first)->order(2)->create();
+        $c = Boss::factory()->for($second)->order(1)->create();
+
+        $this->actingAs($this->officer)->post(route('management.event-templates.store'), [
+            'title' => 'My Template',
+            'raid_ids' => [$first->id, $second->id],
+        ]);
+
+        $template = Event::templates()->where('title', 'My Template')->firstOrFail();
+
+        $this->assertSame([$a->id, $b->id, $c->id], $template->bosses->pluck('id')->all());
+    }
+
+    #[Test]
+    public function store_uses_the_request_order_for_the_raid_sequence(): void
+    {
+        $first = Raid::factory()->create();
+        $second = Raid::factory()->create();
+
+        $this->actingAs($this->officer)->post(route('management.event-templates.store'), [
+            'title' => 'My Template',
+            'raid_ids' => [$second->id, $first->id],
+        ]);
+
+        $template = Event::templates()->where('title', 'My Template')->firstOrFail();
+
+        $this->assertSame([$second->id, $first->id], $template->raids->pluck('id')->all());
+    }
+
     #[Group('validation')]
     #[Test]
     public function store_requires_a_title(): void
@@ -238,6 +274,54 @@ class EventTemplateControllerTest extends TestCase
         $this->assertSame('New Title', $template->title);
         $this->assertFalse($template->raids()->where('raids.id', $raidA->id)->exists());
         $this->assertTrue($template->raids()->where('raids.id', $raidB->id)->exists());
+    }
+
+    #[Test]
+    public function update_re_syncs_the_bosses_pivot_when_the_raids_change(): void
+    {
+        $raidA = Raid::factory()->create();
+        $raidB = Raid::factory()->create();
+        $bossA = Boss::factory()->for($raidA)->order(1)->create();
+        $bossB = Boss::factory()->for($raidB)->order(1)->create();
+
+        $template = Event::factory()->template()->create(['title' => 'Old Title']);
+        $template->raids()->attach($raidA->id);
+        $template->bosses()->attach($bossA->id);
+
+        $this->actingAs($this->officer)->patch(route('management.event-templates.update', $template), [
+            'title' => 'New Title',
+            'raid_ids' => [$raidB->id],
+        ]);
+
+        $template->refresh();
+
+        $this->assertSame([$bossB->id], $template->bosses->pluck('id')->all());
+        $this->assertDatabaseMissing('pivot_events_bosses', ['boss_id' => $bossA->id]);
+    }
+
+    #[Test]
+    public function update_reorders_the_bosses_when_the_raid_order_changes(): void
+    {
+        $first = Raid::factory()->create();
+        $second = Raid::factory()->create();
+        $a = Boss::factory()->for($first)->order(1)->create();
+        $b = Boss::factory()->for($second)->order(1)->create();
+
+        $template = Event::factory()->template()->create(['title' => 'Template']);
+
+        $this->actingAs($this->officer)->patch(route('management.event-templates.update', $template), [
+            'title' => 'Template',
+            'raid_ids' => [$first->id, $second->id],
+        ]);
+
+        $this->actingAs($this->officer)->patch(route('management.event-templates.update', $template), [
+            'title' => 'Template',
+            'raid_ids' => [$second->id, $first->id],
+        ]);
+
+        $template->refresh();
+
+        $this->assertSame([$b->id, $a->id], $template->bosses->pluck('id')->all());
     }
 
     // ==================== destroy ====================

@@ -10,7 +10,9 @@ use App\Models\Character;
 use App\Models\Event;
 use App\Models\EventAssignment;
 use App\Models\EventAssignmentGroup;
+use App\Models\EventBoss;
 use App\Models\EventCharacter;
+use App\Models\EventRaid;
 use App\Models\Raid;
 use App\Services\Discord\Discord;
 use App\Services\Discord\Resources\Channel;
@@ -457,6 +459,41 @@ class EventTest extends ModelTestCase
     }
 
     #[Test]
+    public function raids_use_the_event_raid_pivot(): void
+    {
+        $event = $this->create();
+        $raid = Raid::factory()->create();
+
+        $event->raids()->attach($raid->id);
+
+        $pivot = $event->raids->first()->pivot;
+
+        $this->assertInstanceOf(EventRaid::class, $pivot);
+        $this->assertNotNull($pivot->sort_order);
+    }
+
+    #[Test]
+    public function raids_are_ordered_by_pivot_sort_order(): void
+    {
+        $event = $this->create();
+
+        // Created in reverse so id order and pivot order differ.
+        $third = Raid::factory()->create();
+        $second = Raid::factory()->create();
+        $first = Raid::factory()->create();
+
+        // The pivot numbers itself on create, so sequence follows attach order.
+        $event->raids()->attach($first->id);
+        $event->raids()->attach($second->id);
+        $event->raids()->attach($third->id);
+
+        $this->assertSame(
+            [$first->id, $second->id, $third->id],
+            $event->raids->pluck('id')->all(),
+        );
+    }
+
+    #[Test]
     public function deleting_event_cascades_to_raids_pivot(): void
     {
         $event = $this->create();
@@ -473,70 +510,80 @@ class EventTest extends ModelTestCase
     // bosses
 
     #[Test]
-    public function bosses_returns_a_builder(): void
+    public function bosses_returns_belongs_to_many_relationship(): void
     {
-        $event = $this->create();
+        $model = new Event;
 
-        $this->assertInstanceOf(Builder::class, $event->bosses());
+        $this->assertInstanceOf(BelongsToMany::class, $model->bosses());
     }
 
     #[Test]
-    public function bosses_returns_bosses_from_attached_raids(): void
+    public function it_can_attach_bosses(): void
     {
         $event = $this->create();
-        $raid = Raid::factory()->create();
-        $boss = Boss::factory()->create(['raid_id' => $raid->id]);
-        $event->raids()->attach($raid->id);
+        $boss = Boss::factory()->create();
 
-        $result = $event->bosses()->get();
+        $event->bosses()->attach($boss->id);
 
-        $this->assertCount(1, $result);
-        $this->assertTrue($result->first()->is($boss));
+        $this->assertCount(1, $event->bosses);
+        $this->assertSame($boss->id, $event->bosses->first()->id);
     }
 
     #[Test]
-    public function bosses_excludes_bosses_from_unattached_raids(): void
+    public function bosses_returns_empty_collection_when_none_attached(): void
     {
         $event = $this->create();
-        $otherRaid = Raid::factory()->create();
-        Boss::factory()->create(['raid_id' => $otherRaid->id]);
 
-        $result = $event->bosses()->get();
-
-        $this->assertCount(0, $result);
+        $this->assertCount(0, $event->bosses);
     }
 
     #[Test]
-    public function bosses_returns_empty_when_no_raids_attached(): void
+    public function bosses_use_the_event_boss_pivot(): void
     {
         $event = $this->create();
+        $boss = Boss::factory()->create();
 
-        $this->assertCount(0, $event->bosses()->get());
+        $event->bosses()->attach($boss->id);
+
+        $pivot = $event->bosses->first()->pivot;
+
+        $this->assertInstanceOf(EventBoss::class, $pivot);
+        $this->assertNotNull($pivot->sort_order);
     }
 
     #[Test]
-    public function bosses_are_ordered_by_raid_id_then_sort_order(): void
+    public function bosses_are_ordered_by_pivot_sort_order(): void
     {
         $event = $this->create();
 
-        $raid1 = Raid::factory()->create();
-        $raid2 = Raid::factory()->create();
+        // Created in reverse so id order and pivot order differ.
+        $third = Boss::factory()->create();
+        $second = Boss::factory()->create();
+        $first = Boss::factory()->create();
 
-        $boss1a = Boss::factory()->create(['raid_id' => $raid1->id]);
-        $boss1a->update(['sort_order' => 2]);
-        $boss1b = Boss::factory()->create(['raid_id' => $raid1->id]);
-        $boss1b->update(['sort_order' => 1]);
-        $boss2a = Boss::factory()->create(['raid_id' => $raid2->id]);
-        $boss2a->update(['sort_order' => 1]);
+        // The pivot numbers itself on create, so sequence follows attach order.
+        $event->bosses()->attach($first->id);
+        $event->bosses()->attach($second->id);
+        $event->bosses()->attach($third->id);
 
-        $event->raids()->attach([$raid1->id, $raid2->id]);
+        $this->assertSame(
+            [$first->id, $second->id, $third->id],
+            $event->bosses->pluck('id')->all(),
+        );
+    }
 
-        $result = $event->bosses()->get();
+    #[Test]
+    public function deleting_event_cascades_to_bosses_pivot(): void
+    {
+        $event = $this->create();
+        $boss = Boss::factory()->create();
+        $event->bosses()->attach($boss->id);
 
-        $this->assertCount(3, $result);
-        $this->assertTrue($result[0]->is($boss1b));
-        $this->assertTrue($result[1]->is($boss1a));
-        $this->assertTrue($result[2]->is($boss2a));
+        $event->delete();
+
+        $this->assertDatabaseMissing('pivot_events_bosses', [
+            'event_id' => $event->id,
+        ]);
     }
 
     // prunable

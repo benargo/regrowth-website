@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\EventBossResolver;
 use App\Contracts\HasBlizzardIcons;
 use App\Http\Resources\CharacterSummaryResource;
 use App\Http\Resources\EventResource;
@@ -9,6 +10,7 @@ use App\Http\Resources\EventTemplateCollection;
 use App\Http\Resources\PlayableClassResource;
 use App\Http\Resources\RaidResource;
 use App\Http\Resources\SpellResource;
+use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
 use App\Models\PlayableClass;
@@ -18,6 +20,7 @@ use App\Models\TargetMarker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,6 +28,8 @@ use Inertia\Response;
 #[Authorize('view-officer-dashboard')]
 class EventTemplateController extends Controller implements HasBlizzardIcons
 {
+    public function __construct(private readonly EventBossResolver $eventBossResolver) {}
+
     /**
      * Display a listing of event templates.
      */
@@ -64,7 +69,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
             'is_template' => true,
         ]);
 
-        $template->raids()->attach($validated['raid_ids']);
+        $this->syncRaidsAndBosses($template, $validated['raid_ids']);
 
         return redirect()->route('management.event-templates.edit', $template);
     }
@@ -75,7 +80,7 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
     #[Authorize('update', 'template')]
     public function edit(Event $template, Request $request): Response
     {
-        $template->load('raids.bosses.media', 'assignments.group');
+        $template->load('raids.bosses.media', 'bosses.media', 'assignments.group');
 
         return Inertia::render('Manage/EventTemplates/Edit', [
             'template' => (new EventResource($template))->resolve($request),
@@ -115,9 +120,38 @@ class EventTemplateController extends Controller implements HasBlizzardIcons
         ]);
 
         $template->update(['title' => $validated['title']]);
-        $template->raids()->sync($validated['raid_ids']);
+        $this->syncRaidsAndBosses($template, $validated['raid_ids']);
 
         return back();
+    }
+
+    /**
+     * Sync a template's raids and the bosses they contain.
+     *
+     * The template UI has no per-boss picker, so a template holds every boss of
+     * its selected raids. Both pivots are written with explicit, contiguous
+     * positions taken from the request's raid order.
+     *
+     * @param  array<int, int>  $raidIds
+     */
+    private function syncRaidsAndBosses(Event $template, array $raidIds): void
+    {
+        $raidIds = collect($raidIds)->values();
+        $bosses = $this->eventBossResolver->fromRaidIds($raidIds);
+
+        DB::transaction(function () use ($template, $raidIds, $bosses): void {
+            $template->raids()->sync(
+                $raidIds->mapWithKeys(fn (int $raidId, int $index): array => [
+                    $raidId => ['sort_order' => $index + 1],
+                ])->all()
+            );
+
+            $template->bosses()->sync(
+                $bosses->mapWithKeys(fn (Boss $boss, int $index): array => [
+                    $boss->id => ['sort_order' => $index + 1],
+                ])->all()
+            );
+        });
     }
 
     /**

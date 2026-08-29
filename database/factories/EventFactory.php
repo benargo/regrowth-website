@@ -4,8 +4,10 @@ namespace Database\Factories;
 
 use App\Enums\RaidBackground;
 use App\Enums\SignupStatus;
+use App\Models\Boss;
 use App\Models\Character;
 use App\Models\Event;
+use App\Models\Raid;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -79,6 +81,38 @@ class EventFactory extends Factory
                 'is_leader' => true,
                 'signup_status' => SignupStatus::Confirmed->value,
             ]);
+        });
+    }
+
+    /**
+     * Attach raids to the event, in the order given.
+     *
+     * @param  array<int, Raid>|null  $raids
+     */
+    public function withRaids(?array $raids = null, int $count = 1): static
+    {
+        return $this->afterCreating(function (Event $event) use ($raids, $count) {
+            $raids ??= Raid::factory()->count($count)->create()->all();
+
+            foreach ($raids as $index => $raid) {
+                $event->raids()->attach($raid->id, ['sort_order' => $index + 1]);
+            }
+        });
+    }
+
+    /**
+     * Attach bosses to the event, in the order given.
+     *
+     * @param  array<int, Boss>|null  $bosses
+     */
+    public function withBosses(?array $bosses = null, int $count = 1): static
+    {
+        return $this->afterCreating(function (Event $event) use ($bosses, $count) {
+            $bosses ??= Boss::factory()->count($count)->create()->all();
+
+            foreach ($bosses as $index => $boss) {
+                $event->bosses()->attach($boss->id, ['sort_order' => $index + 1]);
+            }
         });
     }
 

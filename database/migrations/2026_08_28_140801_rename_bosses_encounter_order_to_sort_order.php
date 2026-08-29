@@ -26,7 +26,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('bosses', function (Blueprint $table) {
-            $table->integer('sort_order')->nullable(false)->change();
+            $table->integer('sort_order')->nullable(false)->default(0)->change();
         });
 
         Schema::table('bosses', function (Blueprint $table) {
