@@ -482,10 +482,11 @@ class EventTest extends ModelTestCase
         $second = Raid::factory()->create();
         $first = Raid::factory()->create();
 
-        // The pivot numbers itself on create, so sequence follows attach order.
-        $event->raids()->attach($first->id);
-        $event->raids()->attach($second->id);
-        $event->raids()->attach($third->id);
+        // The pivot does not number itself on create, so each row's position
+        // comes from the sort_order passed to attach().
+        $event->raids()->attach($first->id, ['sort_order' => 1]);
+        $event->raids()->attach($second->id, ['sort_order' => 2]);
+        $event->raids()->attach($third->id, ['sort_order' => 3]);
 
         $this->assertSame(
             [$first->id, $second->id, $third->id],
@@ -561,10 +562,11 @@ class EventTest extends ModelTestCase
         $second = Boss::factory()->create();
         $first = Boss::factory()->create();
 
-        // The pivot numbers itself on create, so sequence follows attach order.
-        $event->bosses()->attach($first->id);
-        $event->bosses()->attach($second->id);
-        $event->bosses()->attach($third->id);
+        // The pivot does not number itself on create, so each row's position
+        // comes from the sort_order passed to attach().
+        $event->bosses()->attach($first->id, ['sort_order' => 1]);
+        $event->bosses()->attach($second->id, ['sort_order' => 2]);
+        $event->bosses()->attach($third->id, ['sort_order' => 3]);
 
         $this->assertSame(
             [$first->id, $second->id, $third->id],

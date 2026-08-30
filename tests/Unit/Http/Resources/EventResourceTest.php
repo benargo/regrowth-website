@@ -255,7 +255,7 @@ class EventResourceTest extends TestCase
 
         $raid = Raid::factory()->create(['name' => 'Karazhan']);
         $event = Event::factory()->create();
-        $event->raids()->attach($raid->id);
+        $event->raids()->attach($raid->id, ['sort_order' => 1]);
 
         $array = $this->makeResource($event);
 
@@ -279,11 +279,11 @@ class EventResourceTest extends TestCase
 
         $event = Event::factory()->create();
 
-        // The pivot numbers itself on create, so sequence comes from the order
-        // rows are attached rather than from the values passed in.
-        $event->raids()->attach($first->id);
-        $event->raids()->attach($second->id);
-        $event->raids()->attach($third->id);
+        // The pivot does not number itself on create, so each row's position
+        // comes from the sort_order passed to attach().
+        $event->raids()->attach($first->id, ['sort_order' => 1]);
+        $event->raids()->attach($second->id, ['sort_order' => 2]);
+        $event->raids()->attach($third->id, ['sort_order' => 3]);
 
         $array = $this->makeResource($event);
 
