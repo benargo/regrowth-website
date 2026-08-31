@@ -39,6 +39,22 @@ class SyncEventControllerTest extends TestCase
         Bus::assertDispatched(SyncEvent::class);
     }
 
+    #[Group('error-handling')]
+    #[Test]
+    #[DataProvider('eventEndpoints')]
+    public function it_still_processes_the_webhook_when_raid_helper_adds_unknown_keys(string $url): void
+    {
+        $body = array_merge($this->eventBody, [
+            'creator' => ['id' => '241299706695778305', 'name' => 'Fizzywigs'],
+            'coLeaders' => [],
+        ]);
+
+        $response = $this->postJson($url, $body, ['Authorization' => 'test_webhook_key']);
+
+        $response->assertStatus(202);
+        Bus::assertDispatched(SyncEvent::class);
+    }
+
     #[Group('authorization')]
     #[Test]
     #[DataProvider('eventEndpoints')]

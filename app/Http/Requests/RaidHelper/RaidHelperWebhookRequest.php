@@ -13,6 +13,12 @@ abstract class RaidHelperWebhookRequest extends FormRequest
 {
     abstract protected function webhookRules(): Collection;
 
+    /**
+     * Raid Helper occasionally adds new top-level keys to its webhook payloads.
+     * These are forward-compatible additions, not errors, so unrecognised keys
+     * are logged for visibility and then quietly ignored — validation only ever
+     * considers the keys declared in rules().
+     */
     protected function prepareForValidation(): void
     {
         $allowed = $this->webhookRules()
@@ -28,8 +34,6 @@ abstract class RaidHelperWebhookRequest extends FormRequest
                 'allowed_keys' => $allowed->values()->all(),
                 'payload' => $this->all(),
             ]);
-
-            abort(400);
         }
     }
 

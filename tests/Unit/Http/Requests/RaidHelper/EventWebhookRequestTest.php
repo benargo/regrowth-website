@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\EventWebhookBody;
 use Tests\TestCase;
 
@@ -39,20 +38,23 @@ class EventWebhookRequestTest extends TestCase
 
     #[Group('error-handling')]
     #[Test]
-    public function it_rejects_requests_with_unknown_fields(): void
+    public function it_ignores_unknown_fields_without_aborting(): void
     {
         $request = new EventWebhookRequest;
         $request->replace(array_merge($this->eventBody, ['unknownField' => 'value']));
 
         $method = new \ReflectionMethod(EventWebhookRequest::class, 'prepareForValidation');
 
-        $this->expectException(HttpException::class);
-
         $method->invoke($request);
+
+        $validator = $this->validate($request->all());
+
+        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
     }
 
+    #[Group('error-handling')]
     #[Test]
-    public function prepare_for_validation_logs_unexpected_keys_before_aborting(): void
+    public function prepare_for_validation_logs_unexpected_keys_as_a_warning(): void
     {
         Log::spy();
 
@@ -61,18 +63,34 @@ class EventWebhookRequestTest extends TestCase
 
         $method = new \ReflectionMethod(EventWebhookRequest::class, 'prepareForValidation');
 
-        try {
-            $method->invoke($request);
-            $this->fail('Expected HttpException was not thrown');
-        } catch (HttpException $e) {
-            $this->assertSame(400, $e->getStatusCode());
-        }
+        $method->invoke($request);
 
         Log::shouldHaveReceived('warning')
             ->once()
             ->withArgs(fn (string $message, array $context) => $message === 'Raid Helper webhook contained unexpected keys'
                 && $context['request'] === EventWebhookRequest::class
                 && in_array('unknownField', $context['unexpected_keys']));
+    }
+
+    #[Group('error-handling')]
+    #[Test]
+    public function it_accepts_the_creator_and_co_leaders_keys_added_by_raid_helper(): void
+    {
+        $body = array_merge($this->eventBody, [
+            'creator' => ['id' => '241299706695778305', 'name' => 'Fizzywigs'],
+            'coLeaders' => [],
+        ]);
+
+        $request = new EventWebhookRequest;
+        $request->replace($body);
+
+        $method = new \ReflectionMethod(EventWebhookRequest::class, 'prepareForValidation');
+
+        $method->invoke($request);
+
+        $validator = $this->validate($body);
+
+        $this->assertTrue($validator->passes(), implode(' ', $validator->errors()->all()));
     }
 
     #[Test]
