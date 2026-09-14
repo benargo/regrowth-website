@@ -17,7 +17,9 @@ class DeleteEventController extends Controller
     {
         Log::info('DeleteEventController hit');
 
-        DeleteEvent::dispatch($request->input('id'));
+        if ($request->boolean('advancedSettings.disableArchiving')) {
+            DeleteEvent::dispatch($request->input('id'));
+        }
 
         return response()->noContent(202);
     }

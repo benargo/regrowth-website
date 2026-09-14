@@ -25,7 +25,33 @@ class DeleteEventControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_202_and_dispatches_delete_event_for_a_valid_event_delete_webhook(): void
+    public function it_returns_202_and_dispatches_delete_event_when_disable_archiving_is_true(): void
+    {
+        $response = $this->postJson(
+            '/api/raidhelper/event-delete',
+            [...$this->eventBody, 'advancedSettings' => ['disableArchiving' => true]],
+            ['Authorization' => 'test_webhook_key'],
+        );
+
+        $response->assertStatus(202);
+        Bus::assertDispatched(DeleteEvent::class, fn ($job) => $job->raidHelperEventId === '111222333444555001');
+    }
+
+    #[Test]
+    public function it_returns_202_and_does_not_dispatch_when_disable_archiving_is_false(): void
+    {
+        $response = $this->postJson(
+            '/api/raidhelper/event-delete',
+            [...$this->eventBody, 'advancedSettings' => ['disableArchiving' => false]],
+            ['Authorization' => 'test_webhook_key'],
+        );
+
+        $response->assertStatus(202);
+        Bus::assertNotDispatched(DeleteEvent::class);
+    }
+
+    #[Test]
+    public function it_returns_202_and_does_not_dispatch_when_disable_archiving_is_absent(): void
     {
         $response = $this->postJson(
             '/api/raidhelper/event-delete',
@@ -34,7 +60,7 @@ class DeleteEventControllerTest extends TestCase
         );
 
         $response->assertStatus(202);
-        Bus::assertDispatched(DeleteEvent::class, fn ($job) => $job->raidHelperEventId === '111222333444555001');
+        Bus::assertNotDispatched(DeleteEvent::class);
     }
 
     #[Group('authorization')]
