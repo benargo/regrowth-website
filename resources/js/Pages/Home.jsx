@@ -44,7 +44,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                                 torn edge stay legible over any frame. */}
                     <div
                         aria-hidden="true"
-                        className="from-forever-900 via-forever-900/40 absolute inset-0 bg-gradient-to-t to-transparent"
+                        className="from-surface-sunken via-surface-sunken/40 absolute inset-0 bg-gradient-to-t to-transparent"
                     />
 
                     <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
@@ -57,10 +57,10 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                                 />
                             </div>
                             <div className="text-center md:text-left">
-                                <h1 className="text-camel-200 mb-4 font-serif text-6xl font-normal drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] md:text-8xl">
+                                <h1 className="text-heading mb-4 font-serif text-6xl font-normal drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] md:text-8xl">
                                     Regrowth
                                 </h1>
-                                <p className="text-camel-400 text-2xl tracking-[0.2em] uppercase md:text-3xl">
+                                <p className="text-body text-2xl tracking-[0.2em] uppercase md:text-3xl">
                                     Thunderstrike
                                 </p>
                             </div>
@@ -95,7 +95,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                             Your Journey Starts Here
                         </DisplayHeading>
 
-                        <p className="text-camel-400 mx-auto mb-8 max-w-xl">
+                        <p className="text-body mx-auto mb-8 max-w-xl">
                             Whether you're a seasoned raider or stepping into Azeroth for the first time, there's a
                             place for you in Regrowth. Come and say hello — recruitment, raid chatter and everything
                             else happens on our Discord.
@@ -105,7 +105,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                             href={discordInviteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="border-primary/30 text-camel-200 focus:ring-primary/60 inline-flex items-center gap-3 rounded border bg-[#5865F2] px-8 py-4 text-lg shadow-lg transition-colors hover:bg-[#5865F2]/80 focus:ring-2 focus:outline-hidden"
+                            className="border-primary/30 text-heading focus:ring-primary/60 inline-flex items-center gap-3 rounded border bg-[#5865F2] px-8 py-4 text-lg shadow-lg transition-colors hover:bg-[#5865F2]/80 focus:ring-2 focus:outline-hidden"
                         >
                             <Icon icon="discord" style="brands" className="h-6 w-6 text-white" />
                             Join our Discord

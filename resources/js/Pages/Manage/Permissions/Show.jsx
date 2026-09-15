@@ -105,7 +105,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                 <nav className="mb-6">
                     <Dropdown>
                         <Dropdown.Trigger>
-                            <button className="flex items-center justify-between rounded border border-camel-600 px-4 py-2 text-camel-600 transition-colors hover:bg-camel-600/20">
+                            <button className="flex items-center justify-between rounded border border-line px-4 py-2 text-line transition-colors hover:bg-accent/20">
                                 {groups.find((g) => g.active)?.name ?? "Select Group"}
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
@@ -118,12 +118,12 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                             </button>
                         </Dropdown.Trigger>
                         <Dropdown.Content align="left" width="48">
-                            <div className="rounded-md border border-camel-600 bg-forever-800 shadow-lg">
+                            <div className="rounded-md border border-line bg-surface shadow-lg">
                                 {groups.map((group) => (
                                     <Dropdown.Link
                                         key={group.slug}
                                         href={route("management.permissions.group.show", { group: group.slug })}
-                                        className={group.active ? "bg-forever-800" : ""}
+                                        className={group.active ? "bg-surface" : ""}
                                     >
                                         {group.name}
                                     </Dropdown.Link>
@@ -137,7 +137,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="border-b-2 border-camel-600">
+                            <tr className="border-b-2 border-line">
                                 <th className="px-4 py-3 text-left">Discord Role</th>
                                 {permissions.map((permission) => (
                                     <th key={permission.id} className="px-4 py-3 text-center">
@@ -153,7 +153,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
                                 const disabled = isRoleDisabled(role);
 
                                 return (
-                                    <tr key={role.id} className="border-b border-camel-600/30 hover:bg-camel-600/10">
+                                    <tr key={role.id} className="border-b border-line/30 hover:bg-accent/10">
                                         <td className="px-4 py-3 font-medium">{role.name}</td>
                                         {permissions.map((permission) => {
                                             const enabled = hasPermission(role, permission);

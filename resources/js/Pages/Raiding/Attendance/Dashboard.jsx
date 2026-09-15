@@ -18,7 +18,7 @@ function formatAbsenceDate(isoDate) {
 function BoxLabel({ icon, label }) {
     return (
         <p className="flex items-center gap-2 align-top text-sm text-gray-400">
-            {icon && <Icon icon={icon} style="light" className="text-camel-400" />}
+            {icon && <Icon icon={icon} style="light" className="text-body" />}
             <span>{label}</span>
         </p>
     );
@@ -26,9 +26,9 @@ function BoxLabel({ icon, label }) {
 
 function StatBox({ icon, label, value, subLabel, subText, className }) {
     return (
-        <div className={`flex flex-col rounded border border-camel-600 p-4${className ? ` ${className}` : ""}`}>
+        <div className={`flex flex-col rounded border border-line p-4${className ? ` ${className}` : ""}`}>
             <BoxLabel icon={icon} label={label} />
-            <p className="mt-1 grow align-top text-3xl font-bold text-camel-400">{value ?? "–"}</p>
+            <p className="mt-1 grow align-top text-3xl font-bold text-body">{value ?? "–"}</p>
             {subText && <p className="mt-1 grow text-xs text-gray-400">{subText}</p>}
             {subLabel && <p className="mt-2 grow text-xs text-gray-500">{subLabel}</p>}
         </div>
@@ -37,7 +37,7 @@ function StatBox({ icon, label, value, subLabel, subText, className }) {
 
 function PlayerChip({ player }) {
     return (
-        <span className="inline-flex items-center gap-1 rounded bg-forever-800 px-2 py-1 text-xs text-white">
+        <span className="inline-flex items-center gap-1 rounded bg-surface px-2 py-1 text-xs text-white">
             {player.playable_class?.icon_url && (
                 <img
                     src={player.playable_class.icon_url}
@@ -52,9 +52,9 @@ function PlayerChip({ player }) {
 
 function PlayerListBox({ icon, label, players }) {
     return (
-        <div className="rounded border border-camel-600 p-4">
+        <div className="rounded border border-line p-4">
             <BoxLabel icon={icon} label={label} />
-            <p className="mt-1 text-3xl font-bold text-camel-400">{players.length}</p>
+            <p className="mt-1 text-3xl font-bold text-body">{players.length}</p>
             {players.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
                     {players.map((player) => (
@@ -71,16 +71,16 @@ function BenchedByTagBox({ icon, label, groups }) {
     const total = entries.reduce((sum, [, players]) => sum + players.length, 0);
 
     return (
-        <div className="rounded border border-camel-600 p-4">
+        <div className="rounded border border-line p-4">
             <BoxLabel icon={icon} label={label} />
-            <p className="mt-1 text-3xl font-bold text-camel-400">{total}</p>
+            <p className="mt-1 text-3xl font-bold text-body">{total}</p>
             {entries.length === 0 ? (
                 <p className="mt-3 text-sm text-gray-500">No benched players this week.</p>
             ) : (
                 <div className="mt-3 flex flex-col gap-2">
                     {entries.map(([tag, players]) => (
                         <div key={tag}>
-                            <p className="text-xs font-semibold text-camel-300">{tag}</p>
+                            <p className="text-xs font-semibold text-body-bright">{tag}</p>
                             <div className="mt-1 flex flex-wrap gap-1">
                                 {players.map((player) => (
                                     <PlayerChip key={player.name} player={player} />
@@ -96,7 +96,7 @@ function BenchedByTagBox({ icon, label, groups }) {
 
 function SkeletonBox() {
     return (
-        <div className="animate-pulse rounded border border-camel-600/30 p-4">
+        <div className="animate-pulse rounded border border-line/30 p-4">
             <div className="mb-2 h-3 w-1/2 rounded bg-gray-700" />
             <div className="h-8 w-1/3 rounded bg-gray-700" />
         </div>
@@ -105,7 +105,7 @@ function SkeletonBox() {
 
 function SkeletonPlayerBox() {
     return (
-        <div className="animate-pulse rounded border border-camel-600/30 p-4">
+        <div className="animate-pulse rounded border border-line/30 p-4">
             <div className="mb-2 h-3 w-1/2 rounded bg-gray-700" />
             <div className="mb-3 h-8 w-1/4 rounded bg-gray-700" />
             <div className="flex flex-wrap gap-1">
@@ -119,7 +119,7 @@ function SkeletonPlayerBox() {
 
 function UpcomingAbsencesBox({ icon, absences }) {
     return (
-        <div className="flex flex-col rounded border border-camel-600 p-4">
+        <div className="flex flex-col rounded border border-line p-4">
             <BoxLabel icon={icon} label="Upcoming planned absences" />
             {absences.length === 0 ? (
                 <p className="mt-3 text-sm text-gray-500">No upcoming absences.</p>
@@ -127,7 +127,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
                 <ul className="mt-3 flex flex-col gap-2">
                     {absences.map((absence) => (
                         <li key={absence.id} className="flex flex-col">
-                            <span className="flex items-center gap-2 text-sm font-semibold text-camel-400">
+                            <span className="flex items-center gap-2 text-sm font-semibold text-body">
                                 {absence.character?.playable_class?.icon_url && (
                                     <img
                                         src={absence.character.playable_class.icon_url}
@@ -148,7 +148,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
             )}
             <Link
                 href={route("raiding.absences.index")}
-                className="mt-3 inline-flex items-center gap-1 text-sm text-camel-400 hover:text-camel-300"
+                className="mt-3 inline-flex items-center gap-1 text-sm text-body hover:text-body-bright"
             >
                 See all <Icon icon="arrow-right" style="light" />
             </Link>
@@ -252,10 +252,10 @@ function PlayerListRows({ stats }) {
                 <UpcomingAbsencesBox icon="umbrella-beach" absences={stats.upcomingAbsences} />
                 <Link
                     href={route("raiding.attendance.graphs.index")}
-                    className="flex items-center gap-4 rounded border border-camel-600 p-4 transition-colors hover:bg-camel-600/20"
+                    className="flex items-center gap-4 rounded border border-line p-4 transition-colors hover:bg-accent/20"
                 >
                     <div className="text-center">
-                        <Icon icon="chart-scatter" style="light" className="text-3xl text-camel-400" />
+                        <Icon icon="chart-scatter" style="light" className="text-3xl text-body" />
                     </div>
                     <div className="flex flex-col gap-1">
                         <h3 className="text-lg font-semibold">Attendance distribution</h3>
@@ -266,10 +266,10 @@ function PlayerListRows({ stats }) {
                 </Link>
                 <Link
                     href={route("raiding.attendance.matrix")}
-                    className="flex items-center gap-4 rounded border border-camel-600 p-4 transition-colors hover:bg-camel-600/20"
+                    className="flex items-center gap-4 rounded border border-line p-4 transition-colors hover:bg-accent/20"
                 >
                     <div className="text-center">
-                        <Icon icon="table" style="light" className="text-3xl text-camel-400" />
+                        <Icon icon="table" style="light" className="text-3xl text-body" />
                     </div>
                     <div className="flex flex-col gap-1">
                         <h3 className="text-lg font-semibold">Full attendance matrix</h3>

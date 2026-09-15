@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Attributes\UsesTheme;
+use App\Enums\Theme;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PlannedAbsenceResource;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+#[UsesTheme(Theme::Forever)]
 class AccountController extends Controller
 {
     /**

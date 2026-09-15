@@ -52,14 +52,14 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
             <button
                 type="button"
                 onClick={open}
-                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-forever-700 ${value ? "border-camel-500 bg-forever-800 text-white" : "border-camel-600 bg-forever-800 text-gray-400"}`}
+                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-surface-raised ${value ? "border-focus-ring bg-surface text-white" : "border-line bg-surface text-gray-400"}`}
             >
                 <span className="flex items-center gap-2 truncate">
-                    <Icon icon="calendar" style="regular" className="shrink-0 text-camel-500" />
+                    <Icon icon="calendar" style="regular" className="shrink-0 text-body-muted" />
                     {formattedValue ? `${label}: ${formattedValue}` : label}
                 </span>
                 {value && (
-                    <span className="ml-2 shrink-0 rounded-full bg-camel-600 px-1.5 py-0.5 text-xs text-white">
+                    <span className="ml-2 shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-xs text-white">
                         set
                     </span>
                 )}
@@ -79,7 +79,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
                         min={min}
                         max={max ?? defaultMax}
                         onChange={(e) => setDraft(e.target.value)}
-                        className="block w-full bg-forever-800/50 text-white scheme-dark"
+                        className="block w-full bg-surface/50 text-white scheme-dark"
                     />
                     <div className="mt-6 flex justify-between gap-3">
                         <button
@@ -94,14 +94,14 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
                             <button
                                 type="button"
                                 onClick={close}
-                                className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-forever-600"
+                                className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-surface-raised"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={apply}
-                                className="inline-flex items-center rounded-md border border-transparent bg-camel-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-camel-700"
+                                className="inline-flex items-center rounded-md border border-transparent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-accent-hover"
                             >
                                 Apply
                             </button>

@@ -114,7 +114,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div className="mb-4 rounded-lg border border-camel-600 p-4">
+                    <div className="mb-4 rounded-lg border border-line p-4">
                         <h2 className="mb-2 flex flex-row items-center">
                             <Icon icon="user-friends" style="solid" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Loot council members</span>
@@ -130,15 +130,15 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             <div className="mt-4">
                                 {councillors.map((councillor) => (
                                     <div key={councillor.id} className="mb-2 flex flex-row items-center gap-4">
-                                        <div className="border-forever-600 bg-forever-800/30 flex h-12 flex-1 items-center gap-3 rounded-md border p-2">
+                                        <div className="border-line bg-surface/30 flex h-12 flex-1 items-center gap-3 rounded-md border p-2">
                                             {councillor.portrait_url ? (
                                                 <img
                                                     src={councillor.portrait_url}
                                                     alt={councillor.name}
-                                                    className="h-8 w-8 rounded border border-camel-600/30"
+                                                    className="h-8 w-8 rounded border border-line/30"
                                                 />
                                             ) : (
-                                                <div className="h-8 w-8 rounded border border-camel-600/30 bg-gray-700" />
+                                                <div className="h-8 w-8 rounded border border-line/30 bg-gray-700" />
                                             )}
                                             <span>{councillor.name}</span>
                                         </div>
@@ -156,7 +156,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                                 ))}
                             </div>
                         ) : (
-                            <p className="border-forever-600 my-2 rounded-md border p-2 text-sm text-gray-400">
+                            <p className="border-line my-2 rounded-md border p-2 text-sm text-gray-400">
                                 No loot councillors configured.
                             </p>
                         )}
@@ -172,7 +172,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             />
                         </div>
                     </div>
-                    <div className="mb-4 rounded-lg border border-camel-600 p-4">
+                    <div className="mb-4 rounded-lg border border-line p-4">
                         <h2 className="mb-2 flex flex-row items-center">
                             <Icon icon="analytics" style="solid" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Ranks to track attendance</span>
@@ -184,13 +184,13 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             The fewer ranks you select, the more responsive the addon will be.
                         </p>
                         {ranks.length > 0 ? (
-                            <div className="border-forever-600 mt-4 rounded-md border">
+                            <div className="border-line mt-4 rounded-md border">
                                 {ranks.map((rank) => (
                                     <div
                                         key={rank.id}
-                                        className="border-b-forever-600 flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
+                                        className="border-b-line flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
                                     >
-                                        <div className="border-forever-600 bg-forever-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
+                                        <div className="border-line bg-surface/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
                                             <Checkbox
                                                 checked={rank.count_attendance}
                                                 onChange={() =>
@@ -207,7 +207,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             <p className="mt-2 text-sm text-gray-400">No ranks available.</p>
                         )}
                     </div>
-                    <div className="mb-4 rounded-lg border border-camel-600 p-4">
+                    <div className="mb-4 rounded-lg border border-line p-4">
                         <h2 className="mb-2 flex flex-row items-center">
                             <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Warcraft Logs tags</span>
@@ -216,13 +216,13 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             Select which Warcraft Logs tags should be used for attendance calculations.
                         </p>
                         {tags.length > 0 ? (
-                            <div className="border-forever-600 mt-4 rounded-md border">
+                            <div className="border-line mt-4 rounded-md border">
                                 {tags.map((tag) => (
                                     <div
                                         key={tag.id}
-                                        className="border-b-forever-600 flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
+                                        className="border-b-line flex flex-row items-center border-b first:rounded-t-md last:rounded-b-md"
                                     >
-                                        <div className="border-forever-600 bg-forever-800/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
+                                        <div className="border-line bg-surface/50 mr-2 flex h-12 w-12 items-center justify-center border p-2">
                                             <Checkbox
                                                 checked={tag.count_attendance}
                                                 onChange={() => handleToggleTagAttendance(tag.id, tag.count_attendance)}

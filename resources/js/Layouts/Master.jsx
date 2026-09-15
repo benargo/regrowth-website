@@ -11,7 +11,7 @@ import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 import SearchPalette from "@/Components/Search/SearchPalette";
 
 export default function Master({ title, children }) {
-    const { auth, flash, discordInviteUrl } = usePage().props;
+    const { auth, flash, discordInviteUrl, theme } = usePage().props;
     const user = auth?.user;
     const impersonating = auth?.impersonating;
 
@@ -19,13 +19,6 @@ export default function Master({ title, children }) {
     const [flashError, setFlashError] = useState(flash?.error);
     const [flashSuccess, setFlashSuccess] = useState(flash?.success);
     const [searchOpen, setSearchOpen] = useState(false);
-
-    useEffect(() => {
-        document.body.classList.add("bg-forever-800", "bg-forever-parchment");
-        return () => {
-            document.body.classList.remove("bg-forever-800", "bg-forever-parchment");
-        };
-    }, []);
 
     // Update flash messages when props change
     useEffect(() => {
@@ -51,10 +44,10 @@ export default function Master({ title, children }) {
 
             <div className="min-h-screen text-white">
                 <div className="fixed inset-x-0 top-4 z-20 px-4">
-                    <nav className="bg-forever-900/80 border-forever-700/50 grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4">
+                    <nav className="bg-surface-sunken/80 border-surface-raised/50 grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4">
                         {/* Mobile menu toggle */}
                         <button
-                            className="hover:bg-forever-700 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
+                            className="hover:bg-surface-raised inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
                             type="button"
                             onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                             aria-controls="mobile-menu"
@@ -83,7 +76,7 @@ export default function Master({ title, children }) {
 
                         {/* Mobile search button */}
                         <button
-                            className="hover:bg-forever-700 inline-flex items-center justify-center justify-self-end rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
+                            className="hover:bg-surface-raised inline-flex items-center justify-center justify-self-end rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
                             type="button"
                             onClick={() => setSearchOpen(true)}
                             aria-label="Search"
@@ -116,11 +109,11 @@ export default function Master({ title, children }) {
                                 <button
                                     type="button"
                                     onClick={() => setSearchOpen(true)}
-                                    className="hover:bg-forever-700 border-forever-500 bg-forever-800 flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:ring-camel-500 focus:outline-hidden"
+                                    className="hover:bg-surface-raised border-focus-ring bg-surface flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:ring-focus-ring focus:outline-hidden"
                                 >
                                     <Icon icon="search" style="solid" className="h-4 w-4" />
                                     <span>Search</span>
-                                    <span className="bg-forever-700 rounded px-1.5 py-0.5 text-xs text-gray-500">
+                                    <span className="bg-surface-raised rounded px-1.5 py-0.5 text-xs text-gray-500">
                                         ⌘K
                                     </span>
                                 </button>
@@ -186,7 +179,7 @@ export default function Master({ title, children }) {
 
                 {/* Mobile menu */}
                 <div
-                    className={`bg-forever-900 fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto ${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`}
+                    className={`bg-surface-sunken fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto ${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`}
                     id="mobile-menu"
                 >
                     <div className="space-y-1 px-2 pt-2 pb-3">
@@ -208,7 +201,7 @@ export default function Master({ title, children }) {
                                 setShowingNavigationDropdown(false);
                                 setSearchOpen(true);
                             }}
-                            className="flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-camel-700 hover:text-white"
+                            className="flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-accent-hover hover:text-white"
                         >
                             <Icon icon="search" style="solid" className="mr-2 h-6" />
                             Search
@@ -219,7 +212,7 @@ export default function Master({ title, children }) {
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-t border-camel-700 pt-4 pb-3">
+                    <div className="border-t border-accent-hover pt-4 pb-3">
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
@@ -237,7 +230,7 @@ export default function Master({ title, children }) {
                                 </div>
                                 <Link
                                     href={route("account.index")}
-                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-camel-700 hover:text-white"
+                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
                                 >
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
@@ -245,7 +238,7 @@ export default function Master({ title, children }) {
                                 {impersonating && (
                                     <Link
                                         href={route("auth.return-to-self")}
-                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-camel-700 hover:text-white"
+                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
                                     >
                                         <Icon icon="undo" style="regular" className="mr-2" />
                                         Return to my account
@@ -254,7 +247,7 @@ export default function Master({ title, children }) {
                                 <Can permission="view-officer-dashboard">
                                     <Link
                                         href={route("management.dashboard")}
-                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-camel-700 hover:text-white"
+                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
                                     >
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Control Panel
@@ -264,7 +257,7 @@ export default function Master({ title, children }) {
                                     href={route("logout")}
                                     method="post"
                                     as="button"
-                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-camel-700 hover:text-white"
+                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
                                 >
                                     <Icon icon="sign-out" style="regular" className="mr-2" />
                                     Logout
@@ -304,11 +297,13 @@ export default function Master({ title, children }) {
                                     <span className="sr-only">Regrowth</span>
                                 </Link>
                                 <img
-                                    src="/images/logo_forever.webp"
-                                    alt="World of Warcraft: Forever logo"
+                                    src={theme === "forever" ? "/images/logo_forever.webp" : "/images/logo_tbcclassic.webp"}
+                                    alt={theme === "forever" ? "World of Warcraft: Forever logo" : "World of Warcraft Classic logo"}
                                     className="h-20 w-1/2 flex-1 object-contain md:mr-4 md:w-auto"
                                 />
-                                <span className="sr-only">World of Warcraft: Forever</span>
+                                <span className="sr-only">
+                                    {theme === "forever" ? "World of Warcraft: Forever" : "World of Warcraft: Classic"}
+                                </span>
                             </div>
                             {/* Footer Links */}
                             <nav className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2">

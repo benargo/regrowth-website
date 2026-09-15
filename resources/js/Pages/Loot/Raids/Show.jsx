@@ -50,7 +50,7 @@ function BossItems({ prepared, weightThreshold }) {
         <div className="space-y-4">
             {groupNames.map((groupName) => (
                 <div key={groupName} className="mb-8 space-y-2">
-                    <h4 className="text-sm font-semibold text-camel-500">{groupName}</h4>
+                    <h4 className="text-sm font-semibold text-body-muted">{groupName}</h4>
                     {groups[groupName].map((item) => (
                         <ItemRow key={item.id} item={item} weightThreshold={weightThreshold} />
                     ))}
@@ -174,7 +174,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
             <ToolNav>
                 <Link
                     href={route("loot.index")}
-                    className="hover:border-primary hover:bg-forever-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                    className="hover:border-primary hover:bg-surface active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                 >
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
                     <span>Loot bias tool</span>
@@ -193,7 +193,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                             style="amber"
                             headerRight={
                                 boss.comments_count > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-camel-600/20 px-2 py-1 text-xs font-semibold text-camel-600">
+                                    <span className="inline-flex items-center gap-1 rounded bg-accent/20 px-2 py-1 text-xs font-semibold text-line">
                                         <Icon icon="comments" style="solid" className="h-4 w-4" />
                                         {boss.comments_count}
                                     </span>
@@ -217,7 +217,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
                             style="amber"
                             headerRight={
                                 raid.data.trash_comments_count > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-camel-600/20 px-2 py-1 text-xs font-semibold text-camel-600">
+                                    <span className="inline-flex items-center gap-1 rounded bg-accent/20 px-2 py-1 text-xs font-semibold text-line">
                                         <Icon icon="comments" style="solid" className="h-4 w-4" />
                                         {raid.data.trash_comments_count}
                                     </span>

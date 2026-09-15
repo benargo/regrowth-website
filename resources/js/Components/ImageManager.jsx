@@ -22,7 +22,7 @@ function SortableImage({ url, onDelete, disabled }) {
             {...attributes}
             {...listeners}
         >
-            <img src={url} alt="" className="h-32 w-32 rounded border border-camel-600 object-cover" />
+            <img src={url} alt="" className="h-32 w-32 rounded border border-line object-cover" />
             <button
                 type="button"
                 disabled={disabled}
@@ -129,13 +129,13 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors ${
                     isDraggingFile
-                        ? "border-camel-400 bg-camel-600/10 text-camel-300"
-                        : "border-gray-600 text-gray-400 hover:border-camel-600 hover:text-gray-300"
+                        ? "border-body bg-accent/10 text-body-bright"
+                        : "border-gray-600 text-gray-400 hover:border-line hover:text-gray-300"
                 }`}
             >
                 {saving ? (
                     <>
-                        <Icon icon="spinner" style="solid" className="fa-spin text-2xl text-camel-400" />
+                        <Icon icon="spinner" style="solid" className="fa-spin text-2xl text-body" />
                         <span className="text-sm">Uploading…</span>
                     </>
                 ) : isDraggingFile ? (
@@ -147,7 +147,7 @@ export default function ImageManager({ images, saving, error, onUpload, onDelete
                     <>
                         <Icon icon="cloud-upload" style="solid" className="text-2xl" />
                         <span className="text-sm">
-                            Drag &amp; drop images here, or <span className="text-camel-400 underline">browse</span>
+                            Drag &amp; drop images here, or <span className="text-body underline">browse</span>
                         </span>
                         <span className="text-xs text-gray-500">JPEG, PNG, WEBP · max 2 MB each</span>
                     </>

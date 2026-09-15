@@ -52,6 +52,19 @@ class AccountControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_renders_with_the_forever_theme(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('account.index'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('theme', 'forever')
+            ->etc()
+        );
+    }
+
+    #[Test]
     public function index_returns_user_roles(): void
     {
         $role = DiscordRole::firstOrCreate(

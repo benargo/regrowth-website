@@ -17,8 +17,8 @@ function GuildTagsLoadingSkeleton() {
         <div className="max-h-64 space-y-2 overflow-y-auto">
             {[...Array(5)].map((_, index) => (
                 <div key={index} className="flex animate-pulse items-center gap-3 p-2">
-                    <div className="h-4 w-4 rounded bg-camel-600/30"></div>
-                    <div className="h-4 w-32 rounded bg-camel-600/30"></div>
+                    <div className="h-4 w-4 rounded bg-accent/30"></div>
+                    <div className="h-4 w-32 rounded bg-accent/30"></div>
                 </div>
             ))}
         </div>
@@ -35,13 +35,13 @@ function GuildTagsList({ allGuildTags, selectedTagIds, onToggleTag }) {
             {allGuildTags.data.map((tag) => (
                 <label
                     key={tag.id}
-                    className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-camel-600/10"
+                    className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-accent/10"
                 >
                     <input
                         type="checkbox"
                         checked={selectedTagIds.includes(tag.id)}
                         onChange={() => onToggleTag(tag.id)}
-                        className="bg-forever-800/50 h-4 w-4 rounded border-camel-600 text-camel-600 focus:ring-camel-500"
+                        className="bg-surface/50 h-4 w-4 rounded border-line text-line focus:ring-focus-ring"
                     />
                     <span className="text-white">{tag.name}</span>
                 </label>
@@ -209,7 +209,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                                 <p className="flex justify-center md:justify-start">
                                     <button
                                         onClick={() => openEditModal(phase)}
-                                        className="mt-2 flex items-center gap-4 rounded border border-camel-600 px-2 py-3 transition-colors hover:bg-camel-600/20"
+                                        className="mt-2 flex items-center gap-4 rounded border border-line px-2 py-3 transition-colors hover:bg-accent/20"
                                     >
                                         <div className="mx-1 text-center">
                                             <Icon icon="edit" style="regular" className="h-4 w-4" />
@@ -270,7 +270,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                                                         onChange={() =>
                                                             toggleCountAttendance(tag.id, tag.count_attendance)
                                                         }
-                                                        className="bg-forever-800/50 h-4 w-4 rounded border-camel-600 text-camel-600 focus:ring-camel-500"
+                                                        className="bg-surface/50 h-4 w-4 rounded border-line text-line focus:ring-focus-ring"
                                                     />
                                                 </span>
                                             </div>
@@ -282,7 +282,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                                 <p className="flex justify-center md:justify-start">
                                     <button
                                         onClick={() => openTagsModal(phase)}
-                                        className="flex items-center gap-4 rounded border border-camel-600 px-2 py-3 transition-colors hover:bg-camel-600/20"
+                                        className="flex items-center gap-4 rounded border border-line px-2 py-3 transition-colors hover:bg-accent/20"
                                     >
                                         <div className="mx-1 text-center">
                                             <Icon icon="tags" style="solid" className="h-4 w-4" />
@@ -311,7 +311,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                             type="datetime-local"
                             value={data.start_date}
                             onChange={(e) => setData("start_date", e.target.value)}
-                            className="bg-forever-800/50 mt-1 block w-full text-white"
+                            className="bg-surface/50 mt-1 block w-full text-white"
                         />
                         <InputError message={errors.start_date} className="mt-2" />
                     </div>

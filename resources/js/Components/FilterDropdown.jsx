@@ -34,27 +34,27 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between rounded border border-camel-600 bg-forever-800 px-4 py-2 text-left text-white transition-colors hover:bg-forever-700"
+                className="flex w-full items-center justify-between rounded border border-line bg-surface px-4 py-2 text-left text-white transition-colors hover:bg-surface-raised"
             >
                 <span className="truncate text-sm">{buttonText}</span>
                 <Icon
                     icon="chevron-down"
-                    className={`ml-2 shrink-0 text-camel-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    className={`ml-2 shrink-0 text-body-muted transition-transform ${isOpen ? "rotate-180" : ""}`}
                 />
             </button>
 
             {isOpen && (
-                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded border border-camel-600 bg-forever-800 shadow-lg">
-                    <div className="flex border-b border-forever-600">
+                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded border border-line bg-surface shadow-lg">
+                    <div className="flex border-b border-line">
                         <button
                             onClick={selectAll}
-                            className="flex-1 px-3 py-2 text-sm text-camel-500 transition-colors hover:bg-forever-700"
+                            className="flex-1 px-3 py-2 text-sm text-body-muted transition-colors hover:bg-surface-raised"
                         >
                             All
                         </button>
                         <button
                             onClick={selectNone}
-                            className="flex-1 border-l border-forever-600 px-3 py-2 text-sm text-camel-500 transition-colors hover:bg-forever-700"
+                            className="flex-1 border-l border-line px-3 py-2 text-sm text-body-muted transition-colors hover:bg-surface-raised"
                         >
                             None
                         </button>
@@ -63,13 +63,13 @@ export default function FilterDropdown({ label, options, selected, onChange, sho
                         {options.map((option) => (
                             <label
                                 key={option.id}
-                                className="flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-forever-700"
+                                className="flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-raised"
                             >
                                 <input
                                     type="checkbox"
                                     checked={selected.includes(option.id)}
                                     onChange={() => toggleOption(option.id)}
-                                    className="h-4 w-4 rounded border-camel-600 bg-forever-900 text-camel-600 focus:ring-camel-500 focus:ring-offset-forever-600"
+                                    className="h-4 w-4 rounded border-line bg-surface-sunken text-line focus:ring-focus-ring focus:ring-offset-line"
                                 />
                                 {showIcon && option.media?.assets?.[0]?.value && (
                                     <img src={option.media.assets[0].value} alt="" className="h-5 w-5 rounded" />

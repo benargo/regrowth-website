@@ -89,7 +89,7 @@ export default function Comments({ comments, replies }) {
             <ToolNav>
                 <Link
                     href={route("loot.index")}
-                    className="hover:border-primary hover:bg-forever-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                    className="hover:border-primary hover:bg-surface active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                 >
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
                     <span>Back to loot biases</span>
@@ -111,10 +111,10 @@ export default function Comments({ comments, replies }) {
                                                 item: group.item.id,
                                                 slug: group.item.slug,
                                             })}
-                                            className="flex items-center gap-3 transition-colors hover:text-camel-300"
+                                            className="flex items-center gap-3 transition-colors hover:text-body-bright"
                                         >
                                             {group.item?.icon && <div className="h-8 w-8 flex-none" />}
-                                            <h3 className="text-lg font-semibold text-camel-400 hover:text-camel-300">
+                                            <h3 className="text-lg font-semibold text-body hover:text-body-bright">
                                                 {group.item?.name ?? `Item #${itemId}`}
                                             </h3>
                                         </Link>

@@ -58,6 +58,37 @@
     --color-camel-800: #5d4a32;
     --color-camel-900: #3e3123;
 
+    /* Classic — warm brown/parchment, the pre-Forever theme */
+    --color-brown: #231a13;
+    --color-brown-100: #f5f0eb;
+    --color-brown-200: #e6ddd3;
+    --color-brown-300: #d1c3b4;
+    --color-brown-400: #b8a48f;
+    --color-brown-500: #9a826a;
+    --color-brown-600: #7a6249;
+    --color-brown-700: #5c472f;
+    --color-brown-800: #4a3d32;
+    --color-brown-900: #372d22;
+
+    /*
+     * Theme role tokens. Each resolves via the [data-theme] blocks below, so a
+     * component written once (e.g. `bg-surface`) renders correctly in both
+     * Classic and Forever without any conditional branching.
+     */
+    --color-surface: var(--theme-surface);
+    --color-surface-raised: var(--theme-surface-raised);
+    --color-surface-sunken: var(--theme-surface-sunken);
+    --color-surface-highlight: var(--theme-surface-highlight);
+    --color-heading: var(--theme-heading);
+    --color-body: var(--theme-body);
+    --color-body-muted: var(--theme-body-muted);
+    --color-body-bright: var(--theme-body-bright);
+    --color-line: var(--theme-line);
+    --color-accent: var(--theme-accent);
+    --color-accent-hover: var(--theme-accent-hover);
+    --color-accent-active: var(--theme-accent-active);
+    --color-focus-ring: var(--theme-focus-ring);
+
     /* affect type colors */
     --color-affect-curse: #9600ff;
     --color-affect-disease: #966400;
@@ -130,6 +161,46 @@
 }
 
 /*
+ * Theme values for the role tokens declared above. `data-theme` is stamped
+ * server-side on <html> (see app.blade.php) from the shared `theme` Inertia
+ * prop, resolved via #[UsesTheme] on the matched controller/action (see
+ * App\Attributes\UsesTheme), so the correct block applies before first paint.
+ * It is kept in sync on client-side navigation by app.jsx's `navigate`
+ * listener, since the Blade shell only renders on a full page load.
+ */
+[data-theme="classic"] {
+    --theme-surface: var(--color-brown-800);
+    --theme-surface-raised: var(--color-brown-700);
+    --theme-surface-sunken: var(--color-brown-900);
+    --theme-surface-highlight: var(--color-brown-600);
+    --theme-heading: var(--color-amber-500);
+    --theme-body: var(--color-amber-400);
+    --theme-body-muted: var(--color-amber-500);
+    --theme-body-bright: var(--color-amber-300);
+    --theme-line: var(--color-amber-600);
+    --theme-accent: var(--color-amber-600);
+    --theme-accent-hover: var(--color-amber-700);
+    --theme-accent-active: var(--color-amber-800);
+    --theme-focus-ring: var(--color-amber-500);
+}
+
+[data-theme="forever"] {
+    --theme-surface: var(--color-forever-800);
+    --theme-surface-raised: var(--color-forever-700);
+    --theme-surface-sunken: var(--color-forever-900);
+    --theme-surface-highlight: var(--color-forever-600);
+    --theme-heading: var(--color-camel-200);
+    --theme-body: var(--color-camel-400);
+    --theme-body-muted: var(--color-camel-500);
+    --theme-body-bright: var(--color-camel-300);
+    --theme-line: var(--color-camel-600);
+    --theme-accent: var(--color-camel-600);
+    --theme-accent-hover: var(--color-camel-700);
+    --theme-accent-active: var(--color-camel-800);
+    --theme-focus-ring: var(--color-camel-500);
+}
+
+/*
  * Safelist replacement (v4 has no regex safelist).
  * These classes are built dynamically in JSX from data; the scanner cannot
  * see them as literals, so `@source inline()` forces generation.
@@ -187,7 +258,19 @@
     h4,
     h5,
     h6 {
-        font-family: var(--font-heading);
+        font-family: var(--font-serif);
+    }
+
+    /*
+     * Body background per theme, replacing the client-side body-class toggle
+     * that used to live in Master.jsx's useEffect (which ran after first
+     * paint and caused a flash of the wrong theme).
+     */
+    body {
+        background-color: var(--color-surface);
+        background-image: url("../images/bg_brown_texture_repeat.jpg");
+        background-position: center -200px;
+        background-repeat: repeat;
     }
 }
 
@@ -322,7 +405,7 @@ svg.recharts-surface {
     background-size: cover;
 }
 
-.bg-forever-parchment {
+.bg-parchment-texture {
     background-image: url("../images/bg_brown_texture_repeat.jpg");
     background-position: center -200px;
     background-repeat: repeat;

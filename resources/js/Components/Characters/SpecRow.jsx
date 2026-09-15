@@ -6,15 +6,15 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
             <label
                 className={`flex flex-1 cursor-pointer items-center gap-3 rounded border px-4 py-3 transition-all ${
                     isSelected
-                        ? "border-camel-500/50 bg-camel-900/20"
-                        : "border-forever-600 bg-forever-800/30 hover:border-forever-500"
+                        ? "border-focus-ring/50 bg-accent/20"
+                        : "border-line bg-surface/30 hover:border-focus-ring"
                 }`}
             >
                 <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={onToggle}
-                    className="bg-forever-900 h-4 w-4 rounded border-camel-600 text-camel-600 focus:ring-camel-500 focus:ring-offset-0"
+                    className="bg-surface-sunken h-4 w-4 rounded border-line text-line focus:ring-focus-ring focus:ring-offset-0"
                 />
 
                 <SpecIcon specialization={spec} size={6} />
@@ -30,8 +30,8 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
             <label
                 className={`flex flex-initial cursor-pointer items-center gap-3 rounded border px-4 py-3 transition-all ${
                     isRaidSpec
-                        ? "border-camel-500/50 bg-camel-900/20"
-                        : "border-forever-600 bg-forever-800/30 hover:border-forever-500"
+                        ? "border-focus-ring/50 bg-accent/20"
+                        : "border-line bg-surface/30 hover:border-focus-ring"
                 }`}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -40,7 +40,7 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
                     checked={isRaidSpec}
                     onChange={onSetRaid}
                     disabled={disabled || !isSelected}
-                    className="bg-forever-900 h-3.5 w-3.5 border-camel-600 text-camel-500 focus:ring-camel-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                    className="bg-surface-sunken h-3.5 w-3.5 border-line text-body-muted focus:ring-focus-ring focus:ring-offset-0 disabled:cursor-not-allowed"
                 />
                 <span className="hidden sm:inline">raid spec</span>
             </label>

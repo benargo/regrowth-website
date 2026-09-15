@@ -75,7 +75,7 @@ export default function CommentItem({
 
     if (comment.is_deleted) {
         return (
-            <div className={`border-forever-600 bg-forever-800/50 rounded-lg border border-dashed ${isReply ? "p-3" : "p-4"}`}>
+            <div className={`border-line bg-surface/50 rounded-lg border border-dashed ${isReply ? "p-3" : "p-4"}`}>
                 <div className="flex items-center gap-3">
                     <img
                         src={comment.user.avatar}
@@ -92,7 +92,7 @@ export default function CommentItem({
 
     return (
         <>
-            <div className={`border-forever-600 bg-forever-800 rounded-lg border ${isReply ? "p-3" : "p-4"}`}>
+            <div className={`border-line bg-surface rounded-lg border ${isReply ? "p-3" : "p-4"}`}>
                 {/* Header with user info and timestamp */}
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -136,12 +136,12 @@ export default function CommentItem({
 
                 {/* Actions */}
                 {!isEditing && (
-                    <div className="border-forever-600 mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
+                    <div className="border-line mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
                         {!readOnly && onReply && comment.permissions.reply && canReplyToComments && (
                             <button
                                 type="button"
                                 onClick={() => onReply()}
-                                className="text-camel-400 transition-colors hover:text-camel-300"
+                                className="text-body transition-colors hover:text-body-bright"
                             >
                                 <Icon icon="reply" style="solid" className="mr-1" /> Reply
                             </button>
@@ -149,7 +149,7 @@ export default function CommentItem({
                         {!readOnly && comment.permissions.edit && (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="text-camel-400 transition-colors hover:text-camel-300"
+                                className="text-body transition-colors hover:text-body-bright"
                             >
                                 <Icon icon="edit" style="solid" className="mr-1" /> Edit
                             </button>
@@ -206,7 +206,7 @@ export default function CommentItem({
                                 {!readOnly && comment.permissions.react && userHasReacted() && (
                                     <Tooltip body="Click to remove your reaction.">
                                         <button
-                                            className="text-camel-400 transition-colors hover:text-camel-300"
+                                            className="text-body transition-colors hover:text-body-bright"
                                             onClick={handleReactionToggle}
                                         >
                                             <Icon icon="thumbs-up" style="solid" />
@@ -237,7 +237,7 @@ export default function CommentItem({
                                                 <img
                                                     src={reaction.user?.avatar}
                                                     alt={reaction.user?.display_name}
-                                                    className="border-forever-600 h-6 w-6 rounded-full border-2"
+                                                    className="border-line h-6 w-6 rounded-full border-2"
                                                 />
                                             </Tooltip>
                                         ))}

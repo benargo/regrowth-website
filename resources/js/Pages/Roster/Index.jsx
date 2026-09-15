@@ -20,26 +20,26 @@ function CharacterRowCells({ character, spec }) {
         <>
             <div
                 role="cell"
-                className={`border-b-forever-600 table-cell border-b px-4 align-middle py-3${character.is_known ? " border-l-2 border-l-camel-600/60" : ""}`}
+                className={`border-b-line table-cell border-b px-4 align-middle py-3${character.is_known ? " border-l-2 border-l-line/60" : ""}`}
             >
                 <span
                     className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-gray-400"}`}
                 >
                     {character.name}
                     {character.is_main && (
-                        <Pill bgColor="bg-camel-700" textColor="text-camel-200">
+                        <Pill bgColor="bg-accent-hover" textColor="text-heading">
                             Main
                         </Pill>
                     )}
                 </span>
             </div>
-            <div role="cell" className="border-b-forever-600 table-cell border-b px-4 py-3 align-middle text-gray-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
                 {character.level}
             </div>
-            <div role="cell" className="border-b-forever-600 table-cell border-b px-4 py-3 align-middle text-gray-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
                 {character.playable_race?.name ?? "—"}
             </div>
-            <div role="cell" className="border-b-forever-600 table-cell border-b px-4 py-3 align-middle">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle">
                 <div className="flex flex-row items-center gap-2">
                     <SpecIcon specialization={spec} playableClass={character.playable_class} />
                     <span className="text-gray-300">
@@ -49,7 +49,7 @@ function CharacterRowCells({ character, spec }) {
                     </span>
                 </div>
             </div>
-            <div role="cell" className="border-b-forever-600 table-cell border-b px-4 py-3 align-middle text-gray-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
                 {character.rank ?? "—"}
             </div>
         </>
@@ -64,7 +64,7 @@ function CharacterRow({ character }) {
             <Link
                 role="row"
                 href={route("characters.show", { character: character.id, slug: character.slug })}
-                className="border-b-forever-600/50 hover:bg-forever-800/50 table-row border-b transition-colors"
+                className="border-b-line/50 hover:bg-surface/50 table-row border-b transition-colors"
             >
                 <CharacterRowCells character={character} spec={spec} />
             </Link>
@@ -72,7 +72,7 @@ function CharacterRow({ character }) {
     }
 
     return (
-        <div role="row" className="border-forever-600/50 table-row border-b">
+        <div role="row" className="border-line/50 table-row border-b">
             <CharacterRowCells character={character} spec={spec} />
         </div>
     );
@@ -104,7 +104,7 @@ function CharacterCard({ character }) {
                 </div>
             </div>
             <div className="flex items-center text-sm">
-                <span className="text-camel-500">{character.rank ?? "—"}</span>
+                <span className="text-body-muted">{character.rank ?? "—"}</span>
             </div>
         </>
     );
@@ -116,37 +116,37 @@ function CharacterCard({ character }) {
                     character: character.id,
                     slug: character.slug,
                 })}
-                className="border-forever-600 bg-forever-800/50 block rounded-lg border-y border-r border-l-2 border-camel-600/60 p-4 transition-colors hover:border-camel-600/40"
+                className="border-line bg-surface/50 block rounded-lg border-y border-r border-l-2 border-line/60 p-4 transition-colors hover:border-line/40"
             >
                 {cardContent}
             </Link>
         );
     }
 
-    return <div className="border-forever-600 bg-forever-800/50 block rounded-lg border p-4">{cardContent}</div>;
+    return <div className="border-line bg-surface/50 block rounded-lg border p-4">{cardContent}</div>;
 }
 
 function IndexSkeleton() {
     return (
         <div className="animate-pulse">
             <div className="mb-8 space-y-6">
-                <div className="bg-forever-800 h-10 rounded"></div>
+                <div className="bg-surface h-10 rounded"></div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-forever-800 h-10 rounded"></div>
+                        <div key={i} className="bg-surface h-10 rounded"></div>
                     ))}
                 </div>
-                <div className="bg-forever-800 h-5 w-48 rounded"></div>
+                <div className="bg-surface h-5 w-48 rounded"></div>
             </div>
             <div className="hidden md:block">
-                <div className="bg-forever-800/50 mb-2 h-12 rounded"></div>
+                <div className="bg-surface/50 mb-2 h-12 rounded"></div>
                 {[...Array(10)].map((_, i) => (
-                    <div key={i} className="bg-forever-800/30 mb-1 h-14 rounded"></div>
+                    <div key={i} className="bg-surface/30 mb-1 h-14 rounded"></div>
                 ))}
             </div>
             <div className="space-y-4 md:hidden">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-forever-800/50 h-24 rounded-lg"></div>
+                    <div key={i} className="bg-surface/50 h-24 rounded-lg"></div>
                 ))}
             </div>
         </div>

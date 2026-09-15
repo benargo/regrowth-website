@@ -183,4 +183,13 @@ class HandleInertiaRequestsTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page->missing('phases'));
     }
+
+    // ==================== theme sharing ====================
+
+    #[Test]
+    public function it_shares_a_theme_prop(): void
+    {
+        $this->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('theme'));
+    }
 }

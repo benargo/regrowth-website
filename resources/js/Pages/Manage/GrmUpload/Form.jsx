@@ -19,7 +19,7 @@ function TallyStat({ label, value, colorClass }) {
     const animated = useCountUp(value);
 
     return (
-        <div className="flex flex-col items-center rounded bg-forever-800 px-2 py-1.5">
+        <div className="flex flex-col items-center rounded bg-surface px-2 py-1.5">
             <span className={`text-lg font-bold ${colorClass}`}>{animated}</span>
             <span className="text-center text-xs text-gray-400">{label}</span>
         </div>
@@ -223,7 +223,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                 <ol className="mb-6 list-inside list-decimal space-y-2">
                     <li>
                         Open{" "}
-                        <span className="inline-block rounded-xs border border-camel-800 bg-forever-800 p-1 font-mono font-bold">
+                        <span className="inline-block rounded-xs border border-accent-active bg-surface p-1 font-mono font-bold">
                             /grm export
                         </span>{" "}
                         in-game.
@@ -283,12 +283,12 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                     <textarea
                         name="grm_data"
                         rows="10"
-                        className={`mb-2 w-full rounded border bg-forever-800 p-4 text-white transition-colors ${
+                        className={`mb-2 w-full rounded border bg-surface p-4 text-white transition-colors ${
                             isDragging
-                                ? "border-blue-500 bg-forever-700"
+                                ? "border-blue-500 bg-surface-raised"
                                 : formErrors.grm_data
                                   ? "border-red-500"
-                                  : "border-forever-600"
+                                  : "border-line"
                         }`}
                         placeholder="Paste your GRM CSV data here, or drag and drop a CSV file."
                         value={data.grm_data}
@@ -339,7 +339,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                                 </span>
                                 <span>{animatedPercent}%</span>
                             </div>
-                            <div className="h-3 w-full overflow-hidden rounded-full bg-forever-700">
+                            <div className="h-3 w-full overflow-hidden rounded-full bg-surface-raised">
                                 <div
                                     className={`h-3 rounded-full transition-all duration-500 ${barColor}`}
                                     style={{ width: `${animatedPercent}%` }}
@@ -402,7 +402,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                         )}
 
                         {isRetrying && (
-                            <div className="rounded border border-camel-700 bg-camel-900/40 p-3 text-sm text-camel-200">
+                            <div className="rounded border border-accent-hover bg-accent/40 p-3 text-sm text-heading">
                                 <div className="flex items-center gap-2 font-semibold">
                                     <svg
                                         className="h-4 w-4 shrink-0"

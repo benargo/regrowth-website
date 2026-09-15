@@ -7,11 +7,11 @@ function QuestsSkeleton() {
     return (
         <div className="space-y-6">
             {[...Array(5)].map((_, i) => (
-                <div key={i} className="animate-pulse rounded-lg bg-forever-800 p-4">
-                    <div className="mb-3 h-5 w-32 rounded bg-forever-700" />
+                <div key={i} className="animate-pulse rounded-lg bg-surface p-4">
+                    <div className="mb-3 h-5 w-32 rounded bg-surface-raised" />
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded bg-forever-700" />
-                        <div className="h-4 w-48 rounded bg-forever-700" />
+                        <div className="h-10 w-10 rounded bg-surface-raised" />
+                        <div className="h-4 w-48 rounded bg-surface-raised" />
                     </div>
                 </div>
             ))}
@@ -53,8 +53,8 @@ function QuestCard({ quest }) {
     const hasMultipleRewards = quest.rewards.length > 1;
 
     return (
-        <div className="mb-8 w-full rounded-lg bg-forever-800/50 p-6">
-            <h3 className="mb-1 text-2xl font-bold text-camel-400">
+        <div className="mb-8 w-full rounded-lg bg-surface/50 p-6">
+            <h3 className="mb-1 text-2xl font-bold text-body">
                 {quest.icon && <img src={quest.icon} alt={quest.label} className="mr-2 inline-block h-6 w-6" />}
                 {quest.label}
             </h3>

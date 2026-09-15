@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Attributes\UsesTheme;
 use App\Contracts\HasCharacterMedia;
+use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Resources\EventResource;
@@ -15,6 +17,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
 
+#[UsesTheme(Theme::Forever)]
 class HomeController extends Controller
 {
     /**

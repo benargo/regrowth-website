@@ -9,17 +9,17 @@ import { Can } from "@/Components/Authorizable";
 function StatSegment({ icon, label, value, index }) {
     return (
         <div
-            className="animate-fade-in-up flex min-w-32 flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-camel-600/5"
+            className="animate-fade-in-up flex min-w-32 flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-accent/5"
             style={{ animationDelay: `${index * 60}ms` }}
         >
             <Icon
                 icon={icon}
                 style="light"
-                className="flex size-6 items-center justify-center text-xl text-camel-500/70"
+                className="flex size-6 items-center justify-center text-xl text-body-muted/70"
             />
             <div className="flex flex-col">
                 <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">{label}</p>
-                <p className="text-2xl font-bold text-camel-400 tabular-nums">{value ?? "–"}</p>
+                <p className="text-2xl font-bold text-body tabular-nums">{value ?? "–"}</p>
             </div>
         </div>
     );
@@ -35,46 +35,46 @@ function StatsRow({ stats }) {
     ];
 
     return (
-        <div className="bg-forever-900/40 flex flex-col divide-y divide-camel-600/20 rounded-lg border border-camel-600/30 sm:flex-row sm:flex-wrap sm:divide-x sm:divide-y-0">
+        <div className="bg-surface-sunken/40 flex flex-col divide-y divide-line/20 rounded-lg border border-line/30 sm:flex-row sm:flex-wrap sm:divide-x sm:divide-y-0">
             {items.map((item, index) => (
                 <StatSegment key={item.label} index={index} {...item} />
             ))}
             <Link
                 href={route("loot.comments")}
-                className="animate-fade-in-up group flex flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-camel-600/10"
+                className="animate-fade-in-up group flex flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-accent/10"
                 style={{ animationDelay: `${items.length * 60}ms` }}
             >
                 <Icon
                     icon="external-link"
                     style="light"
-                    className="flex size-6 items-center justify-center text-xl text-camel-400"
+                    className="flex size-6 items-center justify-center text-xl text-body"
                 />
                 <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
                     View all comments
                     <Icon
                         icon="chevron-right"
                         style="solid"
-                        className="flex size-3 items-center justify-center text-xs text-camel-400 transition-transform duration-200 group-hover:translate-x-0.5"
+                        className="flex size-3 items-center justify-center text-xs text-body transition-transform duration-200 group-hover:translate-x-0.5"
                     />
                 </span>
             </Link>
             <Can permission="view-priorities-page">
                 <Link
                     href={route("loot.priorities")}
-                    className="animate-fade-in-up group flex flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-camel-600/10"
+                    className="animate-fade-in-up group flex flex-1 items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-accent/10"
                     style={{ animationDelay: `${(items.length + 1) * 60}ms` }}
                 >
                     <Icon
                         icon="external-link"
                         style="light"
-                        className="flex size-6 items-center justify-center text-xl text-camel-400"
+                        className="flex size-6 items-center justify-center text-xl text-body"
                     />
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
                         Priority stats
                         <Icon
                             icon="chevron-right"
                             style="solid"
-                            className="flex size-3 items-center justify-center text-xs text-camel-400 transition-transform duration-200 group-hover:translate-x-0.5"
+                            className="flex size-3 items-center justify-center text-xs text-body transition-transform duration-200 group-hover:translate-x-0.5"
                         />
                     </span>
                 </Link>

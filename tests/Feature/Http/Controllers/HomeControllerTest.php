@@ -164,6 +164,13 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('canViewPlans', true)->etc());
     }
 
+    #[Test]
+    public function it_renders_with_the_forever_theme(): void
+    {
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page->where('theme', 'forever')->etc());
+    }
+
     // ==================== officer renders ====================
 
     #[Test]
