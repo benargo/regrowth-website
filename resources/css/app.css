@@ -351,3 +351,15 @@ svg.recharts-surface {
         background-image: url("../images/bg_masthead_xl.jpg");
     }
 }
+
+.bg-footer {
+    background-image: url("../images/bg_footer_sm.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+@media (min-width: 768px) {
+    .bg-footer {
+        background-image: url("../images/bg_footer_lg.webp");
+    }
+}
