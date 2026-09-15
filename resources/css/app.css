@@ -2,6 +2,26 @@
 
 @plugin "@tailwindcss/forms";
 
+@font-face {
+    font-family: "Friz Quadrata";
+    src: url("../fonts/friz-quadrata-regular-os.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Friz Quadrata";
+    src: url("../fonts/friz-quadrata-bold-italic-os.woff") format("woff");
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@utility font-friz-quadrata {
+    font-family: "Friz Quadrata", serif;
+}
+
 /* Scan Blade + JSX for class names (replaces v3 `content` array) */
 @source "../../resources/views/**/*.blade.php";
 @source "../../resources/js/**/*.jsx";
@@ -10,20 +30,33 @@
 
 @theme {
     --font-sans:
-        "Figtree", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-        "Noto Color Emoji";
+        "Semplicita Pro", "Open Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol", "Noto Color Emoji";
+    --font-serif: "Friz Quadrata", "Garamond", ui-serif, system-ui, serif;
 
-    /* brown */
-    --color-brown: #231a13;
-    --color-brown-100: #f5f0eb;
-    --color-brown-200: #e6ddd3;
-    --color-brown-300: #d1c3b4;
-    --color-brown-400: #b8a48f;
-    --color-brown-500: #9a826a;
-    --color-brown-600: #7a6249;
-    --color-brown-700: #5c472f;
-    --color-brown-800: #4a3d32;
-    --color-brown-900: #372d22;
+    /* World of Warcraft: Forever — teal/blue grounds
+       Extracted from Blizzard's camelot.24925ea6c03211663d81.css */
+    --color-forever-900: #011c2b;
+    --color-forever-800: #07324a;
+    --color-forever-700: #09273e;
+    --color-forever-600: #114f72;
+    --color-forever-500: #1a3658;
+    --color-forever-400: #007396;
+    --color-forever-300: #00afd7;
+
+    /* Forever — verdant greens, used for primary actions */
+    --color-verdant-500: #0f6064;
+    --color-verdant-400: #146f73;
+
+    /* Forever — warm camel/parchment, used for headings and body copy */
+    --color-camel-200: #f5e5cf;
+    --color-camel-300: #eccaa1;
+    --color-camel-400: #c6af8d;
+    --color-camel-500: #ba976d;
+    --color-camel-600: #a58050;
+    --color-camel-700: #816541;
+    --color-camel-800: #5d4a32;
+    --color-camel-900: #3e3123;
 
     /* affect type colors */
     --color-affect-curse: #9600ff;
@@ -147,6 +180,15 @@
     [role="button"]:not(:disabled) {
         cursor: pointer;
     }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-heading);
+    }
 }
 
 svg.recharts-surface {
@@ -157,12 +199,6 @@ svg.recharts-surface {
     background-image: url("../images/bg_arcatraz.webp");
     background-position: center;
     background-size: cover;
-}
-
-.bg-brown-texture {
-    background-image: url("../images/bg_brown_texture_repeat.jpg");
-    background-position: center -200px;
-    background-repeat: repeat;
 }
 
 .bg-dungeons {
@@ -284,4 +320,34 @@ svg.recharts-surface {
     background-image: url("../images/bg_stormwind.webp");
     background-position: bottom -60px center;
     background-size: cover;
+}
+
+.bg-forever-parchment {
+    background-image: url("../images/bg_brown_texture_repeat.jpg");
+    background-position: center -200px;
+    background-repeat: repeat;
+}
+
+/*
+ * Forever hero background. Placeholder art from Blizzard's Forever page;
+ * swap the url()s when final masthead art is supplied — nothing else needs
+ * to change.
+ */
+.bg-forever-masthead {
+    background-color: var(--color-forever-900);
+    background-image: url("../images/bg_masthead_sm.jpg");
+    background-position: center;
+    background-size: cover;
+}
+
+@media (min-width: 768px) {
+    .bg-forever-masthead {
+        background-image: url("../images/bg_masthead_md.jpg");
+    }
+}
+
+@media (min-width: 1280px) {
+    .bg-forever-masthead {
+        background-image: url("../images/bg_masthead_xl.jpg");
+    }
 }
