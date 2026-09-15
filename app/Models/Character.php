@@ -64,6 +64,7 @@ class Character extends Model implements HasCharacterMedia, HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection(self::MEDIA_COLLECTION)->singleFile();
+        $this->addMediaCollection(self::MEDIA_COLLECTION_RENDER)->singleFile();
     }
 
     // ============ Custom attributes ============

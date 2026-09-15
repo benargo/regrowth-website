@@ -20,6 +20,16 @@ interface HasCharacterMedia
     public const MEDIA_COLLECTION = 'character_portraits';
 
     /**
+     * The Laravel Media Library collection name for full-body character renders.
+     *
+     * Distinct from MEDIA_COLLECTION: that holds the 135px avatar used across
+     * the roster, this holds the large transparent-background `main-raw` render
+     * used by the homepage officer cards. Both collections are singleFile(), so
+     * they must stay separate or each would evict the other.
+     */
+    public const MEDIA_COLLECTION_RENDER = 'character_renders';
+
+    /**
      * The path prefix on the shared disk where character portraits are stored.
      */
     public const STORAGE_PATH_PREFIX = 'blizzard-cdn/characters';

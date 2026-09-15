@@ -2,6 +2,7 @@
 
 namespace Tests\Support\Blizzard;
 
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
@@ -86,6 +87,38 @@ trait MocksBlizzardServices
                 status: $profileStatus,
             ),
             FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+        ]);
+    }
+
+    /**
+     * Fake a render-CDN fetch for AttachRenderToCharacter.
+     *
+     * The render job shares FetchCharacterPortraitRequest with the avatar job
+     * but sends no profile request, so no oauth token fake is needed.
+     */
+    protected function mockCharacterRenderFetch(int $status = 200, string $body = 'RENDER-BINARY'): void
+    {
+        Saloon::fake([
+            FetchCharacterPortraitRequest::class => MockResponse::make(body: $body, status: $status),
+        ]);
+    }
+
+    /**
+     * Fake the oauth token plus a GetCharacterMediaRequest response carrying
+     * both the avatar and the full-body main-raw asset.
+     */
+    protected function mockCharacterMediaLookup(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
+            GetCharacterMediaRequest::class => MockResponse::make(body: [
+                'character' => ['key' => ['href' => 'https://example.test/character'], 'name' => 'Caldru', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
+                'assets' => [
+                    ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],
+                    ['key' => 'inset', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-inset.jpg'],
+                    ['key' => 'main-raw', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-main-raw.png'],
+                ],
+            ], status: 200),
         ]);
     }
 

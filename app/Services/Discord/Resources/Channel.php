@@ -67,7 +67,7 @@ class Channel extends Data implements ChannelContract
 
         /** @var string|Optional Snowflake of the bot app that created a group DM */
         #[Nullable, StringType]
-        public readonly string|Optional $application_id,
+        public readonly string|Optional|null $application_id,
 
         /** @var bool|Optional Whether the channel is managed by an application via gdm.join */
         #[Nullable, BooleanType]

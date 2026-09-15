@@ -4,21 +4,79 @@ namespace App\Http\Resources;
 
 use App\Models\Boss;
 use App\Models\Character;
+use App\Models\Event;
 use App\Models\Raid;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
 /**
- * Requires raids.bosses.media, bosses.media, assignments.group, and characters.rank
- * to be eager-loaded before construction. Use
- * $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank').
+ * A scoped view of an event. The scope is chosen by audience, not by detail
+ * level — which is why forMembers() may attach Discord channel data and
+ * forVisitors() may not.
+ *
+ * Eager-loading requirements differ per scope:
+ *   - default:      $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank')
+ *   - forMembers:   nothing
+ *   - forVisitors:  $event->load('raids')
  *
  * The bosses relation (the event's own pivot selection) drives the is_visible flag
  * on each boss nested under raids.bosses rather than a top-level key.
  */
 class EventResource extends JsonResource
 {
+    protected const SCOPE_FULL = 'full';
+
+    protected const SCOPE_MEMBERS = 'members';
+
+    protected const SCOPE_VISITORS = 'visitors';
+
+    protected string $scope = self::SCOPE_FULL;
+
+    /**
+     * The dashboard list shape for authenticated members. Includes Discord
+     * channel data, which anonymous visitors must never receive.
+     */
+    public static function forMembers(mixed $resource): static
+    {
+        return static::withScope($resource, self::SCOPE_MEMBERS);
+    }
+
+    /**
+     * The minimal public-safe shape for anonymous visitors. Makes no Discord
+     * API call. Requires the raids relation: $event->load('raids').
+     */
+    public static function forVisitors(mixed $resource): static
+    {
+        return static::withScope($resource, self::SCOPE_VISITORS);
+    }
+
+    /**
+     * @param  iterable<int, Event>  $resources
+     * @return Collection<int, static>
+     */
+    public static function collectionForMembers(iterable $resources): Collection
+    {
+        return collect($resources)->map(fn ($event) => static::forMembers($event));
+    }
+
+    /**
+     * @param  iterable<int, Event>  $resources
+     * @return Collection<int, static>
+     */
+    public static function collectionForVisitors(iterable $resources): Collection
+    {
+        return collect($resources)->map(fn ($event) => static::forVisitors($event));
+    }
+
+    protected static function withScope(mixed $resource, string $scope): static
+    {
+        $instance = new static($resource);
+        $instance->scope = $scope;
+
+        return $instance;
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -26,22 +84,32 @@ class EventResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $allAssignments = $this->assignments;
-        $eventAssignments = $allAssignments->whereNull('boss_id')->values();
-        $bossByIdAssignments = $allAssignments->whereNotNull('boss_id')->groupBy('boss_id');
-
         $data = [
             'id' => $this->id,
             'title' => $this->title,
             'start_time' => $this->start_time?->toIso8601String(),
             'end_time' => $this->end_time?->toIso8601String(),
-            'duration' => $this->start_time && $this->end_time ? $this->duration : null,
-            'color' => $this->color,
-            'background' => $this->background_css_class?->value,
-            'assignments' => (new EventAssignmentsCollection($eventAssignments))->resolve($request),
-            'composition' => $this->buildComposition($request),
-            'raids' => $this->buildRaids($bossByIdAssignments, $request),
         ];
+
+        if ($this->scope === self::SCOPE_VISITORS) {
+            $data['raids'] = $this->raids->pluck('name')->values()->all();
+
+            return $data;
+        }
+
+        $data['duration'] = $this->start_time && $this->end_time ? $this->duration : null;
+
+        if ($this->scope === self::SCOPE_FULL) {
+            $allAssignments = $this->assignments;
+            $eventAssignments = $allAssignments->whereNull('boss_id')->values();
+            $bossByIdAssignments = $allAssignments->whereNotNull('boss_id')->groupBy('boss_id');
+
+            $data['color'] = $this->color;
+            $data['background'] = $this->background_css_class?->value;
+            $data['assignments'] = (new EventAssignmentsCollection($eventAssignments))->resolve($request);
+            $data['composition'] = $this->buildComposition($request);
+            $data['raids'] = $this->buildRaids($bossByIdAssignments, $request);
+        }
 
         try {
             $data['channel'] = $this->channel?->only('id', 'name', 'position')->toArray();

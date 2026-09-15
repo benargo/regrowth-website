@@ -124,4 +124,18 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Fonts
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for custom web fonts used by the application, such as
+    | Adobe Fonts (Typekit) kit stylesheet URLs.
+    |
+    */
+
+    'fonts' => [
+        'typekit_url' => env('TYPEKIT_URL'),
+    ],
+
 ];
