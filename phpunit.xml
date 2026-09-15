@@ -44,6 +44,7 @@
         <env name="DISCORD_CLIENT_SECRET" value="test_discord_client_secret"/>
         <env name="DISCORD_BOT_TOKEN" value="test_discord_bot_token"/>
         <env name="DISCORD_SERVER_ID" value="829020506907869214"/>
+        <env name="DISCORD_INVITE_URL" value=""/>
         <env name="RAID_HELPER_WEBHOOK_KEY" value="test_webhook_key"/>
         <!-- Manual login / view-as test users. Keep in sync with .env.testing. -->
         <env name="LOCAL_USER_OFFICER_ID" value="100000000000000001"/>
