@@ -7,29 +7,29 @@ export function EventsSkeleton() {
 
     return (
         <div className="animate-pulse">
-            <div className="flex border-b border-amber-600">
+            <div className="flex border-b border-camel-600">
                 <div className="w-40 shrink-0 px-4 py-3">
-                    <div className="h-4 w-8 rounded bg-brown-700" />
+                    <div className="h-4 w-8 rounded bg-forever-700" />
                 </div>
                 <div className="min-w-0 flex-1 px-4 py-3">
-                    <div className="h-4 w-10 rounded bg-brown-700" />
+                    <div className="h-4 w-10 rounded bg-forever-700" />
                 </div>
                 <div className="w-36 shrink-0 px-4 py-3">
-                    <div className="h-4 w-16 rounded bg-brown-700" />
+                    <div className="h-4 w-16 rounded bg-forever-700" />
                 </div>
             </div>
-            <div className="divide-y divide-brown-700">
+            <div className="divide-y divide-forever-600">
                 {fakeRows.map((_, i) => (
                     <div key={i} className="flex items-center">
                         <div className="w-40 shrink-0 px-4 py-3">
-                            <div className="mb-1 h-3 w-12 rounded bg-brown-700" />
-                            <div className="h-4 w-24 rounded bg-brown-700" />
+                            <div className="mb-1 h-3 w-12 rounded bg-forever-700" />
+                            <div className="h-4 w-24 rounded bg-forever-700" />
                         </div>
                         <div className="min-w-0 flex-1 px-4 py-3">
-                            <div className="h-4 w-40 rounded bg-brown-700" />
+                            <div className="h-4 w-40 rounded bg-forever-700" />
                         </div>
                         <div className="w-36 shrink-0 px-4 py-3">
-                            <div className="h-4 w-24 rounded bg-brown-700" />
+                            <div className="h-4 w-24 rounded bg-forever-700" />
                         </div>
                     </div>
                 ))}
@@ -53,14 +53,14 @@ export default function EventsTable({ events }) {
     return (
         <div className="overflow-x-auto">
             <div className="w-full">
-                <div className="flex border-b border-amber-600">
-                    <div className="w-40 shrink-0 px-4 py-3 text-left text-sm font-semibold text-amber-500">Date</div>
-                    <div className="min-w-0 flex-1 px-4 py-3 text-left text-sm font-semibold text-amber-500">Title</div>
-                    <div className="w-36 shrink-0 px-4 py-3 text-left text-sm font-semibold text-amber-500">
+                <div className="flex border-b border-camel-600">
+                    <div className="w-40 shrink-0 px-4 py-3 text-left text-sm font-semibold text-camel-500">Date</div>
+                    <div className="min-w-0 flex-1 px-4 py-3 text-left text-sm font-semibold text-camel-500">Title</div>
+                    <div className="w-36 shrink-0 px-4 py-3 text-left text-sm font-semibold text-camel-500">
                         Timings
                     </div>
                 </div>
-                <div className="divide-y divide-brown-700">
+                <div className="divide-y divide-forever-600">
                     {rows.map((event) => {
                         const startDate = new Date(event.start_time);
                         const endDate = new Date(event.end_time);
@@ -72,7 +72,7 @@ export default function EventsTable({ events }) {
                         return (
                             <Link
                                 key={event.id}
-                                className="flex cursor-pointer items-center transition-colors hover:bg-brown-800/50"
+                                className="flex cursor-pointer items-center transition-colors hover:bg-forever-800/50"
                                 href={route("raiding.plans.show", event.id)}
                             >
                                 <div className="w-40 shrink-0 whitespace-nowrap px-4 py-3">

@@ -75,7 +75,7 @@ export default function Create() {
                     Enter times in <strong>{parisTimezoneName}</strong> (server time).
                 </p>
                 {isMateriallyDifferent && (
-                    <p className="mt-1 text-amber-400">
+                    <p className="mt-1 text-camel-400">
                         Your timezone is {formatOffsetDiff(diffMin)} {diffMin > 0 ? "ahead of" : "behind"} server time.
                         Remember to enter times in server time.
                     </p>
@@ -160,7 +160,7 @@ export default function Create() {
                     <div className="mb-6">
                         <Link
                             href={route("raiding.reports.index")}
-                            className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 hover:underline"
+                            className="inline-flex items-center gap-2 text-sm text-camel-400 hover:text-camel-300 hover:underline"
                         >
                             <Icon icon="arrow-left" style="solid" />
                             Back to Reports
@@ -221,7 +221,7 @@ export default function Create() {
                                     setGuildTagId(e.target.value);
                                     setErrors((prev) => ({ ...prev, guild_tag_id: null }));
                                 }}
-                                className="w-full rounded border border-amber-600 bg-brown-800 px-4 py-2 text-white focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                                className="w-full rounded border border-camel-600 bg-forever-800 px-4 py-2 text-white focus:border-camel-500 focus:outline-hidden focus:ring-2 focus:ring-camel-500"
                             >
                                 <option value="">Select a tag…</option>
                                 {guildTags.map((tag) => (
@@ -238,7 +238,7 @@ export default function Create() {
                                 <select
                                     value={selectedExpansionId}
                                     onChange={handleExpansionChange}
-                                    className="w-48 shrink-0 rounded border border-amber-600 bg-brown-800 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                                    className="w-48 shrink-0 rounded border border-camel-600 bg-forever-800 px-3 py-2 text-sm text-white focus:border-camel-500 focus:outline-hidden focus:ring-2 focus:ring-camel-500"
                                 >
                                     {expansions.map((exp) => (
                                         <option key={exp.id} value={exp.id}>
@@ -281,7 +281,7 @@ export default function Create() {
                                         )}
                                         {c.name}
                                         {c.is_main && (
-                                            <span className="rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
+                                            <span className="rounded bg-camel-600/20 px-1.5 py-0.5 text-xs text-camel-400">
                                                 Main
                                             </span>
                                         )}
@@ -289,7 +289,7 @@ export default function Create() {
                                 )}
                             />
                             {addedCharacters.length > 0 && (
-                                <ul className="mt-3 divide-y divide-brown-700 rounded border border-amber-600/30">
+                                <ul className="mt-3 divide-y divide-forever-600 rounded border border-camel-600/30">
                                     {addedCharacters.map((character) => (
                                         <li key={character.id} className="flex items-center justify-between px-4 py-2">
                                             <span className="flex items-center gap-2 text-sm text-white">
@@ -302,7 +302,7 @@ export default function Create() {
                                                 )}
                                                 {character.name}
                                                 {character.is_main && (
-                                                    <span className="rounded bg-amber-600/20 px-1.5 py-0.5 text-xs text-amber-400">
+                                                    <span className="rounded bg-camel-600/20 px-1.5 py-0.5 text-xs text-camel-400">
                                                         Main
                                                     </span>
                                                 )}
@@ -338,7 +338,7 @@ export default function Create() {
                         />
 
                         {/* Actions */}
-                        <div className="flex items-center gap-4 border-t border-amber-600/30 pt-4">
+                        <div className="flex items-center gap-4 border-t border-camel-600/30 pt-4">
                             <PrimaryButton type="submit" processing={processing}>
                                 <Icon icon="plus" style="solid" />
                                 {processing ? "Creating…" : "Create Report"}

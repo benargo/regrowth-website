@@ -39,14 +39,14 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
 
     return (
         <>
-            <div className="flex flex-col gap-2 rounded border border-amber-800/50 bg-brown-800/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex flex-col gap-2 rounded border border-camel-800/50 bg-forever-800/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
                 {showCharacter && (
-                    <div className="shrink-0 font-medium text-amber-300">
+                    <div className="shrink-0 font-medium text-camel-300">
                         {absence.character?.name ?? "Unknown Character"}
                     </div>
                 )}
 
-                <div className="shrink-0 text-sm text-amber-300/70">
+                <div className="shrink-0 text-sm text-camel-300/70">
                     <Icon icon="calendar" style="regular" className="mr-1.5 h-4" />
                     {formatDate(absence.start_date).medium}
                     {absence.end_date && (
@@ -72,7 +72,7 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
                 <div className="flex shrink-0 gap-4">
                     <Link
                         href={route("raiding.absences.edit", absence.id)}
-                        className="flex items-center text-sm text-amber-400 hover:text-amber-300"
+                        className="flex items-center text-sm text-camel-400 hover:text-camel-300"
                     >
                         <Icon icon="pen" style="regular" className="mr-1.5 h-4" />
                         Edit

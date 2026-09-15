@@ -64,11 +64,11 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             ref={setNodeRef}
             style={style}
             data-assignment-key={assignment._key}
-            className="group border-brown-700/50 relative border-b last:border-0"
+            className="group border-forever-600/50 relative border-b last:border-0"
         >
             {/* Drag handle */}
             <td
-                className="text-brown-700 hover:text-brown-400 w-6 cursor-grab px-1 py-2 text-center active:cursor-grabbing"
+                className="text-camel-400 hover:text-camel-400 w-6 cursor-grab px-1 py-2 text-center active:cursor-grabbing"
                 {...attributes}
                 {...listeners}
             >
@@ -129,12 +129,12 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
 
 function AddAssignmentRow({ onAdd }) {
     return (
-        <tr className="border-brown-700/50 border-t border-dashed">
+        <tr className="border-forever-600/50 border-t border-dashed">
             <td colSpan={4}>
                 <button
                     type="button"
                     onClick={onAdd}
-                    className="text-brown-500 hover:bg-brown-700/30 hover:text-brown-300 flex w-full items-center justify-center gap-2 py-2 text-xs transition-colors"
+                    className="text-camel-500 hover:bg-forever-700/30 hover:text-camel-300 flex w-full items-center justify-center gap-2 py-2 text-xs transition-colors"
                 >
                     <Icon icon="plus" style="solid" className="text-[10px]" />
                     Add assignment
@@ -148,8 +148,8 @@ function InsertionIndicatorRow() {
     return (
         <tr>
             <td colSpan={4} className="p-0">
-                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-amber-500 bg-amber-900/20">
-                    <span className="ml-3 text-[10px] font-medium text-amber-400">Drop here</span>
+                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-camel-500 bg-camel-900/20">
+                    <span className="ml-3 text-[10px] font-medium text-camel-400">Drop here</span>
                 </div>
             </td>
         </tr>
@@ -165,7 +165,7 @@ function EmptyGroupDroppable({ containerId }) {
             <td colSpan={4}>
                 <div
                     className={`flex items-center justify-center rounded py-4 text-xs transition-colors ${
-                        isOver ? "bg-amber-900/20 text-amber-400" : "text-brown-600"
+                        isOver ? "bg-camel-900/20 text-camel-400" : "text-camel-500"
                     }`}
                 >
                     Drop here
@@ -203,12 +203,12 @@ function AssignmentGroupEditor({
         <div
             ref={setContainerRef}
             className={`overflow-visible rounded-lg border transition-colors ${
-                isTargetContainer || isOverContainer ? "border-amber-500 bg-amber-900/10" : "border-brown-700"
+                isTargetContainer || isOverContainer ? "border-camel-500 bg-camel-900/10" : "border-forever-600"
             }`}
         >
             {groupName && (
-                <div className="border-brown-700 bg-brown-800/60 border-b px-3 py-2">
-                    <h3 className="text-sm font-semibold text-amber-400">{groupName}</h3>
+                <div className="border-forever-600 bg-forever-800/60 border-b px-3 py-2">
+                    <h3 className="text-sm font-semibold text-camel-400">{groupName}</h3>
                 </div>
             )}
 
@@ -302,7 +302,7 @@ function SortableGroupCard({
                 <div className="mb-1 flex items-center gap-1">
                     <button
                         type="button"
-                        className="text-brown-600 hover:text-brown-400 cursor-grab touch-none active:cursor-grabbing"
+                        className="text-camel-500 hover:text-camel-400 cursor-grab touch-none active:cursor-grabbing"
                         {...attributes}
                         {...listeners}
                     >
@@ -320,7 +320,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="bg-brown-800 flex-1 rounded border border-amber-500 px-2 py-0.5 text-sm text-amber-400 focus:outline-hidden"
+                            className="bg-forever-800 flex-1 rounded border border-camel-500 px-2 py-0.5 text-sm text-camel-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -329,9 +329,9 @@ function SortableGroupCard({
                                 setNameInput(groupName ?? "");
                                 setEditingName(true);
                             }}
-                            className="flex-1 truncate text-left text-sm font-semibold text-amber-400 hover:text-amber-300"
+                            className="flex-1 truncate text-left text-sm font-semibold text-camel-400 hover:text-camel-300"
                         >
-                            {groupName ?? <span className="text-brown-500 italic">Unnamed group</span>}
+                            {groupName ?? <span className="text-camel-500 italic">Unnamed group</span>}
                         </button>
                     )}
 
@@ -377,8 +377,8 @@ function DroppableAddGroupButton({ droppableId, onClick, compact = false }) {
                     compact ? "py-2" : "py-6"
                 } ${
                     isOver
-                        ? "border-amber-500/70 bg-amber-600/15 text-amber-400"
-                        : "border-brown-700/50 text-brown-500 hover:border-amber-600/40 hover:bg-amber-600/5 hover:text-amber-500"
+                        ? "border-camel-500/70 bg-camel-600/15 text-camel-400"
+                        : "border-forever-600/50 text-camel-500 hover:border-camel-600/40 hover:bg-camel-600/5 hover:text-camel-500"
                 }`}
             >
                 <Icon icon="plus" style="solid" className="text-[10px]" />
@@ -555,7 +555,7 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
         >
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                 <div className="flex flex-col gap-3">
-                    <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Assignments</h3>
+                    <h3 className="text-sm font-semibold tracking-wider text-camel-500/80 uppercase">Assignments</h3>
                     <GroupContainer
                         bossId={boss.id}
                         groups={groupsByBossId[boss.id] ?? []}
@@ -566,20 +566,20 @@ function BossStrategySection({ boss, raid, commonContainerProps, groupsByBossId,
 
                 {bossImages.length > 0 || bossNotes ? (
                     <div className="col-span-2 flex flex-col gap-4">
-                        <h3 className="text-sm font-semibold tracking-wider text-amber-500/80 uppercase">Strategy</h3>
+                        <h3 className="text-sm font-semibold tracking-wider text-camel-500/80 uppercase">Strategy</h3>
                         {bossImages.map((url, i) => (
                             <img
                                 key={i}
                                 src={url}
                                 alt={`${boss.name} strategy ${i + 1}`}
-                                className="rounded-lg border border-amber-600/30"
+                                className="rounded-lg border border-camel-600/30"
                             />
                         ))}
                         {bossNotes && <FormattedMarkdown>{bossNotes}</FormattedMarkdown>}
                     </div>
                 ) : (
                     <div className="col-span-2 flex items-center justify-center py-8">
-                        <p className="text-brown-500 text-center text-sm">
+                        <p className="text-camel-500 text-center text-sm">
                             No strategy notes or images for this boss yet.
                         </p>
                     </div>
@@ -618,7 +618,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                         No templates match the raids in this event. Create a template from the{" "}
                         <a
                             href={route("management.event-templates.index")}
-                            className="text-amber-400 underline hover:text-amber-300"
+                            className="text-camel-400 underline hover:text-camel-300"
                         >
                             Event Templates
                         </a>{" "}
@@ -629,7 +629,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                         {templates.map((template) => (
                             <div
                                 key={template.id}
-                                className="border-brown-700 flex items-center justify-between gap-4 rounded border px-4 py-3"
+                                className="border-forever-600 flex items-center justify-between gap-4 rounded border px-4 py-3"
                             >
                                 <div className="flex flex-col gap-1">
                                     <span className="font-semibold">{template.title}</span>
@@ -637,7 +637,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                                         {template.raids.map((r) => (
                                             <span
                                                 key={r.id}
-                                                className="rounded bg-amber-600/20 px-2 py-0.5 text-xs text-amber-400"
+                                                className="rounded bg-camel-600/20 px-2 py-0.5 text-xs text-camel-400"
                                             >
                                                 {r.name}
                                             </span>
@@ -648,7 +648,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                                     type="button"
                                     onClick={() => handleApply(template)}
                                     disabled={!!applying}
-                                    className="shrink-0 rounded bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                    className="shrink-0 rounded bg-camel-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-camel-500 disabled:opacity-50"
                                 >
                                     {applying === template.id ? "Applying…" : "Apply"}
                                 </button>
@@ -1363,7 +1363,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                     <Link
                         href={route("raiding.plans.show", event.id)}
                         preserveScroll
-                        className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                        className="hover:border-primary hover:bg-forever-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to {event.title}
@@ -1392,12 +1392,12 @@ export default function Edit({ event, targetMarkers, templates }) {
                     )}
                     <div className="grow" />
                     {templates === undefined ? (
-                        <div className="h-7 w-32 animate-pulse rounded border border-amber-600/20 bg-amber-600/10" />
+                        <div className="h-7 w-32 animate-pulse rounded border border-camel-600/20 bg-camel-600/10" />
                     ) : (
                         <button
                             type="button"
                             onClick={() => setShowApplyTemplate(true)}
-                            className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20"
+                            className="flex items-center gap-1 rounded border border-camel-600/60 px-3 py-1 text-sm text-camel-400 transition-colors hover:bg-camel-600/20"
                         >
                             <Icon icon="copy" style="light" />
                             Apply template
@@ -1407,7 +1407,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                         type="button"
                         onClick={handlePublish}
                         disabled={publishing}
-                        className="flex items-center gap-1 rounded border border-amber-600/60 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20 disabled:opacity-50"
+                        className="flex items-center gap-1 rounded border border-camel-600/60 px-3 py-1 text-sm text-camel-400 transition-colors hover:bg-camel-600/20 disabled:opacity-50"
                     >
                         <Icon icon="bullhorn" style="light" />
                         {publishing ? "Publishing…" : "Publish"}
@@ -1449,7 +1449,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                 >
                     {/* General Assignments */}
                     <section className="mb-8">
-                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
+                        <h2 className="mb-3 text-base font-semibold tracking-wider text-camel-500/80 uppercase">
                             General Assignments
                         </h2>
                         <GroupContainer
@@ -1467,7 +1467,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                             {event.raids.map((raid) => (
                                 <div key={raid.slug}>
                                     {event.raids.length > 1 && (
-                                        <h2 className="mb-3 text-base font-semibold tracking-wider text-amber-500/80 uppercase">
+                                        <h2 className="mb-3 text-base font-semibold tracking-wider text-camel-500/80 uppercase">
                                             {raid.name}
                                         </h2>
                                     )}
@@ -1494,20 +1494,20 @@ export default function Edit({ event, targetMarkers, templates }) {
 
                     <DragOverlay>
                         {activeAssignment ? (
-                            <table className="bg-brown-800 w-full table-fixed rounded border border-amber-500/50 opacity-90 shadow-xl">
+                            <table className="bg-forever-800 w-full table-fixed rounded border border-camel-500/50 opacity-90 shadow-xl">
                                 <tbody>
-                                    <tr className="border-brown-700/50 border-b">
-                                        <td className="text-brown-700 w-6 px-1 py-2">
+                                    <tr className="border-forever-600/50 border-b">
+                                        <td className="text-camel-400 w-6 px-1 py-2">
                                             <Icon icon="grip-vertical" style="solid" className="text-xs" />
                                         </td>
-                                        <td className="border-brown-700/50 text-brown-200 w-1/2 border-r px-3 py-2.5 text-sm">
+                                        <td className="border-forever-600/50 text-camel-200 w-1/2 border-r px-3 py-2.5 text-sm">
                                             {labelFromSide(activeAssignment._leftSide).label || (
-                                                <span className="text-brown-600 italic">empty</span>
+                                                <span className="text-camel-500 italic">empty</span>
                                             )}
                                         </td>
-                                        <td className="text-brown-200 w-1/2 px-3 py-2.5 text-sm">
+                                        <td className="text-camel-200 w-1/2 px-3 py-2.5 text-sm">
                                             {labelFromSide(activeAssignment._rightSide).label || (
-                                                <span className="text-brown-600 italic">empty</span>
+                                                <span className="text-camel-500 italic">empty</span>
                                             )}
                                         </td>
                                         <td className="w-10" />

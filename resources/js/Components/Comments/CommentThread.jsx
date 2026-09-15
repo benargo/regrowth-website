@@ -73,7 +73,7 @@ export default function CommentThread({
                             onClick={() => onToggle(comment.id)}
                             aria-expanded={isExpanded}
                             aria-controls={regionId}
-                            className="flex items-center gap-2 text-amber-400 transition-colors hover:text-amber-300"
+                            className="flex items-center gap-2 text-camel-400 transition-colors hover:text-camel-300"
                         >
                             <RotatingChevron expanded={isExpanded} style="solid" />
                             {isExpanded ? "Hide replies" : replyCount === 1 ? "1 reply" : `${replyCount} replies`}
@@ -83,7 +83,7 @@ export default function CommentThread({
             )}
 
             {(isExpanded || isReplying) && (
-                <div id={regionId} className="border-brown-700 mt-3 ml-4 space-y-3 border-l pl-4">
+                <div id={regionId} className="border-forever-600 mt-3 ml-4 space-y-3 border-l pl-4">
                     {isExpanded &&
                         replies.map((reply) => (
                             <CommentItem
@@ -117,7 +117,7 @@ export default function CommentThread({
                         <button
                             type="button"
                             onClick={() => onLoadMore(comment.id)}
-                            className="text-sm text-amber-400 transition-colors hover:text-amber-300"
+                            className="text-sm text-camel-400 transition-colors hover:text-camel-300"
                         >
                             <Icon icon="arrow-down" style="solid" className="mr-1" /> Load 5 more replies
                         </button>

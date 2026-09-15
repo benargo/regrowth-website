@@ -109,7 +109,7 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
                     data="exportedData"
                     fallback={
                         <div className="mt-6">
-                            <div className="flex min-h-64 w-full items-center justify-center rounded border border-gray-800 bg-brown-800/50 p-4">
+                            <div className="flex min-h-64 w-full items-center justify-center rounded border border-gray-800 bg-forever-800/50 p-4">
                                 <p className="animate-pulse text-gray-400">Loading data... this may take a while.</p>
                             </div>
                         </div>
@@ -119,7 +119,7 @@ export default function AddonExportJson({ exportedData, grmFreshness }) {
                         <pre
                             ref={dataRef}
                             onClick={selectAllContent}
-                            className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 bg-brown-800/50 p-4 text-sm text-white"
+                            className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 bg-forever-800/50 p-4 text-sm text-white"
                         >
                             {exportedData?.length === 0 && "No addon data available."}
                             {exportedData?.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>

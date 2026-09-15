@@ -524,7 +524,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
                 </div>
             </Can>
             <Cannot permission="comment-on-loot-items">
-                <div className="bg-brown-800/50 mb-8 flex flex-row items-center rounded-lg border border-gray-700 p-4 text-gray-400 italic">
+                <div className="bg-forever-800/50 mb-8 flex flex-row items-center rounded-lg border border-gray-700 p-4 text-gray-400 italic">
                     <Icon icon="lock" style="solid" className="mr-2" />
                     <p>You do not have permission to post comments.</p>
                 </div>
@@ -538,7 +538,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
                         goToPage(1);
                     }}
                     aria-live="polite"
-                    className="border-primary bg-brown-800 hover:bg-brown-700 mb-4 inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm text-amber-400 transition-colors"
+                    className="border-primary bg-forever-800 hover:bg-forever-700 mb-4 inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm text-camel-400 transition-colors"
                 >
                     <Icon icon="arrow-up" style="solid" />
                     {newCommentCount === 1 ? "1 new comment" : `${newCommentCount} new comments`}

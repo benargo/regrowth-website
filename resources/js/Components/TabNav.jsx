@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 
 export default function TabNav({ tabs, currentTab }) {
     return (
-        <div className="border-b border-amber-700 mb-6">
+        <div className="border-b border-camel-700 mb-6">
             <nav className="-mb-px flex gap-4">
                 {tabs.map((tab) => (
                     <Link

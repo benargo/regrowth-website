@@ -74,7 +74,7 @@ function CharacterSearch({ characters, value, onChange, error, disabled = false 
                     onFocus={disabled ? undefined : handleFocus}
                     placeholder="Search by character name..."
                     disabled={disabled}
-                    className={`w-full rounded border border-amber-600 bg-brown-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-amber-500 ${disabled ? "cursor-not-allowed opacity-75" : ""}`}
+                    className={`w-full rounded border border-camel-600 bg-forever-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-camel-500 ${disabled ? "cursor-not-allowed opacity-75" : ""}`}
                 />
                 {!disabled && (search || selectedCharacter) && (
                     <button
@@ -88,13 +88,13 @@ function CharacterSearch({ characters, value, onChange, error, disabled = false 
             </div>
 
             {!disabled && isOpen && filtered.length > 0 && (
-                <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-amber-600 bg-brown-800 shadow-lg">
+                <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-camel-600 bg-forever-800 shadow-lg">
                     {filtered.map((character) => (
                         <li key={character.id}>
                             <button
                                 type="button"
                                 onClick={() => handleSelect(character)}
-                                className="w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-brown-700"
+                                className="w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-forever-700"
                             >
                                 {character.name}
                             </button>
@@ -275,8 +275,8 @@ export default function Form() {
                         )}
 
                         {multipleCharacters && (
-                            <div className="rounded border border-amber-600 bg-brown-800/50 px-4 py-3">
-                                <p className="text-md mb-3 text-amber-300">
+                            <div className="rounded border border-camel-600 bg-forever-800/50 px-4 py-3">
+                                <p className="text-md mb-3 text-camel-300">
                                     Multiple characters matched. Please select one:
                                 </p>
                                 <ul className="flex flex-col gap-1">
@@ -285,7 +285,7 @@ export default function Form() {
                                             <button
                                                 type="button"
                                                 onClick={() => selectDisambiguatedCharacter(c)}
-                                                className="w-full rounded px-3 py-2 text-left text-sm text-white transition-colors hover:bg-brown-700"
+                                                className="w-full rounded px-3 py-2 text-left text-sm text-white transition-colors hover:bg-forever-700"
                                             >
                                                 {c.name}
                                             </button>

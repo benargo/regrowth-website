@@ -10,7 +10,7 @@ function DashboardCard({ href, icon, children }) {
     return (
         <Link
             href={href}
-            className="flex items-center gap-4 rounded border border-amber-600 px-2 py-4 transition-colors hover:bg-amber-600/20"
+            className="flex items-center gap-4 rounded border border-camel-600 px-2 py-4 transition-colors hover:bg-camel-600/20"
         >
             <div className="mx-2 text-center">
                 <Icon icon={icon} style="light" className="text-3xl" />
@@ -145,7 +145,7 @@ export default function Dashboard({ discordRoles }) {
                         {user?.admin && (
                             <a
                                 href={route("horizon.index")}
-                                className="flex items-center gap-4 rounded border border-amber-600 px-2 py-4 transition-colors hover:bg-amber-600/20"
+                                className="flex items-center gap-4 rounded border border-camel-600 px-2 py-4 transition-colors hover:bg-camel-600/20"
                             >
                                 <div className="mx-2 text-center">
                                     <Icon icon="tachometer-alt" style="light" className="text-3xl" />

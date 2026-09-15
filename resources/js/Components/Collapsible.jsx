@@ -4,9 +4,9 @@ import Tooltip from "@/Components/Tooltip";
 
 const STYLES = {
     amber: {
-        border: "border-amber-600",
-        header: "hover:bg-amber-600/10",
-        body: "border-amber-600",
+        border: "border-camel-600",
+        header: "hover:bg-camel-600/10",
+        body: "border-camel-600",
     },
     gray: {
         border: "border-gray-400",

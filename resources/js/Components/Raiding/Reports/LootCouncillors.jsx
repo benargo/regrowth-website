@@ -137,7 +137,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
             {currentCouncillors.length === 0 ? (
                 <p className="text-gray-400">No loot councillors recorded.</p>
             ) : (
-                <div className="divide-y divide-brown-700 rounded border border-amber-600/30">
+                <div className="divide-y divide-forever-600 rounded border border-camel-600/30">
                     {currentCouncillors.map((character) => (
                         <div key={character.id} className="flex items-center justify-between px-4 py-3">
                             <div className="flex items-center gap-3">
@@ -178,9 +178,9 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                 <button
                     type="button"
                     onClick={handleOpenAdd}
-                    className="mt-4 inline-flex items-center gap-2 rounded border border-amber-600/50 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-amber-600 hover:bg-amber-600/10 hover:text-white"
+                    className="mt-4 inline-flex items-center gap-2 rounded border border-camel-600/50 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-camel-600 hover:bg-camel-600/10 hover:text-white"
                 >
-                    <Icon icon="plus" style="solid" className="text-amber-500" />
+                    <Icon icon="plus" style="solid" className="text-camel-500" />
                     Add Councillor
                 </button>
             )}
@@ -188,7 +188,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
             {canManage && isAddingCouncillor && (
                 <div className="mt-4">
                     {isLoadingCandidates ? (
-                        <div className="h-10 w-full animate-pulse rounded border border-amber-600/30 bg-brown-800" />
+                        <div className="h-10 w-full animate-pulse rounded border border-camel-600/30 bg-forever-800" />
                     ) : (
                         <Autocomplete
                             value={characterSearch}
