@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import Section from "./Section";
-import DisplayHeading from "./DisplayHeading";
+import Section from "@/Components/Forever/Section";
+import DisplayHeading from "@/Components/Forever/DisplayHeading";
 import OfficerProfile from "./OfficerProfile";
 
 /**

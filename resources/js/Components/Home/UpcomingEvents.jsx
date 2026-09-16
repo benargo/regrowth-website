@@ -1,6 +1,6 @@
 import { Link } from "@inertiajs/react";
-import Section from "./Section";
-import DisplayHeading from "./DisplayHeading";
+import Section from "@/Components/Forever/Section";
+import DisplayHeading from "@/Components/Forever/DisplayHeading";
 
 /**
  * Format an ISO timestamp in the viewer's own timezone. The server sends
