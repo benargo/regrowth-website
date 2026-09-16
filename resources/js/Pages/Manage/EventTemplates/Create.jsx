@@ -26,7 +26,7 @@ export default function Create({ raids }) {
 
     return (
         <Master title="Create Event Template">
-            <SharedHeader backgroundClass="bg-ssctk" title="Create Event Template" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Create Event Template" />
 
             <FormContainer>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">

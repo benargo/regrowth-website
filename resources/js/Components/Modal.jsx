@@ -35,7 +35,7 @@ export default function Modal({
             <div className="fixed inset-0 z-10 flex items-center overflow-y-auto px-4 py-6 sm:px-0">
                 <DialogPanel
                     transition
-                    className={`bg-surface w-full transform overflow-hidden rounded-lg border border-primary bg-parchment-texture shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:opacity-0 sm:mx-auto sm:data-closed:translate-y-0 sm:data-closed:scale-95 ${maxWidthClass}`}
+                    className={`bg-surface w-full transform overflow-hidden rounded-lg border border-primary bg-parchment shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:opacity-0 sm:mx-auto sm:data-closed:translate-y-0 sm:data-closed:scale-95 ${maxWidthClass}`}
                 >
                     {children}
                 </DialogPanel>

@@ -10,7 +10,7 @@ export default function Index({ results, q, scoped_raid }) {
 
     return (
         <Master title={`Search results for "${q}"`}>
-            <SharedHeader backgroundClass="bg-ssctk" title="Search results" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Search results" />
             <PageContainer>
                 <div className="mb-4 flex items-center gap-3">
                     <p className="text-sm text-gray-400">

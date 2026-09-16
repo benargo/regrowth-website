@@ -61,15 +61,10 @@ export default function LaunchCountdown({ targetIso }) {
         : null;
 
     return (
-        <div className="border-primary/30 from-forever-800 to-forever-900 border-b-4 bg-gradient-to-b">
+        <div className="border-camel-600 from-forever-800 to-forever-900 border-b-8 bg-gradient-to-b">
             <div className="container mx-auto flex flex-col items-center gap-6 px-4 py-8 md:flex-row md:justify-between md:gap-10 md:py-10">
                 <div className="flex items-center gap-4">
-                    <img
-                        src="/images/guild_emblem.webp"
-                        alt=""
-                        aria-hidden="true"
-                        className="h-12 w-12 shrink-0 md:h-16 md:w-16"
-                    />
+                    <img src="/images/icon_camelot.webp" alt="" aria-hidden="true" className="w-12 shrink-0 md:w-16" />
                     <p className="text-camel-200 text-center font-serif text-xl leading-snug md:text-left md:text-2xl">
                         {remaining === null ? (
                             <>Azeroth awaits — World of Warcraft: Forever is live!</>

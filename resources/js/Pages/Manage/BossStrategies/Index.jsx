@@ -9,7 +9,7 @@ export default function BossStrategiesIndex({ bosses, phases }) {
     phases = phases.data ?? phases ?? [];
     return (
         <Master title="Boss Strategies">
-            <SharedHeader title="Boss Strategies" backgroundClass="bg-karazhan" />
+            <SharedHeader title="Boss Strategies" backgroundClass="bg-karazhan-chess" />
             <PageContainer>
                 <div className="flex flex-col gap-4">
                 {phases?.map((phase) => (

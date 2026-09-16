@@ -17,5 +17,5 @@ enum RaidBackground: string
 
     // Joint raids
     case GruulAndMagtheridon = 'bg-raid-gruul-magtheridon';
-    case SerpentshrineCavernAndTempestKeep = 'bg-ssctk';
+    case SerpentshrineCavernAndTempestKeep = 'bg-vashj-and-kaelthas';
 }

@@ -24,8 +24,8 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
     return (
         <Master title="Home">
             <div className="text-base">
-                <section className="bg-forever-masthead relative">
-                    <div className="bg-forever-masthead hidden h-[80vh] overflow-hidden md:block md:h-[800px]">
+                <section className="bg-masthead relative">
+                    <div className="bg-masthead hidden h-[80vh] overflow-hidden md:block md:h-[800px]">
                         {/* <video
                                     preload="auto"
                                     className="h-full w-full object-cover"

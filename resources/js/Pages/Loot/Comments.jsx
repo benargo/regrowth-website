@@ -84,7 +84,7 @@ export default function Comments({ comments, replies }) {
 
     return (
         <Master title="All Comments">
-            <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Loot Bias" />
 
             <ToolNav>
                 <Link

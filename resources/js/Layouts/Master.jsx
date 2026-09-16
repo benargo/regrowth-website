@@ -109,7 +109,7 @@ export default function Master({ title, children }) {
                                 <button
                                     type="button"
                                     onClick={() => setSearchOpen(true)}
-                                    className="hover:bg-surface-raised border-focus-ring bg-surface flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:ring-focus-ring focus:outline-hidden"
+                                    className="hover:bg-surface-raised border-focus-ring bg-surface focus:ring-focus-ring flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:outline-hidden"
                                 >
                                     <Icon icon="search" style="solid" className="h-4 w-4" />
                                     <span>Search</span>
@@ -201,7 +201,7 @@ export default function Master({ title, children }) {
                                 setShowingNavigationDropdown(false);
                                 setSearchOpen(true);
                             }}
-                            className="flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-accent-hover hover:text-white"
+                            className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
                         >
                             <Icon icon="search" style="solid" className="mr-2 h-6" />
                             Search
@@ -212,7 +212,7 @@ export default function Master({ title, children }) {
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-t border-accent-hover pt-4 pb-3">
+                    <div className="border-accent-hover border-t pt-4 pb-3">
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
@@ -230,7 +230,7 @@ export default function Master({ title, children }) {
                                 </div>
                                 <Link
                                     href={route("account.index")}
-                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
+                                    className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                 >
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
@@ -238,7 +238,7 @@ export default function Master({ title, children }) {
                                 {impersonating && (
                                     <Link
                                         href={route("auth.return-to-self")}
-                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
+                                        className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                     >
                                         <Icon icon="undo" style="regular" className="mr-2" />
                                         Return to my account
@@ -247,7 +247,7 @@ export default function Master({ title, children }) {
                                 <Can permission="view-officer-dashboard">
                                     <Link
                                         href={route("management.dashboard")}
-                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
+                                        className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                     >
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Control Panel
@@ -257,7 +257,7 @@ export default function Master({ title, children }) {
                                     href={route("logout")}
                                     method="post"
                                     as="button"
-                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-accent-hover hover:text-white"
+                                    className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                 >
                                     <Icon icon="sign-out" style="regular" className="mr-2" />
                                     Logout
@@ -283,7 +283,7 @@ export default function Master({ title, children }) {
 
                 <main>{children}</main>
 
-                <footer className="p-5" id="footer">
+                <footer className="bg-footer border-footer border-t-8 py-5" id="footer">
                     <div className="container mx-auto">
                         <div className="my-4 flex flex-col-reverse items-center justify-between md:my-6 md:flex-row">
                             {/* Logos Section */}
@@ -297,8 +297,16 @@ export default function Master({ title, children }) {
                                     <span className="sr-only">Regrowth</span>
                                 </Link>
                                 <img
-                                    src={theme === "forever" ? "/images/logo_forever.webp" : "/images/logo_tbcclassic.webp"}
-                                    alt={theme === "forever" ? "World of Warcraft: Forever logo" : "World of Warcraft Classic logo"}
+                                    src={
+                                        theme === "forever"
+                                            ? "/images/logo_forever.webp"
+                                            : "/images/logo_tbcclassic.webp"
+                                    }
+                                    alt={
+                                        theme === "forever"
+                                            ? "World of Warcraft: Forever logo"
+                                            : "World of Warcraft Classic logo"
+                                    }
                                     className="h-20 w-1/2 flex-1 object-contain md:mr-4 md:w-auto"
                                 />
                                 <span className="sr-only">

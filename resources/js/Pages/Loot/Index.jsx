@@ -86,7 +86,7 @@ function StatsRow({ stats }) {
 export default function Index({ raids, stats }) {
     return (
         <Master title="Loot biases">
-            <SharedHeader backgroundClass="bg-ssctk" title="Loot biases" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Loot biases" />
             <PageContainer>
                 <StatsRow stats={stats} />
                 <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

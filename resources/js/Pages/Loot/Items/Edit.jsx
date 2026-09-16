@@ -552,7 +552,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
 
     return (
         <Master title={`Editing ${item.data.name}`}>
-            <SharedHeader backgroundClass={raid?.background ?? "bg-ssctk"} title="Edit Loot Biases" subtitle={raid?.name} />
+            <SharedHeader backgroundClass={raid?.background ?? "bg-vashj-and-kaelthas"} title="Edit Loot Biases" subtitle={raid?.name} />
             {/* Tool navigation */}
             <ToolNav>
                 <div className="flex-initial space-x-4">

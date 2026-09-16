@@ -268,14 +268,63 @@
      */
     body {
         background-color: var(--color-surface);
-        background-image: url("../images/bg_brown_texture_repeat.jpg");
         background-position: center -200px;
         background-repeat: repeat;
+    }
+
+    [data-theme="classic"] body {
+        background-image: url("../images/classic/bg_brown_texture.jpg");
+    }
+
+    [data-theme="forever"] body {
+        background-image: url("../images/forever/bg_parchment.jpg");
+        background-position: center;
+        background-repeat: repeat;
+        background-size: cover;
     }
 }
 
 svg.recharts-surface {
     overflow: visible;
+}
+
+/*
+ * SharedHeader backgrounds
+ * Consumed by resources/js/Components/SharedHeader.jsx via its
+ * `backgroundClass` prop (default: `bg-masthead`). Each page passes one of
+ * these classes to set the header's hero image; `.bg-masthead` is themed
+ * (classic/forever) and responsive, the rest are single fixed images used
+ * on specific pages (dungeons, raids, etc).
+ */
+[data-theme="classic"] .bg-masthead {
+    background-image: url("../images/classic/bg_masthead_sm.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+@media (min-width: 768px) {
+    [data-theme="classic"] .bg-masthead {
+        background-image: url("../images/classic/bg_masthead_md.webp");
+    }
+}
+
+[data-theme="forever"] .bg-masthead {
+    background-color: var(--color-forever-900);
+    background-image: url("../images/forever/bg_masthead_sm.jpg");
+    background-position: center;
+    background-size: cover;
+}
+
+@media (min-width: 768px) {
+    [data-theme="forever"] .bg-masthead {
+        background-image: url("../images/forever/bg_masthead_md.jpg");
+    }
+}
+
+@media (min-width: 1280px) {
+    [data-theme="forever"] .bg-masthead {
+        background-image: url("../images/forever/bg_masthead_xl.jpg");
+    }
 }
 
 .bg-arcatraz {
@@ -286,13 +335,6 @@ svg.recharts-surface {
 
 .bg-dungeons {
     background-image: url("../images/bg_dungeons.webp");
-    background-position: center;
-    background-size: cover;
-}
-
-/* Deprecated background, avoid using for new pages */
-.bg-goldshire {
-    background-image: url("../images/bg_goldshire.webp");
     background-position: center;
     background-size: cover;
 }
@@ -309,20 +351,8 @@ svg.recharts-surface {
     background-size: cover;
 }
 
-.bg-karazhan {
+.bg-karazhan-chess {
     background-image: url("../images/bg_karazhan.webp");
-    background-position: center;
-    background-size: cover;
-}
-
-.bg-masthead {
-    background-image: url("../images/bg_masthead_mobile.webp");
-    background-position: center;
-    background-size: cover;
-}
-
-.bg-masthead-desktop {
-    background-image: url("../images/bg_masthead_desktop_1.webp");
     background-position: center;
     background-size: cover;
 }
@@ -332,6 +362,20 @@ svg.recharts-surface {
     background-position: center;
     background-size: cover;
 }
+
+.bg-stormwind {
+    background-image: url("../images/bg_stormwind.webp");
+    background-position: bottom -60px center;
+    background-size: cover;
+}
+
+.bg-vashj-and-kaelthas {
+    background-image: url("../images/bg_vashj_and_kaelthas.webp");
+    background-position: center;
+    background-size: cover;
+}
+
+/* Raid instance backgrounds */
 
 .bg-raid-black-temple {
     background-image: url("../images/bg_blacktemple.webp");
@@ -393,56 +437,48 @@ svg.recharts-surface {
     background-size: cover;
 }
 
-.bg-ssctk {
-    background-image: url("../images/bg_ssctk.webp");
-    background-position: center;
-    background-size: cover;
-}
+/* Themed surface backgrounds */
 
-.bg-stormwind {
-    background-image: url("../images/bg_stormwind.webp");
-    background-position: bottom -60px center;
-    background-size: cover;
-}
-
-.bg-parchment-texture {
-    background-image: url("../images/bg_brown_texture_repeat.jpg");
+[data-theme="classic"] .bg-parchment {
+    background-image: url("../images/classic/bg_brown_texture.jpg");
     background-position: center -200px;
     background-repeat: repeat;
 }
 
-/*
- * Forever hero background. Placeholder art from Blizzard's Forever page;
- * swap the url()s when final masthead art is supplied — nothing else needs
- * to change.
- */
-.bg-forever-masthead {
-    background-color: var(--color-forever-900);
-    background-image: url("../images/bg_masthead_sm.jpg");
+[data-theme="forever"] .bg-parchment {
+    background-image: url("../images/forever/bg_parchment.jpg");
+    background-position: center;
+    background-repeat: repeat;
+    background-size: 100% auto;
+}
+
+[data-theme="classic"] .bg-footer {
+    background-image: none;
+}
+
+[data-theme="forever"] .bg-footer {
+    background-image: url("../images/forever/bg_footer_sm.webp");
     background-position: center;
     background-size: cover;
 }
 
 @media (min-width: 768px) {
-    .bg-forever-masthead {
-        background-image: url("../images/bg_masthead_md.jpg");
+    [data-theme="forever"] .bg-footer {
+        background-image: url("../images/forever/bg_footer_lg.webp");
     }
 }
 
-@media (min-width: 1280px) {
-    .bg-forever-masthead {
-        background-image: url("../images/bg_masthead_xl.jpg");
-    }
+[data-theme="classic"] .border-footer {
+    border-color: transparent;
 }
 
-.bg-footer {
-    background-image: url("../images/bg_footer_sm.webp");
-    background-position: center;
-    background-size: cover;
+[data-theme="forever"] .border-footer {
+    border-color: var(--color-camel-600);
 }
 
-@media (min-width: 768px) {
-    .bg-footer {
-        background-image: url("../images/bg_footer_lg.webp");
-    }
+[data-theme="forever"] .bg-mountains {
+    background-image: url("../images/forever/bg_mountains.avif");
+    background-position: 50% 100%;
+    background-size: 100% contain;
+    background-repeat: no-repeat;
 }

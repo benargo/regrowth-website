@@ -283,7 +283,7 @@ export default function Priorities({ phases, table }) {
 
     return (
         <Master title="Priority stats">
-            <SharedHeader backgroundClass="bg-ssctk" title="Highest priority stats" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Highest priority stats" />
             <ToolNav>
                 <div className="flex items-center space-x-4">
                     <Link

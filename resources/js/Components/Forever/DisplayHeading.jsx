@@ -14,9 +14,7 @@ export default function DisplayHeading({ level = 2, eyebrow, className = "", chi
 
     return (
         <div className={className}>
-            {eyebrow && (
-                <p className="text-camel-400 mb-2 text-sm font-medium tracking-[0.2em] uppercase">{eyebrow}</p>
-            )}
+            {eyebrow && <p className="text-camel-400 mb-2 text-sm font-medium tracking-[0.2em] uppercase">{eyebrow}</p>}
             <Tag className={`text-camel-200 font-serif font-normal ${SIZES[level] ?? SIZES[2]}`} {...props}>
                 {children}
             </Tag>

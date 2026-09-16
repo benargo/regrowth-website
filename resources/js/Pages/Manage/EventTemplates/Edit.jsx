@@ -1109,7 +1109,7 @@ export default function Edit({ template, targetMarkers, raids }) {
 
     return (
         <Master title={`Editing template: ${template.title}`}>
-            <SharedHeader title={template.title} backgroundClass={template.background ?? "bg-ssctk"} />
+            <SharedHeader title={template.title} backgroundClass={template.background ?? "bg-vashj-and-kaelthas"} />
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link

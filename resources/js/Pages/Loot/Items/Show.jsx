@@ -105,7 +105,7 @@ export default function Show({ item, comments, replies }) {
 
     return (
         <Master title={item.data.name}>
-            <SharedHeader backgroundClass={raid?.background ?? "bg-ssctk"} title="Loot Bias" subtitle={raid?.name} />
+            <SharedHeader backgroundClass={raid?.background ?? "bg-vashj-and-kaelthas"} title="Loot Bias" subtitle={raid?.name} />
             {/* Tool navigation */}
             <ToolNav>
                 {raid && (

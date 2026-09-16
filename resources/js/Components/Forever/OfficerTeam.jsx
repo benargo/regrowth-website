@@ -62,8 +62,8 @@ export default function OfficerTeam({ officers = [], renders }) {
                 </DisplayHeading>
 
                 <p className="text-camel-400 mx-auto mb-12 max-w-2xl text-center md:mb-16">
-                    Regrowth is steered by a team of officers who organise the raids, settle the loot and keep the
-                    guild running. Here they all are.
+                    Regrowth is steered by a team of officers who organise the raids, settle the loot and keep the guild
+                    running. Here they all are.
                 </p>
 
                 {/* Desktop: one staggered row on a shared baseline, each render

@@ -167,7 +167,7 @@ export default function Index({ raid, boss_items, trash_items, priority_weight_t
     return (
         <Master title={`Loot biases - ${raid.data.name}`}>
             <SharedHeader
-                backgroundClass={raid.data.background ?? "bg-ssctk"}
+                backgroundClass={raid.data.background ?? "bg-vashj-and-kaelthas"}
                 title="Loot biases"
                 subtitle={raid.data.name}
             />

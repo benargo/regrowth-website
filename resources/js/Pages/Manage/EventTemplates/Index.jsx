@@ -67,7 +67,7 @@ export default function Index({ templates, raidGroups }) {
 
     return (
         <Master title="Event Templates">
-            <SharedHeader backgroundClass="bg-ssctk" title="Event Templates" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Event Templates" />
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
