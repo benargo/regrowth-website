@@ -13,6 +13,7 @@ use App\Models\Character;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -69,13 +70,24 @@ class HomeController extends Controller
      * paint. An officer with no character row, no attached render, or a failed
      * lookup maps to null and the card renders a silhouette instead.
      *
+     * Characters are batch-loaded in a single query (with their render media
+     * eager-loaded) rather than one query per officer.
+     *
      * @return array<string, array{url: string, visibleTop: float, visibleBottom: float, isLargeRace: bool}|null>
      */
     private function resolveOfficerRenders(): array
     {
-        return collect(config('guild.officers'))
-            ->mapWithKeys(fn (array $officer): array => [
-                $officer['name'] => $this->renderFor($officer['name']),
+        $officerNames = collect(config('guild.officers'))->pluck('name');
+
+        $charactersByLowerName = Character::query()
+            ->whereIn(DB::raw('LOWER(name)'), $officerNames->map(fn (string $name): string => mb_strtolower($name)))
+            ->with('media')
+            ->get()
+            ->keyBy(fn (Character $character): string => mb_strtolower($character->name));
+
+        return $officerNames
+            ->mapWithKeys(fn (string $name): array => [
+                $name => $this->renderFor($charactersByLowerName->get(mb_strtolower($name))),
             ])
             ->all();
     }
@@ -91,10 +103,8 @@ class HomeController extends Controller
      *
      * @return array{url: string, visibleTop: float, visibleBottom: float, isLargeRace: bool}|null
      */
-    private function renderFor(string $name): ?array
+    private function renderFor(?Character $character): ?array
     {
-        $character = Character::whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first();
-
         if ($character === null) {
             return null;
         }
