@@ -130,14 +130,14 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
             <h2 className="mb-4 text-xl font-semibold text-white">
                 Loot Council
                 {currentCouncillors.length > 0 && (
-                    <span className="ml-2 text-base font-normal text-gray-400">({currentCouncillors.length})</span>
+                    <span className="ml-2 text-base font-normal text-secondary-400">({currentCouncillors.length})</span>
                 )}
             </h2>
 
             {currentCouncillors.length === 0 ? (
-                <p className="text-gray-400">No loot councillors recorded.</p>
+                <p className="text-secondary-400">No loot councillors recorded.</p>
             ) : (
-                <div className="divide-y divide-brown-700 rounded border border-amber-600/30">
+                <div className="divide-y divide-ink-600 rounded border border-ink-600/30">
                     {currentCouncillors.map((character) => (
                         <div key={character.id} className="flex items-center justify-between px-4 py-3">
                             <div className="flex items-center gap-3">
@@ -163,7 +163,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                                         type="button"
                                         disabled={processingIds.has(character.id)}
                                         onClick={() => handleRemove(character.id)}
-                                        className="rounded px-3 py-1.5 text-gray-500 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="rounded px-3 py-1.5 text-secondary-500 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         <Icon icon="times" style="solid" className="text-xs" />
                                     </button>
@@ -178,9 +178,9 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                 <button
                     type="button"
                     onClick={handleOpenAdd}
-                    className="mt-4 inline-flex items-center gap-2 rounded border border-amber-600/50 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-amber-600 hover:bg-amber-600/10 hover:text-white"
+                    className="mt-4 inline-flex items-center gap-2 rounded border border-ink-600/50 px-4 py-2 text-sm text-secondary-300 transition-colors hover:border-ink-600 hover:bg-ink-600/10 hover:text-white"
                 >
-                    <Icon icon="plus" style="solid" className="text-amber-500" />
+                    <Icon icon="plus" style="solid" className="text-ink-500" />
                     Add Councillor
                 </button>
             )}
@@ -188,7 +188,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
             {canManage && isAddingCouncillor && (
                 <div className="mt-4">
                     {isLoadingCandidates ? (
-                        <div className="h-10 w-full animate-pulse rounded border border-amber-600/30 bg-brown-800" />
+                        <div className="h-10 w-full animate-pulse rounded border border-ink-600/30 bg-ground-800" />
                     ) : (
                         <Autocomplete
                             value={characterSearch}
@@ -214,7 +214,7 @@ export default function LootCouncillors({ reportId, characters, onChange }) {
                     <button
                         type="button"
                         onClick={handleCancelAdd}
-                        className="mt-2 text-sm text-gray-400 hover:text-white"
+                        className="mt-2 text-sm text-secondary-400 hover:text-white"
                     >
                         Cancel
                     </button>

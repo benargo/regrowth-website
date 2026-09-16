@@ -23,24 +23,6 @@ class EventResourceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function mockChannel(string $id = '111222333', ?string $name = 'general', ?int $position = 0): Channel
-    {
-        $channel = Channel::from(['id' => $id, 'name' => $name, 'position' => $position]);
-
-        $discord = $this->createStub(Discord::class);
-        $discord->method('getChannel')->willReturn($channel);
-        $this->app->instance(Discord::class, $discord);
-
-        return $channel;
-    }
-
-    private function makeResource(Event $event): array
-    {
-        $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
-
-        return (new EventResource($event))->toArray(new Request);
-    }
-
     #[Test]
     public function it_returns_all_expected_top_level_keys(): void
     {
@@ -493,5 +475,194 @@ class EventResourceTest extends TestCase
         $this->assertArrayHasKey('sort_order', $bench['rank']);
         $this->assertArrayNotHasKey('slot_number', $bench);
         $this->assertArrayNotHasKey('is_confirmed', $bench);
+    }
+
+    // ==================== forMembers ====================
+
+    #[Test]
+    public function the_member_scope_returns_all_expected_keys(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = $this->makeMemberResource($event);
+
+        $this->assertArrayHasKey('id', $array);
+        $this->assertArrayHasKey('title', $array);
+        $this->assertArrayHasKey('start_time', $array);
+        $this->assertArrayHasKey('end_time', $array);
+        $this->assertArrayHasKey('duration', $array);
+        $this->assertArrayHasKey('channel', $array);
+    }
+
+    #[Test]
+    public function the_member_scope_returns_correct_scalar_fields(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = $this->makeMemberResource($event);
+
+        $this->assertSame($event->id, $array['id']);
+        $this->assertSame($event->title, $array['title']);
+        $this->assertSame($event->start_time->toIso8601String(), $array['start_time']);
+        $this->assertSame($event->end_time->toIso8601String(), $array['end_time']);
+    }
+
+    #[Test]
+    public function the_member_scope_returns_duration_as_seconds_between_start_and_end(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = $this->makeMemberResource($event);
+
+        $this->assertSame($event->start_time->diffInSeconds($event->end_time), $array['duration']);
+    }
+
+    #[Test]
+    public function the_member_scope_returns_channel_as_an_array_with_id_name_and_position(): void
+    {
+        $this->mockChannel(id: '999888777', name: 'raid-chat', position: 3);
+        $event = Event::factory()->create();
+
+        $array = $this->makeMemberResource($event);
+
+        $this->assertIsArray($array['channel']);
+        $this->assertSame('999888777', $array['channel']['id']);
+        $this->assertSame('raid-chat', $array['channel']['name']);
+        $this->assertSame(3, $array['channel']['position']);
+    }
+
+    #[Test]
+    public function the_member_scope_omits_channel_when_discord_api_fails(): void
+    {
+        $discord = $this->createStub(Discord::class);
+        $discord->method('getChannel')->willThrowException(new \Exception('Discord unavailable'));
+        $this->app->instance(Discord::class, $discord);
+
+        $event = Event::factory()->create();
+
+        $this->assertArrayNotHasKey('channel', $this->makeMemberResource($event));
+    }
+
+    #[Test]
+    public function the_member_scope_does_not_include_composition_raids_or_assignments(): void
+    {
+        $this->mockChannel();
+        $event = Event::factory()->create();
+
+        $array = $this->makeMemberResource($event);
+
+        $this->assertArrayNotHasKey('composition', $array);
+        $this->assertArrayNotHasKey('raids', $array);
+        $this->assertArrayNotHasKey('assignments', $array);
+    }
+
+    // ==================== forVisitors ====================
+
+    #[Test]
+    public function the_visitor_scope_exposes_only_public_safe_fields(): void
+    {
+        $event = Event::factory()->live()->create([
+            'title' => 'Karazhan',
+            'start_time' => '2026-09-18 19:00:00',
+            'end_time' => '2026-09-18 22:00:00',
+        ]);
+
+        $data = $this->makeVisitorResource($event);
+
+        $this->assertSame($event->id, $data['id']);
+        $this->assertSame('Karazhan', $data['title']);
+        $this->assertStringStartsWith('2026-09-18T19:00:00', $data['start_time']);
+        $this->assertStringStartsWith('2026-09-18T22:00:00', $data['end_time']);
+    }
+
+    #[Test]
+    public function the_visitor_scope_never_exposes_internal_or_roster_data(): void
+    {
+        $data = $this->makeVisitorResource(Event::factory()->live()->create());
+
+        // A Discord channel call per event on anonymous traffic is both slow
+        // and a leak of internal channel names.
+        $this->assertArrayNotHasKey('channel', $data);
+        $this->assertArrayNotHasKey('channel_id', $data);
+        $this->assertArrayNotHasKey('composition', $data);
+        $this->assertArrayNotHasKey('assignments', $data);
+        $this->assertArrayNotHasKey('characters', $data);
+        $this->assertArrayNotHasKey('duration', $data);
+    }
+
+    #[Test]
+    public function the_visitor_scope_never_calls_the_discord_api(): void
+    {
+        // No Discord stub is bound: if the visitor scope reached the channel
+        // lookup the container would resolve the real client and this would fail.
+        $discord = $this->createMock(Discord::class);
+        $discord->expects($this->never())->method('getChannel');
+        $this->app->instance(Discord::class, $discord);
+
+        $this->makeVisitorResource(Event::factory()->live()->create());
+    }
+
+    #[Test]
+    public function the_visitor_scope_lists_raid_names_as_strings(): void
+    {
+        $event = Event::factory()->live()->create();
+        $event->raids()->attach(Raid::factory()->create(['name' => 'Black Temple']), ['sort_order' => 1]);
+
+        $this->assertSame(['Black Temple'], $this->makeVisitorResource($event)['raids']);
+    }
+
+    #[Test]
+    public function the_visitor_scope_handles_an_event_with_no_raids(): void
+    {
+        $this->assertSame([], $this->makeVisitorResource(Event::factory()->live()->create())['raids']);
+    }
+
+    #[Test]
+    public function the_default_scope_still_returns_raids_as_full_objects(): void
+    {
+        // `raids` is deliberately polymorphic: names under forVisitors, full
+        // objects by default. Guard against one scope's shape leaking into the other.
+        $this->mockChannel();
+        $event = Event::factory()->create();
+        $event->raids()->attach(Raid::factory()->create(['name' => 'Black Temple']), ['sort_order' => 1]);
+
+        $raids = $this->makeResource($event)['raids'];
+
+        $this->assertIsArray($raids[0]);
+        $this->assertArrayHasKey('bosses', $raids[0]);
+        $this->assertSame('Black Temple', $raids[0]['name']);
+    }
+
+    // ==================== helpers ====================
+
+    private function mockChannel(string $id = '111222333', ?string $name = 'general', ?int $position = 0): Channel
+    {
+        $channel = Channel::from(['id' => $id, 'name' => $name, 'position' => $position]);
+
+        $discord = $this->createStub(Discord::class);
+        $discord->method('getChannel')->willReturn($channel);
+        $this->app->instance(Discord::class, $discord);
+
+        return $channel;
+    }
+
+    private function makeResource(Event $event): array
+    {
+        $event->load('raids.bosses.media', 'bosses.media', 'assignments.group', 'characters.rank');
+
+        return (new EventResource($event))->toArray(new Request);
+    }
+
+    private function makeMemberResource(Event $event): array
+    {
+        return EventResource::forMembers($event)->toArray(new Request);
+    }
+
+    private function makeVisitorResource(Event $event): array
+    {
+        return EventResource::forVisitors($event->load('raids'))->toArray(new Request);
     }
 }

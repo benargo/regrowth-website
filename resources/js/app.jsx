@@ -1,7 +1,7 @@
 import '../css/app.css';
 import './bootstrap';
 
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
@@ -15,6 +15,14 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.jsx'),
         ),
     setup({ el, App, props }) {
+        // Keep <html data-theme> in sync on client-side navigation: the Blade
+        // shell only stamps it on a full page load, so without this a visit
+        // between pages with different themes (#[UsesTheme]) leaves the old
+        // theme's tokens applied.
+        router.on('navigate', (event) => {
+            document.documentElement.dataset.theme = event.detail.page.props.theme;
+        });
+
         const root = createRoot(el);
 
         root.render(<App {...props} />);

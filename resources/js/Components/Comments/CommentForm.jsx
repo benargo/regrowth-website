@@ -106,7 +106,7 @@ export default function CommentForm({
                 <button
                     type="submit"
                     disabled={processing || validationError}
-                    className={`inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-hidden active:bg-amber-800 ${
+                    className={`inline-flex items-center rounded-md border border-transparent bg-ink-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-ink-700 focus:bg-ink-700 focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 focus:outline-hidden active:bg-ink-800 ${
                         (processing || validationError) && "opacity-25"
                     }`}
                 >
@@ -117,7 +117,7 @@ export default function CommentForm({
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="inline-flex items-center rounded-md border border-gray-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-gray-700"
+                        className="inline-flex items-center rounded-md border border-secondary-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-secondary-700"
                     >
                         Cancel
                     </button>

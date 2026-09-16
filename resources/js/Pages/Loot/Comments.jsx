@@ -84,12 +84,12 @@ export default function Comments({ comments, replies }) {
 
     return (
         <Master title="All Comments">
-            <SharedHeader backgroundClass="bg-ssctk" title="Loot Bias" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Loot Bias" />
 
             <ToolNav>
                 <Link
                     href={route("loot.index")}
-                    className="hover:border-primary hover:bg-brown-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                    className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                 >
                     <Icon icon="arrow-left" style="solid" className="mr-2" />
                     <span>Back to loot biases</span>
@@ -111,10 +111,10 @@ export default function Comments({ comments, replies }) {
                                                 item: group.item.id,
                                                 slug: group.item.slug,
                                             })}
-                                            className="flex items-center gap-3 transition-colors hover:text-amber-300"
+                                            className="flex items-center gap-3 transition-colors hover:text-ink-300"
                                         >
                                             {group.item?.icon && <div className="h-8 w-8 flex-none" />}
-                                            <h3 className="text-lg font-semibold text-amber-400 hover:text-amber-300">
+                                            <h3 className="text-lg font-semibold text-ink-400 hover:text-ink-300">
                                                 {group.item?.name ?? `Item #${itemId}`}
                                             </h3>
                                         </Link>
@@ -158,7 +158,7 @@ export default function Comments({ comments, replies }) {
                         <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
-                    <p className="py-8 text-center text-gray-400">No comments yet.</p>
+                    <p className="py-8 text-center text-secondary-400">No comments yet.</p>
                 )}
             </PageContainer>
         </Master>

@@ -8,7 +8,7 @@ import Master from "@/Layouts/Master";
 import PageContainer from "@/Components/PageContainer";
 
 function RaidBadge({ raid }) {
-    return <span className="rounded bg-amber-600/20 px-2 py-0.5 text-xs text-amber-400">{raid.name}</span>;
+    return <span className="rounded bg-ink-600/20 px-2 py-0.5 text-xs text-ink-400">{raid.name}</span>;
 }
 
 function TemplateCard({ template, onDeleteClick }) {
@@ -19,10 +19,10 @@ function TemplateCard({ template, onDeleteClick }) {
     });
 
     return (
-        <div className="flex flex-col gap-3 rounded border border-amber-600/40 bg-brown-800/40 p-4">
+        <div className="flex flex-col gap-3 rounded border border-ink-600/40 bg-ground-800/40 p-4">
             <div className="flex items-start justify-between gap-2">
                 <h3 className="font-semibold text-white">{template.title}</h3>
-                <span className="shrink-0 text-xs text-gray-500">Updated {updatedAt}</span>
+                <span className="shrink-0 text-xs text-secondary-500">Updated {updatedAt}</span>
             </div>
             <div className="flex flex-wrap gap-1">
                 {template.raids.map((raid) => (
@@ -32,7 +32,7 @@ function TemplateCard({ template, onDeleteClick }) {
             <div className="flex gap-2">
                 <Link
                     href={route("management.event-templates.edit", template.id)}
-                    className="flex items-center gap-1 rounded border border-amber-600 px-3 py-1 text-sm text-amber-400 transition-colors hover:bg-amber-600/20"
+                    className="flex items-center gap-1 rounded border border-ink-600 px-3 py-1 text-sm text-ink-400 transition-colors hover:bg-ink-600/20"
                 >
                     <Icon icon="edit" style="light" />
                     Edit
@@ -67,12 +67,12 @@ export default function Index({ templates, raidGroups }) {
 
     return (
         <Master title="Event Templates">
-            <SharedHeader backgroundClass="bg-ssctk" title="Event Templates" />
+            <SharedHeader backgroundClass="bg-vashj-and-kaelthas" title="Event Templates" />
             <ToolNav>
                 <div className="flex-initial space-x-4">
                     <Link
                         href={route("management.dashboard")}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-brown-800 active:border-primary"
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to officers' dashboard
@@ -82,10 +82,10 @@ export default function Index({ templates, raidGroups }) {
 
             <PageContainer>
                 <div className="mb-8 flex items-center justify-between">
-                    <p className="text-gray-400">Create and manage reusable raid event templates.</p>
+                    <p className="text-secondary-400">Create and manage reusable raid event templates.</p>
                     <Link
                         href={route("management.event-templates.create")}
-                        className="flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500"
+                        className="flex items-center gap-2 rounded bg-ink-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-ink-500"
                     >
                         <Icon icon="plus" style="light" />
                         Create Template
@@ -93,14 +93,14 @@ export default function Index({ templates, raidGroups }) {
                 </div>
 
                 {raidGroups.length === 0 ? (
-                    <p className="text-center text-gray-500">No templates yet. Create one to get started.</p>
+                    <p className="text-center text-secondary-500">No templates yet. Create one to get started.</p>
                 ) : (
                     <div className="flex flex-col gap-12">
                         {raidGroups.map(({ raid, templates: raidTemplates }) => (
                             <section key={raid.id}>
-                                <h2 className="mb-4 text-xl font-semibold text-amber-400">{raid.name}</h2>
+                                <h2 className="mb-4 text-xl font-semibold text-ink-400">{raid.name}</h2>
                                 {raidTemplates.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No templates for this raid yet.</p>
+                                    <p className="text-sm text-secondary-500">No templates for this raid yet.</p>
                                 ) : (
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                         {raidTemplates.map((template) => (

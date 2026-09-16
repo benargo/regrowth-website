@@ -260,6 +260,9 @@ class ChannelTest extends TestCase
 
         $channel = Channel::from([...$this->minimalPayload(), 'icon' => null]);
         $this->assertNull($channel->icon);
+
+        $channel = Channel::from([...$this->minimalPayload(), 'application_id' => null]);
+        $this->assertNull($channel->application_id);
     }
 
     // ==================== array fields ====================

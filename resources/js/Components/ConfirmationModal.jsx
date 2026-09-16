@@ -22,7 +22,7 @@ export default function ConfirmationModal({
         <Modal show={show} onClose={onClose} maxWidth={maxWidth}>
             <div className="p-6 text-white">
                 <h2 className="mb-2 text-lg font-semibold">{title}</h2>
-                <div className="mb-6 text-sm text-gray-400">{children}</div>
+                <div className="mb-6 text-sm text-secondary-400">{children}</div>
                 <div className="flex justify-end gap-3">
                     <SecondaryButton type="button" onClick={onClose} disabled={processing}>
                         {cancelLabel}

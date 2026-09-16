@@ -12,10 +12,10 @@ function ResultSkeleton() {
         <div className="animate-pulse space-y-1 p-2">
             {[0, 1, 2].map((i) => (
                 <div key={i} className="flex items-center gap-4 rounded p-2">
-                    <div className="bg-brown-700 h-8 w-8 flex-none rounded" />
+                    <div className="bg-ground-700 h-8 w-8 flex-none rounded" />
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <div className="bg-brown-700 h-3 w-1/3 rounded" />
-                        <div className="bg-brown-700 h-4 w-2/3 rounded" />
+                        <div className="bg-ground-700 h-3 w-1/3 rounded" />
+                        <div className="bg-ground-700 h-4 w-2/3 rounded" />
                     </div>
                 </div>
             ))}
@@ -128,10 +128,10 @@ export default function SearchPalette({ open, onClose }) {
             <div className="fixed inset-0 z-10 flex items-start justify-center overflow-y-auto px-4 pt-[10vh] pb-6">
                 <DialogPanel
                     transition
-                    className="border-primary bg-brown bg-brown-texture w-full max-w-2xl transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:scale-95 data-closed:opacity-0"
+                    className="border-primary bg-ground-800 bg-parchment w-full max-w-2xl transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:scale-95 data-closed:opacity-0"
                 >
-                    <div className="flex items-center gap-2 border-b border-amber-600/50 px-4 py-3">
-                        <Icon icon="search" style="solid" className="h-4 w-4 flex-none text-gray-400" />
+                    <div className="flex items-center gap-2 border-b border-ink-600/50 px-4 py-3">
+                        <Icon icon="search" style="solid" className="h-4 w-4 flex-none text-secondary-400" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -152,7 +152,7 @@ export default function SearchPalette({ open, onClose }) {
                             <button
                                 type="button"
                                 onClick={() => setScopeDismissed(true)}
-                                className="inline-flex flex-none items-center gap-1 rounded bg-amber-600/20 px-2 py-1 text-xs font-semibold text-amber-500 hover:bg-amber-600/30"
+                                className="inline-flex flex-none items-center gap-1 rounded bg-ink-600/20 px-2 py-1 text-xs font-semibold text-ink-500 hover:bg-ink-600/30"
                             >
                                 {raidScope.name}
                                 <Icon icon="times" style="solid" className="h-3 w-3" />
@@ -163,7 +163,7 @@ export default function SearchPalette({ open, onClose }) {
                     {http.processing && <ResultSkeleton />}
 
                     {!http.processing && query.trim().length >= MIN_QUERY_LENGTH && results.length === 0 && (
-                        <p className="px-4 py-6 text-center text-sm text-gray-400">No items found</p>
+                        <p className="px-4 py-6 text-center text-sm text-secondary-400">No items found</p>
                     )}
 
                     {!http.processing && results.length > 0 && (
@@ -189,7 +189,7 @@ export default function SearchPalette({ open, onClose }) {
                         <button
                             type="button"
                             onClick={goToResults}
-                            className="w-full border-t border-amber-600/50 px-4 py-2 text-left text-sm text-amber-500 transition-colors hover:bg-amber-600/20"
+                            className="w-full border-t border-ink-600/50 px-4 py-2 text-left text-sm text-ink-500 transition-colors hover:bg-ink-600/20"
                         >
                             {`See all ${total} results`}
                         </button>

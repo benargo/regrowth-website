@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\EventSummaryResource;
+use App\Http\Resources\EventResource;
 use App\Models\Event;
 use App\Models\Report;
 use Illuminate\Http\RedirectResponse;
@@ -35,12 +35,12 @@ class RaidingController extends Controller
         return Inertia::render('Raiding/Index', [
             'upcomingEvents' => Inertia::defer(function () use ($request) {
                 return Cache::tags('raiding', 'events')->remember('events:upcoming', now()->addMinutes(10), function () use ($request) {
-                    return EventSummaryResource::collection(
+                    return EventResource::collectionForMembers(
                         Event::live()->where('end_time', '>=', now()->subHours(2))
                             ->where('end_time', '<=', now()->addWeek()->endOfDay())
                             ->orderBy('start_time')
                             ->get()
-                    )->resolve($request);
+                    )->map->resolve($request)->all();
                 });
             }),
             'reports' => Inertia::defer(function () use ($request) {

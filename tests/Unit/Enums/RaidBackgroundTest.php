@@ -47,7 +47,7 @@ class RaidBackgroundTest extends TestCase
     #[Test]
     public function ssc_tk_has_correct_value(): void
     {
-        $this->assertSame('bg-ssctk', RaidBackground::SerpentshrineCavernAndTempestKeep->value);
+        $this->assertSame('bg-vashj-and-kaelthas', RaidBackground::SerpentshrineCavernAndTempestKeep->value);
     }
 
     #[Test]

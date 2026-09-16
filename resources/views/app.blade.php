@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $page['props']['theme'] ?? \App\Enums\Theme::default()->value }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,8 +7,9 @@
         <title data-inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        @if (config('app.fonts.typekit_url'))
+            <link rel="stylesheet" href="{{ config('app.fonts.typekit_url') }}">
+        @endif
 
         <!-- Open Graph -->
         <meta property="og:title" content="{{ config('app.name', 'Laravel') }}">

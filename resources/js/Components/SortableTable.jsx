@@ -13,7 +13,7 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
     return (
         <div
             role="columnheader"
-            className="table-cell cursor-pointer select-none px-4 py-3 text-left text-sm font-semibold text-amber-500 transition-colors hover:text-amber-400"
+            className="table-cell cursor-pointer select-none px-4 py-3 text-left text-sm font-semibold text-ink-500 transition-colors hover:text-ink-400"
             onClick={() => onSort(column)}
         >
             <span className="inline-flex items-center gap-2">
@@ -26,7 +26,7 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
                             <Icon icon="sort-down" style="solid" />
                         )
                     ) : (
-                        <Icon icon="sort" style="solid" className="text-gray-600" />
+                        <Icon icon="sort" style="solid" className="text-secondary-600" />
                     )}
                 </span>
             </span>
@@ -55,7 +55,7 @@ export default function SortableTable({
     return (
         <div role="table" className={`table w-full text-left${className ? ` ${className}` : ""}`}>
             <div role="rowgroup" className="table-header-group">
-                <div role="row" className="table-row border-b border-brown-700">
+                <div role="row" className="table-row border-b border-ink-600">
                     {columns.map((col) => (
                         <SortableHeader
                             key={col}

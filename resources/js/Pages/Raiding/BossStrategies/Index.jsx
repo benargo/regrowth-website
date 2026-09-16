@@ -9,7 +9,7 @@ export default function BossStrategiesIndex({ bosses, phases }) {
     phases = phases.data ?? phases ?? [];
     return (
         <Master title="Boss Strategies">
-            <SharedHeader title="Boss Strategies" backgroundClass="bg-karazhan" />
+            <SharedHeader title="Boss Strategies" backgroundClass="bg-karazhan-chess" />
             <PageContainer>
                 <div className="flex flex-col gap-4">
                 {phases?.map((phase) => (
@@ -23,7 +23,7 @@ export default function BossStrategiesIndex({ bosses, phases }) {
                             {Object.values(phase.raids).map((raid) => (
                                 <div
                                     key={raid.id}
-                                    className="flex min-w-[200px] flex-1 flex-col rounded border border-amber-600/40 bg-amber-600/5 p-4"
+                                    className="flex min-w-[200px] flex-1 flex-col rounded border border-ink-600/40 bg-ink-600/5 p-4"
                                 >
                                     <h3 className="mb-4 text-lg font-bold text-white">{raid.name}</h3>
                                     <div className="flex flex-col gap-2">
@@ -34,7 +34,7 @@ export default function BossStrategiesIndex({ bosses, phases }) {
                                                     boss: boss.id,
                                                     slug: boss.slug,
                                                 })}
-                                                className="w-full rounded border border-amber-600 bg-amber-600/20 px-3 py-2 text-center text-white transition-colors hover:bg-amber-600/40"
+                                                className="w-full rounded border border-ink-600 bg-ink-600/20 px-3 py-2 text-center text-white transition-colors hover:bg-ink-600/40"
                                             >
                                                 {boss.name}
                                             </Link>

@@ -75,24 +75,24 @@ export default function CommentItem({
 
     if (comment.is_deleted) {
         return (
-            <div className={`border-brown-700 bg-brown-800/50 rounded-lg border border-dashed ${isReply ? "p-3" : "p-4"}`}>
+            <div className={`border-ink-600 bg-ground-800/50 rounded-lg border border-dashed ${isReply ? "p-3" : "p-4"}`}>
                 <div className="flex items-center gap-3">
                     <img
                         src={comment.user.avatar}
                         alt={comment.user.display_name}
                         className={`rounded-full opacity-50 grayscale ${isReply ? "h-6 w-6" : "h-8 w-8"}`}
                     />
-                    <span className="text-sm font-medium text-gray-400">{comment.user.display_name}</span>
-                    <span className="ml-auto text-sm text-gray-500">{formatDate(comment.created_at)}</span>
+                    <span className="text-sm font-medium text-secondary-400">{comment.user.display_name}</span>
+                    <span className="ml-auto text-sm text-secondary-500">{formatDate(comment.created_at)}</span>
                 </div>
-                <p className="mt-2 text-sm text-gray-500 italic">[deleted]</p>
+                <p className="mt-2 text-sm text-secondary-500 italic">[deleted]</p>
             </div>
         );
     }
 
     return (
         <>
-            <div className={`border-brown-700 bg-brown-800 rounded-lg border ${isReply ? "p-3" : "p-4"}`}>
+            <div className={`border-ink-600 bg-ground-800 rounded-lg border ${isReply ? "p-3" : "p-4"}`}>
                 {/* Header with user info and timestamp */}
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -117,7 +117,7 @@ export default function CommentItem({
                             )}
                         </div>
                     </div>
-                    <span className="text-sm text-gray-400">{formatDate(comment.created_at)}</span>
+                    <span className="text-sm text-secondary-400">{formatDate(comment.created_at)}</span>
                 </div>
 
                 {/* Comment body or edit form */}
@@ -136,12 +136,12 @@ export default function CommentItem({
 
                 {/* Actions */}
                 {!isEditing && (
-                    <div className="border-brown-700 mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
+                    <div className="border-ink-600 mt-3 flex flex-col justify-start gap-4 border-t pt-3 text-sm md:flex-row">
                         {!readOnly && onReply && comment.permissions.reply && canReplyToComments && (
                             <button
                                 type="button"
                                 onClick={() => onReply()}
-                                className="text-amber-400 transition-colors hover:text-amber-300"
+                                className="text-ink-400 transition-colors hover:text-ink-300"
                             >
                                 <Icon icon="reply" style="solid" className="mr-1" /> Reply
                             </button>
@@ -149,7 +149,7 @@ export default function CommentItem({
                         {!readOnly && comment.permissions.edit && (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="text-amber-400 transition-colors hover:text-amber-300"
+                                className="text-ink-400 transition-colors hover:text-ink-300"
                             >
                                 <Icon icon="edit" style="solid" className="mr-1" /> Edit
                             </button>
@@ -198,7 +198,7 @@ export default function CommentItem({
                                                   : "You may not react to this comment."
                                         }
                                     >
-                                        <button className="cursor-not-allowed text-gray-400" disabled>
+                                        <button className="cursor-not-allowed text-secondary-400" disabled>
                                             <Icon icon="thumbs-up" style="regular" />
                                         </button>
                                     </Tooltip>
@@ -206,7 +206,7 @@ export default function CommentItem({
                                 {!readOnly && comment.permissions.react && userHasReacted() && (
                                     <Tooltip body="Click to remove your reaction.">
                                         <button
-                                            className="text-amber-400 transition-colors hover:text-amber-300"
+                                            className="text-ink-400 transition-colors hover:text-ink-300"
                                             onClick={handleReactionToggle}
                                         >
                                             <Icon icon="thumbs-up" style="solid" />
@@ -216,7 +216,7 @@ export default function CommentItem({
                                 {!readOnly && comment.permissions.react && !userHasReacted() && (
                                     <Tooltip body="Click to like this comment.">
                                         <button
-                                            className="text-white-400 transition-colors hover:text-gray-300"
+                                            className="text-white-400 transition-colors hover:text-secondary-300"
                                             onClick={handleReactionToggle}
                                         >
                                             <Icon icon="thumbs-up" style="regular" />
@@ -237,7 +237,7 @@ export default function CommentItem({
                                                 <img
                                                     src={reaction.user?.avatar}
                                                     alt={reaction.user?.display_name}
-                                                    className="border-brown-800 h-6 w-6 rounded-full border-2"
+                                                    className="border-ink-600 h-6 w-6 rounded-full border-2"
                                                 />
                                             </Tooltip>
                                         ))}

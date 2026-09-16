@@ -18,6 +18,7 @@ use App\Http\Controllers\Dashboard\PermissionController;
 use App\Http\Controllers\Dashboard\PhaseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTemplateController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LootBiasToolController;
 use App\Http\Controllers\PlannedAbsenceController;
@@ -28,7 +29,7 @@ use App\Http\Controllers\WarcraftLogs\GuildTagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', fn () => Inertia::render('Home'))->name('home');
+Route::get('/', HomeController::class)->name('home');
 
 Route::get('/search', SearchController::class)->name('search');
 

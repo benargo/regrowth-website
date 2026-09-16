@@ -12,7 +12,7 @@ function PlannedAbsencesSkeleton() {
     return (
         <div className="animate-pulse space-y-4">
             {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 rounded bg-brown-800/50" />
+                <div key={i} className="h-16 rounded bg-ground-800/50" />
             ))}
         </div>
     );
@@ -47,7 +47,7 @@ export default function Index() {
                         <Can permission="manage-planned-absences">
                             <Link
                                 href={route("raiding.absences.create")}
-                                className="mt-3 inline-flex items-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-amber-700 focus:bg-amber-700 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:bg-amber-800 md:mt-0"
+                                className="mt-3 inline-flex items-center rounded-md border border-transparent bg-ink-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-ink-700 focus:bg-ink-700 focus:outline-hidden focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 active:bg-ink-800 md:mt-0"
                             >
                                 <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
                                 Add Absence
@@ -62,7 +62,7 @@ export default function Index() {
                         <div className="flex flex-col gap-6">
                             {Object.entries(grouped).map(([characterName, absences]) => (
                                 <div key={characterName}>
-                                    <h2 className="mb-3 text-lg font-semibold text-amber-400">{characterName}</h2>
+                                    <h2 className="mb-3 text-lg font-semibold text-ink-400">{characterName}</h2>
                                     <div className="flex flex-col gap-2">
                                         {absences.map((absence) => (
                                             <PlannedAbsenceRow

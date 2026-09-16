@@ -89,7 +89,7 @@ function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
         <div
             ref={setNodeRef}
             style={style}
-            className="flex items-center justify-between border-b border-amber-600 bg-brown-900 px-4 py-2 last:border-b-0"
+            className="flex items-center justify-between border-b border-ink-600 bg-ground-900 px-4 py-2 last:border-b-0"
         >
             <span className="mr-2 w-6 flex-initial text-right">{index + 1}.</span>
             {isEditing ? (
@@ -100,17 +100,17 @@ function SortableRankItem({ rank, index, onNameChange, isSavingName }) {
                     onChange={handleInputChange}
                     onBlur={handleInputBlur}
                     onKeyDown={handleKeyDown}
-                    className="mr-2 flex-auto rounded border border-amber-600 bg-brown-800 px-2 py-0.5 text-left text-white focus:outline-hidden focus:ring-1 focus:ring-amber-500"
+                    className="mr-2 flex-auto rounded border border-ink-600 bg-ground-800 px-2 py-0.5 text-left text-white focus:outline-hidden focus:ring-1 focus:ring-ink-500"
                 />
             ) : (
                 <span
-                    className="mr-2 flex-auto cursor-text text-left transition-colors hover:text-amber-400"
+                    className="mr-2 flex-auto cursor-text text-left transition-colors hover:text-ink-400"
                     onClick={handleNameClick}
                     title="Click to edit"
                 >
                     {rank.name}
                     <span className={isSavingName === rank.id ? "inline" : "hidden"}>
-                        <Icon icon="spinner" style="solid" className="fa-spin ml-2 text-xs text-amber-400" />
+                        <Icon icon="spinner" style="solid" className="fa-spin ml-2 text-xs text-ink-400" />
                     </span>
                 </span>
             )}
@@ -125,7 +125,7 @@ function RankOverlay({ rank, index }) {
     if (!rank) return null;
 
     return (
-        <div className="flex cursor-grabbing items-center justify-between rounded border border-amber-600 bg-brown-900 px-4 py-2 shadow-lg">
+        <div className="flex cursor-grabbing items-center justify-between rounded border border-ink-600 bg-ground-900 px-4 py-2 shadow-lg">
             <span className="mr-2 w-6 flex-initial text-right">{index + 1}.</span>
             <span className="mr-2 flex-auto text-left">{rank.name}</span>
             <span className="flex flex-none items-center justify-center">
@@ -187,7 +187,7 @@ function NewRankInput({ nextPosition, onSave, isSaving }) {
     };
 
     return (
-        <div className="flex items-center justify-between border-t border-amber-600 bg-brown-800/50 px-4 py-2">
+        <div className="flex items-center justify-between border-t border-ink-600 bg-ground-800/50 px-4 py-2">
             <span className="text-grey-400 mr-2 w-6 flex-initial text-right">{nextPosition + 1}.</span>
             <input
                 ref={inputRef}
@@ -202,7 +202,7 @@ function NewRankInput({ nextPosition, onSave, isSaving }) {
             />
             {isSaving && (
                 <span className="flex-none">
-                    <Icon icon="spinner" style="solid" className="fa-spin text-xs text-amber-400" />
+                    <Icon icon="spinner" style="solid" className="fa-spin text-xs text-ink-400" />
                 </span>
             )}
         </div>
@@ -382,7 +382,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                 </div>
                 <div className="mt-6 w-64">
                     {ranks.length === 0 ? (
-                        <div className="flex flex-col rounded border border-amber-600">
+                        <div className="flex flex-col rounded border border-ink-600">
                             <NewRankInput nextPosition={0} onSave={handleCreate} isSaving={isCreating} />
                         </div>
                     ) : (
@@ -393,7 +393,7 @@ export default function ManageRanks({ guildRanks: initialRanks }) {
                             onDragEnd={handleDragEnd}
                         >
                             <SortableContext items={ranks.map((r) => r.id)} strategy={verticalListSortingStrategy}>
-                                <div className="flex flex-col rounded border border-amber-600">
+                                <div className="flex flex-col rounded border border-ink-600">
                                     {ranks.map((rank, index) => (
                                         <SortableRankItem
                                             key={rank.id}

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Contracts\HasCharacterMedia;
 use App\Enums\Gender;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\MediaLibrary\HasMedia;
@@ -554,6 +556,48 @@ class CharacterTest extends ModelTestCase
             ->firstWhere('name', Character::MEDIA_COLLECTION);
 
         $this->assertTrue($collection->singleFile);
+    }
+
+    #[Test]
+    public function it_registers_the_portrait_and_render_collections_separately(): void
+    {
+        Storage::fake('public');
+
+        $character = $this->create();
+
+        $character->addMediaFromString('AVATAR')
+            ->usingFileName('avatar.jpg')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
+
+        $character->addMediaFromString('RENDER')
+            ->usingFileName('main-raw.png')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
+
+        $character = $character->fresh();
+
+        $this->assertTrue($character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION));
+        $this->assertTrue($character->hasMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER));
+        $this->assertSame('avatar.jpg', $character->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION)->file_name);
+        $this->assertSame('main-raw.png', $character->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER)->file_name);
+    }
+
+    #[Test]
+    public function the_render_collection_holds_only_one_file(): void
+    {
+        Storage::fake('public');
+
+        $character = $this->create();
+
+        $character->addMediaFromString('OLD')
+            ->usingFileName('old.png')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
+
+        $character->addMediaFromString('NEW')
+            ->usingFileName('new.png')
+            ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
+
+        $this->assertCount(1, $character->fresh()->getMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER));
+        $this->assertSame('new.png', $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER)->file_name);
     }
 
     // ==================== warcraft_logs_reports ====================

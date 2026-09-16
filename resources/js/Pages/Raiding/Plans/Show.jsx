@@ -22,7 +22,7 @@ function BossSection({ boss, onStrategyChanged }) {
                 <div className="flex flex-col items-center gap-2 text-center">
                     {boss.assignments?.count > 0 ? (
                         <div className="flex w-full flex-col items-start gap-4">
-                            <h2 className="flex-1 text-lg font-semibold text-amber-500">Assignments</h2>
+                            <h2 className="flex-1 text-lg font-semibold text-ink-500">Assignments</h2>
                             {boss.assignments.groups.length > 0 &&
                                 boss.assignments.groups.map((group) => (
                                     <AssignmentGroup key={group.id} group={group} />
@@ -32,7 +32,7 @@ function BossSection({ boss, onStrategyChanged }) {
                             )}
                         </div>
                     ) : (
-                        <p className="text-center text-sm text-gray-500">No assignments for this boss yet.</p>
+                        <p className="text-center text-sm text-secondary-500">No assignments for this boss yet.</p>
                     )}
                 </div>
                 <BossStrategy boss={boss} />
@@ -79,7 +79,7 @@ export default function Show({ event }) {
                     <Can permission="manage-raid-plans">
                         <Link
                             href={route("raiding.plans.edit", event.id)}
-                            className="inline-flex items-center gap-2 rounded border border-amber-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-amber-600/20"
+                            className="inline-flex items-center gap-2 rounded border border-ink-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-ink-600/20"
                         >
                             <Icon icon="pencil" />
                             Edit
@@ -97,7 +97,7 @@ export default function Show({ event }) {
                         )}
                     </div>
                 ) : (
-                    <p className="flex-1 text-center text-sm text-gray-400">
+                    <p className="flex-1 text-center text-sm text-secondary-400">
                         Groups for this raid have not been posted yet.
                     </p>
                 )}
@@ -105,7 +105,7 @@ export default function Show({ event }) {
                 {/** General assignments */}
                 {event.assignments.count > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-md mb-2 font-semibold tracking-wider text-amber-500/80 uppercase">
+                        <h2 className="text-md mb-2 font-semibold tracking-wider text-ink-500/80 uppercase">
                             General Assignments
                         </h2>
                         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">

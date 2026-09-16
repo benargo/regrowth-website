@@ -1,8 +1,8 @@
 import { Link } from "@inertiajs/react";
 
-export default function NavLink({ href, children, ...props }) {
+export default function NavLink({ href, children, className = "", ...props }) {
     const classes =
-        "flex flex-row items-center border-b border-transparent p-1 text-sm font-medium transition-colors hover:border-white";
+        `min-h-9 flex flex-row items-center border-b border-transparent px-4 text-sm font-bold transition-colors hover:bg-ground-700/80 rounded-sm ${className}`.trim();
     const { external, ...rest } = props;
 
     if (external) {

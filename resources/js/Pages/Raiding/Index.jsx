@@ -28,7 +28,7 @@ export default function Index({ upcomingEvents, reports }) {
 
                         <Link
                             href={route("raiding.boss-strategies.index")}
-                            className="inline-flex items-center gap-2 rounded-md border border-amber-600 px-4 py-2 text-sm font-semibold text-amber-500 transition duration-150 ease-in-out hover:bg-amber-600 hover:text-white"
+                            className="inline-flex items-center gap-2 rounded-md border border-ink-600 px-4 py-2 text-sm font-semibold text-ink-500 transition duration-150 ease-in-out hover:bg-ink-600 hover:text-white"
                         >
                             View boss strategies
                             <Icon icon="arrow-right" style="solid" className="h-4" />
@@ -40,7 +40,7 @@ export default function Index({ upcomingEvents, reports }) {
 
                         <Link
                             href={route("raiding.reports.index")}
-                            className="inline-flex items-center gap-2 rounded-md border border-amber-600 px-4 py-2 text-sm font-semibold text-amber-500 transition duration-150 ease-in-out hover:bg-amber-600 hover:text-white"
+                            className="inline-flex items-center gap-2 rounded-md border border-ink-600 px-4 py-2 text-sm font-semibold text-ink-500 transition duration-150 ease-in-out hover:bg-ink-600 hover:text-white"
                         >
                             View all reports
                             <Icon icon="arrow-right" style="solid" className="h-4" />

@@ -11,7 +11,7 @@ import WarcraftLogsLogo from "@/Components/WarcraftLogs/Logo";
 import SearchPalette from "@/Components/Search/SearchPalette";
 
 export default function Master({ title, children }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash, discordInviteUrl, theme } = usePage().props;
     const user = auth?.user;
     const impersonating = auth?.impersonating;
 
@@ -19,13 +19,6 @@ export default function Master({ title, children }) {
     const [flashError, setFlashError] = useState(flash?.error);
     const [flashSuccess, setFlashSuccess] = useState(flash?.success);
     const [searchOpen, setSearchOpen] = useState(false);
-
-    useEffect(() => {
-        document.body.classList.add("bg-brown", "bg-brown-texture");
-        return () => {
-            document.body.classList.remove("bg-brown", "bg-brown-texture");
-        };
-    }, []);
 
     // Update flash messages when props change
     useEffect(() => {
@@ -49,28 +42,12 @@ export default function Master({ title, children }) {
         <>
             <Head title={title} />
 
-            <div className="min-h-screen text-white">
-                <nav className="flex flex-wrap items-center justify-between px-4 py-3 lg:px-6">
-                    <Link
-                        className="flex flex-row items-center border-b border-transparent p-1 text-lg font-bold text-white transition-colors hover:border-white"
-                        href="/"
-                    >
-                        <img src="/images/guild_emblem.webp" alt="Guild Emblem" className="mr-1 inline-block max-h-8" />
-                        Regrowth
-                    </Link>
-
-                    {/* Mobile search + menu buttons */}
-                    <div className="ml-auto flex items-center gap-1 lg:hidden">
+            <div className="flex min-h-screen flex-col text-white">
+                <div className="fixed inset-x-0 top-4 z-20 px-4">
+                    <nav className="bg-ground-900/80 border-ground-700/50 grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4">
+                        {/* Mobile menu toggle */}
                         <button
-                            className="hover:bg-brown-700 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset"
-                            type="button"
-                            onClick={() => setSearchOpen(true)}
-                            aria-label="Search"
-                        >
-                            <Icon icon="search" style="regular" className="h-6 w-6" />
-                        </button>
-                        <button
-                            className="hover:bg-brown-700 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset"
+                            className="hover:bg-ground-700 text-secondary-400 inline-flex items-center justify-center rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
                             type="button"
                             onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                             aria-controls="mobile-menu"
@@ -84,100 +61,127 @@ export default function Master({ title, children }) {
                                 <Icon icon="times" style="regular" className="h-6 w-6" />
                             </span>
                         </button>
-                    </div>
 
-                    {/* Desktop menu */}
-                    <div className="hidden lg:ml-10 lg:flex lg:flex-1 lg:items-center lg:justify-between">
-                        <div className="flex gap-4 space-x-1">
-                            <NavLink href={route("characters.index")}>
-                                <Icon icon="users" style="solid" className="mr-2 h-6" />
-                                Roster
-                            </NavLink>
-                            <NavLink href={route("raiding.index")}>
-                                <Icon icon="dragon" style="solid" className="mr-2 h-6" />
-                                Raiding
-                            </NavLink>
-                            <NavLink href={route("loot.index")}>
-                                <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
-                                Loot
-                            </NavLink>
-                            <NavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
-                                <Icon icon="discord" style="brands" className="mr-2 h-6" />
-                                Discord
-                            </NavLink>
-                        </div>
+                        <Link
+                            className="flex flex-row items-center justify-center p-1 font-serif text-lg text-white transition-opacity hover:opacity-80 lg:-my-2.5 lg:justify-start lg:p-0"
+                            href="/"
+                        >
+                            <img
+                                src="/images/guild_emblem.webp"
+                                alt="Guild Emblem"
+                                className="inline-block max-h-8 lg:mr-2 lg:max-h-16"
+                            />
+                            <span className="hidden lg:inline">Regrowth</span>
+                        </Link>
 
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setSearchOpen(true)}
-                                className="hover:bg-brown-700 border-brown-600 bg-brown-800 flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
-                            >
-                                <Icon icon="search" style="solid" className="h-4 w-4" />
-                                <span>Search</span>
-                                <span className="bg-brown-700 rounded px-1.5 py-0.5 text-xs text-gray-500">⌘K</span>
-                            </button>
-                            {user ? (
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <button className="flex items-center space-x-2 text-sm font-medium text-gray-300 transition-colors hover:text-white">
-                                            <img
-                                                src={user.avatar}
-                                                alt={user.display_name}
-                                                className="h-8 w-8 rounded-full"
-                                            />
-                                            <span>{user.display_name}</span>
-                                            {user.highest_role && (
-                                                <Pill
-                                                    bgColor={`bg-discord-${user.highest_role ? user.highest_role.toLowerCase() : "grey-800"}`}
-                                                >
-                                                    {user.highest_role}
-                                                </Pill>
-                                            )}
-                                            <Icon icon="chevron-down" style="regular" className="h-6" />
-                                        </button>
-                                    </Dropdown.Trigger>
+                        {/* Mobile search button */}
+                        <button
+                            className="hover:bg-ground-700 text-secondary-400 inline-flex items-center justify-center justify-self-end rounded-md p-2 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
+                            type="button"
+                            onClick={() => setSearchOpen(true)}
+                            aria-label="Search"
+                        >
+                            <Icon icon="search" style="regular" className="h-6 w-6" />
+                        </button>
 
-                                    <Dropdown.Content>
-                                        <Dropdown.Link href={route("account.index")}>
-                                            <Icon icon="user-cog" style="regular" className="mr-2 h-6" />
-                                            Account Settings
-                                        </Dropdown.Link>
-                                        {impersonating && (
-                                            <Dropdown.Link href={route("auth.return-to-self")}>
-                                                <Icon icon="undo" style="regular" className="mr-2 h-6" />
-                                                Return to my account
-                                            </Dropdown.Link>
-                                        )}
-                                        <Can permission="view-officer-dashboard">
-                                            <Dropdown.Link href={route("management.dashboard")}>
-                                                <Icon icon="cogs" style="regular" className="mr-2" />
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <span>Control Panel</span>
-                                                </div>
-                                            </Dropdown.Link>
-                                        </Can>
-                                        <Dropdown.Link href={route("logout")} method="post" as="button">
-                                            <Icon icon="sign-out" style="regular" className="mr-2 h-6" />
-                                            Logout
-                                        </Dropdown.Link>
-                                    </Dropdown.Content>
-                                </Dropdown>
-                            ) : (
-                                <a
-                                    href={route("login")}
-                                    className="flex items-center space-x-2 rounded-md bg-[#5865F2] px-4 py-2 text-white transition-colors hover:bg-[#4752C4]"
-                                >
+                        {/* Desktop menu */}
+                        <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
+                            <div className="flex items-center gap-1">
+                                <NavLink href={route("characters.index")}>
+                                    <Icon icon="users" style="solid" className="mr-2 h-6" />
+                                    Roster
+                                </NavLink>
+                                <NavLink href={route("raiding.index")}>
+                                    <Icon icon="dragon" style="solid" className="mr-2 h-9" />
+                                    Raiding
+                                </NavLink>
+                                <NavLink href={route("loot.index")}>
+                                    <Icon icon="treasure-chest" style="solid" className="mr-2 h-6" />
+                                    Loot
+                                </NavLink>
+                                <NavLink href={discordInviteUrl} external rel="noopener noreferrer">
                                     <Icon icon="discord" style="brands" className="mr-2 h-6" />
-                                    <span>Login with Discord</span>
-                                </a>
-                            )}
+                                    Discord
+                                </NavLink>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchOpen(true)}
+                                    className="hover:bg-ground-700 border-ground-600 bg-ground-800 focus:ring-ink-500 text-secondary-400 flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm transition-colors hover:text-white focus:ring-1 focus:outline-hidden"
+                                >
+                                    <Icon icon="search" style="solid" className="h-4 w-4" />
+                                    <span>Search</span>
+                                    <span className="bg-ground-700 text-secondary-500 rounded px-1.5 py-0.5 text-xs">
+                                        ⌘K
+                                    </span>
+                                </button>
+                                {user ? (
+                                    <Dropdown>
+                                        <Dropdown.Trigger>
+                                            <button className="flex items-center space-x-2 text-sm font-medium text-white transition-colors hover:text-white">
+                                                <img
+                                                    src={user.avatar}
+                                                    alt={user.display_name}
+                                                    className="h-8 w-8 rounded-full"
+                                                />
+                                                <span>{user.display_name}</span>
+                                                {user.highest_role && (
+                                                    <Pill
+                                                        bgColor={`bg-discord-${user.highest_role ? user.highest_role.toLowerCase() : "grey-800"}`}
+                                                    >
+                                                        {user.highest_role}
+                                                    </Pill>
+                                                )}
+                                                <Icon icon="chevron-down" style="regular" className="h-6" />
+                                            </button>
+                                        </Dropdown.Trigger>
+
+                                        <Dropdown.Content>
+                                            <Dropdown.Link href={route("account.index")}>
+                                                <Icon icon="user-cog" style="regular" className="mr-2 h-6" />
+                                                Account Settings
+                                            </Dropdown.Link>
+                                            {impersonating && (
+                                                <Dropdown.Link href={route("auth.return-to-self")}>
+                                                    <Icon icon="undo" style="regular" className="mr-2 h-6" />
+                                                    Return to my account
+                                                </Dropdown.Link>
+                                            )}
+                                            <Can permission="view-officer-dashboard">
+                                                <Dropdown.Link href={route("management.dashboard")}>
+                                                    <Icon icon="cogs" style="regular" className="mr-2" />
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <span>Control Panel</span>
+                                                    </div>
+                                                </Dropdown.Link>
+                                            </Can>
+                                            <Dropdown.Link href={route("logout")} method="post" as="button">
+                                                <Icon icon="sign-out" style="regular" className="mr-2 h-6" />
+                                                Logout
+                                            </Dropdown.Link>
+                                        </Dropdown.Content>
+                                    </Dropdown>
+                                ) : (
+                                    <a
+                                        href={route("login")}
+                                        className="flex items-center space-x-2 rounded-md bg-[#5865F2] px-4 py-2 text-white transition-colors hover:bg-[#4752C4]"
+                                    >
+                                        <Icon icon="discord" style="brands" className="mr-2 h-6" />
+                                        <span>Login with Discord</span>
+                                    </a>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </nav>
+                    </nav>
+                </div>
 
                 {/* Mobile menu */}
-                <div className={`${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`} id="mobile-menu">
+                <div
+                    className={`bg-ground-900 fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto ${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`}
+                    id="mobile-menu"
+                >
                     <div className="space-y-1 px-2 pt-2 pb-3">
                         <ResponsiveNavLink href={route("characters.index")}>
                             <Icon icon="users" style="solid" className="mr-2 h-6" />
@@ -197,18 +201,18 @@ export default function Master({ title, children }) {
                                 setShowingNavigationDropdown(false);
                                 setSearchOpen(true);
                             }}
-                            className="flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-amber-700 hover:text-white"
+                            className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium hover:text-white"
                         >
                             <Icon icon="search" style="solid" className="mr-2 h-6" />
                             Search
                         </button>
-                        <ResponsiveNavLink href="https://discord.gg/pM6haPnQRt" external rel="noopener noreferrer">
+                        <ResponsiveNavLink href={discordInviteUrl} external rel="noopener noreferrer">
                             <Icon icon="discord" style="brands" className="mr-2 h-6" />
                             Discord
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-t border-amber-700 pt-4 pb-3">
+                    <div className="border-ink-700 border-t pt-4 pb-3">
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
@@ -226,7 +230,7 @@ export default function Master({ title, children }) {
                                 </div>
                                 <Link
                                     href={route("account.index")}
-                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
+                                    className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
                                 >
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
@@ -234,7 +238,7 @@ export default function Master({ title, children }) {
                                 {impersonating && (
                                     <Link
                                         href={route("auth.return-to-self")}
-                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
+                                        className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
                                     >
                                         <Icon icon="undo" style="regular" className="mr-2" />
                                         Return to my account
@@ -243,7 +247,7 @@ export default function Master({ title, children }) {
                                 <Can permission="view-officer-dashboard">
                                     <Link
                                         href={route("management.dashboard")}
-                                        className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
+                                        className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
                                     >
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Control Panel
@@ -253,7 +257,7 @@ export default function Master({ title, children }) {
                                     href={route("logout")}
                                     method="post"
                                     as="button"
-                                    className="flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-amber-700 hover:text-white"
+                                    className="hover:bg-ink-700 text-secondary-300 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm hover:text-white"
                                 >
                                     <Icon icon="sign-out" style="regular" className="mr-2" />
                                     Logout
@@ -277,9 +281,9 @@ export default function Master({ title, children }) {
                 <FlashMessage type="error" message={flashError} onDismiss={() => setFlashError(null)} />
                 <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
 
-                <main>{children}</main>
+                <div className="flex flex-1 flex-col">{children}</div>
 
-                <footer className="p-5" id="footer">
+                <footer className="bg-footer border-footer border-t-8 py-5" id="footer">
                     <div className="container mx-auto">
                         <div className="my-4 flex flex-col-reverse items-center justify-between md:my-6 md:flex-row">
                             {/* Logos Section */}
@@ -293,45 +297,55 @@ export default function Master({ title, children }) {
                                     <span className="sr-only">Regrowth</span>
                                 </Link>
                                 <img
-                                    src="/images/logo_tbcclassic.webp"
-                                    alt="World of Warcraft Classic logo"
+                                    src={
+                                        theme === "forever"
+                                            ? "/images/logo_forever.webp"
+                                            : "/images/logo_tbcclassic.webp"
+                                    }
+                                    alt={
+                                        theme === "forever"
+                                            ? "World of Warcraft: Forever logo"
+                                            : "World of Warcraft Classic logo"
+                                    }
                                     className="h-20 w-1/2 flex-1 object-contain md:mr-4 md:w-auto"
                                 />
-                                <span className="sr-only">World of Warcraft: Classic</span>
+                                <span className="sr-only">
+                                    {theme === "forever" ? "World of Warcraft: Forever" : "World of Warcraft: Classic"}
+                                </span>
                             </div>
                             {/* Footer Links */}
                             <nav className="flex flex-col items-center justify-start gap-4 md:flex-row md:flex-wrap md:gap-2">
-                                <Link href="/" className="flex h-8 flex-row items-center p-1 text-gray-400 md:ml-2">
+                                <div className="text-ink-600 flex h-8 flex-row items-center p-1 md:ml-2">
                                     <Icon icon="copyright" style="regular" className="mr-2 h-5 w-5" />
                                     <span className="text-nowrap">{new Date().getFullYear()} Regrowth</span>
-                                </Link>
+                                </div>
                                 <a
                                     href="https://www.warcraftlogs.com/guilds/774848-regrowth"
-                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
                                     rel="noopener noreferrer"
                                 >
                                     <WarcraftLogsLogo className="h-5 w-5" />
                                     <span className="text-nowrap">Warcraft Logs</span>
                                 </a>
                                 <a
-                                    href="https://discord.gg/pM6haPnQRt"
+                                    href={discordInviteUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="discord" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Discord</span>
                                 </a>
                                 <Link
                                     href={route("privacypolicy")}
-                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="user-secret" style="solid" className="h-5 w-5" />
                                     <span className="text-nowrap">Privacy policy</span>
                                 </Link>
                                 <Link
                                     href={route("battlenet-usage")}
-                                    className="flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="text-ink-600 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="battle-net" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">Battle.net API Usage</span>
@@ -342,16 +356,15 @@ export default function Master({ title, children }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title="Ben Argo"
-                                    className="mt-0 flex h-8 flex-row items-center gap-2 p-1 text-gray-400 transition-colors hover:text-white md:ml-2"
+                                    className="text-ink-600 mt-0 flex h-8 flex-row items-center gap-2 p-1 transition-colors hover:text-white md:ml-2"
                                 >
                                     <Icon icon="safari" style="brands" className="h-5 w-5" />
                                     <span className="text-nowrap">A Fizzywigs Production</span>
                                 </a>
                             </nav>
                         </div>
-                        {/* Disclaimer */}
-                        <div className="py-4">
-                            <p className="text-sm text-gray-500">
+                        <div className="mt-4 md:mt-2">
+                            <p className="text-center text-xs text-gray-400 md:text-left">
                                 Disclaimer: Classic is a trademark, and World of Warcraft and Warcraft are trademarks or
                                 registered trademarks of Blizzard Entertainment, Inc., in the U.S. and/or other
                                 countries. All related materials, logos, and images are copyright &copy; Blizzard

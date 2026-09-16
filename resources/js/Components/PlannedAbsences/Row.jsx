@@ -39,32 +39,32 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
 
     return (
         <>
-            <div className="flex flex-col gap-2 rounded border border-amber-800/50 bg-brown-800/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex flex-col gap-2 rounded border border-ink-800/50 bg-ground-800/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
                 {showCharacter && (
-                    <div className="shrink-0 font-medium text-amber-300">
+                    <div className="shrink-0 font-medium text-ink-300">
                         {absence.character?.name ?? "Unknown Character"}
                     </div>
                 )}
 
-                <div className="shrink-0 text-sm text-amber-300/70">
+                <div className="shrink-0 text-sm text-ink-300/70">
                     <Icon icon="calendar" style="regular" className="mr-1.5 h-4" />
                     {formatDate(absence.start_date).medium}
                     {absence.end_date && (
                         <>
-                            <span className="mx-1 text-gray-500">—</span>
+                            <span className="mx-1 text-secondary-500">—</span>
                             {formatDate(absence.end_date).medium}
                         </>
                     )}
                 </div>
 
                 {absence.reason && (
-                    <div className="flex-1 text-sm text-gray-300">
+                    <div className="flex-1 text-sm text-secondary-300">
                         <FormattedMarkdown>{absence.reason}</FormattedMarkdown>
                     </div>
                 )}
 
                 {showCreatedBy && absence.created_by && absence.created_at && (
-                    <div className="shrink-0 text-xs text-gray-500">
+                    <div className="shrink-0 text-xs text-secondary-500">
                         Added by {absence.created_by.display_name} on {formatDate(absence.created_at).medium}
                     </div>
                 )}
@@ -72,7 +72,7 @@ export default function PlannedAbsenceRow({ absence, showCharacter = false, show
                 <div className="flex shrink-0 gap-4">
                     <Link
                         href={route("raiding.absences.edit", absence.id)}
-                        className="flex items-center text-sm text-amber-400 hover:text-amber-300"
+                        className="flex items-center text-sm text-ink-400 hover:text-ink-300"
                     >
                         <Icon icon="pen" style="regular" className="mr-1.5 h-4" />
                         Edit

@@ -5,7 +5,7 @@ import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAx
 function TooltipBody({ point }) {
     return (
         <div className="flex flex-col gap-0.5 text-left">
-            <h3 className="whitespace-nowrap text-sm font-semibold text-amber-300">{point.character.name}</h3>
+            <h3 className="whitespace-nowrap text-sm font-semibold text-ink-300">{point.character.name}</h3>
             <p className="whitespace-nowrap font-bold">{point.percentage.toFixed(2)}% attendance</p>
             <p className="whitespace-nowrap">
                 <span className="font-bold">Raids:</span> {point.raidsTotal}
@@ -69,7 +69,7 @@ function PointShape({ cx, cy, payload }) {
                             className="inline-block h-4 w-4 rounded-xs"
                         />
                     )}
-                    <span className="hidden whitespace-nowrap text-sm text-gray-900 lg:inline">
+                    <span className="hidden whitespace-nowrap text-sm text-secondary-900 lg:inline">
                         {point.character.name}
                     </span>
                 </Link>
@@ -84,7 +84,7 @@ function ChartTooltip({ active, payload }) {
     if (!point) return null;
 
     return (
-        <div className="rounded bg-gray-900 px-2 py-1 text-xs text-white">
+        <div className="rounded bg-secondary-900 px-2 py-1 text-xs text-white">
             <TooltipBody point={point} />
         </div>
     );
@@ -92,7 +92,7 @@ function ChartTooltip({ active, payload }) {
 
 export default function AttendanceScatterChart({ points }) {
     if (!points || points.length === 0) {
-        return <p className="mt-3 text-sm text-gray-500">No attendance data yet.</p>;
+        return <p className="mt-3 text-sm text-secondary-500">No attendance data yet.</p>;
     }
 
     // Each point occupies ~10 percentage-point width; find lowest row with no horizontal collision

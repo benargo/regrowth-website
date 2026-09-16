@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Middleware;
 
+use App\Enums\Theme;
 use App\Models\DiscordRole;
 use App\Models\Permission;
 use App\Models\Phase;
@@ -182,5 +183,26 @@ class HandleInertiaRequestsTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page->missing('phases'));
+    }
+
+    // ==================== theme sharing ====================
+
+    #[Test]
+    public function it_shares_a_theme_prop(): void
+    {
+        $this->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('theme'));
+    }
+
+    #[Test]
+    public function it_shares_the_default_theme_and_discord_invite_url_for_a_non_forever_route(): void
+    {
+        $user = User::factory()->member()->create();
+
+        $this->actingAs($user)
+            ->get(route('loot.index'))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('theme', Theme::default()->value)
+                ->where('discordInviteUrl', config('guild.discord_invite_url'))
+            );
     }
 }

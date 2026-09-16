@@ -4,7 +4,7 @@ import RoleBadge from "@/Components/Events/RoleBadge";
 
 function BenchedPill({ character }) {
     const classSlug = character.playable_class?.slug;
-    const colorClass = classSlug ? `playable-class-${classSlug}` : "brown-600";
+    const colorClass = classSlug ? `playable-class-${classSlug}` : "line";
 
     return (
         <span
@@ -27,10 +27,10 @@ export function BenchedTable({ characters }) {
         <div className="flex flex-col">
             <h2 className="mb-4 text-xl font-semibold text-white">
                 Benched
-                <span className="ml-2 text-base font-normal text-gray-400">({characters.length})</span>
+                <span className="ml-2 text-base font-normal text-secondary-400">({characters.length})</span>
             </h2>
 
-            <div className="flex flex-wrap gap-2 rounded border border-amber-600/30 p-4">
+            <div className="flex flex-wrap gap-2 rounded border border-ink-600/30 p-4">
                 {characters.map((character) => (
                     <BenchedPill key={character.id} character={character} />
                 ))}
@@ -44,23 +44,23 @@ export function GroupTable({ group }) {
         <div className="flex flex-col">
             <h2 className="mb-4 text-xl font-semibold text-white">
                 {group.is_team ? "Team" : "Group"} {group.group_number}
-                <span className="ml-2 text-base font-normal text-gray-400">({group.characters.length})</span>
+                <span className="ml-2 text-base font-normal text-secondary-400">({group.characters.length})</span>
             </h2>
-            <div className="flex flex-1 flex-col rounded border border-amber-600/30">
+            <div className="flex flex-1 flex-col rounded border border-ink-600/30">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
-                        <thead className="border-b border-amber-600">
+                        <thead className="border-b border-ink-600">
                             <tr>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Character</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Rank</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-amber-500">Class</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Character</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Rank</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Class</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-brown-700">
+                        <tbody className="divide-y divide-ink-600">
                             {group.characters.map((character) => (
                                 <tr
                                     key={character.id}
-                                    className={`transition-colors hover:bg-brown-800/50${character.signup_status === "unconfirmed" ? " opacity-40" : ""}${character.signup_status === "cancelled" ? " opacity-40 line-through decoration-red-400 text-red-400" : ""}`}
+                                    className={`transition-colors hover:bg-ground-800/50${character.signup_status === "unconfirmed" ? " opacity-40" : ""}${character.signup_status === "cancelled" ? " opacity-40 line-through decoration-red-400 text-red-400" : ""}`}
                                 >
                                     <td className="px-4 py-3">
                                         <span className="inline-flex items-center gap-1">
@@ -70,11 +70,11 @@ export function GroupTable({ group }) {
                                             {character.is_leader && <RoleBadge role="leader" />}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-gray-300">
+                                    <td className="px-4 py-3 text-sm text-secondary-300">
                                         {character.rank ? <RankLabel rank={character.rank} /> : "—"}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2 text-sm text-gray-300">
+                                        <div className="flex items-center gap-2 text-sm text-secondary-300">
                                             {character.playable_class?.icon_url && (
                                                 <img
                                                     src={character.playable_class.icon_url}
