@@ -1,11 +1,11 @@
 import { Deferred, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
-import RaggedEdge from "@/Components/Forever/RaggedEdge";
-import LaunchCountdown from "@/Components/Forever/LaunchCountdown";
+import RaggedEdge from "@/Themes/Forever/RaggedEdge";
+import LaunchCountdown from "@/Themes/Forever/LaunchCountdown";
 import OfficerTeam from "@/Components/Home/OfficerTeam";
 import UpcomingEvents from "@/Components/Home/UpcomingEvents";
-import Section from "@/Components/Forever/Section";
-import DisplayHeading from "@/Components/Forever/DisplayHeading";
+import Section from "@/Themes/Forever/Section";
+import DisplayHeading from "@/Themes/Forever/DisplayHeading";
 import Icon from "@/Components/FontAwesome/Icon";
 
 function OfficerTeamWithRenders({ officers }) {
