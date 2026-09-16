@@ -78,7 +78,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                     <UpcomingEventsWithData canViewPlans={canViewPlans} />
                 </Deferred>
 
-                <Section tone="deep" className="py-16 md:py-24">
+                <Section tone="deep">
                     <div className="container mx-auto max-w-2xl px-4 text-center">
                         <DisplayHeading level={2} eyebrow="Join us" className="mb-4">
                             Your Journey Starts Here

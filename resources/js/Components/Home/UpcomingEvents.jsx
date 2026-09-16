@@ -64,7 +64,7 @@ export default function UpcomingEvents({ events, canViewPlans = false }) {
     const isLoading = events === undefined;
 
     return (
-        <Section tone="mid" edge="bottom" edgeTone="deep" className="py-16 md:py-24">
+        <Section tone="mid" edge="bottom" edgeTone="deep">
             <div className="container mx-auto max-w-3xl px-4">
                 <DisplayHeading level={2} eyebrow="What's next" className="mb-10 text-center">
                     Upcoming Raids

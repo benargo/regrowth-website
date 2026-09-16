@@ -25,7 +25,7 @@ export default function Section({
     const showBottom = edge === "bottom" || edge === "both";
 
     return (
-        <section className={`relative ${TONE_BG[tone] ?? TONE_BG.mid} ${className}`} {...props}>
+        <section className={`relative pt-12 pb-24 ${TONE_BG[tone] ?? TONE_BG.mid} ${className}`} {...props}>
             {showTop && <RaggedEdge position="top" tone={edgeTone} />}
             <div className="relative z-10">{children}</div>
             {showBottom && <RaggedEdge position="bottom" tone={edgeTone} />}

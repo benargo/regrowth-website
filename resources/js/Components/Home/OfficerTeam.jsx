@@ -95,7 +95,7 @@ export default function OfficerTeam({ officers = [], renders }) {
     const carouselVisibleHeightFor = (name) => (renderFor(name)?.isLargeRace ? 100 : 200);
 
     return (
-        <Section tone="parchment" edge="bottom" edgeTone="mid" className="py-16 md:py-24">
+        <Section tone="parchment" edge="bottom" edgeTone="mid">
             <div className="container mx-auto px-4">
                 <DisplayHeading level={2} eyebrow="Who leads us" className="mb-4 text-center">
                     Meet the Officers
@@ -176,9 +176,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                                         aria-label={`Show ${officer.name}`}
                                         onClick={() => scrollTo(index)}
                                         className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                                            index === selectedIndex
-                                                ? "bg-ink-300"
-                                                : "bg-ink-600/50 hover:bg-ink-500"
+                                            index === selectedIndex ? "bg-ink-300" : "bg-ink-600/50 hover:bg-ink-500"
                                         }`}
                                     />
                                 ))}
