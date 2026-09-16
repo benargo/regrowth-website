@@ -85,7 +85,7 @@ export default function Master({ title, children }) {
                         </button>
 
                         {/* Desktop menu */}
-                        <div className="j hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
+                        <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
                             <div className="flex items-center gap-1">
                                 <NavLink href={route("characters.index")}>
                                     <Icon icon="users" style="solid" className="mr-2 h-6" />
@@ -362,6 +362,15 @@ export default function Master({ title, children }) {
                                     <span className="text-nowrap">A Fizzywigs Production</span>
                                 </a>
                             </nav>
+                        </div>
+                        <div className="mt-4 md:mt-2">
+                            <p className="text-center text-xs text-gray-400 md:text-left">
+                                Disclaimer: Classic is a trademark, and World of Warcraft and Warcraft are trademarks
+                                or registered trademarks of Blizzard Entertainment, Inc., in the U.S. and/or other
+                                countries. All related materials, logos, and images are copyright &copy; Blizzard
+                                Entertainment, Inc. Regrowth is in no way associated with or endorsed by Blizzard
+                                Entertainment.
+                            </p>
                         </div>
                     </div>
                 </footer>
