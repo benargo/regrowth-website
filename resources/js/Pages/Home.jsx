@@ -1,7 +1,7 @@
 import { Deferred, usePage } from "@inertiajs/react";
 import Master from "@/Layouts/Master";
 import RaggedEdge from "@/Themes/Forever/RaggedEdge";
-import LaunchCountdown from "@/Themes/Forever/LaunchCountdown";
+import LaunchCountdown from "@/Components/Home/LaunchCountdown";
 import OfficerTeam from "@/Components/Home/OfficerTeam";
 import UpcomingEvents from "@/Components/Home/UpcomingEvents";
 import Section from "@/Themes/Forever/Section";
