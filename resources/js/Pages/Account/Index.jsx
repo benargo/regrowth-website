@@ -6,7 +6,8 @@ import Pill from "@/Components/Pill";
 import PlannedAbsenceRow from "@/Components/PlannedAbsences/Row";
 import EmptyState from "@/Components/EmptyState";
 import { Can } from "@/Components/Authorizable";
-import PageContainer from "@/Components/PageContainer";
+import Section from "@/Themes/Forever/Section";
+import DisplayHeading from "@/Themes/Forever/DisplayHeading";
 
 export default function Index() {
     const { auth, roles, planned_absences } = usePage().props;
@@ -17,33 +18,39 @@ export default function Index() {
             {/* TODO: bg-arcatraz is a temporary header image */}
             <SharedHeader title="My Account" backgroundClass="bg-arcatraz" />
 
-            <PageContainer>
-                {/* User profile section */}
-                <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                    <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">{user.display_name}</h1>
-                        <p className="text-sm text-secondary-400">@{user.username}</p>
-                        {roles.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                {roles.map((role) => (
-                                    <Pill
-                                        key={role.id}
-                                        bgColor={`bg-discord-${role.name.toLowerCase().replace(/\s+/g, "")}`}
-                                        textColor="text-white"
-                                    >
-                                        {role.name}
-                                    </Pill>
-                                ))}
-                            </div>
-                        )}
+            {/* User profile section */}
+            <Section tone="mid" edge="bottom" edgeTone="deep">
+                <div className="container mx-auto px-4 pt-12 pb-20">
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                        <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
+                        <div>
+                            <DisplayHeading level={1}>{user.display_name}</DisplayHeading>
+                            <p className="text-secondary-400 text-sm">@{user.username}</p>
+                            {roles.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {roles.map((role) => (
+                                        <Pill
+                                            key={role.id}
+                                            bgColor={`bg-discord-${role.name.toLowerCase().replace(/\s+/g, "")}`}
+                                            textColor="text-white"
+                                        >
+                                            {role.name}
+                                        </Pill>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
+            </Section>
 
-                {/* Planned absences section */}
-                <div>
+            {/* Planned absences section */}
+            <Section tone="deep">
+                <div className="container mx-auto px-4">
                     <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
-                        <h2 className="text-ink-400 text-lg font-semibold">Planned Absences</h2>
+                        <DisplayHeading level={2} eyebrow="My Account">
+                            Planned Absences
+                        </DisplayHeading>
                         <Can permission="create-planned-absences">
                             <Link
                                 href={route("raiding.absences.create")}
@@ -69,7 +76,7 @@ export default function Index() {
                         </div>
                     )}
                 </div>
-            </PageContainer>
+            </Section>
         </Master>
     );
 }
