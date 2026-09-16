@@ -11,7 +11,7 @@ export default function SearchInput({ value, onChange, placeholder = "Search by 
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 dusk={dusk}
-                className="border-focus-ring bg-surface w-full rounded border py-2 pr-10 pl-10 text-white placeholder-gray-500 focus:ring-1 focus:ring-focus-ring focus:outline-hidden"
+                className="border-ink-500 bg-ground-800 w-full rounded border py-2 pr-10 pl-10 text-white placeholder-gray-500 focus:ring-1 focus:ring-ink-500 focus:outline-hidden"
             />
             {value && (
                 <button

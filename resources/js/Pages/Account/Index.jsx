@@ -43,11 +43,11 @@ export default function Index() {
                 {/* Planned absences section */}
                 <div>
                     <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
-                        <h2 className="text-body text-lg font-semibold">Planned Absences</h2>
+                        <h2 className="text-ink-400 text-lg font-semibold">Planned Absences</h2>
                         <Can permission="create-planned-absences">
                             <Link
                                 href={route("raiding.absences.create")}
-                                className="bg-accent hover:bg-accent-hover focus:bg-accent-hover focus:ring-focus-ring active:bg-camel-800 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
+                                className="bg-ink-600 hover:bg-ink-700 focus:bg-ink-700 focus:ring-ink-500 active:bg-ink-800 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
                             >
                                 <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
                                 Add Absence

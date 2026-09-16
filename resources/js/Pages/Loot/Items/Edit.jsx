@@ -42,7 +42,7 @@ function DraggablePriorityItem({ priority, onRemove }) {
         <div
             ref={setNodeRef}
             style={style}
-            className="min-w-50 relative flex cursor-grab items-center justify-center gap-2 rounded-md border border-primary bg-surface p-6"
+            className="min-w-50 relative flex cursor-grab items-center justify-center gap-2 rounded-md border border-primary bg-ground-800 p-6"
             {...attributes}
             {...listeners}
         >
@@ -66,7 +66,7 @@ function PriorityOverlay({ priority }) {
     if (!priority) return null;
 
     return (
-        <div className="flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border border-primary bg-surface p-6 shadow-lg">
+        <div className="flex w-60 cursor-grabbing items-center justify-center gap-2 rounded-md border border-primary bg-ground-800 p-6 shadow-lg">
             {priority.media && <img src={priority.media} alt="" className="h-6 w-6 rounded-xs" />}
             <span>{priority.title}</span>
         </div>
@@ -82,7 +82,7 @@ function DroppableWeightRow({ weight, children, onAddClick }) {
     return (
         <div
             ref={setNodeRef}
-            className={`flex min-h-24 items-center justify-center transition-colors ${isOver ? "bg-accent/30" : ""}`}
+            className={`flex min-h-24 items-center justify-center transition-colors ${isOver ? "bg-ink-600/30" : ""}`}
         >
             <div className="w-12 flex-none text-4xl">{weight + 1}</div>
             <div className="ml-4 flex w-full flex-wrap items-center justify-center gap-4 py-4">
@@ -90,7 +90,7 @@ function DroppableWeightRow({ weight, children, onAddClick }) {
                 <button
                     type="button"
                     onClick={() => onAddClick(weight)}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-ink-600 text-white transition-colors hover:bg-ink-700"
                 >
                     <Icon icon="plus" style="solid" />
                 </button>
@@ -113,7 +113,7 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="my-4 text-center text-4xl font-bold text-line">
+            <div className="my-4 text-center text-4xl font-bold text-ink-600">
                 <Icon icon="chevron-down" style="solid" />
             </div>
             <div
@@ -125,7 +125,7 @@ function InsertWeightZone({ afterWeight, onDrop, onAddClick }) {
                     type="button"
                     onClick={() => onAddClick(afterWeight)}
                     className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                        isOver ? "bg-body-muted text-white" : "bg-accent text-white hover:bg-accent-hover"
+                        isOver ? "bg-ink-500 text-white" : "bg-ink-600 text-white hover:bg-ink-700"
                     }`}
                 >
                     <Icon icon="plus" style="solid" />
@@ -145,13 +145,13 @@ function AddNewWeightRow({ weight, onAddClick }) {
         <div
             ref={setNodeRef}
             className={`flex items-center justify-center rounded-lg border-2 border-dashed py-8 transition-colors ${
-                isOver ? "border-focus-ring bg-accent/20" : "border-line/30"
+                isOver ? "border-ink-500 bg-ink-600/20" : "border-ink-600/30"
             }`}
         >
             <button
                 type="button"
                 onClick={() => onAddClick(weight)}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-ink-600 text-white transition-colors hover:bg-ink-700"
             >
                 <Icon icon="plus" style="solid" />
             </button>
@@ -177,7 +177,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
             <div
-                className="max-h-[80vh] max-w-6xl overflow-y-auto rounded-lg border border-primary bg-surface-sunken p-6"
+                className="max-h-[80vh] max-w-6xl overflow-y-auto rounded-lg border border-primary bg-ground-900 p-6"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="mb-4 flex items-center justify-between">
@@ -188,14 +188,14 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                 </div>
                 {Object.entries(groupedPriorities).map(([type, typePriorities]) => (
                     <div key={type} className="mb-4">
-                        <h4 className="mb-2 text-sm font-semibold uppercase text-body-muted">{type}</h4>
+                        <h4 className="mb-2 text-sm font-semibold uppercase text-ink-500">{type}</h4>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                             {typePriorities.map((priority) => (
                                 <button
                                     key={priority.id}
                                     type="button"
                                     onClick={() => onSelect(priority.id)}
-                                    className="flex items-center gap-2 rounded-md border border-primary/50 bg-surface p-3 text-left transition-colors hover:bg-surface-raised"
+                                    className="flex items-center gap-2 rounded-md border border-primary/50 bg-ground-800 p-3 text-left transition-colors hover:bg-ground-700"
                                 >
                                     {priority.media && (
                                         <img src={priority.media} alt="" className="h-5 w-5 rounded-xs" />
@@ -356,7 +356,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
                 <button
                     type="button"
                     onClick={() => handleAddNewWeight(0)}
-                    className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-white transition-colors hover:bg-accent-hover"
+                    className="inline-flex items-center gap-2 rounded-md bg-ink-600 px-4 py-2 text-white transition-colors hover:bg-ink-700"
                 >
                     <Icon icon="plus" style="solid" />
                     Add first bias level
@@ -391,7 +391,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
                             {groupedPriorities[weight].map((priority, index) => (
                                 <div key={priority.id} className="flex items-center">
                                     {index > 0 && (
-                                        <div className="mx-2 w-12 flex-none items-center text-center text-2xl font-bold text-line">
+                                        <div className="mx-2 w-12 flex-none items-center text-center text-2xl font-bold text-ink-600">
                                             <Icon icon="equals" style="solid" className="-ml-4" />
                                         </div>
                                     )}
@@ -558,7 +558,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 <div className="flex-initial space-x-4">
                     <Link
                         href={route("loot.items.show", { item: item.data.id, slug: item.data.slug })}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-surface active:border-primary"
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Finish editing {item.data.name}</span>
@@ -610,7 +610,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                             <button
                                 type="button"
                                 onClick={() => resetNotes("notes")}
-                                className="hover:bg-surface-raised focus:bg-surface-raised focus:ring-focus-ring active:bg-surface inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+                                className="hover:bg-ground-700 focus:bg-ground-700 focus:ring-ink-500 active:bg-ground-800 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
                             >
                                 <Icon icon="trash" style="solid" className="mr-1" /> Reset notes
                             </button>

@@ -44,10 +44,10 @@ export default function Master({ title, children }) {
 
             <div className="flex min-h-screen flex-col text-white">
                 <div className="fixed inset-x-0 top-4 z-20 px-4">
-                    <nav className="bg-surface-sunken/80 border-surface-raised/50 grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4">
+                    <nav className="bg-ground-900/80 border-ground-700/50 grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4">
                         {/* Mobile menu toggle */}
                         <button
-                            className="hover:bg-surface-raised inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
+                            className="hover:bg-ground-700 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
                             type="button"
                             onClick={() => setShowingNavigationDropdown(!showingNavigationDropdown)}
                             aria-controls="mobile-menu"
@@ -76,7 +76,7 @@ export default function Master({ title, children }) {
 
                         {/* Mobile search button */}
                         <button
-                            className="hover:bg-surface-raised inline-flex items-center justify-center justify-self-end rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
+                            className="hover:bg-ground-700 inline-flex items-center justify-center justify-self-end rounded-md p-2 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset lg:hidden"
                             type="button"
                             onClick={() => setSearchOpen(true)}
                             aria-label="Search"
@@ -109,11 +109,11 @@ export default function Master({ title, children }) {
                                 <button
                                     type="button"
                                     onClick={() => setSearchOpen(true)}
-                                    className="hover:bg-surface-raised border-surface-highlight bg-surface focus:ring-focus-ring flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:outline-hidden"
+                                    className="hover:bg-ground-700 border-ground-600 bg-ground-800 focus:ring-ink-500 flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:outline-hidden"
                                 >
                                     <Icon icon="search" style="solid" className="h-4 w-4" />
                                     <span>Search</span>
-                                    <span className="bg-surface-raised rounded px-1.5 py-0.5 text-xs text-gray-500">
+                                    <span className="bg-ground-700 rounded px-1.5 py-0.5 text-xs text-gray-500">
                                         ⌘K
                                     </span>
                                 </button>
@@ -179,7 +179,7 @@ export default function Master({ title, children }) {
 
                 {/* Mobile menu */}
                 <div
-                    className={`bg-surface-sunken fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto ${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`}
+                    className={`bg-ground-900 fixed inset-x-0 top-19 z-20 max-h-[calc(100vh-4.75rem)] overflow-y-auto ${showingNavigationDropdown ? "block" : "hidden"} lg:hidden`}
                     id="mobile-menu"
                 >
                     <div className="space-y-1 px-2 pt-2 pb-3">
@@ -201,7 +201,7 @@ export default function Master({ title, children }) {
                                 setShowingNavigationDropdown(false);
                                 setSearchOpen(true);
                             }}
-                            className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                            className="hover:bg-ink-700 flex w-full flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
                         >
                             <Icon icon="search" style="solid" className="mr-2 h-6" />
                             Search
@@ -212,7 +212,7 @@ export default function Master({ title, children }) {
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-accent-hover border-t pt-4 pb-3">
+                    <div className="border-ink-700 border-t pt-4 pb-3">
                         {user ? (
                             <div className="space-y-2 px-2">
                                 <div className="mx-2 flex items-center space-x-3">
@@ -230,7 +230,7 @@ export default function Master({ title, children }) {
                                 </div>
                                 <Link
                                     href={route("account.index")}
-                                    className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
+                                    className="hover:bg-ink-700 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                 >
                                     <Icon icon="user-cog" style="regular" className="mr-2" />
                                     Account Settings
@@ -238,7 +238,7 @@ export default function Master({ title, children }) {
                                 {impersonating && (
                                     <Link
                                         href={route("auth.return-to-self")}
-                                        className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
+                                        className="hover:bg-ink-700 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                     >
                                         <Icon icon="undo" style="regular" className="mr-2" />
                                         Return to my account
@@ -247,7 +247,7 @@ export default function Master({ title, children }) {
                                 <Can permission="view-officer-dashboard">
                                     <Link
                                         href={route("management.dashboard")}
-                                        className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
+                                        className="hover:bg-ink-700 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                     >
                                         <Icon icon="cogs" style="regular" className="mr-2" />
                                         Control Panel
@@ -257,7 +257,7 @@ export default function Master({ title, children }) {
                                     href={route("logout")}
                                     method="post"
                                     as="button"
-                                    className="hover:bg-accent-hover flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
+                                    className="hover:bg-ink-700 flex w-full flex-row items-center rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:text-white"
                                 >
                                     <Icon icon="sign-out" style="regular" className="mr-2" />
                                     Logout

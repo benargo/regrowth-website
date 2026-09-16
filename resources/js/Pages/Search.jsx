@@ -17,7 +17,7 @@ export default function Index({ results, q, scoped_raid }) {
                         {meta.total} {meta.total === 1 ? "result" : "results"} for &ldquo;{q}&rdquo;
                     </p>
                     {scoped_raid?.data && (
-                        <span className="inline-flex items-center gap-1 rounded bg-accent/20 px-2 py-1 text-xs font-semibold text-body-muted">
+                        <span className="inline-flex items-center gap-1 rounded bg-ink-600/20 px-2 py-1 text-xs font-semibold text-ink-500">
                             {scoped_raid.data.name}
                         </span>
                     )}

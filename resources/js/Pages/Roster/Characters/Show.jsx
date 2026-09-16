@@ -48,7 +48,7 @@ function ReportsSkeleton() {
     return (
         <div className="animate-pulse space-y-2">
             {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 rounded bg-surface/50" />
+                <div key={i} className="h-12 rounded bg-ground-800/50" />
             ))}
         </div>
     );
@@ -67,7 +67,7 @@ function ReportRow({ report }) {
     return (
         <Link
             href={route("raiding.reports.show", report.id)}
-            className="flex items-center justify-between rounded border border-line bg-surface/40 px-4 py-3 transition-colors hover:border-line/40 hover:bg-surface"
+            className="flex items-center justify-between rounded border border-ink-600 bg-ground-800/40 px-4 py-3 transition-colors hover:border-ink-600/40 hover:bg-ground-800"
         >
             <span className="font-medium text-white">{report.title}</span>
             <span className="text-sm text-gray-400">{date}</span>
@@ -77,9 +77,9 @@ function ReportRow({ report }) {
 
 function SectionHeading({ children }) {
     return (
-        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-body-muted/70">
+        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-ink-500/70">
             <span>{children}</span>
-            <span className="h-px flex-1 bg-accent/20" />
+            <span className="h-px flex-1 bg-ink-600/20" />
         </h2>
     );
 }
@@ -100,7 +100,7 @@ export default function Show({ character, recent_reports }) {
                 <div className="flex-initial space-x-4">
                     <Link
                         href={route("characters.index")}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-surface active:border-primary"
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Roster</span>
@@ -115,7 +115,7 @@ export default function Show({ character, recent_reports }) {
                         <img
                             src={character.portrait_url}
                             alt={character.name}
-                            className="h-20 w-20 rounded-xl border border-line/30 shadow-lg shadow-black/50"
+                            className="h-20 w-20 rounded-xl border border-ink-600/30 shadow-lg shadow-black/50"
                         />
                     ) : (
                         <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-gray-600/30 bg-gray-700/50 shadow-lg shadow-black/50">
@@ -134,7 +134,7 @@ export default function Show({ character, recent_reports }) {
                         <h2 className="text-2xl font-bold text-white">{character.name}</h2>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                             {character.is_main && (
-                                <Pill bgColor="bg-accent-hover" textColor="text-heading">Main</Pill>
+                                <Pill bgColor="bg-ink-700" textColor="text-heading">Main</Pill>
                             )}
                             {character.is_loot_councillor && (
                                 <Pill bgColor="bg-purple-800" textColor="text-purple-200">Loot Council</Pill>
@@ -148,7 +148,7 @@ export default function Show({ character, recent_reports }) {
                                 character: character.id,
                                 slug: character.slug,
                             })}
-                            className="ml-auto flex items-center gap-2 rounded border border-line/60 px-4 py-2 text-sm font-medium text-body transition-colors hover:bg-accent/20"
+                            className="ml-auto flex items-center gap-2 rounded border border-ink-600/60 px-4 py-2 text-sm font-medium text-ink-400 transition-colors hover:bg-ink-600/20"
                         >
                             <Icon icon="edit" style="light" />
                             Edit Character
@@ -214,7 +214,7 @@ export default function Show({ character, recent_reports }) {
                                                 character: alt.id,
                                                 slug: alt.slug,
                                             })}
-                                            className="flex items-center gap-3 rounded border border-line bg-surface/40 px-3 py-2.5 transition-colors hover:border-line/40 hover:bg-surface"
+                                            className="flex items-center gap-3 rounded border border-ink-600 bg-ground-800/40 px-3 py-2.5 transition-colors hover:border-ink-600/40 hover:bg-ground-800"
                                         >
                                             {alt.playable_class?.icon_url && (
                                                 <img

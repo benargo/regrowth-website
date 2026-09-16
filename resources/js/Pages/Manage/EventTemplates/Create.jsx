@@ -52,13 +52,13 @@ export default function Create({ raids }) {
                                 {raids.map((raid) => (
                                     <label
                                         key={raid.id}
-                                        className="flex cursor-pointer items-center gap-3 rounded border border-gray-700 px-3 py-2 transition-colors hover:border-line/50 hover:bg-accent/10"
+                                        className="flex cursor-pointer items-center gap-3 rounded border border-gray-700 px-3 py-2 transition-colors hover:border-ink-600/50 hover:bg-ink-600/10"
                                     >
                                         <input
                                             type="checkbox"
                                             checked={data.raid_ids.includes(raid.id)}
                                             onChange={() => toggleRaid(raid.id)}
-                                            className="accent-focus-ring"
+                                            className="accent-ink-500"
                                         />
                                         <span>{raid.name}</span>
                                     </label>

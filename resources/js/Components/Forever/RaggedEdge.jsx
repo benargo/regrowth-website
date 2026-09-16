@@ -1,7 +1,7 @@
 const TONE_FILL = {
-    deep: "var(--color-forever-900)",
-    mid: "var(--color-forever-800)",
-    parchment: "var(--color-forever-700)",
+    deep: "var(--color-ground-900)",
+    mid: "var(--color-ground-800)",
+    parchment: "var(--color-ground-700)",
 };
 
 /**

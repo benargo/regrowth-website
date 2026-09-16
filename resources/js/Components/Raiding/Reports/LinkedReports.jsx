@@ -112,7 +112,7 @@ function LinkReportsModal({
 
     return (
         <Modal show={isOpen} maxWidth="xl" onClose={onClose}>
-            <div className="flex items-center justify-between border-b border-line/30 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-ink-600/30 px-6 py-4">
                 <h2 className="text-lg font-semibold text-white">Link Reports</h2>
                 <button onClick={onClose} className="text-gray-400 transition-colors hover:text-white">
                     <Icon icon="times" style="solid" />
@@ -121,13 +121,13 @@ function LinkReportsModal({
 
             <div className="max-h-[60vh] overflow-y-auto">
                 {isLoading ? (
-                    <ul className="divide-y divide-line">
+                    <ul className="divide-y divide-ink-600">
                         {skeletonRows.map((_, i) => (
                             <li key={i} className="flex animate-pulse items-center gap-3 px-6 py-3">
-                                <div className="h-4 w-4 rounded bg-surface-raised" />
+                                <div className="h-4 w-4 rounded bg-ground-700" />
                                 <div className="flex-1 space-y-1.5">
-                                    <div className="h-3.5 w-48 rounded bg-surface-raised" />
-                                    <div className="h-3 w-32 rounded bg-surface-raised" />
+                                    <div className="h-3.5 w-48 rounded bg-ground-700" />
+                                    <div className="h-3 w-32 rounded bg-ground-700" />
                                 </div>
                             </li>
                         ))}
@@ -137,7 +137,7 @@ function LinkReportsModal({
                         <p>No other reports found.</p>
                     </div>
                 ) : (
-                    <ul className="divide-y divide-line">
+                    <ul className="divide-y divide-ink-600">
                         {nearbyReports.data.map((cluster) => {
                             const linked = isClusterLinked(cluster);
                             const current = isClusterCurrent(cluster);
@@ -150,7 +150,7 @@ function LinkReportsModal({
                                 <li
                                     key={cluster.id}
                                     onClick={() => toggleCluster(cluster)}
-                                    className={`flex gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "cursor-pointer hover:bg-surface/50"}`}
+                                    className={`flex gap-3 px-6 py-3 transition-colors ${isDisabled ? "cursor-default opacity-60" : "cursor-pointer hover:bg-ground-800/50"}`}
                                 >
                                     <input
                                         type="checkbox"
@@ -158,7 +158,7 @@ function LinkReportsModal({
                                         disabled={isDisabled}
                                         onChange={() => toggleCluster(cluster)}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="mt-1 h-4 w-4 shrink-0 rounded border-line bg-surface text-body-muted accent-focus-ring"
+                                        className="mt-1 h-4 w-4 shrink-0 rounded border-ink-600 bg-ground-800 text-ink-500 accent-ink-500"
                                     />
                                     <div className="min-w-0 flex-1">
                                         {!isSingle && (
@@ -167,7 +167,7 @@ function LinkReportsModal({
                                                     {cluster.reports.length} reports
                                                 </span>
                                                 {current && (
-                                                    <span className="shrink-0 rounded bg-accent/20 px-1.5 py-0.5 text-xs text-body">
+                                                    <span className="shrink-0 rounded bg-ink-600/20 px-1.5 py-0.5 text-xs text-ink-400">
                                                         Current
                                                     </span>
                                                 )}
@@ -178,7 +178,7 @@ function LinkReportsModal({
                                                 )}
                                             </div>
                                         )}
-                                        <div className={!isSingle ? "space-y-2 border-l-2 border-line pl-3" : ""}>
+                                        <div className={!isSingle ? "space-y-2 border-l-2 border-ink-600 pl-3" : ""}>
                                             {isSingle ? (
                                                 <div>
                                                     <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ function LinkReportsModal({
                                                             {cluster.reports[0].title}
                                                         </span>
                                                         {current && (
-                                                            <span className="shrink-0 rounded bg-accent/20 px-1.5 py-0.5 text-xs text-body">
+                                                            <span className="shrink-0 rounded bg-ink-600/20 px-1.5 py-0.5 text-xs text-ink-400">
                                                                 Current
                                                             </span>
                                                         )}
@@ -241,14 +241,14 @@ function LinkReportsModal({
                 )}
             </div>
 
-            <div className="flex items-center justify-between border-t border-line/30 px-6 py-4">
+            <div className="flex items-center justify-between border-t border-ink-600/30 px-6 py-4">
                 <div className="flex items-center gap-3">
                     {meta && meta.last_page > 1 && (
                         <>
                             <button
                                 onClick={() => handlePageChange(meta.current_page - 1)}
                                 disabled={meta.current_page <= 1 || isLoading}
-                                className="rounded border border-line/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="rounded border border-ink-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-ink-600/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 <Icon icon="chevron-left" style="solid" />
                             </button>
@@ -258,7 +258,7 @@ function LinkReportsModal({
                             <button
                                 onClick={() => handlePageChange(meta.current_page + 1)}
                                 disabled={meta.current_page >= meta.last_page || isLoading}
-                                className="rounded border border-line/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="rounded border border-ink-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-ink-600/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 <Icon icon="chevron-right" style="solid" />
                             </button>
@@ -268,7 +268,7 @@ function LinkReportsModal({
                 <button
                     onClick={handleSubmit}
                     disabled={newlySelectedCount === 0 || isSubmitting}
-                    className="rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-body-muted disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded bg-ink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ink-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     {isSubmitting
                         ? "Linking..."
@@ -326,12 +326,12 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
                 from all manually linked reports. The following links will be severed:
             </p>
             {isLoading ? (
-                <ul className="divide-y divide-line rounded border border-line/30">
+                <ul className="divide-y divide-ink-600 rounded border border-ink-600/30">
                     {skeletonRows.map((_, i) => (
                         <li key={i} className="flex animate-pulse items-center gap-3 px-4 py-3">
                             <div className="flex-1 space-y-1.5">
-                                <div className="h-3.5 w-48 rounded bg-surface-raised" />
-                                <div className="h-3 w-32 rounded bg-surface-raised" />
+                                <div className="h-3.5 w-48 rounded bg-ground-700" />
+                                <div className="h-3 w-32 rounded bg-ground-700" />
                             </div>
                         </li>
                     ))}
@@ -339,7 +339,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
             ) : !impactedReports?.data || impactedReports.data.length === 0 ? (
                 <p className="text-sm text-gray-500">No manually linked reports found.</p>
             ) : (
-                <ul className="divide-y divide-line rounded border border-line/30">
+                <ul className="divide-y divide-ink-600 rounded border border-ink-600/30">
                     {impactedReports.data.map((report) => {
                         const formattedDate = formatDate(report.start_time);
                         return (
@@ -432,7 +432,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
             )}
 
             {linkedReports.length > 0 && (
-                <div className="divide-y divide-line rounded border border-line/30">
+                <div className="divide-y divide-ink-600 rounded border border-ink-600/30">
                     {linkedReports.map((linked) => {
                         const formattedDate = formatDate(linked.start_time);
                         const isManualLink = linked.pivot?.created_by;
@@ -442,11 +442,11 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                             <div key={linked.id} className="flex items-center justify-between px-4 py-3">
                                 <div>
                                     {isCreateMode ? (
-                                        <span className="font-medium text-body">{linked.title}</span>
+                                        <span className="font-medium text-ink-400">{linked.title}</span>
                                     ) : (
                                         <Link
                                             href={route("raiding.reports.show", { report: linked.id })}
-                                            className="font-medium text-body hover:text-body-bright hover:underline"
+                                            className="font-medium text-ink-400 hover:text-ink-300 hover:underline"
                                         >
                                             {linked.title}
                                         </Link>
@@ -509,9 +509,9 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                 <button
                     type="button"
                     onClick={handleAddLink}
-                    className="mt-4 inline-flex items-center gap-2 rounded border border-line/50 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-line hover:bg-accent/10 hover:text-white"
+                    className="mt-4 inline-flex items-center gap-2 rounded border border-ink-600/50 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-ink-600 hover:bg-ink-600/10 hover:text-white"
                 >
-                    <Icon icon="plus" style="solid" className="text-body-muted" />
+                    <Icon icon="plus" style="solid" className="text-ink-500" />
                     Add Link
                 </button>
             </Can>

@@ -10,7 +10,7 @@ import useLootPrioritiesChannel from "@/Hooks/useLootPrioritiesChannel";
 
 function PriorityIcon({ icon, title, size = "h-5 w-5" }) {
     if (!icon) {
-        return <span className={`${size} bg-surface-raised shrink-0 rounded`} />;
+        return <span className={`${size} bg-ground-700 shrink-0 rounded`} />;
     }
 
     return <img src={icon} alt={title} className={`${size} shrink-0 rounded`} />;
@@ -48,19 +48,19 @@ function RowCells({ row, phases, columnMax }) {
 
 function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
     return (
-        <div className="hidden overflow-x-auto rounded border border-line/30 md:block">
+        <div className="hidden overflow-x-auto rounded border border-ink-600/30 md:block">
             <table className="w-full min-w-max border-collapse">
-                <thead className="bg-surface-sunken sticky top-0 border-b border-line/30">
+                <thead className="bg-ground-900 sticky top-0 border-b border-ink-600/30">
                     <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-body-muted">Priority</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Priority</th>
                         {phases.map((phase) => (
-                            <th key={phase.id} className="px-3 py-3 text-center text-sm font-semibold text-body-muted">
+                            <th key={phase.id} className="px-3 py-3 text-center text-sm font-semibold text-ink-500">
                                 {phase.name}
                             </th>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-line divide-y">
+                <tbody className="divide-ink-600 divide-y">
                     {rows.map((row) =>
                         row.kind === "class" ? (
                             <Fragment key={`class-${row.id}`}>
@@ -77,7 +77,7 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
                                     <RowCells row={row} phases={phases} columnMax={columnMax} />
                                 </tr>
                                 {row.children.map((child) => (
-                                    <tr key={`priority-${child.id}`} className="hover:bg-surface/50">
+                                    <tr key={`priority-${child.id}`} className="hover:bg-ground-800/50">
                                         <td className="py-2 pr-4 pl-10">
                                             <div className="flex items-center gap-2">
                                                 <PriorityIcon icon={child.icon} title={child.title} />
@@ -89,7 +89,7 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
                                 ))}
                             </Fragment>
                         ) : (
-                            <tr key={`priority-${row.id}`} className="hover:bg-surface/50">
+                            <tr key={`priority-${row.id}`} className="hover:bg-ground-800/50">
                                 <td className="px-4 py-2">
                                     <div className="flex items-center gap-2">
                                         <PriorityIcon icon={row.icon} title={row.title} />
@@ -101,13 +101,13 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
                         ),
                     )}
                 </tbody>
-                <tfoot className="bg-surface-sunken/60 border-t border-line/30">
+                <tfoot className="bg-ground-900/60 border-t border-ink-600/30">
                     <tr>
-                        <td className="px-4 py-3 text-sm font-semibold text-body-muted">Total</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-ink-500">Total</td>
                         {phases.map((phase) => (
                             <td
                                 key={phase.id}
-                                className="px-3 py-3 text-center text-sm font-semibold text-body tabular-nums"
+                                className="px-3 py-3 text-center text-sm font-semibold text-ink-400 tabular-nums"
                             >
                                 {phaseTotals[phase.id] ?? 0}
                             </td>
@@ -124,7 +124,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
 
     return (
         <div className="flex flex-col gap-4 md:hidden">
-            <div className="flex overflow-x-auto rounded border border-line/30">
+            <div className="flex overflow-x-auto rounded border border-ink-600/30">
                 {phases.map((p) => (
                     <button
                         key={p.id}
@@ -132,8 +132,8 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                         onClick={() => onSelectPhase(p.id)}
                         className={`flex-1 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                             p.id === phase?.id
-                                ? "bg-accent/20 text-body"
-                                : "hover:bg-surface/50 text-gray-400"
+                                ? "bg-ink-600/20 text-ink-400"
+                                : "hover:bg-ground-800/50 text-gray-400"
                         }`}
                     >
                         {p.name}
@@ -142,7 +142,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
             </div>
 
             {phase && (
-                <div className="divide-line divide-y rounded border border-line/30">
+                <div className="divide-ink-600 divide-y rounded border border-ink-600/30">
                     {rows.map((row) =>
                         row.kind === "class" ? (
                             <div key={`class-${row.id}`}>
@@ -153,7 +153,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                                         <PriorityIcon icon={row.icon} title={row.title} size="h-6 w-6" />
                                         <span className="text-sm font-semibold text-white">{row.title}</span>
                                     </div>
-                                    <span className="text-sm font-semibold text-body tabular-nums">
+                                    <span className="text-sm font-semibold text-ink-400 tabular-nums">
                                         {row.counts[phase.id] ?? 0}
                                     </span>
                                 </div>
@@ -182,9 +182,9 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                             </div>
                         ),
                     )}
-                    <div className="bg-surface-sunken/60 flex items-center justify-between px-4 py-3">
-                        <span className="text-sm font-semibold text-body-muted">Total</span>
-                        <span className="text-sm font-semibold text-body tabular-nums">
+                    <div className="bg-ground-900/60 flex items-center justify-between px-4 py-3">
+                        <span className="text-sm font-semibold text-ink-500">Total</span>
+                        <span className="text-sm font-semibold text-ink-400 tabular-nums">
                             {phaseTotals[phase.id] ?? 0}
                         </span>
                     </div>
@@ -199,29 +199,29 @@ function TableSkeleton() {
     const fakeCols = Array.from({ length: 4 });
 
     return (
-        <div className="animate-pulse overflow-x-auto rounded border border-line/30">
+        <div className="animate-pulse overflow-x-auto rounded border border-ink-600/30">
             <table className="w-full min-w-max border-collapse">
-                <thead className="border-b border-line/30">
+                <thead className="border-b border-ink-600/30">
                     <tr>
                         <th className="px-4 py-3">
-                            <div className="bg-surface-raised h-4 w-32 rounded" />
+                            <div className="bg-ground-700 h-4 w-32 rounded" />
                         </th>
                         {fakeCols.map((_, i) => (
                             <th key={i} className="px-3 py-3">
-                                <div className="bg-surface-raised mx-auto h-4 w-10 rounded" />
+                                <div className="bg-ground-700 mx-auto h-4 w-10 rounded" />
                             </th>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-line divide-y">
+                <tbody className="divide-ink-600 divide-y">
                     {fakeRows.map((_, i) => (
                         <tr key={i}>
                             <td className="px-4 py-2">
-                                <div className="bg-surface-raised h-4 w-28 rounded" />
+                                <div className="bg-ground-700 h-4 w-28 rounded" />
                             </td>
                             {fakeCols.map((_, j) => (
                                 <td key={j} className="px-3 py-2">
-                                    <div className="bg-surface-raised mx-auto h-4 w-4 rounded" />
+                                    <div className="bg-ground-700 mx-auto h-4 w-4 rounded" />
                                 </td>
                             ))}
                         </tr>
@@ -234,8 +234,8 @@ function TableSkeleton() {
 
 function EmptyState() {
     return (
-        <div className="flex flex-col items-center gap-3 rounded border border-line/30 py-16 text-center">
-            <Icon icon="sack" style="light" className="text-4xl text-body-muted/70" />
+        <div className="flex flex-col items-center gap-3 rounded border border-ink-600/30 py-16 text-center">
+            <Icon icon="sack" style="light" className="text-4xl text-ink-500/70" />
             <p className="text-gray-400">No priorities have been assigned yet.</p>
         </div>
     );
@@ -288,7 +288,7 @@ export default function Priorities({ phases, table }) {
                 <div className="flex items-center space-x-4">
                     <Link
                         href={route("loot.index")}
-                        className="hover:border-primary hover:bg-surface active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
+                        className="hover:border-primary hover:bg-ground-800 active:border-primary my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Back to loot bias tool</span>

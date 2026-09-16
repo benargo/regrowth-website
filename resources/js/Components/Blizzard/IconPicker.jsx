@@ -5,7 +5,7 @@ import Tooltip from "@/Components/Tooltip";
 
 function BlizzardIconPickerSkeleton() {
     return (
-        <div className="flex items-center justify-center py-12 text-body">
+        <div className="flex items-center justify-center py-12 text-ink-400">
             <Icon icon="spinner" style="solid" className="fa-spin" />
         </div>
     );
@@ -95,14 +95,14 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     <Icon
                         icon="search"
                         style="solid"
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-body-muted"
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-500"
                     />
                     <input
                         type="text"
                         value={query}
                         onChange={handleQueryChange}
                         placeholder="Search icons…"
-                        className="w-full rounded border border-focus-ring bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder-focus-ring focus:border-focus-ring focus:outline-hidden"
+                        className="w-full rounded border border-ink-500 bg-ground-800 py-2 pl-8 pr-3 text-sm text-white placeholder-ink-500 focus:border-ink-500 focus:outline-hidden"
                         autoFocus
                     />
                 </div>
@@ -128,7 +128,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                                             ? "ring-2 ring-green-500 ring-offset-1 ring-offset-surface-raised"
                                             : isDisabled
                                               ? "cursor-not-allowed opacity-40"
-                                              : "hover:bg-surface-raised"
+                                              : "hover:bg-ground-700"
                                     }`}
                                     title={icon.name}
                                 >
@@ -145,7 +145,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                             );
                         })}
                         {icons.length === 0 && (
-                            <p className="col-span-10 py-8 text-center text-sm text-body">No icons found.</p>
+                            <p className="col-span-10 py-8 text-center text-sm text-ink-400">No icons found.</p>
                         )}
                     </div>
                 )}
@@ -156,12 +156,12 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                 links={paginatorLinks}
                 meta={paginatorMeta}
                 onPageChange={handlePage}
-                className="border-t border-line pt-3"
+                className="border-t border-ink-600 pt-3"
             />
 
             {/* Footer: selection count + confirm */}
-            <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-                <span className="text-sm text-body">
+            <div className="mt-3 flex items-center justify-between border-t border-ink-600 pt-3">
+                <span className="text-sm text-ink-400">
                     {selectionCount === 0 ? (
                         maxSelections === 1 ? (
                             "No icon selected"
@@ -171,7 +171,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     ) : maxSelections === 1 ? (
                         <span className="text-green-400">1 icon selected</span>
                     ) : (
-                        <span className={atLimit ? "text-green-400" : "text-body-bright"}>
+                        <span className={atLimit ? "text-green-400" : "text-ink-300"}>
                             {selectionCount} / {maxSelections} selected
                         </span>
                     )}
@@ -181,7 +181,7 @@ export default function IconPicker({ onSelect, maxSelections = 1 }) {
                     type="button"
                     disabled={selectionCount === 0}
                     onClick={handleConfirm}
-                    className="rounded bg-accent px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
+                    className="rounded bg-ink-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ink-700 disabled:opacity-40"
                 >
                     {maxSelections === 1
                         ? "Select"

@@ -6,7 +6,7 @@ import PageContainer from "@/Components/PageContainer";
 function ActionBadge({ action }) {
     const colors = {
         posted: "bg-green-700 text-green-200",
-        updated: "bg-accent-hover text-heading",
+        updated: "bg-ink-700 text-heading",
         deleted: "bg-red-700 text-red-200",
     };
 

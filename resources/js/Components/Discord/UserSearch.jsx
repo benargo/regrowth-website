@@ -81,7 +81,7 @@ export default function UserSearch({ value, onSelect, error }) {
                     value={query}
                     onChange={handleInputChange}
                     placeholder="Search by username or nickname..."
-                    className="w-full rounded border border-line bg-surface py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-focus-ring"
+                    className="w-full rounded border border-ink-600 bg-ground-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-ink-500"
                 />
                 {isLoading && (
                     <div className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />
@@ -98,13 +98,13 @@ export default function UserSearch({ value, onSelect, error }) {
             </div>
 
             {isOpen && results.length > 0 && (
-                <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-line bg-surface shadow-lg">
+                <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border border-ink-600 bg-ground-800 shadow-lg">
                     {results.map((member) => (
                         <li key={member.id}>
                             <button
                                 type="button"
                                 onClick={() => handleSelect(member)}
-                                className="w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-surface-raised"
+                                className="w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-ground-700"
                             >
                                 {member.nickname ?? member.username}
                                 {member.nickname && (
@@ -117,7 +117,7 @@ export default function UserSearch({ value, onSelect, error }) {
             )}
 
             {isOpen && !isLoading && results.length === 0 && query.trim() && (
-                <div className="absolute z-50 mt-1 w-full rounded border border-line bg-surface px-4 py-2 text-sm text-gray-400 shadow-lg">
+                <div className="absolute z-50 mt-1 w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-sm text-gray-400 shadow-lg">
                     No members found
                 </div>
             )}

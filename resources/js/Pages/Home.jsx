@@ -32,7 +32,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                                     torn edge stay legible over any frame. */}
                         <div
                             aria-hidden="true"
-                            className="from-surface-sunken via-surface-sunken/40 absolute inset-0 bg-gradient-to-t to-transparent"
+                            className="from-ground-900 via-ground-900/40 absolute inset-0 bg-gradient-to-t to-transparent"
                         />
 
                         <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
@@ -45,10 +45,10 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                                     />
                                 </div>
                                 <div className="text-center md:text-left">
-                                    <h1 className="from-camel-100 to-camel-300 mb-3 bg-linear-to-b bg-clip-text pb-1 font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-8xl">
+                                    <h1 className="from-ink-100 to-ink-300 mb-3 bg-linear-to-b bg-clip-text pb-1 font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-8xl">
                                         Regrowth
                                     </h1>
-                                    <p className="from-camel-300 to-camel-500 text-body bg-linear-to-b bg-clip-text text-2xl tracking-[0.2em] uppercase md:text-3xl">
+                                    <p className="from-ink-300 to-ink-500 text-ink-400 bg-linear-to-b bg-clip-text text-2xl tracking-[0.2em] uppercase md:text-3xl">
                                         Thunderstrike
                                     </p>
                                 </div>
@@ -84,7 +84,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                             Your Journey Starts Here
                         </DisplayHeading>
 
-                        <p className="text-body mx-auto mb-8 max-w-xl">
+                        <p className="text-ink-400 mx-auto mb-8 max-w-xl">
                             Whether you're a seasoned raider or stepping into Azeroth for the first time, there's a
                             place for you in Regrowth. Come and say hello — recruitment, raid chatter and everything
                             else happens on our Discord.

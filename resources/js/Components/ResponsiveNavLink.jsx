@@ -2,7 +2,7 @@ import { Link } from "@inertiajs/react";
 
 export default function ResponsiveNavLink({ href, children, ...props }) {
     const classes =
-        "flex flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-accent-hover hover:text-white";
+        "flex flex-row items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-ink-700 hover:text-white";
     const { external, ...rest } = props;
 
     if (external) {

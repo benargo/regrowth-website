@@ -251,7 +251,7 @@ export default function PrivacyPolicy() {
                             href="https://discord.gg/regrowth"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-bold text-body transition-colors hover:text-body-bright"
+                            className="font-bold text-ink-400 transition-colors hover:text-ink-300"
                         >
                             Discord
                         </Link>{" "}

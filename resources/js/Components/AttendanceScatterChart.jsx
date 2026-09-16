@@ -5,7 +5,7 @@ import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAx
 function TooltipBody({ point }) {
     return (
         <div className="flex flex-col gap-0.5 text-left">
-            <h3 className="whitespace-nowrap text-sm font-semibold text-body-bright">{point.character.name}</h3>
+            <h3 className="whitespace-nowrap text-sm font-semibold text-ink-300">{point.character.name}</h3>
             <p className="whitespace-nowrap font-bold">{point.percentage.toFixed(2)}% attendance</p>
             <p className="whitespace-nowrap">
                 <span className="font-bold">Raids:</span> {point.raidsTotal}

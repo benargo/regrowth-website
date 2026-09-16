@@ -106,7 +106,7 @@ export default function CommentForm({
                 <button
                     type="submit"
                     disabled={processing || validationError}
-                    className={`inline-flex items-center rounded-md border border-transparent bg-accent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-accent-hover focus:bg-accent-hover focus:ring-2 focus:ring-focus-ring focus:ring-offset-2 focus:outline-hidden active:bg-accent-active ${
+                    className={`inline-flex items-center rounded-md border border-transparent bg-ink-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-ink-700 focus:bg-ink-700 focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 focus:outline-hidden active:bg-ink-800 ${
                         (processing || validationError) && "opacity-25"
                     }`}
                 >

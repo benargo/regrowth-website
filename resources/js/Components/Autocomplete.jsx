@@ -123,12 +123,12 @@ export default function Autocomplete({
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 required={required}
-                className="w-full rounded border border-line bg-surface px-4 py-2 text-white placeholder-gray-400 focus:border-focus-ring focus:outline-hidden focus:ring-2 focus:ring-focus-ring"
+                className="w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-white placeholder-gray-400 focus:border-ink-500 focus:outline-hidden focus:ring-2 focus:ring-ink-500"
                 autoComplete="off"
             />
 
             {isOpen && filteredOptions.length > 0 && (
-                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded border border-line bg-surface shadow-xl">
+                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded border border-ink-600 bg-ground-800 shadow-xl">
                     {filteredOptions.map((option, index) => (
                         <div
                             key={option.id}
@@ -136,8 +136,8 @@ export default function Autocomplete({
                             onMouseEnter={() => setHighlightedIndex(index)}
                             className={`cursor-pointer px-4 py-2 transition-colors ${
                                 index === highlightedIndex
-                                    ? "bg-accent text-white"
-                                    : "text-gray-300 hover:bg-accent/20"
+                                    ? "bg-ink-600 text-white"
+                                    : "text-gray-300 hover:bg-ink-600/20"
                             }`}
                         >
                             {renderOption(option)}
@@ -147,7 +147,7 @@ export default function Autocomplete({
             )}
 
             {isOpen && filteredOptions.length === 0 && value && (
-                <div className="absolute z-10 mt-1 w-full rounded border border-line bg-surface px-4 py-2 text-gray-400 shadow-xl">
+                <div className="absolute z-10 mt-1 w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-gray-400 shadow-xl">
                     No matches found
                 </div>
             )}

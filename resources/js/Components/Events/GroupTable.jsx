@@ -30,7 +30,7 @@ export function BenchedTable({ characters }) {
                 <span className="ml-2 text-base font-normal text-gray-400">({characters.length})</span>
             </h2>
 
-            <div className="flex flex-wrap gap-2 rounded border border-line/30 p-4">
+            <div className="flex flex-wrap gap-2 rounded border border-ink-600/30 p-4">
                 {characters.map((character) => (
                     <BenchedPill key={character.id} character={character} />
                 ))}
@@ -46,21 +46,21 @@ export function GroupTable({ group }) {
                 {group.is_team ? "Team" : "Group"} {group.group_number}
                 <span className="ml-2 text-base font-normal text-gray-400">({group.characters.length})</span>
             </h2>
-            <div className="flex flex-1 flex-col rounded border border-line/30">
+            <div className="flex flex-1 flex-col rounded border border-ink-600/30">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
-                        <thead className="border-b border-line">
+                        <thead className="border-b border-ink-600">
                             <tr>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-body-muted">Character</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-body-muted">Rank</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-body-muted">Class</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Character</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Rank</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold text-ink-500">Class</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-line">
+                        <tbody className="divide-y divide-ink-600">
                             {group.characters.map((character) => (
                                 <tr
                                     key={character.id}
-                                    className={`transition-colors hover:bg-surface/50${character.signup_status === "unconfirmed" ? " opacity-40" : ""}${character.signup_status === "cancelled" ? " opacity-40 line-through decoration-red-400 text-red-400" : ""}`}
+                                    className={`transition-colors hover:bg-ground-800/50${character.signup_status === "unconfirmed" ? " opacity-40" : ""}${character.signup_status === "cancelled" ? " opacity-40 line-through decoration-red-400 text-red-400" : ""}`}
                                 >
                                     <td className="px-4 py-3">
                                         <span className="inline-flex items-center gap-1">

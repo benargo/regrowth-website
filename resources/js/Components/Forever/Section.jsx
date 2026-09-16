@@ -1,8 +1,8 @@
 import RaggedEdge from "./RaggedEdge";
 
 const TONE_BG = {
-    deep: "bg-forever-900",
-    mid: "bg-forever-800",
+    deep: "bg-ground-900",
+    mid: "bg-ground-800",
     parchment: "bg-mountains",
 };
 

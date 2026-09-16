@@ -7,11 +7,11 @@ import PageContainer from "@/Components/PageContainer";
 function headerInner() {
     return (
         <div className="flex flex-col items-center justify-center gap-2">
-            <p className="text-body text-sm font-semibold uppercase tracking-widest">
+            <p className="text-ink-400 text-sm font-semibold uppercase tracking-widest">
                 Error 410
             </p>
             <div className="flex flex-row items-center gap-4">
-                <Icon icon="dragon" style="solid" className="text-4xl text-body-muted" />
+                <Icon icon="dragon" style="solid" className="text-4xl text-ink-500" />
                 <span className="text-4xl font-bold">Raid Plan Gone</span>
             </div>
         </div>
@@ -25,7 +25,7 @@ export default function Gone() {
 
             <PageContainer>
                 <div className="max-w-2xl text-center mx-auto">
-                    <div className="border border-line/30 rounded-lg p-8 mb-8 bg-black/20">
+                    <div className="border border-ink-600/30 rounded-lg p-8 mb-8 bg-black/20">
                         <p className="text-gray-300 text-lg leading-relaxed mb-4">
                             This raid plan existed once, but has since been removed from our records.
                             Old raid plans are pruned automatically after one month.
@@ -37,7 +37,7 @@ export default function Gone() {
 
                     <Link
                         href={route("raiding.index")}
-                        className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white font-semibold px-6 py-3 rounded transition-colors"
+                        className="inline-flex items-center gap-2 bg-ink-600 hover:bg-ink-700 text-white font-semibold px-6 py-3 rounded transition-colors"
                     >
                         <Icon icon="dragon" style="solid" />
                         Back to Raiding

@@ -59,10 +59,10 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
             ref={setNodeRef}
             style={style}
             data-assignment-key={assignment._key}
-            className="group relative border-b border-line/50 last:border-0"
+            className="group relative border-b border-ink-600/50 last:border-0"
         >
             <td
-                className="w-6 cursor-grab px-1 py-2 text-center text-body hover:text-body active:cursor-grabbing"
+                className="w-6 cursor-grab px-1 py-2 text-center text-ink-400 hover:text-ink-400 active:cursor-grabbing"
                 {...attributes}
                 {...listeners}
             >
@@ -121,12 +121,12 @@ function AssignmentRowEditor({ assignment, targetMarkers, onUpdate, onRemove }) 
 
 function AddAssignmentRow({ onAdd }) {
     return (
-        <tr className="border-t border-dashed border-line/50">
+        <tr className="border-t border-dashed border-ink-600/50">
             <td colSpan={4}>
                 <button
                     type="button"
                     onClick={onAdd}
-                    className="flex w-full items-center justify-center gap-2 py-2 text-xs text-body-muted transition-colors hover:bg-surface-raised/30 hover:text-body-bright"
+                    className="flex w-full items-center justify-center gap-2 py-2 text-xs text-ink-500 transition-colors hover:bg-ground-700/30 hover:text-ink-300"
                 >
                     <Icon icon="plus" style="solid" className="text-[10px]" />
                     Add assignment
@@ -140,8 +140,8 @@ function InsertionIndicatorRow() {
     return (
         <tr>
             <td colSpan={4} className="p-0">
-                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-focus-ring bg-accent/20">
-                    <span className="ml-3 text-[10px] font-medium text-body">Drop here</span>
+                <div className="mx-1 flex h-8 items-center rounded border-2 border-dashed border-ink-500 bg-ink-600/20">
+                    <span className="ml-3 text-[10px] font-medium text-ink-400">Drop here</span>
                 </div>
             </td>
         </tr>
@@ -157,7 +157,7 @@ function EmptyGroupDroppable({ containerId }) {
             <td colSpan={4}>
                 <div
                     className={`flex items-center justify-center rounded py-4 text-xs transition-colors ${
-                        isOver ? "bg-accent/20 text-body" : "text-body-muted"
+                        isOver ? "bg-ink-600/20 text-ink-400" : "text-ink-500"
                     }`}
                 >
                     Drop here
@@ -195,12 +195,12 @@ function AssignmentGroupEditor({
         <div
             ref={setContainerRef}
             className={`overflow-visible rounded-lg border transition-colors ${
-                isTargetContainer || isOverContainer ? "border-focus-ring bg-accent/10" : "border-line"
+                isTargetContainer || isOverContainer ? "border-ink-500 bg-ink-600/10" : "border-ink-600"
             }`}
         >
             {groupName && (
-                <div className="border-b border-line bg-surface/60 px-3 py-2">
-                    <h3 className="text-sm font-semibold text-body">{groupName}</h3>
+                <div className="border-b border-ink-600 bg-ground-800/60 px-3 py-2">
+                    <h3 className="text-sm font-semibold text-ink-400">{groupName}</h3>
                 </div>
             )}
             <SortableContext items={sortedAssignments.map((a) => a._key)} strategy={verticalListSortingStrategy}>
@@ -292,7 +292,7 @@ function SortableGroupCard({
                 <div className="mb-1 flex items-center gap-1">
                     <button
                         type="button"
-                        className="cursor-grab touch-none text-body-muted hover:text-body active:cursor-grabbing"
+                        className="cursor-grab touch-none text-ink-500 hover:text-ink-400 active:cursor-grabbing"
                         {...attributes}
                         {...listeners}
                     >
@@ -310,7 +310,7 @@ function SortableGroupCard({
                                 if (e.key === "Enter") commitRename();
                                 if (e.key === "Escape") setEditingName(false);
                             }}
-                            className="flex-1 rounded border border-focus-ring bg-surface px-2 py-0.5 text-sm text-body focus:outline-hidden"
+                            className="flex-1 rounded border border-ink-500 bg-ground-800 px-2 py-0.5 text-sm text-ink-400 focus:outline-hidden"
                         />
                     ) : (
                         <button
@@ -319,9 +319,9 @@ function SortableGroupCard({
                                 setNameInput(groupName ?? "");
                                 setEditingName(true);
                             }}
-                            className="flex-1 truncate text-left text-sm font-semibold text-body hover:text-body-bright"
+                            className="flex-1 truncate text-left text-sm font-semibold text-ink-400 hover:text-ink-300"
                         >
-                            {groupName ?? <span className="italic text-body-muted">Unnamed group</span>}
+                            {groupName ?? <span className="italic text-ink-500">Unnamed group</span>}
                         </button>
                     )}
 
@@ -367,8 +367,8 @@ function DroppableAddGroupButton({ droppableId, onClick, compact = false }) {
                     compact ? "py-2" : "py-6"
                 } ${
                     isOver
-                        ? "border-focus-ring/70 bg-accent/15 text-body"
-                        : "border-line/50 text-body-muted hover:border-line/40 hover:bg-accent/5 hover:text-body-muted"
+                        ? "border-ink-500/70 bg-ink-600/15 text-ink-400"
+                        : "border-ink-600/50 text-ink-500 hover:border-ink-600/40 hover:bg-ink-600/5 hover:text-ink-500"
                 }`}
             >
                 <Icon icon="plus" style="solid" className="text-[10px]" />
@@ -1114,7 +1114,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                 <div className="flex-initial space-x-4">
                     <Link
                         href={route("management.event-templates.index")}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-surface active:border-primary"
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to templates
@@ -1138,7 +1138,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                                     type="text"
                                     value={data.title}
                                     onChange={(e) => setData("title", e.target.value)}
-                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-focus-ring focus:outline-hidden"
+                                    className="rounded border border-transparent bg-transparent px-1 text-white focus:border-ink-500 focus:outline-hidden"
                                     placeholder="Template name"
                                 />
                             </Tooltip>
@@ -1190,7 +1190,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                 >
                     {/* General Assignments */}
                     <section className="mb-8">
-                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-body-muted/80">
+                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-ink-500/80">
                             General Assignments
                         </h2>
                         <GroupContainer
@@ -1208,7 +1208,7 @@ export default function Edit({ template, targetMarkers, raids }) {
                             {template.raids.map((raid) => (
                                 <div key={raid.slug}>
                                     {template.raids.length > 1 && (
-                                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-body-muted/80">
+                                        <h2 className="mb-3 text-base font-semibold uppercase tracking-wider text-ink-500/80">
                                             {raid.name}
                                         </h2>
                                     )}
@@ -1231,20 +1231,20 @@ export default function Edit({ template, targetMarkers, raids }) {
 
                     <DragOverlay>
                         {activeAssignment ? (
-                            <table className="w-full table-fixed rounded border border-focus-ring/50 bg-surface opacity-90 shadow-xl">
+                            <table className="w-full table-fixed rounded border border-ink-500/50 bg-ground-800 opacity-90 shadow-xl">
                                 <tbody>
-                                    <tr className="border-b border-line/50">
-                                        <td className="w-6 px-1 py-2 text-body">
+                                    <tr className="border-b border-ink-600/50">
+                                        <td className="w-6 px-1 py-2 text-ink-400">
                                             <Icon icon="grip-vertical" style="solid" className="text-xs" />
                                         </td>
-                                        <td className="w-1/2 border-r border-line/50 px-3 py-2.5 text-sm text-heading">
+                                        <td className="w-1/2 border-r border-ink-600/50 px-3 py-2.5 text-sm text-heading">
                                             {labelFromSide(activeAssignment._leftSide).label || (
-                                                <span className="italic text-body-muted">empty</span>
+                                                <span className="italic text-ink-500">empty</span>
                                             )}
                                         </td>
                                         <td className="w-1/2 px-3 py-2.5 text-sm text-heading">
                                             {labelFromSide(activeAssignment._rightSide).label || (
-                                                <span className="italic text-body-muted">empty</span>
+                                                <span className="italic text-ink-500">empty</span>
                                             )}
                                         </td>
                                         <td className="w-10" />

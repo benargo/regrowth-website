@@ -43,10 +43,10 @@ export default function LevelRangeFilter({ minLevel, maxLevel, onMinChange, onMa
         <>
             <button
                 onClick={openModal}
-                className="flex w-full items-center justify-between rounded border border-line bg-surface px-4 py-2 text-left text-white transition-colors hover:bg-surface-raised"
+                className="flex w-full items-center justify-between rounded border border-ink-600 bg-ground-800 px-4 py-2 text-left text-white transition-colors hover:bg-ground-700"
             >
                 <span className="truncate text-sm">{buttonLabel}</span>
-                <Icon icon="sliders" className="ml-2 shrink-0 text-body-muted" />
+                <Icon icon="sliders" className="ml-2 shrink-0 text-ink-500" />
             </button>
 
             <Modal show={isOpen} onClose={() => setIsOpen(false)} maxWidth="sm">
@@ -79,13 +79,13 @@ export default function LevelRangeFilter({ minLevel, maxLevel, onMinChange, onMa
                     <div className="mt-6 flex justify-end gap-3">
                         <button
                             onClick={handleClear}
-                            className="rounded border border-line px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-surface-raised hover:text-white"
+                            className="rounded border border-ink-600 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-ground-700 hover:text-white"
                         >
                             Clear
                         </button>
                         <button
                             onClick={handleApply}
-                            className="rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-body-muted"
+                            className="rounded bg-ink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ink-500"
                         >
                             Apply
                         </button>

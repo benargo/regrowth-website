@@ -10,9 +10,9 @@ import SpecRow from "@/Components/Characters/SpecRow";
 
 function SectionHeading({ children }) {
     return (
-        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-body-muted/70">
+        <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-ink-500/70">
             <span>{children}</span>
-            <span className="h-px flex-1 bg-accent/20" />
+            <span className="h-px flex-1 bg-ink-600/20" />
         </h2>
     );
 }
@@ -75,7 +75,7 @@ export default function Edit({ character, specializations }) {
                             character: character.id,
                             slug: character.slug,
                         })}
-                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-surface active:border-primary"
+                        className="my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white hover:border-primary hover:bg-ground-800 active:border-primary"
                     >
                         <Icon icon="arrow-left" style="solid" className="mr-2" />
                         <span>Finish editing {character.name}</span>
@@ -91,7 +91,7 @@ export default function Edit({ character, specializations }) {
                             <img
                                 src={character.playable_class.icon_url}
                                 alt={character.playable_class.name}
-                                className="h-12 w-12 rounded-lg border border-line/30 shadow-lg shadow-black/40"
+                                className="h-12 w-12 rounded-lg border border-ink-600/30 shadow-lg shadow-black/40"
                             />
                         )}
                         <div>
@@ -109,7 +109,7 @@ export default function Edit({ character, specializations }) {
                             <SectionHeading>Specializations</SectionHeading>
                             <p className="mb-4 text-sm text-gray-400">
                                 Select which specs this character plays. Mark one as the{" "}
-                                <span className="inline-flex items-center gap-1 text-body-muted">
+                                <span className="inline-flex items-center gap-1 text-ink-500">
                                     raid spec
                                 </span>
                                 .
@@ -151,12 +151,12 @@ export default function Edit({ character, specializations }) {
                         {/* Loot Council */}
                         <section>
                             <SectionHeading>Loot Council</SectionHeading>
-                            <label className="flex cursor-pointer items-center gap-3 rounded border border-line bg-surface/30 px-4 py-3 transition-colors hover:border-focus-ring">
+                            <label className="flex cursor-pointer items-center gap-3 rounded border border-ink-600 bg-ground-800/30 px-4 py-3 transition-colors hover:border-ink-500">
                                 <input
                                     type="checkbox"
                                     checked={data.is_loot_councillor}
                                     onChange={(e) => setData("is_loot_councillor", e.target.checked)}
-                                    className="h-4 w-4 rounded border-line bg-surface-sunken text-line focus:ring-focus-ring focus:ring-offset-0"
+                                    className="h-4 w-4 rounded border-ink-600 bg-ground-900 text-ink-600 focus:ring-ink-500 focus:ring-offset-0"
                                 />
                                 <span className="font-medium text-white">Loot Councillor</span>
                                 <span className="text-sm text-gray-500">
@@ -169,7 +169,7 @@ export default function Edit({ character, specializations }) {
                         </section>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-4 border-t border-line pt-6">
+                        <div className="flex items-center gap-4 border-t border-ink-600 pt-6">
                             <PrimaryButton type="submit" processing={processing}>
                                 {processing ? "Saving…" : "Save Changes"}
                             </PrimaryButton>

@@ -1,6 +1,6 @@
 export default function SharedHeader({ title, subtitle, backgroundClass = "bg-masthead" }) {
     return (
-        <header className={`${backgroundClass} border-line h-64 border-b-8 text-white md:h-128`}>
+        <header className={`${backgroundClass} border-ink-600 h-64 border-b-8 text-white md:h-128`}>
             <div className="flex h-full w-full items-center bg-black/50 px-4 pt-20.5 pb-8 lg:pt-21.5">
                 <div className="container mx-auto">
                     <h1 className="text-center font-serif text-5xl">

@@ -101,7 +101,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                     Meet the Officers
                 </DisplayHeading>
 
-                <p className="text-camel-200 mx-auto mb-12 max-w-2xl text-center md:mb-16">
+                <p className="text-ink-200 mx-auto mb-12 max-w-2xl text-center md:mb-16">
                     Regrowth is steered by a team of officers who organise the raids, settle the loot and keep the guild
                     running. Here they all are.
                 </p>
@@ -152,7 +152,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                                 type="button"
                                 onClick={scrollPrev}
                                 aria-label="Previous officer"
-                                className="text-camel-400 hover:text-camel-200 focus-visible:outline-camel-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
+                                className="text-ink-400 hover:text-ink-200 focus-visible:outline-ink-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
                             >
                                 <svg
                                     aria-hidden="true"
@@ -177,8 +177,8 @@ export default function OfficerTeam({ officers = [], renders }) {
                                         onClick={() => scrollTo(index)}
                                         className={`h-2.5 w-2.5 rounded-full transition-colors ${
                                             index === selectedIndex
-                                                ? "bg-camel-300"
-                                                : "bg-camel-600/50 hover:bg-camel-500"
+                                                ? "bg-ink-300"
+                                                : "bg-ink-600/50 hover:bg-ink-500"
                                         }`}
                                     />
                                 ))}
@@ -188,7 +188,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                                 type="button"
                                 onClick={scrollNext}
                                 aria-label="Next officer"
-                                className="text-camel-400 hover:text-camel-200 focus-visible:outline-camel-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
+                                className="text-ink-400 hover:text-ink-200 focus-visible:outline-ink-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
                             >
                                 <svg
                                     aria-hidden="true"

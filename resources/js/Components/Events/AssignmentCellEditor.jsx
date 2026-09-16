@@ -151,15 +151,15 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
         <Modal show onClose={onClose} maxWidth="2xl">
             <div className="p-6">
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-semibold text-body">Define New Spell</h3>
-                    <button type="button" onClick={onClose} className="text-body hover:text-white">
+                    <h3 className="font-semibold text-ink-400">Define New Spell</h3>
+                    <button type="button" onClick={onClose} className="text-ink-400 hover:text-white">
                         <Icon icon="times" style="solid" />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-body">
+                        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-400">
                             Name
                         </label>
                         <input
@@ -167,20 +167,20 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData((d) => ({ ...d, name: e.target.value }))}
-                            className="w-full rounded border border-focus-ring bg-surface px-3 py-2 text-sm text-white focus:border-focus-ring focus:outline-hidden"
+                            className="w-full rounded border border-ink-500 bg-ground-800 px-3 py-2 text-sm text-white focus:border-ink-500 focus:outline-hidden"
                             required
                         />
                         {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
                     </div>
 
                     <div>
-                        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-body">
+                        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-400">
                             Type
                         </label>
                         <select
                             value={formData.type}
                             onChange={(e) => setFormData((d) => ({ ...d, type: e.target.value }))}
-                            className={`w-full rounded border border-${formData.type ? "affect-" + formData.type.toLowerCase() : "focus-ring"} bg-${formData.type ? "affect-" + formData.type.toLowerCase() + "/20" : "surface"} px-3 py-2 text-sm text-white focus:border-focus-ring focus:outline-hidden`}
+                            className={`w-full rounded border border-${formData.type ? "affect-" + formData.type.toLowerCase() : "focus-ring"} bg-${formData.type ? "affect-" + formData.type.toLowerCase() + "/20" : "surface"} px-3 py-2 text-sm text-white focus:border-ink-500 focus:outline-hidden`}
                         >
                             {AFFECT_TYPES.map((t) => (
                                 <option key={t} value={t}>
@@ -191,13 +191,13 @@ function DefineSpellModal({ initialName = "", onClose, onCreated }) {
                     </div>
 
                     <div className="flex justify-end gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="text-sm text-body hover:text-white">
+                        <button type="button" onClick={onClose} className="text-sm text-ink-400 hover:text-white">
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={submitting || !formData.name.trim()}
-                            className="rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
+                            className="rounded bg-ink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ink-700 disabled:opacity-40"
                         >
                             {submitting ? "Creating…" : "Create Spell"}
                         </button>
@@ -385,7 +385,7 @@ export default function AssignmentCellEditor({
     };
 
     return (
-        <td className={`relative w-1/2 border-r border-line/50 p-0 last:border-r-0 ${colorClass}`}>
+        <td className={`relative w-1/2 border-r border-ink-600/50 p-0 last:border-r-0 ${colorClass}`}>
             <div className="relative flex items-center">
                 {(displayIconUrl || displaySlug) && (
                     <span className="pointer-events-none absolute left-2 mr-2 flex h-6 w-6 items-center justify-center">
@@ -409,7 +409,7 @@ export default function AssignmentCellEditor({
                     onFocus={openDropdown}
                     onKeyDown={handleKeyDown}
                     placeholder="Type to search…"
-                    className={`w-full bg-transparent py-2.5 pr-7 text-sm placeholder-line transition-colors focus:bg-surface/60 focus:outline-hidden ${textClass} ${
+                    className={`w-full bg-transparent py-2.5 pr-7 text-sm placeholder-ink-600 transition-colors focus:bg-ground-800/60 focus:outline-hidden ${textClass} ${
                         displayIconUrl || displaySlug ? "pl-10" : "pl-3"
                     }`}
                 />
@@ -426,7 +426,7 @@ export default function AssignmentCellEditor({
                         }
                         inputRef.current?.focus();
                     }}
-                    className="absolute right-2 flex h-full items-center text-body-bright hover:text-primary"
+                    className="absolute right-2 flex h-full items-center text-ink-300 hover:text-primary"
                 >
                     <span className={open ? "hidden" : ""}>
                         <Icon icon="caret-down" style="solid" className="text-sm" />
@@ -445,7 +445,7 @@ export default function AssignmentCellEditor({
                 return (
                     <div
                         ref={dropdownRef}
-                        className="absolute left-0 top-full z-40 max-h-60 w-72 overflow-auto rounded-b border border-t-0 border-focus-ring bg-surface-sunken shadow-xl"
+                        className="absolute left-0 top-full z-40 max-h-60 w-72 overflow-auto rounded-b border border-t-0 border-ink-500 bg-ground-900 shadow-xl"
                     >
                         {[
                             { label: "Target Markers", options: targetMarkerOptions },
@@ -456,7 +456,7 @@ export default function AssignmentCellEditor({
                         ].map(({ label, options: groupOpts }) =>
                             groupOpts.length > 0 ? (
                                 <div key={label}>
-                                    <div className="select-none px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-body-muted">
+                                    <div className="select-none px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-ink-500">
                                         {label}
                                     </div>
                                     {groupOpts.map((opt, i) => {
@@ -471,11 +471,11 @@ export default function AssignmentCellEditor({
                                                     handleSelect(opt);
                                                 }}
                                                 onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-heading ${myIdx === highlightedIndex ? "bg-surface-raised" : "hover:bg-surface-raised"}`}
+                                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-heading ${myIdx === highlightedIndex ? "bg-ground-700" : "hover:bg-ground-700"}`}
                                             >
                                                 {renderOptionIcon(opt)}
                                                 <span className="flex-1 truncate">{opt.label}</span>
-                                                {opt.sublabel && <span className="text-xs text-body-muted">{opt.sublabel}</span>}
+                                                {opt.sublabel && <span className="text-xs text-ink-500">{opt.sublabel}</span>}
                                             </button>
                                         );
                                     })}
@@ -496,7 +496,7 @@ export default function AssignmentCellEditor({
                                             setShowDefineSpell(true);
                                         }}
                                         onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                        className={`flex w-full items-center gap-2 border-t border-line px-3 py-2 text-left text-sm text-body ${myIdx === highlightedIndex ? "bg-surface-raised" : "hover:bg-surface-raised"}`}
+                                        className={`flex w-full items-center gap-2 border-t border-ink-600 px-3 py-2 text-left text-sm text-ink-400 ${myIdx === highlightedIndex ? "bg-ground-700" : "hover:bg-ground-700"}`}
                                     >
                                         <Icon icon="plus" style="solid" className="text-xs" />
                                         Define a new spell
@@ -516,7 +516,7 @@ export default function AssignmentCellEditor({
                                         handleUseRaw();
                                     }}
                                     onMouseEnter={() => setHighlightedIndex(myIdx)}
-                                    className={`flex w-full items-center gap-2 border-t border-line px-3 py-2 text-left text-sm text-body ${myIdx === highlightedIndex ? "bg-surface-raised" : "hover:bg-surface-raised"}`}
+                                    className={`flex w-full items-center gap-2 border-t border-ink-600 px-3 py-2 text-left text-sm text-ink-400 ${myIdx === highlightedIndex ? "bg-ground-700" : "hover:bg-ground-700"}`}
                                 >
                                     <Icon icon="pen" style="solid" className="text-xs" />
                                     Use &ldquo;{query}&rdquo;
@@ -525,7 +525,7 @@ export default function AssignmentCellEditor({
                         })()}
 
                         {dataLoading && (
-                            <p className="flex items-center gap-2 px-3 py-2 text-sm text-body-muted">
+                            <p className="flex items-center gap-2 px-3 py-2 text-sm text-ink-500">
                                 <Icon icon="spinner" style="solid" className="fa-spin text-xs" />
                                 Loading…
                             </p>
@@ -536,7 +536,7 @@ export default function AssignmentCellEditor({
                             targetMarkerOptions.length === 0 &&
                             spellOptions.length === 0 &&
                             query.length === 0 && (
-                                <p className="px-3 py-2 text-sm text-body-muted">Start typing to search…</p>
+                                <p className="px-3 py-2 text-sm text-ink-500">Start typing to search…</p>
                             )}
                     </div>
                 );

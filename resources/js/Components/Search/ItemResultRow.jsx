@@ -18,7 +18,7 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
                 tabIndex={-1}
                 onMouseEnter={onMouseEnter}
                 className={`flex items-center gap-4 rounded p-2 transition-colors ${
-                    isHighlighted ? "bg-surface-raised" : "bg-surface/50 hover:bg-surface/70"
+                    isHighlighted ? "bg-ground-700" : "bg-ground-800/50 hover:bg-ground-800/70"
                 }`}
             >
                 {item.icon && <div className="h-8 w-8 flex-none" />}

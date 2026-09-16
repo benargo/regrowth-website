@@ -410,12 +410,12 @@ export default function MarkdownEditor({
 
     return (
         <div className={className}>
-            <div className="overflow-hidden rounded-md border border-focus-ring focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-line">
+            <div className="overflow-hidden rounded-md border border-ink-500 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:border-ink-600">
                 {formatButtons.length > 0 && (
-                    <div className="flex items-center gap-0.5 border-b border-focus-ring bg-surface-raised px-2 py-1.5">
+                    <div className="flex items-center gap-0.5 border-b border-ink-500 bg-ground-700 px-2 py-1.5">
                         {groupedButtons.map((group, groupIndex) => (
                             <div key={groupIndex} className="flex items-center gap-0.5">
-                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-focus-ring" />}
+                                {groupIndex > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
                                 {group.map((format) => (
                                     <FormatButton
                                         key={format.key}
@@ -428,7 +428,7 @@ export default function MarkdownEditor({
                         ))}
                         {ungroupedButtons.length > 0 && (
                             <div className="flex items-center gap-0.5">
-                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-focus-ring" />}
+                                {groupedButtons.length > 0 && <span className="mx-1.5 h-4 w-px bg-ink-500" />}
                                 {ungroupedButtons.map((format) => (
                                     <FormatButton
                                         key={format.key}
@@ -449,7 +449,7 @@ export default function MarkdownEditor({
                     placeholder={computedPlaceholder}
                     rows={rows}
                     autoFocus={autoFocus}
-                    className="w-full resize-none border-none bg-surface p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
+                    className="w-full resize-none border-none bg-ground-800 p-2 text-white placeholder-gray-500 focus:outline-hidden focus:ring-0"
                 />
             </div>
             <div>
@@ -470,7 +470,7 @@ export default function MarkdownEditor({
                                 setWowheadError(null);
                             }}
                             placeholder="https://www.wowhead.com/tbc/item=28438/dragonmaw"
-                            className="w-full rounded-md border-focus-ring bg-surface text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
+                            className="w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
                             autoFocus
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
@@ -508,7 +508,7 @@ export default function MarkdownEditor({
                                     setLinkError(null);
                                 }}
                                 placeholder="https://example.com"
-                                className="mt-1 w-full rounded-md border-focus-ring bg-surface text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
+                                className="mt-1 w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
                                 autoFocus
                             />
                             <InputError message={linkError} className="mt-2" />
@@ -523,7 +523,7 @@ export default function MarkdownEditor({
                                 value={linkText}
                                 onChange={(e) => setLinkText(e.target.value)}
                                 placeholder="Click here"
-                                className="mt-1 w-full rounded-md border-focus-ring bg-surface text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
+                                className="mt-1 w-full rounded-md border-ink-500 bg-ground-800 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                         e.preventDefault();

@@ -46,12 +46,12 @@ export default function AddonExportSchema({ schema }) {
                     <pre
                         ref={dataRef}
                         onClick={selectAllContent}
-                        className="bg-surface/50 max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 p-4 text-sm text-white"
+                        className="bg-ground-800/50 max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto rounded border border-gray-800 p-4 text-sm text-white"
                     >
                         {schemaJson}
                     </pre>
                 </div>
-                <div className="mt-6 border-t border-accent-hover pt-6">
+                <div className="mt-6 border-t border-ink-700 pt-6">
                     <h2 className="mb-4 text-2xl font-semibold">Changelog</h2>
                     <h3 className="mt-4 flex flex-row items-center gap-2 font-semibold">
                         <span className="text-lg">Version 2.0.0 </span>

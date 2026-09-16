@@ -6,15 +6,15 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
             <label
                 className={`flex flex-1 cursor-pointer items-center gap-3 rounded border px-4 py-3 transition-all ${
                     isSelected
-                        ? "border-focus-ring/50 bg-accent/20"
-                        : "border-line bg-surface/30 hover:border-focus-ring"
+                        ? "border-ink-500/50 bg-ink-600/20"
+                        : "border-ink-600 bg-ground-800/30 hover:border-ink-500"
                 }`}
             >
                 <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={onToggle}
-                    className="bg-surface-sunken h-4 w-4 rounded border-line text-line focus:ring-focus-ring focus:ring-offset-0"
+                    className="bg-ground-900 h-4 w-4 rounded border-ink-600 text-ink-600 focus:ring-ink-500 focus:ring-offset-0"
                 />
 
                 <SpecIcon specialization={spec} size={6} />
@@ -30,8 +30,8 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
             <label
                 className={`flex flex-initial cursor-pointer items-center gap-3 rounded border px-4 py-3 transition-all ${
                     isRaidSpec
-                        ? "border-focus-ring/50 bg-accent/20"
-                        : "border-line bg-surface/30 hover:border-focus-ring"
+                        ? "border-ink-500/50 bg-ink-600/20"
+                        : "border-ink-600 bg-ground-800/30 hover:border-ink-500"
                 }`}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -40,7 +40,7 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
                     checked={isRaidSpec}
                     onChange={onSetRaid}
                     disabled={disabled || !isSelected}
-                    className="bg-surface-sunken h-3.5 w-3.5 border-line text-body-muted focus:ring-focus-ring focus:ring-offset-0 disabled:cursor-not-allowed"
+                    className="bg-ground-900 h-3.5 w-3.5 border-ink-600 text-ink-500 focus:ring-ink-500 focus:ring-offset-0 disabled:cursor-not-allowed"
                 />
                 <span className="hidden sm:inline">raid spec</span>
             </label>
