@@ -47,8 +47,15 @@
     --color-forever-900: #002936;
 
     /* Forever — verdant greens, placeholder for a future `secondary` scheme */
-    --color-verdant-400: #146f73;
-    --color-verdant-500: #0f6064;
+    --color-verdant-100: #5adde2;
+    --color-verdant-200: #33d4dc;
+    --color-verdant-300: #21b9bf;
+    --color-verdant-400: #1a9398;
+    --color-verdant-500: #146f73;
+    --color-verdant-600: #115e62;
+    --color-verdant-700: #0e4c4e;
+    --color-verdant-800: #0a393b;
+    --color-verdant-900: #072627;
 
     /* Forever — warm camel/parchment, used for headings and body copy */
     --color-camel-100: #fffff3;
@@ -75,10 +82,11 @@
 
     /*
      * Themed ramps. `ground-*` are surfaces, `ink-*` is type, lines and
-     * accents. Both resolve per-theme via the [data-theme] blocks below, so a
-     * component written once (e.g. `bg-ground-800`) renders correctly in both
-     * Classic and Forever without any conditional branching. Full 100–900 in
-     * both ramps, so any step is available without touching those blocks.
+     * accents, `secondary-*` is the secondary accent scale. All three resolve
+     * per-theme via the [data-theme] blocks below, so a component written
+     * once (e.g. `bg-ground-800`) renders correctly in both Classic and
+     * Forever without any conditional branching. Full 100–900 in each ramp,
+     * so any step is available without touching those blocks.
      */
     --color-ground-100: var(--theme-ground-100);
     --color-ground-200: var(--theme-ground-200);
@@ -98,6 +106,15 @@
     --color-ink-700: var(--theme-ink-700);
     --color-ink-800: var(--theme-ink-800);
     --color-ink-900: var(--theme-ink-900);
+    --color-secondary-100: var(--theme-secondary-100);
+    --color-secondary-200: var(--theme-secondary-200);
+    --color-secondary-300: var(--theme-secondary-300);
+    --color-secondary-400: var(--theme-secondary-400);
+    --color-secondary-500: var(--theme-secondary-500);
+    --color-secondary-600: var(--theme-secondary-600);
+    --color-secondary-700: var(--theme-secondary-700);
+    --color-secondary-800: var(--theme-secondary-800);
+    --color-secondary-900: var(--theme-secondary-900);
     --color-heading: var(--theme-heading);
     --color-primary: var(--theme-primary);
 
@@ -171,7 +188,7 @@
 }
 
 /*
- * Theme values for the ground/ink ramps declared above. `data-theme` is
+ * Theme values for the ground/ink/secondary ramps declared above. `data-theme` is
  * stamped server-side on <html> (see app.blade.php) from the shared `theme`
  * Inertia prop, resolved via #[UsesTheme] on the matched controller/action
  * (see App\Attributes\UsesTheme), so the correct block applies before first
@@ -200,6 +217,17 @@
     --theme-ink-800: var(--color-amber-800);
     --theme-ink-900: var(--color-amber-900);
 
+    /* secondary = Tailwind's default gray scale */
+    --theme-secondary-100: var(--color-gray-100);
+    --theme-secondary-200: var(--color-gray-200);
+    --theme-secondary-300: var(--color-gray-300);
+    --theme-secondary-400: var(--color-gray-400);
+    --theme-secondary-500: var(--color-gray-500);
+    --theme-secondary-600: var(--color-gray-600);
+    --theme-secondary-700: var(--color-gray-700);
+    --theme-secondary-800: var(--color-gray-800);
+    --theme-secondary-900: var(--color-gray-900);
+
     /* Bright text on an accent fill; diverges from the ink ramp by design. */
     --theme-heading: var(--color-amber-500);
     --theme-primary: #f8b700;
@@ -226,6 +254,17 @@
     --theme-ink-700: var(--color-camel-700);
     --theme-ink-800: var(--color-camel-800);
     --theme-ink-900: var(--color-camel-900);
+
+    /* secondary = verdant greens */
+    --theme-secondary-100: var(--color-verdant-100);
+    --theme-secondary-200: var(--color-verdant-200);
+    --theme-secondary-300: var(--color-verdant-300);
+    --theme-secondary-400: var(--color-verdant-400);
+    --theme-secondary-500: var(--color-verdant-500);
+    --theme-secondary-600: var(--color-verdant-600);
+    --theme-secondary-700: var(--color-verdant-700);
+    --theme-secondary-800: var(--color-verdant-800);
+    --theme-secondary-900: var(--color-verdant-900);
 
     --theme-heading: var(--color-camel-200);
     --theme-primary: var(--color-forever-500);
