@@ -36,19 +36,19 @@
 
     /* World of Warcraft: Forever — teal/blue grounds
        Extracted from Blizzard's camelot.24925ea6c03211663d81.css */
-    --color-forever-900: #002936;
-    --color-forever-800: #003c4e;
-    --color-forever-700: #004e66;
-    --color-forever-600: #00617e;
-    --color-forever-500: #007396;
-    --color-forever-400: #0088b1;
-    --color-forever-300: #009ccc;
-    --color-forever-200: #00b1e7;
     --color-forever-100: #00c6ff;
+    --color-forever-200: #00b1e7;
+    --color-forever-300: #009ccc;
+    --color-forever-400: #0088b1;
+    --color-forever-500: #007396;
+    --color-forever-600: #00617e;
+    --color-forever-700: #004e66;
+    --color-forever-800: #003c4e;
+    --color-forever-900: #002936;
 
     /* Forever — verdant greens, used for primary actions */
-    --color-verdant-500: #0f6064;
     --color-verdant-400: #146f73;
+    --color-verdant-500: #0f6064;
 
     /* Forever — warm camel/parchment, used for headings and body copy */
     --color-camel-100: #fffff3;
@@ -455,6 +455,13 @@ svg.recharts-surface {
     background-size: 100% auto;
 }
 
+[data-theme="forever"] .bg-mountains {
+    background-image: url("../images/forever/bg_mountains.avif");
+    background-position: 50% 100%;
+    background-size: 100% contain;
+    background-repeat: no-repeat;
+}
+
 [data-theme="classic"] .bg-footer {
     background-image: none;
 }
@@ -479,9 +486,17 @@ svg.recharts-surface {
     border-color: var(--color-camel-600);
 }
 
-[data-theme="forever"] .bg-mountains {
-    background-image: url("../images/forever/bg_mountains.avif");
-    background-position: 50% 100%;
-    background-size: 100% contain;
-    background-repeat: no-repeat;
+/*
+ * Fades `bg-surface` from full opacity to transparent over the element's
+ * top edge, used where forever-themed content needs to blend into the
+ * masthead/background behind it instead of cutting off sharply.
+ */
+[data-theme="forever"] .bg-fade-surface {
+    background-image: linear-gradient(to bottom, var(--color-surface) 0, transparent 100px);
+}
+
+@media (min-width: 1024px) {
+    [data-theme="forever"] .bg-fade-surface {
+        background-image: linear-gradient(to bottom, var(--color-surface) 0, transparent 150px);
+    }
 }
