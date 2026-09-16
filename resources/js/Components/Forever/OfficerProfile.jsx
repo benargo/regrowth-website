@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import CountryFlag from "./CountryFlag";
+import CountryFlag from "@/Components/CountryFlag";
 
 /**
  * A single officer. Renders their in-game character render standing on a
