@@ -281,7 +281,7 @@ export default function Master({ title, children }) {
                 <FlashMessage type="error" message={flashError} onDismiss={() => setFlashError(null)} />
                 <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
 
-                <main className="flex-1">{children}</main>
+                <div className="flex flex-1 flex-col">{children}</div>
 
                 <footer className="bg-footer border-footer border-t-8 py-5" id="footer">
                     <div className="container mx-auto">
@@ -365,8 +365,8 @@ export default function Master({ title, children }) {
                         </div>
                         <div className="mt-4 md:mt-2">
                             <p className="text-center text-xs text-gray-400 md:text-left">
-                                Disclaimer: Classic is a trademark, and World of Warcraft and Warcraft are trademarks
-                                or registered trademarks of Blizzard Entertainment, Inc., in the U.S. and/or other
+                                Disclaimer: Classic is a trademark, and World of Warcraft and Warcraft are trademarks or
+                                registered trademarks of Blizzard Entertainment, Inc., in the U.S. and/or other
                                 countries. All related materials, logos, and images are copyright &copy; Blizzard
                                 Entertainment, Inc. Regrowth is in no way associated with or endorsed by Blizzard
                                 Entertainment.

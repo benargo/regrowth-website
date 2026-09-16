@@ -18,53 +18,57 @@ export default function Index() {
             <SharedHeader title="My Account" backgroundClass="bg-arcatraz" />
 
             <PageContainer>
-                    {/* User profile section */}
-                    <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                        <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">{user.display_name}</h1>
-                            <p className="text-sm text-gray-400">@{user.username}</p>
-                            {roles.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    {roles.map((role) => (
-                                        <Pill
-                                            key={role.id}
-                                            bgColor={`bg-discord-${role.name.toLowerCase().replace(/\s+/g, "")}`}
-                                            textColor="text-white"
-                                        >
-                                            {role.name}
-                                        </Pill>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Planned absences section */}
+                {/* User profile section */}
+                <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                    <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
                     <div>
-                        <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
-                            <h2 className="text-lg font-semibold text-body">Planned Absences</h2>
-                            <Can permission="create-planned-absences">
-                                <Link
-                                    href={route("raiding.absences.create")}
-                                    className="mt-3 inline-flex items-center rounded-md border border-transparent bg-accent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-accent-hover focus:bg-accent-hover focus:outline-hidden focus:ring-2 focus:ring-focus-ring focus:ring-offset-2 active:bg-camel-800 md:mt-0"
-                                >
-                                    <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
-                                    Add Absence
-                                </Link>
-                            </Can>
-                        </header>
-
-                        {planned_absences.data.length === 0 ? (
-                            <EmptyState icon="calendar-times" message="You haven't created any planned absences." size="text-3xl" />
-                        ) : (
-                            <div className="flex flex-col gap-2">
-                                {planned_absences.data.map((absence) => (
-                                    <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy />
+                        <h1 className="text-2xl font-bold text-white">{user.display_name}</h1>
+                        <p className="text-sm text-gray-400">@{user.username}</p>
+                        {roles.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {roles.map((role) => (
+                                    <Pill
+                                        key={role.id}
+                                        bgColor={`bg-discord-${role.name.toLowerCase().replace(/\s+/g, "")}`}
+                                        textColor="text-white"
+                                    >
+                                        {role.name}
+                                    </Pill>
                                 ))}
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Planned absences section */}
+                <div>
+                    <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
+                        <h2 className="text-body text-lg font-semibold">Planned Absences</h2>
+                        <Can permission="create-planned-absences">
+                            <Link
+                                href={route("raiding.absences.create")}
+                                className="bg-accent hover:bg-accent-hover focus:bg-accent-hover focus:ring-focus-ring active:bg-camel-800 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
+                            >
+                                <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
+                                Add Absence
+                            </Link>
+                        </Can>
+                    </header>
+
+                    {planned_absences.data.length === 0 ? (
+                        <EmptyState
+                            icon="calendar-times"
+                            message="You haven't created any planned absences."
+                            size="text-3xl"
+                        />
+                    ) : (
+                        <div className="flex flex-col gap-2">
+                            {planned_absences.data.map((absence) => (
+                                <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </PageContainer>
         </Master>
     );
