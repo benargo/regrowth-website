@@ -42,7 +42,7 @@ export default function Master({ title, children }) {
         <>
             <Head title={title} />
 
-            <div className="min-h-screen text-white">
+            <div className="flex min-h-screen flex-col text-white">
                 <div className="fixed inset-x-0 top-4 z-20 px-4">
                     <nav className="bg-surface-sunken/80 border-surface-raised/50 grid grid-cols-[auto_1fr_auto] items-center overflow-visible rounded-lg border py-3 pr-3 pl-4 shadow-lg backdrop-blur-xl lg:flex lg:flex-wrap lg:gap-10 lg:px-4">
                         {/* Mobile menu toggle */}
@@ -281,7 +281,7 @@ export default function Master({ title, children }) {
                 <FlashMessage type="error" message={flashError} onDismiss={() => setFlashError(null)} />
                 <FlashMessage type="success" message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />
 
-                <main>{children}</main>
+                <main className="flex-1">{children}</main>
 
                 <footer className="bg-footer border-footer border-t-8 py-5" id="footer">
                     <div className="container mx-auto">
