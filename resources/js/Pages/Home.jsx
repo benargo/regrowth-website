@@ -17,13 +17,6 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                     <section className="bg-masthead relative lg:flex-1">
                         <div className="bg-masthead hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
 
-                        {/* Scrim: darkens the foot of the video so the wordmark and the
-                                    torn edge stay legible over any frame. */}
-                        <div
-                            aria-hidden="true"
-                            className="from-ground-900 via-ground-900/40 absolute inset-0 bg-gradient-to-t to-transparent"
-                        />
-
                         <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
                             <div className="my-10 flex flex-row items-center">
                                 <div className="md:mr-10">
@@ -74,8 +67,8 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
 
                     <p className="text-ink-400 mx-auto mb-8 max-w-xl">
                         Whether you're a seasoned raider or stepping into Azeroth for the first time, there's a place
-                        for you in Regrowth. Come and say hello — recruitment, raid chatter and everything else
-                        happens on our Discord.
+                        for you in Regrowth. Come and say hello — recruitment, raid chatter and everything else happens
+                        on our Discord.
                     </p>
 
                     <a
