@@ -65,7 +65,7 @@ export default function LaunchCountdown({ targetIso }) {
             <div className="container mx-auto flex flex-col items-center gap-6 px-4 py-8 md:flex-row md:justify-between md:gap-10 md:py-10">
                 <div className="flex items-center gap-4">
                     <img src="/images/icon_camelot.webp" alt="" aria-hidden="true" className="w-12 shrink-0 md:w-16" />
-                    <p className="text-camel-200 text-center font-serif text-xl leading-snug md:text-left md:text-2xl">
+                    <p className="text-camel-400 text-center font-serif text-xl leading-snug md:text-left md:text-2xl">
                         {remaining === null ? (
                             <>Azeroth awaits — World of Warcraft: Forever is live!</>
                         ) : (
@@ -82,10 +82,10 @@ export default function LaunchCountdown({ targetIso }) {
                         {UNITS.map((unit, index) => (
                             <div key={unit.key} className="flex items-start gap-2 md:gap-4">
                                 <div className="flex min-w-[3.5rem] flex-col items-center md:min-w-[4.5rem]">
-                                    <span className="text-camel-200 font-serif text-4xl leading-none tabular-nums md:text-5xl">
+                                    <span className="text-camel-400 font-serif text-4xl leading-none tabular-nums md:text-5xl">
                                         {String(remaining[unit.key]).padStart(2, "0")}
                                     </span>
-                                    <span className="text-camel-400 mt-2 text-[0.65rem] tracking-[0.15em] uppercase md:text-xs">
+                                    <span className="text-camel-500 mt-2 text-[0.65rem] tracking-[0.15em] uppercase md:text-xs">
                                         {unit.label}
                                     </span>
                                 </div>

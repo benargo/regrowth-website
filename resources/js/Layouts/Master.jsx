@@ -85,14 +85,14 @@ export default function Master({ title, children }) {
                         </button>
 
                         {/* Desktop menu */}
-                        <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
-                            <div className="flex items-center gap-4">
+                        <div className="j hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
+                            <div className="flex items-center gap-1">
                                 <NavLink href={route("characters.index")}>
                                     <Icon icon="users" style="solid" className="mr-2 h-6" />
                                     Roster
                                 </NavLink>
                                 <NavLink href={route("raiding.index")}>
-                                    <Icon icon="dragon" style="solid" className="mr-2 h-6" />
+                                    <Icon icon="dragon" style="solid" className="mr-2 h-9" />
                                     Raiding
                                 </NavLink>
                                 <NavLink href={route("loot.index")}>
@@ -109,7 +109,7 @@ export default function Master({ title, children }) {
                                 <button
                                     type="button"
                                     onClick={() => setSearchOpen(true)}
-                                    className="hover:bg-surface-raised border-focus-ring bg-surface focus:ring-focus-ring flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:outline-hidden"
+                                    className="hover:bg-surface-raised border-surface-highlight bg-surface focus:ring-focus-ring flex min-h-6 items-center gap-2 rounded border px-3 py-2 text-sm text-gray-400 transition-colors hover:text-white focus:ring-1 focus:outline-hidden"
                                 >
                                     <Icon icon="search" style="solid" className="h-4 w-4" />
                                     <span>Search</span>

@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import Section from "./Section";
 import DisplayHeading from "./DisplayHeading";
 import OfficerProfile from "./OfficerProfile";
@@ -31,14 +33,47 @@ const Z_INDEXES = ["z-0", "z-10", "z-20", "z-30"];
  * baseline at staggered heights — the "Inner Circle" treatment from the
  * earlier theorder-website project.
  *
- * Desktop gets the single staggered row. Mobile gets a wrapped grid rather
- * than a carousel, so every officer is reachable without interaction.
+ * Desktop gets the single staggered row. Mobile and tablet get a swipeable
+ * carousel, one officer centred per slide.
  *
  * `renders` is the deferred officerRenders map — `{ url, visibleTop,
  * visibleBottom }` per officer, or null — and is undefined until it
  * resolves, so every lookup must tolerate that.
  */
 export default function OfficerTeam({ officers = [], renders }) {
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        loop: false,
+        align: "center",
+        containScroll: "trimSnaps",
+        dragFree: false,
+    });
+
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const onSelect = useCallback((api) => setSelectedIndex(api.selectedScrollSnap()), []);
+
+    useEffect(() => {
+        if (!emblaApi) {
+            return;
+        }
+
+        onSelect(emblaApi);
+        emblaApi.on("select", onSelect);
+        emblaApi.on("reInit", onSelect);
+
+        return () => {
+            emblaApi.off("select", onSelect);
+            emblaApi.off("reInit", onSelect);
+        };
+    }, [emblaApi, onSelect]);
+
+    const scrollTo = useCallback((index) => emblaApi?.scrollTo(index), [emblaApi]);
+    const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+    const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+    // The desktop row and the mobile carousel both need every hook above
+    // called unconditionally (Rules of Hooks), so this guard has to sit
+    // after them rather than before, even though it used to be the first
+    // line in the component.
     if (officers.length === 0) {
         return null;
     }
@@ -46,13 +81,18 @@ export default function OfficerTeam({ officers = [], renders }) {
     const isLoading = renders === undefined;
     const renderFor = (name) => renders?.[name] ?? null;
 
-    // Some races (Tauren) read visibly oversized next to the rest of the
+    // Some races (dwarves/gnomes) read visibly oversized next to the rest of the
     // team at the same visible-character height, so their render is scaled
     // down independently of the row's per-position stagger.
     const visibleHeightFor = (name, index) => {
         const baseHeight = VISIBLE_HEIGHTS[index % VISIBLE_HEIGHTS.length];
         return renderFor(name)?.isLargeRace ? baseHeight / 2 : baseHeight;
     };
+
+    // Carousel slides are full-width (or near it), with far more headroom
+    // relative to width than a grid cell had, so they use taller base
+    // heights than the desktop row's VISIBLE_HEIGHTS stagger.
+    const carouselVisibleHeightFor = (name) => (renderFor(name)?.isLargeRace ? 100 : 200);
 
     return (
         <Section tone="parchment" edge="bottom" edgeTone="mid" className="py-16 md:py-24">
@@ -61,7 +101,7 @@ export default function OfficerTeam({ officers = [], renders }) {
                     Meet the Officers
                 </DisplayHeading>
 
-                <p className="text-camel-400 mx-auto mb-12 max-w-2xl text-center md:mb-16">
+                <p className="text-camel-200 mx-auto mb-12 max-w-2xl text-center md:mb-16">
                     Regrowth is steered by a team of officers who organise the raids, settle the loot and keep the guild
                     running. Here they all are.
                 </p>
@@ -83,17 +123,86 @@ export default function OfficerTeam({ officers = [], renders }) {
                     ))}
                 </div>
 
-                {/* Mobile and tablet: a wrapped grid, no carousel. */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:hidden">
-                    {officers.map((officer) => (
-                        <OfficerProfile
-                            key={officer.name}
-                            officer={officer}
-                            render={renderFor(officer.name)}
-                            isLoading={isLoading}
-                            visibleHeight={renderFor(officer.name)?.isLargeRace ? 80 : 160}
-                        />
-                    ))}
+                {/* Mobile and tablet: a swipeable single-officer carousel (peeking
+                    neighbours from `sm` up), replacing the old wrapped grid so the
+                    section reads the same "step through officers" way the original
+                    theorder-website Bootstrap carousel did. */}
+                <div className="lg:hidden">
+                    <div className="overflow-hidden" ref={emblaRef}>
+                        <div className="flex">
+                            {officers.map((officer) => (
+                                <div
+                                    key={officer.name}
+                                    className="flex min-w-0 flex-[0_0_100%] items-end justify-center px-4 sm:flex-[0_0_85%]"
+                                >
+                                    <OfficerProfile
+                                        officer={officer}
+                                        render={renderFor(officer.name)}
+                                        isLoading={isLoading}
+                                        visibleHeight={carouselVisibleHeightFor(officer.name)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {officers.length > 1 && (
+                        <div className="mt-8 flex items-center justify-center gap-6">
+                            <button
+                                type="button"
+                                onClick={scrollPrev}
+                                aria-label="Previous officer"
+                                className="text-camel-400 hover:text-camel-200 focus-visible:outline-camel-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
+                            >
+                                <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    className="h-5 w-5"
+                                >
+                                    <path d="M15 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+
+                            <div className="flex items-center gap-2" role="tablist" aria-label="Officers">
+                                {officers.map((officer, index) => (
+                                    <button
+                                        key={officer.name}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={index === selectedIndex}
+                                        aria-label={`Show ${officer.name}`}
+                                        onClick={() => scrollTo(index)}
+                                        className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                                            index === selectedIndex
+                                                ? "bg-camel-300"
+                                                : "bg-camel-600/50 hover:bg-camel-500"
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={scrollNext}
+                                aria-label="Next officer"
+                                className="text-camel-400 hover:text-camel-200 focus-visible:outline-camel-500 rounded-full p-1 transition-colors focus-visible:outline focus-visible:outline-2"
+                            >
+                                <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    className="h-5 w-5"
+                                >
+                                    <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </Section>

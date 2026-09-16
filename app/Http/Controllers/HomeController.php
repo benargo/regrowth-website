@@ -57,7 +57,7 @@ class HomeController extends Controller
 
     /**
      * Playable races whose renders read visually oversized next to the rest
-     * of the officer team at the same visible-character height — Tauren.
+     * of the officer team at the same visible-character height — Gnome.
      */
     private const LARGE_RACE_IDS = [7];
 

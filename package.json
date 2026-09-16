@@ -33,6 +33,7 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@fortawesome/fontawesome-pro": "file:resources/fonts/fortawesome-fontawesome-pro-5.15.4.tgz",
         "country-flag-icons": "^1.6.20",
+        "embla-carousel-react": "^8.6.0",
         "react-markdown": "^10.1.0",
         "recharts": "^3.8.1"
     }

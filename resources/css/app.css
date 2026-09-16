@@ -36,27 +36,30 @@
 
     /* World of Warcraft: Forever — teal/blue grounds
        Extracted from Blizzard's camelot.24925ea6c03211663d81.css */
-    --color-forever-900: #011c2b;
-    --color-forever-800: #07324a;
-    --color-forever-700: #09273e;
-    --color-forever-600: #114f72;
-    --color-forever-500: #1a3658;
-    --color-forever-400: #007396;
-    --color-forever-300: #00afd7;
+    --color-forever-900: #002936;
+    --color-forever-800: #003c4e;
+    --color-forever-700: #004e66;
+    --color-forever-600: #00617e;
+    --color-forever-500: #007396;
+    --color-forever-400: #0088b1;
+    --color-forever-300: #009ccc;
+    --color-forever-200: #00b1e7;
+    --color-forever-100: #00c6ff;
 
     /* Forever — verdant greens, used for primary actions */
     --color-verdant-500: #0f6064;
     --color-verdant-400: #146f73;
 
     /* Forever — warm camel/parchment, used for headings and body copy */
-    --color-camel-200: #f5e5cf;
-    --color-camel-300: #eccaa1;
-    --color-camel-400: #c6af8d;
-    --color-camel-500: #ba976d;
-    --color-camel-600: #a58050;
-    --color-camel-700: #816541;
-    --color-camel-800: #5d4a32;
-    --color-camel-900: #3e3123;
+    --color-camel-100: #fffff3;
+    --color-camel-200: #ffffd9;
+    --color-camel-300: #ffeec0;
+    --color-camel-400: #eacfa6;
+    --color-camel-500: #c6af8d;
+    --color-camel-600: #a69376;
+    --color-camel-700: #877760;
+    --color-camel-800: #675b49;
+    --color-camel-900: #473f33;
 
     /* Classic — warm brown/parchment, the pre-Forever theme */
     --color-brown: #231a13;

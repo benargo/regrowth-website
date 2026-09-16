@@ -24,53 +24,42 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
     return (
         <Master title="Home">
             <div className="text-base">
-                <section className="bg-masthead relative">
-                    <div className="bg-masthead hidden h-[80vh] overflow-hidden md:block md:h-[800px]">
-                        {/* <video
-                                    preload="auto"
-                                    className="h-full w-full object-cover"
-                                    playsInline
-                                    autoPlay
-                                    muted
-                                    loop
-                                    aria-hidden="true"
-                                >
-                                    <source src="/videos/bcc_masthead_1.webm" type="video/webm" />
-                                    <source src="/videos/bcc_masthead_1.mp4" type="video/mp4" />
-                                </video> */}
-                    </div>
+                <div className="flex flex-col lg:h-screen">
+                    <section className="bg-masthead relative lg:flex-1">
+                        <div className="bg-masthead hidden h-[60vh] overflow-hidden md:block md:h-[800px] lg:h-full" />
 
-                    {/* Scrim: darkens the foot of the video so the wordmark and the
-                                torn edge stay legible over any frame. */}
-                    <div
-                        aria-hidden="true"
-                        className="from-surface-sunken via-surface-sunken/40 absolute inset-0 bg-gradient-to-t to-transparent"
-                    />
+                        {/* Scrim: darkens the foot of the video so the wordmark and the
+                                    torn edge stay legible over any frame. */}
+                        <div
+                            aria-hidden="true"
+                            className="from-surface-sunken via-surface-sunken/40 absolute inset-0 bg-gradient-to-t to-transparent"
+                        />
 
-                    <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
-                        <div className="my-10 flex flex-row items-center">
-                            <div className="md:mr-10">
-                                <img
-                                    src="/images/guild_emblem.webp"
-                                    alt="Regrowth emblem"
-                                    className="mx-auto h-32 drop-shadow-[0_0_25px_rgba(0,0,0,0.6)] md:mx-0 md:h-48"
-                                />
-                            </div>
-                            <div className="text-center md:text-left">
-                                <h1 className="text-heading mb-4 font-serif text-6xl font-normal drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] md:text-8xl">
-                                    Regrowth
-                                </h1>
-                                <p className="text-body text-2xl tracking-[0.2em] uppercase md:text-3xl">
-                                    Thunderstrike
-                                </p>
+                        <div className="relative flex flex-col items-center justify-center py-20 md:absolute md:inset-0 md:py-0">
+                            <div className="my-10 flex flex-row items-center">
+                                <div className="md:mr-10">
+                                    <img
+                                        src="/images/guild_emblem.webp"
+                                        alt="Regrowth emblem"
+                                        className="mx-auto h-32 drop-shadow-[0_0_25px_rgba(0,0,0,0.6)] md:mx-0 md:h-48"
+                                    />
+                                </div>
+                                <div className="text-center md:text-left">
+                                    <h1 className="from-camel-100 to-camel-300 mb-3 bg-linear-to-b bg-clip-text pb-1 font-serif text-6xl font-normal text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] text-shadow-sm md:text-8xl">
+                                        Regrowth
+                                    </h1>
+                                    <p className="from-camel-300 to-camel-500 text-body bg-linear-to-b bg-clip-text text-2xl tracking-[0.2em] uppercase md:text-3xl">
+                                        Thunderstrike
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <RaggedEdge position="bottom" tone="mid" />
-                </section>
+                        <RaggedEdge position="bottom" tone="mid" />
+                    </section>
 
-                <LaunchCountdown targetIso={foreverLaunchAt} />
+                    <LaunchCountdown targetIso={foreverLaunchAt} />
+                </div>
 
                 {/*
                  * officerRenders is deferred: the section paints immediately
@@ -105,7 +94,7 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                             href={discordInviteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="border-primary/30 text-heading focus:ring-primary/60 inline-flex items-center gap-3 rounded border bg-[#5865F2] px-8 py-4 text-lg shadow-lg transition-colors hover:bg-[#5865F2]/80 focus:ring-2 focus:outline-hidden"
+                            className="border-discord/30 text-heading focus:ring-primary/60 bg-discord hover:bg-discord/80 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus:ring-2 focus:outline-hidden"
                         >
                             <Icon icon="discord" style="brands" className="h-6 w-6 text-white" />
                             Join our Discord
