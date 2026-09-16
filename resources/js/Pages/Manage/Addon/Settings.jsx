@@ -119,10 +119,10 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             <Icon icon="user-friends" style="solid" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Loot council members</span>
                         </h2>
-                        <p className="text-mb mb-1 text-gray-200">
+                        <p className="text-mb mb-1 text-secondary-200">
                             Configure which guild members are part of the loot council.
                         </p>
-                        <p className="mb-1 text-sm text-gray-400">
+                        <p className="mb-1 text-sm text-secondary-400">
                             {councillorCounts.total} total ({councillorCounts.mains} mains, {councillorCounts.alts}{" "}
                             alts)
                         </p>
@@ -138,7 +138,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                                                     className="h-8 w-8 rounded border border-ink-600/30"
                                                 />
                                             ) : (
-                                                <div className="h-8 w-8 rounded border border-ink-600/30 bg-gray-700" />
+                                                <div className="h-8 w-8 rounded border border-ink-600/30 bg-secondary-700" />
                                             )}
                                             <span>{councillor.name}</span>
                                         </div>
@@ -156,7 +156,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                                 ))}
                             </div>
                         ) : (
-                            <p className="border-ink-600 my-2 rounded-md border p-2 text-sm text-gray-400">
+                            <p className="border-ink-600 my-2 rounded-md border p-2 text-sm text-secondary-400">
                                 No loot councillors configured.
                             </p>
                         )}
@@ -204,7 +204,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                                 ))}
                             </div>
                         ) : (
-                            <p className="mt-2 text-sm text-gray-400">No ranks available.</p>
+                            <p className="mt-2 text-sm text-secondary-400">No ranks available.</p>
                         )}
                     </div>
                     <div className="mb-4 rounded-lg border border-ink-600 p-4">
@@ -212,7 +212,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                             <img src="/images/logo_warcraftlogs.webp" alt="Warcraft Logs" className="mr-2 h-6 w-6" />
                             <span className="text-2xl font-semibold">Warcraft Logs tags</span>
                         </h2>
-                        <p className="text-mb mb-1 text-gray-200">
+                        <p className="text-mb mb-1 text-secondary-200">
                             Select which Warcraft Logs tags should be used for attendance calculations.
                         </p>
                         {tags.length > 0 ? (
@@ -234,7 +234,7 @@ export default function AddonSettings({ councillors: councillorsProp, ranks: ran
                                 ))}
                             </div>
                         ) : (
-                            <p className="mt-2 text-sm text-gray-400">No tags available.</p>
+                            <p className="mt-2 text-sm text-secondary-400">No tags available.</p>
                         )}
                     </div>
                 </div>

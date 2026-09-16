@@ -29,7 +29,7 @@ export default function Modal({
         >
             <DialogBackdrop
                 transition
-                className="fixed inset-0 bg-gray-500/75 transition duration-300 ease-out data-closed:opacity-0"
+                className="fixed inset-0 bg-secondary-500/75 transition duration-300 ease-out data-closed:opacity-0"
             />
 
             <div className="fixed inset-0 z-10 flex items-center overflow-y-auto px-4 py-6 sm:px-0">

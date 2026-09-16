@@ -62,7 +62,7 @@ export default function FlashMessage({ type = "error", message, onDismiss }) {
                 <p className="flex-1 text-sm text-white">{message}</p>
                 <button
                     onClick={handleDismiss}
-                    className="text-gray-400 transition-colors hover:text-white"
+                    className="text-secondary-400 transition-colors hover:text-white"
                     aria-label="Dismiss"
                 >
                     <Icon icon="times" style="regular" />

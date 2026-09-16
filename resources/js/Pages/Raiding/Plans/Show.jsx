@@ -32,7 +32,7 @@ function BossSection({ boss, onStrategyChanged }) {
                             )}
                         </div>
                     ) : (
-                        <p className="text-center text-sm text-gray-500">No assignments for this boss yet.</p>
+                        <p className="text-center text-sm text-secondary-500">No assignments for this boss yet.</p>
                     )}
                 </div>
                 <BossStrategy boss={boss} />
@@ -79,7 +79,7 @@ export default function Show({ event }) {
                     <Can permission="manage-raid-plans">
                         <Link
                             href={route("raiding.plans.edit", event.id)}
-                            className="inline-flex items-center gap-2 rounded border border-ink-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-ink-600/20"
+                            className="inline-flex items-center gap-2 rounded border border-ink-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-ink-600/20"
                         >
                             <Icon icon="pencil" />
                             Edit
@@ -97,7 +97,7 @@ export default function Show({ event }) {
                         )}
                     </div>
                 ) : (
-                    <p className="flex-1 text-center text-sm text-gray-400">
+                    <p className="flex-1 text-center text-sm text-secondary-400">
                         Groups for this raid have not been posted yet.
                     </p>
                 )}

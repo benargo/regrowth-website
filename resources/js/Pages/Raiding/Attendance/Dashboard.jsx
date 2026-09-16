@@ -17,7 +17,7 @@ function formatAbsenceDate(isoDate) {
 
 function BoxLabel({ icon, label }) {
     return (
-        <p className="flex items-center gap-2 align-top text-sm text-gray-400">
+        <p className="flex items-center gap-2 align-top text-sm text-secondary-400">
             {icon && <Icon icon={icon} style="light" className="text-ink-400" />}
             <span>{label}</span>
         </p>
@@ -29,8 +29,8 @@ function StatBox({ icon, label, value, subLabel, subText, className }) {
         <div className={`flex flex-col rounded border border-ink-600 p-4${className ? ` ${className}` : ""}`}>
             <BoxLabel icon={icon} label={label} />
             <p className="mt-1 grow align-top text-3xl font-bold text-ink-400">{value ?? "–"}</p>
-            {subText && <p className="mt-1 grow text-xs text-gray-400">{subText}</p>}
-            {subLabel && <p className="mt-2 grow text-xs text-gray-500">{subLabel}</p>}
+            {subText && <p className="mt-1 grow text-xs text-secondary-400">{subText}</p>}
+            {subLabel && <p className="mt-2 grow text-xs text-secondary-500">{subLabel}</p>}
         </div>
     );
 }
@@ -75,7 +75,7 @@ function BenchedByTagBox({ icon, label, groups }) {
             <BoxLabel icon={icon} label={label} />
             <p className="mt-1 text-3xl font-bold text-ink-400">{total}</p>
             {entries.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No benched players this week.</p>
+                <p className="mt-3 text-sm text-secondary-500">No benched players this week.</p>
             ) : (
                 <div className="mt-3 flex flex-col gap-2">
                     {entries.map(([tag, players]) => (
@@ -97,8 +97,8 @@ function BenchedByTagBox({ icon, label, groups }) {
 function SkeletonBox() {
     return (
         <div className="animate-pulse rounded border border-ink-600/30 p-4">
-            <div className="mb-2 h-3 w-1/2 rounded bg-gray-700" />
-            <div className="h-8 w-1/3 rounded bg-gray-700" />
+            <div className="mb-2 h-3 w-1/2 rounded bg-secondary-700" />
+            <div className="h-8 w-1/3 rounded bg-secondary-700" />
         </div>
     );
 }
@@ -106,11 +106,11 @@ function SkeletonBox() {
 function SkeletonPlayerBox() {
     return (
         <div className="animate-pulse rounded border border-ink-600/30 p-4">
-            <div className="mb-2 h-3 w-1/2 rounded bg-gray-700" />
-            <div className="mb-3 h-8 w-1/4 rounded bg-gray-700" />
+            <div className="mb-2 h-3 w-1/2 rounded bg-secondary-700" />
+            <div className="mb-3 h-8 w-1/4 rounded bg-secondary-700" />
             <div className="flex flex-wrap gap-1">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-5 w-16 rounded bg-gray-700" />
+                    <div key={i} className="h-5 w-16 rounded bg-secondary-700" />
                 ))}
             </div>
         </div>
@@ -122,7 +122,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
         <div className="flex flex-col rounded border border-ink-600 p-4">
             <BoxLabel icon={icon} label="Upcoming planned absences" />
             {absences.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No upcoming absences.</p>
+                <p className="mt-3 text-sm text-secondary-500">No upcoming absences.</p>
             ) : (
                 <ul className="mt-3 flex flex-col gap-2">
                     {absences.map((absence) => (
@@ -137,7 +137,7 @@ function UpcomingAbsencesBox({ icon, absences }) {
                                 )}
                                 {absence.character?.name ?? "Unknown"}
                             </span>
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-secondary-400">
                                 {absence.end_date && absence.end_date !== absence.start_date
                                     ? `${formatAbsenceDate(absence.start_date)} – ${formatAbsenceDate(absence.end_date)}`
                                     : formatAbsenceDate(absence.start_date)}
@@ -259,7 +259,7 @@ function PlayerListRows({ stats }) {
                     </div>
                     <div className="flex flex-col gap-1">
                         <h3 className="text-lg font-semibold">Attendance distribution</h3>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-secondary-400">
                             View per-player attendance spread on an interactive chart.
                         </p>
                     </div>
@@ -273,7 +273,7 @@ function PlayerListRows({ stats }) {
                     </div>
                     <div className="flex flex-col gap-1">
                         <h3 className="text-lg font-semibold">Full attendance matrix</h3>
-                        <p className="text-sm text-gray-400">View per-raid attendance for all tracked players.</p>
+                        <p className="text-sm text-secondary-400">View per-raid attendance for all tracked players.</p>
                     </div>
                 </Link>
             </div>

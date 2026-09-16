@@ -27,7 +27,7 @@ function GuildTagsLoadingSkeleton() {
 
 function GuildTagsList({ allGuildTags, selectedTagIds, onToggleTag }) {
     if (!allGuildTags || allGuildTags.length === 0) {
-        return <p className="text-gray-400">No Warcraft Logs tags available. Tags are synced from Warcraft Logs.</p>;
+        return <p className="text-secondary-400">No Warcraft Logs tags available. Tags are synced from Warcraft Logs.</p>;
     }
 
     return (
@@ -305,7 +305,7 @@ export default function ManagePhases({ phases, current_phase, all_guild_tags }) 
                         Enter the start date and time in Europe/Paris timezone (server time).
                     </p>
                     <div className="mt-4">
-                        <InputLabel htmlFor="start_date" value="Start Date (Europe/Paris)" className="text-gray-400" />
+                        <InputLabel htmlFor="start_date" value="Start Date (Europe/Paris)" className="text-secondary-400" />
                         <TextInput
                             id="start_date"
                             type="datetime-local"

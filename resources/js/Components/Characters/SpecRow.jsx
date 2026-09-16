@@ -18,10 +18,10 @@ export default function SpecRow({ spec, isSelected, isRaidSpec, onToggle, onSetR
                 />
 
                 <SpecIcon specialization={spec} size={6} />
-                <span className={`flex font-medium ${isSelected ? "text-white" : "text-gray-400"}`}>{spec.name}</span>
+                <span className={`flex font-medium ${isSelected ? "text-white" : "text-secondary-400"}`}>{spec.name}</span>
 
                 {spec.role && (
-                    <span className="inline-flex flex-1 flex-row gap-1 text-xs tracking-wide text-gray-400 uppercase">
+                    <span className="inline-flex flex-1 flex-row gap-1 text-xs tracking-wide text-secondary-400 uppercase">
                         {spec.role_icon_url && <img src={spec.role_icon_url} alt={spec.role} className="h-4 w-4" />}
                         <p>{spec.role}</p>
                     </span>

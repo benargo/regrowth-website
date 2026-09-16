@@ -21,7 +21,7 @@ function TallyStat({ label, value, colorClass }) {
     return (
         <div className="flex flex-col items-center rounded bg-ground-800 px-2 py-1.5">
             <span className={`text-lg font-bold ${colorClass}`}>{animated}</span>
-            <span className="text-center text-xs text-gray-400">{label}</span>
+            <span className="text-center text-xs text-secondary-400">{label}</span>
         </div>
     );
 }
@@ -213,11 +213,11 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
             <PageContainer>
                 <p className="mb-6 text-xl font-bold">Upload your GRM data here.</p>
                 {lastUploadTimestamp ? (
-                    <p className="text-md mb-6 text-gray-400">
+                    <p className="text-md mb-6 text-secondary-400">
                         The last GRM data upload was made on {lastUploadTimestamp}
                     </p>
                 ) : (
-                    <p className="text-md mb-6 text-gray-400">No previous uploads found.</p>
+                    <p className="text-md mb-6 text-secondary-400">No previous uploads found.</p>
                 )}
                 <p className="mb-6 text-lg">To export your GRM data, follow these steps:</p>
                 <ol className="mb-6 list-inside list-decimal space-y-2">
@@ -246,7 +246,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                             <li>Main/Alt</li>
                             <li>Player Alts</li>
                         </ul>
-                        <p className="italics mt-1 text-gray-400">
+                        <p className="italics mt-1 text-secondary-400">
                             Any other columns are optional, but ideally you should only select the ones listed
                             above.
                         </p>
@@ -261,7 +261,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                     </li>
                     <li>
                         Click the
-                        <span className="font-friz-quadrata mx-1 inline-block rounded-md border border-gray-600 bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
+                        <span className="font-friz-quadrata mx-1 inline-block rounded-md border border-secondary-600 bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
                             Export Selection
                         </span>{" "}
                         button.
@@ -269,7 +269,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                     <li>Copy the exported CSV data, and paste it below.</li>
                     <li>
                         Click the
-                        <span className="font-friz-quadrata mx-1 inline-block rounded-md border border-gray-600 bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
+                        <span className="font-friz-quadrata mx-1 inline-block rounded-md border border-secondary-600 bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
                             Export Next{" "}
                             <Deferred data="memberCount" fallback={<span className="italics">X</span>}>
                                 {memberCount - 500}
@@ -316,7 +316,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                             <h2 className="text-lg font-bold">GRM Upload Progress</h2>
                             <button
                                 onClick={dismiss}
-                                className="text-gray-400 transition-colors hover:text-white"
+                                className="text-secondary-400 transition-colors hover:text-white"
                                 aria-label="Dismiss"
                             >
                                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -331,7 +331,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                         </div>
 
                         <div className="mb-4">
-                            <div className="mb-1 flex justify-between text-sm text-gray-400">
+                            <div className="mb-1 flex justify-between text-sm text-secondary-400">
                                 <span>
                                     {total
                                         ? `${processedSoFar} of ${total} characters`
@@ -349,7 +349,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
 
                         {(isQueued || isProcessing) && (
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-sm text-gray-300">
+                                <div className="flex items-center gap-2 text-sm text-secondary-300">
                                     <svg
                                         className="h-4 w-4 shrink-0 animate-spin text-blue-400"
                                         fill="none"
@@ -472,7 +472,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                                         tallies.skippedCount > 0 ||
                                         tallies.warningCount > 0 ||
                                         tallies.errorCount > 0) && (
-                                        <ul className="space-y-1 pl-1 text-sm text-gray-300">
+                                        <ul className="space-y-1 pl-1 text-sm text-secondary-300">
                                             {tallies.processedCount > 0 && (
                                                 <li>
                                                     <span className="font-semibold text-green-400">
@@ -520,7 +520,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                                                 </li>
                                             ))}
                                             {errors.length > 10 && (
-                                                <li className="text-gray-400">
+                                                <li className="text-secondary-400">
                                                     ...and {errors.length - 10} more
                                                 </li>
                                             )}

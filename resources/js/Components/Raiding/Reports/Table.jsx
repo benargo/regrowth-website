@@ -52,7 +52,7 @@ export default function Table({ reports }) {
     const rows = reports?.data ?? reports ?? [];
     if (rows.length === 0) {
         return (
-            <div className="py-16 text-center text-gray-400">
+            <div className="py-16 text-center text-secondary-400">
                 <Icon icon="scroll" style="solid" className="mb-4 text-4xl" />
                 <p>No reports found.</p>
             </div>
@@ -81,8 +81,8 @@ export default function Table({ reports }) {
                         return (
                             <tr key={report.id} className="transition-colors hover:bg-ground-800/50">
                                 <td className="whitespace-nowrap px-4 py-3">
-                                    <p className="text-xs text-gray-500">{dayOfWeek}</p>
-                                    <p className="text-sm text-gray-300">
+                                    <p className="text-xs text-secondary-500">{dayOfWeek}</p>
+                                    <p className="text-sm text-secondary-300">
                                         <span className="md:hidden">{formattedDate.short}</span>
                                         <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                         <span className="hidden lg:inline">{formattedDate.long}</span>
@@ -97,9 +97,9 @@ export default function Table({ reports }) {
                                         {report.title}
                                     </Link>
                                 </td>
-                                <td className="px-4 py-3 text-sm text-gray-300">{report.zone?.name ?? "—"}</td>
-                                <td className="px-4 py-3 text-sm text-gray-300">{report.guild_tag?.name ?? "—"}</td>
-                                <td className="px-4 py-3 text-right text-sm text-gray-300">
+                                <td className="px-4 py-3 text-sm text-secondary-300">{report.zone?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-sm text-secondary-300">{report.guild_tag?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-right text-sm text-secondary-300">
                                     {formatDuration({ milliseconds: new Date(report.end_time) - startDate })}
                                 </td>
                                 <td className="px-4 py-3 text-center">
@@ -108,7 +108,7 @@ export default function Table({ reports }) {
                                             <Icon icon="link" style="solid" className="text-ink-500" />
                                         </Tooltip>
                                     ) : (
-                                        <Icon icon="link" style="solid" className="text-gray-600" />
+                                        <Icon icon="link" style="solid" className="text-secondary-600" />
                                     )}
                                 </td>
                             </tr>

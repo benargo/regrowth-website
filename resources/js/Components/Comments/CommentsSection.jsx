@@ -524,7 +524,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
                 </div>
             </Can>
             <Cannot permission="comment-on-loot-items">
-                <div className="bg-ground-800/50 mb-8 flex flex-row items-center rounded-lg border border-gray-700 p-4 text-gray-400 italic">
+                <div className="bg-ground-800/50 mb-8 flex flex-row items-center rounded-lg border border-secondary-700 p-4 text-secondary-400 italic">
                     <Icon icon="lock" style="solid" className="mr-2" />
                     <p>You do not have permission to post comments.</p>
                 </div>
@@ -542,7 +542,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
                 >
                     <Icon icon="arrow-up" style="solid" />
                     {newCommentCount === 1 ? "1 new comment" : `${newCommentCount} new comments`}
-                    <span className="text-gray-400">— jump to the latest</span>
+                    <span className="text-secondary-400">— jump to the latest</span>
                 </button>
             )}
 
@@ -585,7 +585,7 @@ export default function CommentsSection({ comments, replies, itemId, registerBro
                         />
                     </>
                 ) : (
-                    <p className="py-8 text-center text-gray-400">
+                    <p className="py-8 text-center text-secondary-400">
                         No comments yet. Be the first to share your thoughts!
                     </p>
                 )}

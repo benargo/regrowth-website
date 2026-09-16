@@ -35,7 +35,7 @@ function RowCells({ row, phases, columnMax }) {
                 return (
                     <td
                         key={phase.id}
-                        className="px-3 py-2 text-center text-sm text-gray-200 tabular-nums"
+                        className="px-3 py-2 text-center text-sm text-secondary-200 tabular-nums"
                         style={heatStyle(value, columnMax[phase.id])}
                     >
                         {value}
@@ -81,7 +81,7 @@ function DesktopTable({ phases, rows, columnMax, phaseTotals }) {
                                         <td className="py-2 pr-4 pl-10">
                                             <div className="flex items-center gap-2">
                                                 <PriorityIcon icon={child.icon} title={child.title} />
-                                                <span className="text-sm text-gray-300">{child.title}</span>
+                                                <span className="text-sm text-secondary-300">{child.title}</span>
                                             </div>
                                         </td>
                                         <RowCells row={child} phases={phases} columnMax={columnMax} />
@@ -133,7 +133,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                         className={`flex-1 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                             p.id === phase?.id
                                 ? "bg-ink-600/20 text-ink-400"
-                                : "hover:bg-ground-800/50 text-gray-400"
+                                : "hover:bg-ground-800/50 text-secondary-400"
                         }`}
                     >
                         {p.name}
@@ -164,9 +164,9 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                                     >
                                         <div className="flex items-center gap-2">
                                             <PriorityIcon icon={child.icon} title={child.title} />
-                                            <span className="text-sm text-gray-300">{child.title}</span>
+                                            <span className="text-sm text-secondary-300">{child.title}</span>
                                         </div>
-                                        <span className="text-sm text-gray-200 tabular-nums">
+                                        <span className="text-sm text-secondary-200 tabular-nums">
                                             {child.counts[phase.id] ?? 0}
                                         </span>
                                     </div>
@@ -178,7 +178,7 @@ function MobileTable({ phases, rows, selectedPhaseId, onSelectPhase, phaseTotals
                                     <PriorityIcon icon={row.icon} title={row.title} />
                                     <span className="text-sm font-medium text-white">{row.title}</span>
                                 </div>
-                                <span className="text-sm text-gray-200 tabular-nums">{row.counts[phase.id] ?? 0}</span>
+                                <span className="text-sm text-secondary-200 tabular-nums">{row.counts[phase.id] ?? 0}</span>
                             </div>
                         ),
                     )}
@@ -236,7 +236,7 @@ function EmptyState() {
     return (
         <div className="flex flex-col items-center gap-3 rounded border border-ink-600/30 py-16 text-center">
             <Icon icon="sack" style="light" className="text-4xl text-ink-500/70" />
-            <p className="text-gray-400">No priorities have been assigned yet.</p>
+            <p className="text-secondary-400">No priorities have been assigned yet.</p>
         </div>
     );
 }

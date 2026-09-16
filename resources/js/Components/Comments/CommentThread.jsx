@@ -102,7 +102,7 @@ export default function CommentThread({
                     {isExpanded && isLoadingReplies && (
                         <div className="animate-pulse space-y-2" aria-hidden="true">
                             {[1, 2, 3].map((row) => (
-                                <div key={row} className="h-12 rounded bg-gray-600/20" />
+                                <div key={row} className="h-12 rounded bg-secondary-600/20" />
                             ))}
                         </div>
                     )}

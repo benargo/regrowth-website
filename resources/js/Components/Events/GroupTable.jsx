@@ -27,7 +27,7 @@ export function BenchedTable({ characters }) {
         <div className="flex flex-col">
             <h2 className="mb-4 text-xl font-semibold text-white">
                 Benched
-                <span className="ml-2 text-base font-normal text-gray-400">({characters.length})</span>
+                <span className="ml-2 text-base font-normal text-secondary-400">({characters.length})</span>
             </h2>
 
             <div className="flex flex-wrap gap-2 rounded border border-ink-600/30 p-4">
@@ -44,7 +44,7 @@ export function GroupTable({ group }) {
         <div className="flex flex-col">
             <h2 className="mb-4 text-xl font-semibold text-white">
                 {group.is_team ? "Team" : "Group"} {group.group_number}
-                <span className="ml-2 text-base font-normal text-gray-400">({group.characters.length})</span>
+                <span className="ml-2 text-base font-normal text-secondary-400">({group.characters.length})</span>
             </h2>
             <div className="flex flex-1 flex-col rounded border border-ink-600/30">
                 <div className="overflow-x-auto">
@@ -70,11 +70,11 @@ export function GroupTable({ group }) {
                                             {character.is_leader && <RoleBadge role="leader" />}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-gray-300">
+                                    <td className="px-4 py-3 text-sm text-secondary-300">
                                         {character.rank ? <RankLabel rank={character.rank} /> : "—"}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2 text-sm text-gray-300">
+                                        <div className="flex items-center gap-2 text-sm text-secondary-300">
                                             {character.playable_class?.icon_url && (
                                                 <img
                                                     src={character.playable_class.icon_url}

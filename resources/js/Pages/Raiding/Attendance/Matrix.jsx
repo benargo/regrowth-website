@@ -105,7 +105,7 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
     );
     if (rows.length === 0) {
         return (
-            <div className="py-16 text-center text-gray-400">
+            <div className="py-16 text-center text-secondary-400">
                 <Icon icon="table" style="solid" className="mb-4 text-4xl" />
                 <p>No attendance data available.</p>
             </div>
@@ -162,10 +162,10 @@ function MatrixTable({ raids, rows, ranks, plannedAbsences, fetchAttendanceNames
                                         </p>
                                     </div>
                                 </td>
-                                <td className="bg-ground-900 hidden px-4 py-2 text-right text-sm whitespace-nowrap text-gray-300 md:table-cell lg:sticky lg:z-10">
+                                <td className="bg-ground-900 hidden px-4 py-2 text-right text-sm whitespace-nowrap text-secondary-300 md:table-cell lg:sticky lg:z-10">
                                     <RankLabel rank={rankMap[row.rank_id]} />
                                 </td>
-                                <td className="bg-ground-900 px-4 py-2 text-right text-sm whitespace-nowrap text-gray-300 lg:sticky lg:z-10">
+                                <td className="bg-ground-900 px-4 py-2 text-right text-sm whitespace-nowrap text-secondary-300 lg:sticky lg:z-10">
                                     <span className="hidden md:inline">{row.percentage.toFixed(2)}%</span>
                                     <span className="inline md:hidden">{row.percentage.toFixed(0)}%</span>
                                 </td>

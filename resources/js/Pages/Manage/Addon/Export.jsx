@@ -112,8 +112,8 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                     data="exportedData"
                     fallback={
                         <div className="mt-6">
-                            <div className="flex min-h-64 w-full items-center justify-center rounded border border-gray-800 bg-ground-800/50 p-4">
-                                <p className="animate-pulse text-gray-400">Loading data... this may take a while.</p>
+                            <div className="flex min-h-64 w-full items-center justify-center rounded border border-secondary-800 bg-ground-800/50 p-4">
+                                <p className="animate-pulse text-secondary-400">Loading data... this may take a while.</p>
                             </div>
                         </div>
                     }
@@ -122,7 +122,7 @@ export default function AddonExport({ exportedData, grmFreshness }) {
                         <div
                             ref={dataRef}
                             onClick={selectAllContent}
-                            className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto break-all rounded border border-gray-800 bg-ground-800/50 p-4 text-white"
+                            className="max-h-[600px] min-h-64 w-full cursor-pointer overflow-auto break-all rounded border border-secondary-800 bg-ground-800/50 p-4 text-white"
                         >
                             {exportedData?.length === 0 && <p>No addon data available.</p>}
                             {exportedData}

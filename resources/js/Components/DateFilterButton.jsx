@@ -52,7 +52,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
             <button
                 type="button"
                 onClick={open}
-                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-ground-700 ${value ? "border-ink-500 bg-ground-800 text-white" : "border-ink-600 bg-ground-800 text-gray-400"}`}
+                className={`flex w-full items-center justify-between rounded border px-4 py-2 text-left text-sm transition-colors hover:bg-ground-700 ${value ? "border-ink-500 bg-ground-800 text-white" : "border-ink-600 bg-ground-800 text-secondary-400"}`}
             >
                 <span className="flex items-center gap-2 truncate">
                     <Icon icon="calendar" style="regular" className="shrink-0 text-ink-500" />
@@ -69,9 +69,9 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
                 <div className="p-6">
                     <h2 className="mb-1 text-lg font-bold text-white">{label} date</h2>
                     {typeof helpText === "string" ? (
-                        <p className="mb-4 text-sm text-gray-400">{helpText}</p>
+                        <p className="mb-4 text-sm text-secondary-400">{helpText}</p>
                     ) : (
-                        <div className="mb-4 text-sm text-gray-400">{helpText}</div>
+                        <div className="mb-4 text-sm text-secondary-400">{helpText}</div>
                     )}
                     <TextInput
                         type={includeTime ? "datetime-local" : "date"}
@@ -85,7 +85,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
                         <button
                             type="button"
                             onClick={clear}
-                            className="inline-flex items-center gap-2 rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-600"
+                            className="inline-flex items-center gap-2 rounded-md border border-secondary-500 bg-secondary-700 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-secondary-600"
                         >
                             <Icon icon="times" style="solid" />
                             Clear
@@ -94,7 +94,7 @@ export default function DateFilterButton({ label, value, onChange, onClear, min,
                             <button
                                 type="button"
                                 onClick={close}
-                                className="inline-flex items-center rounded-md border border-gray-300 bg-gray-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-ground-700"
+                                className="inline-flex items-center rounded-md border border-secondary-300 bg-secondary-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-ground-700"
                             >
                                 Cancel
                             </button>

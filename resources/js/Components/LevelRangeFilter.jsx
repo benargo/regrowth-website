@@ -62,7 +62,7 @@ export default function LevelRangeFilter({ minLevel, maxLevel, onMinChange, onMa
                             max={dataMax}
                             className="w-full"
                         />
-                        <span className="shrink-0 text-gray-400">–</span>
+                        <span className="shrink-0 text-secondary-400">–</span>
                         <TextInput
                             type="number"
                             value={draftMax}
@@ -73,13 +73,13 @@ export default function LevelRangeFilter({ minLevel, maxLevel, onMinChange, onMa
                             className="w-full"
                         />
                     </div>
-                    <p className="mt-2 text-xs text-gray-400">
+                    <p className="mt-2 text-xs text-secondary-400">
                         Roster levels range from {dataMin} to {dataMax}
                     </p>
                     <div className="mt-6 flex justify-end gap-3">
                         <button
                             onClick={handleClear}
-                            className="rounded border border-ink-600 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-ground-700 hover:text-white"
+                            className="rounded border border-ink-600 px-4 py-2 text-sm text-secondary-300 transition-colors hover:bg-ground-700 hover:text-white"
                         >
                             Clear
                         </button>

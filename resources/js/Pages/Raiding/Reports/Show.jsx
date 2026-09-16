@@ -21,7 +21,7 @@ function ViewOnWarcraftLogsLink({ code, children }) {
                 href={`https://fresh.warcraftlogs.com/reports/${code}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded border border-ink-600 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-ink-600/20"
+                className="inline-flex items-center gap-2 rounded border border-ink-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-ink-600/20"
             >
                 <WarcraftLogsLogo className="h-4 w-4" />
                 {children}
@@ -60,10 +60,10 @@ function CharactersTable({ characters }) {
                                     </span>
                                 )}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-300">
+                            <td className="px-4 py-3 text-sm text-secondary-300">
                                 {character.rank ? <RankLabel rank={character.rank} /> : "—"}
                             </td>
-                            <td className="flex flex-row items-center gap-2 px-4 py-3 text-sm text-gray-300">
+                            <td className="flex flex-row items-center gap-2 px-4 py-3 text-sm text-secondary-300">
                                 <img
                                     src={character.playable_class?.icon_url}
                                     alt={character.playable_class?.name}
@@ -71,7 +71,7 @@ function CharactersTable({ characters }) {
                                 />
                                 {character.playable_class?.name ?? "—"}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-300">{character.playable_race?.name ?? "—"}</td>
+                            <td className="px-4 py-3 text-sm text-secondary-300">{character.playable_race?.name ?? "—"}</td>
                             <Can permission="view-attendance">
                                 <td className="px-4 py-3">
                                     <Link
@@ -141,7 +141,7 @@ export default function Show({ report, nearbyReports, impactedReports }) {
                 <h2 className="mb-4 text-xl font-semibold text-white">
                     Attendance
                     {data.characters?.length > 0 && (
-                        <span className="ml-2 text-base font-normal text-gray-400">({data.characters.length})</span>
+                        <span className="ml-2 text-base font-normal text-secondary-400">({data.characters.length})</span>
                     )}
                 </h2>
                 <div className="rounded border border-ink-600/30">

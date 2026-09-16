@@ -66,7 +66,7 @@ function CharacterSearch({ characters, value, onChange, error, disabled = false 
     return (
         <div ref={containerRef} className="relative">
             <div className="relative">
-                <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-500" />
                 <input
                     type="text"
                     value={selectedCharacter ? selectedCharacter.name : search}
@@ -80,7 +80,7 @@ function CharacterSearch({ characters, value, onChange, error, disabled = false 
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-500 hover:text-white"
                     >
                         <Icon icon="times" style="solid" />
                     </button>
@@ -375,13 +375,13 @@ export default function Form() {
                             <Can permission="view-planned-absences">
                                 <Link
                                     href={route("raiding.absences.index")}
-                                    className="text-sm text-gray-400 hover:text-white"
+                                    className="text-sm text-secondary-400 hover:text-white"
                                 >
                                     Cancel
                                 </Link>
                             </Can>
                             <Cannot permission="view-planned-absences">
-                                <Link href={route("account.index")} className="text-sm text-gray-400 hover:text-white">
+                                <Link href={route("account.index")} className="text-sm text-secondary-400 hover:text-white">
                                     Cancel
                                 </Link>
                             </Cannot>

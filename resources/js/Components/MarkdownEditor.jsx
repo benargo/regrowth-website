@@ -459,7 +459,7 @@ export default function MarkdownEditor({
             <Modal show={showWowheadModal} onClose={handleWowheadCancel} maxWidth="md">
                 <div className="p-6">
                     <h2 className="text-lg font-medium text-white">Insert Wowhead Link</h2>
-                    <p className="mt-1 text-sm text-gray-400">Paste a Wowhead URL for an item or spell.</p>
+                    <p className="mt-1 text-sm text-secondary-400">Paste a Wowhead URL for an item or spell.</p>
 
                     <div className="mt-4">
                         <input
@@ -492,11 +492,11 @@ export default function MarkdownEditor({
             <Modal show={showLinkModal} onClose={handleLinkCancel} maxWidth="md">
                 <div className="p-6">
                     <h2 className="text-lg font-medium text-white">Insert Link</h2>
-                    <p className="mt-1 text-sm text-gray-400">Enter a URL and optional display text.</p>
+                    <p className="mt-1 text-sm text-secondary-400">Enter a URL and optional display text.</p>
 
                     <div className="mt-4 space-y-4">
                         <div>
-                            <label htmlFor="link-url" className="block text-sm font-medium text-gray-300">
+                            <label htmlFor="link-url" className="block text-sm font-medium text-secondary-300">
                                 URL
                             </label>
                             <input
@@ -514,8 +514,8 @@ export default function MarkdownEditor({
                             <InputError message={linkError} className="mt-2" />
                         </div>
                         <div>
-                            <label htmlFor="link-text" className="block text-sm font-medium text-gray-300">
-                                Display Text <span className="text-gray-500">(optional)</span>
+                            <label htmlFor="link-text" className="block text-sm font-medium text-secondary-300">
+                                Display Text <span className="text-secondary-500">(optional)</span>
                             </label>
                             <input
                                 id="link-text"

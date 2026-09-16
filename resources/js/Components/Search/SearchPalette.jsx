@@ -131,7 +131,7 @@ export default function SearchPalette({ open, onClose }) {
                     className="border-primary bg-ground-800 bg-parchment w-full max-w-2xl transform overflow-hidden rounded-lg border shadow-xl transition duration-300 ease-out data-closed:translate-y-4 data-closed:scale-95 data-closed:opacity-0"
                 >
                     <div className="flex items-center gap-2 border-b border-ink-600/50 px-4 py-3">
-                        <Icon icon="search" style="solid" className="h-4 w-4 flex-none text-gray-400" />
+                        <Icon icon="search" style="solid" className="h-4 w-4 flex-none text-secondary-400" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -163,7 +163,7 @@ export default function SearchPalette({ open, onClose }) {
                     {http.processing && <ResultSkeleton />}
 
                     {!http.processing && query.trim().length >= MIN_QUERY_LENGTH && results.length === 0 && (
-                        <p className="px-4 py-6 text-center text-sm text-gray-400">No items found</p>
+                        <p className="px-4 py-6 text-center text-sm text-secondary-400">No items found</p>
                     )}
 
                     {!http.processing && results.length > 0 && (

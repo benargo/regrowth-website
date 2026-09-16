@@ -18,7 +18,7 @@ export default function BattlenetUsage() {
         <Master title="Usage of the Blizzard Developer APIs">
             <SharedHeader backgroundClass="bg-ironforge" title={headerInner()}/>
             <PageContainer>
-                <p className="font-md text-gray-400 mb-2">
+                <p className="font-md text-secondary-400 mb-2">
                     Some of the services provided by Regrowth use data obtained from the Blizzard Developer APIs,
                     and is subject to the{" "}
                     <Link
@@ -31,7 +31,7 @@ export default function BattlenetUsage() {
                     .
                 </p>
 
-                <p className="font-md text-gray-400 mb-2">
+                <p className="font-md text-secondary-400 mb-2">
                     Use of this data is subject to our <Link href={route('privacypolicy')}>privacy policy</Link> and that of{" "}
                     <Link
                         href="https://www.blizzard.com/en-us/legal/a4380ee5-5c8d-4e3b-83b7-ea26d01a9918/blizzard-entertainment-online-privacy-policy"
@@ -44,7 +44,7 @@ export default function BattlenetUsage() {
                     us information through the API.
                 </p>
 
-                <p className="font-md text-gray-400 mb-2">If you have any questions about this statement please do not hesitate to contact an officer.</p>
+                <p className="font-md text-secondary-400 mb-2">If you have any questions about this statement please do not hesitate to contact an officer.</p>
             </PageContainer>
         </Master>
     );

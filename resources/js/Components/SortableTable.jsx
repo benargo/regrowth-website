@@ -26,7 +26,7 @@ function SortableHeader({ column, label, sortColumn, sortDirection, onSort }) {
                             <Icon icon="sort-down" style="solid" />
                         )
                     ) : (
-                        <Icon icon="sort" style="solid" className="text-gray-600" />
+                        <Icon icon="sort" style="solid" className="text-secondary-600" />
                     )}
                 </span>
             </span>

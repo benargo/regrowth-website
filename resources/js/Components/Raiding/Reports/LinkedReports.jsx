@@ -14,8 +14,8 @@ function ClusterReportRow({ report, dayDiff }) {
         <div>
             <p className="truncate text-sm font-medium text-white">{report.title}</p>
             <div className="flex flex-col gap-2 md:flex-row">
-                <p className="mt-0.5 text-xs text-gray-500">{report.zone?.name}</p>
-                <p className="mt-0.5 text-xs text-gray-500 md:border-l md:border-gray-700 md:pl-2">
+                <p className="mt-0.5 text-xs text-secondary-500">{report.zone?.name}</p>
+                <p className="mt-0.5 text-xs text-secondary-500 md:border-l md:border-secondary-700 md:pl-2">
                     <span className="md:hidden">{formattedDate.short}</span>
                     <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                     <span className="hidden lg:inline">{formattedDate.long}</span>
@@ -114,7 +114,7 @@ function LinkReportsModal({
         <Modal show={isOpen} maxWidth="xl" onClose={onClose}>
             <div className="flex items-center justify-between border-b border-ink-600/30 px-6 py-4">
                 <h2 className="text-lg font-semibold text-white">Link Reports</h2>
-                <button onClick={onClose} className="text-gray-400 transition-colors hover:text-white">
+                <button onClick={onClose} className="text-secondary-400 transition-colors hover:text-white">
                     <Icon icon="times" style="solid" />
                 </button>
             </div>
@@ -133,7 +133,7 @@ function LinkReportsModal({
                         ))}
                     </ul>
                 ) : !nearbyReports || nearbyReports.data.length === 0 ? (
-                    <div className="py-12 text-center text-gray-400">
+                    <div className="py-12 text-center text-secondary-400">
                         <p>No other reports found.</p>
                     </div>
                 ) : (
@@ -163,7 +163,7 @@ function LinkReportsModal({
                                     <div className="min-w-0 flex-1">
                                         {!isSingle && (
                                             <div className="mb-2 flex items-center gap-2">
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-secondary-500">
                                                     {cluster.reports.length} reports
                                                 </span>
                                                 {current && (
@@ -196,15 +196,15 @@ function LinkReportsModal({
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="mt-0.5 text-xs text-gray-500">
+                                                    <div className="mt-0.5 text-xs text-secondary-500">
                                                         {(() => {
                                                             const d = formatDate(cluster.reports[0].start_time);
                                                             return (
                                                                 <div className="flex flex-col gap-2 md:flex-row">
-                                                                    <p className="mt-0.5 text-xs text-gray-500">
+                                                                    <p className="mt-0.5 text-xs text-secondary-500">
                                                                         {cluster.reports[0].zone.name}
                                                                     </p>
-                                                                    <p className="mt-0.5 text-xs text-gray-500 md:border-l md:border-gray-700 md:pl-2">
+                                                                    <p className="mt-0.5 text-xs text-secondary-500 md:border-l md:border-secondary-700 md:pl-2">
                                                                         <span className="md:hidden">{d.short}</span>
                                                                         <span className="hidden md:inline lg:hidden">
                                                                             {d.medium}
@@ -248,17 +248,17 @@ function LinkReportsModal({
                             <button
                                 onClick={() => handlePageChange(meta.current_page - 1)}
                                 disabled={meta.current_page <= 1 || isLoading}
-                                className="rounded border border-ink-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-ink-600/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="rounded border border-ink-600/30 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:bg-ink-600/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 <Icon icon="chevron-left" style="solid" />
                             </button>
-                            <span className="text-sm text-gray-400">
+                            <span className="text-sm text-secondary-400">
                                 Page {meta.current_page} of {meta.last_page}
                             </span>
                             <button
                                 onClick={() => handlePageChange(meta.current_page + 1)}
                                 disabled={meta.current_page >= meta.last_page || isLoading}
-                                className="rounded border border-ink-600/30 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-ink-600/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="rounded border border-ink-600/30 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:bg-ink-600/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 <Icon icon="chevron-right" style="solid" />
                             </button>
@@ -337,7 +337,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
                     ))}
                 </ul>
             ) : !impactedReports?.data || impactedReports.data.length === 0 ? (
-                <p className="text-sm text-gray-500">No manually linked reports found.</p>
+                <p className="text-sm text-secondary-500">No manually linked reports found.</p>
             ) : (
                 <ul className="divide-y divide-ink-600 rounded border border-ink-600/30">
                     {impactedReports.data.map((report) => {
@@ -345,7 +345,7 @@ function DeleteLinkModal({ isOpen, onClose, currentReport, impactedReports, onCo
                         return (
                             <li key={report.id} className="px-4 py-3">
                                 <span className="text-sm font-medium text-white">{report.title}</span>
-                                <p className="mt-0.5 text-xs text-gray-500">
+                                <p className="mt-0.5 text-xs text-secondary-500">
                                     <span className="md:hidden">{formattedDate.short}</span>
                                     <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                     <span className="hidden lg:inline">{formattedDate.long}</span>
@@ -425,7 +425,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
             <h2 className="mb-3 text-xl font-semibold text-white">Linked Reports</h2>
 
             {linkedReports.length === 0 && (
-                <div className="flex flex-row gap-2 text-gray-400">
+                <div className="flex flex-row gap-2 text-secondary-400">
                     <Icon icon="scroll" style="solid" className="text-xl" />
                     <p>No linked reports.</p>
                 </div>
@@ -451,16 +451,16 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                             {linked.title}
                                         </Link>
                                     )}
-                                    <p className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
+                                    <p className="mt-0.5 flex items-center gap-2 text-xs text-secondary-500">
                                         <span className="md:hidden">{formattedDate.short}</span>
                                         <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                         <span className="hidden lg:inline">{formattedDate.long}</span>
                                         {linked.zone?.name && (
-                                            <span className="ml-2 text-gray-500">{linked.zone.name}</span>
+                                            <span className="ml-2 text-secondary-500">{linked.zone.name}</span>
                                         )}
-                                        {dayDiff && <span className="ml-2 text-gray-500">{dayDiff}</span>}
+                                        {dayDiff && <span className="ml-2 text-secondary-500">{dayDiff}</span>}
                                         {!isCreateMode && isManualLink && (
-                                            <span className="ml-2 text-gray-500">
+                                            <span className="ml-2 text-secondary-500">
                                                 Linked by {linked.pivot.created_by.display_name} on{" "}
                                                 {new Date(linked.pivot.created_at).toLocaleString("en-GB", {
                                                     day: "numeric",
@@ -478,7 +478,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                         <button
                                             type="button"
                                             onClick={() => handleCreateModeRemove(linked)}
-                                            className="rounded p-1.5 text-gray-500 transition-colors hover:bg-red-700/20 hover:text-red-400"
+                                            className="rounded p-1.5 text-secondary-500 transition-colors hover:bg-red-700/20 hover:text-red-400"
                                         >
                                             <Icon icon="unlink" style="solid" className="text-xs" />
                                         </button>
@@ -491,7 +491,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                                                 <button
                                                     onClick={() => isManualLink && handleShowModeDelete()}
                                                     disabled={!isManualLink}
-                                                    className="rounded px-3 py-1.5 text-gray-500 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                                                    className="rounded px-3 py-1.5 text-secondary-500 transition-colors hover:bg-red-700/20 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
                                                 >
                                                     <Icon icon="unlink" style="solid" className="text-xs" />
                                                 </button>
@@ -509,7 +509,7 @@ export default function LinkedReports({ currentReport, nearbyReports, impactedRe
                 <button
                     type="button"
                     onClick={handleAddLink}
-                    className="mt-4 inline-flex items-center gap-2 rounded border border-ink-600/50 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-ink-600 hover:bg-ink-600/10 hover:text-white"
+                    className="mt-4 inline-flex items-center gap-2 rounded border border-ink-600/50 px-4 py-2 text-sm text-secondary-300 transition-colors hover:border-ink-600 hover:bg-ink-600/10 hover:text-white"
                 >
                     <Icon icon="plus" style="solid" className="text-ink-500" />
                     Add Link

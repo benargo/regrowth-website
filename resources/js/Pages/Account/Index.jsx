@@ -23,7 +23,7 @@ export default function Index() {
                     <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
                     <div>
                         <h1 className="text-2xl font-bold text-white">{user.display_name}</h1>
-                        <p className="text-sm text-gray-400">@{user.username}</p>
+                        <p className="text-sm text-secondary-400">@{user.username}</p>
                         {roles.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">
                                 {roles.map((role) => (

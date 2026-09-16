@@ -5,10 +5,10 @@ const GAP = 8;
 const VIEWPORT_MARGIN = 16;
 
 const ARROW_CLASSES = {
-    top: "left-1/2 top-full -translate-x-1/2 border-t-gray-900",
-    bottom: "left-1/2 bottom-full -translate-x-1/2 border-b-gray-900",
-    left: "left-full top-1/2 -translate-y-1/2 border-l-gray-900",
-    right: "right-full top-1/2 -translate-y-1/2 border-r-gray-900",
+    top: "left-1/2 top-full -translate-x-1/2 border-t-secondary-900",
+    bottom: "left-1/2 bottom-full -translate-x-1/2 border-b-secondary-900",
+    left: "left-full top-1/2 -translate-y-1/2 border-l-secondary-900",
+    right: "right-full top-1/2 -translate-y-1/2 border-r-secondary-900",
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -104,7 +104,7 @@ export default function Tooltip({ children, body, position = "top", className = 
                             left: coords?.left ?? -9999,
                             visibility: coords ? "visible" : "hidden",
                         }}
-                        className={`pointer-events-none z-30 max-w-xs rounded bg-gray-900 px-2 py-1 text-xs text-white ${body ? "" : "w-max"}`}
+                        className={`pointer-events-none z-30 max-w-xs rounded bg-secondary-900 px-2 py-1 text-xs text-white ${body ? "" : "w-max"}`}
                     >
                         {body}
                         <div className={`absolute border-4 border-transparent ${ARROW_CLASSES[position]}`}></div>

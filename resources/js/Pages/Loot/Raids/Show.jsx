@@ -30,7 +30,7 @@ function prepareItems(rawItems) {
 
 function BossItems({ prepared, weightThreshold }) {
     if (!prepared) {
-        return <p className="text-gray-500 italic">No items configured for this boss.</p>;
+        return <p className="text-secondary-500 italic">No items configured for this boss.</p>;
     }
 
     const { groups, ungroupedItems } = prepared;

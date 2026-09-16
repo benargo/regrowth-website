@@ -155,7 +155,7 @@ function AddNewWeightRow({ weight, onAddClick }) {
             >
                 <Icon icon="plus" style="solid" />
             </button>
-            <span className="ml-4 text-gray-400">Add new bias level</span>
+            <span className="ml-4 text-secondary-400">Add new bias level</span>
         </div>
     );
 }
@@ -182,7 +182,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
             >
                 <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-xl font-bold">Select an option</h3>
-                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">
+                    <button type="button" onClick={onClose} className="text-secondary-400 hover:text-white">
                         <Icon icon="times" style="solid" />
                     </button>
                 </div>
@@ -207,7 +207,7 @@ function PriorityPickerModal({ isOpen, onClose, priorities, onSelect }) {
                     </div>
                 ))}
                 {Object.keys(groupedPriorities).length === 0 && (
-                    <p className="py-4 text-center text-gray-400">All options have been assigned to this item.</p>
+                    <p className="py-4 text-center text-secondary-400">All options have been assigned to this item.</p>
                 )}
             </div>
         </div>
@@ -352,7 +352,7 @@ function EditablePriorityDisplay({ priorities, allPriorities, data, setData }) {
     if (priorities.length === 0 && data.priorities.length === 0) {
         return (
             <div className="py-8 text-center">
-                <p className="mb-4 text-gray-400">No biases assigned to this item.</p>
+                <p className="mb-4 text-secondary-400">No biases assigned to this item.</p>
                 <button
                     type="button"
                     onClick={() => handleAddNewWeight(0)}
@@ -574,7 +574,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
 
                 {/* Editable Priorities */}
                 <h2 className="mb-2 mt-8 text-xl font-bold">Loot Biases</h2>
-                <p className="mb-4 text-gray-400">
+                <p className="mb-4 text-secondary-400">
                     Drag biases between rows to change their weight. Use the + buttons to add new biases.
                 </p>
                 <div className="mt-8 w-full">
@@ -589,7 +589,7 @@ export default function ItemEdit({ item, priorities: prioritiesResource, comment
                 {/* Notes Section */}
                 <div className="mt-8">
                     <h2 className="mb-2 text-xl font-bold">Officers&rsquo; notes</h2>
-                    <p className="text-md mb-4 text-gray-400">
+                    <p className="text-md mb-4 text-secondary-400">
                         Notes are unique to each loot item. If you change what another officer has written, it will
                         overwrite their notes.
                     </p>

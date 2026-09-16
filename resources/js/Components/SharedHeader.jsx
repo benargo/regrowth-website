@@ -5,7 +5,7 @@ export default function SharedHeader({ title, subtitle, backgroundClass = "bg-ma
                 <div className="container mx-auto">
                     <h1 className="text-center font-serif text-5xl">
                         {title}
-                        {subtitle && <span className="mt-2 block text-xl text-gray-300">{subtitle}</span>}
+                        {subtitle && <span className="mt-2 block text-xl text-secondary-300">{subtitle}</span>}
                     </h1>
                 </div>
             </div>

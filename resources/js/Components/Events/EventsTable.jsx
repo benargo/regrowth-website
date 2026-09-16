@@ -43,7 +43,7 @@ export default function EventsTable({ events }) {
 
     if (rows.length === 0) {
         return (
-            <div className="py-16 text-center text-gray-400">
+            <div className="py-16 text-center text-secondary-400">
                 <Icon icon="calendar-xmark" style="solid" className="mb-4 text-4xl" />
                 <p>No events scheduled this week.</p>
             </div>
@@ -76,15 +76,15 @@ export default function EventsTable({ events }) {
                                 href={route("raiding.plans.show", event.id)}
                             >
                                 <div className="w-40 shrink-0 whitespace-nowrap px-4 py-3">
-                                    <p className="text-xs text-gray-500">{dayOfWeek}</p>
-                                    <p className="text-sm text-gray-300">
+                                    <p className="text-xs text-secondary-500">{dayOfWeek}</p>
+                                    <p className="text-sm text-secondary-300">
                                         <span className="md:hidden">{formattedDate.short}</span>
                                         <span className="hidden md:inline lg:hidden">{formattedDate.medium}</span>
                                         <span className="hidden lg:inline">{formattedDate.long}</span>
                                     </p>
                                 </div>
                                 <div className="min-w-0 flex-1 px-4 py-3 text-sm font-medium text-white">{event.title}</div>
-                                <div className="w-36 shrink-0 whitespace-nowrap px-4 py-3 text-sm text-gray-300">
+                                <div className="w-36 shrink-0 whitespace-nowrap px-4 py-3 text-sm text-secondary-300">
                                     {formatTime(startDate)}–{formatTime(endDate)}
                                 </div>
                             </Link>

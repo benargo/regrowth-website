@@ -117,7 +117,7 @@ export default function CommentForm({
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="inline-flex items-center rounded-md border border-gray-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-gray-700"
+                        className="inline-flex items-center rounded-md border border-secondary-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out hover:bg-secondary-700"
                     >
                         Cancel
                     </button>

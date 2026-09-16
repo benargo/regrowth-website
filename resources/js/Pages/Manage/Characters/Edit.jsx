@@ -96,7 +96,7 @@ export default function Edit({ character, specializations }) {
                         )}
                         <div>
                             <h2 className="text-xl font-bold text-white">{character.name}</h2>
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-secondary-400">
                                 {character.playable_class?.name ?? "Unknown class"}
                                 {character.rank?.name ? ` · ${character.rank.name}` : ""}
                             </p>
@@ -107,7 +107,7 @@ export default function Edit({ character, specializations }) {
                         {/* Specializations */}
                         <section>
                             <SectionHeading>Specializations</SectionHeading>
-                            <p className="mb-4 text-sm text-gray-400">
+                            <p className="mb-4 text-sm text-secondary-400">
                                 Select which specs this character plays. Mark one as the{" "}
                                 <span className="inline-flex items-center gap-1 text-ink-500">
                                     raid spec
@@ -129,7 +129,7 @@ export default function Edit({ character, specializations }) {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-secondary-500">
                                     No specializations available for this class.
                                 </p>
                             )}
@@ -159,7 +159,7 @@ export default function Edit({ character, specializations }) {
                                     className="h-4 w-4 rounded border-ink-600 bg-ground-900 text-ink-600 focus:ring-ink-500 focus:ring-offset-0"
                                 />
                                 <span className="font-medium text-white">Loot Councillor</span>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-secondary-500">
                                     This character has a vote on loot distribution
                                 </span>
                             </label>
@@ -178,7 +178,7 @@ export default function Edit({ character, specializations }) {
                                     character: character.id,
                                     slug: character.slug,
                                 })}
-                                className="text-sm text-gray-400 transition-colors hover:text-white"
+                                className="text-sm text-secondary-400 transition-colors hover:text-white"
                             >
                                 Cancel
                             </Link>

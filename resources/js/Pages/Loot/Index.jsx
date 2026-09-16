@@ -18,7 +18,7 @@ function StatSegment({ icon, label, value, index }) {
                 className="flex size-6 items-center justify-center text-xl text-ink-500/70"
             />
             <div className="flex flex-col">
-                <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">{label}</p>
+                <p className="text-xs font-medium tracking-wide text-secondary-400 uppercase">{label}</p>
                 <p className="text-2xl font-bold text-ink-400 tabular-nums">{value ?? "–"}</p>
             </div>
         </div>

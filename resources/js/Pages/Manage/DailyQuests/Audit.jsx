@@ -11,7 +11,7 @@ function ActionBadge({ action }) {
     };
 
     return (
-        <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${colors[action] || "bg-gray-700 text-gray-300"}`}>
+        <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${colors[action] || "bg-secondary-700 text-secondary-300"}`}>
             {action}
         </span>
     );
@@ -26,12 +26,12 @@ export default function DailyQuestsAuditLog({ entries }) {
             />
             <PageContainer>
                 {entries.data.length === 0 ? (
-                    <p className="text-center text-gray-400">No audit log entries found.</p>
+                    <p className="text-center text-secondary-400">No audit log entries found.</p>
                 ) : (
                     <>
-                        <div className="overflow-x-auto rounded-lg border border-gray-700">
-                            <table className="w-full text-left text-sm text-gray-300">
-                                <thead className="bg-gray-800 text-xs uppercase text-gray-400">
+                        <div className="overflow-x-auto rounded-lg border border-secondary-700">
+                            <table className="w-full text-left text-sm text-secondary-300">
+                                <thead className="bg-secondary-800 text-xs uppercase text-secondary-400">
                                     <tr>
                                         <th className="px-4 py-3">Timestamp</th>
                                         <th className="px-4 py-3">User</th>
@@ -41,7 +41,7 @@ export default function DailyQuestsAuditLog({ entries }) {
                                 </thead>
                                 <tbody className="divide-y divide-gray-700">
                                     {entries.data.map((entry, index) => (
-                                        <tr key={index} className="hover:bg-gray-800/50">
+                                        <tr key={index} className="hover:bg-secondary-800/50">
                                             <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">
                                                 {entry.timestamp}
                                             </td>

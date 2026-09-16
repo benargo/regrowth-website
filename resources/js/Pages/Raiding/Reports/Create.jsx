@@ -310,7 +310,7 @@ export default function Create() {
                                             <button
                                                 type="button"
                                                 onClick={() => handleCharacterRemove(character.id)}
-                                                className="rounded p-1 text-gray-500 transition-colors hover:bg-red-700/20 hover:text-red-400"
+                                                className="rounded p-1 text-secondary-500 transition-colors hover:bg-red-700/20 hover:text-red-400"
                                             >
                                                 <Icon icon="times" style="solid" className="text-xs" />
                                             </button>
@@ -345,7 +345,7 @@ export default function Create() {
                             </PrimaryButton>
                             <Link
                                 href={route("raiding.reports.index")}
-                                className="text-sm text-gray-400 hover:text-white"
+                                className="text-sm text-secondary-400 hover:text-white"
                             >
                                 Cancel
                             </Link>

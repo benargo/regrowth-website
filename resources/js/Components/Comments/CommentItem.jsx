@@ -82,10 +82,10 @@ export default function CommentItem({
                         alt={comment.user.display_name}
                         className={`rounded-full opacity-50 grayscale ${isReply ? "h-6 w-6" : "h-8 w-8"}`}
                     />
-                    <span className="text-sm font-medium text-gray-400">{comment.user.display_name}</span>
-                    <span className="ml-auto text-sm text-gray-500">{formatDate(comment.created_at)}</span>
+                    <span className="text-sm font-medium text-secondary-400">{comment.user.display_name}</span>
+                    <span className="ml-auto text-sm text-secondary-500">{formatDate(comment.created_at)}</span>
                 </div>
-                <p className="mt-2 text-sm text-gray-500 italic">[deleted]</p>
+                <p className="mt-2 text-sm text-secondary-500 italic">[deleted]</p>
             </div>
         );
     }
@@ -117,7 +117,7 @@ export default function CommentItem({
                             )}
                         </div>
                     </div>
-                    <span className="text-sm text-gray-400">{formatDate(comment.created_at)}</span>
+                    <span className="text-sm text-secondary-400">{formatDate(comment.created_at)}</span>
                 </div>
 
                 {/* Comment body or edit form */}
@@ -198,7 +198,7 @@ export default function CommentItem({
                                                   : "You may not react to this comment."
                                         }
                                     >
-                                        <button className="cursor-not-allowed text-gray-400" disabled>
+                                        <button className="cursor-not-allowed text-secondary-400" disabled>
                                             <Icon icon="thumbs-up" style="regular" />
                                         </button>
                                     </Tooltip>
@@ -216,7 +216,7 @@ export default function CommentItem({
                                 {!readOnly && comment.permissions.react && !userHasReacted() && (
                                     <Tooltip body="Click to like this comment.">
                                         <button
-                                            className="text-white-400 transition-colors hover:text-gray-300"
+                                            className="text-white-400 transition-colors hover:text-secondary-300"
                                             onClick={handleReactionToggle}
                                         >
                                             <Icon icon="thumbs-up" style="regular" />

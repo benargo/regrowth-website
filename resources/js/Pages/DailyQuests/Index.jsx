@@ -58,12 +58,12 @@ function QuestCard({ quest }) {
                 {quest.icon && <img src={quest.icon} alt={quest.label} className="mr-2 inline-block h-6 w-6" />}
                 {quest.label}
             </h3>
-            <p className="text-md mb-2 text-gray-300">
+            <p className="text-md mb-2 text-secondary-300">
                 {quest.instance ? `${quest.instance} - ${quest.name}` : quest.name}
             </p>
             <div>
                 {hasMultipleRewards && (
-                    <p className="mb-2 text-xs italic text-gray-400">A choice from one of the following:</p>
+                    <p className="mb-2 text-xs italic text-secondary-400">A choice from one of the following:</p>
                 )}
                 <div className="flex flex-wrap gap-4">
                     {quest.rewards.map((reward) => (
@@ -79,7 +79,7 @@ function QuestsList() {
     const { quests } = usePage().props;
 
     if (!quests) {
-        return <p className="text-center text-gray-400">No daily quests have been posted yet today.</p>;
+        return <p className="text-center text-secondary-400">No daily quests have been posted yet today.</p>;
     }
 
     return (
@@ -101,7 +101,7 @@ export default function Index({ hasNotification }) {
                         <QuestsList />
                     </Deferred>
                 ) : (
-                    <p className="text-center text-gray-400">No daily quests have been posted yet today.</p>
+                    <p className="text-center text-secondary-400">No daily quests have been posted yet today.</p>
                 )}
             </PageContainer>
         </Master>

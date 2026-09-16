@@ -158,7 +158,7 @@ export default function Comments({ comments, replies }) {
                         <Pagination links={comments.meta.links} meta={comments.meta} itemName="comments" />
                     </>
                 ) : (
-                    <p className="py-8 text-center text-gray-400">No comments yet.</p>
+                    <p className="py-8 text-center text-secondary-400">No comments yet.</p>
                 )}
             </PageContainer>
         </Master>

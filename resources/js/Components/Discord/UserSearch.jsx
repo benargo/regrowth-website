@@ -75,7 +75,7 @@ export default function UserSearch({ value, onSelect, error }) {
     return (
         <div ref={containerRef} className="relative">
             <div className="relative">
-                <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <Icon icon="search" style="solid" className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-500" />
                 <input
                     type="text"
                     value={query}
@@ -84,13 +84,13 @@ export default function UserSearch({ value, onSelect, error }) {
                     className="w-full rounded border border-ink-600 bg-ground-800 py-2 pl-10 pr-10 text-white placeholder-gray-500 focus:outline-hidden focus:ring-1 focus:ring-ink-500"
                 />
                 {isLoading && (
-                    <div className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />
+                    <div className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent" />
                 )}
                 {!isLoading && (query || value) && (
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-500 hover:text-white"
                     >
                         <Icon icon="times" style="solid" />
                     </button>
@@ -108,7 +108,7 @@ export default function UserSearch({ value, onSelect, error }) {
                             >
                                 {member.nickname ?? member.username}
                                 {member.nickname && (
-                                    <span className="ml-2 text-xs text-gray-400">@{member.username}</span>
+                                    <span className="ml-2 text-xs text-secondary-400">@{member.username}</span>
                                 )}
                             </button>
                         </li>
@@ -117,7 +117,7 @@ export default function UserSearch({ value, onSelect, error }) {
             )}
 
             {isOpen && !isLoading && results.length === 0 && query.trim() && (
-                <div className="absolute z-50 mt-1 w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-sm text-gray-400 shadow-lg">
+                <div className="absolute z-50 mt-1 w-full rounded border border-ink-600 bg-ground-800 px-4 py-2 text-sm text-secondary-400 shadow-lg">
                     No members found
                 </div>
             )}

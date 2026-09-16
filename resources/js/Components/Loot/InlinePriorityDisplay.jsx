@@ -1,6 +1,6 @@
 export default function InlinePriorityDisplay({ itemId, priorities, weightThreshold = null }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="text-center text-gray-500 italic lg:text-right">MS &gt; OS</p>;
+        return <p className="text-center text-secondary-500 italic lg:text-right">MS &gt; OS</p>;
     }
 
     const sorted = [...priorities].sort((a, b) => a.weight - b.weight);
@@ -40,7 +40,7 @@ export default function InlinePriorityDisplay({ itemId, priorities, weightThresh
             {hasHidden && (
                 <span className="inline-flex items-center gap-1">
                     <span className="mx-0.5 text-sm font-bold text-ink-600">&gt;</span>
-                    <span className="text-gray-500 italic">others</span>
+                    <span className="text-secondary-500 italic">others</span>
                 </span>
             )}
         </span>

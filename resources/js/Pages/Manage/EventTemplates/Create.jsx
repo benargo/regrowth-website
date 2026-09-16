@@ -44,15 +44,15 @@ export default function Create({ raids }) {
 
                     {/* Raids */}
                     <div className="flex flex-col gap-2">
-                        <p className="text-sm font-semibold text-gray-300">Raids</p>
+                        <p className="text-sm font-semibold text-secondary-300">Raids</p>
                         {raids.length === 0 ? (
-                            <p className="text-sm text-gray-500">No raids available.</p>
+                            <p className="text-sm text-secondary-500">No raids available.</p>
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {raids.map((raid) => (
                                     <label
                                         key={raid.id}
-                                        className="flex cursor-pointer items-center gap-3 rounded border border-gray-700 px-3 py-2 transition-colors hover:border-ink-600/50 hover:bg-ink-600/10"
+                                        className="flex cursor-pointer items-center gap-3 rounded border border-secondary-700 px-3 py-2 transition-colors hover:border-ink-600/50 hover:bg-ink-600/10"
                                     >
                                         <input
                                             type="checkbox"
@@ -75,7 +75,7 @@ export default function Create({ raids }) {
                         </PrimaryButton>
                         <Link
                             href={route("management.event-templates.index")}
-                            className="text-sm text-gray-400 hover:text-gray-200"
+                            className="text-sm text-secondary-400 hover:text-secondary-200"
                         >
                             Cancel
                         </Link>

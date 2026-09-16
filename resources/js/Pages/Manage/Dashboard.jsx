@@ -32,7 +32,7 @@ export default function Dashboard({ discordRoles }) {
             <PageContainer>
                 {/* Loot Council */}
                 <h2 className="text-2xl font-semibold">Loot Council</h2>
-                <p className="text-md text-gray-400">Manage loot distribution priorities and addon settings.</p>
+                <p className="text-md text-secondary-400">Manage loot distribution priorities and addon settings.</p>
                 <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <DashboardCard href={route("management.addon.export")} icon="file-export">
                         <h3 className="text-md">Export addon data</h3>
@@ -46,7 +46,7 @@ export default function Dashboard({ discordRoles }) {
 
                 {/* Raiding */}
                 <h2 className="mt-12 text-2xl font-semibold">Raiding</h2>
-                <p className="text-md text-gray-400">
+                <p className="text-md text-secondary-400">
                     Manage raid team compositions, planned absences, and attendance tracking.
                 </p>
                 <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -82,7 +82,7 @@ export default function Dashboard({ discordRoles }) {
 
                 {/* Daily Quests */}
                 <h2 className="mt-12 text-2xl font-semibold">Daily Quests</h2>
-                <p className="text-md text-gray-400">Manage TBC daily quest selections.</p>
+                <p className="text-md text-secondary-400">Manage TBC daily quest selections.</p>
                 <div className="my-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <DashboardCard href={route("management.daily-quests.form")} icon="scroll">
                         <h3 className="text-md">Set daily quests</h3>
@@ -94,7 +94,7 @@ export default function Dashboard({ discordRoles }) {
                     </DashboardCard>
                 </div>
                 <h2 className="mt-12 text-2xl font-semibold">Site Management</h2>
-                <p className="text-md text-gray-400">Manage site-wide settings and core datasets.</p>
+                <p className="text-md text-secondary-400">Manage site-wide settings and core datasets.</p>
 
                 <div className="flex flex-col gap-4">
                 {/* Datasets */}
@@ -102,7 +102,7 @@ export default function Dashboard({ discordRoles }) {
                     title="Datasets"
                     style="gray"
                 >
-                    <p className="text-md mb-4 text-gray-400">
+                    <p className="text-md mb-4 text-secondary-400">
                         Manage core datasets that power the site&rsquo;s features.
                     </p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -136,7 +136,7 @@ export default function Dashboard({ discordRoles }) {
                     title="Site options"
                     style="gray"
                 >
-                    <p className="text-md mb-4 text-gray-400">Configure site-wide options and permissions.</p>
+                    <p className="text-md mb-4 text-secondary-400">Configure site-wide options and permissions.</p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <DashboardCard href={route("management.permissions.index")} icon="shield-check">
                             <h3 className="text-md">Site permissions</h3>
@@ -164,7 +164,7 @@ export default function Dashboard({ discordRoles }) {
                     title="Testing"
                     style="gray"
                 >
-                    <p className="text-md mb-4 text-gray-400">
+                    <p className="text-md mb-4 text-secondary-400">
                         View the site as different user roles for testing purposes. Use the user menu to switch back to
                         your own account.
                     </p>

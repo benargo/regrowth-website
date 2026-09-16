@@ -23,7 +23,7 @@ function PriorityItem({ priority }) {
 
 function PriorityDisplay({ priorities }) {
     if (!priorities || priorities.length === 0) {
-        return <p className="text-gray-500 italic">This item has no biases.</p>;
+        return <p className="text-secondary-500 italic">This item has no biases.</p>;
     }
 
     const sorted = [...priorities].sort((a, b) => a.weight - b.weight);
@@ -142,12 +142,12 @@ export default function Show({ item, comments, replies }) {
                 {priorities.length > 0 ? (
                     <div className="w-full">
                         <PriorityDisplay priorities={priorities} />
-                        <p className="mt-4 text-gray-400">
+                        <p className="mt-4 text-secondary-400">
                             Beyond the above biases, this item will be distributed <strong>MS &gt; OS</strong>.
                         </p>
                     </div>
                 ) : (
-                    <p className="text-gray-300">
+                    <p className="text-secondary-300">
                         No biases have been set for this item. This item will be distributed <strong>MS &gt; OS</strong>
                         .
                     </p>

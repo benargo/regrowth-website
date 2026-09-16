@@ -23,7 +23,7 @@ function CharacterRowCells({ character, spec }) {
                 className={`border-b-line table-cell border-b px-4 align-middle py-3${character.is_known ? " border-l-2 border-l-line/60" : ""}`}
             >
                 <span
-                    className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-gray-400"}`}
+                    className={`inline-flex items-center gap-2 font-medium ${character.is_known ? "text-white" : "text-secondary-400"}`}
                 >
                     {character.name}
                     {character.is_main && (
@@ -33,23 +33,23 @@ function CharacterRowCells({ character, spec }) {
                     )}
                 </span>
             </div>
-            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-secondary-300">
                 {character.level}
             </div>
-            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-secondary-300">
                 {character.playable_race?.name ?? "—"}
             </div>
             <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle">
                 <div className="flex flex-row items-center gap-2">
                     <SpecIcon specialization={spec} playableClass={character.playable_class} />
-                    <span className="text-gray-300">
+                    <span className="text-secondary-300">
                         {character.playable_class
                             ? `${spec?.name ? `${spec.name} ` : ""}${character.playable_class.name}`
                             : "—"}
                     </span>
                 </div>
             </div>
-            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-gray-300">
+            <div role="cell" className="border-b-line table-cell border-b px-4 py-3 align-middle text-secondary-300">
                 {character.rank ?? "—"}
             </div>
         </>
@@ -86,7 +86,7 @@ function CharacterCard({ character }) {
                 <SpecIcon specialization={spec} playableClass={character.playable_class} size={10} />
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                        <h3 className={`font-bold ${character.is_known ? "text-white" : "text-gray-400"}`}>
+                        <h3 className={`font-bold ${character.is_known ? "text-white" : "text-secondary-400"}`}>
                             {character.name}
                         </h3>
                         {character.is_main && (
@@ -95,7 +95,7 @@ function CharacterCard({ character }) {
                             </Pill>
                         )}
                     </div>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-secondary-400">
                         Level {character.level} {character.playable_race?.name}{" "}
                         {character.playable_class
                             ? `${spec?.name ? `${spec.name} ` : ""}${character.playable_class.name}`
@@ -321,7 +321,7 @@ export default function Index({ characters, classes, ranks, races }) {
                                 />
                             </div>
                         </div>
-                        <p className="mb-4 text-sm text-gray-200">
+                        <p className="mb-4 text-sm text-secondary-200">
                             Showing {filteredAndSorted.length} of {characters.length} characters
                         </p>
 

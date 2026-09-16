@@ -15,7 +15,7 @@ export default function Pagination({ links, meta, itemName = "items", className 
 
     return (
         <nav className={`mt-6 flex flex-col items-center justify-between gap-4 ${className}`}>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-secondary-400">
                 Showing {meta.from} to {meta.to} of {meta.total} {itemName}
             </div>
             <div className="flex gap-1">
@@ -24,7 +24,7 @@ export default function Pagination({ links, meta, itemName = "items", className 
                         return (
                             <span
                                 key={index}
-                                className="rounded bg-ground-800 px-3 py-1 text-sm text-gray-500"
+                                className="rounded bg-ground-800 px-3 py-1 text-sm text-secondary-500"
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />
                         );
@@ -39,7 +39,7 @@ export default function Pagination({ links, meta, itemName = "items", className 
                                 className={`rounded px-3 py-1 text-sm transition-colors ${
                                     link.active
                                         ? "bg-ink-600 text-white"
-                                        : "bg-ground-800 text-gray-300 hover:bg-ground-700"
+                                        : "bg-ground-800 text-secondary-300 hover:bg-ground-700"
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />
@@ -52,7 +52,7 @@ export default function Pagination({ links, meta, itemName = "items", className 
                             href={link.url}
                             preserveScroll
                             className={`rounded px-3 py-1 text-sm transition-colors ${
-                                link.active ? "bg-ink-600 text-white" : "bg-ground-800 text-gray-300 hover:bg-ground-700"
+                                link.active ? "bg-ink-600 text-white" : "bg-ground-800 text-secondary-300 hover:bg-ground-700"
                             }`}
                             dangerouslySetInnerHTML={{ __html: link.label }}
                         />

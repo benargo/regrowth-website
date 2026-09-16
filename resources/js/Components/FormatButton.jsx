@@ -10,8 +10,8 @@ export default function FormatButton({ title, onClick, label = null }) {
             >
                 {label || title}
             </button>
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-10">
-                <div className="absolute left-1/2 -translate-x-1/2 -top-1 border-4 border-transparent border-b-gray-900"></div>
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-1 text-xs text-white bg-secondary-900 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-10">
+                <div className="absolute left-1/2 -translate-x-1/2 -top-1 border-4 border-transparent border-b-secondary-900"></div>
                 {title}
             </div>
         </div>

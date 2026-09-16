@@ -614,7 +614,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
             <div className="p-6 text-white">
                 <h2 className="mb-4 text-lg font-semibold">Apply a template</h2>
                 {templates.length === 0 ? (
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-secondary-400">
                         No templates match the raids in this event. Create a template from the{" "}
                         <a
                             href={route("management.event-templates.index")}
@@ -660,7 +660,7 @@ function ApplyTemplateModal({ eventId, templates, onClose }) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded border border-gray-600 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-600/20"
+                        className="rounded border border-secondary-600 px-4 py-2 text-sm text-secondary-300 transition-colors hover:bg-secondary-600/20"
                     >
                         Cancel
                     </button>
@@ -1423,7 +1423,7 @@ export default function Edit({ event, targetMarkers, templates }) {
                         {compBench.length > 0 && <BenchedTable characters={compBench} />}
                     </div>
                 ) : (
-                    <p className="flex-1 text-center text-sm text-gray-400">
+                    <p className="flex-1 text-center text-sm text-secondary-400">
                         Groups for this raid have not been posted yet.
                     </p>
                 )}

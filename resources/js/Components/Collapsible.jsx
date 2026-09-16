@@ -9,9 +9,9 @@ const STYLES = {
         body: "border-ink-600",
     },
     gray: {
-        border: "border-gray-400",
-        header: "hover:bg-gray-400/10",
-        body: "border-gray-400",
+        border: "border-secondary-400",
+        header: "hover:bg-secondary-400/10",
+        body: "border-secondary-400",
     },
 };
 
@@ -37,9 +37,9 @@ export function RotatingChevron({ expanded = false, style = "solid" }) {
  */
 export function DisabledCollapsible({ title, headerRight, tooltip }) {
     const collapsible = (
-        <div className="rounded-md border border-gray-700 opacity-60">
-            <div className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-3 text-left text-gray-500">
-                <span className="flex items-center justify-items-center text-gray-600">
+        <div className="rounded-md border border-secondary-700 opacity-60">
+            <div className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-3 text-left text-secondary-500">
+                <span className="flex items-center justify-items-center text-secondary-600">
                     <Icon icon="chevron-down" style="solid" />
                 </span>
                 <h3 className="text-lg font-semibold">{title}</h3>
@@ -118,7 +118,7 @@ export default function Collapsible({
         return (
             <div className="animate-pulse space-y-2">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 rounded bg-gray-600/20" />
+                    <div key={i} className="h-12 rounded bg-secondary-600/20" />
                 ))}
             </div>
         );

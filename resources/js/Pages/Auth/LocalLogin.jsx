@@ -21,7 +21,7 @@ export default function LocalLogin() {
             <SharedHeader title="Local Login" subtitle="Development sign-in — local and testing only" />
 
             <FormContainer maxWidth="lg">
-                <p className="mb-6 text-sm text-gray-400">
+                <p className="mb-6 text-sm text-secondary-400">
                     Enter the Discord ID of an existing user to sign in as them. This bypasses Discord OAuth and is only
                     available outside production.
                 </p>

@@ -41,7 +41,7 @@ function PermissionToggle({ enabled, processing, onToggle, disabled }) {
             className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
                 enabled
                     ? "bg-green-600" + (disabled ? "" : " hover:bg-green-700")
-                    : "bg-gray-600" + (disabled ? "" : " hover:bg-gray-700")
+                    : "bg-secondary-600" + (disabled ? "" : " hover:bg-secondary-700")
             } ${processing ? "cursor-wait opacity-50" : ""} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         >
             {processing ? "..." : enabled ? "Enabled" : "Disabled"}
@@ -98,7 +98,7 @@ export default function ManagePermissions({ discordRoles, groups, permissions })
         <Master title="Manage Permissions">
             <SharedHeader title="Manage Permissions" backgroundClass="bg-arcatraz" />
             <PageContainer>
-                <p className="mb-6 text-gray-400">
+                <p className="mb-6 text-secondary-400">
                     Control which Discord roles have access to specific site features. Changes take effect immediately.
                 </p>
                 {/* Group navigation */}

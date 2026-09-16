@@ -26,11 +26,11 @@ export default function Gone() {
             <PageContainer>
                 <div className="max-w-2xl text-center mx-auto">
                     <div className="border border-ink-600/30 rounded-lg p-8 mb-8 bg-black/20">
-                        <p className="text-gray-300 text-lg leading-relaxed mb-4">
+                        <p className="text-secondary-300 text-lg leading-relaxed mb-4">
                             This raid plan existed once, but has since been removed from our records.
                             Old raid plans are pruned automatically after one month.
                         </p>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-secondary-400 text-sm">
                             If you're looking for active plans, head back to the raiding schedule.
                         </p>
                     </div>

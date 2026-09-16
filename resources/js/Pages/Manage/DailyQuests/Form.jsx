@@ -110,7 +110,7 @@ export default function DailyQuestsForm({
 
             {/* Content */}
             <PageContainer>
-                <p className="mb-6 text-lg text-gray-300">
+                <p className="mb-6 text-lg text-secondary-300">
                     Use the form below to select the current daily quests for professions, dungeons, and PvP. Once you
                     submit, the selected quests will be posted to the configured Discord channel.
                 </p>
@@ -166,7 +166,7 @@ export default function DailyQuestsForm({
                                             <div>
                                                 <div className="font-medium">{quest.name}</div>
                                                 {quest.instance && (
-                                                    <div className="text-sm text-gray-400">{quest.instance}</div>
+                                                    <div className="text-sm text-secondary-400">{quest.instance}</div>
                                                 )}
                                             </div>
                                         )}
@@ -188,7 +188,7 @@ export default function DailyQuestsForm({
                                             <div>
                                                 <div className="font-medium">{quest.name}</div>
                                                 {quest.instance && (
-                                                    <div className="text-sm text-gray-400">{quest.instance}</div>
+                                                    <div className="text-sm text-secondary-400">{quest.instance}</div>
                                                 )}
                                             </div>
                                         )}
