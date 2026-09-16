@@ -20,7 +20,7 @@ export default function Index() {
 
             {/* User profile section */}
             <Section tone="mid" edge="bottom" edgeTone="deep">
-                <div className="container mx-auto px-4 pt-12 pb-20">
+                <div className="container mx-auto px-4">
                     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                         <img src={user.avatar} alt={user.display_name} className="h-20 w-20 rounded-full" />
                         <div>
@@ -46,36 +46,34 @@ export default function Index() {
 
             {/* Planned absences section */}
             <Section tone="deep">
-                <div className="container mx-auto px-4">
-                    <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
-                        <DisplayHeading level={2} eyebrow="My Account">
-                            Planned Absences
-                        </DisplayHeading>
-                        <Can permission="create-planned-absences">
-                            <Link
-                                href={route("raiding.absences.create")}
-                                className="bg-ink-600 hover:bg-ink-700 focus:bg-ink-700 focus:ring-ink-500 active:bg-ink-800 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
-                            >
-                                <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
-                                Add Absence
-                            </Link>
-                        </Can>
-                    </header>
+                <header className="mb-4 flex flex-col items-center justify-between md:flex-row">
+                    <DisplayHeading level={2} eyebrow="My Account">
+                        Planned Absences
+                    </DisplayHeading>
+                    <Can permission="create-planned-absences">
+                        <Link
+                            href={route("raiding.absences.create")}
+                            className="bg-ink-600 hover:bg-ink-700 focus:bg-ink-700 focus:ring-ink-500 active:bg-ink-800 mt-3 inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold tracking-wide text-white transition duration-150 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-hidden md:mt-0"
+                        >
+                            <Icon icon="plus" style="solid" className="mr-1.5 h-4" />
+                            Add Absence
+                        </Link>
+                    </Can>
+                </header>
 
-                    {planned_absences.data.length === 0 ? (
-                        <EmptyState
-                            icon="calendar-times"
-                            message="You haven't created any planned absences."
-                            size="text-3xl"
-                        />
-                    ) : (
-                        <div className="flex flex-col gap-2">
-                            {planned_absences.data.map((absence) => (
-                                <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                {planned_absences.data.length === 0 ? (
+                    <EmptyState
+                        icon="calendar-times"
+                        message="You haven't created any planned absences."
+                        size="text-3xl"
+                    />
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        {planned_absences.data.map((absence) => (
+                            <PlannedAbsenceRow key={absence.id} absence={absence} showCreatedBy />
+                        ))}
+                    </div>
+                )}
             </Section>
         </Master>
     );

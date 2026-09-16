@@ -8,19 +8,8 @@ import Section from "@/Themes/Forever/Section";
 import DisplayHeading from "@/Themes/Forever/DisplayHeading";
 import Icon from "@/Components/FontAwesome/Icon";
 
-function OfficerTeamWithRenders({ officers }) {
-    const { officerRenders } = usePage().props;
-
-    return <OfficerTeam officers={officers} renders={officerRenders} />;
-}
-
-function UpcomingEventsWithData({ canViewPlans }) {
-    const { upcomingEvents } = usePage().props;
-
-    return <UpcomingEvents events={upcomingEvents} canViewPlans={canViewPlans} />;
-}
-
 export default function Home({ foreverLaunchAt, officers, canViewPlans, discordInviteUrl }) {
+    const { officerRenders, upcomingEvents } = usePage().props;
     return (
         <Master title="Home">
             <div className="text-base">
@@ -68,38 +57,36 @@ export default function Home({ foreverLaunchAt, officers, canViewPlans, discordI
                  * the section itself rather than a separate skeleton.
                  */}
                 <Deferred data="officerRenders" fallback={<OfficerTeam officers={officers} renders={undefined} />}>
-                    <OfficerTeamWithRenders officers={officers} />
+                    <OfficerTeam officers={officers} renders={officerRenders} />
                 </Deferred>
 
                 <Deferred
                     data="upcomingEvents"
                     fallback={<UpcomingEvents events={undefined} canViewPlans={canViewPlans} />}
                 >
-                    <UpcomingEventsWithData canViewPlans={canViewPlans} />
+                    <UpcomingEvents events={upcomingEvents} canViewPlans={canViewPlans} />
                 </Deferred>
 
-                <Section tone="deep">
-                    <div className="container mx-auto max-w-2xl px-4 text-center">
-                        <DisplayHeading level={2} eyebrow="Join us" className="mb-4">
-                            Your Journey Starts Here
-                        </DisplayHeading>
+                <Section tone="deep" maxWidth="max-w-2xl text-center">
+                    <DisplayHeading level={2} eyebrow="Join us" className="mb-4">
+                        Your Journey Starts Here
+                    </DisplayHeading>
 
-                        <p className="text-ink-400 mx-auto mb-8 max-w-xl">
-                            Whether you're a seasoned raider or stepping into Azeroth for the first time, there's a
-                            place for you in Regrowth. Come and say hello — recruitment, raid chatter and everything
-                            else happens on our Discord.
-                        </p>
+                    <p className="text-ink-400 mx-auto mb-8 max-w-xl">
+                        Whether you're a seasoned raider or stepping into Azeroth for the first time, there's a place
+                        for you in Regrowth. Come and say hello — recruitment, raid chatter and everything else
+                        happens on our Discord.
+                    </p>
 
-                        <a
-                            href={discordInviteUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="border-discord/30 text-heading focus:ring-primary/60 bg-discord hover:bg-discord/80 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus:ring-2 focus:outline-hidden"
-                        >
-                            <Icon icon="discord" style="brands" className="h-6 w-6 text-white" />
-                            Join our Discord
-                        </a>
-                    </div>
+                    <a
+                        href={discordInviteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="border-discord/30 text-heading focus:ring-primary/60 bg-discord hover:bg-discord/80 inline-flex items-center gap-3 rounded border px-8 py-4 text-lg shadow-lg transition-colors focus:ring-2 focus:outline-hidden"
+                    >
+                        <Icon icon="discord" style="brands" className="h-6 w-6 text-white" />
+                        Join our Discord
+                    </a>
                 </Section>
             </div>
         </Master>

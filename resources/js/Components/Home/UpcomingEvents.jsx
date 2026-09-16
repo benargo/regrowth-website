@@ -64,43 +64,41 @@ export default function UpcomingEvents({ events, canViewPlans = false }) {
     const isLoading = events === undefined;
 
     return (
-        <Section tone="mid" edge="bottom" edgeTone="deep">
-            <div className="container mx-auto max-w-3xl px-4">
-                <DisplayHeading level={2} eyebrow="What's next" className="mb-10 text-center">
-                    Upcoming Raids
-                </DisplayHeading>
+        <Section tone="mid" edge="bottom" edgeTone="deep" maxWidth="max-w-3xl">
+            <DisplayHeading level={2} eyebrow="What's next" className="mb-10 text-center">
+                Upcoming Raids
+            </DisplayHeading>
 
-                {isLoading ? (
-                    <ul className="border-ground-600/60 border-t">
-                        <SkeletonRow />
-                        <SkeletonRow />
-                        <SkeletonRow />
-                    </ul>
-                ) : events.length === 0 ? (
-                    <p className="text-ink-400 text-center">
-                        No raids are scheduled right now. Check back soon, or ask in Discord.
-                    </p>
-                ) : (
-                    <ul className="border-ground-600/60 border-t">
-                        {events.map((event) => (
-                            <li key={event.id} className="border-ground-600/60 border-b">
-                                {canViewPlans ? (
-                                    <Link
-                                        href={route("raiding.plans.show", event.id)}
-                                        className="hover:bg-ground-700/60 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4 transition-colors"
-                                    >
-                                        <EventRow event={event} />
-                                    </Link>
-                                ) : (
-                                    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4">
-                                        <EventRow event={event} />
-                                    </div>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+            {isLoading ? (
+                <ul className="border-ground-600/60 border-t">
+                    <SkeletonRow />
+                    <SkeletonRow />
+                    <SkeletonRow />
+                </ul>
+            ) : events.length === 0 ? (
+                <p className="text-ink-400 text-center">
+                    No raids are scheduled right now. Check back soon, or ask in Discord.
+                </p>
+            ) : (
+                <ul className="border-ground-600/60 border-t">
+                    {events.map((event) => (
+                        <li key={event.id} className="border-ground-600/60 border-b">
+                            {canViewPlans ? (
+                                <Link
+                                    href={route("raiding.plans.show", event.id)}
+                                    className="hover:bg-ground-700/60 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4 transition-colors"
+                                >
+                                    <EventRow event={event} />
+                                </Link>
+                            ) : (
+                                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-2 py-4">
+                                    <EventRow event={event} />
+                                </div>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
         </Section>
     );
 }
