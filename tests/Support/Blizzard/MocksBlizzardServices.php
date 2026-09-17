@@ -7,7 +7,7 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use Illuminate\Support\Facades\Storage;
 use Saloon\Http\Faking\MockResponse;
@@ -16,12 +16,27 @@ use Saloon\Laravel\Facades\Saloon;
 
 trait MocksBlizzardServices
 {
+    /** @var string */
+    const TOKEN_MOCK_KEY = 'eu.battle.net/oauth/token';
+
+    /** @var array<string, mixed> */
+    const TOKEN_MOCK_RESPONSE = [
+        'access_token' => 'test_token',
+        'token_type' => 'bearer',
+        'expires_in' => 3600,
+    ];
+
+    /** @var array<string, mixed> */
+    protected array $pendingBlizzardMocks = [];
+
     /**
-     * @return array<string, mixed>
+     * Saloon::fake() replaces any previously registered fakes, so mockX()
+     * helpers must not call it directly — they accumulate into
+     * $pendingBlizzardMocks and this flushes them all in one call.
      */
-    protected function makeTokenResponse(): array
+    protected function applyBlizzardMocks(): void
     {
-        return ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600];
+        Saloon::fake($this->pendingBlizzardMocks);
     }
 
     /**
@@ -45,130 +60,82 @@ trait MocksBlizzardServices
     }
 
     /**
-     * Fake the oauth token plus a GetCharacterProfileRequest response.
+     * @param  array<string, mixed>  $responseData
      */
-    protected function mockCharacterProfileService(string $gender = 'Male'): void
+    protected function mockGetCharacterProfile(string $gender = 'Male', array $responseData = [], int $status = 200): void
     {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
             GetCharacterProfileRequest::class => MockResponse::make(
-                body: $this->makeCharacterProfileResponse($gender),
-                status: 200,
+                body: array_merge($this->makeCharacterProfileResponse($gender), $responseData),
+                status: $status,
             ),
         ]);
     }
 
-    /**
-     * Fake a FetchCharacterPortraitRequest response in isolation (no token/profile fake).
-     *
-     * Use when the job under test must not send GetCharacterProfileRequest at
-     * all (e.g. the character's gender is already set), so the test can assert
-     * Saloon::assertNotSent(GetCharacterProfileRequest::class).
-     */
-    protected function mockCharacterPortraitFetch(int $status = 200, string $body = 'BINARY'): void
+    protected function mockFetchCharacterMedia(int $status = 200, string $body = 'BINARY'): void
     {
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: $body, status: $status),
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            FetchCharacterMediaRequest::class => MockResponse::make(body: $body, status: $status),
         ]);
     }
 
     /**
-     * Fake the full happy-path chain for AttachPortraitToCharacter: oauth
-     * token + GetCharacterProfileRequest + FetchCharacterPortraitRequest.
-     *
-     * @param  array<string, mixed>|null  $profileBody
+     * @param  array<string, mixed>  $responseData
      */
-    protected function mockCharacterPortraitService(string $gender = 'Male', ?array $profileBody = null, int $profileStatus = 200): void
+    protected function mockGetCharacterMedia(array $responseData = [], int $status = 200): void
     {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(
-                body: $profileBody ?? $this->makeCharacterProfileResponse($gender),
-                status: $profileStatus,
-            ),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
-        ]);
-    }
-
-    /**
-     * Fake a render-CDN fetch for AttachRenderToCharacter.
-     *
-     * The render job shares FetchCharacterPortraitRequest with the avatar job
-     * but sends no profile request, so no oauth token fake is needed.
-     */
-    protected function mockCharacterRenderFetch(int $status = 200, string $body = 'RENDER-BINARY'): void
-    {
-        Saloon::fake([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: $body, status: $status),
-        ]);
-    }
-
-    /**
-     * Fake the oauth token plus a GetCharacterMediaRequest response carrying
-     * both the avatar and the full-body main-raw asset.
-     */
-    protected function mockCharacterMediaLookup(): void
-    {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterMediaRequest::class => MockResponse::make(body: [
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetCharacterMediaRequest::class => MockResponse::make(body: array_merge([
                 'character' => ['key' => ['href' => 'https://example.test/character'], 'name' => 'Caldru', 'id' => 1, 'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike']],
                 'assets' => [
                     ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],
                     ['key' => 'inset', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-inset.jpg'],
                     ['key' => 'main-raw', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-main-raw.png'],
                 ],
-            ], status: 200),
+            ], $responseData), status: $status),
         ]);
     }
 
     /**
-     * Fake the oauth token plus a GetGuildRosterRequest response. Defaults to
-     * an empty roster — pass $members for tests that assert on roster
-     * contents.
-     *
-     * @param  array<int, array<string, mixed>>  $members
+     * @param  array<string, mixed>  $responseData
      */
-    protected function mockGuildRoster(array $members = []): void
+    protected function mockGetGuildRoster(array $responseData = []): void
     {
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetGuildRosterRequest::class => MockResponse::make(body: [
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetGuildRosterRequest::class => MockResponse::make(body: array_merge([
                 'guild' => [
                     'key' => ['href' => 'https://example.test/guild'],
                     'name' => 'Wild Growth',
                     'id' => 1,
                     'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Thunderstrike', 'id' => 1, 'slug' => 'thunderstrike'],
                 ],
-                'members' => $members,
-            ], status: 200),
+                'members' => [],
+            ], $responseData), status: 200),
         ]);
     }
 
     /**
-     * Fake all Blizzard service requests.
+     * With $responseData empty, GetItemRequest extracts the item ID from the
+     * request URL per call — for tests creating multiple items.
      *
-     * When $itemData is empty, GetItemRequest is handled by a callback that
-     * extracts the item ID from the request URL — suitable for feature tests
-     * that create multiple items and need per-item responses.
-     *
-     * When $itemData is provided, GetItemRequest returns a static body merged
-     * over sensible defaults — suitable for unit tests targeting a single item.
-     *
-     * @param  array<string, mixed>  $itemData
+     * @param  array<string, mixed>  $responseData
      */
-    protected function mockItemService(array $itemData = []): void
+    protected function mockGetItem(array $responseData = []): void
     {
         Storage::fake('public');
 
-        $itemRequest = $itemData
+        $itemRequest = $responseData
             ? MockResponse::make(body: array_merge([
                 'name' => 'Test Item',
                 'item_class' => ['name' => 'Armor'],
                 'item_subclass' => ['name' => 'Plate'],
                 'quality' => ['type' => 'EPIC', 'name' => 'Epic'],
                 'inventory_type' => ['name' => 'Head'],
-            ], $itemData), status: 200)
+            ], $responseData), status: 200)
             : function (PendingRequest $pendingRequest): MockResponse {
                 $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
                 $segments = explode('/', trim($path, '/'));
@@ -189,8 +156,8 @@ trait MocksBlizzardServices
                 ], status: 200);
             };
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+        $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
+            self::TOKEN_MOCK_KEY => MockResponse::make(self::TOKEN_MOCK_RESPONSE),
             GetItemRequest::class => $itemRequest,
             GetItemMediaRequest::class => MockResponse::make(body: ['id' => 0, 'assets' => []], status: 200),
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
