@@ -379,9 +379,7 @@ vendor/bin/sail artisan channel:list
 
 ```bash
 vendor/bin/sail artisan queue:work    # Required for ShouldBroadcast events
-
 vendor/bin/sail artisan reverb:start  # Required for Reverb driver
-
 ```
 
 ## Common Pitfalls

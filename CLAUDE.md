@@ -1,4 +1,160 @@
 <laravel-boost-guidelines>
+=== .ai/api-services rules ===
+
+# Third-Party API Service Classes
+
+This project integrates with several external APIs (Blizzard, Discord, Warcraft Logs, Raid Helper). All service/connector classes for those APIs follow these rules.
+
+## API services make HTTP calls only
+
+Keep each API service class focused purely on making HTTP calls (optionally wrapped in `Cache::remember`). Do **not** add methods that:
+
+- depend on another service,
+- map responses into domain objects, or
+- touch the database.
+
+That work belongs to the consumer (job, controller, seeder). Example: a `getPlayableClassIconUrl()` method was rejected because it combined an API call with a `MediaService` resolution — consumers should call `getPlayableClassMedia()` and resolve URLs through `MediaService` themselves.
+
+## Give each resource type its own dedicated method
+
+When an API has a specific endpoint for a known resource type, give it its own method that calls that path directly (e.g. `getItemMedia`, `getPlayableClassMedia`). Dedicated methods keep their own cache keys, TTLs, and skip unnecessary validation.
+
+Only use a generic `findMedia(tag, id)`-style method when the resource type genuinely varies at runtime.
+
+## Inject config through the constructor
+
+Pass config values into service classes through the constructor via the service provider. Do **not** call the `config()` helper inside the class. The class may expose a local `config(string $key)` helper using `Arr::get()` to read nested values, throwing if a required key is missing.
+
+## Prefer dependency injection over facades
+
+Use Laravel facades only as a last resort. Prefer constructor/method dependency injection wherever possible — it makes dependencies explicit and simplifies testing (real bindings + `Saloon::fake()` instead of facade-mocking).
+
+- Controllers / Jobs / Commands / Notifications / Seeders → type-hint `BlizzardConnector` / `RenderConnector` in the constructor (or `handle()` for queue jobs) and let Laravel resolve them via the `BlizzardServiceProvider` singleton bindings.
+- Where an existing helper exposes a facade (`Blizzard::send(...)`, `BlizzardAsset::...`), refactor the caller to receive the connector by DI and migrate the call to `$blizzard->send(...)`.
+- Resources/Models cannot accept constructor injection — there `app(BlizzardConnector::class)` is acceptable, but call it out explicitly and minimise it (e.g. resolve once into a property).
+- New code should never reach for `App\Facades\Blizzard` or `App\Facades\BlizzardAsset` unless DI is genuinely impossible.
+
+## Catch the abstract `NotFoundException` in Blizzard batch loops
+
+A 404 from the render CDN (`FetchAssetRequest` / `RenderConnector`) throws `App\Http\Integrations\Blizzard\Exceptions\MediaNotFoundException`. The item-data path (`GetItemRequest`) throws `ItemNotFoundException`. Both extend the abstract `App\Http\Integrations\Blizzard\Exceptions\NotFoundException`.
+
+In seeders/resources that send both `GetItemRequest`/`GetItemMediaRequest` **and** `FetchAssetRequest`, catch the abstract parent so a single icon-CDN 404 doesn't abort the whole batch:
+
+```php
+catch (NotFoundException | BlizzardApiException | FatalRequestException $e) {
+    // skip this record, continue the loop
+}
+```
+
+Add a test that fakes a `FetchAssetRequest` 404 and asserts the loop continues with no media attached.
+
+=== .ai/frontend rules ===
+
+# Frontend (Inertia + React)
+
+## Search shared components before writing new front-end code
+
+Before proposing or implementing any front-end change, search `resources/js/Components/`, `resources/js/Helpers/`, and `resources/js/Hooks/` for existing shared components, helpers, and hooks, and reuse them. The project has a rich shared library; duplicating it creates inconsistency and maintenance burden.
+
+## Render from props, not `useState`, on pages that call `router.reload()`
+
+In read-only Inertia pages that call `router.reload()` in response to broadcast events, render directly from the incoming props — do **not** copy them into `useState`.
+
+`useState` initialises once at mount and ignores later prop changes, so when `router.reload()` delivers fresh props the component re-renders but the state stays frozen and the UI never updates. Render from the prop directly (e.g. `event.composition?.groups`). Only use `useState` for data that needs client-side-only mutation (optimistic updates, UI toggles) that won't be reconciled via a reload.
+
+## Never define `broadcastAs()` on Notification classes
+
+Never define `broadcastAs()` on a Laravel notification class (extends `Illuminate\Notifications\Notification`, implements `ShouldBroadcast`). Doing so renames the wire event, but `useEchoNotification` from `@laravel/echo-react` hardcodes listening for `.Illuminate\Notifications\Events\BroadcastNotificationCreated` and will never match — the frontend callback never fires.
+
+To filter notifications on the frontend, use `broadcastType()` instead — it sets the `type` field that `useEchoNotification`'s third argument matches. `broadcastAs()` is fine on genuine broadcast **Event** classes (e.g. `BossKilled`, `EventAssignment`).
+
+=== .ai/php-conventions rules ===
+
+# PHP Conventions
+
+## Write against PHP 8.4
+
+Ensure new code uses syntax that is not deprecated in PHP 8.4. Always use **explicit** nullable types — `?Type` or `Type|null`, never an implicit nullable from a `null` default:
+
+```php
+// Wrong — implicit nullable, deprecated in 8.4
+public function __construct(MockInterface $service = null) {}
+
+// Right
+public function __construct(?MockInterface $service = null) {}
+```
+
+## Value objects / DTOs implement `Arrayable` + `JsonSerializable`
+
+Any new value object or DTO (a `final class` that wraps data rather than a service with behaviour) must implement:
+
+- `Illuminate\Contracts\Support\Arrayable` — `toArray(): array` returning the canonical array shape
+- `JsonSerializable` — `jsonSerialize(): array`, usually `return $this->toArray();`
+
+Consistent with existing VOs like `app/Services/Attendance/Filters.php`. This keeps VOs interoperable with Eloquent, Resource responses, JSON encoding, and `collect()->toArray()`.
+
+## Don't call `->value` on enums inside Resource arrays
+
+PHP's `json_encode` and Laravel's HTTP layer serialize backed enums to their value automatically at the final serialization boundary. A Resource's `toArray()` returns a plain PHP array internally, so the correct contract at that layer is the enum **case** itself, not its string value.
+
+When asserting on resource output via `->resolve()` in unit tests, compare against the enum case (e.g. `SignupStatus::Confirmed`), not `SignupStatus::Confirmed->value`. Only use `->value` when explicitly building a string for storage, display, or a non-JSON context.
+
+## Union-Find must be iterative
+
+PHP recursive closures that capture themselves by reference (`&$find`) cause segmentation faults (signal 11) under PHPUnit when called deeply. Always implement Union-Find with an iterative find + path-compression loop:
+
+```php
+$find = function (string $id) use (&$parent): string {
+    $root = $id;
+    while ($parent[$root] !== $root) { $root = $parent[$root]; }
+    while ($parent[$id] !== $root) { $next = $parent[$id]; $parent[$id] = $root; $id = $next; }
+    return $root;
+};
+```
+
+=== .ai/testing rules ===
+
+# Testing
+
+## Run tests via `sail test`
+
+Always use `vendor/bin/sail test` (which wraps `php artisan test`). Never invoke PHPUnit directly (`vendor/bin/sail php vendor/bin/phpunit`) — the Artisan wrapper applies the project's full bootstrap and matches CI output.
+
+## Test flags
+
+- Always include `--display-phpunit-notices` so notices surface and can be fixed. When a notice appears, fix it — `createMock()` with no expectations should be `createStub()`.
+- Never combine `--parallel` with `--compact`; `--parallel` silently drops `--compact`.
+- Standard run: `vendor/bin/sail test --display-phpunit-notices`
+- Filtered run: `vendor/bin/sail test --compact --display-phpunit-notices --filter=...`
+
+## `make:test` naming
+
+Pass only the path relative to the test type's base directory — Artisan prepends `tests/Unit/` for `--unit` and `tests/Feature/` otherwise.
+
+- Correct: `make:test --unit "Services/Foo/BarTest"` → `tests/Unit/Services/Foo/BarTest.php`
+- Wrong: `make:test --unit "Unit/Services/Foo/BarTest"` → doubled `Unit/Unit/` prefix
+
+## Use `--env=testing` for manual Artisan commands
+
+The dev database (`laravel`) holds real guild data synced from live sources. Always pass `--env=testing` to any manual `tinker`, `db:seed`, or `migrate` run so it targets the separate `laravel_testing` database:
+
+```
+vendor/bin/sail artisan tinker --env=testing
+vendor/bin/sail artisan db:seed --env=testing
+```
+
+A `.env.testing` file at the repo root points to `DB_DATABASE=laravel_testing`. Never call factory `create()` or run seeders without `--env=testing` unless deliberately seeding dev data.
+
+=== .ai/upgrades rules ===
+
+# Dependency Upgrades
+
+## Build major-version upgrades around the official codemod
+
+When a library ships an official upgrade/migration tool (e.g. `npx @tailwindcss/upgrade`), make running it the first explicit step of the plan, then scope manual work to only what the tool cannot do.
+
+The codemod handles the mechanical bulk (build pipeline, renames, directive swaps) reliably; hand-doing it is error-prone and slower. Document precisely which gaps remain manual — for the Tailwind v4 upgrade that was: regex safelist → `@source inline()`, and v3-default compatibility shims for border/ring/placeholder/cursor.
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -73,7 +229,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ## Project Rules
 
 - This project contains committed, area-grouped rules in `.ai/rules` when that directory exists (settled decisions, non-obvious traps, standing constraints). Framework and package guidelines that only apply to specific paths (testing, frontend, components) also live there, under `.ai/rules/boost` — this is not just recorded decisions, it is load-bearing guidance you have not seen inline. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
-- Record durable rules with `record-rule` so the next agent or teammate inherits them instead of working them out again. Pass a `glob` (e.g. `app/Http/Controllers/**`), a short `title`, and a few-line `note`. Always use `record-rule`, never your native memory or notes tool — native memory is personal and session-scoped; only `.ai/rules` is shared with the team and persists in the repo.
+- Record a rule with `record-rule` only when the user explicitly asks for one. Instructions for the work at hand are not rules, no matter how emphatic: "remove this typo", "use X here" are work to do, not rules to record. Never record a rule on your own initiative, as a byproduct of a change, or to summarize what you just did. When the user does ask, pass a `glob` (e.g. `app/Http/Controllers/**`), a short `title`, and a few-line `note`. Use `record-rule` rather than your native memory or notes tool, because native memory is personal and session-scoped, while only `.ai/rules` is shared with the team and persists in the repo.
 
 ## Artisan
 
@@ -103,6 +259,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
+- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
 
 === sail rules ===
 
@@ -122,8 +279,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # Test Enforcement
 
-- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
-- Run the minimum number of tests needed to ensure code quality and speed. Use `vendor/bin/sail artisan test --compact` with a specific filename or filter.
+- Add or update tests for behavior and logic changes when a test provides meaningful regression coverage.
+- Pure copy, styling, and layout-only changes do not require new or updated tests.
+- When test coverage applies, run the affected tests and ensure they pass.
+- Test the changed behavior and its important failure modes, but do not add tests beyond them.
+- Read the `testing-best-practices` skill before writing tests.
 
 === inertia-laravel/core rules ===
 
@@ -189,19 +349,15 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # PHPUnit
 
-- This application uses PHPUnit for testing. All tests must be written as PHPUnit classes. Use `vendor/bin/sail artisan make:test --phpunit {name}` to create a new test.
-- If you see a test using "Pest", convert it to PHPUnit.
-- Every time a test has been updated, run that singular test.
-- When the tests relating to your feature are passing, ask the user if they would like to also run the entire test suite to make sure everything is still passing.
-- Tests should cover all happy paths, failure paths, and edge cases.
-- You must not remove any tests or test files from the tests directory without approval. These are not temporary or helper files; these are core to the application.
+- This project uses PHPUnit. Create tests with `vendor/bin/sail artisan make:test --phpunit {name}`.
+- Do not include the test suite directory in `{name}`. Use `SomeFeatureTest`, not `Feature/SomeFeatureTest`.
+- Read the `testing-best-practices` skill for guidance on coverage, naming, structure, dependency isolation, and review.
 
 ## Running Tests
 
-- Run the minimal number of tests, using an appropriate filter, before finalizing.
-- To run all tests: `vendor/bin/sail artisan test --compact`.
-- To run all tests in a file: `vendor/bin/sail artisan test --compact tests/Feature/ExampleTest.php`.
-- To filter on a particular test name: `vendor/bin/sail artisan test --compact --filter=testName` (recommended after making a change to a related file).
+- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `vendor/bin/sail artisan test --compact`.
+- Rerun a test after each change to it.
+- Run `vendor/bin/sail bin phpunit` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 === inertia-react/core rules ===
 
