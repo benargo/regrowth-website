@@ -297,7 +297,8 @@ class HomeControllerTest extends TestCase
     {
         Queue::fake();
         Character::factory()->create(['name' => 'Caldru']);
-        $this->mockCharacterMediaLookup();
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
 
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
@@ -310,7 +311,8 @@ class HomeControllerTest extends TestCase
     {
         Queue::fake();
         Character::factory()->create(['name' => 'Caldru']);
-        $this->mockCharacterMediaLookup();
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
 
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Characters;
 
 use App\Contracts\HasCharacterMedia;
-use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
 use App\Models\User;
@@ -14,8 +13,6 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
@@ -89,10 +86,8 @@ class ShowCharacterTest extends TestCase
         $character = Character::factory()->withPlayableClass()->withRank()->create();
         $user = $this->member();
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterMediaRequest::class => MockResponse::make(body: $this->makeMediaResponse(), status: 200),
-        ]);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
 
         $response = $this->actingAs($user)->get(route('characters.show', [
             'character' => $character,
@@ -113,10 +108,8 @@ class ShowCharacterTest extends TestCase
     {
         $character = Character::factory()->withPlayableClass()->withRank()->withPlayableRace()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterMediaRequest::class => MockResponse::make(body: $this->makeMediaResponse(), status: 200),
-        ]);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
 
         $response = $this->get(route('characters.show', [
             'character' => $character,
@@ -139,10 +132,8 @@ class ShowCharacterTest extends TestCase
 
         $character = Character::factory()->withPlayableClass()->withRank()->create();
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterMediaRequest::class => MockResponse::make(body: $this->makeMediaResponse(), status: 200),
-        ]);
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
 
         $this->get(route('characters.show', [
             'character' => $character,
@@ -179,10 +170,8 @@ class ShowCharacterTest extends TestCase
 
         $character = Character::factory()->withPlayableClass()->withRank()->create();
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterMediaRequest::class => MockResponse::make(body: ['type' => 'BLZWEBAPI00000404'], status: 404),
-        ]);
+        $this->mockGetCharacterMedia(['type' => 'BLZWEBAPI00000404'], 404);
+        $this->applyBlizzardMocks();
 
         $this->get(route('characters.show', [
             'character' => $character,
@@ -202,23 +191,5 @@ class ShowCharacterTest extends TestCase
     private function characterSlug(Character $character): string
     {
         return Str::slug($character->name);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function makeMediaResponse(): array
-    {
-        return [
-            '_links' => ['self' => ['href' => 'https://eu.api.blizzard.com']],
-            'character' => [
-                'key' => ['href' => 'https://eu.api.blizzard.com'],
-                'name' => 'Testcharacter',
-                'id' => 1,
-            ],
-            'assets' => [
-                ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],
-            ],
-        ];
     }
 }
