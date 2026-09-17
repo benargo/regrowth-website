@@ -4,7 +4,9 @@ namespace Tests\Feature\Jobs;
 
 use App\Contracts\HasCharacterMedia;
 use App\Events\Broadcasts\CharacterRenderAttached;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\RenderConnector;
+use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Jobs\AttachRenderToCharacter;
@@ -15,11 +17,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Uri;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Exceptions\Request\RequestException;
+use Saloon\Http\Faking\MockResponse;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
@@ -30,8 +32,6 @@ class AttachRenderToCharacterTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
-
-    private const RENDER_URL = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-main-raw.png';
 
     protected function setUp(): void
     {
@@ -45,39 +45,28 @@ class AttachRenderToCharacterTest extends TestCase
     #[Test]
     public function it_implements_should_queue(): void
     {
-        $this->assertInstanceOf(ShouldQueue::class, new AttachRenderToCharacter(1, self::RENDER_URL));
+        $this->assertInstanceOf(ShouldQueue::class, new AttachRenderToCharacter(1));
     }
 
     #[Group('contract')]
     #[Test]
     public function it_has_three_total_attempts(): void
     {
-        $this->assertSame(3, (new AttachRenderToCharacter(1, self::RENDER_URL))->tries);
+        $this->assertSame(3, (new AttachRenderToCharacter(1))->tries);
     }
 
     #[Group('contract')]
     #[Test]
     public function it_has_five_minute_backoff_between_attempts(): void
     {
-        $this->assertSame([300, 300], (new AttachRenderToCharacter(1, self::RENDER_URL))->backoff());
+        $this->assertSame([300, 300], (new AttachRenderToCharacter(1))->backoff());
     }
 
     #[Group('contract')]
     #[Test]
     public function it_has_the_correct_tags(): void
     {
-        $this->assertSame(['blizzard', 'character:42'], (new AttachRenderToCharacter(42, self::RENDER_URL))->tags());
-    }
-
-    #[Group('contract')]
-    #[Test]
-    public function it_accepts_the_asset_url_as_a_string_or_a_uri(): void
-    {
-        $fromString = new AttachRenderToCharacter(1, self::RENDER_URL);
-        $fromUri = new AttachRenderToCharacter(1, Uri::of(self::RENDER_URL));
-
-        $this->assertInstanceOf(Uri::class, $fromString->assetUrl);
-        $this->assertSame((string) $fromString->assetUrl, (string) $fromUri->assetUrl);
+        $this->assertSame(['blizzard', 'character:42'], (new AttachRenderToCharacter(42))->tags());
     }
 
     // ==================== middleware ====================
@@ -87,7 +76,7 @@ class AttachRenderToCharacterTest extends TestCase
     public function it_scopes_the_overlap_lock_to_the_character_render(): void
     {
         /** @var WithoutOverlapping $middleware */
-        $middleware = (new AttachRenderToCharacter(7, self::RENDER_URL))->middleware()[0];
+        $middleware = (new AttachRenderToCharacter(7))->middleware()[0];
 
         $this->assertSame('character-render:7', $middleware->key);
         $this->assertSame(60, $middleware->releaseAfter);
@@ -100,10 +89,11 @@ class AttachRenderToCharacterTest extends TestCase
     public function it_fetches_the_render_and_attaches_it_to_the_render_collection(): void
     {
         $character = Character::factory()->create();
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         $character = $character->fresh();
 
@@ -120,10 +110,11 @@ class AttachRenderToCharacterTest extends TestCase
             ->usingFileName('avatar.jpg')
             ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION);
 
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         $this->assertSame('avatar.jpg', $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION)->file_name);
     }
@@ -135,10 +126,11 @@ class AttachRenderToCharacterTest extends TestCase
         Event::fake([CharacterRenderAttached::class]);
 
         $character = Character::factory()->create();
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Event::assertDispatched(CharacterRenderAttached::class);
     }
@@ -152,11 +144,13 @@ class AttachRenderToCharacterTest extends TestCase
             ->usingFileName('existing.png')
             ->toMediaCollection(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
 
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
+        Saloon::assertNotSent(GetCharacterMediaRequest::class);
         Saloon::assertNotSent(FetchCharacterMediaRequest::class);
         $this->assertSame('existing.png', $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER)->file_name);
     }
@@ -166,10 +160,11 @@ class AttachRenderToCharacterTest extends TestCase
     public function it_never_calls_the_character_profile_endpoint(): void
     {
         $character = Character::factory()->create(['gender' => null]);
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Saloon::assertNotSent(GetCharacterProfileRequest::class);
         $this->assertNull($character->fresh()->gender);
@@ -180,10 +175,11 @@ class AttachRenderToCharacterTest extends TestCase
     public function it_stores_the_opaque_vertical_bounds_as_custom_properties(): void
     {
         $character = Character::factory()->create();
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia(body: $this->pngWithOpaqueBand(width: 10, height: 100, opaqueFrom: 20, opaqueTo: 79));
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         $media = $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
 
@@ -196,10 +192,11 @@ class AttachRenderToCharacterTest extends TestCase
     public function it_leaves_the_visible_bounds_unset_when_the_render_is_not_a_decodable_image(): void
     {
         $character = Character::factory()->create();
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         $media = $character->fresh()->getFirstMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER);
 
@@ -212,10 +209,11 @@ class AttachRenderToCharacterTest extends TestCase
     public function it_requests_the_render_url_unresized(): void
     {
         $character = Character::factory()->create();
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Saloon::assertSent(fn (FetchCharacterMediaRequest $request) => str_contains($request->resolveEndpoint(), '51042439-main-raw.png'));
     }
@@ -228,7 +226,7 @@ class AttachRenderToCharacterTest extends TestCase
     {
         $this->expectException(ModelNotFoundException::class);
 
-        (new AttachRenderToCharacter(999_999, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter(999_999))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
     }
 
     #[Group('failure-path')]
@@ -236,12 +234,13 @@ class AttachRenderToCharacterTest extends TestCase
     public function it_throws_when_the_render_cdn_returns_an_error(): void
     {
         $character = Character::factory()->create();
+        $this->mockGetCharacterMedia();
         $this->mockFetchCharacterMedia(status: 404);
         $this->applyBlizzardMocks();
 
         $this->expectException(RequestException::class);
 
-        (new AttachRenderToCharacter($character->id, self::RENDER_URL))->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
     }
 
     #[Group('failure-path')]
@@ -251,11 +250,56 @@ class AttachRenderToCharacterTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         $character = Character::factory()->create();
+        $this->mockGetCharacterMedia(responseData: [
+            'assets' => [
+                ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],
+                ['key' => 'main-raw', 'value' => 'https://evil.example.com/payload.png'],
+            ],
+        ]);
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
-        (new AttachRenderToCharacter($character->id, 'https://evil.example.com/payload.png'))
-            ->handle(app(RenderConnector::class));
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+    }
+
+    #[Group('failure-path')]
+    #[Test]
+    public function it_silently_no_ops_when_the_character_media_lookup_fails(): void
+    {
+        Event::fake([CharacterRenderAttached::class]);
+
+        $character = Character::factory()->create();
+        Saloon::fake([
+            self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
+            GetCharacterMediaRequest::class => MockResponse::make(status: 503),
+        ]);
+
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        $this->assertFalse($character->fresh()->hasMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER));
+        Event::assertNotDispatched(CharacterRenderAttached::class);
+    }
+
+    #[Group('failure-path')]
+    #[Test]
+    public function it_silently_no_ops_when_no_main_raw_asset_is_present(): void
+    {
+        Event::fake([CharacterRenderAttached::class]);
+
+        $character = Character::factory()->create();
+        $this->mockGetCharacterMedia(responseData: [
+            'assets' => [
+                ['key' => 'avatar', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'],
+                ['key' => 'inset', 'value' => 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-inset.jpg'],
+            ],
+        ]);
+        $this->applyBlizzardMocks();
+
+        (new AttachRenderToCharacter($character->id))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
+
+        Saloon::assertNotSent(FetchCharacterMediaRequest::class);
+        $this->assertFalse($character->fresh()->hasMedia(HasCharacterMedia::MEDIA_COLLECTION_RENDER));
+        Event::assertNotDispatched(CharacterRenderAttached::class);
     }
 
     // ==================== helpers ====================
