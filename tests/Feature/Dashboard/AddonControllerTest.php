@@ -38,24 +38,6 @@ class AddonControllerTest extends DashboardTestCase
         $this->applyBlizzardMocks();
     }
 
-    /**
-     * Seed the export file in storage with the given overrides.
-     *
-     * @param  array<string, mixed>  $overrides
-     */
-    protected function seedExportFile(array $overrides = []): void
-    {
-        $data = array_merge([
-            'system' => ['date_generated' => Carbon::now()->unix()],
-            'priorities' => [],
-            'items' => [],
-            'players' => [],
-            'councillors' => [],
-        ], $overrides);
-
-        Storage::disk('local')->put('addon/export.json', json_encode($data));
-    }
-
     // ==================== export & export json ====================
 
     #[Test]
@@ -449,20 +431,7 @@ class AddonControllerTest extends DashboardTestCase
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Fake Saloon to return 5 raiders
-        $this->mockGetGuildRoster(['members' => array_map(
-            fn (int $id) => [
-                'character' => [
-                    'id' => $id,
-                    'name' => "Player{$id}",
-                    'level' => 80,
-                    'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
-                    'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
-                    'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
-                ],
-                'rank' => $raiderRank->sort_order,
-            ],
-            range(1, 5),
-        )]);
+        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(5, $raiderRank->sort_order)]);
         $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
@@ -493,20 +462,7 @@ class AddonControllerTest extends DashboardTestCase
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Fake Saloon to return 3 raiders (same as CSV)
-        $this->mockGetGuildRoster(['members' => array_map(
-            fn (int $id) => [
-                'character' => [
-                    'id' => $id,
-                    'name' => "Player{$id}",
-                    'level' => 80,
-                    'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
-                    'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
-                    'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
-                ],
-                'rank' => $raiderRank->sort_order,
-            ],
-            range(1, 3),
-        )]);
+        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(3, $raiderRank->sort_order)]);
         $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
@@ -539,20 +495,7 @@ class AddonControllerTest extends DashboardTestCase
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Fake Saloon to return 3 raiders (difference of 2)
-        $this->mockGetGuildRoster(['members' => array_map(
-            fn (int $id) => [
-                'character' => [
-                    'id' => $id,
-                    'name' => "Player{$id}",
-                    'level' => 80,
-                    'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
-                    'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
-                    'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
-                ],
-                'rank' => $raiderRank->sort_order,
-            ],
-            range(1, 3),
-        )]);
+        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(3, $raiderRank->sort_order)]);
         $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
@@ -582,20 +525,7 @@ class AddonControllerTest extends DashboardTestCase
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Fake Saloon to return 5 raiders (difference of 3)
-        $this->mockGetGuildRoster(['members' => array_map(
-            fn (int $id) => [
-                'character' => [
-                    'id' => $id,
-                    'name' => "Player{$id}",
-                    'level' => 80,
-                    'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
-                    'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
-                    'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
-                ],
-                'rank' => $raiderRank->sort_order,
-            ],
-            range(1, 5),
-        )]);
+        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(5, $raiderRank->sort_order)]);
         $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
@@ -631,9 +561,9 @@ class AddonControllerTest extends DashboardTestCase
 
         // Fake Saloon to return 3 raiders across different ranks
         $this->mockGetGuildRoster(['members' => [
-            ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $raiderRank->sort_order],
-            ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $coreRaiderRank->sort_order],
-            ['character' => ['id' => 3, 'name' => 'Player3', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $trialRaiderRank->sort_order],
+            $this->raiderMemberPayload(1, $raiderRank->sort_order),
+            $this->raiderMemberPayload(2, $coreRaiderRank->sort_order),
+            $this->raiderMemberPayload(3, $trialRaiderRank->sort_order),
         ]]);
         $this->applyBlizzardMocks();
 
@@ -692,8 +622,8 @@ class AddonControllerTest extends DashboardTestCase
 
         // Fake Saloon to return non-raiders
         $this->mockGetGuildRoster(['members' => [
-            ['character' => ['id' => 1, 'name' => 'Player1', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $officerRank->sort_order],
-            ['character' => ['id' => 2, 'name' => 'Player2', 'level' => 80, 'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1], 'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1], 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1]], 'rank' => $memberRank->sort_order],
+            $this->raiderMemberPayload(1, $officerRank->sort_order),
+            $this->raiderMemberPayload(2, $memberRank->sort_order),
         ]]);
         $this->applyBlizzardMocks();
 
@@ -724,20 +654,7 @@ class AddonControllerTest extends DashboardTestCase
         $raiderRank = GuildRank::factory()->doesNotCountAttendance()->create(['name' => 'Raider']);
 
         // Fake Saloon to return 2 raiders
-        $this->mockGetGuildRoster(['members' => array_map(
-            fn (int $id) => [
-                'character' => [
-                    'id' => $id,
-                    'name' => "Player{$id}",
-                    'level' => 80,
-                    'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
-                    'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
-                    'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
-                ],
-                'rank' => $raiderRank->sort_order,
-            ],
-            range(1, 2),
-        )]);
+        $this->mockGetGuildRoster(['members' => $this->raiderMemberPayloads(2, $raiderRank->sort_order)]);
         $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)->get(route('management.addon.export'));
@@ -749,6 +666,59 @@ class AddonControllerTest extends DashboardTestCase
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->has('grmFreshness.dataIsStale')
             )
+        );
+    }
+
+    // ==================== helpers ====================
+
+    /**
+     * Seed the export file in storage with the given overrides.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    private function seedExportFile(array $overrides = []): void
+    {
+        $data = array_merge([
+            'system' => ['date_generated' => Carbon::now()->unix()],
+            'priorities' => [],
+            'items' => [],
+            'players' => [],
+            'councillors' => [],
+        ], $overrides);
+
+        Storage::disk('local')->put('addon/export.json', json_encode($data));
+    }
+
+    /**
+     * Build a single guild roster member payload for the given character id and rank.
+     *
+     * @return array<string, mixed>
+     */
+    private function raiderMemberPayload(int $id, int $rank): array
+    {
+        return [
+            'character' => [
+                'id' => $id,
+                'name' => "Player{$id}",
+                'level' => 80,
+                'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
+                'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
+                'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
+            ],
+            'rank' => $rank,
+        ];
+    }
+
+    /**
+     * Build guild roster member payloads numbered from 1, all sharing the given rank.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function raiderMemberPayloads(int $count, int $rank): array
+    {
+        return array_map(
+            fn (int $id) => $this->raiderMemberPayload($id, $rank),
+            range(1, $count),
         );
     }
 }
