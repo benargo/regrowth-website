@@ -27,14 +27,14 @@ trait MocksBlizzardServices
     ];
 
     /** @var array<string, mixed> */
-    protected array $pendingBlizzardMocks = [];
+    private array $pendingBlizzardMocks = [];
 
     /**
      * Saloon::fake() replaces any previously registered fakes, so mockX()
      * helpers must not call it directly — they accumulate into
      * $pendingBlizzardMocks and this flushes them all in one call.
      */
-    protected function applyBlizzardMocks(): void
+    private function applyBlizzardMocks(): void
     {
         Saloon::fake($this->pendingBlizzardMocks);
     }
@@ -42,7 +42,7 @@ trait MocksBlizzardServices
     /**
      * @return array<string, mixed>
      */
-    protected function makeCharacterProfileResponse(string $gender = 'Male', int $classId = 1, int $raceId = 1): array
+    private function makeCharacterProfileResponse(string $gender = 'Male', int $classId = 1, int $raceId = 1): array
     {
         return [
             'id' => 1,
@@ -62,7 +62,7 @@ trait MocksBlizzardServices
     /**
      * @param  array<string, mixed>  $responseData
      */
-    protected function mockGetCharacterProfile(string $gender = 'Male', array $responseData = [], int $status = 200): void
+    private function mockGetCharacterProfile(string $gender = 'Male', array $responseData = [], int $status = 200): void
     {
         $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
             self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
@@ -73,7 +73,7 @@ trait MocksBlizzardServices
         ]);
     }
 
-    protected function mockFetchCharacterMedia(int $status = 200, string $body = 'BINARY'): void
+    private function mockFetchCharacterMedia(int $status = 200, string $body = 'BINARY'): void
     {
         $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
             self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
@@ -84,7 +84,7 @@ trait MocksBlizzardServices
     /**
      * @param  array<string, mixed>  $responseData
      */
-    protected function mockGetCharacterMedia(array $responseData = [], int $status = 200): void
+    private function mockGetCharacterMedia(array $responseData = [], int $status = 200): void
     {
         $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
             self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
@@ -102,7 +102,7 @@ trait MocksBlizzardServices
     /**
      * @param  array<string, mixed>  $responseData
      */
-    protected function mockGetGuildRoster(array $responseData = []): void
+    private function mockGetGuildRoster(array $responseData = []): void
     {
         $this->pendingBlizzardMocks = array_merge($this->pendingBlizzardMocks, [
             self::TOKEN_MOCK_KEY => MockResponse::make(body: self::TOKEN_MOCK_RESPONSE, status: 200),
@@ -124,7 +124,7 @@ trait MocksBlizzardServices
      *
      * @param  array<string, mixed>  $responseData
      */
-    protected function mockGetItem(array $responseData = []): void
+    private function mockGetItem(array $responseData = []): void
     {
         Storage::fake('public');
 
@@ -170,7 +170,7 @@ trait MocksBlizzardServices
      *
      * @param  class-string  $requestClass
      */
-    protected function mockNotFoundResponse(string $requestClass): void
+    private function mockNotFoundResponse(string $requestClass): void
     {
         $this->pendingBlizzardMocks[$requestClass] = MockResponse::make(
             body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
