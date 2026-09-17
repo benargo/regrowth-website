@@ -4,7 +4,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Render;
 
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Uri;
 use InvalidArgumentException;
@@ -16,12 +16,12 @@ use Saloon\Http\Faking\MockResponse;
 use Tests\TestCase;
 
 #[Group('blizzard-integration')]
-class FetchCharacterPortraitRequestTest extends TestCase
+class FetchCharacterMediaRequestTest extends TestCase
 {
     #[Test]
     public function it_strips_the_host_for_apex_render_urls(): void
     {
-        $request = new FetchCharacterPortraitRequest(
+        $request = new FetchCharacterMediaRequest(
             'https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg',
         );
 
@@ -35,7 +35,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     #[Test]
     public function it_strips_the_host_for_regional_subdomain_render_urls(): void
     {
-        $request = new FetchCharacterPortraitRequest(
+        $request = new FetchCharacterMediaRequest(
             'https://render-eu.worldofwarcraft.com/character/thunderstrike/135/51042439-avatar.jpg',
         );
 
@@ -48,7 +48,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     #[Test]
     public function it_preserves_an_inline_region_segment_in_the_path(): void
     {
-        $request = new FetchCharacterPortraitRequest(
+        $request = new FetchCharacterMediaRequest(
             'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg',
         );
 
@@ -61,7 +61,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     #[Test]
     public function it_accepts_a_uri_instance_as_an_absolute_render_url(): void
     {
-        $request = new FetchCharacterPortraitRequest(
+        $request = new FetchCharacterMediaRequest(
             Uri::of('https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg'),
         );
 
@@ -77,7 +77,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchCharacterPortraitRequest(
+        new FetchCharacterMediaRequest(
             Uri::of('https://example.com/character/thunderstrike/135/51042439-avatar.jpg'),
         );
     }
@@ -86,13 +86,13 @@ class FetchCharacterPortraitRequestTest extends TestCase
     public function it_sends_a_uri_instance_through_the_render_connector(): void
     {
         $mock = new MockClient([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchCharacterPortraitRequest(
+        $connector->send(new FetchCharacterMediaRequest(
             Uri::of('https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg'),
         ));
 
@@ -110,7 +110,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchCharacterPortraitRequest('https://example.com/character/thunderstrike/135/51042439-avatar.jpg');
+        new FetchCharacterMediaRequest('https://example.com/character/thunderstrike/135/51042439-avatar.jpg');
     }
 
     #[Group('error-handling')]
@@ -119,7 +119,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchCharacterPortraitRequest('https://render.worldofwarcraft.com');
+        new FetchCharacterMediaRequest('https://render.worldofwarcraft.com');
     }
 
     #[Group('error-handling')]
@@ -128,7 +128,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchCharacterPortraitRequest('https://render.worldofwarcraft.com/');
+        new FetchCharacterMediaRequest('https://render.worldofwarcraft.com/');
     }
 
     #[Group('error-handling')]
@@ -137,7 +137,7 @@ class FetchCharacterPortraitRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new FetchCharacterPortraitRequest('51042439-avatar');
+        new FetchCharacterMediaRequest('51042439-avatar');
     }
 
     // ==================== sending through connector ====================
@@ -146,13 +146,13 @@ class FetchCharacterPortraitRequestTest extends TestCase
     public function it_sends_through_render_connector_to_the_given_url(): void
     {
         $mock = new MockClient([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $response = $connector->send(new FetchCharacterPortraitRequest(
+        $response = $connector->send(new FetchCharacterMediaRequest(
             'https://render.worldofwarcraft.com/classicann-eu/character/thunderstrike/135/51042439-avatar.jpg',
         ));
 
@@ -163,19 +163,19 @@ class FetchCharacterPortraitRequestTest extends TestCase
         );
     }
 
-    // ==================== building endpoint from bare portrait path ====================
+    // ==================== building endpoint from bare media path ====================
 
     #[Test]
-    public function it_builds_an_endpoint_from_a_bare_portrait_path_using_the_connectors_region(): void
+    public function it_builds_an_endpoint_from_a_bare_media_path_using_the_connectors_region(): void
     {
         $mock = new MockClient([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchCharacterPortraitRequest('thunderstrike/51042439-avatar'));
+        $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar'));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg',
@@ -184,16 +184,16 @@ class FetchCharacterPortraitRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_builds_an_endpoint_from_a_bare_portrait_path_using_the_us_region(): void
+    public function it_builds_an_endpoint_from_a_bare_media_path_using_the_us_region(): void
     {
         $mock = new MockClient([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::US, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchCharacterPortraitRequest('thunderstrike/51042439-avatar'));
+        $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar'));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/us/character/thunderstrike/135/51042439-avatar.jpg',
@@ -205,13 +205,13 @@ class FetchCharacterPortraitRequestTest extends TestCase
     public function it_builds_an_endpoint_with_a_custom_size(): void
     {
         $mock = new MockClient([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchCharacterPortraitRequest('thunderstrike/51042439-avatar', size: 56));
+        $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar', size: 56));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/character/thunderstrike/56/51042439-avatar.jpg',
@@ -220,16 +220,16 @@ class FetchCharacterPortraitRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_preserves_an_existing_file_extension_on_a_bare_portrait_path(): void
+    public function it_preserves_an_existing_file_extension_on_a_bare_media_path(): void
     {
         $mock = new MockClient([
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: 'BINARY', status: 200),
+            FetchCharacterMediaRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
 
         $connector = new RenderConnector(Region::EU, Storage::fake('public'));
         $connector->withMockClient($mock);
 
-        $connector->send(new FetchCharacterPortraitRequest('thunderstrike/51042439-avatar.jpg'));
+        $connector->send(new FetchCharacterMediaRequest('thunderstrike/51042439-avatar.jpg'));
 
         $this->assertSame(
             'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg',

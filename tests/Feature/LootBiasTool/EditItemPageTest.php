@@ -16,8 +16,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
@@ -32,7 +30,8 @@ class EditItemPageTest extends TestCase
         parent::setUp();
 
         $this->setUpPermissions();
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
     }
 
     // ==================== edit — access control ====================
@@ -212,13 +211,8 @@ class EditItemPageTest extends TestCase
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
-            GetItemRequest::class => MockResponse::make(
-                body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
-                status: 404,
-            ),
-        ]);
+        $this->mockNotFoundResponse(GetItemRequest::class);
+        $this->applyBlizzardMocks();
 
         $response = $this->actingAs($user)->get($this->editUrl($item));
 

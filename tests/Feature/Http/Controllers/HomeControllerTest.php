@@ -244,7 +244,7 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_flags_large_race_officers_for_a_smaller_render(): void
+    public function it_flags_small_race_officers_for_a_smaller_render(): void
     {
         Storage::fake('public');
 
@@ -257,14 +257,14 @@ class HomeControllerTest extends TestCase
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru.isLargeRace', true)
+                    ->where('officerRenders.Caldru.isSmallRace', true)
                     ->etc()
                 )
             );
     }
 
     #[Test]
-    public function it_does_not_flag_a_non_large_race_officer(): void
+    public function it_does_not_flag_a_non_small_race_officer(): void
     {
         Storage::fake('public');
 
@@ -277,7 +277,7 @@ class HomeControllerTest extends TestCase
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->loadDeferredProps(fn (Assert $reload) => $reload
-                    ->where('officerRenders.Caldru.isLargeRace', false)
+                    ->where('officerRenders.Caldru.isSmallRace', false)
                     ->etc()
                 )
             );
@@ -297,7 +297,8 @@ class HomeControllerTest extends TestCase
     {
         Queue::fake();
         Character::factory()->create(['name' => 'Caldru']);
-        $this->mockCharacterMediaLookup();
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
 
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
@@ -310,7 +311,8 @@ class HomeControllerTest extends TestCase
     {
         Queue::fake();
         Character::factory()->create(['name' => 'Caldru']);
-        $this->mockCharacterMediaLookup();
+        $this->mockGetCharacterMedia();
+        $this->applyBlizzardMocks();
 
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));

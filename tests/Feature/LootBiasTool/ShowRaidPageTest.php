@@ -27,7 +27,8 @@ class ShowRaidPageTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
     }
 
     // ==================== show — access control ====================

@@ -179,6 +179,7 @@ class RosterTest extends TestCase
 
     private function fakeRosterWithMembers(array $members): void
     {
-        $this->mockGuildRoster($members);
+        $this->mockGetGuildRoster(['members' => $members]);
+        $this->applyBlizzardMocks();
     }
 }

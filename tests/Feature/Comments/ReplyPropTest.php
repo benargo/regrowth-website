@@ -26,7 +26,8 @@ class ReplyPropTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $this->mockDiscordChannel()->shouldReceive('createMessage')->andReturn($this->makeDiscordMessage());
     }

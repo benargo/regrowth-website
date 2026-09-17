@@ -10,7 +10,7 @@ use App\Http\Integrations\Blizzard\Exceptions\BlizzardRequestException;
 use App\Http\Integrations\Blizzard\Middleware\MergeUriQuery;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Models\Character;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -73,7 +73,7 @@ class AttachPortraitToCharacter implements HasCharacterMedia, ShouldQueue
         $assetUrl = $this->withFallback($character);
         $fileName = $this->assetUrl->pathSegments()->last()
             ?? throw new \ValueError("Cannot extract filename from asset URL: {$this->assetUrl}");
-        $request = new FetchCharacterPortraitRequest($assetUrl);
+        $request = new FetchCharacterMediaRequest($assetUrl);
 
         if ($assetUrl->query()->all() !== []) {
             $request->middleware()->onRequest(new MergeUriQuery($assetUrl), 'mergeUriQuery');

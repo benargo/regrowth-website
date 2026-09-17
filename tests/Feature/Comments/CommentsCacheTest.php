@@ -32,7 +32,8 @@ class CommentsCacheTest extends TestCase
 
         $this->mockDiscordChannel();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);

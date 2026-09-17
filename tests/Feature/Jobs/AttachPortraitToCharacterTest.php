@@ -9,7 +9,7 @@ use App\Events\CharacterUpdated;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\RenderConnector;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
-use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterPortraitRequest;
+use App\Http\Integrations\Blizzard\Requests\Render\FetchCharacterMediaRequest;
 use App\Jobs\AttachPortraitToCharacter;
 use App\Models\Character;
 use App\Models\PlayableRace;
@@ -22,7 +22,6 @@ use Illuminate\Support\Uri;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Exceptions\Request\RequestException;
-use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Response;
 use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
@@ -34,6 +33,8 @@ class AttachPortraitToCharacterTest extends TestCase
 {
     use MocksBlizzardServices;
     use RefreshDatabase;
+
+    private const PORTRAIT_URL = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
 
     protected function setUp(): void
     {
@@ -47,14 +48,14 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_implements_should_queue(): void
     {
-        $this->assertInstanceOf(ShouldQueue::class, new AttachPortraitToCharacter(1, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg'));
+        $this->assertInstanceOf(ShouldQueue::class, new AttachPortraitToCharacter(1, self::PORTRAIT_URL));
     }
 
     #[Group('contract')]
     #[Test]
     public function it_has_three_total_attempts(): void
     {
-        $job = new AttachPortraitToCharacter(1, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $job = new AttachPortraitToCharacter(1, self::PORTRAIT_URL);
 
         $this->assertSame(3, $job->tries);
     }
@@ -63,7 +64,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_has_five_minute_backoff_between_attempts(): void
     {
-        $job = new AttachPortraitToCharacter(1, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $job = new AttachPortraitToCharacter(1, self::PORTRAIT_URL);
 
         $this->assertSame([300, 300], $job->backoff());
     }
@@ -72,7 +73,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_has_the_correct_tags(): void
     {
-        $job = new AttachPortraitToCharacter(42, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $job = new AttachPortraitToCharacter(42, self::PORTRAIT_URL);
 
         $this->assertSame(['blizzard', 'character:42'], $job->tags());
     }
@@ -83,7 +84,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_applies_without_overlapping_middleware(): void
     {
-        $job = new AttachPortraitToCharacter(1, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $job = new AttachPortraitToCharacter(1, self::PORTRAIT_URL);
         $middleware = $job->middleware();
 
         $this->assertCount(1, $middleware);
@@ -94,8 +95,8 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_scopes_the_overlap_lock_to_the_character(): void
     {
-        $jobA = new AttachPortraitToCharacter(1, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
-        $jobB = new AttachPortraitToCharacter(2, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $jobA = new AttachPortraitToCharacter(1, self::PORTRAIT_URL);
+        $jobB = new AttachPortraitToCharacter(2, self::PORTRAIT_URL);
 
         /** @var WithoutOverlapping $middlewareA */
         $middlewareA = $jobA->middleware()[0];
@@ -111,7 +112,7 @@ class AttachPortraitToCharacterTest extends TestCase
     #[Test]
     public function it_releases_the_overlapping_job_after_sixty_seconds(): void
     {
-        $job = new AttachPortraitToCharacter(1, 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $job = new AttachPortraitToCharacter(1, self::PORTRAIT_URL);
 
         /** @var WithoutOverlapping $middleware */
         $middleware = $job->middleware()[0];
@@ -127,9 +128,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService();
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
@@ -146,9 +149,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService();
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
         $job = new AttachPortraitToCharacter($character->id, $assetUrl);
 
         $job->handle(app(RenderConnector::class), app(BlizzardConnector::class));
@@ -164,13 +169,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make(body: $this->makeTokenResponse(), status: 200),
-            GetCharacterProfileRequest::class => MockResponse::make(body: $this->makeCharacterProfileResponse(), status: 200),
-            FetchCharacterPortraitRequest::class => MockResponse::make(body: ['code' => 403], status: 403),
-        ]);
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia(status: 403);
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         $this->expectException(RequestException::class);
 
@@ -185,9 +188,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService();
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = Uri::of('https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $assetUrl = Uri::of(self::PORTRAIT_URL);
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
@@ -201,9 +206,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService();
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = Uri::of('https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg');
+        $assetUrl = Uri::of(self::PORTRAIT_URL);
 
         $job = new AttachPortraitToCharacter($character->id, $assetUrl);
 
@@ -223,9 +230,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService();
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg?version=3';
+        $assetUrl = self::PORTRAIT_URL.'?version=3';
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
@@ -241,9 +250,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService(gender: 'Male');
+        $this->mockGetCharacterProfile(gender: 'Male');
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
@@ -257,9 +268,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService(gender: 'Female');
+        $this->mockGetCharacterProfile(gender: 'Female');
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
@@ -273,9 +286,10 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => Gender::FEMALE]);
 
-        $this->mockCharacterPortraitFetch();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
@@ -290,9 +304,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService(gender: 'Male');
+        $this->mockGetCharacterProfile(gender: 'Male');
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         // First run: attaches portrait and syncs gender.
         (new AttachPortraitToCharacter($character->id, $assetUrl))
@@ -301,7 +317,8 @@ class AttachPortraitToCharacterTest extends TestCase
         // Simulate re-run scenario: portrait still attached, gender cleared.
         $character->fresh()->updateQuietly(['gender' => null]);
 
-        $this->mockCharacterProfileService(gender: 'Male');
+        $this->mockGetCharacterProfile(gender: 'Male');
+        $this->applyBlizzardMocks();
 
         // Second run: portrait already present (skipped), gender still synced.
         (new AttachPortraitToCharacter($character->id, $assetUrl))
@@ -316,9 +333,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService(profileBody: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], profileStatus: 404);
+        $this->mockNotFoundResponse(GetCharacterProfileRequest::class);
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
@@ -333,9 +352,11 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService(gender: 'Unknown');
+        $this->mockGetCharacterProfile(gender: 'Unknown');
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
@@ -352,9 +373,11 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService();
+        $this->mockGetCharacterProfile();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))
             ->handle(app(RenderConnector::class), app(BlizzardConnector::class));
@@ -371,13 +394,14 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 2]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => Gender::FEMALE]);
 
-        $this->mockCharacterPortraitFetch();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
-        Saloon::assertSent(function (FetchCharacterPortraitRequest $request, Response $response): bool {
+        Saloon::assertSent(function (FetchCharacterMediaRequest $request, Response $response): bool {
             return $response->getPendingRequest()->query()->get('alt') === '/shadow/avatar/2-1.jpg';
         });
     }
@@ -389,13 +413,14 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 1]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => Gender::MALE]);
 
-        $this->mockCharacterPortraitFetch();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
-        Saloon::assertSent(function (FetchCharacterPortraitRequest $request, Response $response): bool {
+        Saloon::assertSent(function (FetchCharacterMediaRequest $request, Response $response): bool {
             return $response->getPendingRequest()->query()->get('alt') === '/shadow/avatar/1-0.jpg';
         });
     }
@@ -407,14 +432,16 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 2]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => null]);
 
-        $this->mockCharacterPortraitService(profileBody: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], profileStatus: 404);
+        $this->mockNotFoundResponse(GetCharacterProfileRequest::class);
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Saloon::assertNotSent(function ($request, Response $response): bool {
-            return $request instanceof FetchCharacterPortraitRequest
+            return $request instanceof FetchCharacterMediaRequest
                 && $response->getPendingRequest()->query()->get('alt') !== null;
         });
     }
@@ -425,14 +452,15 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => Gender::MALE]);
 
-        $this->mockCharacterPortraitFetch();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
         Saloon::assertNotSent(function ($request, Response $response): bool {
-            return $request instanceof FetchCharacterPortraitRequest
+            return $request instanceof FetchCharacterMediaRequest
                 && $response->getPendingRequest()->query()->get('alt') !== null;
         });
     }
@@ -444,9 +472,10 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 2]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => Gender::FEMALE]);
 
-        $this->mockCharacterPortraitFetch();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
@@ -464,9 +493,10 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $character = Character::factory()->create(['gender' => Gender::MALE]);
 
-        $this->mockCharacterPortraitFetch();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));
 
@@ -481,9 +511,10 @@ class AttachPortraitToCharacterTest extends TestCase
 
         $character = Character::factory()->create(['gender' => Gender::MALE]);
 
-        $this->mockCharacterPortraitFetch();
+        $this->mockFetchCharacterMedia();
+        $this->applyBlizzardMocks();
 
-        $assetUrl = 'https://render.worldofwarcraft.com/eu/character/thunderstrike/135/51042439-avatar.jpg';
+        $assetUrl = self::PORTRAIT_URL;
 
         // First run attaches media.
         (new AttachPortraitToCharacter($character->id, $assetUrl))->handle(app(RenderConnector::class), app(BlizzardConnector::class));

@@ -21,16 +21,13 @@ use Throwable;
 #[UsesTheme(Theme::Forever)]
 class HomeController extends Controller
 {
-    /**
-     * The number of upcoming events shown on the homepage.
-     */
     private const UPCOMING_EVENT_LIMIT = 5;
+
+    /** Gnome — small races that render visually oversized next to other races at the same visible-character height. */
+    private const SMALL_RACE_IDS = [7];
 
     public function __construct(private readonly BlizzardConnector $blizzard) {}
 
-    /**
-     * Display the homepage.
-     */
     public function __invoke(Request $request): Response
     {
         return Inertia::render('Home', [
@@ -57,23 +54,7 @@ class HomeController extends Controller
     }
 
     /**
-     * Playable races whose renders read visually oversized next to the rest
-     * of the officer team at the same visible-character height — Gnome.
-     */
-    private const LARGE_RACE_IDS = [7];
-
-    /**
-     * Map each configured officer name to their full-body render.
-     *
-     * Deferred rather than synchronous: on a cold cache this is one Blizzard
-     * round trip per officer, far too slow for a public landing page's first
-     * paint. An officer with no character row, no attached render, or a failed
-     * lookup maps to null and the card renders a silhouette instead.
-     *
-     * Characters are batch-loaded in a single query (with their render media
-     * eager-loaded) rather than one query per officer.
-     *
-     * @return array<string, array{url: string, visibleTop: float, visibleBottom: float, isLargeRace: bool}|null>
+     * @return array<string, array{url: string, visibleTop: float, visibleBottom: float, isSmallRace: bool}|null>
      */
     private function resolveOfficerRenders(): array
     {
@@ -93,15 +74,7 @@ class HomeController extends Controller
     }
 
     /**
-     * Resolve one officer's render, dispatching a fetch when it is absent.
-     *
-     * Returns null on the first visit for a character whose render has not been
-     * fetched yet; the dispatched job means the next visit has it. The visible
-     * bounds default to the full frame when the render predates bounds being
-     * measured, or measurement failed — the homepage falls back to sizing by
-     * canvas height rather than breaking.
-     *
-     * @return array{url: string, visibleTop: float, visibleBottom: float, isLargeRace: bool}|null
+     * @return array{url: string, visibleTop: float, visibleBottom: float, isSmallRace: bool}|null
      */
     private function renderFor(?Character $character): ?array
     {
@@ -121,7 +94,7 @@ class HomeController extends Controller
                 'url' => $url,
                 'visibleTop' => (float) ($media->getCustomProperty('visible_top') ?? 0.0),
                 'visibleBottom' => (float) ($media->getCustomProperty('visible_bottom') ?? 1.0),
-                'isLargeRace' => in_array($character->playable_race_id, self::LARGE_RACE_IDS, true),
+                'isSmallRace' => in_array($character->playable_race_id, self::SMALL_RACE_IDS, true),
             ];
         }
 

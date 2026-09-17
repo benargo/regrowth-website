@@ -25,7 +25,8 @@ class LootPagesTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $editItems = Permission::firstOrCreate(['name' => 'edit-items', 'guard_name' => 'web']);
 

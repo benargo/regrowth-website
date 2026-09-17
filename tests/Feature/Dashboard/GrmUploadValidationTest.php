@@ -93,7 +93,7 @@ class GrmUploadValidationTest extends DashboardTestCase
     #[Test]
     public function upload_form_member_count_reflects_guild_roster(): void
     {
-        $this->mockGuildRoster([
+        $this->mockGetGuildRoster(['members' => [
             [
                 'character' => [
                     'id' => 1,
@@ -116,7 +116,8 @@ class GrmUploadValidationTest extends DashboardTestCase
                 ],
                 'rank' => 1,
             ],
-        ]);
+        ]]);
+        $this->applyBlizzardMocks();
 
         $response = $this->actingAs($this->officer)->get(route('management.grm-upload.form'));
         $pageData = $response->viewData('page');
