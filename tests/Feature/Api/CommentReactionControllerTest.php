@@ -30,7 +30,8 @@ class CommentReactionControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $reactToComments = Permission::firstOrCreate(['name' => 'react-to-comments', 'guard_name' => 'web']);
 

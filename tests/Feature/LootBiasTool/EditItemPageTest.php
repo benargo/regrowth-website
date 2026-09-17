@@ -32,7 +32,8 @@ class EditItemPageTest extends TestCase
         parent::setUp();
 
         $this->setUpPermissions();
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
     }
 
     // ==================== edit — access control ====================
@@ -213,7 +214,7 @@ class EditItemPageTest extends TestCase
         $item = $this->createTestItem();
 
         Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            'eu.battle.net/oauth/token' => MockResponse::make(self::TOKEN_MOCK_RESPONSE),
             GetItemRequest::class => MockResponse::make(
                 body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
                 status: 404,

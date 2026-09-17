@@ -30,7 +30,8 @@ class ThreadedCommentsTest extends TestCase
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $commentOnLootItems = Permission::firstOrCreate(['name' => 'comment-on-loot-items', 'guard_name' => 'web']);
         $deleteAnyComment = Permission::firstOrCreate(['name' => 'delete-any-comment', 'guard_name' => 'web']);

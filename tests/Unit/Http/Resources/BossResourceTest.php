@@ -23,7 +23,8 @@ class BossResourceTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
     }
 
     #[Test]

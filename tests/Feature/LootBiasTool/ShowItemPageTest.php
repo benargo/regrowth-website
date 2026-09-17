@@ -46,7 +46,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_unauthenticated_users(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
 
@@ -59,7 +60,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_guest_users(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->guest()->create();
         $item = $this->createTestItem();
@@ -72,7 +74,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_member_users(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -85,7 +88,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_raider_users(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->raider()->create();
         $item = $this->createTestItem();
@@ -98,7 +102,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_allows_officer_users(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
@@ -137,7 +142,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_renders_with_correct_slug(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
@@ -178,7 +184,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_renders_with_fallback_slug_when_item_has_no_name(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->member()->create();
         $item = $this->createTestItemWithoutName();
@@ -191,13 +198,14 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_renders_using_db_data_when_blizzard_api_returns_not_found(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->member()->create();
         $item = $this->createTestItem();
 
         Saloon::fake([
-            'eu.battle.net/oauth/token' => MockResponse::make($this->makeTokenResponse()),
+            'eu.battle.net/oauth/token' => MockResponse::make(self::TOKEN_MOCK_RESPONSE),
             GetItemRequest::class => MockResponse::make(
                 body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
                 status: 404,
@@ -216,7 +224,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_renders_with_null_boss_when_item_has_no_boss(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $user = User::factory()->member()->create();
         $item = $this->createTestItemWithoutBoss();
@@ -237,7 +246,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_item_eager_loads_reaction_users_for_comments(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $author = User::factory()->create();
@@ -263,7 +273,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function item_show_page_includes_comments(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $user = User::factory()->member()->create();
@@ -287,7 +298,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function item_show_page_includes_can_create_comment_for_raiders(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $user = User::factory()->raider()->create();
@@ -304,7 +316,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function item_show_page_includes_can_create_comment_false_for_members(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $user = User::factory()->member()->create();
@@ -321,7 +334,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function comments_are_paginated(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $user = User::factory()->member()->create();
@@ -356,7 +370,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function comments_are_ordered_by_latest(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $user = User::factory()->member()->create();
@@ -391,7 +406,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function comment_resource_includes_authorization_flags(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $user = User::factory()->raider()->create();
@@ -414,7 +430,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function comment_resource_includes_is_resolved(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $user = User::factory()->member()->create();
@@ -446,7 +463,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function comment_resource_includes_can_resolve_for_officers(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $officer = User::factory()->officer()->create();
@@ -469,7 +487,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function comment_resource_includes_can_resolve_false_for_raiders(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $item = $this->createTestItem();
         $raider = User::factory()->raider()->create();
@@ -493,7 +512,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function a_cross_raid_item_exposes_only_one_raid_to_the_page(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
@@ -512,7 +532,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_returns_the_remembered_origin_raid_when_the_item_drops_there(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()
@@ -532,7 +553,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_falls_back_to_the_first_raid_when_the_remembered_raid_does_not_apply(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $raids = Raid::factory()->count(2)->create();
         $otherRaid = Raid::factory()->create();
@@ -554,7 +576,8 @@ class ShowItemPageTest extends TestCase
     #[Test]
     public function show_falls_back_to_the_first_raid_when_nothing_is_remembered(): void
     {
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
 
         $raids = Raid::factory()->count(2)->create();
         $item = Item::factory()

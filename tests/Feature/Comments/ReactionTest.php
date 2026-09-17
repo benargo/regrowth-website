@@ -28,7 +28,8 @@ class ReactionTest extends TestCase
     {
         parent::setUp();
 
-        $this->mockItemService();
+        $this->mockGetItem();
+        $this->applyBlizzardMocks();
     }
 
     // ==================== model validation ====================
