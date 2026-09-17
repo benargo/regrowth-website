@@ -163,4 +163,18 @@ trait MocksBlizzardServices
             FetchIconRequest::class => MockResponse::make(body: 'BINARY', status: 200),
         ]);
     }
+
+    /**
+     * Queues a standard Blizzard "not found" response for the given request
+     * class, overriding any previously queued mock for it.
+     *
+     * @param  class-string  $requestClass
+     */
+    protected function mockNotFoundResponse(string $requestClass): void
+    {
+        $this->pendingBlizzardMocks[$requestClass] = MockResponse::make(
+            body: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'],
+            status: 404,
+        );
+    }
 }
