@@ -23,7 +23,7 @@ class HomeController extends Controller
 {
     private const UPCOMING_EVENT_LIMIT = 5;
 
-    /** Gnome — renders visually oversized next to other races at the same visible-character height. */
+    /** Gnome — small races that render visually oversized next to other races at the same visible-character height. */
     private const SMALL_RACE_IDS = [7];
 
     public function __construct(private readonly BlizzardConnector $blizzard) {}
@@ -54,7 +54,7 @@ class HomeController extends Controller
     }
 
     /**
-     * @return array<string, array{url: string, visibleTop: float, visibleBottom: float, isLargeRace: bool}|null>
+     * @return array<string, array{url: string, visibleTop: float, visibleBottom: float, isSmallRace: bool}|null>
      */
     private function resolveOfficerRenders(): array
     {
@@ -74,7 +74,7 @@ class HomeController extends Controller
     }
 
     /**
-     * @return array{url: string, visibleTop: float, visibleBottom: float, isLargeRace: bool}|null
+     * @return array{url: string, visibleTop: float, visibleBottom: float, isSmallRace: bool}|null
      */
     private function renderFor(?Character $character): ?array
     {
@@ -94,7 +94,7 @@ class HomeController extends Controller
                 'url' => $url,
                 'visibleTop' => (float) ($media->getCustomProperty('visible_top') ?? 0.0),
                 'visibleBottom' => (float) ($media->getCustomProperty('visible_bottom') ?? 1.0),
-                'isLargeRace' => in_array($character->playable_race_id, self::SMALL_RACE_IDS, true),
+                'isSmallRace' => in_array($character->playable_race_id, self::SMALL_RACE_IDS, true),
             ];
         }
 

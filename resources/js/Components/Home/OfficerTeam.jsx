@@ -137,13 +137,13 @@ export default function OfficerTeam({ officers = [], renders }) {
     const isLoading = renders === undefined;
     const renderFor = (name) => renders?.[name] ?? null;
 
-    // Some races (dwarves/gnomes) read oversized at the same visible height, so scale them down.
+    // Small races (dwarves/gnomes) read oversized at the same visible height, so scale them down.
     const visibleHeightFor = (name, index) => {
         const baseHeight = staggerHeight(index);
-        return renderFor(name)?.isLargeRace ? baseHeight / 2 : baseHeight;
+        return renderFor(name)?.isSmallRace ? baseHeight / 2 : baseHeight;
     };
 
-    const carouselVisibleHeightFor = (name) => (renderFor(name)?.isLargeRace ? 100 : 200);
+    const carouselVisibleHeightFor = (name) => (renderFor(name)?.isSmallRace ? 100 : 200);
 
     return (
         <Section tone="parchment" edge="bottom" edgeTone="mid">
