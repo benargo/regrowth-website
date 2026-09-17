@@ -211,7 +211,6 @@ class EditItemPageTest extends TestCase
         $user = User::factory()->officer()->create();
         $item = $this->createTestItem();
 
-        $this->mockGetItem();
         $this->mockNotFoundResponse(GetItemRequest::class);
         $this->applyBlizzardMocks();
 

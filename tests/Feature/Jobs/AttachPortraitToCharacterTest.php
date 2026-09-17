@@ -331,7 +331,7 @@ class AttachPortraitToCharacterTest extends TestCase
     {
         $character = Character::factory()->create(['gender' => null]);
 
-        $this->mockGetCharacterProfile(responseData: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404);
+        $this->mockNotFoundResponse(GetCharacterProfileRequest::class);
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
@@ -430,7 +430,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $race = PlayableRace::factory()->create(['id' => 2]);
         $character = Character::factory()->withPlayableRace($race)->create(['gender' => null]);
 
-        $this->mockGetCharacterProfile(responseData: ['code' => 404, 'type' => 'BLZWEBAPI00000404', 'detail' => 'Not Found'], status: 404);
+        $this->mockNotFoundResponse(GetCharacterProfileRequest::class);
         $this->mockFetchCharacterMedia();
         $this->applyBlizzardMocks();
 
