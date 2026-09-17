@@ -25,7 +25,7 @@
 
         <link rel="icon" type="image/webp" rel="noopener" target="_blank" href="{{ asset('images/guild_emblem.webp') }}" />
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased overflow-x-clip">
         @inertia
 
         <!-- Wowhead Tooltips -->
