@@ -12,10 +12,10 @@ use InvalidArgumentException;
 use Saloon\Http\PendingRequest;
 
 /**
- * Fetches a character portrait asset from the Blizzard render CDN.
+ * Fetches a character media asset (portrait, avatar, render, etc.) from the Blizzard render CDN.
  *
  * Accepts either a full asset URL (as returned by the Blizzard character media API)
- * or a bare portrait path in `{realmSlug}/{portraitFile}` format
+ * or a bare media path in `{realmSlug}/{mediaFile}` format
  * (e.g. `thunderstrike/51042439-avatar`). When given a bare path, the full URL
  * is constructed in boot() using the connector's configured region.
  *
@@ -23,11 +23,11 @@ use Saloon\Http\PendingRequest;
  * used as the endpoint, avoiding the SSRF-flavoured opt-in for absolute-URL
  * endpoint overrides.
  */
-class FetchCharacterPortraitRequest extends RenderRequest implements HasCharacterMedia
+class FetchCharacterMediaRequest extends RenderRequest implements HasCharacterMedia
 {
     private ?string $realmSlug = null;
 
-    private ?string $portraitPath = null;
+    private ?string $mediaPath = null;
 
     public function __construct(Uri|string $input, ?int $size = null)
     {
@@ -38,13 +38,13 @@ class FetchCharacterPortraitRequest extends RenderRequest implements HasCharacte
                 if ($string->doesntContain('://')) {
                     if ($string->doesntContain('/')) {
                         throw new InvalidArgumentException(
-                            "FetchCharacterPortraitRequest bare input must be in {realmSlug}/{portraitFile} format; got: {$string}",
+                            "FetchCharacterMediaRequest bare input must be in {realmSlug}/{mediaFile} format; got: {$string}",
                         );
                     }
 
-                    [$realmSlug, $portraitPath] = explode('/', $string->value(), 2);
+                    [$realmSlug, $mediaPath] = explode('/', $string->value(), 2);
                     $this->realmSlug = $realmSlug;
-                    $this->portraitPath = $portraitPath;
+                    $this->mediaPath = $mediaPath;
                 }
             });
         }
@@ -53,11 +53,11 @@ class FetchCharacterPortraitRequest extends RenderRequest implements HasCharacte
     }
 
     /**
-     * Resolve the region from the connector and overwrite the pending URL with the portrait path.
+     * Resolve the region from the connector and overwrite the pending URL with the media path.
      * Only runs for bare-input mode; absolute-URL inputs already set $endpoint in the constructor.
      *
      * boot() runs after PendingRequest::__construct() locks in the URL from resolveEndpoint(),
-     * so we use setUrl() to replace the placeholder with the fully-resolved portrait URL.
+     * so we use setUrl() to replace the placeholder with the fully-resolved media URL.
      */
     public function boot(PendingRequest $pendingRequest): void
     {
@@ -65,9 +65,9 @@ class FetchCharacterPortraitRequest extends RenderRequest implements HasCharacte
             return;
         }
 
-        $portraitPath = Str::of($this->portraitPath);
+        $mediaPath = Str::of($this->mediaPath);
 
-        $portraitPath = $portraitPath->when($portraitPath->doesntContain('.'), function (Stringable $str) {
+        $mediaPath = $mediaPath->when($mediaPath->doesntContain('.'), function (Stringable $str) {
             return $str->append('.', self::DEFAULT_MEDIA_FILE_EXTENSION);
         });
 
@@ -75,7 +75,7 @@ class FetchCharacterPortraitRequest extends RenderRequest implements HasCharacte
         $connector = $pendingRequest->getConnector();
 
         $pendingRequest->setUrl(
-            $connector->getRegion()->renderCdnUrl()."/character/{$this->realmSlug}/{$this->size}/{$portraitPath->value()}",
+            $connector->getRegion()->renderCdnUrl()."/character/{$this->realmSlug}/{$this->size}/{$mediaPath->value()}",
         );
     }
 }
