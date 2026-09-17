@@ -170,7 +170,7 @@ class AttachPortraitToCharacterTest extends TestCase
         $character = Character::factory()->create(['gender' => null]);
 
         $this->mockGetCharacterProfile();
-        $this->mockFetchCharacterMedia(status: 403, body: '{"code":403}');
+        $this->mockFetchCharacterMedia(status: 403);
         $this->applyBlizzardMocks();
 
         $assetUrl = self::PORTRAIT_URL;
