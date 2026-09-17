@@ -3,7 +3,6 @@
 namespace Tests\Feature\Http\Controllers;
 
 use App\Contracts\HasCharacterMedia;
-use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Jobs\AttachRenderToCharacter;
 use App\Models\Character;
 use App\Models\Event;
@@ -15,15 +14,11 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
-use Saloon\Http\Faking\MockResponse;
-use Saloon\Laravel\Facades\Saloon;
-use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
 #[Group('home')]
 class HomeControllerTest extends TestCase
 {
-    use MocksBlizzardServices;
     use RefreshDatabase;
 
     // ==================== index ====================
@@ -296,31 +291,12 @@ class HomeControllerTest extends TestCase
     public function it_dispatches_a_render_job_for_an_officer_whose_media_is_missing(): void
     {
         Queue::fake();
-        Character::factory()->create(['name' => 'Caldru']);
-        $this->mockGetCharacterMedia();
-        $this->applyBlizzardMocks();
+        $character = Character::factory()->create(['name' => 'Caldru']);
 
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
 
-        Queue::assertPushed(AttachRenderToCharacter::class, fn ($job) => str_contains((string) $job->assetUrl, 'main-raw'));
-    }
-
-    #[Test]
-    public function it_selects_the_main_raw_asset_and_not_the_avatar(): void
-    {
-        Queue::fake();
-        Character::factory()->create(['name' => 'Caldru']);
-        $this->mockGetCharacterMedia();
-        $this->applyBlizzardMocks();
-
-        $this->get(route('home'))
-            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
-
-        Queue::assertPushed(
-            AttachRenderToCharacter::class,
-            fn ($job) => ! str_contains((string) $job->assetUrl, 'avatar'),
-        );
+        Queue::assertPushed(AttachRenderToCharacter::class, fn ($job) => $job->characterId === $character->id);
     }
 
     #[Test]
@@ -341,18 +317,16 @@ class HomeControllerTest extends TestCase
     }
 
     #[Test]
-    public function a_blizzard_outage_does_not_break_the_homepage(): void
+    public function the_homepage_renders_and_dispatches_the_render_job_regardless_of_blizzard_state(): void
     {
+        Queue::fake();
         Character::factory()->create(['name' => 'Caldru']);
-        Saloon::fake([
-            GetCharacterMediaRequest::class => MockResponse::make(body: '', status: 503),
-        ]);
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->loadDeferredProps(fn (Assert $reload) => $reload->where('officerRenders.Caldru', null)->etc())
-            );
+            ->assertInertia(fn (Assert $page) => $page->loadDeferredProps(fn (Assert $reload) => $reload->etc()));
+
+        Queue::assertPushed(AttachRenderToCharacter::class);
     }
 
     #[Test]

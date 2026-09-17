@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Attributes\UsesTheme;
 use App\Contracts\HasCharacterMedia;
 use App\Enums\Theme;
-use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
 use App\Http\Resources\EventResource;
 use App\Jobs\AttachRenderToCharacter;
 use App\Models\Character;
@@ -16,7 +14,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use Throwable;
 
 #[UsesTheme(Theme::Forever)]
 class HomeController extends Controller
@@ -25,8 +22,6 @@ class HomeController extends Controller
 
     /** Gnome — small races that render visually oversized next to other races at the same visible-character height. */
     private const SMALL_RACE_IDS = [7];
-
-    public function __construct(private readonly BlizzardConnector $blizzard) {}
 
     public function __invoke(Request $request): Response
     {
@@ -98,20 +93,7 @@ class HomeController extends Controller
             ];
         }
 
-        try {
-            $assets = $this->blizzard->send(new GetCharacterMediaRequest(
-                $this->blizzard->defaultRealmSlug(),
-                $character->name,
-            ))->dto()->assets;
-
-            $render = collect($assets)->first(fn ($asset): bool => $asset->key === 'main-raw');
-
-            if ($render !== null) {
-                AttachRenderToCharacter::dispatch($character->id, $render->value);
-            }
-        } catch (Throwable) {
-            // A Blizzard outage must never break the homepage render.
-        }
+        AttachRenderToCharacter::dispatch($character->id);
 
         return null;
     }
