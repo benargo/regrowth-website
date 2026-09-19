@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Database;
+namespace Tests\Feature\Database\Seeders;
 
 use App\Models\Boss;
 use App\Models\GameVersion;
