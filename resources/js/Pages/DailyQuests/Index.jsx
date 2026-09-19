@@ -24,7 +24,7 @@ function QuestReward({ reward }) {
         <div className="flex items-center gap-3">
             <Link
                 href={reward.wowhead_url}
-                data-wowhead={`item=${reward.id}&domain=tbc`}
+                data-wowhead={`item=${reward.blizzard_id}&domain=tbc`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="relative flex-none"
@@ -38,7 +38,7 @@ function QuestReward({ reward }) {
             </Link>
             <Link
                 href={reward.wowhead_url}
-                data-wowhead={`item=${reward.id}&domain=tbc`}
+                data-wowhead={`item=${reward.blizzard_id}&domain=tbc`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`text-sm font-medium text-quality-${reward.quality}`}
