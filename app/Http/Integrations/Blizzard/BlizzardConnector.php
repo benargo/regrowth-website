@@ -42,28 +42,15 @@ class BlizzardConnector extends Connector
     use ClientCredentialsBasicAuthGrant;
     use HasRateLimits;
 
-    /** @var array<string, string> */
-    private array $namespaces;
-
     public function __construct(
         protected string $clientId,
         protected string $clientSecret,
-        protected GameVersion $gameVersion,
         protected Region $region,
         protected string $locale,
         protected string $defaultRealmSlug,
         protected string $defaultGuildSlug,
         EagerlyMirrorAssets $eagerlyMirrorAssets,
     ) {
-        $component = $gameVersion->namespaceComponent();
-        $regionValue = $region->value;
-
-        $this->namespaces = [
-            'profile' => "profile{$component}-{$regionValue}",
-            'static' => "static{$component}-{$regionValue}",
-            'dynamic' => "dynamic{$component}-{$regionValue}",
-        ];
-
         if (! $this->region->supportsLocale($this->locale)) {
             throw new InvalidArgumentException(sprintf(
                 'Locale "%s" is not supported for region "%s". Supported locales: %s',
@@ -117,16 +104,6 @@ class BlizzardConnector extends Connector
     public function defaultGuildSlug(): string
     {
         return $this->defaultGuildSlug;
-    }
-
-    /**
-     * Get the namespace for a given kind (profile/static/dynamic).
-     *
-     * @throws InvalidArgumentException if the namespace kind is invalid.
-     */
-    public function namespace(string $kind): string
-    {
-        return $this->namespaces[$kind] ?? throw new InvalidArgumentException("Unknown Blizzard namespace kind: {$kind}");
     }
 
     /**

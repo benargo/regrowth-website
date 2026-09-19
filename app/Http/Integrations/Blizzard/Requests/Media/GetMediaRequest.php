@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Blizzard\Requests\Media;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Responses\GetMediaResponse;
 use InvalidArgumentException;
@@ -24,6 +25,7 @@ class GetMediaRequest extends Request implements Cacheable
     public function __construct(
         protected string $tag,
         protected int $mediaId,
+        protected ?BlizzardNamespace $namespace = null,
     ) {
         if (! in_array($tag, self::VALID_MEDIA_TAGS, true)) {
             throw new InvalidArgumentException(sprintf(
@@ -46,7 +48,8 @@ class GetMediaRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('static'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forStaticRequests($connector->getRegion()),
         );
     }
 

@@ -10,7 +10,6 @@ use App\Http\Integrations\Blizzard\Exceptions\InvalidClassException;
 use App\Http\Integrations\Blizzard\Exceptions\InvalidRaceException;
 use App\Http\Integrations\Blizzard\Exceptions\ItemNotFoundException;
 use App\Http\Integrations\Blizzard\Exceptions\XmlException;
-use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
@@ -41,40 +40,6 @@ class BlizzardConnectorTest extends TestCase
         $this->assertSame('https://tw.api.blizzard.com', $this->makeConnector(Region::TW)->resolveBaseUrl());
     }
 
-    // ==================== namespace lookup ====================
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_returns_derived_value_for_anniversary(): void
-    {
-        $connector = $this->makeConnector(Region::EU, GameVersion::Anniversary);
-
-        $this->assertSame('profile-classicann-eu', $connector->namespace('profile'));
-        $this->assertSame('static-classicann-eu', $connector->namespace('static'));
-        $this->assertSame('dynamic-classicann-eu', $connector->namespace('dynamic'));
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_returns_derived_value_for_retail(): void
-    {
-        $connector = $this->makeConnector(Region::EU, GameVersion::Retail);
-
-        $this->assertSame('profile-eu', $connector->namespace('profile'));
-        $this->assertSame('static-eu', $connector->namespace('static'));
-        $this->assertSame('dynamic-eu', $connector->namespace('dynamic'));
-    }
-
-    #[Test]
-    #[Group('happy-path')]
-    public function namespace_throws_for_unknown_kind(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown Blizzard namespace kind: bogus');
-
-        $this->makeConnector()->namespace('bogus');
-    }
-
     // ==================== locale validation ====================
 
     #[Test]
@@ -87,7 +52,6 @@ class BlizzardConnectorTest extends TestCase
         new BlizzardConnector(
             clientId: 'test_id',
             clientSecret: 'test_secret',
-            gameVersion: GameVersion::Anniversary,
             region: Region::EU,
             locale: 'ko_KR',
             defaultRealmSlug: 'thunderstrike',
@@ -392,7 +356,6 @@ class BlizzardConnectorTest extends TestCase
 
     private function makeConnector(
         ?Region $region = null,
-        GameVersion $gameVersion = GameVersion::Anniversary,
         string $defaultRealmSlug = 'thunderstrike',
         string $defaultGuildSlug = 'regrowth',
     ): BlizzardConnector {
@@ -403,7 +366,6 @@ class BlizzardConnectorTest extends TestCase
             clientSecret: 'test_secret',
             region: $region,
             locale: $region->defaultLocale(),
-            gameVersion: $gameVersion,
             defaultRealmSlug: $defaultRealmSlug,
             defaultGuildSlug: $defaultGuildSlug,
             eagerlyMirrorAssets: $this->createStub(EagerlyMirrorAssets::class),
