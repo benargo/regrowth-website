@@ -8,6 +8,7 @@ use App\Models\Comment;
 use App\Models\CommentRevision;
 use App\Models\User;
 use Database\Factories\ItemFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,10 +23,16 @@ use Tests\Support\ModelTestCase;
 /**
  * Minimal stub used to test the polymorphic `commentable` relationship
  * without coupling this unit test to any real domain model.
+ *
+ * Backed by the `items` table, which has a uuid primary key — HasUuids is
+ * required here for the same reason the real Item model needs it: without
+ * it, Eloquent assumes an auto-incrementing integer key and queries
+ * `items.id = 1`, which fails against the uuid column.
  */
 class CommentableStub extends Model
 {
     use HasFactory;
+    use HasUuids;
 
     protected $table = 'items';
 
