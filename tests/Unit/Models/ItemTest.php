@@ -38,12 +38,13 @@ class ItemTest extends ModelTestCase
     }
 
     #[Test]
-    public function it_uses_auto_incrementing_id(): void
+    public function it_uses_a_uuid_primary_key(): void
     {
         $model = new Item;
 
         $this->assertSame('id', $model->getKeyName());
-        $this->assertTrue($model->getIncrementing());
+        $this->assertSame('string', $model->getKeyType());
+        $this->assertFalse($model->getIncrementing());
     }
 
     #[Test]
@@ -57,6 +58,8 @@ class ItemTest extends ModelTestCase
             'quality',
             'group',
             'notes',
+            'blizzard_id',
+            'game_version_id',
         ]);
     }
 
@@ -348,7 +351,7 @@ class ItemTest extends ModelTestCase
         $item = $this->create(['name' => 'Warglaive of Azzinoth']);
 
         $this->assertSame(
-            "https://www.wowhead.com/tbc/item={$item->id}/warglaive-of-azzinoth",
+            "https://www.wowhead.com/tbc/item={$item->blizzard_id}/warglaive-of-azzinoth",
             $item->wowhead_url,
         );
     }
@@ -359,7 +362,7 @@ class ItemTest extends ModelTestCase
         $item = $this->create(['name' => null]);
 
         $this->assertSame(
-            "https://www.wowhead.com/tbc/item={$item->id}",
+            "https://www.wowhead.com/tbc/item={$item->blizzard_id}",
             $item->wowhead_url,
         );
     }
