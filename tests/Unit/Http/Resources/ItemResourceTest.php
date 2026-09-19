@@ -33,6 +33,16 @@ class ItemResourceTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_blizzard_id(): void
+    {
+        $item = Item::factory()->create(['blizzard_id' => 19019]);
+
+        $array = (new ItemResource($item))->toArray(new Request);
+
+        $this->assertSame(19019, $array['blizzard_id']);
+    }
+
+    #[Test]
     public function it_returns_name_from_model(): void
     {
         $item = Item::factory()->create(['name' => 'Thunderfury, Blessed Blade of the Windseeker']);
@@ -400,6 +410,7 @@ class ItemResourceTest extends TestCase
         $array = (new ItemResource($item))->toArray(new Request);
 
         $this->assertArrayHasKey('id', $array);
+        $this->assertArrayHasKey('blizzard_id', $array);
         $this->assertArrayHasKey('name', $array);
         $this->assertArrayHasKey('slug', $array);
         $this->assertArrayHasKey('group', $array);

@@ -14,6 +14,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemMediaRequest;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
+use App\Models\GameVersion;
 use App\Models\Item;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -750,10 +751,12 @@ class ItemSeeder extends Seeder
 
     public function run(): void
     {
+        $gameVersion = GameVersion::sole();
+
         foreach ($this->items as $item) {
             try {
                 /** @var ItemData $itemDto */
-                $itemDto = $this->blizzard->send(new GetItemRequest($item['id']))->dto();
+                $itemDto = $this->blizzard->send(new GetItemRequest($item['id'], $gameVersion->blizzard_namespace))->dto();
 
                 /** @var MediaData $mediaDto */
                 $mediaDto = $this->blizzard->send(new GetItemMediaRequest($item['id']))->dto();
@@ -764,9 +767,9 @@ class ItemSeeder extends Seeder
                 continue;
             }
 
-            $model = Item::withoutEvents(function () use ($item, $itemDto) {
+            $model = Item::withoutEvents(function () use ($item, $itemDto, $gameVersion) {
                 return Item::updateOrCreate(
-                    ['id' => $item['id']],
+                    ['game_version_id' => $gameVersion->id, 'blizzard_id' => $item['id']],
                     [
                         'name' => $itemDto->name,
                         'quality' => ItemQuality::{$itemDto->quality->type},

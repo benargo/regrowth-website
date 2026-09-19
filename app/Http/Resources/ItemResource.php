@@ -17,6 +17,7 @@ class ItemResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'blizzard_id' => $this->blizzard_id,
             'name' => $this->name,
             'slug' => $this->slug,
             'group' => $this->whenNotNull($this->group),

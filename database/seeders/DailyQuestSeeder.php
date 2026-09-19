@@ -19,6 +19,7 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\DailyQuest;
+use App\Models\GameVersion;
 use App\Models\Item;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Database\Seeder;
@@ -93,6 +94,7 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
      */
     public function run(): void
     {
+        $gameVersion = GameVersion::sole();
         $dailyQuests = $this->dailyQuests;
 
         foreach ($dailyQuests as $quest) {
@@ -101,7 +103,7 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
                 ['name' => $quest['name'], 'type' => $quest['type'], 'instance' => $quest['instance']],
             );
 
-            $this->syncRewards($model, $this->rewardsFor($quest));
+            $this->syncRewards($model, $this->rewardsFor($quest), $gameVersion);
 
             $this->command?->line("  <info>✓</info> [{$model->id}] {$model->name}");
 
@@ -141,14 +143,20 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
      *
      * @param  array<int, array{item_id: int, quantity: int}>  $rewards
      */
-    private function syncRewards(DailyQuest $quest, array $rewards): void
+    private function syncRewards(DailyQuest $quest, array $rewards, GameVersion $gameVersion): void
     {
         $syncData = [];
 
         foreach ($rewards as $reward) {
-            $this->ensureItemExists($reward['item_id']);
+            $this->ensureItemExists($reward['item_id'], $gameVersion);
 
-            $syncData[$reward['item_id']] = ['quantity' => $reward['quantity'] ?? 1];
+            $item = Item::where('game_version_id', $gameVersion->id)->where('blizzard_id', $reward['item_id'])->first();
+
+            if ($item === null) {
+                continue;
+            }
+
+            $syncData[$item->id] = ['quantity' => $reward['quantity'] ?? 1];
         }
 
         $quest->rewards()->sync($syncData);
@@ -159,13 +167,13 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
      * and icon from the Blizzard API on a cache miss. Mirrors ItemSeeder: dispatches
      * AttachBlizzardIconToModel when the icon fetch returns 403.
      */
-    private function ensureItemExists(int $itemId): void
+    private function ensureItemExists(int $itemId, GameVersion $gameVersion): void
     {
         if (isset($this->locks[$itemId])) {
             return;
         }
 
-        $lock = Cache::lock("daily-quest-seeder-item-{$itemId}", 60);
+        $lock = Cache::lock("daily-quest-seeder-item-{$gameVersion->id}-{$itemId}", 60);
 
         if (! $lock->get()) {
             return;
@@ -173,13 +181,13 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
 
         $this->locks[$itemId] = $lock;
 
-        if (Item::whereKey($itemId)->exists()) {
+        if (Item::where('game_version_id', $gameVersion->id)->where('blizzard_id', $itemId)->exists()) {
             return;
         }
 
         try {
             /** @var ItemData $itemDto */
-            $itemDto = $this->blizzard->send(new GetItemRequest($itemId))->dto();
+            $itemDto = $this->blizzard->send(new GetItemRequest($itemId, $gameVersion->blizzard_namespace))->dto();
 
             /** @var MediaData $mediaDto */
             $mediaDto = $this->blizzard->send(new GetItemMediaRequest($itemId))->dto();
@@ -190,7 +198,7 @@ class DailyQuestSeeder extends Seeder implements HasBlizzardIcons
         }
 
         $item = Item::withoutEvents(fn () => Item::updateOrCreate(
-            ['id' => $itemId],
+            ['game_version_id' => $gameVersion->id, 'blizzard_id' => $itemId],
             [
                 'name' => $itemDto->name,
                 'quality' => ItemQuality::{$itemDto->quality->type},
