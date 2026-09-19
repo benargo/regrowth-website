@@ -3,10 +3,13 @@
 namespace Tests\Feature\LootBiasTool;
 
 use App\Contracts\Http\Middleware\SharesOriginRaidSession;
+use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Models\Comment;
 use App\Models\CommentReaction;
 use App\Models\DiscordRole;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Permission;
 use App\Models\Raid;
@@ -164,6 +167,23 @@ class ShowItemPageTest extends TestCase
 
         Saloon::assertSent(function (GetItemRequest $request) use ($item): bool {
             return $request->resolveEndpoint() === "/data/wow/item/{$item->blizzard_id}";
+        });
+    }
+
+    #[Test]
+    public function show_item_scopes_the_blizzard_request_to_the_items_game_version_namespace(): void
+    {
+        $user = User::factory()->member()->create();
+        $gameVersion = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::RETAIL]);
+        $item = Item::factory()->fromBoss()->withName('Test Item')->create(['game_version_id' => $gameVersion->id]);
+
+        $expectedNamespace = BlizzardNamespace::RETAIL->forStaticRequests(app(BlizzardConnector::class)->getRegion());
+
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        Saloon::assertSent(function ($request, $response) use ($expectedNamespace): bool {
+            return $request instanceof GetItemRequest
+                && $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === $expectedNamespace;
         });
     }
 
