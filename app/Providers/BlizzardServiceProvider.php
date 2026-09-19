@@ -7,7 +7,6 @@ use App\Contracts\HasCharacterMedia;
 use App\Facades\Blizzard as BlizzardFacade;
 use App\Facades\BlizzardRenderPath;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
-use App\Http\Integrations\Blizzard\GameVersion;
 use App\Http\Integrations\Blizzard\Middleware\EagerlyMirrorAssets;
 use App\Http\Integrations\Blizzard\Region;
 use App\Http\Integrations\Blizzard\RenderConnector;
@@ -35,7 +34,6 @@ class BlizzardServiceProvider extends ServiceProvider
             return new BlizzardConnector(
                 clientId: data_get($config, 'client_id'),
                 clientSecret: data_get($config, 'client_secret'),
-                gameVersion: GameVersion::fromName(data_get($config, 'game_version', 'Anniversary')),
                 region: Region::from(data_get($config, 'region', 'eu')),
                 locale: data_get($config, 'locale'),
                 defaultRealmSlug: data_get($config, 'realm.slug'),

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\PlayableRace;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use PHPUnit\Framework\Attributes\Group;
@@ -60,7 +61,7 @@ class GetPlayableRaceIndexRequestTest extends BlizzardTestCase
         ]);
 
         $connector = $this->makeConnector();
-        $expected = $connector->namespace('static');
+        $expected = BlizzardNamespace::default()->forStaticRequests($connector->getRegion());
 
         $connector->send(new GetPlayableRaceIndexRequest);
 

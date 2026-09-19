@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterMediaData;
 use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterMediaRequest;
@@ -80,7 +81,7 @@ class GetCharacterMediaRequestTest extends BlizzardTestCase
         ]);
 
         $connector = $this->makeConnector();
-        $expected = $connector->namespace('profile');
+        $expected = BlizzardNamespace::default()->forProfileRequests($connector->getRegion());
 
         $connector->send(new GetCharacterMediaRequest('thunderstrike', 'wastedhippy'));
 
