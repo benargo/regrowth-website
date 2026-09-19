@@ -25,10 +25,10 @@ class BlizzardNamespaceTest extends TestCase
     #[Group('happy-path')]
     public function each_case_is_backed_by_its_own_name(): void
     {
-        $this->assertSame('anniversary', BlizzardNamespace::anniversary->value);
-        $this->assertSame('classic', BlizzardNamespace::classic->value);
-        $this->assertSame('era', BlizzardNamespace::era->value);
-        $this->assertSame('retail', BlizzardNamespace::retail->value);
+        $this->assertSame('anniversary', BlizzardNamespace::ANNIVERSARY->value);
+        $this->assertSame('classic', BlizzardNamespace::CLASSIC->value);
+        $this->assertSame('era', BlizzardNamespace::ERA->value);
+        $this->assertSame('retail', BlizzardNamespace::RETAIL->value);
     }
 
     #[Test]
@@ -44,8 +44,8 @@ class BlizzardNamespaceTest extends TestCase
     #[Group('happy-path')]
     public function value_without_a_category_returns_the_case_value(): void
     {
-        $this->assertSame('anniversary', BlizzardNamespace::anniversary->value());
-        $this->assertSame('retail', BlizzardNamespace::retail->value());
+        $this->assertSame('anniversary', BlizzardNamespace::ANNIVERSARY->value());
+        $this->assertSame('retail', BlizzardNamespace::RETAIL->value());
     }
 
     #[Test]
@@ -54,19 +54,19 @@ class BlizzardNamespaceTest extends TestCase
     {
         $this->assertSame(
             'static-classicann-eu',
-            BlizzardNamespace::anniversary->value('static', Region::EU),
+            BlizzardNamespace::ANNIVERSARY->value('static', Region::EU),
         );
         $this->assertSame(
             'static-classic-eu',
-            BlizzardNamespace::classic->value('static', Region::EU),
+            BlizzardNamespace::CLASSIC->value('static', Region::EU),
         );
         $this->assertSame(
             'static-classic1x-eu',
-            BlizzardNamespace::era->value('static', Region::EU),
+            BlizzardNamespace::ERA->value('static', Region::EU),
         );
         $this->assertSame(
             'static-eu',
-            BlizzardNamespace::retail->value('static', Region::EU),
+            BlizzardNamespace::RETAIL->value('static', Region::EU),
         );
     }
 
@@ -76,15 +76,15 @@ class BlizzardNamespaceTest extends TestCase
     {
         $this->assertSame(
             'static-classicann-us',
-            BlizzardNamespace::anniversary->value('static', Region::US),
+            BlizzardNamespace::ANNIVERSARY->value('static', Region::US),
         );
         $this->assertSame(
             'static-classicann-kr',
-            BlizzardNamespace::anniversary->value('static', Region::KR),
+            BlizzardNamespace::ANNIVERSARY->value('static', Region::KR),
         );
         $this->assertSame(
             'static-classicann-tw',
-            BlizzardNamespace::anniversary->value('static', Region::TW),
+            BlizzardNamespace::ANNIVERSARY->value('static', Region::TW),
         );
     }
 
@@ -95,7 +95,7 @@ class BlizzardNamespaceTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid category: bogus');
 
-        BlizzardNamespace::anniversary->value('bogus', Region::EU);
+        BlizzardNamespace::ANNIVERSARY->value('bogus', Region::EU);
     }
 
     #[Test]
@@ -106,7 +106,7 @@ class BlizzardNamespaceTest extends TestCase
 
         $this->assertSame(
             'static-classicann-us',
-            BlizzardNamespace::anniversary->value('static'),
+            BlizzardNamespace::ANNIVERSARY->value('static'),
         );
     }
 
@@ -118,15 +118,15 @@ class BlizzardNamespaceTest extends TestCase
     {
         $this->assertSame(
             'dynamic-classicann-eu',
-            BlizzardNamespace::anniversary->forDynamicRequests(Region::EU),
+            BlizzardNamespace::ANNIVERSARY->forDynamicRequests(Region::EU),
         );
         $this->assertSame(
             'profile-classicann-eu',
-            BlizzardNamespace::anniversary->forProfileRequests(Region::EU),
+            BlizzardNamespace::ANNIVERSARY->forProfileRequests(Region::EU),
         );
         $this->assertSame(
             'static-classicann-eu',
-            BlizzardNamespace::anniversary->forStaticRequests(Region::EU),
+            BlizzardNamespace::ANNIVERSARY->forStaticRequests(Region::EU),
         );
     }
 
@@ -138,7 +138,7 @@ class BlizzardNamespaceTest extends TestCase
 
         $this->assertSame(
             'profile-classicann-kr',
-            BlizzardNamespace::anniversary->forProfileRequests(),
+            BlizzardNamespace::ANNIVERSARY->forProfileRequests(),
         );
     }
 
@@ -150,7 +150,7 @@ class BlizzardNamespaceTest extends TestCase
     {
         config(['services.blizzard.namespace' => 'era']);
 
-        $this->assertSame(BlizzardNamespace::era, BlizzardNamespace::default());
+        $this->assertSame(BlizzardNamespace::ERA, BlizzardNamespace::default());
     }
 
     #[Test]
@@ -159,7 +159,7 @@ class BlizzardNamespaceTest extends TestCase
     {
         config(['services.blizzard.namespace' => null]);
 
-        $this->assertSame(BlizzardNamespace::anniversary, BlizzardNamespace::default());
+        $this->assertSame(BlizzardNamespace::ANNIVERSARY, BlizzardNamespace::default());
     }
 
     #[Test]
