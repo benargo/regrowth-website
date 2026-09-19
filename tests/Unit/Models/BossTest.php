@@ -6,6 +6,7 @@ use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Raid;
 use App\Models\User;
@@ -54,6 +55,7 @@ class BossTest extends ModelTestCase
             'raid_id',
             'sort_order',
             'notes',
+            'game_version_id',
         ]);
     }
 
@@ -67,6 +69,7 @@ class BossTest extends ModelTestCase
             'raid_id',
             'sort_order',
             'notes',
+            'game_version_id',
         ]);
     }
 
@@ -180,6 +183,15 @@ class BossTest extends ModelTestCase
 
         $this->assertRelation($boss, 'raid', BelongsTo::class);
         $this->assertTrue($boss->raid->is($raid));
+    }
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $boss = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertTrue($boss->gameVersion->is($gameVersion));
     }
 
     #[Test]

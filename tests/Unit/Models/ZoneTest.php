@@ -4,10 +4,12 @@ namespace Tests\Unit\Models;
 
 use App\Casts\AsDifficultyCollection;
 use App\Casts\AsExpansion;
+use App\Models\GameVersion;
 use App\Models\Report;
 use App\Models\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Group;
@@ -51,6 +53,7 @@ class ZoneTest extends ModelTestCase
             'difficulties',
             'expansion',
             'is_frozen',
+            'game_version_id',
         ]);
     }
 
@@ -65,6 +68,7 @@ class ZoneTest extends ModelTestCase
             'difficulties',
             'expansion',
             'is_frozen',
+            'game_version_id',
         ]);
     }
 
@@ -179,6 +183,18 @@ class ZoneTest extends ModelTestCase
         $zone = $this->create();
 
         $this->assertCount(0, $zone->reports);
+    }
+
+    // ==================== game version relationship ====================
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $zone = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertRelation($zone, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($zone->gameVersion->is($gameVersion));
     }
 
     // ==================== factory states ====================

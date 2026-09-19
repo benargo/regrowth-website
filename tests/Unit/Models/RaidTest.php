@@ -8,6 +8,7 @@ use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventRaid;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -57,6 +58,7 @@ class RaidTest extends ModelTestCase
             'phase_id',
             'max_players',
             'max_loot_councillors',
+            'game_version_id',
         ]);
     }
 
@@ -73,6 +75,7 @@ class RaidTest extends ModelTestCase
             'phase_id',
             'max_players',
             'max_loot_councillors',
+            'game_version_id',
         ]);
     }
 
@@ -351,6 +354,18 @@ class RaidTest extends ModelTestCase
 
         $this->assertRelation($raid, 'phase', BelongsTo::class);
         $this->assertTrue($raid->phase->is($phase));
+    }
+
+    // ==================== game version ====================
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $raid = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertRelation($raid, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($raid->gameVersion->is($gameVersion));
     }
 
     // ==================== bosses ====================
