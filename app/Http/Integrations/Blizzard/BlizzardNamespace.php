@@ -6,11 +6,11 @@ use InvalidArgumentException;
 
 enum BlizzardNamespace: string
 {
-    case anniversary = 'anniversary';
-    case classic = 'classic';
-    case era = 'era';
-    // case forever = 'forever';
-    case retail = 'retail';
+    case ANNIVERSARY = 'anniversary';
+    case CLASSIC = 'classic';
+    case ERA = 'era';
+    // case FOREVER = 'forever';
+    case RETAIL = 'retail';
 
     /** @var list<string> */
     private const CATEGORIES = [
@@ -55,11 +55,11 @@ enum BlizzardNamespace: string
         }
 
         return match ($this) {
-            self::anniversary => "$category-classicann-{$region->value}",
-            self::classic => "$category-classic-{$region->value}",
-            self::era => "$category-classic1x-{$region->value}",
-            // self::forever => "$category-forever-{$region->value}",
-            self::retail => "$category-{$region->value}",
+            self::ANNIVERSARY => "$category-classicann-{$region->value}",
+            self::CLASSIC => "$category-classic-{$region->value}",
+            self::ERA => "$category-classic1x-{$region->value}",
+            // self::FOREVER => "$category-forever-{$region->value}",
+            self::RETAIL => "$category-{$region->value}",
         };
     }
 
