@@ -248,4 +248,22 @@ class ZoneTest extends ModelTestCase
         $this->assertSame('Mythic', $zone->difficulties->first()->name);
         $this->assertSame([20], $zone->difficulties->first()->sizes);
     }
+
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $zone = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $zone->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $zone = $this->create();
+
+        $this->assertNull($zone->game_version_id);
+    }
 }
