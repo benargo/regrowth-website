@@ -133,7 +133,7 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
         ]);
 
         $this->makeConnector()->send(
-            new GetCharacterProfileRequest('thunderstrike', 'foo', BlizzardNamespace::era),
+            new GetCharacterProfileRequest('thunderstrike', 'foo', BlizzardNamespace::ERA),
         );
 
         Saloon::assertSent(function ($request, $response) {
