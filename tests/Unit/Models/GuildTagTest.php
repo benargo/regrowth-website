@@ -196,6 +196,24 @@ class GuildTagTest extends ModelTestCase
         $this->assertNull($guildTag->tbc_phase_id);
     }
 
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $guildTag = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $guildTag->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $guildTag = $this->create();
+
+        $this->assertNull($guildTag->game_version_id);
+    }
+
     // ==================== phase relationship ====================
 
     #[Test]

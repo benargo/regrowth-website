@@ -158,6 +158,24 @@ class PhaseTest extends ModelTestCase
         $this->assertNull($phase->start_date);
     }
 
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $phase = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $phase->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $phase = $this->create();
+
+        $this->assertNull($phase->game_version_id);
+    }
+
     // ==================== number accessor ====================
 
     #[Test]

@@ -344,6 +344,24 @@ class RaidTest extends ModelTestCase
         $this->assertCount(2, $raid->comments);
     }
 
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $raid = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $raid->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $raid = $this->create();
+
+        $this->assertNull($raid->game_version_id);
+    }
+
     // ==================== phase ====================
 
     #[Test]

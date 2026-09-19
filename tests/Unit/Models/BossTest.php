@@ -126,6 +126,24 @@ class BossTest extends ModelTestCase
         $this->assertSame(5, $boss->sort_order);
     }
 
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $boss = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $boss->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $boss = $this->create();
+
+        $this->assertNull($boss->game_version_id);
+    }
+
     // ==================== sort order ====================
 
     #[Test]
