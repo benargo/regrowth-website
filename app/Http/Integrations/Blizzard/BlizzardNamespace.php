@@ -77,4 +77,21 @@ enum BlizzardNamespace: string
     {
         return $this->value('static', $region);
     }
+
+    /**
+     * Map this namespace to its Wowhead URL path segment.
+     *
+     * Wowhead hosts retail content at the site root (no segment), Classic Era
+     * under `/classic`, and both Anniversary and TBC Classic under `/tbc` —
+     * Wowhead has never split Anniversary into its own segment, so it shares
+     * the `/tbc` path with TBC Classic.
+     */
+    public function expansionUrlSegment(): string
+    {
+        return match ($this) {
+            self::RETAIL => '',
+            self::ERA => 'classic',
+            self::ANNIVERSARY, self::CLASSIC => 'tbc',
+        };
+    }
 }
