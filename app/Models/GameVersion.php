@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use Database\Factories\GameVersionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GameVersion extends Model
@@ -79,5 +80,23 @@ class GameVersion extends Model
     public function zones(): HasMany
     {
         return $this->hasMany(Zone::class);
+    }
+
+    /**
+     * @return BelongsToMany<PlayableRace, $this>
+     */
+    public function playableRaces(): BelongsToMany
+    {
+        return $this->belongsToMany(PlayableRace::class, 'pivot_game_versions_playable_races')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<PlayableClass, $this>
+     */
+    public function playableClasses(): BelongsToMany
+    {
+        return $this->belongsToMany(PlayableClass::class, 'pivot_game_versions_playable_classes')
+            ->withTimestamps();
     }
 }
