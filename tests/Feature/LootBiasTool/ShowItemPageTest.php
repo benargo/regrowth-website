@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Saloon\Laravel\Facades\Saloon;
 use Tests\Support\Blizzard\MocksBlizzardServices;
 use Tests\TestCase;
 
@@ -151,6 +152,19 @@ class ShowItemPageTest extends TestCase
             ->missing('raids')
             ->missing('boss')
         );
+    }
+
+    #[Test]
+    public function show_item_requests_the_item_from_blizzard_using_the_blizzard_id_not_the_uuid(): void
+    {
+        $user = User::factory()->member()->create();
+        $item = $this->createTestItem();
+
+        $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => $item->slug]));
+
+        Saloon::assertSent(function (GetItemRequest $request) use ($item): bool {
+            return $request->resolveEndpoint() === "/data/wow/item/{$item->blizzard_id}";
+        });
     }
 
     #[Test]

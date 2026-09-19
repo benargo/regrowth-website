@@ -121,8 +121,12 @@ class ItemController extends Controller
 
     private function loadItemData(BlizzardConnector $blizzardConnector, Item $item, ?int $originRaidId): void
     {
+        $item->loadMissing('gameVersion');
+
         try {
-            $blizzardItem = $blizzardConnector->send(new GetItemRequest($item->blizzard_id))->dto();
+            $blizzardItem = $blizzardConnector->send(
+                new GetItemRequest($item->blizzard_id, $item->gameVersion?->blizzard_namespace)
+            )->dto();
             $item->fillBlizzardData($blizzardItem);
         } catch (ItemNotFoundException) {
             // We can continue without the filled in data.
