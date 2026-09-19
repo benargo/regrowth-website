@@ -15,16 +15,16 @@ use Tests\TestCase;
 class AsKeyTypeTest extends TestCase
 {
     #[Test]
-    public function get_returns_integer_when_commentable_type_is_integer_keyed_model(): void
+    public function get_returns_string_when_commentable_type_is_item(): void
     {
         $cast = new AsKeyType;
         $model = $this->createStub(Model::class);
 
-        $result = $cast->get($model, 'commentable_id', '42', [
+        $result = $cast->get($model, 'commentable_id', '0199a1b2-1234-7000-8000-abcdef012345', [
             'commentable_type' => Item::class,
         ]);
 
-        $this->assertSame(42, $result);
+        $this->assertSame('0199a1b2-1234-7000-8000-abcdef012345', $result);
     }
 
     #[Test]
@@ -167,6 +167,11 @@ class AsKeyTypeTest extends TestCase
     #[Test]
     public function set_throws_when_value_is_not_numeric_for_an_integer_keyed_model(): void
     {
+        $integerKeyedModel = new class extends Model
+        {
+            protected $keyType = 'integer';
+        };
+
         $cast = new AsKeyType;
         $model = $this->createStub(Model::class);
 
@@ -174,7 +179,7 @@ class AsKeyTypeTest extends TestCase
         $this->expectExceptionMessage('Value [abc] is not a valid key for an integer-keyed model.');
 
         $cast->set($model, 'commentable_id', 'abc', [
-            'commentable_type' => Item::class,
+            'commentable_type' => $integerKeyedModel::class,
         ]);
     }
 
