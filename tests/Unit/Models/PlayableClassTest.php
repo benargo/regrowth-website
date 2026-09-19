@@ -4,6 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\PlayableClass;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\ModelTestCase;
@@ -161,5 +162,21 @@ class PlayableClassTest extends ModelTestCase
         $playableClass = PlayableClass::factory()->withLootPriorities(3)->create();
 
         $this->assertCount(3, $playableClass->lootPriorities);
+    }
+
+    // ==================== media ====================
+
+    #[Test]
+    public function it_can_add_media(): void
+    {
+        Storage::fake('public');
+
+        $class = $this->create();
+        $class->addMediaFromString('fake image content')
+            ->usingFileName('icon.jpg')
+            ->toMediaCollection('default');
+
+        $this->assertDatabaseHas('media', ['model_type' => PlayableClass::class, 'model_id' => (string) $class->id]);
+        $this->assertTrue($class->fresh()->hasMedia('default'));
     }
 }

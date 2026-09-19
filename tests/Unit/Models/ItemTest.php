@@ -15,6 +15,7 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -525,5 +526,11 @@ class ItemTest extends ModelTestCase
         // singleFile() collection keeps only the most recent media item.
         $this->assertCount(1, $item->getMedia('blizzard_icons'));
         $this->assertSame('inv_sword_05.jpg', $item->getFirstMedia('blizzard_icons')->file_name);
+    }
+
+    #[Test]
+    public function media_model_id_column_is_a_string(): void
+    {
+        $this->assertSame('varchar', Schema::getColumnType('media', 'model_id'));
     }
 }
