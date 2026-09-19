@@ -8,8 +8,10 @@ use App\Http\Integrations\Blizzard\Requests\Item\GetItemRequest;
 use App\Http\Integrations\Blizzard\Requests\Render\FetchIconRequest;
 use App\Jobs\AttachBlizzardIconToModel;
 use App\Models\DailyQuest;
+use App\Models\GameVersion;
 use App\Models\Item;
 use Database\Seeders\DailyQuestSeeder;
+use Database\Seeders\GameVersionSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -31,6 +33,8 @@ class DailyQuestSeederTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->seed(GameVersionSeeder::class);
 
         Storage::fake('public');
 
@@ -87,29 +91,42 @@ class DailyQuestSeederTest extends TestCase
     // ==================== reward items ====================
 
     #[Test]
-    public function seeder_creates_reward_items_that_do_not_yet_exist(): void
+    public function seeder_scopes_reward_items_to_the_resolved_game_version(): void
     {
-        $this->assertDatabaseMissing('items', ['id' => 33844]);
+        $gameVersion = GameVersion::sole();
 
         $this->runSeeder();
 
-        $this->assertDatabaseHas('items', ['id' => 33844, 'name' => 'Item 33844']);
-        $this->assertSame(ItemQuality::UNCOMMON, Item::find(33844)->quality);
-        $this->assertTrue(Item::find(33844)->hasMedia('blizzard_icons'));
+        $this->assertDatabaseHas('items', ['blizzard_id' => 33844, 'game_version_id' => $gameVersion->id]);
+    }
+
+    #[Test]
+    public function seeder_creates_reward_items_that_do_not_yet_exist(): void
+    {
+        $this->assertDatabaseMissing('items', ['blizzard_id' => 33844]);
+
+        $this->runSeeder();
+
+        $this->assertDatabaseHas('items', ['blizzard_id' => 33844, 'name' => 'Item 33844']);
+        $this->assertSame(ItemQuality::UNCOMMON, Item::where('blizzard_id', 33844)->first()->quality);
+        $this->assertTrue(Item::where('blizzard_id', 33844)->first()->hasMedia('blizzard_icons'));
     }
 
     #[Test]
     public function seeder_does_not_refetch_reward_items_that_already_exist(): void
     {
+        $gameVersion = GameVersion::sole();
+
         Item::withoutEvents(fn () => Item::forceCreate([
-            'id' => 33844,
+            'blizzard_id' => 33844,
+            'game_version_id' => $gameVersion->id,
             'name' => 'Existing Barrel',
             'quality' => ItemQuality::COMMON->value,
         ]));
 
         $this->runSeeder();
 
-        $this->assertDatabaseHas('items', ['id' => 33844, 'name' => 'Existing Barrel']);
+        $this->assertDatabaseHas('items', ['blizzard_id' => 33844, 'name' => 'Existing Barrel']);
     }
 
     #[Test]
@@ -119,8 +136,8 @@ class DailyQuestSeederTest extends TestCase
 
         $heroic = DailyQuest::where('type', 'Heroic dungeon')->first();
 
-        $this->assertTrue($heroic->rewards->contains('id', 29434));
-        $this->assertSame(2, (int) $heroic->rewards->firstWhere('id', 29434)->pivot->quantity);
+        $this->assertTrue($heroic->rewards->contains('blizzard_id', 29434));
+        $this->assertSame(2, (int) $heroic->rewards->firstWhere('blizzard_id', 29434)->pivot->quantity);
     }
 
     #[Test]
@@ -166,11 +183,12 @@ class DailyQuestSeederTest extends TestCase
 
         $this->runSeeder();
 
-        $this->assertNotNull(Item::find(33844));
-        $this->assertFalse(Item::find(33844)->hasMedia('blizzard_icons'));
+        $item = Item::where('blizzard_id', 33844)->first();
+        $this->assertNotNull($item);
+        $this->assertFalse($item->hasMedia('blizzard_icons'));
 
-        Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job) {
-            return $job->modelClass === Item::class && $job->modelKey === 33844;
+        Queue::assertPushed(AttachBlizzardIconToModel::class, function (AttachBlizzardIconToModel $job) use ($item) {
+            return $job->modelClass === Item::class && $job->modelKey === $item->id;
         });
     }
 

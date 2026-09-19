@@ -161,7 +161,7 @@ class ShowItemPageTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id]));
 
-        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->id}"]));
+        $response->assertRedirect(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->blizzard_id}"]));
     }
 
     #[Test]
@@ -170,7 +170,7 @@ class ShowItemPageTest extends TestCase
         $user = User::factory()->member()->create();
         $item = $this->createTestItemWithoutName();
 
-        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->id}"]));
+        $response = $this->actingAs($user)->get(route('loot.items.show', ['item' => $item->id, 'slug' => "item-{$item->blizzard_id}"]));
 
         $response->assertOk();
     }

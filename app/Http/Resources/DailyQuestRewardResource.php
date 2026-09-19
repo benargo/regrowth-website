@@ -23,6 +23,7 @@ class DailyQuestRewardResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'blizzard_id' => $this->blizzard_id,
             'quantity' => (int) $this->pivot->quantity,
             'name' => $this->name,
             'quality' => $this->quality ? Str::lower($this->quality->name) : 'common',
