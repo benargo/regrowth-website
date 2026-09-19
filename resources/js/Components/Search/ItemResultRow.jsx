@@ -44,7 +44,7 @@ export default function ItemResultRow({ item, index, isHighlighted, onMouseEnter
             {item.icon && (
                 <div className="absolute top-1/2 left-2 -translate-y-1/2">
                     <ItemIcon
-                        itemId={item.id}
+                        itemId={item.blizzard_id}
                         itemName={item.name}
                         iconUrl={item.icon}
                         itemQuality={item.quality_border_class}
