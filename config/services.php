@@ -17,7 +17,7 @@ return [
     'blizzard' => [
         'client_id' => env('BLIZZARD_CLIENT_ID'),
         'client_secret' => env('BLIZZARD_CLIENT_SECRET'),
-        'game_version' => env('BLIZZARD_GAME_VERSION', 'Anniversary'),
+        'namespace' => env('BLIZZARD_NAMESPACE', 'anniversary'),
         'guild' => [
             'name' => 'Regrowth',
             'slug' => 'regrowth',
@@ -28,15 +28,6 @@ return [
         ],
         'region' => env('BLIZZARD_REGION', 'eu'),
         'locale' => env('BLIZZARD_LOCALE', 'en_GB'),
-        /**
-         * TODO: Remove the hardcoded namespaces once the refactor is complete.
-         */
-        'namespaces' => [
-            'dynamic' => 'dynamic-classicann-eu',
-            'media' => 'static-eu',
-            'profile' => 'profile-classicann-eu',
-            'static' => 'static-classicann-eu',
-        ],
         'filesystem' => env('BLIZZARD_FILESYSTEM', 'public'),
     ],
 
