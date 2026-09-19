@@ -8,6 +8,8 @@ use App\Models\Boss;
 use App\Models\GameVersion;
 use App\Models\GuildTag;
 use App\Models\Phase;
+use App\Models\PlayableClass;
+use App\Models\PlayableRace;
 use App\Models\Raid;
 use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -125,5 +127,29 @@ class GameVersionTest extends TestCase
         $zone = Zone::factory()->create(['game_version_id' => $gameVersion->id]);
 
         $this->assertTrue($gameVersion->zones->contains($zone));
+    }
+
+    #[Test]
+    public function it_belongs_to_many_playable_races(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $race = PlayableRace::factory()->create();
+
+        $gameVersion->playableRaces()->attach($race);
+
+        $this->assertTrue($gameVersion->fresh()->playableRaces->contains($race));
+        $this->assertTrue($race->fresh()->gameVersions->contains($gameVersion));
+    }
+
+    #[Test]
+    public function it_belongs_to_many_playable_classes(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $class = PlayableClass::factory()->create();
+
+        $gameVersion->playableClasses()->attach($class);
+
+        $this->assertTrue($gameVersion->fresh()->playableClasses->contains($class));
+        $this->assertTrue($class->fresh()->gameVersions->contains($gameVersion));
     }
 }
