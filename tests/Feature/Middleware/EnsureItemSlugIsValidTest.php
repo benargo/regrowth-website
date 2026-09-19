@@ -19,7 +19,7 @@ class EnsureItemSlugIsValidTest extends TestCase
     #[Group('happy-path')]
     public function it_calls_the_next_middleware_when_the_slug_matches_the_item_name(): void
     {
-        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->make();
+        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->create();
         $request = $this->requestForItem($item, 'thunderfury-blessed-blade-of-the-windseeker');
 
         $response = (new EnsureItemSlugIsValid)->handle($request, fn () => response('next'));
@@ -30,7 +30,7 @@ class EnsureItemSlugIsValidTest extends TestCase
     #[Test]
     public function it_redirects_to_the_correct_slug_when_the_slug_does_not_match(): void
     {
-        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->make();
+        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->create();
         $request = $this->requestForItem($item, 'wrong-slug');
 
         $response = (new EnsureItemSlugIsValid)->handle($request, fn () => response('next'));
@@ -42,7 +42,7 @@ class EnsureItemSlugIsValidTest extends TestCase
     #[Test]
     public function it_redirects_to_the_correct_slug_when_the_slug_is_missing(): void
     {
-        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->make();
+        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->create();
         $request = $this->requestForItem($item, null);
 
         $response = (new EnsureItemSlugIsValid)->handle($request, fn () => response('next'));
@@ -55,8 +55,8 @@ class EnsureItemSlugIsValidTest extends TestCase
     #[Group('edge-case')]
     public function it_falls_back_to_an_item_id_slug_when_the_item_has_no_name(): void
     {
-        $item = Item::factory()->make(['name' => null]);
-        $request = $this->requestForItem($item, "item-{$item->id}");
+        $item = Item::factory()->make(['name' => null, 'blizzard_id' => 19019]);
+        $request = $this->requestForItem($item, 'item-19019');
 
         $response = (new EnsureItemSlugIsValid)->handle($request, fn () => response('next'));
 
@@ -67,19 +67,19 @@ class EnsureItemSlugIsValidTest extends TestCase
     #[Group('edge-case')]
     public function it_redirects_to_the_item_id_slug_when_the_item_has_no_name_and_the_slug_is_wrong(): void
     {
-        $item = Item::factory()->make(['name' => null]);
+        $item = Item::factory()->make(['name' => null, 'blizzard_id' => 19019]);
         $request = $this->requestForItem($item, 'wrong-slug');
 
         $response = (new EnsureItemSlugIsValid)->handle($request, fn () => response('next'));
 
         $this->assertSame(303, $response->getStatusCode());
-        $this->assertStringContainsString("item-{$item->id}", $response->headers->get('Location'));
+        $this->assertStringContainsString('item-19019', $response->headers->get('Location'));
     }
 
     #[Test]
     public function it_preserves_the_current_route_name_when_redirecting(): void
     {
-        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->make();
+        $item = Item::factory()->withName('Thunderfury, Blessed Blade of the Windseeker')->create();
         $request = $this->requestForItem($item, 'wrong-slug');
 
         $response = (new EnsureItemSlugIsValid)->handle($request, fn () => response('next'));
