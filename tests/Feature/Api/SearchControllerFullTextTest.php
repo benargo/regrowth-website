@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Boss;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -218,6 +219,29 @@ class SearchControllerFullTextTest extends FullTextTestCase
                     ->assertOk()
                     ->assertJsonCount(1, 'data')
                     ->assertJsonPath('data.0.id', $items['itemB']->id);
+            },
+        );
+    }
+
+    #[Test]
+    public function it_does_not_serve_a_cached_search_across_different_game_versions(): void
+    {
+        $this->withCommittedTransaction(
+            create: fn () => ['item' => $this->createItem('Archbishop\'s Slippers')],
+            assert: function (array $items) {
+                GameVersion::factory()->create();
+
+                $this->getJson(route('api.search', ['q' => 'slipper']))
+                    ->assertOk()
+                    ->assertJsonCount(1, 'data');
+
+                Item::query()->delete();
+                GameVersion::query()->delete();
+                GameVersion::factory()->create();
+
+                $this->getJson(route('api.search', ['q' => 'slipper']))
+                    ->assertOk()
+                    ->assertJsonCount(0, 'data');
             },
         );
     }
