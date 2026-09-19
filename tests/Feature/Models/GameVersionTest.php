@@ -22,6 +22,8 @@ class GameVersionTest extends TestCase
 {
     use RefreshDatabase;
 
+    // ==================== attributes ====================
+
     #[Test]
     public function it_persists_via_the_factory(): void
     {
@@ -83,6 +85,8 @@ class GameVersionTest extends TestCase
         $this->assertNull($fresh->warcraftlogs_guild);
         $this->assertNull($fresh->warcraftlogs_expansion);
     }
+
+    // ==================== relationships ====================
 
     #[Test]
     public function it_has_many_bosses(): void
