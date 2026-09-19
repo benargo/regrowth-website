@@ -4,9 +4,11 @@ namespace Tests\Unit\Models;
 
 use App\Helpers\Database\Eloquent\Relations\HasManyKeyBy;
 use App\Models\Boss;
+use App\Models\GameVersion;
 use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\Raid;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
@@ -48,6 +50,7 @@ class PhaseTest extends ModelTestCase
             'number',
             'description',
             'start_date',
+            'game_version_id',
         ]);
     }
 
@@ -155,6 +158,24 @@ class PhaseTest extends ModelTestCase
         $this->assertNull($phase->start_date);
     }
 
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $phase = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $phase->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $phase = $this->create();
+
+        $this->assertNull($phase->game_version_id);
+    }
+
     // ==================== number accessor ====================
 
     #[Test]
@@ -246,5 +267,17 @@ class PhaseTest extends ModelTestCase
 
         $this->assertRelation($phase, 'guildTags', HasMany::class);
         $this->assertCount(3, $phase->guildTags);
+    }
+
+    // ==================== game version ====================
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $phase = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertRelation($phase, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($phase->gameVersion->is($gameVersion));
     }
 }

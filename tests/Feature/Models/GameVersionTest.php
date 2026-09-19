@@ -4,7 +4,14 @@ namespace Tests\Feature\Models;
 
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use App\Models\Boss;
 use App\Models\GameVersion;
+use App\Models\GuildTag;
+use App\Models\Phase;
+use App\Models\PlayableClass;
+use App\Models\PlayableRace;
+use App\Models\Raid;
+use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,6 +21,8 @@ use Tests\TestCase;
 class GameVersionTest extends TestCase
 {
     use RefreshDatabase;
+
+    // ==================== attributes ====================
 
     #[Test]
     public function it_persists_via_the_factory(): void
@@ -75,5 +84,76 @@ class GameVersionTest extends TestCase
         $this->assertNull($fresh->blizzard_namespace);
         $this->assertNull($fresh->warcraftlogs_guild);
         $this->assertNull($fresh->warcraftlogs_expansion);
+    }
+
+    // ==================== relationships ====================
+
+    #[Test]
+    public function it_has_many_bosses(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $boss = Boss::factory()->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertTrue($gameVersion->bosses->contains($boss));
+    }
+
+    #[Test]
+    public function it_has_many_phases(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $phase = Phase::factory()->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertTrue($gameVersion->phases->contains($phase));
+    }
+
+    #[Test]
+    public function it_has_many_raids(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $raid = Raid::factory()->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertTrue($gameVersion->raids->contains($raid));
+    }
+
+    #[Test]
+    public function it_has_many_guild_tags(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $guildTag = GuildTag::factory()->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertTrue($gameVersion->guildTags->contains($guildTag));
+    }
+
+    #[Test]
+    public function it_has_many_zones(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $zone = Zone::factory()->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertTrue($gameVersion->zones->contains($zone));
+    }
+
+    #[Test]
+    public function it_belongs_to_many_playable_races(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $race = PlayableRace::factory()->create();
+
+        $gameVersion->playableRaces()->attach($race);
+
+        $this->assertTrue($gameVersion->fresh()->playableRaces->contains($race));
+        $this->assertTrue($race->fresh()->gameVersions->contains($gameVersion));
+    }
+
+    #[Test]
+    public function it_belongs_to_many_playable_classes(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $class = PlayableClass::factory()->create();
+
+        $gameVersion->playableClasses()->attach($class);
+
+        $this->assertTrue($gameVersion->fresh()->playableClasses->contains($class));
+        $this->assertTrue($class->fresh()->gameVersions->contains($gameVersion));
     }
 }

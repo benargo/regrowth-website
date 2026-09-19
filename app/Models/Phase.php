@@ -12,10 +12,11 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-#[Fillable(['number', 'description', 'start_date'])]
+#[Fillable(['number', 'description', 'start_date', 'game_version_id'])]
 #[Hidden(['created_at', 'updated_at'])]
 #[UsePolicy(DatasetPolicy::class)]
 class Phase extends Model implements DatasetModel
@@ -90,5 +91,13 @@ class Phase extends Model implements DatasetModel
     public function guildTags(): HasMany
     {
         return $this->hasMany(GuildTag::class, 'tbc_phase_id');
+    }
+
+    /**
+     * Get the game version that this phase belongs to.
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
     }
 }

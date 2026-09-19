@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\GameVersion;
 use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\Report;
@@ -60,6 +61,7 @@ class GuildTagTest extends ModelTestCase
             'name',
             'count_attendance',
             'tbc_phase_id',
+            'game_version_id',
         ]);
     }
 
@@ -73,6 +75,7 @@ class GuildTagTest extends ModelTestCase
             'name',
             'count_attendance',
             'tbc_phase_id',
+            'game_version_id',
         ]);
     }
 
@@ -193,6 +196,24 @@ class GuildTagTest extends ModelTestCase
         $this->assertNull($guildTag->tbc_phase_id);
     }
 
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $guildTag = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $guildTag->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $guildTag = $this->create();
+
+        $this->assertNull($guildTag->game_version_id);
+    }
+
     // ==================== phase relationship ====================
 
     #[Test]
@@ -211,6 +232,18 @@ class GuildTagTest extends ModelTestCase
         $guildTag = $this->create(['tbc_phase_id' => null]);
 
         $this->assertNull($guildTag->phase);
+    }
+
+    // ==================== game version relationship ====================
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $guildTag = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertRelation($guildTag, 'gameVersion', BelongsTo::class);
+        $this->assertTrue($guildTag->gameVersion->is($gameVersion));
     }
 
     // ==================== reports relationship ====================
