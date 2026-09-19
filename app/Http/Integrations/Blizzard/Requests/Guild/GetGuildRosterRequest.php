@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Blizzard\Requests\Guild;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
 use Illuminate\Support\Str;
@@ -21,6 +22,7 @@ class GetGuildRosterRequest extends Request implements Cacheable
     public function __construct(
         protected string $realm,
         protected string $guild,
+        protected ?BlizzardNamespace $namespace = null,
     ) {
         $this->realm = Str::slug($realm);
         $this->guild = Str::slug($guild);
@@ -38,7 +40,8 @@ class GetGuildRosterRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('profile'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forProfileRequests($connector->getRegion()),
         );
     }
 

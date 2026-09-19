@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Blizzard\Requests\PlayableClass;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use Saloon\CachePlugin\Contracts\Cacheable;
@@ -17,6 +18,10 @@ class GetPlayableClassIndexRequest extends Request implements Cacheable
 
     protected Method $method = Method::GET;
 
+    public function __construct(
+        protected ?BlizzardNamespace $namespace = null,
+    ) {}
+
     public function resolveEndpoint(): string
     {
         return '/data/wow/playable-class/index';
@@ -29,7 +34,8 @@ class GetPlayableClassIndexRequest extends Request implements Cacheable
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('static'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forStaticRequests($connector->getRegion()),
         );
     }
 

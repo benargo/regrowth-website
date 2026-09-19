@@ -3,6 +3,7 @@
 namespace App\Http\Integrations\Blizzard\Requests\Media;
 
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
 use App\Http\Integrations\Blizzard\Pagination\SearchPaginator;
 use InvalidArgumentException;
@@ -30,6 +31,7 @@ class SearchMediaRequest extends Request implements Cacheable, HasRequestPaginat
         protected ?string $orderby = null,
         protected ?int $page = null,
         protected ?int $pageSize = null,
+        protected ?BlizzardNamespace $namespace = null,
     ) {
         if (count($tags) === 0) {
             throw new InvalidArgumentException('The "tags" parameter is required for media search.');
@@ -59,7 +61,8 @@ class SearchMediaRequest extends Request implements Cacheable, HasRequestPaginat
 
         $pendingRequest->headers()->add(
             'Battlenet-Namespace',
-            $connector->namespace('static'),
+            ($this->namespace ?? BlizzardNamespace::default())
+                ->forStaticRequests($connector->getRegion()),
         );
     }
 
