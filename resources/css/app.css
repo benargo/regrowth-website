@@ -403,6 +403,12 @@ svg.recharts-surface {
     background-size: cover;
 }
 
+.bg-camelot {
+    background-image: url("../images/bg_camelot.webp");
+    background-position: center;
+    background-size: cover;
+}
+
 .bg-dungeons {
     background-image: url("../images/bg_dungeons.webp");
     background-position: center;
