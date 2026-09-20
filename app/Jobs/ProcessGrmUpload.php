@@ -14,6 +14,7 @@ use App\Http\Integrations\Blizzard\Exceptions\CharacterNotFoundException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\User;
 use App\Notifications\GrmUploadCompleted;
@@ -60,6 +61,7 @@ class ProcessGrmUpload implements ShouldQueue
     public function __construct(
         public array $grmData,
         public string $userId,
+        public int $gameVersionId,
     ) {}
 
     public function middleware(): array
@@ -90,6 +92,8 @@ class ProcessGrmUpload implements ShouldQueue
         // Guard against a stale/deleted uploader; fail the job loudly if gone.
         User::findOrFail($this->userId);
 
+        $gameVersion = GameVersion::findOrFail($this->gameVersionId);
+
         $delimiter = $this->grmData['delimiter'];
         // GRM exports use one delimiter for columns and the opposite for alt lists.
         $altDelimiter = $delimiter === ',' ? ';' : ',';
@@ -113,6 +117,7 @@ class ProcessGrmUpload implements ShouldQueue
             $total,
             $altDelimiter,
             $blizzard,
+            $gameVersion,
             &$processedCount,
             &$errorCount,
             &$errors,
@@ -124,6 +129,7 @@ class ProcessGrmUpload implements ShouldQueue
                 $total,
                 $altDelimiter,
                 $blizzard,
+                $gameVersion,
                 &$processedCount,
                 &$errorCount,
                 &$errors,
@@ -134,7 +140,7 @@ class ProcessGrmUpload implements ShouldQueue
                     $characterName = $row['Name'] ?? 'Unknown';
 
                     try {
-                        $this->processRow($row, $altDelimiter, $blizzard);
+                        $this->processRow($row, $altDelimiter, $blizzard, $gameVersion);
                         $processedCount++;
                     } catch (CharacterTooLowLevelException $e) {
                         // Below level 60 — skip silently, not an error.
@@ -261,7 +267,7 @@ class ProcessGrmUpload implements ShouldQueue
      *
      * @param  array<string, string>  $row
      */
-    protected function processRow(array $row, string $altDelimiter, BlizzardConnector $blizzard): void
+    protected function processRow(array $row, string $altDelimiter, BlizzardConnector $blizzard, GameVersion $gameVersion): void
     {
         $name = trim($row['Name']);
         $rankName = trim($row['Rank']);
@@ -280,8 +286,9 @@ class ProcessGrmUpload implements ShouldQueue
         // Get character ID from Blizzard API
         try {
             $status = $blizzard->send(new GetCharacterStatusRequest(
-                $blizzard->defaultRealmSlug(),
+                $gameVersion->realm ?? $blizzard->defaultRealmSlug(),
                 $name,
+                $gameVersion->blizzard_namespace,
             ))->dto();
             $characterId = $status->id;
         } catch (BlizzardRequestException $e) {
@@ -298,6 +305,7 @@ class ProcessGrmUpload implements ShouldQueue
             [
                 'name' => $name,
                 'is_main' => strtolower($mainAlt) === 'main',
+                'game_version_id' => $gameVersion->id,
             ]
         );
 
@@ -310,7 +318,7 @@ class ProcessGrmUpload implements ShouldQueue
 
         // Process alts if this is a main character
         if ($character->is_main && ! empty($playerAlts)) {
-            $this->processAlts($character, $playerAlts, $altDelimiter, $blizzard);
+            $this->processAlts($character, $playerAlts, $altDelimiter, $blizzard, $gameVersion);
         }
     }
 
@@ -321,7 +329,8 @@ class ProcessGrmUpload implements ShouldQueue
         Character $mainCharacter,
         string $playerAlts,
         string $altDelimiter,
-        BlizzardConnector $blizzard
+        BlizzardConnector $blizzard,
+        GameVersion $gameVersion,
     ): void {
         $altNames = explode($altDelimiter, $playerAlts);
 
@@ -341,8 +350,9 @@ class ProcessGrmUpload implements ShouldQueue
 
             try {
                 $altStatus = $blizzard->send(new GetCharacterProfileRequest(
-                    $blizzard->defaultRealmSlug(),
+                    $gameVersion->realm ?? $blizzard->defaultRealmSlug(),
                     $altName,
+                    $gameVersion->blizzard_namespace,
                 ))->dto();
                 $altId = $altStatus->id;
                 $altLevel = $altStatus->level;
@@ -352,7 +362,7 @@ class ProcessGrmUpload implements ShouldQueue
                 // Find or create the alt character
                 $altCharacter = Character::query()->updateOrCreate(
                     ['id' => $altId],
-                    ['name' => $altName]
+                    ['name' => $altName, 'game_version_id' => $gameVersion->id]
                 );
 
                 // Create links in both directions so either character can find the other.

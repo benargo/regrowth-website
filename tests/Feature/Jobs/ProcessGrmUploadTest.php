@@ -12,6 +12,7 @@ use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterStatusRequest;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\User;
 use App\Services\Discord\Discord;
@@ -21,6 +22,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Assert as PHPUnit;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Saloon\Http\Faking\MockResponse;
@@ -40,6 +42,8 @@ class ProcessGrmUploadTest extends TestCase
 
     private User $user;
 
+    private GameVersion $gameVersion;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -49,6 +53,7 @@ class ProcessGrmUploadTest extends TestCase
         ]);
 
         $this->user = User::factory()->create();
+        $this->gameVersion = GameVersion::factory()->create();
 
         $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
 
@@ -71,7 +76,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -94,7 +99,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'TestChar', 'Rank' => 'Officer', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Alt', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -112,7 +117,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'AltChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Alt', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -138,7 +143,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltOne;AltTwo'],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -166,7 +171,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltChar-Thunderstrike'],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -189,7 +194,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltChar - Wild Growth'],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -215,7 +220,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltOne,AltTwo'],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -236,7 +241,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
                 ['Name' => 'SuccessChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -268,7 +273,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $discordMock);
     }
@@ -297,7 +302,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'LowChar', 'Rank' => 'Raider', 'Level' => '10', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $discordMock);
 
@@ -326,7 +331,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $discordMock);
     }
@@ -352,7 +357,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltChar'],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -374,7 +379,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -404,7 +409,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'CharOne', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
                 ['Name' => 'CharTwo', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Alt', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -425,7 +430,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'GoodChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
                 ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -451,7 +456,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -469,7 +474,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => '', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
                 ['Name' => '   ', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -495,7 +500,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
         $job->withFakeQueueInteractions();
         $job->handle(app(BlizzardConnector::class), $rateLimitedDiscord);
 
@@ -519,7 +524,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'CharOne', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
                 ['Name' => 'CharTwo', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Alt', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -542,7 +547,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'CharOne', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
                 ['Name' => 'CharTwo', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Alt', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -566,7 +571,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'CharOne', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -591,7 +596,7 @@ class ProcessGrmUploadTest extends TestCase
                 ['Name' => 'GoodChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
                 ['Name' => 'FailChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -610,7 +615,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->failed(new \RuntimeException('boom'));
 
@@ -634,9 +639,9 @@ class ProcessGrmUploadTest extends TestCase
             'AltTwo' => 33333,
         ]);
 
-        $main = Character::factory()->main()->create(['id' => 11111, 'name' => 'MainChar']);
-        $altOne = Character::factory()->create(['id' => 22222, 'name' => 'AltOne']);
-        $altTwo = Character::factory()->create(['id' => 33333, 'name' => 'AltTwo']);
+        $main = Character::factory()->main()->create(['id' => 11111, 'name' => 'MainChar', 'game_version_id' => $this->gameVersion->id]);
+        $altOne = Character::factory()->create(['id' => 22222, 'name' => 'AltOne', 'game_version_id' => $this->gameVersion->id]);
+        $altTwo = Character::factory()->create(['id' => 33333, 'name' => 'AltTwo', 'game_version_id' => $this->gameVersion->id]);
         $altOne->linkedCharacters()->attach($main->id);
         $altTwo->linkedCharacters()->attach($main->id);
 
@@ -654,7 +659,7 @@ class ProcessGrmUploadTest extends TestCase
             'rows' => [
                 ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltOne;AltTwo'],
             ],
-        ], $this->user->id);
+        ], $this->user->id, $this->gameVersion->id);
 
         $job->handle(app(BlizzardConnector::class), $this->discord);
 
@@ -665,6 +670,109 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertEquals($originalRankUpdatedAt, $rank->updated_at, 'GuildRank should not be touched');
         $this->assertEquals($originalAltOneUpdatedAt, $altOne->updated_at, 'Existing alt characters should not be touched');
         $this->assertEquals($originalAltTwoUpdatedAt, $altTwo->updated_at, 'Existing alt characters should not be touched');
+    }
+
+    // ==================== game version ====================
+
+    #[Test]
+    public function it_stamps_created_characters_with_the_game_version(): void
+    {
+        $this->fakeCharacters(['TestChar' => 12345]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class), $this->discord);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'game_version_id' => $this->gameVersion->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_stamps_alt_characters_with_the_same_game_version_as_the_main(): void
+    {
+        $this->fakeCharacters(['MainChar' => 11111, 'AltOne' => 22222]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltOne'],
+            ],
+        ], $this->user->id, $this->gameVersion->id);
+
+        $job->handle(app(BlizzardConnector::class), $this->discord);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 22222,
+            'game_version_id' => $this->gameVersion->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_queries_the_blizzard_api_using_the_game_versions_realm(): void
+    {
+        $version = GameVersion::factory()->create(['realm' => 'stormrage']);
+        $this->fakeCharactersOnRealm('stormrage', ['TestChar' => 12345]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $version->id);
+
+        $job->handle(app(BlizzardConnector::class), $this->discord);
+
+        $this->assertDatabaseHas('characters', ['id' => 12345]);
+    }
+
+    // ==================== cross-version isolation ====================
+
+    #[Test]
+    public function a_character_created_under_one_game_version_keeps_its_stamp_when_reprocessed_under_another(): void
+    {
+        $this->fakeCharacters(['TestChar' => 12345]);
+        $versionA = GameVersion::factory()->create();
+        $versionB = GameVersion::factory()->create();
+
+        $channel = ChannelResource::from(['id' => '1407688195386114119', 'type' => 0]);
+        $discord = $this->mock(Discord::class, function (MockInterface $mock) use ($channel) {
+            $mock->shouldReceive('getChannel')->andReturn($channel);
+            $mock->shouldReceive('createMessage')
+                ->andReturnUsing(fn () => $this->makeDiscordMessage(id: (string) fake()->unique()->numerify('99999999999999#####'), channelId: '1407688195386114119'));
+        });
+
+        $firstRun = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $versionA->id);
+        $firstRun->handle(app(BlizzardConnector::class), $discord);
+
+        $secondRun = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $versionB->id);
+        $secondRun->handle(app(BlizzardConnector::class), $discord);
+
+        $this->assertDatabaseHas('characters', [
+            'id' => 12345,
+            'game_version_id' => $versionB->id,
+        ]);
     }
 
     // ==================== helpers ====================
@@ -712,6 +820,57 @@ class ProcessGrmUploadTest extends TestCase
                 'race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
                 'character_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
                 'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => 'Thunderstrike', 'id' => 1],
+                'level' => 70,
+                'last_login_timestamp' => 0,
+                'average_item_level' => 0,
+                'equipped_item_level' => 0,
+            ], status: 200);
+        };
+
+        Saloon::fake([
+            GetClientCredentialsTokenBasicAuthRequest::class => MockResponse::make(body: [
+                'access_token' => 'test_token',
+                'token_type' => 'bearer',
+                'expires_in' => 3600,
+            ], status: 200),
+            GetCharacterStatusRequest::class => $resolve,
+            GetCharacterProfileRequest::class => $resolve,
+        ]);
+    }
+
+    /**
+     * Like fakeCharacters(), but asserts every request's realm segment matches
+     * the given slug, failing the test if a request goes to the wrong realm.
+     *
+     * @param  array<string, int>  $characterMap
+     */
+    protected function fakeCharactersOnRealm(string $realm, array $characterMap): void
+    {
+        $realmSlug = Str::slug($realm);
+        $idBySlug = [];
+        foreach ($characterMap as $name => $id) {
+            $idBySlug[Str::slug($name)] = $id;
+        }
+
+        $resolve = function (PendingRequest $pendingRequest) use ($realm, $realmSlug, $idBySlug): MockResponse {
+            $path = parse_url($pendingRequest->getUrl(), PHP_URL_PATH) ?: '';
+            $segments = explode('/', trim($path, '/'));
+            $requestRealm = $segments[3] ?? '';
+            $slug = $segments[4] ?? '';
+
+            PHPUnit::assertSame($realmSlug, $requestRealm, "Expected request against realm '{$realmSlug}', got '{$requestRealm}'.");
+
+            $id = $idBySlug[$slug] ?? 0;
+
+            return MockResponse::make(body: [
+                'id' => $id,
+                'name' => $slug,
+                'is_valid' => true,
+                'gender' => ['type' => 'MALE', 'name' => 'Male'],
+                'faction' => ['type' => 'ALLIANCE', 'name' => 'Alliance'],
+                'race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
+                'character_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
+                'realm' => ['key' => ['href' => 'https://example.test/realm/1'], 'name' => $realm, 'id' => 1],
                 'level' => 70,
                 'last_login_timestamp' => 0,
                 'average_item_level' => 0,
