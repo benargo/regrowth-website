@@ -5,6 +5,7 @@ namespace App\Http\Requests\Dashboard;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UploadGrmDataRequest extends FormRequest
 {
@@ -28,6 +29,7 @@ class UploadGrmDataRequest extends FormRequest
     {
         return [
             'grm_data' => ['required', 'string'],
+            'game_version_id' => ['required', 'integer', Rule::exists('game_versions', 'id')],
         ];
     }
 
@@ -41,6 +43,9 @@ class UploadGrmDataRequest extends FormRequest
         return [
             'grm_data.required' => 'GRM data is required.',
             'grm_data.string' => 'GRM data must be a string.',
+            'game_version_id.required' => 'A game version is required.',
+            'game_version_id.integer' => 'The selected game version is invalid.',
+            'game_version_id.exists' => 'The selected game version does not exist.',
         ];
     }
 
