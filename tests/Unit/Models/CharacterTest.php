@@ -7,6 +7,7 @@ use App\Enums\Gender;
 use App\Events\CharacterDeleted;
 use App\Events\CharacterUpdated;
 use App\Models\Character;
+use App\Models\GameVersion;
 use App\Models\GuildRank;
 use App\Models\PlannedAbsence;
 use App\Models\PlayableClass;
@@ -47,6 +48,7 @@ class CharacterTest extends ModelTestCase
 
         $this->assertFillable($model, [
             'id',
+            'game_version_id',
             'name',
             'level',
             'rank_id',
@@ -65,6 +67,7 @@ class CharacterTest extends ModelTestCase
 
         $this->assertFillableAttribute($model, [
             'id',
+            'game_version_id',
             'name',
             'level',
             'rank_id',
@@ -128,6 +131,44 @@ class CharacterTest extends ModelTestCase
 
         $this->assertNotNull($character->created_at);
         $this->assertNotNull($character->updated_at);
+    }
+
+    // ==================== game_version ====================
+
+    #[Test]
+    public function characters_table_has_a_nullable_game_version_id_column(): void
+    {
+        $character = $this->create();
+
+        $this->assertNull($character->game_version_id);
+    }
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $version = GameVersion::factory()->create();
+        $character = $this->create(['game_version_id' => $version->id]);
+
+        $this->assertTrue($character->gameVersion->is($version));
+    }
+
+    #[Test]
+    public function game_version_returns_belongs_to_relationship(): void
+    {
+        $character = new Character;
+
+        $this->assertInstanceOf(BelongsTo::class, $character->gameVersion());
+    }
+
+    #[Test]
+    public function deleting_a_game_version_nulls_the_characters_game_version_id(): void
+    {
+        $version = GameVersion::factory()->create();
+        $character = $this->create(['game_version_id' => $version->id]);
+
+        $version->delete();
+
+        $this->assertTableHas(['id' => $character->id, 'game_version_id' => null]);
     }
 
     // ==================== is_loot_councillor ====================

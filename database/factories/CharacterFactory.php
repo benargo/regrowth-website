@@ -24,6 +24,7 @@ class CharacterFactory extends Factory
     public function definition(): array
     {
         return [
+            'game_version_id' => null,
             'name' => fake()->randomElement($this->characterNames),
             'level' => fake()->numberBetween(1, 80),
             'rank_id' => null,
