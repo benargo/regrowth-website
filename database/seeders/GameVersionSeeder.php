@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\Faction;
+use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Models\GameVersion;
 use Carbon\Carbon;
@@ -20,6 +21,7 @@ class GameVersionSeeder extends Seeder
                 'realm' => 'Thunderstrike',
                 'faction' => Faction::ALLIANCE->value,
                 'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, CarbonTimeZone::create('Europe/Paris')),
+                'theme' => Theme::CLASSIC->value,
                 'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY->value,
                 'warcraftlogs_guild' => 774848,
                 'warcraftlogs_expansion' => 1001,
