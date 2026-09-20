@@ -22,6 +22,7 @@ class GameVersion extends Model
     {
         return [
             'faction' => Faction::class,
+            'release_date' => 'datetime',
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
             'warcraftlogs_expansion' => 'integer',

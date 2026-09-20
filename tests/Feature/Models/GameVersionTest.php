@@ -5,7 +5,9 @@ namespace Tests\Feature\Models;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Models\GameVersion;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon as SupportCarbon;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -54,6 +56,38 @@ class GameVersionTest extends TestCase
 
         $this->assertIsInt($fresh->warcraftlogs_guild);
         $this->assertIsInt($fresh->warcraftlogs_expansion);
+    }
+
+    #[Test]
+    public function it_casts_release_date_to_carbon(): void
+    {
+        $gameVersion = GameVersion::factory()->create([
+            'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, config('app.timezone')),
+        ]);
+
+        $this->assertInstanceOf(SupportCarbon::class, $gameVersion->fresh()->release_date);
+    }
+
+    #[Test]
+    public function it_round_trips_release_date_without_a_timezone_shift(): void
+    {
+        $releaseDate = Carbon::create(2026, 2, 6, 0, 0, 0, config('app.timezone'));
+
+        $gameVersion = GameVersion::factory()->create(['release_date' => $releaseDate]);
+
+        $this->assertTrue($releaseDate->eq($gameVersion->fresh()->release_date));
+    }
+
+    #[Test]
+    public function it_converts_release_date_to_app_timezone_at_the_consumer_boundary(): void
+    {
+        $releaseDate = Carbon::create(2026, 2, 6, 0, 0, 0, config('app.timezone'));
+
+        $gameVersion = GameVersion::factory()->create(['release_date' => $releaseDate]);
+
+        $converted = $gameVersion->fresh()->release_date->copy()->setTimezone(config('app.timezone'));
+
+        $this->assertSame('2026-02-06 00:00:00', $converted->toDateTimeString());
     }
 
     #[Test]
