@@ -165,6 +165,55 @@ class GrmUploadValidationTest extends DashboardTestCase
     }
 
     #[Test]
+    public function upload_form_excludes_game_versions_without_a_blizzard_namespace(): void
+    {
+        GameVersion::factory()->create(['title' => 'Classic', 'blizzard_namespace' => null]);
+        GameVersion::factory()->create(['title' => 'Season of Discovery']);
+
+        $response = $this->actingAs($this->officer)->get(route('management.grm-upload.form'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->has('gameVersions', 1)
+            ->where('gameVersions.0.title', 'Season of Discovery')
+        );
+    }
+
+    #[Test]
+    public function upload_form_member_count_uses_the_selected_game_version(): void
+    {
+        GameVersion::factory()->create(['title' => 'Alpha Version', 'realm' => 'thunderstrike']);
+        $selected = GameVersion::factory()->create(['title' => 'Beta Version', 'realm' => 'proudmoore']);
+
+        $this->mockGetGuildRoster(['members' => [
+            [
+                'character' => [
+                    'id' => 1,
+                    'name' => 'Alpha',
+                    'level' => 70,
+                    'playable_class' => ['key' => ['href' => 'https://example.test/class/1'], 'name' => 'Warrior', 'id' => 1],
+                    'playable_race' => ['key' => ['href' => 'https://example.test/race/1'], 'name' => 'Human', 'id' => 1],
+                    'realm' => ['key' => ['href' => 'https://example.test/realm'], 'name' => 'Proudmoore', 'id' => 1, 'slug' => 'proudmoore'],
+                ],
+                'rank' => 0,
+            ],
+        ]]);
+        $this->applyBlizzardMocks();
+
+        $response = $this->actingAs($this->officer)->get(route('management.grm-upload.form'));
+        $pageData = $response->viewData('page');
+
+        $partialResponse = $this->actingAs($this->officer)->get(route('management.grm-upload.form', ['game_version_id' => $selected->id]), [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $pageData['version'],
+            'X-Inertia-Partial-Component' => 'Manage/GrmUpload/Form',
+            'X-Inertia-Partial-Data' => 'memberCount',
+        ]);
+
+        $partialResponse->assertOk();
+        $partialResponse->assertJsonPath('props.memberCount', 1);
+    }
+
+    #[Test]
     public function upload_form_member_count_uses_the_first_game_versions_realm(): void
     {
         GameVersion::factory()->create(['title' => 'Alpha Version', 'realm' => 'thunderstrike']);

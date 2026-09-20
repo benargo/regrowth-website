@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Requests\Dashboard\UploadGrmDataRequest;
+use App\Http\Resources\GameVersionResource;
 use App\Jobs\ProcessGrmUpload;
 use App\Models\GameVersion;
 use Carbon\Carbon;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -32,7 +34,7 @@ class GrmController extends Controller
     /**
      * Show the GRM data upload form.
      */
-    public function showUploadForm()
+    public function showUploadForm(Request $request)
     {
         if ($this->storage->exists('grm/uploads/latest.csv')) {
             $lastModified = Carbon::createFromTimestamp(
@@ -42,23 +44,37 @@ class GrmController extends Controller
             $lastModified = null;
         }
 
+        $gameVersionId = $request->integer('game_version_id') ?: null;
+
         return Inertia::render('Manage/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
-            'gameVersions' => GameVersion::orderBy('release_date')->get(['id', 'title']),
-            'memberCount' => Inertia::defer(function () {
-                $gameVersion = GameVersion::orderBy('release_date')->first();
+            'gameVersions' => GameVersionResource::collection(
+                GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->get(['id', 'title', 'theme'])
+            )->resolve($request),
+            'memberCount' => Inertia::defer(function () use ($gameVersionId) {
+                $gameVersion = $gameVersionId
+                    ? GameVersion::whereNotNull('blizzard_namespace')->find($gameVersionId)
+                    : GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->first();
 
-                if ($gameVersion?->realm === null) {
-                    return null;
-                }
-
-                return count($this->blizzardConnector->send(new GetGuildRosterRequest(
-                    $gameVersion->realm,
-                    $this->blizzardConnector->defaultGuildSlug(),
-                    $gameVersion->blizzard_namespace,
-                ))->dto()->members);
+                return $this->resolveMemberCount($gameVersion);
             }),
         ]);
+    }
+
+    /**
+     * Resolve the guild member count for the given game version.
+     */
+    protected function resolveMemberCount(?GameVersion $gameVersion): ?int
+    {
+        if ($gameVersion?->realm === null) {
+            return null;
+        }
+
+        return count($this->blizzardConnector->send(new GetGuildRosterRequest(
+            $gameVersion->realm,
+            $this->blizzardConnector->defaultGuildSlug(),
+            $gameVersion->blizzard_namespace,
+        ))->dto()->members);
     }
 
     #[Authorize('edit-datasets')]
