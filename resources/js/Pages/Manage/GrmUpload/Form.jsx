@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Deferred, useForm } from "@inertiajs/react";
+import { Deferred, router, useForm } from "@inertiajs/react";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
 import Modal from "@/Components/Modal";
+import Card from "@/Components/Card";
 import InputError from "@/Components/InputError";
 import PageContainer from "@/Components/PageContainer";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import useGrmUploadChannel from "@/Hooks/useGrmUploadChannel";
 import useCountUp from "@/Hooks/useCountUp";
 
@@ -19,14 +21,14 @@ function TallyStat({ label, value, colorClass }) {
     const animated = useCountUp(value);
 
     return (
-        <div className="flex flex-col items-center rounded bg-ground-800 px-2 py-1.5">
+        <div className="bg-ground-800 flex flex-col items-center rounded px-2 py-1.5">
             <span className={`text-lg font-bold ${colorClass}`}>{animated}</span>
-            <span className="text-center text-xs text-secondary-400">{label}</span>
+            <span className="text-secondary-400 text-center text-xs">{label}</span>
         </div>
     );
 }
 
-export default function GRM({ lastUploadTimestamp, memberCount }) {
+export default function GRM({ lastUploadTimestamp, memberCount, gameVersions }) {
     const [isDragging, setIsDragging] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
@@ -42,9 +44,19 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
 
     const retryCountdownRef = useRef(null);
 
-    const { data, setData, post, processing, errors: formErrors } = useForm({
+    const {
+        data,
+        setData,
+        post,
+        processing,
+        errors: formErrors,
+    } = useForm({
         grm_data: "",
+        game_version_id: gameVersions.length === 1 ? gameVersions[0].id : "",
     });
+
+    const selectedGameVersion = gameVersions.find((v) => v.id === data.game_version_id);
+    const hasMultipleGameVersions = gameVersions.length > 1;
 
     const clearTimers = () => {
         if (retryCountdownRef.current) {
@@ -189,8 +201,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
         reader.readAsText(file);
     };
 
-    const processedSoFar =
-        tallies.processedCount + tallies.skippedCount + tallies.warningCount + tallies.errorCount;
+    const processedSoFar = tallies.processedCount + tallies.skippedCount + tallies.warningCount + tallies.errorCount;
     const progressPercent =
         status === "completed"
             ? 100
@@ -210,103 +221,141 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
     return (
         <Master title="GRM Data Upload">
             <SharedHeader backgroundClass="bg-officer-meeting" title="GRM Data Upload" />
+            {hasMultipleGameVersions && data.game_version_id && (
+                <ToolNav>
+                    <ToolNavLink as="button" type="button" onClick={() => setData("game_version_id", "")}>
+                        ← Change game version
+                    </ToolNavLink>
+                </ToolNav>
+            )}
             <PageContainer>
-                <p className="mb-6 text-xl font-bold">Upload your GRM data here.</p>
-                {lastUploadTimestamp ? (
-                    <p className="text-md mb-6 text-secondary-400">
-                        The last GRM data upload was made on {lastUploadTimestamp}
+                {gameVersions.length === 0 ? (
+                    <p className="text-secondary-400 text-lg">
+                        No game versions have been set up yet. Add one before uploading GRM data.
                     </p>
+                ) : !data.game_version_id ? (
+                    <div>
+                        <p className="mb-6 text-xl font-bold">Choose a game version to get started.</p>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {gameVersions.map((version) => (
+                                <Card
+                                    key={version.id}
+                                    backgroundClass={version.banner_class}
+                                    heading={version.title}
+                                    onClick={() => {
+                                        setData("game_version_id", version.id);
+                                        router.reload({
+                                            only: ["memberCount"],
+                                            data: { game_version_id: version.id },
+                                        });
+                                    }}
+                                />
+                            ))}
+                        </div>
+                        <InputError message={formErrors.game_version_id} className="mt-4" />
+                    </div>
                 ) : (
-                    <p className="text-md mb-6 text-secondary-400">No previous uploads found.</p>
-                )}
-                <p className="mb-6 text-lg">To export your GRM data, follow these steps:</p>
-                <ol className="mb-6 list-inside list-decimal space-y-2">
-                    <li>
-                        Open{" "}
-                        <span className="inline-block rounded-xs border border-ink-800 bg-ground-800 p-1 font-mono font-bold">
-                            /grm export
-                        </span>{" "}
-                        in-game.
-                    </li>
-                    <li>
-                        Select the <strong>Members</strong> tab.
-                    </li>
-                    <li>
-                        Set the <strong>delimiter</strong> to a comma (
-                        <span className="font-mono text-2xl font-bold">,</span>)
-                    </li>
-                    <li>
-                        Make sure the right columns are selected for export. You need to select the following
-                        columns:
-                        <ul className="my-1 ml-6 list-inside list-disc">
-                            <li>Name</li>
-                            <li>Rank</li>
-                            <li>Level</li>
-                            <li>Last Online</li>
-                            <li>Main/Alt</li>
-                            <li>Player Alts</li>
-                        </ul>
-                        <p className="italics mt-1 text-secondary-400">
-                            Any other columns are optional, but ideally you should only select the ones listed
-                            above.
+                    <div className="animate-fade-in-up">
+                        <p className="mb-6 text-xl font-bold">
+                            Upload your GRM data for <span className="text-heading">{selectedGameVersion.title}</span>.
                         </p>
-                    </li>
-                    <li>
-                        Make sure <strong>Remove Alt-Code Letters From Names</strong> is{" "}
-                        <span className="font-bold uppercase underline">not</span> checked.
-                    </li>
-                    <li>
-                        Make sure <strong>Auto Include Headers</strong>{" "}
-                        <span className="font-bold uppercase underline">is</span> checked.
-                    </li>
-                    <li>
-                        Click the
-                        <span className="font-friz-quadrata mx-1 inline-block rounded-md border border-secondary-600 bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
-                            Export Selection
-                        </span>{" "}
-                        button.
-                    </li>
-                    <li>Copy the exported CSV data, and paste it below.</li>
-                    <li>
-                        Click the
-                        <span className="font-friz-quadrata mx-1 inline-block rounded-md border border-secondary-600 bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
-                            Export Next{" "}
-                            <Deferred data="memberCount" fallback={<span className="italics">X</span>}>
-                                {memberCount - 500}
-                            </Deferred>
-                        </span>
-                        button, copy the new data, and paste it below, appending it to the previous data.
-                    </li>
-                </ol>
+                        {lastUploadTimestamp ? (
+                            <p className="text-md text-secondary-400 mb-6">
+                                The last GRM data upload was made on {lastUploadTimestamp}
+                            </p>
+                        ) : (
+                            <p className="text-md text-secondary-400 mb-6">No previous uploads found.</p>
+                        )}
+                        <p className="mb-6 text-lg">To export your GRM data, follow these steps:</p>
+                        <ol className="mb-6 list-inside list-decimal space-y-2">
+                            <li>
+                                Open{" "}
+                                <span className="border-ink-800 bg-ground-800 inline-block rounded-xs border p-1 font-mono font-bold">
+                                    /grm export
+                                </span>{" "}
+                                in-game.
+                            </li>
+                            <li>
+                                Select the <strong>Members</strong> tab.
+                            </li>
+                            <li>
+                                Set the <strong>delimiter</strong> to a comma (
+                                <span className="font-mono text-2xl font-bold">,</span>)
+                            </li>
+                            <li>
+                                Make sure the right columns are selected for export. You need to select the following
+                                columns:
+                                <ul className="my-1 ml-6 list-inside list-disc">
+                                    <li>Name</li>
+                                    <li>Rank</li>
+                                    <li>Level</li>
+                                    <li>Last Online</li>
+                                    <li>Main/Alt</li>
+                                    <li>Player Alts</li>
+                                </ul>
+                                <p className="italics text-secondary-400 mt-1">
+                                    Any other columns are optional, but ideally you should only select the ones listed
+                                    above.
+                                </p>
+                            </li>
+                            <li>
+                                Make sure <strong>Remove Alt-Code Letters From Names</strong> is{" "}
+                                <span className="font-bold uppercase underline">not</span> checked.
+                            </li>
+                            <li>
+                                Make sure <strong>Auto Include Headers</strong>{" "}
+                                <span className="font-bold uppercase underline">is</span> checked.
+                            </li>
+                            <li>
+                                Click the
+                                <span className="font-friz-quadrata border-secondary-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
+                                    Export Selection
+                                </span>{" "}
+                                button.
+                            </li>
+                            <li>Copy the exported CSV data, and paste it below.</li>
+                            <li>
+                                Click the
+                                <span className="font-friz-quadrata border-secondary-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
+                                    Export Next{" "}
+                                    <Deferred data="memberCount" fallback={<span className="italics">X</span>}>
+                                        {memberCount - 500}
+                                    </Deferred>
+                                </span>
+                                button, copy the new data, and paste it below, appending it to the previous data.
+                            </li>
+                        </ol>
 
-                <form onSubmit={handleSubmit}>
-                    <textarea
-                        name="grm_data"
-                        rows="10"
-                        className={`mb-2 w-full rounded border bg-ground-800 p-4 text-white transition-colors ${
-                            isDragging
-                                ? "border-blue-500 bg-ground-700"
-                                : formErrors.grm_data
-                                  ? "border-red-500"
-                                  : "border-ink-600"
-                        }`}
-                        placeholder="Paste your GRM CSV data here, or drag and drop a CSV file."
-                        value={data.grm_data}
-                        onChange={(e) => setData("grm_data", e.target.value)}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    />
-                    <InputError message={formErrors.grm_data} className="mb-4" />
+                        <form onSubmit={handleSubmit}>
+                            <textarea
+                                name="grm_data"
+                                rows="10"
+                                className={`bg-ground-800 mb-2 w-full rounded border p-4 text-white transition-colors ${
+                                    isDragging
+                                        ? "bg-ground-700 border-blue-500"
+                                        : formErrors.grm_data
+                                          ? "border-red-500"
+                                          : "border-ink-600"
+                                }`}
+                                placeholder="Paste your GRM CSV data here, or drag and drop a CSV file."
+                                value={data.grm_data}
+                                onChange={(e) => setData("grm_data", e.target.value)}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                            />
+                            <InputError message={formErrors.grm_data} className="mb-4" />
 
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {processing ? "Uploading..." : "Upload GRM Data"}
-                    </button>
-                </form>
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {processing ? "Uploading..." : "Upload GRM Data"}
+                            </button>
+                        </form>
+                    </div>
+                )}
             </PageContainer>
 
             {showModal && (
@@ -331,15 +380,11 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                         </div>
 
                         <div className="mb-4">
-                            <div className="mb-1 flex justify-between text-sm text-secondary-400">
-                                <span>
-                                    {total
-                                        ? `${processedSoFar} of ${total} characters`
-                                        : "Preparing..."}
-                                </span>
+                            <div className="text-secondary-400 mb-1 flex justify-between text-sm">
+                                <span>{total ? `${processedSoFar} of ${total} characters` : "Preparing..."}</span>
                                 <span>{animatedPercent}%</span>
                             </div>
-                            <div className="h-3 w-full overflow-hidden rounded-full bg-ground-700">
+                            <div className="bg-ground-700 h-3 w-full overflow-hidden rounded-full">
                                 <div
                                     className={`h-3 rounded-full transition-all duration-500 ${barColor}`}
                                     style={{ width: `${animatedPercent}%` }}
@@ -349,7 +394,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
 
                         {(isQueued || isProcessing) && (
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-sm text-secondary-300">
+                                <div className="text-secondary-300 flex items-center gap-2 text-sm">
                                     <svg
                                         className="h-4 w-4 shrink-0 animate-spin text-blue-400"
                                         fill="none"
@@ -402,7 +447,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                         )}
 
                         {isRetrying && (
-                            <div className="rounded border border-ink-700 bg-ink-600/40 p-3 text-sm text-heading">
+                            <div className="border-ink-700 bg-ink-600/40 text-heading rounded border p-3 text-sm">
                                 <div className="flex items-center gap-2 font-semibold">
                                     <svg
                                         className="h-4 w-4 shrink-0"
@@ -472,7 +517,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                                         tallies.skippedCount > 0 ||
                                         tallies.warningCount > 0 ||
                                         tallies.errorCount > 0) && (
-                                        <ul className="space-y-1 pl-1 text-sm text-secondary-300">
+                                        <ul className="text-secondary-300 space-y-1 pl-1 text-sm">
                                             {tallies.processedCount > 0 && (
                                                 <li>
                                                     <span className="font-semibold text-green-400">
@@ -520,9 +565,7 @@ export default function GRM({ lastUploadTimestamp, memberCount }) {
                                                 </li>
                                             ))}
                                             {errors.length > 10 && (
-                                                <li className="text-secondary-400">
-                                                    ...and {errors.length - 10} more
-                                                </li>
+                                                <li className="text-secondary-400">...and {errors.length - 10} more</li>
                                             )}
                                         </ul>
                                     </div>
