@@ -15,7 +15,7 @@ class AsTheme implements CastsAttributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): Theme
     {
-        return Theme::from($value);
+        return $value === null ? Theme::default() : Theme::from($value);
     }
 
     /**
