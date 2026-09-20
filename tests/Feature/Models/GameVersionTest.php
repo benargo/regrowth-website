@@ -3,6 +3,7 @@
 namespace Tests\Feature\Models;
 
 use App\Enums\Faction;
+use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Models\Boss;
 use App\Models\GameVersion;
@@ -25,7 +26,7 @@ class GameVersionTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ==================== attributes ====================
+    // ==================== factory ====================
 
     #[Test]
     public function it_persists_via_the_factory(): void
@@ -37,6 +38,8 @@ class GameVersionTest extends TestCase
             'title' => $gameVersion->title,
         ]);
     }
+
+    // ==================== enum casting ====================
 
     #[Test]
     public function it_casts_faction_to_the_faction_enum(): void
@@ -69,6 +72,44 @@ class GameVersionTest extends TestCase
     }
 
     #[Test]
+    public function it_casts_theme_to_the_theme_enum(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['theme' => Theme::FOREVER]);
+
+        $this->assertSame(Theme::FOREVER, $gameVersion->fresh()->theme);
+    }
+
+    #[Test]
+    public function it_throws_when_reading_a_theme_value_outside_the_enum(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        DB::table('game_versions')
+            ->where('id', $gameVersion->id)
+            ->update(['theme' => 'some-future-theme']);
+
+        $this->expectException(\ValueError::class);
+
+        $gameVersion->fresh()->theme;
+    }
+
+    #[Test]
+    public function it_defaults_theme_to_the_default_theme_when_set_to_null(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['theme' => null]);
+
+        $this->assertSame(Theme::default(), $gameVersion->theme);
+        $this->assertSame(Theme::default(), $gameVersion->fresh()->theme);
+
+        $this->assertDatabaseHas('game_versions', [
+            'id' => $gameVersion->id,
+            'theme' => Theme::default()->value,
+        ]);
+    }
+
+    // ==================== warcraft logs ids ====================
+
+    #[Test]
     public function it_casts_warcraftlogs_ids_to_integers(): void
     {
         $gameVersion = GameVersion::factory()->create([
@@ -81,6 +122,8 @@ class GameVersionTest extends TestCase
         $this->assertIsInt($fresh->warcraftlogs_guild);
         $this->assertIsInt($fresh->warcraftlogs_expansion);
     }
+
+    // ==================== release date ====================
 
     #[Test]
     public function it_casts_release_date_to_carbon(): void
@@ -113,6 +156,8 @@ class GameVersionTest extends TestCase
 
         $this->assertSame('2026-02-06 00:00:00', $converted->toDateTimeString());
     }
+
+    // ==================== nullable fields ====================
 
     #[Test]
     #[Group('edge-case')]
