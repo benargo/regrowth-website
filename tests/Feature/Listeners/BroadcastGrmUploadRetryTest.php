@@ -22,7 +22,7 @@ class BroadcastGrmUploadRetryTest extends TestCase
     {
         Event::fake([GrmUploadRetrying::class]);
 
-        $command = new ProcessGrmUpload($this->grmData(), 'user-123');
+        $command = new ProcessGrmUpload($this->grmData(), 'user-123', 1);
 
         $job = $this->mock(Job::class, function (MockInterface $mock) use ($command) {
             $mock->shouldReceive('resolveName')->andReturn(ProcessGrmUpload::class);
