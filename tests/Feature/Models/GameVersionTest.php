@@ -8,6 +8,7 @@ use App\Models\GameVersion;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon as SupportCarbon;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -42,6 +43,20 @@ class GameVersionTest extends TestCase
         $gameVersion = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::CLASSIC]);
 
         $this->assertSame(BlizzardNamespace::CLASSIC, $gameVersion->fresh()->blizzard_namespace);
+    }
+
+    #[Test]
+    public function it_throws_when_reading_a_blizzard_namespace_value_outside_the_enum(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        DB::table('game_versions')
+            ->where('id', $gameVersion->id)
+            ->update(['blizzard_namespace' => 'some-future-namespace']);
+
+        $this->expectException(\ValueError::class);
+
+        $gameVersion->fresh()->blizzard_namespace;
     }
 
     #[Test]
