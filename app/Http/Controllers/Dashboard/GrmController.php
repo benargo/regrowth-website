@@ -7,6 +7,7 @@ use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Requests\Dashboard\UploadGrmDataRequest;
 use App\Jobs\ProcessGrmUpload;
+use App\Models\GameVersion;
 use Carbon\Carbon;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -43,12 +44,20 @@ class GrmController extends Controller
 
         return Inertia::render('Manage/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
-            'memberCount' => Inertia::defer(fn () => count(
-                $this->blizzardConnector->send(new GetGuildRosterRequest(
-                    $this->blizzardConnector->defaultRealmSlug(),
+            'gameVersions' => GameVersion::orderBy('release_date')->get(['id', 'title']),
+            'memberCount' => Inertia::defer(function () {
+                $gameVersion = GameVersion::orderBy('release_date')->first();
+
+                if ($gameVersion?->realm === null) {
+                    return null;
+                }
+
+                return count($this->blizzardConnector->send(new GetGuildRosterRequest(
+                    $gameVersion->realm,
                     $this->blizzardConnector->defaultGuildSlug(),
-                ))->dto()->members,
-            )),
+                    $gameVersion->blizzard_namespace,
+                ))->dto()->members);
+            }),
         ]);
     }
 
@@ -64,7 +73,7 @@ class GrmController extends Controller
 
         // Dispatch the processing job; progress is delivered live over the
         // uploading user's private broadcast channel.
-        ProcessGrmUpload::dispatch($parsedData, $request->user()->id)->withoutDelay();
+        ProcessGrmUpload::dispatch($parsedData, $request->user()->id, $request->integer('game_version_id'))->withoutDelay();
 
         return redirect()->route('management.grm-upload.form')->with('success', 'GRM data uploaded successfully. Processing will continue in the background.');
     }
