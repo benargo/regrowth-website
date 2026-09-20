@@ -39,6 +39,24 @@ class UploadGrmDataRequestTest extends TestCase
         $this->assertTrue(collect($rules['game_version_id'])->contains(fn ($rule) => $rule instanceof Exists));
     }
 
+    #[Test]
+    #[Group('validation')]
+    public function with_validator_fails_when_game_version_has_no_blizzard_namespace(): void
+    {
+        $gameVersion = GameVersion::factory()->create(['blizzard_namespace' => null]);
+
+        $validator = $this->validate([
+            'grm_data' => "Name,Rank,Level,Last Online (Days),Main/Alt,Player Alts\nBob,Officer,80,0,Main,",
+            'game_version_id' => $gameVersion->id,
+        ]);
+
+        $this->assertTrue($validator->fails());
+        $this->assertStringContainsString(
+            'does not exist or is not available for GRM upload',
+            implode(' ', $validator->errors()->get('game_version_id'))
+        );
+    }
+
     // ==================== messages ====================
 
     #[Test]
@@ -50,7 +68,7 @@ class UploadGrmDataRequestTest extends TestCase
         $this->assertSame('GRM data must be a string.', $messages['grm_data.string']);
         $this->assertSame('A game version is required.', $messages['game_version_id.required']);
         $this->assertSame('The selected game version is invalid.', $messages['game_version_id.integer']);
-        $this->assertSame('The selected game version does not exist.', $messages['game_version_id.exists']);
+        $this->assertSame('The selected game version does not exist or is not available for GRM upload.', $messages['game_version_id.exists']);
     }
 
     // ==================== withValidator ====================
