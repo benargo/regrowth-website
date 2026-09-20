@@ -29,7 +29,11 @@ class UploadGrmDataRequest extends FormRequest
     {
         return [
             'grm_data' => ['required', 'string'],
-            'game_version_id' => ['required', 'integer', Rule::exists('game_versions', 'id')],
+            'game_version_id' => [
+                'required',
+                'integer',
+                Rule::exists('game_versions', 'id')->whereNotNull('blizzard_namespace'),
+            ],
         ];
     }
 
@@ -45,7 +49,7 @@ class UploadGrmDataRequest extends FormRequest
             'grm_data.string' => 'GRM data must be a string.',
             'game_version_id.required' => 'A game version is required.',
             'game_version_id.integer' => 'The selected game version is invalid.',
-            'game_version_id.exists' => 'The selected game version does not exist.',
+            'game_version_id.exists' => 'The selected game version does not exist or is not available for GRM upload.',
         ];
     }
 
