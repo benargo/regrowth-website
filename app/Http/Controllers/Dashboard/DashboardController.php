@@ -12,7 +12,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 #[Authorize('view-officer-dashboard')]
-#[UsesTheme(Theme::Forever)]
+#[UsesTheme(Theme::FOREVER)]
 class DashboardController extends Controller
 {
     /**
