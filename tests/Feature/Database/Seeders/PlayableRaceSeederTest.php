@@ -3,8 +3,10 @@
 namespace Tests\Feature\Database\Seeders;
 
 use App\Enums\Faction;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use App\Models\GameVersion;
 use App\Models\PlayableRace;
 use Database\Seeders\PlayableRaceSeeder;
 use Illuminate\Console\Command;
@@ -26,18 +28,38 @@ class PlayableRaceSeederTest extends TestCase
     public function seeder_creates_playable_races_from_api(): void
     {
         $this->fakeSaloon();
+        $gameVersion = GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
 
         $this->runSeeder();
 
         $this->assertDatabaseCount('playable_races', 2);
         $this->assertDatabaseHas('playable_races', ['id' => 1, 'name' => 'Human', 'faction' => Faction::ALLIANCE->value]);
         $this->assertDatabaseHas('playable_races', ['id' => 2, 'name' => 'Orc', 'faction' => Faction::HORDE->value]);
+        $this->assertDatabaseHas('pivot_game_versions_playable_races', [
+            'game_version_id' => $gameVersion->id,
+            'playable_race_id' => 1,
+        ]);
+        $this->assertDatabaseHas('pivot_game_versions_playable_races', [
+            'game_version_id' => $gameVersion->id,
+            'playable_race_id' => 2,
+        ]);
+    }
+
+    #[Test]
+    public function seeder_does_nothing_when_no_game_version_has_a_blizzard_namespace(): void
+    {
+        $this->fakeSaloon();
+
+        $this->runSeeder();
+
+        $this->assertDatabaseCount('playable_races', 0);
     }
 
     #[Test]
     public function seeder_updates_existing_playable_race_without_duplicating(): void
     {
         $this->fakeSaloon();
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
 
         PlayableRace::factory()->create(['id' => 1, 'name' => 'Old Name']);
 
@@ -50,6 +72,8 @@ class PlayableRaceSeederTest extends TestCase
     #[Test]
     public function seeder_stores_neutral_faction_when_faction_is_absent_from_api(): void
     {
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
+
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(
                 body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],
@@ -76,6 +100,7 @@ class PlayableRaceSeederTest extends TestCase
     public function seeder_outputs_a_line_per_race_to_the_console(): void
     {
         $this->fakeSaloon();
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
 
         $command = $this->createMock(Command::class);
         $command->expects($this->exactly(2))
@@ -88,6 +113,8 @@ class PlayableRaceSeederTest extends TestCase
     #[Test]
     public function seeder_does_nothing_when_races_list_is_empty(): void
     {
+        GameVersion::factory()->create(['blizzard_namespace' => BlizzardNamespace::ANNIVERSARY]);
+
         Saloon::fake([
             'eu.battle.net/oauth/token' => MockResponse::make(
                 body: ['access_token' => 'test_token', 'token_type' => 'bearer', 'expires_in' => 3600],

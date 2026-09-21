@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\GameVersion;
 use App\Models\PlayableClass;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -161,5 +163,26 @@ class PlayableClassTest extends ModelTestCase
         $playableClass = PlayableClass::factory()->withLootPriorities(3)->create();
 
         $this->assertCount(3, $playableClass->lootPriorities);
+    }
+
+    // ==================== gameVersions relationship ====================
+
+    #[Test]
+    public function game_versions_returns_belongs_to_many_relationship(): void
+    {
+        $playableClass = new PlayableClass;
+
+        $this->assertInstanceOf(BelongsToMany::class, $playableClass->gameVersions());
+    }
+
+    #[Test]
+    public function game_versions_includes_attached_game_version(): void
+    {
+        $playableClass = $this->create();
+        $gameVersion = GameVersion::factory()->create();
+
+        $playableClass->gameVersions()->attach($gameVersion);
+
+        $this->assertTrue($playableClass->fresh()->gameVersions->contains($gameVersion));
     }
 }

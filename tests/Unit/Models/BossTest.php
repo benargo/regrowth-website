@@ -6,6 +6,7 @@ use App\Models\Boss;
 use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventAssignment;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Raid;
 use App\Models\User;
@@ -54,6 +55,7 @@ class BossTest extends ModelTestCase
             'raid_id',
             'sort_order',
             'notes',
+            'game_version_id',
         ]);
     }
 
@@ -67,6 +69,7 @@ class BossTest extends ModelTestCase
             'raid_id',
             'sort_order',
             'notes',
+            'game_version_id',
         ]);
     }
 
@@ -121,6 +124,24 @@ class BossTest extends ModelTestCase
         $boss = $this->factory()->order(5)->create();
 
         $this->assertSame(5, $boss->sort_order);
+    }
+
+    #[Test]
+    public function factory_for_game_version_state_sets_game_version_id(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+
+        $boss = $this->factory()->forGameVersion($gameVersion)->create();
+
+        $this->assertSame($gameVersion->id, $boss->game_version_id);
+    }
+
+    #[Test]
+    public function factory_default_game_version_id_is_null(): void
+    {
+        $boss = $this->create();
+
+        $this->assertNull($boss->game_version_id);
     }
 
     // ==================== sort order ====================
@@ -180,6 +201,15 @@ class BossTest extends ModelTestCase
 
         $this->assertRelation($boss, 'raid', BelongsTo::class);
         $this->assertTrue($boss->raid->is($raid));
+    }
+
+    #[Test]
+    public function it_belongs_to_a_game_version(): void
+    {
+        $gameVersion = GameVersion::factory()->create();
+        $boss = $this->create(['game_version_id' => $gameVersion->id]);
+
+        $this->assertTrue($boss->gameVersion->is($gameVersion));
     }
 
     #[Test]

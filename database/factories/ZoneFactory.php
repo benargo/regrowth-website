@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\GameVersion;
 use App\Models\Zone;
 use App\Services\WarcraftLogs\ValueObjects\DifficultyData;
 use App\Services\WarcraftLogs\ValueObjects\ExpansionData;
@@ -78,6 +79,16 @@ class ZoneFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'difficulties' => $difficulties,
+        ]);
+    }
+
+    /**
+     * Associate the model with a specific game version.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'game_version_id' => $gameVersion->id,
         ]);
     }
 }
