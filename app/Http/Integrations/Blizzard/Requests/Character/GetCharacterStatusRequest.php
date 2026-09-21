@@ -5,6 +5,7 @@ namespace App\Http\Integrations\Blizzard\Requests\Character;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Concerns\HasCaching;
+use App\Http\Integrations\Blizzard\Concerns\RequiresRealm;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterStatusData;
 use Illuminate\Support\Str;
 use Saloon\CachePlugin\Contracts\Cacheable;
@@ -15,16 +16,16 @@ use Saloon\Http\Response;
 
 class GetCharacterStatusRequest extends Request implements Cacheable
 {
-    use HasCaching;
+    use HasCaching, RequiresRealm;
 
     protected Method $method = Method::GET;
 
     public function __construct(
-        protected string $realm,
+        protected ?string $realm,
         protected string $character,
         protected ?BlizzardNamespace $namespace = null,
     ) {
-        $this->realm = Str::slug($realm);
+        $this->realm = $realm !== null ? Str::slug($realm) : null;
         $this->character = Str::slug($character);
     }
 
