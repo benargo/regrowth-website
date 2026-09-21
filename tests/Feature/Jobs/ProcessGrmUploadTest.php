@@ -735,6 +735,57 @@ class ProcessGrmUploadTest extends TestCase
         $this->assertDatabaseHas('characters', ['id' => 12345]);
     }
 
+    // ==================== realm requirement ====================
+
+    #[Test]
+    public function it_records_an_error_when_the_game_version_has_no_realm(): void
+    {
+        Event::fake([GrmUploadProcessed::class]);
+
+        $version = GameVersion::factory()->create(['realm' => null]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'TestChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => ''],
+            ],
+        ], $this->user->id, $version->id);
+
+        $job->handle(app(BlizzardConnector::class), $this->discord);
+
+        $this->assertDatabaseCount('characters', 0);
+
+        Event::assertNotDispatched(GrmUploadProcessed::class);
+    }
+
+    #[Test]
+    public function it_does_not_process_alts_when_the_game_version_has_no_realm(): void
+    {
+        // The main character lookup (processRow) requires a realm and fails first,
+        // so a missing realm never reaches processAlts() — both call sites share
+        // the same $gameVersion->realm, so if the main lookup succeeds, the alt
+        // lookup has a realm too. This asserts the alt is never touched when the
+        // row fails for lack of a realm.
+        Event::fake([GrmUploadProcessed::class]);
+
+        $version = GameVersion::factory()->create(['realm' => null]);
+
+        $job = new ProcessGrmUpload([
+            'delimiter' => ',',
+            'headers' => ['Name', 'Rank', 'Level', 'Last Online (Days)', 'Main/Alt', 'Player Alts'],
+            'rows' => [
+                ['Name' => 'MainChar', 'Rank' => 'Raider', 'Level' => '80', 'Last Online (Days)' => '1', 'Main/Alt' => 'Main', 'Player Alts' => 'AltChar'],
+            ],
+        ], $this->user->id, $version->id);
+
+        $job->handle(app(BlizzardConnector::class), $this->discord);
+
+        $this->assertDatabaseMissing('characters', ['name' => 'MainChar']);
+        $this->assertDatabaseMissing('characters', ['name' => 'AltChar']);
+        $this->assertDatabaseCount('character_links', 0);
+    }
+
     // ==================== cross-version isolation ====================
 
     #[Test]
