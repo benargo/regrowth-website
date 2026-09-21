@@ -180,6 +180,8 @@ class PlayableClassTest extends ModelTestCase
 
         $this->assertDatabaseHas('media', ['model_type' => PlayableClass::class, 'model_id' => (string) $class->id]);
         $this->assertTrue($class->fresh()->hasMedia('default'));
+    }
+
     // ==================== gameVersions relationship ====================
 
     #[Test]
