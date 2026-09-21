@@ -91,7 +91,7 @@ class BlizzardConnectorTest extends TestCase
             'eu.api.blizzard.com/data/wow/item/19019' => MockResponse::make(['id' => 19019, 'name' => 'Thunderfury']),
         ]);
 
-        $request = Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/19019')->getMock();
+        $request = Mockery::mock(new GetItemRequest(19019))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/19019')->getMock();
 
         $connector = $this->makeConnector();
         $response = $connector->send($request);
@@ -113,8 +113,8 @@ class BlizzardConnectorTest extends TestCase
         ]);
 
         $connector = $this->makeConnector();
-        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock());
-        $connector->send(Mockery::mock(GetItemRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/2')->getMock());
+        $connector->send(Mockery::mock(new GetItemRequest(1))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/1')->getMock());
+        $connector->send(Mockery::mock(new GetItemRequest(2))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/item/2')->getMock());
 
         // The token endpoint should only be hit once.
         Saloon::assertSentCount(3); // token + 2 api requests
@@ -141,7 +141,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(CharacterNotFoundException::class);
 
-        $request = Mockery::mock(GetCharacterProfileRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/profile/wow/character/thunderstrike/ghost')->getMock();
+        $request = Mockery::mock(new GetCharacterProfileRequest('thunderstrike', 'ghost'))->makePartial()->allows('resolveEndpoint')->andReturn('/profile/wow/character/thunderstrike/ghost')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -160,7 +160,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidRaceException::class);
 
-        $request = Mockery::mock(GetPlayableRaceRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-race/999')->getMock();
+        $request = Mockery::mock(new GetPlayableRaceRequest(999))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-race/999')->getMock();
 
         $this->makeConnector()->send($request);
     }
@@ -179,7 +179,7 @@ class BlizzardConnectorTest extends TestCase
 
         $this->expectException(InvalidClassException::class);
 
-        $request = Mockery::mock(GetPlayableClassRequest::class)->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-class/999')->getMock();
+        $request = Mockery::mock(new GetPlayableClassRequest(999))->makePartial()->allows('resolveEndpoint')->andReturn('/data/wow/playable-class/999')->getMock();
 
         $this->makeConnector()->send($request);
     }

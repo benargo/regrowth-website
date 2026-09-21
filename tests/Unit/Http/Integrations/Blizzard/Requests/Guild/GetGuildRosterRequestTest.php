@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Guild;
 
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\Guild\GuildRosterData;
+use App\Http\Integrations\Blizzard\Exceptions\RealmRequiredException;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -55,5 +57,20 @@ class GetGuildRosterRequestTest extends BlizzardTestCase
         $request = new GetGuildRosterRequest('Thunderstrike', 'Wild Growth');
 
         $this->assertSame('/data/wow/guild/thunderstrike/wild-growth/roster', $request->resolveEndpoint());
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_throws_when_realm_is_null_for_a_namespace_that_requires_one(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+        ]);
+
+        $this->expectException(RealmRequiredException::class);
+
+        $this->makeConnector()->send(
+            new GetGuildRosterRequest(null, 'regrowth', BlizzardNamespace::RETAIL),
+        );
     }
 }

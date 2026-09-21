@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Integrations\Blizzard\Requests\Character;
 
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Integrations\Blizzard\Data\Characters\CharacterProfileData;
+use App\Http\Integrations\Blizzard\Exceptions\RealmRequiredException;
 use App\Http\Integrations\Blizzard\Requests\Character\GetCharacterProfileRequest;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -139,5 +140,20 @@ class GetCharacterProfileRequestTest extends BlizzardTestCase
         Saloon::assertSent(function ($request, $response) {
             return $response->getPendingRequest()->headers()->get('Battlenet-Namespace') === 'profile-classic1x-eu';
         });
+    }
+
+    #[Test]
+    #[Group('validation')]
+    public function it_throws_when_realm_is_null_for_a_namespace_that_requires_one(): void
+    {
+        Saloon::fake([
+            'eu.battle.net/oauth/token' => $this->tokenMock(),
+        ]);
+
+        $this->expectException(RealmRequiredException::class);
+
+        $this->makeConnector()->send(
+            new GetCharacterProfileRequest(null, 'foo', BlizzardNamespace::RETAIL),
+        );
     }
 }
