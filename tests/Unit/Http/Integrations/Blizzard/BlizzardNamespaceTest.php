@@ -142,6 +142,18 @@ class BlizzardNamespaceTest extends TestCase
         );
     }
 
+    // ==================== requiresRealm ====================
+
+    #[Test]
+    #[Group('happy-path')]
+    public function requires_realm_is_true_for_every_current_case(): void
+    {
+        $this->assertTrue(BlizzardNamespace::ANNIVERSARY->requiresRealm());
+        $this->assertTrue(BlizzardNamespace::CLASSIC->requiresRealm());
+        $this->assertTrue(BlizzardNamespace::ERA->requiresRealm());
+        $this->assertTrue(BlizzardNamespace::RETAIL->requiresRealm());
+    }
+
     // ==================== default ====================
 
     #[Test]
