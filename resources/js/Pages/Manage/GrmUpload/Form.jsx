@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import { Button, Textarea } from "@headlessui/react";
 import { Deferred, router, useForm } from "@inertiajs/react";
 import SharedHeader from "@/Components/SharedHeader";
 import Master from "@/Layouts/Master";
@@ -28,8 +29,11 @@ function TallyStat({ label, value, colorClass }) {
     );
 }
 
-export default function GRM({ lastUploadTimestamp, memberCount, gameVersions }) {
-    const [isDragging, setIsDragging] = useState(false);
+/**
+ * Tracks GRM upload progress broadcasts and renders them in a dismissable modal.
+ * Exposes `start()` via ref so the parent can open the modal once the upload is queued.
+ */
+const GrmUploadProgressModal = forwardRef(function GrmUploadProgressModal(_props, ref) {
     const [showModal, setShowModal] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -43,20 +47,6 @@ export default function GRM({ lastUploadTimestamp, memberCount, gameVersions }) 
     const [retryCountdown, setRetryCountdown] = useState(null);
 
     const retryCountdownRef = useRef(null);
-
-    const {
-        data,
-        setData,
-        post,
-        processing,
-        errors: formErrors,
-    } = useForm({
-        grm_data: "",
-        game_version_id: gameVersions.length === 1 ? gameVersions[0].id : "",
-    });
-
-    const selectedGameVersion = gameVersions.find((v) => v.id === data.game_version_id);
-    const hasMultipleGameVersions = gameVersions.length > 1;
 
     const clearTimers = () => {
         if (retryCountdownRef.current) {
@@ -147,22 +137,264 @@ export default function GRM({ lastUploadTimestamp, memberCount, gameVersions }) 
         },
     });
 
-    const startProgressModal = () => {
-        clearTimers();
-        setStatus("queued");
-        setTotal(null);
-        setTallies(EMPTY_TALLIES);
-        setCurrentCharacter("");
-        setErrors([]);
-        setRetry(null);
-        setShowModal(true);
-        setIsVisible(true);
-    };
+    useImperativeHandle(ref, () => ({
+        start: () => {
+            clearTimers();
+            setStatus("queued");
+            setTotal(null);
+            setTallies(EMPTY_TALLIES);
+            setCurrentCharacter("");
+            setErrors([]);
+            setRetry(null);
+            setShowModal(true);
+            setIsVisible(true);
+        },
+    }));
+
+    const processedSoFar = tallies.processedCount + tallies.skippedCount + tallies.warningCount + tallies.errorCount;
+    const progressPercent =
+        status === "completed"
+            ? 100
+            : total && total > 0
+              ? Math.min(Math.round((processedSoFar / total) * 100), 100)
+              : 0;
+    const animatedPercent = useCountUp(progressPercent);
+
+    const isQueued = status === "queued";
+    const isProcessing = status === "processing";
+    const isRetrying = status === "retrying";
+    const isCompleted = status === "completed";
+    const isFailed = status === "failed";
+
+    const barColor = isFailed ? "bg-red-500" : isCompleted ? "bg-green-500" : "bg-blue-500";
+
+    if (!showModal) {
+        return null;
+    }
+
+    return (
+        <Modal show={isVisible} maxWidth="lg" closeable={true} onClose={dismiss}>
+            <div className="p-6 text-white">
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-bold">GRM Upload Progress</h2>
+                    <button
+                        onClick={dismiss}
+                        className="text-secondary-400 transition-colors hover:text-white"
+                        aria-label="Dismiss"
+                    >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                            />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className="mb-4">
+                    <div className="text-secondary-400 mb-1 flex justify-between text-sm">
+                        <span>{total ? `${processedSoFar} of ${total} characters` : "Preparing..."}</span>
+                        <span>{animatedPercent}%</span>
+                    </div>
+                    <div className="bg-ground-700 h-3 w-full overflow-hidden rounded-full">
+                        <div
+                            className={`h-3 rounded-full transition-all duration-500 ${barColor}`}
+                            style={{ width: `${animatedPercent}%` }}
+                        />
+                    </div>
+                </div>
+
+                {(isQueued || isProcessing) && (
+                    <div className="space-y-3">
+                        <div className="text-secondary-300 flex items-center gap-2 text-sm">
+                            <svg
+                                className="h-4 w-4 shrink-0 animate-spin text-blue-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                            </svg>
+                            <span>
+                                {isQueued
+                                    ? "Queued for processing…"
+                                    : currentCharacter
+                                      ? `Processing ${currentCharacter}…`
+                                      : "Processing GRM roster data…"}
+                            </span>
+                        </div>
+
+                        {isProcessing && (
+                            <div className="grid grid-cols-4 gap-2">
+                                <TallyStat label="Updated" value={tallies.processedCount} colorClass="text-green-400" />
+                                <TallyStat
+                                    label="Low level"
+                                    value={tallies.skippedCount}
+                                    colorClass="text-yellow-400"
+                                />
+                                <TallyStat
+                                    label="Not found"
+                                    value={tallies.warningCount}
+                                    colorClass="text-yellow-400"
+                                />
+                                <TallyStat label="Errors" value={tallies.errorCount} colorClass="text-red-400" />
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {isRetrying && (
+                    <div className="border-ink-700 bg-ink-600/40 text-heading rounded border p-3 text-sm">
+                        <div className="flex items-center gap-2 font-semibold">
+                            <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                                />
+                            </svg>
+                            <span>
+                                Attempt {retry?.attempt} of {retry?.maxTries} failed.
+                                {retryCountdown !== null ? ` Retrying in ${retryCountdown}s…` : " Retrying…"}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {(isCompleted || isFailed) && (
+                    <div className="space-y-3">
+                        {isCompleted ? (
+                            <div className="flex items-center gap-2 font-semibold text-green-400">
+                                <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                <span>
+                                    {tallies.errorCount > 0 ? "Upload complete (with errors)." : "Upload complete!"}
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 font-semibold text-red-400">
+                                <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                                    />
+                                </svg>
+                                <span>Processing failed.</span>
+                            </div>
+                        )}
+
+                        {isCompleted &&
+                            (tallies.processedCount > 0 ||
+                                tallies.skippedCount > 0 ||
+                                tallies.warningCount > 0 ||
+                                tallies.errorCount > 0) && (
+                                <ul className="text-secondary-300 space-y-1 pl-1 text-sm">
+                                    {tallies.processedCount > 0 && (
+                                        <li>
+                                            <span className="font-semibold text-green-400">
+                                                {tallies.processedCount}
+                                            </span>{" "}
+                                            characters processed
+                                        </li>
+                                    )}
+                                    {tallies.skippedCount > 0 && (
+                                        <li>
+                                            <span className="font-semibold text-yellow-400">
+                                                {tallies.skippedCount}
+                                            </span>{" "}
+                                            skipped (too low level)
+                                        </li>
+                                    )}
+                                    {tallies.warningCount > 0 && (
+                                        <li>
+                                            <span className="font-semibold text-yellow-400">
+                                                {tallies.warningCount}
+                                            </span>{" "}
+                                            skipped (API lookup failed)
+                                        </li>
+                                    )}
+                                    {tallies.errorCount > 0 && (
+                                        <li>
+                                            <span className="font-semibold text-red-400">{tallies.errorCount}</span>{" "}
+                                            failed (see the officer channel on Discord for details)
+                                        </li>
+                                    )}
+                                </ul>
+                            )}
+
+                        {isFailed && errors.length > 0 && (
+                            <div className="mt-2">
+                                <p className="mb-1 text-sm font-semibold text-red-400">
+                                    {errors.length} error{errors.length !== 1 ? "s" : ""}:
+                                </p>
+                                <ul className="max-h-32 space-y-0.5 overflow-y-auto text-xs text-red-300">
+                                    {errors.slice(0, 10).map((err, i) => (
+                                        <li key={i} className="truncate">
+                                            {err}
+                                        </li>
+                                    ))}
+                                    {errors.length > 10 && (
+                                        <li className="text-secondary-400">...and {errors.length - 10} more</li>
+                                    )}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="pt-2">
+                            <button
+                                onClick={dismiss}
+                                className="rounded bg-blue-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </Modal>
+    );
+});
+
+/**
+ * The paste/drag-and-drop CSV textarea and submit button for GRM data upload.
+ * Manages its own form state and posts to the upload endpoint, notifying the
+ * parent via `onUploaded` so it can start the progress modal.
+ */
+function GrmUploadForm({ memberCount, onUploaded }) {
+    const [isDragging, setIsDragging] = useState(false);
+
+    const {
+        data,
+        setData,
+        post,
+        processing,
+        errors: formErrors,
+    } = useForm({
+        grm_data: "",
+    });
 
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route("management.grm-upload.upload"), {
-            onSuccess: startProgressModal,
+            onSuccess: onUploaded,
         });
     };
 
@@ -201,22 +433,137 @@ export default function GRM({ lastUploadTimestamp, memberCount, gameVersions }) 
         reader.readAsText(file);
     };
 
-    const processedSoFar = tallies.processedCount + tallies.skippedCount + tallies.warningCount + tallies.errorCount;
-    const progressPercent =
-        status === "completed"
-            ? 100
-            : total && total > 0
-              ? Math.min(Math.round((processedSoFar / total) * 100), 100)
-              : 0;
-    const animatedPercent = useCountUp(progressPercent);
+    return (
+        <>
+            <ol className="mb-6 list-inside list-decimal space-y-2">
+                <li>
+                    Open{" "}
+                    <span className="border-ink-800 bg-ground-800 inline-block rounded-xs border p-1 font-mono font-bold">
+                        /grm export
+                    </span>{" "}
+                    in-game.
+                </li>
+                <li>
+                    Select the <strong>Members</strong> tab.
+                </li>
+                <li>
+                    Set the <strong>delimiter</strong> to a comma (
+                    <span className="font-mono text-2xl font-bold">,</span>)
+                </li>
+                <li>
+                    Make sure the right columns are selected for export. You need to select the following columns:
+                    <ul className="my-1 ml-6 list-inside list-disc">
+                        <li>Name</li>
+                        <li>Rank</li>
+                        <li>Level</li>
+                        <li>Last Online</li>
+                        <li>Main/Alt</li>
+                        <li>Player Alts</li>
+                    </ul>
+                    <p className="italics text-secondary-400 mt-1">
+                        Any other columns are optional, but ideally you should only select the ones listed above.
+                    </p>
+                </li>
+                <li>
+                    Make sure <strong>Remove Alt-Code Letters From Names</strong> is{" "}
+                    <span className="font-bold uppercase underline">not</span> checked.
+                </li>
+                <li>
+                    Make sure <strong>Auto Include Headers</strong>{" "}
+                    <span className="font-bold uppercase underline">is</span> checked.
+                </li>
+                <li>
+                    Click the
+                    <span className="font-friz-quadrata border-secondary-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
+                        Export Selection
+                    </span>{" "}
+                    button.
+                </li>
+                <li>Copy the exported CSV data, and paste it below.</li>
+                <li>
+                    Click the
+                    <span className="font-friz-quadrata border-secondary-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
+                        Export Next{" "}
+                        <Deferred data="memberCount" fallback={<span className="italics">X</span>}>
+                            {memberCount - 500}
+                        </Deferred>
+                    </span>
+                    button, copy the new data, and paste it below, appending it to the previous data.
+                </li>
+            </ol>
 
-    const isQueued = status === "queued";
-    const isProcessing = status === "processing";
-    const isRetrying = status === "retrying";
-    const isCompleted = status === "completed";
-    const isFailed = status === "failed";
+            <form onSubmit={handleSubmit}>
+                <Textarea
+                    name="grm_data"
+                    rows="10"
+                    className={`bg-ground-800 mb-2 w-full rounded border p-4 text-white transition-colors data-focus:outline-none ${
+                        isDragging
+                            ? "bg-ground-700 border-blue-500"
+                            : formErrors.grm_data
+                              ? "border-red-500"
+                              : "border-ink-600 data-focus:border-blue-500"
+                    }`}
+                    placeholder="Paste your GRM CSV data here, or drag and drop a CSV file."
+                    value={data.grm_data}
+                    onChange={(e) => setData("grm_data", e.target.value)}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                />
+                <InputError message={formErrors.grm_data} className="mb-4" />
 
-    const barColor = isFailed ? "bg-red-500" : isCompleted ? "bg-green-500" : "bg-blue-500";
+                <Button
+                    type="submit"
+                    disabled={processing}
+                    className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {processing ? "Uploading..." : "Upload GRM Data"}
+                </Button>
+            </form>
+        </>
+    );
+}
+
+/**
+ * Grid of game version cards; selecting one sets it on the form and reloads
+ * the deferred `memberCount` prop scoped to that version.
+ */
+function GameVersionPicker({ gameVersions, onSelect }) {
+    return (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {gameVersions.map((version) => (
+                <Card
+                    key={version.id}
+                    backgroundClass={version.banner_class}
+                    heading={version.title}
+                    onClick={() => onSelect(version.id)}
+                />
+            ))}
+        </div>
+    );
+}
+
+export default function Page({ lastUploadTimestamp, memberCount, gameVersions }) {
+    const progressModalRef = useRef(null);
+
+    const {
+        data,
+        setData,
+        errors: formErrors,
+    } = useForm({
+        game_version_id: gameVersions.length === 1 ? gameVersions[0].id : "",
+    });
+
+    const selectedGameVersion = gameVersions.find((v) => v.id === data.game_version_id);
+    const hasMultipleGameVersions = gameVersions.length > 1;
+
+    const handleGameVersionSelect = (id) => {
+        setData("game_version_id", id);
+        router.reload({
+            only: ["memberCount"],
+            data: { game_version_id: id },
+        });
+    };
 
     return (
         <Master title="GRM Data Upload">
@@ -236,22 +583,7 @@ export default function GRM({ lastUploadTimestamp, memberCount, gameVersions }) 
                 ) : !data.game_version_id ? (
                     <div>
                         <p className="mb-6 text-xl font-bold">Choose a game version to get started.</p>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            {gameVersions.map((version) => (
-                                <Card
-                                    key={version.id}
-                                    backgroundClass={version.banner_class}
-                                    heading={version.title}
-                                    onClick={() => {
-                                        setData("game_version_id", version.id);
-                                        router.reload({
-                                            only: ["memberCount"],
-                                            data: { game_version_id: version.id },
-                                        });
-                                    }}
-                                />
-                            ))}
-                        </div>
+                        <GameVersionPicker gameVersions={gameVersions} onSelect={handleGameVersionSelect} />
                         <InputError message={formErrors.game_version_id} className="mt-4" />
                     </div>
                 ) : (
@@ -267,323 +599,13 @@ export default function GRM({ lastUploadTimestamp, memberCount, gameVersions }) 
                             <p className="text-md text-secondary-400 mb-6">No previous uploads found.</p>
                         )}
                         <p className="mb-6 text-lg">To export your GRM data, follow these steps:</p>
-                        <ol className="mb-6 list-inside list-decimal space-y-2">
-                            <li>
-                                Open{" "}
-                                <span className="border-ink-800 bg-ground-800 inline-block rounded-xs border p-1 font-mono font-bold">
-                                    /grm export
-                                </span>{" "}
-                                in-game.
-                            </li>
-                            <li>
-                                Select the <strong>Members</strong> tab.
-                            </li>
-                            <li>
-                                Set the <strong>delimiter</strong> to a comma (
-                                <span className="font-mono text-2xl font-bold">,</span>)
-                            </li>
-                            <li>
-                                Make sure the right columns are selected for export. You need to select the following
-                                columns:
-                                <ul className="my-1 ml-6 list-inside list-disc">
-                                    <li>Name</li>
-                                    <li>Rank</li>
-                                    <li>Level</li>
-                                    <li>Last Online</li>
-                                    <li>Main/Alt</li>
-                                    <li>Player Alts</li>
-                                </ul>
-                                <p className="italics text-secondary-400 mt-1">
-                                    Any other columns are optional, but ideally you should only select the ones listed
-                                    above.
-                                </p>
-                            </li>
-                            <li>
-                                Make sure <strong>Remove Alt-Code Letters From Names</strong> is{" "}
-                                <span className="font-bold uppercase underline">not</span> checked.
-                            </li>
-                            <li>
-                                Make sure <strong>Auto Include Headers</strong>{" "}
-                                <span className="font-bold uppercase underline">is</span> checked.
-                            </li>
-                            <li>
-                                Click the
-                                <span className="font-friz-quadrata border-secondary-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
-                                    Export Selection
-                                </span>{" "}
-                                button.
-                            </li>
-                            <li>Copy the exported CSV data, and paste it below.</li>
-                            <li>
-                                Click the
-                                <span className="font-friz-quadrata border-secondary-600 mx-1 inline-block rounded-md border bg-red-600 px-6 py-2 font-bold text-[#ffff00] shadow-md">
-                                    Export Next{" "}
-                                    <Deferred data="memberCount" fallback={<span className="italics">X</span>}>
-                                        {memberCount - 500}
-                                    </Deferred>
-                                </span>
-                                button, copy the new data, and paste it below, appending it to the previous data.
-                            </li>
-                        </ol>
 
-                        <form onSubmit={handleSubmit}>
-                            <textarea
-                                name="grm_data"
-                                rows="10"
-                                className={`bg-ground-800 mb-2 w-full rounded border p-4 text-white transition-colors ${
-                                    isDragging
-                                        ? "bg-ground-700 border-blue-500"
-                                        : formErrors.grm_data
-                                          ? "border-red-500"
-                                          : "border-ink-600"
-                                }`}
-                                placeholder="Paste your GRM CSV data here, or drag and drop a CSV file."
-                                value={data.grm_data}
-                                onChange={(e) => setData("grm_data", e.target.value)}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                            />
-                            <InputError message={formErrors.grm_data} className="mb-4" />
-
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {processing ? "Uploading..." : "Upload GRM Data"}
-                            </button>
-                        </form>
+                        <GrmUploadForm memberCount={memberCount} onUploaded={() => progressModalRef.current?.start()} />
                     </div>
                 )}
             </PageContainer>
 
-            {showModal && (
-                <Modal show={isVisible} maxWidth="lg" closeable={true} onClose={dismiss}>
-                    <div className="p-6 text-white">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-lg font-bold">GRM Upload Progress</h2>
-                            <button
-                                onClick={dismiss}
-                                className="text-secondary-400 transition-colors hover:text-white"
-                                aria-label="Dismiss"
-                            >
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div className="mb-4">
-                            <div className="text-secondary-400 mb-1 flex justify-between text-sm">
-                                <span>{total ? `${processedSoFar} of ${total} characters` : "Preparing..."}</span>
-                                <span>{animatedPercent}%</span>
-                            </div>
-                            <div className="bg-ground-700 h-3 w-full overflow-hidden rounded-full">
-                                <div
-                                    className={`h-3 rounded-full transition-all duration-500 ${barColor}`}
-                                    style={{ width: `${animatedPercent}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {(isQueued || isProcessing) && (
-                            <div className="space-y-3">
-                                <div className="text-secondary-300 flex items-center gap-2 text-sm">
-                                    <svg
-                                        className="h-4 w-4 shrink-0 animate-spin text-blue-400"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                    </svg>
-                                    <span>
-                                        {isQueued
-                                            ? "Queued for processing…"
-                                            : currentCharacter
-                                              ? `Processing ${currentCharacter}…`
-                                              : "Processing GRM roster data…"}
-                                    </span>
-                                </div>
-
-                                {isProcessing && (
-                                    <div className="grid grid-cols-4 gap-2">
-                                        <TallyStat
-                                            label="Updated"
-                                            value={tallies.processedCount}
-                                            colorClass="text-green-400"
-                                        />
-                                        <TallyStat
-                                            label="Low level"
-                                            value={tallies.skippedCount}
-                                            colorClass="text-yellow-400"
-                                        />
-                                        <TallyStat
-                                            label="Not found"
-                                            value={tallies.warningCount}
-                                            colorClass="text-yellow-400"
-                                        />
-                                        <TallyStat
-                                            label="Errors"
-                                            value={tallies.errorCount}
-                                            colorClass="text-red-400"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {isRetrying && (
-                            <div className="border-ink-700 bg-ink-600/40 text-heading rounded border p-3 text-sm">
-                                <div className="flex items-center gap-2 font-semibold">
-                                    <svg
-                                        className="h-4 w-4 shrink-0"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                                        />
-                                    </svg>
-                                    <span>
-                                        Attempt {retry?.attempt} of {retry?.maxTries} failed.
-                                        {retryCountdown !== null ? ` Retrying in ${retryCountdown}s…` : " Retrying…"}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
-
-                        {(isCompleted || isFailed) && (
-                            <div className="space-y-3">
-                                {isCompleted ? (
-                                    <div className="flex items-center gap-2 font-semibold text-green-400">
-                                        <svg
-                                            className="h-5 w-5 shrink-0"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M5 13l4 4L19 7"
-                                            />
-                                        </svg>
-                                        <span>
-                                            {tallies.errorCount > 0
-                                                ? "Upload complete (with errors)."
-                                                : "Upload complete!"}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 font-semibold text-red-400">
-                                        <svg
-                                            className="h-5 w-5 shrink-0"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                                            />
-                                        </svg>
-                                        <span>Processing failed.</span>
-                                    </div>
-                                )}
-
-                                {isCompleted &&
-                                    (tallies.processedCount > 0 ||
-                                        tallies.skippedCount > 0 ||
-                                        tallies.warningCount > 0 ||
-                                        tallies.errorCount > 0) && (
-                                        <ul className="text-secondary-300 space-y-1 pl-1 text-sm">
-                                            {tallies.processedCount > 0 && (
-                                                <li>
-                                                    <span className="font-semibold text-green-400">
-                                                        {tallies.processedCount}
-                                                    </span>{" "}
-                                                    characters processed
-                                                </li>
-                                            )}
-                                            {tallies.skippedCount > 0 && (
-                                                <li>
-                                                    <span className="font-semibold text-yellow-400">
-                                                        {tallies.skippedCount}
-                                                    </span>{" "}
-                                                    skipped (too low level)
-                                                </li>
-                                            )}
-                                            {tallies.warningCount > 0 && (
-                                                <li>
-                                                    <span className="font-semibold text-yellow-400">
-                                                        {tallies.warningCount}
-                                                    </span>{" "}
-                                                    skipped (API lookup failed)
-                                                </li>
-                                            )}
-                                            {tallies.errorCount > 0 && (
-                                                <li>
-                                                    <span className="font-semibold text-red-400">
-                                                        {tallies.errorCount}
-                                                    </span>{" "}
-                                                    failed (see the officer channel on Discord for details)
-                                                </li>
-                                            )}
-                                        </ul>
-                                    )}
-
-                                {isFailed && errors.length > 0 && (
-                                    <div className="mt-2">
-                                        <p className="mb-1 text-sm font-semibold text-red-400">
-                                            {errors.length} error{errors.length !== 1 ? "s" : ""}:
-                                        </p>
-                                        <ul className="max-h-32 space-y-0.5 overflow-y-auto text-xs text-red-300">
-                                            {errors.slice(0, 10).map((err, i) => (
-                                                <li key={i} className="truncate">
-                                                    {err}
-                                                </li>
-                                            ))}
-                                            {errors.length > 10 && (
-                                                <li className="text-secondary-400">...and {errors.length - 10} more</li>
-                                            )}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                <div className="pt-2">
-                                    <button
-                                        onClick={dismiss}
-                                        className="rounded bg-blue-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-blue-700"
-                                    >
-                                        Dismiss
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </Modal>
-            )}
+            <GrmUploadProgressModal ref={progressModalRef} />
         </Master>
     );
 }
