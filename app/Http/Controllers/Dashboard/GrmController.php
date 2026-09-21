@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Http\Integrations\Blizzard\BlizzardConnector;
+use App\Http\Integrations\Blizzard\Exceptions\RealmRequiredException;
 use App\Http\Integrations\Blizzard\Requests\Guild\GetGuildRosterRequest;
 use App\Http\Requests\Dashboard\UploadGrmDataRequest;
 use App\Http\Resources\GameVersionResource;
@@ -66,15 +67,19 @@ class GrmController extends Controller
      */
     protected function resolveMemberCount(?GameVersion $gameVersion): ?int
     {
-        if ($gameVersion?->realm === null) {
+        if ($gameVersion === null) {
             return null;
         }
 
-        return count($this->blizzardConnector->send(new GetGuildRosterRequest(
-            $gameVersion->realm,
-            $this->blizzardConnector->defaultGuildSlug(),
-            $gameVersion->blizzard_namespace,
-        ))->dto()->members);
+        try {
+            return count($this->blizzardConnector->send(new GetGuildRosterRequest(
+                $gameVersion->realm,
+                $this->blizzardConnector->defaultGuildSlug(),
+                $gameVersion->blizzard_namespace,
+            ))->dto()->members);
+        } catch (RealmRequiredException) {
+            return null;
+        }
     }
 
     #[Authorize('edit-datasets')]
