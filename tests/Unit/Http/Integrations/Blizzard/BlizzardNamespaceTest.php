@@ -166,12 +166,15 @@ class BlizzardNamespaceTest extends TestCase
     }
 
     #[Test]
-    #[Group('happy-path')]
-    public function default_falls_back_to_anniversary_when_unconfigured(): void
+    #[Group('validation')]
+    public function default_throws_when_unconfigured(): void
     {
         config(['services.blizzard.namespace' => null]);
 
-        $this->assertSame(BlizzardNamespace::ANNIVERSARY, BlizzardNamespace::default());
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unknown Blizzard namespace: ""');
+
+        BlizzardNamespace::default();
     }
 
     #[Test]

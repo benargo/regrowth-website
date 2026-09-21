@@ -26,9 +26,9 @@ enum BlizzardNamespace: string
      */
     public static function default(): self
     {
-        $configured = config('services.blizzard.namespace', 'anniversary');
+        $configured = config('services.blizzard.namespace');
 
-        return self::tryFrom($configured) ?? throw new InvalidArgumentException(sprintf(
+        return self::tryFrom($configured ?? '') ?? throw new InvalidArgumentException(sprintf(
             'Unknown Blizzard namespace: "%s". Expected one of: %s',
             $configured,
             implode(', ', array_column(self::cases(), 'value')),
