@@ -47,15 +47,15 @@ class GrmController extends Controller
 
         $gameVersionId = $request->integer('game_version_id') ?: null;
 
+        $gameVersions = GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->get(['id', 'title', 'theme', 'realm', 'blizzard_namespace']);
+
         return Inertia::render('Manage/GrmUpload/Form', [
             'lastUploadTimestamp' => $lastModified,
-            'gameVersions' => GameVersionResource::collection(
-                GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->get(['id', 'title', 'theme'])
-            )->resolve($request),
-            'memberCount' => Inertia::defer(function () use ($gameVersionId) {
+            'gameVersions' => GameVersionResource::collection($gameVersions)->resolve($request),
+            'memberCount' => Inertia::defer(function () use ($gameVersions, $gameVersionId) {
                 $gameVersion = $gameVersionId
-                    ? GameVersion::whereNotNull('blizzard_namespace')->find($gameVersionId)
-                    : GameVersion::whereNotNull('blizzard_namespace')->orderBy('release_date')->first();
+                    ? $gameVersions->firstWhere('id', $gameVersionId)
+                    : $gameVersions->first();
 
                 return $this->resolveMemberCount($gameVersion);
             }),
