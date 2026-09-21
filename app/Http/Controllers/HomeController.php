@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[UsesTheme(Theme::Forever)]
+#[UsesTheme(Theme::FOREVER)]
 class HomeController extends Controller
 {
     private const UPCOMING_EVENT_LIMIT = 5;

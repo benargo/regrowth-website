@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AsTheme;
 use App\Enums\Faction;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use Database\Factories\GameVersionFactory;
@@ -24,6 +25,8 @@ class GameVersion extends Model
     {
         return [
             'faction' => Faction::class,
+            'release_date' => 'datetime',
+            'theme' => AsTheme::class,
             'blizzard_namespace' => BlizzardNamespace::class,
             'warcraftlogs_guild' => 'integer',
             'warcraftlogs_expansion' => 'integer',
