@@ -26,7 +26,7 @@ enum BlizzardNamespace: string
      */
     public static function default(): self
     {
-        $configured = config('services.blizzard.namespace') ?? 'anniversary';
+        $configured = config('services.blizzard.namespace', 'anniversary');
 
         return self::tryFrom($configured) ?? throw new InvalidArgumentException(sprintf(
             'Unknown Blizzard namespace: "%s". Expected one of: %s',
@@ -60,6 +60,14 @@ enum BlizzardNamespace: string
             self::ERA => "$category-classic1x-{$region->value}",
             // self::FOREVER => "$category-forever-{$region->value}",
             self::RETAIL => "$category-{$region->value}",
+        };
+    }
+
+    public function requiresRealm(): bool
+    {
+        return match ($this) {
+            self::ANNIVERSARY, self::CLASSIC, self::ERA, self::RETAIL => true,
+            // self::FOREVER => false,
         };
     }
 
