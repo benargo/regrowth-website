@@ -25,7 +25,7 @@ class GetCharacterProfileRequest extends Request implements Cacheable
         protected string $character,
         protected ?BlizzardNamespace $namespace = null,
     ) {
-        $this->realm = $realm !== null ? Str::slug($realm) : null;
+        $this->realm = self::normalizeRealm($realm);
         $this->character = Str::slug($character);
     }
 
