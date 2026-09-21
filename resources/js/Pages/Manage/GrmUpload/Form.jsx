@@ -546,19 +546,13 @@ function GameVersionPicker({ gameVersions, onSelect }) {
 export default function Page({ lastUploadTimestamp, memberCount, gameVersions }) {
     const progressModalRef = useRef(null);
 
-    const {
-        data,
-        setData,
-        errors: formErrors,
-    } = useForm({
-        game_version_id: gameVersions.length === 1 ? gameVersions[0].id : "",
-    });
+    const [gameVersionId, setGameVersionId] = useState(gameVersions.length === 1 ? gameVersions[0].id : "");
 
-    const selectedGameVersion = gameVersions.find((v) => v.id === data.game_version_id);
+    const selectedGameVersion = gameVersions.find((v) => v.id === gameVersionId);
     const hasMultipleGameVersions = gameVersions.length > 1;
 
     const handleGameVersionSelect = (id) => {
-        setData("game_version_id", id);
+        setGameVersionId(id);
         router.reload({
             only: ["memberCount"],
             data: { game_version_id: id },
@@ -568,9 +562,9 @@ export default function Page({ lastUploadTimestamp, memberCount, gameVersions })
     return (
         <Master title="GRM Data Upload">
             <SharedHeader backgroundClass="bg-officer-meeting" title="GRM Data Upload" />
-            {hasMultipleGameVersions && data.game_version_id && (
+            {hasMultipleGameVersions && gameVersionId && (
                 <ToolNav>
-                    <ToolNavLink as="button" type="button" onClick={() => setData("game_version_id", "")}>
+                    <ToolNavLink as="button" type="button" onClick={() => setGameVersionId("")}>
                         ← Change game version
                     </ToolNavLink>
                 </ToolNav>
@@ -580,11 +574,10 @@ export default function Page({ lastUploadTimestamp, memberCount, gameVersions })
                     <p className="text-secondary-400 text-lg">
                         No game versions have been set up yet. Add one before uploading GRM data.
                     </p>
-                ) : !data.game_version_id ? (
+                ) : !gameVersionId ? (
                     <div>
                         <p className="mb-6 text-xl font-bold">Choose a game version to get started.</p>
                         <GameVersionPicker gameVersions={gameVersions} onSelect={handleGameVersionSelect} />
-                        <InputError message={formErrors.game_version_id} className="mt-4" />
                     </div>
                 ) : (
                     <div className="animate-fade-in-up">
