@@ -1,7 +1,7 @@
 <?php
 
 use App\Enums\Faction;
-use App\Http\Integrations\Blizzard\BlizzardNamespace;
+use Carbon\Carbon;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('title');
             $table->string('realm')->nullable();
             $table->enum('faction', Faction::cases())->nullable();
-            $table->enum('blizzard_namespace', BlizzardNamespace::cases())->nullable();
+            $table->dateTime('release_date')->default(Carbon::now());
+            $table->string('theme')->nullable();
+            $table->string('blizzard_namespace')->nullable();
             $table->integer('warcraftlogs_guild')->nullable();
             $table->integer('warcraftlogs_expansion')->nullable();
             $table->timestamps();

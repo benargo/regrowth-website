@@ -17,7 +17,7 @@ class UsesThemeTest extends TestCase
     {
         $route = $this->routeFor(ClassForeverMethodClassicStub::class, 'show');
 
-        $this->assertSame(Theme::Classic, UsesTheme::forRoute($route));
+        $this->assertSame(Theme::CLASSIC, UsesTheme::forRoute($route));
     }
 
     #[Test]
@@ -25,7 +25,7 @@ class UsesThemeTest extends TestCase
     {
         $route = $this->routeFor(ClassForeverStub::class, 'index');
 
-        $this->assertSame(Theme::Forever, UsesTheme::forRoute($route));
+        $this->assertSame(Theme::FOREVER, UsesTheme::forRoute($route));
     }
 
     #[Test]
@@ -35,7 +35,7 @@ class UsesThemeTest extends TestCase
 
         $route = $this->routeFor(UndecoratedStub::class, 'index');
 
-        $this->assertSame(Theme::Forever, UsesTheme::forRoute($route));
+        $this->assertSame(Theme::FOREVER, UsesTheme::forRoute($route));
     }
 
     #[Test]
@@ -46,7 +46,7 @@ class UsesThemeTest extends TestCase
         // which resolves getActionMethod() to the controller's class name, not '__invoke'.
         $route = Route::get('/uses-theme-test-invokable', InvokableForeverStub::class);
 
-        $this->assertSame(Theme::Forever, UsesTheme::forRoute($route));
+        $this->assertSame(Theme::FOREVER, UsesTheme::forRoute($route));
     }
 
     #[Test]
@@ -54,7 +54,7 @@ class UsesThemeTest extends TestCase
     {
         config(['app.theme' => 'classic']);
 
-        $this->assertSame(Theme::Classic, UsesTheme::forRoute(null));
+        $this->assertSame(Theme::CLASSIC, UsesTheme::forRoute(null));
     }
 
     #[Test]
@@ -66,7 +66,7 @@ class UsesThemeTest extends TestCase
             return 'ok';
         });
 
-        $this->assertSame(Theme::Classic, UsesTheme::forRoute($route));
+        $this->assertSame(Theme::CLASSIC, UsesTheme::forRoute($route));
     }
 
     #[Test]
@@ -76,7 +76,7 @@ class UsesThemeTest extends TestCase
 
         $route = $this->routeFor(UndecoratedStub::class, 'missingMethod');
 
-        $this->assertSame(Theme::Classic, UsesTheme::forRoute($route));
+        $this->assertSame(Theme::CLASSIC, UsesTheme::forRoute($route));
     }
 
     private function routeFor(string $controller, string $method): \Illuminate\Routing\Route
@@ -87,7 +87,7 @@ class UsesThemeTest extends TestCase
     }
 }
 
-#[UsesTheme(Theme::Forever)]
+#[UsesTheme(Theme::FOREVER)]
 class ClassForeverStub
 {
     public function index(): string
@@ -96,10 +96,10 @@ class ClassForeverStub
     }
 }
 
-#[UsesTheme(Theme::Forever)]
+#[UsesTheme(Theme::FOREVER)]
 class ClassForeverMethodClassicStub
 {
-    #[UsesTheme(Theme::Classic)]
+    #[UsesTheme(Theme::CLASSIC)]
     public function show(): string
     {
         return 'ok';
@@ -114,7 +114,7 @@ class UndecoratedStub
     }
 }
 
-#[UsesTheme(Theme::Forever)]
+#[UsesTheme(Theme::FOREVER)]
 class InvokableForeverStub
 {
     public function __invoke(): string

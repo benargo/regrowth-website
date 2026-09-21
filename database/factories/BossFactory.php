@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Boss;
 use App\Models\Comment;
+use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Raid;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -62,5 +63,15 @@ class BossFactory extends Factory
             Item::factory()->has(Comment::factory()->count($count), 'comments'),
             'items'
         );
+    }
+
+    /**
+     * Associate the model with a specific game version.
+     */
+    public function forGameVersion(GameVersion $gameVersion): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'game_version_id' => $gameVersion->id,
+        ]);
     }
 }

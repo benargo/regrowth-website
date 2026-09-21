@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-#[UsesTheme(Theme::Forever)]
+#[UsesTheme(Theme::FOREVER)]
 class AccountController extends Controller
 {
     /**

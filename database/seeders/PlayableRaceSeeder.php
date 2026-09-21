@@ -8,6 +8,7 @@ use App\Http\Integrations\Blizzard\Data\PlayableRace\PlayableRaceData;
 use App\Http\Integrations\Blizzard\Data\Shared\LinkData;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceIndexRequest;
 use App\Http\Integrations\Blizzard\Requests\PlayableRace\GetPlayableRaceRequest;
+use App\Models\GameVersion;
 use App\Models\PlayableRace;
 use Illuminate\Database\Seeder;
 
@@ -19,23 +20,29 @@ class PlayableRaceSeeder extends Seeder
 
     public function run(): void
     {
-        /** @var array<int, LinkData> $races */
-        $races = $this->blizzard->send(new GetPlayableRaceIndexRequest)->dto();
+        $gameVersions = GameVersion::whereNotNull('blizzard_namespace')->get();
 
-        foreach ($races as $race) {
-            /** @var PlayableRaceData $raceData */
-            $raceData = $this->blizzard->send(new GetPlayableRaceRequest($race->id))->dto();
-            $factionType = data_get($raceData, 'faction.type', 'NEUTRAL');
+        foreach ($gameVersions as $gameVersion) {
+            /** @var array<int, LinkData> $races */
+            $races = $this->blizzard->send(new GetPlayableRaceIndexRequest($gameVersion->blizzard_namespace))->dto();
 
-            $model = PlayableRace::updateOrCreate(
-                ['id' => $race->id],
-                [
-                    'name' => $raceData->name,
-                    'faction' => Faction::{$factionType},
-                ],
-            );
+            foreach ($races as $race) {
+                /** @var PlayableRaceData $raceData */
+                $raceData = $this->blizzard->send(new GetPlayableRaceRequest($race->id, $gameVersion->blizzard_namespace))->dto();
+                $factionType = data_get($raceData, 'faction.type', 'NEUTRAL');
 
-            $this->command?->line("  <info>✓</info> [{$model->id}] {$model->name}");
+                $model = PlayableRace::updateOrCreate(
+                    ['id' => $race->id],
+                    [
+                        'name' => $raceData->name,
+                        'faction' => Faction::{$factionType},
+                    ],
+                );
+
+                $model->gameVersions()->syncWithoutDetaching([$gameVersion->id]);
+
+                $this->command?->line("  <info>✓</info> [{$model->id}] {$model->name} ({$gameVersion->title})");
+            }
         }
     }
 }

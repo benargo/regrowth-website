@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[ObservedBy([GuildTagObserver::class])]
 #[UsePolicy(DatasetPolicy::class)]
-#[Fillable(['id', 'name', 'count_attendance', 'tbc_phase_id'])]
+#[Fillable(['id', 'name', 'count_attendance', 'tbc_phase_id', 'game_version_id'])]
 #[Table('wcl_guild_tags')]
 class GuildTag extends Model implements DatasetModel
 {
@@ -51,6 +51,16 @@ class GuildTag extends Model implements DatasetModel
     public function phase(): BelongsTo
     {
         return $this->belongsTo(Phase::class, 'tbc_phase_id');
+    }
+
+    /**
+     * Get the game version that this guild tag belongs to.
+     *
+     * @return BelongsTo<GameVersion>
+     */
+    public function gameVersion(): BelongsTo
+    {
+        return $this->belongsTo(GameVersion::class);
     }
 
     /**

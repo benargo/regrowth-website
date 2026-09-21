@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
@@ -54,5 +55,14 @@ class PlayableClass extends Model implements HasBlizzardIcons, HasMedia
     public function lootPriorities(): HasMany
     {
         return $this->hasMany(LootPriority::class);
+    }
+
+    /**
+     * @return BelongsToMany<GameVersion, $this>
+     */
+    public function gameVersions(): BelongsToMany
+    {
+        return $this->belongsToMany(GameVersion::class, 'pivot_game_versions_playable_classes')
+            ->withTimestamps();
     }
 }
