@@ -25,7 +25,7 @@ class GetGuildRosterRequest extends Request implements Cacheable
         protected string $guild,
         protected ?BlizzardNamespace $namespace = null,
     ) {
-        $this->realm = $realm !== null ? Str::slug($realm) : null;
+        $this->realm = self::normalizeRealm($realm);
         $this->guild = Str::slug($guild);
     }
 
