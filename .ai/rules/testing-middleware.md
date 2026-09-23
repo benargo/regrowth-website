@@ -1,3 +1,8 @@
+---
+paths:
+  - 'tests/Feature/Middleware/**'
+---
+
 # Middleware Feature Tests
 
 Middleware that resolves routes/redirects (`redirect()->route(...)`, `$request->route()->getName()`) depends on the app's real, booted `RouteCollection`. That makes it a **Feature test**, not a Unit test, even though the test never goes through the HTTP kernel — `tests/Unit/**` is not allowed to depend on real routing infrastructure. Location: `tests/Feature/Middleware/{Name}Test.php`.

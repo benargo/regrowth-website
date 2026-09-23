@@ -1,3 +1,8 @@
+---
+paths:
+  - 'tests/**'
+---
+
 # Test Group Vocabulary (canonical)
 
 The test suite is tagged with PHPUnit `#[Group]` attributes on two axes so tests
@@ -33,7 +38,7 @@ vendor/bin/sail artisan test --testsuite=Feature --group=authorization --compact
 ## Domain groups
 
 | Group                      | Definition                                                                                                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `characters`               | Character roster, profile, edit/show, character models/resources, roster-sync and portrait jobs, GRM upload processing.                                                  |
 | `raiding`                  | Raids, events, assignments, attendance, phases, templates, planned absences, boss strategies, spells, reports (raid-facing).                                             |
 | `loot`                     | Loot council cache, items, priorities, bias tool.                                                                                                                        |
@@ -52,7 +57,7 @@ vendor/bin/sail artisan test --testsuite=Feature --group=authorization --compact
 ## Behaviour groups
 
 | Group                   | Definition                                                                                                                                                                                                                                |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `happy-path`            | Nominal success flow — page loads / canonical redirect, job attaches/syncs correctly, success-path assertions.                                                                                                                            |
 | `error-handling`        | Error/exception paths and resilience to failing upstreams (asserts a throw, or graceful skip on an upstream failure).                                                                                                                     |
 | `validation`            | Form-request / input validation failures (`assertInvalid`, `assertSessionHasErrors`, `assertJsonValidationErrors`, 422).                                                                                                                  |

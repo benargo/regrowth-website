@@ -6,3 +6,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | tests/**,routes/auth.php,app/Http/Controllers/Auth/** | .ai/rules/auth.md |
 | app/Models/GuildRank.php | .ai/rules/models.md |
+| tests/** | .ai/rules/testing.md |
+| tests/** | .ai/rules/testing-groups.md |
+| tests/Feature/Middleware/** | .ai/rules/testing-middleware.md |

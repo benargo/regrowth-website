@@ -11,7 +11,7 @@ This codebase migrates third-party API integrations from `app/Services/{Api}/` (
 
 **Core principle: migrate in phases that keep the app green the whole way.** Stand up the new integration *alongside* the old service, cut callers over one at a time, then delete the legacy service only once it is provably dead. Never do a big-bang swap.
 
-This is the codebase house pattern. For generic Saloon API syntax, see the `saloon-development` skill; for test mechanics, the `writing-tests` skill. This skill is about the **migration sequence and the conventions specific to this repo**.
+This is the codebase house pattern. For generic Saloon API syntax, see the `saloon-development` skill; for test mechanics, see `.ai/rules/testing.md`. This skill is about the **migration sequence and the conventions specific to this repo**.
 
 ## When to Use
 

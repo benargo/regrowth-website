@@ -1,18 +1,16 @@
 ---
-name: writing-tests
-description: Use when writing, creating, or editing PHPUnit test classes in this Laravel project — covers TDD cycle, test structure, attribute notation, directory conventions, database traits, factory usage, and helper method placement
+paths:
+  - 'tests/**'
 ---
 
-# Writing Tests
+# Testing
 
-**REQUIRED SUB-SKILL:** Invoke `superpowers:test-driven-development` before writing any implementation code.
-
-**REQUIRED SUB-SKILL:** Invoke `spatie-laravel-php-standards` for all PHP style and conventions.
+Invoke `superpowers:test-driven-development` before writing any implementation code, and `spatie-laravel-php-standards` for PHP style. See `.ai/rules/testing-groups.md` for the canonical `#[Group]` vocabulary, and `.ai/rules/testing-middleware.md` when the middleware under test resolves routes or redirects.
 
 ## Quick Reference
 
 | Rule                 | Detail                                                                                            |
-| -------------------- | ------------------------------------------------------------------------------------------------- |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
 | Test annotation      | `#[Test]` attribute — no `test_` prefix on method names                                           |
 | Unit test location   | Mirrors `app/`: `app/Foo/Bar.php` → `tests/Unit/Foo/BarTest.php`                                  |
 | Unit test isolation  | No `RefreshDatabase`, no factories, no real routes — mock every collaborator                      |
@@ -88,7 +86,7 @@ If a global helper (e.g. `redirect()->route()`) can't be reached through the pri
 
 If the class under test cannot be isolated without touching real infrastructure, it likely doesn't belong in `tests/Unit/` — write a feature test instead.
 
-**Testing middleware:** if the middleware resolves routes or redirects (`redirect()->route(...)`, `$request->route()->getName()`), read the sibling `middleware-feature-tests.md` before writing the test — it belongs in `tests/Feature/`, not `tests/Unit/`, and has its own gotchas around mocking `Route` vs `Request` and route-name resolution.
+**Testing middleware:** if the middleware resolves routes or redirects (`redirect()->route(...)`, `$request->route()->getName()`), read `.ai/rules/testing-middleware.md` before writing the test — it belongs in `tests/Feature/`, not `tests/Unit/`, and has its own gotchas around mocking `Route` vs `Request` and route-name resolution.
 
 ## Database Tests (Feature Tests)
 
@@ -157,7 +155,7 @@ fake()->randomDigit()
 
 Every test class **must** have at least one domain `#[Group]` attribute. Behaviour groups are optional and applied at method level where useful.
 
-Group names and definitions are the canonical vocabulary in `test-groups-vocabulary.md` (sibling file). Do not invent new group names.
+Group names and definitions are the canonical vocabulary in `.ai/rules/testing-groups.md`. Do not invent new group names.
 
 ```php
 use PHPUnit\Framework\Attributes\Group;
