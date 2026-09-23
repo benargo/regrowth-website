@@ -12,14 +12,11 @@ public function __construct(MockInterface $service = null) {}
 public function __construct(?MockInterface $service = null) {}
 ```
 
-## Value objects / DTOs implement `Arrayable` + `JsonSerializable`
+## Value objects / DTOs extend `Spatie\LaravelData\Data`
 
-Any new value object or DTO (a `final class` that wraps data rather than a service with behaviour) must implement:
+Any new value object or DTO (a `final class` that wraps data rather than a service with behaviour) extends `Spatie\LaravelData\Data`, as a `final` class with `readonly` constructor-promoted properties. Override `toArray()`/`jsonSerialize()` only when the output shape must differ from the raw constructor properties (computed/renamed fields, nested resolution).
 
-- `Illuminate\Contracts\Support\Arrayable` — `toArray(): array` returning the canonical array shape
-- `JsonSerializable` — `jsonSerialize(): array`, usually `return $this->toArray();`
-
-Consistent with existing VOs like `app/Services/Attendance/Filters.php`. This keeps VOs interoperable with Eloquent, Resource responses, JSON encoding, and `collect()->toArray()`.
+This supersedes the older convention of manually implementing `Illuminate\Contracts\Support\Arrayable` + `JsonSerializable` — that style no longer appears anywhere in the codebase. Applies both to API response data under `app/Http/Integrations/**/Data/**` and to domain VOs/DTOs elsewhere (e.g. `app/Services/Attendance/*Data.php`).
 
 ## Don't call `->value` on enums inside Resource arrays
 

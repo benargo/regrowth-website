@@ -75,3 +75,9 @@ The stable suites (`Unit`, `Feature`, `SmokeTest`, off `main`) and the
 sets, then integrated. The `dashboard` and `edge-case` groups appear in this
 canonical set even though the `main`-based integration branch may not exercise
 `dashboard` directly — it is carried by the `new-characters` delta side.
+
+## $this->seed() only inside Seeder tests
+Call $this->seed(SeederClass::class) only in a test that verifies that seeder's own behaviour (tests/Feature/Database/Seeders/*SeederTest.php). All other tests build their own fixtures with factories, never by running seeders.
+
+## Mockery for framework/container collaborators only, Saloon::fake() for API connectors
+Use Saloon::fake() to isolate external API connectors (Blizzard/Discord/WCL/RaidHelper), never Mockery::mock() on a connector class directly. Reserve Mockery::mock()/->mock() for Laravel/HTTP framework objects (Request, Route, Response) or container-bound jobs stubbed in tests/TestCase.php, not for the app's own Service classes.
