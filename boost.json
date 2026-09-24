@@ -11,7 +11,8 @@
         "spatie/laravel-permission",
         "spatie/laravel-medialibrary",
         "spatie/laravel-query-builder",
-        "saloonphp/laravel-plugin"
+        "saloonphp/laravel-plugin",
+        "lorisleiva/laravel-actions"
     ],
     "sail": true,
     "skills": [
@@ -24,6 +25,7 @@
         "echo-react-development",
         "echo-development",
         "tailwindcss-development",
+        "laravel-actions",
         "saloon-development",
         "medialibrary-development",
         "laravel-permission-development",
