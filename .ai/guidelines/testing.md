@@ -28,3 +28,12 @@ vendor/bin/sail artisan db:seed --env=testing
 ```
 
 A `.env.testing` file at the repo root points to `DB_DATABASE=laravel_testing`. Never call factory `create()` or run seeders without `--env=testing` unless deliberately seeding dev data.
+
+## Use the Manual Login Routes for browser testing
+
+When driving the app through a browser automation tool (Playwright, claude-in-chrome, etc.), authenticate via the Manual Login Routes defined in `routes/auth.php` instead of going through Discord OAuth.
+
+- `GET login/local` (`login.local`) renders the local login form.
+- `POST login/local` (`login.local.store`) logs the user in.
+
+These routes are only registered when `app()->environment(['local', 'testing'])`, guarded by the `env:local,testing` middleware, so they're unavailable in production and never reach Ziggy's route list there.
