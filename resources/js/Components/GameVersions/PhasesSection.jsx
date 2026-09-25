@@ -1,12 +1,17 @@
-import { useForm } from "@inertiajs/react";
+import RecordChecklist from "@/Components/Datasets/RecordChecklist";
+import Relationships from "@/Components/Datasets/Relationships";
 import { SaveButton, firstError } from "@/Components/FormControls";
-import { AUTOSAVE_DELAY } from "@/Components/GameVersions/GameVersionForm";
 import NewPhaseForm from "@/Components/GameVersions/NewPhaseForm";
-import RecordChecklist from "@/Components/GameVersions/RecordChecklist";
 import Pill from "@/Components/Pill";
-import Relationships from "@/Datasets/Relationships";
-import { useFormAutosave } from "@/Hooks/useAutosave";
-import useSyncedSelection from "@/Hooks/useSyncedSelection";
+import useRelationshipForm from "@/Hooks/useRelationshipForm";
+
+/**
+ * The title of the other game version that owns a phase, for
+ * RecordChecklist's ownerOf, or null when it is unowned or owned by this one.
+ */
+function otherOwner(phase, gameVersion) {
+    return phase.game_version && phase.game_version.id !== gameVersion.id ? phase.game_version.title : null;
+}
 
 function RaidPill({ raid }) {
     return (
@@ -50,27 +55,13 @@ export default function PhasesSection({
     autosave = false,
 }) {
     const { phases } = relationships;
-    const form = useForm({ phase_ids: phases.selected_ids });
-    useSyncedSelection(form, "phase_ids", phases.selected_ids);
-
-    const url = route("management.game-versions.update", gameVersion.id);
-    const { schedule, containerProps } = useFormAutosave({
-        form,
-        url,
-        saved: { phase_ids: phases.selected_ids },
+    const { form, setIds, handleSubmit, containerProps } = useRelationshipForm({
+        url: route("management.game-versions.update", gameVersion.id),
         key: "phases",
-        trigger: "blur",
-        delay: AUTOSAVE_DELAY,
-        enabled: autosave,
+        selected: { phase_ids: phases.selected_ids },
+        autosave,
+        onSaved,
     });
-
-    function handleSubmit(e) {
-        e.preventDefault();
-        form.patch(url, {
-            preserveScroll: true,
-            onSuccess: () => onSaved?.(),
-        });
-    }
 
     return (
         <Relationships
@@ -85,11 +76,8 @@ export default function PhasesSection({
                     name="phase_ids"
                     options={phases.options}
                     selectedIds={form.data.phase_ids}
-                    onChange={(ids) => {
-                        form.setData("phase_ids", ids);
-                        schedule();
-                    }}
-                    currentGameVersionId={gameVersion.id}
+                    onChange={(ids) => setIds("phase_ids", ids)}
+                    ownerOf={(phase) => otherOwner(phase, gameVersion)}
                     renderLabel={(phase) => <PhaseLabel phase={phase} />}
                     emptyMessage="No phases exist yet. Add the first one below."
                     error={firstError(form.errors, "phase_ids")}

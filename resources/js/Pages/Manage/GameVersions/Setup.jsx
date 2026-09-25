@@ -1,10 +1,11 @@
 import { Link, router } from "@inertiajs/react";
+import EditLockGuard from "@/Components/Datasets/EditLockGuard";
+import Relationships from "@/Components/Datasets/Relationships";
+import SetupNavigation, { setupNavigationLabels } from "@/Components/Datasets/SetupNavigation";
 import { linkClassName } from "@/Components/FormControls";
-import EditLockGuard from "@/Components/GameVersions/EditLockGuard";
 import SetupSteps from "@/Components/GameVersions/SetupSteps";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
-import Relationships from "@/Datasets/Relationships";
 import Master from "@/Layouts/Master";
 
 /**
@@ -15,22 +16,6 @@ const sections = import.meta.glob("/resources/js/Components/GameVersions/*Sectio
     eager: true,
     import: "default",
 });
-
-/**
- * The submit label and skip link text: back to the review page when the step
- * was opened from there, otherwise onwards to the next step or the review.
- */
-function navigationLabels(nextStep, returnToReview) {
-    if (returnToReview) {
-        return { submit: "Save and return to review", skip: "Back to review" };
-    }
-
-    if (nextStep) {
-        return { submit: "Save and continue", skip: `Skip to ${nextStep.label.toLowerCase()}` };
-    }
-
-    return { submit: "Save and review", skip: "Skip to review" };
-}
 
 export default function Setup({
     gameVersion,
@@ -52,7 +37,7 @@ export default function Setup({
         nextStep && !returnToReview
             ? route("management.game-versions.setup", [gameVersion.id, nextStep.value])
             : reviewUrl;
-    const labels = navigationLabels(nextStep, returnToReview);
+    const labels = setupNavigationLabels(nextStep, returnToReview);
 
     return (
         <Master title={`Set up ${gameVersion.title}`}>
@@ -62,7 +47,7 @@ export default function Setup({
 
             <PageContainer>
                 <div className="mx-auto flex max-w-5xl flex-col gap-8">
-                    <EditLockGuard canEdit={canEdit} editor={editor}>
+                    <EditLockGuard canEdit={canEdit} editor={editor} recordName="game version">
                         <Relationships.Step
                             step={step}
                             sections={sections}
@@ -73,17 +58,14 @@ export default function Setup({
                         />
                     </EditLockGuard>
 
-                    <nav
-                        aria-label="Setup navigation"
-                        className="border-ink-600/40 flex flex-wrap items-center justify-between gap-4 border-t pt-6"
+                    <SetupNavigation
+                        backHref={previousUrl}
+                        backLabel={previousStep ? `Back to ${previousStep.label.toLowerCase()}` : "Back to details"}
                     >
-                        <Link href={previousUrl} className={linkClassName}>
-                            {previousStep ? `Back to ${previousStep.label.toLowerCase()}` : "Back to details"}
-                        </Link>
                         <Link href={nextUrl} className={linkClassName}>
                             {labels.skip}
                         </Link>
-                    </nav>
+                    </SetupNavigation>
                 </div>
             </PageContainer>
         </Master>

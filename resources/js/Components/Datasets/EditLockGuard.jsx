@@ -13,13 +13,13 @@ const EDIT_LOCK_IDLE_AFTER = 5 * 60_000;
 const ACTIVITY_EVENTS = ["keydown", "pointerdown", "focusin"];
 
 /**
- * Keep the game version's edit lock while the officer is using the page, and
+ * Keep a dataset record's edit lock while the officer is using the page, and
  * make the page read-only while another officer holds it. The poll is what
  * renews the lock: every edit and setup visit takes or refreshes it on the
- * server. Once the officer is idle, polls say so (X-Edit-Idle) and only
+ * server, which shares canEdit and editor props. Once the officer is idle, polls say so (X-Edit-Idle) and only
  * check the lock, so a forgotten tab lets it expire for someone else.
  */
-export default function EditLockGuard({ canEdit, editor, children }) {
+export default function EditLockGuard({ canEdit, editor, recordName, children }) {
     // Take the stable control callbacks, not the whole context value: that
     // changes on every save status update, and depending on it would re-run
     // the pause/clear effect below (which publishes a new status) forever.
@@ -102,7 +102,7 @@ export default function EditLockGuard({ canEdit, editor, children }) {
                 >
                     <Icon icon="lock" style="solid" />
                     <p>
-                        {editor ?? "Another officer"} is editing this game version. It will unlock automatically when
+                        {editor ?? "Another officer"} is editing this {recordName}. It will unlock automatically when
                         they finish.
                     </p>
                 </div>

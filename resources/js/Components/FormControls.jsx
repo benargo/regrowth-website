@@ -9,6 +9,11 @@ export const buttonClassName =
     "bg-ink-800 data-focus:outline-ink-400 data-hover:bg-ink-900 inline-flex items-center gap-2 rounded-md px-4 py-2 " +
     "text-sm font-semibold text-white data-disabled:opacity-50 data-focus:outline-2 data-focus:outline-offset-2";
 
+/** A Link styled like buttonClassName, such as Edit or Finish. */
+export const linkButtonClassName =
+    "bg-ink-800 hover:bg-ink-900 focus-visible:outline-ink-400 inline-flex items-center gap-2 rounded-md px-4 py-2 " +
+    "text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2";
+
 /** A quiet text link beside a form's buttons, such as Cancel, Back or Skip. */
 export const linkClassName =
     "text-secondary-300 focus-visible:outline-ink-400 rounded px-2 py-2 text-sm underline hover:text-white " +
@@ -33,6 +38,19 @@ export function FormRow({ htmlFor, label, required = false, hint, error, classNa
             {hint && <Description className="text-secondary-300 text-sm">{hint}</Description>}
             {error && <Description className="text-sm text-red-300">{error}</Description>}
         </Field>
+    );
+}
+
+/** Explains the asterisk FormRow puts on required fields. */
+export function RequiredFieldsNote() {
+    return (
+        <p className="text-secondary-300 text-sm">
+            Fields marked with{" "}
+            <span aria-hidden="true" className="text-red-300">
+                *
+            </span>
+            <span className="sr-only">an asterisk</span> are required.
+        </p>
     );
 }
 

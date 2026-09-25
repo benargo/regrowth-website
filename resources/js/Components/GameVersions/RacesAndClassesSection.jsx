@@ -1,9 +1,7 @@
-import { useForm } from "@inertiajs/react";
+import RecordChecklist from "@/Components/Datasets/RecordChecklist";
+import Relationships from "@/Components/Datasets/Relationships";
 import { SaveButton, firstError } from "@/Components/FormControls";
-import { AUTOSAVE_DELAY } from "@/Components/GameVersions/GameVersionForm";
-import RecordChecklist from "@/Components/GameVersions/RecordChecklist";
-import Relationships from "@/Datasets/Relationships";
-import { useFormAutosave } from "@/Hooks/useAutosave";
+import useRelationshipForm from "@/Hooks/useRelationshipForm";
 
 function ClassLabel({ playableClass }) {
     return (
@@ -22,32 +20,16 @@ export default function RacesAndClassesSection({
     autosave = false,
 }) {
     const { playable_races: races, playable_classes: classes } = relationships;
-    const form = useForm({
-        playable_race_ids: races.selected_ids,
-        playable_class_ids: classes.selected_ids,
-    });
-
-    const url = route("management.game-versions.update", gameVersion.id);
-    const { schedule, containerProps } = useFormAutosave({
-        form,
-        url,
-        saved: {
+    const { form, setIds, handleSubmit, containerProps } = useRelationshipForm({
+        url: route("management.game-versions.update", gameVersion.id),
+        key: "races-and-classes",
+        selected: {
             playable_race_ids: races.selected_ids,
             playable_class_ids: classes.selected_ids,
         },
-        key: "races-and-classes",
-        trigger: "blur",
-        delay: AUTOSAVE_DELAY,
-        enabled: autosave,
+        autosave,
+        onSaved,
     });
-
-    function handleSubmit(e) {
-        e.preventDefault();
-        form.patch(url, {
-            preserveScroll: true,
-            onSuccess: () => onSaved?.(),
-        });
-    }
 
     return (
         <Relationships
@@ -61,10 +43,7 @@ export default function RacesAndClassesSection({
                     name="playable_race_ids"
                     options={races.options}
                     selectedIds={form.data.playable_race_ids}
-                    onChange={(ids) => {
-                        form.setData("playable_race_ids", ids);
-                        schedule();
-                    }}
+                    onChange={(ids) => setIds("playable_race_ids", ids)}
                     groupBy={(race) => race.faction}
                     emptyMessage="No races exist yet."
                     selectAll
@@ -75,10 +54,7 @@ export default function RacesAndClassesSection({
                     name="playable_class_ids"
                     options={classes.options}
                     selectedIds={form.data.playable_class_ids}
-                    onChange={(ids) => {
-                        form.setData("playable_class_ids", ids);
-                        schedule();
-                    }}
+                    onChange={(ids) => setIds("playable_class_ids", ids)}
                     renderLabel={(playableClass) => <ClassLabel playableClass={playableClass} />}
                     emptyMessage="No classes exist yet."
                     selectAll

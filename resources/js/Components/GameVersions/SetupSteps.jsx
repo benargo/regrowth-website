@@ -1,7 +1,4 @@
-import ToolNav, { ToolNavSteps } from "@/Components/ToolNav";
-
-const DETAILS_STEP = { value: "details", label: "Core details" };
-const REVIEW_STEP = { value: "review", label: "Review" };
+import DatasetSetupSteps, { DETAILS_STEP, REVIEW_STEP } from "@/Components/Datasets/SetupSteps";
 
 function stepHref(gameVersion, step) {
     if (!gameVersion) {
@@ -20,20 +17,11 @@ function stepHref(gameVersion, step) {
 }
 
 /**
- * The wizard progress trail, shown in the ToolNav bar. Before the game version
- * exists (the Create page) the steps are plain text; afterwards every step is
- * a link.
+ * The game version wizard's progress trail. Before the game version exists
+ * (the Create page) the steps are plain text; afterwards every step is a link.
  */
 export default function SetupSteps({ gameVersion = null, steps, currentStep }) {
-    const allSteps = [DETAILS_STEP, ...steps, REVIEW_STEP].map((step) => ({
-        key: step.value,
-        label: step.label,
-        href: stepHref(gameVersion, step),
-    }));
-
     return (
-        <ToolNav>
-            <ToolNavSteps label="Setup progress" steps={allSteps} currentKey={currentStep} />
-        </ToolNav>
+        <DatasetSetupSteps steps={steps} currentStep={currentStep} stepHref={(step) => stepHref(gameVersion, step)} />
     );
 }

@@ -6,14 +6,13 @@ import {
     FormRow,
     FormSection,
     OptionSelect,
+    RequiredFieldsNote,
     buttonClassName,
     controlClassName,
     linkClassName,
 } from "@/Components/FormControls";
 import { useFormAutosave } from "@/Hooks/useAutosave";
-
-/** How long after focus leaves a section its autosave runs. */
-export const AUTOSAVE_DELAY = 750;
+import { AUTOSAVE_DELAY } from "@/Hooks/useRelationshipForm";
 
 const FIELD_LABELS = {
     title: "Title",
@@ -103,13 +102,7 @@ export default function GameVersionForm({ form, options, onSubmit, submitLabel, 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8" {...containerProps}>
             <ErrorSummary errors={errors} summaryRef={summaryRef} />
 
-            <p className="text-secondary-300 text-sm">
-                Fields marked with{" "}
-                <span aria-hidden="true" className="text-red-300">
-                    *
-                </span>
-                <span className="sr-only">an asterisk</span> are required.
-            </p>
+            <RequiredFieldsNote />
 
             <FormSection legend="The version">
                 <FormRow
@@ -199,10 +192,7 @@ export default function GameVersionForm({ form, options, onSubmit, submitLabel, 
                     <Button type="submit" disabled={processing} className={buttonClassName}>
                         {processing ? processingLabel : submitLabel}
                     </Button>
-                    <Link
-                        href={route("management.game-versions.index")}
-                        className={linkClassName}
-                    >
+                    <Link href={route("management.game-versions.index")} className={linkClassName}>
                         Cancel
                     </Link>
                 </div>

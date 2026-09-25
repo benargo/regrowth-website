@@ -21,9 +21,10 @@ function groupOptions(options, groupBy) {
 }
 
 /**
- * A fieldset of checkboxes for linking records to a game version. A record
- * that another game version owns stays selectable, with a pill naming that
- * version inside its label, because ticking it moves the record here.
+ * A fieldset of checkboxes for linking records to a dataset record. When
+ * `ownerOf` names another record that owns an option, the option stays
+ * selectable, with a pill naming that owner inside its label, because
+ * ticking it moves the option here.
  */
 export default function RecordChecklist({
     legend,
@@ -32,7 +33,7 @@ export default function RecordChecklist({
     options,
     selectedIds,
     onChange,
-    currentGameVersionId = null,
+    ownerOf = () => null,
     renderLabel = (option) => option.name,
     groupBy = null,
     emptyMessage,
@@ -99,10 +100,7 @@ export default function RecordChecklist({
                         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                             {members.map((option) => {
                                 const inputId = `${name}-${option.id}`;
-                                const owner =
-                                    option.game_version && option.game_version.id !== currentGameVersionId
-                                        ? option.game_version
-                                        : null;
+                                const owner = ownerOf(option);
 
                                 return (
                                     <li key={option.id}>
@@ -125,7 +123,7 @@ export default function RecordChecklist({
                                                             textColor="text-secondary-200"
                                                             borderColor="border-ink-600"
                                                         >
-                                                            In {owner.title}
+                                                            In {owner}
                                                         </Pill>
                                                     </span>
                                                 )}

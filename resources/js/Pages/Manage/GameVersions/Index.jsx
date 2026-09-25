@@ -6,7 +6,7 @@ import EmptyState from "@/Components/EmptyState";
 import Icon from "@/Components/FontAwesome/Icon";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
-import ToolNav from "@/Components/ToolNav";
+import ToolNav, { ToolNavLink } from "@/Components/ToolNav";
 import Master from "@/Layouts/Master";
 
 const USAGE_LABELS = [
@@ -113,13 +113,10 @@ export default function Index({ gameVersions }) {
             <SharedHeader backgroundClass="bg-officer-meeting" title="Game versions" />
             <ToolNav>
                 <div className="flex-initial space-x-4">
-                    <Link
-                        href={route("management.dashboard")}
-                        className={`hover:border-primary hover:bg-ground-800 my-2 flex flex-row items-center rounded-md border border-transparent p-2 text-sm font-medium text-white ${focusRing}`}
-                    >
+                    <ToolNavLink href={route("management.dashboard")} className={focusRing}>
                         <Icon icon="arrow-left" style="solid" className="mr-1 text-xs" />
                         Back to officers' dashboard
-                    </Link>
+                    </ToolNavLink>
                 </div>
             </ToolNav>
 
