@@ -137,14 +137,14 @@ class GameVersionResourceTest extends TestCase
     public function the_management_scope_includes_usage_counts_only_when_they_are_loaded(): void
     {
         $gameVersion = GameVersion::factory()->make();
-        $gameVersion->setAttribute('raids_count', 2);
+        $gameVersion->setAttribute('phases_count', 2);
         $gameVersion->setAttribute('guild_tags_count', 3);
 
         $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
 
-        $this->assertSame(2, $array['raids_count']);
+        $this->assertSame(2, $array['phases_count']);
         $this->assertSame(3, $array['guild_tags_count']);
-        $this->assertArrayNotHasKey('bosses_count', $array);
+        $this->assertArrayNotHasKey('zones_count', $array);
         $this->assertArrayNotHasKey('characters_count', $array);
     }
 }
