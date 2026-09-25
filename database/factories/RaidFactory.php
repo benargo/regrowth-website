@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Enums\RaidBackground;
 use App\Models\Boss;
 use App\Models\Comment;
-use App\Models\GameVersion;
 use App\Models\Item;
 use App\Models\Phase;
 use App\Models\Raid;
@@ -140,16 +139,6 @@ class RaidFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'background_css_class' => $background ?? fake()->randomElement(RaidBackground::cases()),
-        ]);
-    }
-
-    /**
-     * Associate the model with a specific game version.
-     */
-    public function forGameVersion(GameVersion $gameVersion): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'game_version_id' => $gameVersion->id,
         ]);
     }
 }

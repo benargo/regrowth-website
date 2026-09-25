@@ -7,7 +7,6 @@ use App\Contracts\Models\DatasetModel;
 use App\Enums\Faction;
 use App\Enums\Theme;
 use App\Http\Integrations\Blizzard\BlizzardNamespace;
-use App\Models\Boss;
 use App\Models\Character;
 use App\Models\GameVersion;
 use App\Models\GuildTag;
@@ -22,6 +21,7 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -233,6 +233,17 @@ class GameVersionTest extends ModelTestCase
     }
 
     #[Test]
+    public function it_has_many_raids_through_phases(): void
+    {
+        $gameVersion = $this->create();
+        $phase = Phase::factory()->for($gameVersion)->create();
+        $raid = Raid::factory()->for($phase)->create();
+
+        $this->assertRelation($gameVersion, 'raids', HasManyThrough::class);
+        $this->assertTrue($gameVersion->raids->contains($raid));
+    }
+
+    #[Test]
     public function it_belongs_to_many_playable_races(): void
     {
         $gameVersion = $this->create();
@@ -302,7 +313,7 @@ class GameVersionTest extends ModelTestCase
     public function it_is_not_in_use_when_related_records_belong_to_another_game_version(): void
     {
         $gameVersion = $this->create();
-        Raid::factory()->for(GameVersion::factory())->create();
+        Phase::factory()->for(GameVersion::factory())->create();
 
         $this->assertFalse($gameVersion->isInUse());
     }
@@ -315,9 +326,7 @@ class GameVersionTest extends ModelTestCase
     public static function usageRelations(): array
     {
         return [
-            'bosses' => ['bosses', Boss::class],
             'phases' => ['phases', Phase::class],
-            'raids' => ['raids', Raid::class],
             'guildTags' => ['guildTags', GuildTag::class],
             'zones' => ['zones', Zone::class],
             'items' => ['items', Item::class],

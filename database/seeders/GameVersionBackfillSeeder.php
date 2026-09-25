@@ -2,13 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\Boss;
 use App\Models\GameVersion;
 use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
-use App\Models\Raid;
 use App\Models\Zone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
@@ -33,7 +31,7 @@ class GameVersionBackfillSeeder extends Seeder
      */
     protected function backfillModels(): array
     {
-        return [Boss::class, Phase::class, Raid::class, GuildTag::class, Zone::class];
+        return [Phase::class, GuildTag::class, Zone::class];
     }
 
     public function run(): void

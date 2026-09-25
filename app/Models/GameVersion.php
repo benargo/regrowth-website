@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Cache;
 
 #[Fillable([
@@ -40,7 +41,7 @@ class GameVersion extends Model implements DatasetModel
      *
      * @var list<string>
      */
-    public const array USAGE_RELATIONS = ['bosses', 'phases', 'raids', 'guildTags', 'zones', 'items', 'characters'];
+    public const array USAGE_RELATIONS = ['phases', 'guildTags', 'zones', 'items', 'characters'];
 
     /**
      * How long an officer keeps the edit lock after their last active visit or poll.
@@ -129,16 +130,6 @@ class GameVersion extends Model implements DatasetModel
     // ============ Relationships ===========
 
     /**
-     * Get the bosses for this game version.
-     *
-     * @return HasMany<Boss, $this>
-     */
-    public function bosses(): HasMany
-    {
-        return $this->hasMany(Boss::class);
-    }
-
-    /**
      * Get the phases for this game version.
      *
      * @return HasMany<Phase, $this>
@@ -149,13 +140,13 @@ class GameVersion extends Model implements DatasetModel
     }
 
     /**
-     * Get the raids for this game version.
+     * Get the raids for this game version, through their phase.
      *
-     * @return HasMany<Raid, $this>
+     * @return HasManyThrough<Raid, Phase, $this>
      */
-    public function raids(): HasMany
+    public function raids(): HasManyThrough
     {
-        return $this->hasMany(Raid::class);
+        return $this->hasManyThrough(Raid::class, Phase::class);
     }
 
     /**

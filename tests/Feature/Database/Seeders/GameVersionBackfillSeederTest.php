@@ -2,13 +2,11 @@
 
 namespace Tests\Feature\Database\Seeders;
 
-use App\Models\Boss;
 use App\Models\GameVersion;
 use App\Models\GuildTag;
 use App\Models\Phase;
 use App\Models\PlayableClass;
 use App\Models\PlayableRace;
-use App\Models\Raid;
 use App\Models\Zone;
 use Database\Seeders\GameVersionBackfillSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,9 +25,7 @@ class GameVersionBackfillSeederTest extends TestCase
     {
         $gameVersion = GameVersion::factory()->create();
 
-        $boss = Boss::factory()->create(['game_version_id' => null]);
         $phase = Phase::factory()->create(['game_version_id' => null]);
-        $raid = Raid::factory()->create(['game_version_id' => null]);
         $guildTag = GuildTag::factory()->create(['game_version_id' => null]);
         $zone = Zone::factory()->create(['game_version_id' => null]);
 
@@ -38,9 +34,7 @@ class GameVersionBackfillSeederTest extends TestCase
 
         $this->runSeeder($gameVersion->id);
 
-        $this->assertSame($gameVersion->id, $boss->fresh()->game_version_id);
         $this->assertSame($gameVersion->id, $phase->fresh()->game_version_id);
-        $this->assertSame($gameVersion->id, $raid->fresh()->game_version_id);
         $this->assertSame($gameVersion->id, $guildTag->fresh()->game_version_id);
         $this->assertSame($gameVersion->id, $zone->fresh()->game_version_id);
 
@@ -59,9 +53,7 @@ class GameVersionBackfillSeederTest extends TestCase
     {
         $gameVersion = GameVersion::factory()->create();
 
-        Boss::factory()->create(['game_version_id' => null]);
         Phase::factory()->create(['game_version_id' => null]);
-        Raid::factory()->create(['game_version_id' => null]);
         GuildTag::factory()->create(['game_version_id' => null]);
         Zone::factory()->create(['game_version_id' => null]);
         PlayableRace::factory()->create();
@@ -69,9 +61,7 @@ class GameVersionBackfillSeederTest extends TestCase
 
         $this->runSeeder($gameVersion->id);
 
-        $bossCount = Boss::count();
         $phaseCount = Phase::count();
-        $raidCount = Raid::count();
         $guildTagCount = GuildTag::count();
         $zoneCount = Zone::count();
         $racePivotCount = $gameVersion->playableRaces()->count();
@@ -79,9 +69,7 @@ class GameVersionBackfillSeederTest extends TestCase
 
         $this->runSeeder($gameVersion->id);
 
-        $this->assertSame($bossCount, Boss::count());
         $this->assertSame($phaseCount, Phase::count());
-        $this->assertSame($raidCount, Raid::count());
         $this->assertSame($guildTagCount, GuildTag::count());
         $this->assertSame($zoneCount, Zone::count());
         $this->assertSame($racePivotCount, $gameVersion->playableRaces()->count());
@@ -94,11 +82,11 @@ class GameVersionBackfillSeederTest extends TestCase
         $targetVersion = GameVersion::factory()->create();
         $otherVersion = GameVersion::factory()->create();
 
-        $boss = Boss::factory()->create(['game_version_id' => $otherVersion->id]);
+        $phase = Phase::factory()->for($otherVersion)->create();
 
         $this->runSeeder($targetVersion->id);
 
-        $this->assertSame($otherVersion->id, $boss->fresh()->game_version_id);
+        $this->assertSame($otherVersion->id, $phase->fresh()->game_version_id);
     }
 
     #[Test]
