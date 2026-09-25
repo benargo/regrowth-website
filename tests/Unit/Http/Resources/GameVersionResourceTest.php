@@ -2,9 +2,12 @@
 
 namespace Tests\Unit\Http\Resources;
 
+use App\Enums\Faction;
 use App\Enums\Theme;
+use App\Http\Integrations\Blizzard\BlizzardNamespace;
 use App\Http\Resources\GameVersionResource;
 use App\Models\GameVersion;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Group;
@@ -77,5 +80,71 @@ class GameVersionResourceTest extends TestCase
         $array = (new GameVersionResource($gameVersion))->resolve(new Request);
 
         $this->assertSame(['id', 'title', 'theme', 'banner_class'], array_keys($array));
+    }
+
+    #[Test]
+    public function the_management_scope_exposes_every_editable_field(): void
+    {
+        $gameVersion = GameVersion::factory()->make([
+            'id' => 7,
+            'title' => 'Burning Crusade Classic (Anniversary)',
+            'realm' => 'Thunderstrike',
+            'faction' => Faction::ALLIANCE,
+            'release_date' => Carbon::create(2026, 2, 6, 0, 0, 0, 'Europe/Paris'),
+            'theme' => Theme::CLASSIC,
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'warcraftlogs_guild' => 774848,
+            'warcraftlogs_expansion' => 1001,
+        ]);
+
+        $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
+
+        $this->assertSame([
+            'id' => 7,
+            'title' => 'Burning Crusade Classic (Anniversary)',
+            'theme' => Theme::CLASSIC,
+            'banner_class' => 'bg-raid-black-temple',
+            'realm' => 'Thunderstrike',
+            'faction' => Faction::ALLIANCE,
+            'release_date' => '2026-02-06',
+            'blizzard_namespace' => BlizzardNamespace::ANNIVERSARY,
+            'warcraftlogs_guild' => 774848,
+            'warcraftlogs_expansion' => 1001,
+        ], $array);
+    }
+
+    #[Test]
+    public function the_management_scope_returns_null_for_blank_optional_fields(): void
+    {
+        $gameVersion = GameVersion::factory()->make([
+            'realm' => null,
+            'faction' => null,
+            'blizzard_namespace' => null,
+            'warcraftlogs_guild' => null,
+            'warcraftlogs_expansion' => null,
+        ]);
+
+        $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
+
+        $this->assertNull($array['realm']);
+        $this->assertNull($array['faction']);
+        $this->assertNull($array['blizzard_namespace']);
+        $this->assertNull($array['warcraftlogs_guild']);
+        $this->assertNull($array['warcraftlogs_expansion']);
+    }
+
+    #[Test]
+    public function the_management_scope_includes_usage_counts_only_when_they_are_loaded(): void
+    {
+        $gameVersion = GameVersion::factory()->make();
+        $gameVersion->setAttribute('raids_count', 2);
+        $gameVersion->setAttribute('guild_tags_count', 3);
+
+        $array = GameVersionResource::forManagement($gameVersion)->resolve(new Request);
+
+        $this->assertSame(2, $array['raids_count']);
+        $this->assertSame(3, $array['guild_tags_count']);
+        $this->assertArrayNotHasKey('bosses_count', $array);
+        $this->assertArrayNotHasKey('characters_count', $array);
     }
 }
