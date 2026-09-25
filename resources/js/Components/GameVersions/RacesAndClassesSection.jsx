@@ -2,7 +2,7 @@ import { useForm } from "@inertiajs/react";
 import { SaveButton, firstError } from "@/Components/FormControls";
 import { AUTOSAVE_DELAY } from "@/Components/GameVersions/GameVersionForm";
 import RecordChecklist from "@/Components/GameVersions/RecordChecklist";
-import RelationshipPanel from "@/Components/GameVersions/RelationshipPanel";
+import Relationships from "@/Datasets/Relationships";
 import { useFormAutosave } from "@/Hooks/useAutosave";
 
 function ClassLabel({ playableClass }) {
@@ -50,7 +50,7 @@ export default function RacesAndClassesSection({
     }
 
     return (
-        <RelationshipPanel
+        <Relationships
             id="races-and-classes"
             title="Races and classes"
             description="Tick every race and class players can choose in this version."
@@ -86,6 +86,6 @@ export default function RacesAndClassesSection({
                 />
                 {!autosave && <SaveButton processing={form.processing} label={submitLabel} />}
             </form>
-        </RelationshipPanel>
+        </Relationships>
     );
 }

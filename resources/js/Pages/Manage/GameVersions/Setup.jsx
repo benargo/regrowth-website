@@ -1,11 +1,20 @@
 import { Link, router } from "@inertiajs/react";
 import { linkClassName } from "@/Components/FormControls";
 import EditLockGuard from "@/Components/GameVersions/EditLockGuard";
-import RelationshipStep from "@/Components/GameVersions/RelationshipStep";
 import SetupSteps from "@/Components/GameVersions/SetupSteps";
 import PageContainer from "@/Components/PageContainer";
 import SharedHeader from "@/Components/SharedHeader";
+import Relationships from "@/Datasets/Relationships";
 import Master from "@/Layouts/Master";
+
+/**
+ * Every {Name}Section.jsx game version section, which Relationships.Step picks
+ * from by the step's component name (GameVersionSetupStep::component()).
+ */
+const sections = import.meta.glob("/resources/js/Components/GameVersions/*Section.jsx", {
+    eager: true,
+    import: "default",
+});
 
 /**
  * The submit label and skip link text: back to the review page when the step
@@ -54,8 +63,9 @@ export default function Setup({
             <PageContainer>
                 <div className="mx-auto flex max-w-5xl flex-col gap-8">
                     <EditLockGuard canEdit={canEdit} editor={editor}>
-                        <RelationshipStep
+                        <Relationships.Step
                             step={step}
+                            sections={sections}
                             gameVersion={gameVersion}
                             relationships={relationships}
                             submitLabel={labels.submit}

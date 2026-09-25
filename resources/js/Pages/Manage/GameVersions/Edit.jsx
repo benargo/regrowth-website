@@ -5,11 +5,20 @@ import PageContainer from "@/Components/PageContainer";
 import EditLockGuard from "@/Components/GameVersions/EditLockGuard";
 import OnThisPage from "@/Components/OnThisPage";
 import GameVersionForm, { gameVersionFormData } from "@/Components/GameVersions/GameVersionForm";
-import RelationshipStep from "@/Components/GameVersions/RelationshipStep";
 import SharedHeader from "@/Components/SharedHeader";
 import ToolNav from "@/Components/ToolNav";
+import Relationships from "@/Datasets/Relationships";
 import { AutosaveProvider } from "@/Hooks/useAutosave";
 import Master from "@/Layouts/Master";
+
+/**
+ * Every {Name}Section.jsx game version section, which Relationships.Step picks
+ * from by the step's component name (GameVersionSetupStep::component()).
+ */
+const sections = import.meta.glob("/resources/js/Components/GameVersions/*Section.jsx", {
+    eager: true,
+    import: "default",
+});
 
 const DETAILS_SECTION = { value: "details", label: "Details" };
 const AUTOSAVE_HINT = "Changes will save automatically.";
@@ -80,9 +89,10 @@ export default function Edit({ gameVersion, options, relationships, steps, canEd
                                 </section>
 
                                 {steps.map((step) => (
-                                    <RelationshipStep
+                                    <Relationships.Step
                                         key={step.value}
                                         step={step}
+                                        sections={sections}
                                         gameVersion={gameVersion}
                                         relationships={relationships}
                                         autosave

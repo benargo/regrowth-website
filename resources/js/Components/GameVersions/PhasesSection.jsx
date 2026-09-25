@@ -3,8 +3,8 @@ import { SaveButton, firstError } from "@/Components/FormControls";
 import { AUTOSAVE_DELAY } from "@/Components/GameVersions/GameVersionForm";
 import NewPhaseForm from "@/Components/GameVersions/NewPhaseForm";
 import RecordChecklist from "@/Components/GameVersions/RecordChecklist";
-import RelationshipPanel, { AddRecordDisclosure } from "@/Components/GameVersions/RelationshipPanel";
 import Pill from "@/Components/Pill";
+import Relationships from "@/Datasets/Relationships";
 import { useFormAutosave } from "@/Hooks/useAutosave";
 import useSyncedSelection from "@/Hooks/useSyncedSelection";
 
@@ -73,7 +73,7 @@ export default function PhasesSection({
     }
 
     return (
-        <RelationshipPanel
+        <Relationships
             id="phases"
             title="Phases and raids"
             description="Tick the content phases that belong to this version. Ticking a phase from another version moves it here, along with its raids and bosses. Each phase's raids are listed under it; add a new raid to a linked phase below."
@@ -96,9 +96,9 @@ export default function PhasesSection({
                 />
                 {!autosave && <SaveButton processing={form.processing} label={submitLabel} />}
             </form>
-            <AddRecordDisclosure label="Add a new phase">
+            <Relationships.AddRecord label="Add a new phase">
                 <NewPhaseForm gameVersion={gameVersion} />
-            </AddRecordDisclosure>
-        </RelationshipPanel>
+            </Relationships.AddRecord>
+        </Relationships>
     );
 }
